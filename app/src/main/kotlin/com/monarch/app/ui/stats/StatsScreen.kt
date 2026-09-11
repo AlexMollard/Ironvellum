@@ -151,7 +151,9 @@ private enum class StatsTab(val label: String) { BODY("BODY"), TRAINING("TRAININ
 
 @Composable
 fun StatsScreen(
-    onOpenMeasurement: (MeasurementSite) -> Unit = {},
+    // No default: a defaulted no-op lets a forgotten nav wiring compile clean,
+    // which is how five screens ended up unreachable earlier.
+    onOpenMeasurement: (MeasurementSite) -> Unit,
     viewModel: StatsViewModel =
         viewModel(factory = viewModelFactory { initializer { StatsViewModel(monarchRepository()) } }),
 ) {
