@@ -1,5 +1,7 @@
 package com.monarch.app.ui
 
+import android.net.Uri
+
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -48,6 +50,8 @@ import com.monarch.app.ui.social.SocialScreen
 import com.monarch.app.ui.social.HunterScreen
 import com.monarch.app.ui.train.WorkoutLogScreen
 import com.monarch.app.ui.train.WorkoutDetailScreen
+import com.monarch.app.domain.MeasurementSite
+import com.monarch.app.ui.stats.MeasurementDetailScreen
 import com.monarch.app.ui.stats.StatsScreen
 import com.monarch.app.ui.titles.TitlesScreen
 import com.monarch.app.ui.theme.MonarchColors
@@ -68,6 +72,7 @@ object Routes {
     const val WORKOUT_LOG = "workout_log"
     const val WORKOUT_DETAIL = "workout/{sessionId}"
     const val HUNTER = "hunter/{userId}?name={name}"
+    const val MEASUREMENT = "measurement/{site}"
     const val PRESET_EDITOR = "preset_editor?presetId={presetId}"
     const val SESSION = "session/{sessionId}"
 
@@ -78,7 +83,15 @@ object Routes {
 
     fun workoutDetail(sessionId: Long): String = "workout/$sessionId"
 
-    fun hunter(userId: String, name: String): String = "hunter/$userId?name=$name"
+    /**
+     * Display names only carry a length constraint server-side, so they can
+     * hold spaces, '&' and '?' — raw interpolation would truncate or corrupt
+     * the route. Navigation decodes the argument on the way out.
+     */
+    fun measurement(site: MeasurementSite): String = "measurement/${site.name}"
+
+    fun hunter(userId: String, name: String): String =
+        "hunter/${Uri.encode(userId)}?name=${Uri.encode(name)}"
 }
 
 private data class BottomDestination(val route: String, val label: String, val icon: ImageVector)
@@ -237,9 +250,26 @@ fun MonarchRoot() {
                         onExit = { navController.popBackStack() },
                     )
                 }
-                composable(Routes.STATS) { StatsScreen() }
+                composable(Routes.STATS) {
+                    StatsScreen(
+                        onOpenMeasurement = { site -> navController.navigate(Routes.measurement(site)) },
+                    )
+                }
                 composable(Routes.TITLES) { TitlesScreen() }
                 composable(Routes.SETTINGS) { SettingsScreen() }
+                composable(
+                    Routes.MEASUREMENT,
+                    arguments = listOf(navArgument("site") { type = NavType.StringType }),
+                ) { entry ->
+                    val site = MeasurementSite.entries
+                        .firstOrNull { it.name == entry.arguments?.getString("site") }
+                    if (site == null) {
+                        // Unknown site in a deep link: go back rather than crash.
+                        navController.popBackStack()
+                    } else {
+                        MeasurementDetailScreen(site = site, onBack = { navController.popBackStack() })
+                    }
+                }
                 composable(Routes.SOCIAL) {
                     SocialScreen(
                         onOpenHunter = { userId, name ->

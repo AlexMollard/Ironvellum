@@ -69,6 +69,7 @@ import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.Energy
 import com.monarch.app.domain.EnergyConfidence
 import com.monarch.app.domain.EnergyEstimate
+import com.monarch.app.domain.MeasurementSite
 import com.monarch.app.domain.STEP_GOAL
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
@@ -150,6 +151,7 @@ private enum class StatsTab(val label: String) { BODY("BODY"), TRAINING("TRAININ
 
 @Composable
 fun StatsScreen(
+    onOpenMeasurement: (MeasurementSite) -> Unit = {},
     viewModel: StatsViewModel =
         viewModel(factory = viewModelFactory { initializer { StatsViewModel(monarchRepository()) } }),
 ) {
@@ -286,6 +288,10 @@ fun StatsScreen(
                     onClick = { showAdd = true },
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(Modifier.height(14.dp))
+                // Circumferences sit beside weight/BMI/FFMI: same body tab,
+                // same never-leaves-the-device rule.
+                MeasurementsPanel(onOpenSite = onOpenMeasurement)
                 SectionHeader("Readings")
                 if (ui.stats.isEmpty()) {
                     Text(

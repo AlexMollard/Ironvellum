@@ -166,3 +166,25 @@ data class ActivitySetRow(
     val distanceM: Double?,
     val grade: String?,
 )
+
+
+@Entity(tableName = "measurements")
+data class MeasurementEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Stored as the enum name; mapped defensively on read. */
+    val site: String,
+    val valueCm: Double,
+    val takenAtMs: Long,
+)
+
+@Entity(tableName = "measurement_goals")
+data class MeasurementGoalEntity(
+    /** One goal per site — a new goal replaces the old one. */
+    @PrimaryKey val site: String,
+    val targetCm: Double,
+    val setAtMs: Long,
+    /** Reading when the goal was set — the baseline progress measures from. */
+    val startCm: Double,
+    /** Stamped by logMeasurement the moment a reading satisfies the goal. */
+    val achievedAtMs: Long? = null,
+)

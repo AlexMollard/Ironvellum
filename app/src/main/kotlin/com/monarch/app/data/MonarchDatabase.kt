@@ -10,6 +10,9 @@ import com.monarch.app.data.db.ExerciseDao
 import com.monarch.app.data.db.ExerciseEntity
 import com.monarch.app.data.db.HealthDayDao
 import com.monarch.app.data.db.HealthDayEntity
+import com.monarch.app.data.db.MeasurementDao
+import com.monarch.app.data.db.MeasurementEntity
+import com.monarch.app.data.db.MeasurementGoalEntity
 import com.monarch.app.data.db.PresetDao
 import com.monarch.app.data.db.PresetEntity
 import com.monarch.app.data.db.PresetEntryEntity
@@ -37,8 +40,10 @@ import com.monarch.app.data.db.TitleUnlockEntity
         TitleUnlockEntity::class,
         SkillPracticeEntity::class,
         HealthDayEntity::class,
+        MeasurementEntity::class,
+        MeasurementGoalEntity::class,
     ],
-    version = 13,
+    version = 14,
     exportSchema = false,
 )
 abstract class MonarchDatabase : RoomDatabase() {
@@ -50,6 +55,7 @@ abstract class MonarchDatabase : RoomDatabase() {
     abstract fun titleDao(): TitleDao
     abstract fun skillPracticeDao(): SkillPracticeDao
     abstract fun healthDayDao(): HealthDayDao
+    abstract fun measurementDao(): MeasurementDao
 
     companion object {
         // Version 11 is the shipped baseline. Every future schema change
@@ -77,9 +83,32 @@ abstract class MonarchDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_13_14 = object : Migration(13, 14) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Body measurements are device-only by design: the cloud schema
+                // has no table for them, so there is no sync path to grow here.
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `measurements` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`site` TEXT NOT NULL, " +
+                        "`valueCm` REAL NOT NULL, " +
+                        "`takenAtMs` INTEGER NOT NULL)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `measurement_goals` (" +
+                        "`site` TEXT NOT NULL, " +
+                        "`targetCm` REAL NOT NULL, " +
+                        "`setAtMs` INTEGER NOT NULL, " +
+                        "`startCm` REAL NOT NULL, " +
+                        "`achievedAtMs` INTEGER, " +
+                        "PRIMARY KEY(`site`))",
+                )
+            }
+        }
+
         fun create(context: Context): MonarchDatabase =
             Room.databaseBuilder(context, MonarchDatabase::class.java, "monarch.db")
-                .addMigrations(MIGRATION_11_12, MIGRATION_12_13)
+                .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
                 .build()
     }
 }

@@ -7,6 +7,9 @@ import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.data.db.ExerciseDao
 import com.monarch.app.data.db.HealthDayDao
 import com.monarch.app.data.db.HealthDayEntity
+import com.monarch.app.data.db.MeasurementDao
+import com.monarch.app.data.db.MeasurementEntity
+import com.monarch.app.data.db.MeasurementGoalEntity
 import com.monarch.app.data.db.ExerciseEntity
 import com.monarch.app.data.db.PresetDao
 import com.monarch.app.data.db.PresetEntity
@@ -27,6 +30,10 @@ import com.monarch.app.domain.HealthDay
 import com.monarch.app.domain.ExerciseHistoryCalculator
 import com.monarch.app.domain.ExportReader
 import com.monarch.app.domain.ExportWriter
+import com.monarch.app.domain.MeasurementEntry
+import com.monarch.app.domain.MeasurementGoal
+import com.monarch.app.domain.MeasurementSite
+import com.monarch.app.domain.Measurements
 import com.monarch.app.domain.MuscleGroup
 import com.monarch.app.domain.PresetEntry
 import com.monarch.app.domain.PlayerProfile
@@ -66,6 +73,7 @@ class Repository(
     private val titleDao = db.titleDao()
     private val skillPracticeDao = db.skillPracticeDao()
     private val healthDayDao: HealthDayDao = db.healthDayDao()
+    private val measurementDao: MeasurementDao = db.measurementDao()
     // ---------------------------------------------------------------- seeding
 
     suspend fun ensureSeeded() {
@@ -612,6 +620,77 @@ class Repository(
 
     suspend fun deleteStat(id: Long) = statDao.delete(id)
 
+    // ---------------------------------------------------------------- measurements
+    // Device-only by design: the cloud schema has no measurement table, so
+    // nothing here may grow a sync path.
+
+    fun observeMeasurements(): Flow<List<MeasurementEntry>> =
+        measurementDao.observeAll().map { list ->
+            list.mapNotNull { e ->
+                // Unknown site strings must never crash the app — drop the row.
+                val site = MeasurementSite.entries.firstOrNull { it.name == e.site }
+                    ?: return@mapNotNull null
+                MeasurementEntry(id = e.id, site = site, valueCm = e.valueCm, takenAtMs = e.takenAtMs)
+            }
+        }
+
+    fun observeMeasurementGoals(): Flow<List<MeasurementGoal>> =
+        measurementDao.observeGoals().map { list ->
+            list.mapNotNull { g ->
+                val site = MeasurementSite.entries.firstOrNull { it.name == g.site }
+                    ?: return@mapNotNull null
+                MeasurementGoal(
+                    site = site,
+                    targetCm = g.targetCm,
+                    setAtMs = g.setAtMs,
+                    startCm = g.startCm,
+                    achievedAtMs = g.achievedAtMs,
+                )
+            }
+        }
+
+    suspend fun logMeasurement(site: MeasurementSite, valueCm: Double) {
+        val now = System.currentTimeMillis()
+        measurementDao.insert(MeasurementEntity(site = site.name, valueCm = valueCm, takenAtMs = now))
+        // Record the moment the goal is satisfied rather than deriving it later.
+        val goal = measurementDao.observeGoals().first().firstOrNull { it.site == site.name }
+        if (goal != null && goal.achievedAtMs == null) {
+            val domainGoal = MeasurementGoal(
+                site = site,
+                targetCm = goal.targetCm,
+                setAtMs = goal.setAtMs,
+                startCm = goal.startCm,
+                achievedAtMs = goal.achievedAtMs,
+            )
+            val reading = MeasurementEntry(site = site, takenAtMs = now, valueCm = valueCm)
+            if (Measurements.progress(domainGoal, listOf(reading)).achieved) {
+                measurementDao.stampAchieved(site.name, now)
+            }
+        }
+    }
+
+    suspend fun deleteMeasurement(id: Long) = measurementDao.delete(id)
+
+    suspend fun setMeasurementGoal(site: MeasurementSite, targetCm: Double) {
+        // Baseline is the newest reading AT SET TIME; recomputing it later would
+        // let progress drift as new readings land. With no reading yet the
+        // target itself is the baseline so progress reads 0 rather than exploding.
+        val startCm = measurementDao.observeAll().first()
+            .filter { it.site == site.name }
+            .maxByOrNull { it.takenAtMs }
+            ?.valueCm ?: targetCm
+        measurementDao.upsertGoal(
+            MeasurementGoalEntity(
+                site = site.name,
+                targetCm = targetCm,
+                setAtMs = System.currentTimeMillis(),
+                startCm = startCm,
+            ),
+        )
+    }
+
+    suspend fun clearMeasurementGoal(site: MeasurementSite) = measurementDao.deleteGoal(site.name)
+
     // ---------------------------------------------------------------- profile & titles
 
     fun observeProfile(): Flow<PlayerProfile?> =
@@ -825,6 +904,20 @@ class Repository(
             )
         }
         val titles = titleDao.observeAll().first().map { UnlockedTitle(it.titleId, it.unlockedAtMs) }
+        val measurements = measurementDao.observeAll().first().mapNotNull { e ->
+            val site = MeasurementSite.entries.firstOrNull { it.name == e.site } ?: return@mapNotNull null
+            MeasurementEntry(id = e.id, site = site, valueCm = e.valueCm, takenAtMs = e.takenAtMs)
+        }
+        val measurementGoals = measurementDao.observeGoals().first().mapNotNull { g ->
+            val site = MeasurementSite.entries.firstOrNull { it.name == g.site } ?: return@mapNotNull null
+            MeasurementGoal(
+                site = site,
+                targetCm = g.targetCm,
+                setAtMs = g.setAtMs,
+                startCm = g.startCm,
+                achievedAtMs = g.achievedAtMs,
+            )
+        }
         return ExportWriter.write(
             profile = profile,
             trainingMode = profile.trainingMode,
@@ -834,6 +927,8 @@ class Repository(
             titles = titles,
             skills = skills,
             healthDays = healthDays,
+            measurements = measurements,
+            measurementGoals = measurementGoals,
             exportedAtMs = System.currentTimeMillis(),
         )
     }
@@ -846,6 +941,8 @@ class Repository(
         val titles: Int,
         val skills: Int,
         val healthDays: Int,
+        val measurements: Int = 0,
+        val measurementGoals: Int = 0,
         val problems: List<String>,
     )
 
@@ -866,6 +963,8 @@ class Repository(
                 titleDao.clearAll()
                 skillPracticeDao.clearAll()
                 healthDayDao.clearAll()
+                measurementDao.clearAll()
+                measurementDao.clearAllGoals()
 
                 profileDao.upsert(
                     ProfileEntity(
@@ -995,6 +1094,22 @@ class Repository(
                         ),
                     )
                 }
+                archive.measurements.forEach { m ->
+                    measurementDao.insert(
+                        MeasurementEntity(site = m.site.name, valueCm = m.valueCm, takenAtMs = m.takenAtMs),
+                    )
+                }
+                archive.measurementGoals.forEach { g ->
+                    measurementDao.upsertGoal(
+                        MeasurementGoalEntity(
+                            site = g.site.name,
+                            targetCm = g.targetCm,
+                            setAtMs = g.setAtMs,
+                            startCm = g.startCm,
+                            achievedAtMs = g.achievedAtMs,
+                        ),
+                    )
+                }
                 if (archive.healthDays.isNotEmpty()) {
                     healthDayDao.upsertAll(
                         archive.healthDays.map {
@@ -1018,6 +1133,8 @@ class Repository(
                     titles = archive.titles.size,
                     skills = archive.skills.size,
                     healthDays = archive.healthDays.size,
+                    measurements = archive.measurements.size,
+                    measurementGoals = archive.measurementGoals.size,
                     problems = problems,
                 )
             }

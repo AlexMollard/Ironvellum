@@ -260,3 +260,35 @@ interface HealthDayDao {
     @Query("DELETE FROM health_days")
     suspend fun clearAll()
 }
+
+
+@Dao
+interface MeasurementDao {
+    @Query("SELECT * FROM measurements ORDER BY takenAtMs DESC")
+    fun observeAll(): Flow<List<MeasurementEntity>>
+
+    @Query("SELECT * FROM measurement_goals")
+    fun observeGoals(): Flow<List<MeasurementGoalEntity>>
+
+    @Insert
+    suspend fun insert(entry: MeasurementEntity)
+
+    @Query("DELETE FROM measurements WHERE id = :id")
+    suspend fun delete(id: Long)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertGoal(goal: MeasurementGoalEntity)
+
+    @Query("UPDATE measurement_goals SET achievedAtMs = :atMs WHERE site = :site")
+    suspend fun stampAchieved(site: String, atMs: Long)
+
+    @Query("DELETE FROM measurement_goals WHERE site = :site")
+    suspend fun deleteGoal(site: String)
+
+    /** Import is a full restore: measurements are replaced wholesale. */
+    @Query("DELETE FROM measurements")
+    suspend fun clearAll()
+
+    @Query("DELETE FROM measurement_goals")
+    suspend fun clearAllGoals()
+}

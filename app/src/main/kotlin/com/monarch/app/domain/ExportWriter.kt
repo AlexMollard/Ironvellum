@@ -6,7 +6,7 @@ package com.monarch.app.domain
  */
 object ExportWriter {
 
-    const val FORMAT_VERSION = 3
+    const val FORMAT_VERSION = 4
 
     fun write(
         profile: PlayerProfile,
@@ -17,6 +17,8 @@ object ExportWriter {
         titles: List<UnlockedTitle>,
         skills: List<SkillPractice>,
         healthDays: List<HealthDay>,
+        measurements: List<MeasurementEntry> = emptyList(),
+        measurementGoals: List<MeasurementGoal> = emptyList(),
         exportedAtMs: Long,
     ): String = buildString {
         append("{")
@@ -38,6 +40,10 @@ object ExportWriter {
         appendSkills(skills)
         append(",\"healthDays\":")
         appendHealthDays(healthDays)
+        append(",\"measurements\":")
+        appendMeasurements(measurements)
+        append(",\"measurementGoals\":")
+        appendMeasurementGoals(measurementGoals)
         append("}")
     }
 
@@ -161,6 +167,32 @@ object ExportWriter {
             append(",\"activeKcal\":").append(day.activeKcal)
             append(",\"sleepMinutes\":").append(day.sleepMinutes)
             append(",\"restingHr\":").appendNullable(day.restingHr) { append(it) }
+            append("}")
+        }
+        append("]")
+    }
+
+    private fun StringBuilder.appendMeasurements(measurements: List<MeasurementEntry>) {
+        append("[")
+        measurements.forEachIndexed { i, m ->
+            if (i > 0) append(",")
+            append("{\"site\":").appendEscaped(m.site.name)
+            append(",\"valueCm\":").append(m.valueCm)
+            append(",\"takenAtMs\":").append(m.takenAtMs)
+            append("}")
+        }
+        append("]")
+    }
+
+    private fun StringBuilder.appendMeasurementGoals(goals: List<MeasurementGoal>) {
+        append("[")
+        goals.forEachIndexed { i, g ->
+            if (i > 0) append(",")
+            append("{\"site\":").appendEscaped(g.site.name)
+            append(",\"targetCm\":").append(g.targetCm)
+            append(",\"setAtMs\":").append(g.setAtMs)
+            append(",\"startCm\":").append(g.startCm)
+            append(",\"achievedAtMs\":").appendNullable(g.achievedAtMs) { append(it) }
             append("}")
         }
         append("]")

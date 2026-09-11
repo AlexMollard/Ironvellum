@@ -37,7 +37,7 @@ class ExportWriterTest {
             exportedAtMs = 999,
         )
 
-        assertTrue(json.startsWith("{\"formatVersion\":3,"))
+        assertTrue(json.startsWith("{\"formatVersion\":4,"))
         assertTrue(json.contains("\"modifiers\":\"\""))
         assertTrue(json.contains("\"name\":\"Pog Champ\""))
         assertTrue(json.contains("\"totalXp\":1234"))
@@ -107,13 +107,47 @@ class ExportWriterTest {
 
     @Test
     fun `empty collections render as empty arrays`() {
-        val json = ExportWriter.write(PlayerProfile("x", 0), TrainingMode.STRENGTH, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0)
+        val json = ExportWriter.write(PlayerProfile("x", 0), TrainingMode.STRENGTH, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0)
         assertEquals(
-            "{\"formatVersion\":3,\"exportedAtMs\":0," +
+            "{\"formatVersion\":4,\"exportedAtMs\":0," +
                 "\"profile\":{\"name\":\"x\",\"totalXp\":0,\"currentTitleId\":null}," +
                 "\"trainingMode\":\"STRENGTH\"," +
-                "\"presets\":[],\"sessions\":[],\"stats\":[],\"titles\":[],\"skills\":[],\"healthDays\":[]}",
+                "\"presets\":[],\"sessions\":[],\"stats\":[],\"titles\":[],\"skills\":[],\"healthDays\":[]," +
+                "\"measurements\":[],\"measurementGoals\":[]}",
             json,
         )
+    }
+
+    @Test
+    fun `measurements and goals survive a real write then read`() {
+        // Regression guard: the writer once silently omitted a section and the
+        // restore destroyed the data. These keys must round-trip, including an
+        // empty goal note.
+        // The archive carries no ids — restored rows are new (same as stats).
+        val entries = listOf(
+            MeasurementEntry(site = MeasurementSite.WAIST, valueCm = 82.5, takenAtMs = 100),
+            MeasurementEntry(site = MeasurementSite.UPPER_ARM, valueCm = 36.0, takenAtMs = 200),
+        )
+        val goals = listOf(
+            MeasurementGoal(site = MeasurementSite.WAIST, targetCm = 80.0, setAtMs = 90, startCm = 85.0),
+            MeasurementGoal(site = MeasurementSite.UPPER_ARM, targetCm = 38.0, setAtMs = 150, startCm = 35.0, achievedAtMs = 300),
+        )
+        val json = ExportWriter.write(
+            profile = PlayerProfile(),
+            trainingMode = TrainingMode.STRENGTH,
+            presets = emptyList(),
+            sessions = emptyList(),
+            stats = emptyList(),
+            titles = emptyList(),
+            skills = emptyList(),
+            healthDays = emptyList(),
+            measurements = entries,
+            measurementGoals = goals,
+            exportedAtMs = 1,
+        )
+        val restored = ExportReader.read(json).getOrThrow()
+
+        assertEquals(entries, restored.measurements)
+        assertEquals(goals, restored.measurementGoals)
     }
 }

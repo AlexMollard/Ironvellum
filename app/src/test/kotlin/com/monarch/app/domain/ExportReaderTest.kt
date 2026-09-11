@@ -48,6 +48,13 @@ class ExportReaderTest {
             HealthDay(date = LocalDate.of(2026, 9, 10), steps = 9000, distanceKm = 6.5, activeKcal = 320, sleepMinutes = 460, restingHr = 58),
             HealthDay(date = LocalDate.of(2026, 9, 11), steps = 1200, distanceKm = 0.9, activeKcal = 40, sleepMinutes = 0, restingHr = null),
         ),
+        measurements = listOf(
+            MeasurementEntry(site = MeasurementSite.WAIST, valueCm = 82.5, takenAtMs = 100),
+            MeasurementEntry(site = MeasurementSite.UPPER_ARM, valueCm = 36.0, takenAtMs = 200),
+        ),
+        measurementGoals = listOf(
+            MeasurementGoal(site = MeasurementSite.WAIST, targetCm = 80.0, setAtMs = 90, startCm = 85.0, achievedAtMs = null),
+        ),
         exportedAtMs = 999,
     )
 
@@ -55,7 +62,7 @@ class ExportReaderTest {
     fun `round trip preserves every field of every section`() {
         val archive = ExportReader.read(fullArchiveJson()).getOrThrow()
 
-        assertEquals(3, archive.formatVersion)
+        assertEquals(4, archive.formatVersion)
         assertEquals(999, archive.exportedAtMs)
         assertEquals("Mo\"narch \\ The Türkçe Æon", archive.profile.name)
         assertEquals(123_456_789_012L, archive.profile.totalXp)
@@ -115,6 +122,33 @@ class ExportReaderTest {
             ),
             archive.healthDays,
         )
+
+        assertEquals(
+            listOf(
+                MeasurementEntry(id = 0, site = MeasurementSite.WAIST, valueCm = 82.5, takenAtMs = 100),
+                MeasurementEntry(id = 0, site = MeasurementSite.UPPER_ARM, valueCm = 36.0, takenAtMs = 200),
+            ),
+            archive.measurements,
+        )
+        assertEquals(
+            listOf(MeasurementGoal(site = MeasurementSite.WAIST, targetCm = 80.0, setAtMs = 90, startCm = 85.0, achievedAtMs = null)),
+            archive.measurementGoals,
+        )
+    }
+
+    @Test
+    fun `v3 archive without measurement sections restores with empty defaults`() {
+        val v3 = """
+            {"formatVersion":3,"exportedAtMs":42,
+             "profile":{"name":"Old Hunter","totalXp":55,"currentTitleId":null},
+             "trainingMode":"STRENGTH",
+             "presets":[],"sessions":[],"stats":[],"titles":[],"skills":[],"healthDays":[]}
+        """.trimIndent()
+
+        val archive = ExportReader.read(v3).getOrThrow()
+
+        assertTrue(archive.measurements.isEmpty())
+        assertTrue(archive.measurementGoals.isEmpty())
     }
 
     @Test
