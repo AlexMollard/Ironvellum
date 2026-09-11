@@ -1,6 +1,11 @@
 package com.monarch.app.domain
 
-enum class MuscleGroup { PULL, PUSH, LEGS, CORE }
+/**
+ * Lifting groups first, then the activity groups the seeded sports use.
+ * Activity work has no single muscle group, so it gets its own bucket rather
+ * than being mislabelled as PULL or LEGS.
+ */
+enum class MuscleGroup { PULL, PUSH, LEGS, CORE, CARDIO, SPORT, CLIMBING, WATER, MOBILITY }
 
 /** How a movement is measured. REPS is the existing lifting/calisthenics case. */
 enum class ExerciseMetric { REPS, DURATION, DISTANCE_TIME, ATTEMPTS_GRADE }

@@ -195,8 +195,19 @@ class Repository(
 
     // ---------------------------------------------------------------- mapping
 
-    private fun ExerciseEntity.toDomain() =
-        Exercise(id = id, name = name, muscleGroup = MuscleGroup.valueOf(muscleGroup), isWeighted = isWeighted)
+    /**
+     * An unrecognised group must never take the app down: a seed typo or an
+     * archive from a newer build crashed every screen that reads the catalogue,
+     * because valueOf throws on the way out of the database.
+     */
+    private fun ExerciseEntity.toDomain() = Exercise(
+        id = id,
+        name = name,
+        muscleGroup = MuscleGroup.entries.firstOrNull { it.name == muscleGroup } ?: MuscleGroup.CORE,
+        isWeighted = isWeighted,
+        metric = ExerciseMetric.entries.firstOrNull { it.name == metric } ?: ExerciseMetric.REPS,
+        category = category,
+    )
 
     // ---------------------------------------------------------------- exercises
 
