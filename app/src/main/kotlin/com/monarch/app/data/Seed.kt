@@ -3,6 +3,7 @@ package com.monarch.app.data
 import com.monarch.app.data.db.ExerciseEntity
 import com.monarch.app.data.db.PresetEntity
 import com.monarch.app.domain.MuscleGroup
+import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.domain.Skills
 
 /** Static catalog and preset seeds; runs once on an empty database. */
@@ -58,15 +59,93 @@ object Seed {
         else -> MuscleGroup.CORE
     }
 
-    val exercises: List<ExerciseEntity> = baseExercises + Skills.ALL
-        .filterNot { skill -> baseExercises.any { it.name == skill.name } }
-        .map { skill ->
-            ExerciseEntity(
-                name = skill.name,
-                muscleGroup = skillGroup(skill).name,
-                isWeighted = skill.name.contains("Weighted"),
-            )
-        }
+
+    /**
+     * Activity/sport catalogue. Metric picks how a set is measured; muscleGroup
+     * carries a coarse bucket so the existing ORDER BY and journal grouping still
+     * work. Repository.ensureSeeded inserts any missing by name, so existing v12
+     * installs pick these up on upgrade without touching their history.
+     */
+    private fun activity(
+        name: String,
+        group: String,
+        metric: ExerciseMetric,
+        category: String,
+        weighted: Boolean = false,
+    ) = ExerciseEntity(
+        name = name,
+        muscleGroup = group,
+        isWeighted = weighted,
+        metric = metric.name,
+        category = category,
+    )
+
+    val activities: List<ExerciseEntity> = listOf(
+        // Cardio — distance/timed
+        activity("Running", "CARDIO", ExerciseMetric.DISTANCE_TIME, "Cardio"),
+        activity("Trail Running", "CARDIO", ExerciseMetric.DISTANCE_TIME, "Cardio"),
+        activity("Cycling", "CARDIO", ExerciseMetric.DISTANCE_TIME, "Cardio"),
+        activity("Rowing", "CARDIO", ExerciseMetric.DISTANCE_TIME, "Cardio"),
+        activity("Hiking", "CARDIO", ExerciseMetric.DISTANCE_TIME, "Cardio"),
+        activity("Walking", "CARDIO", ExerciseMetric.DISTANCE_TIME, "Cardio"),
+        // Cardio — duration only
+        activity("Skipping", "CARDIO", ExerciseMetric.DURATION, "Cardio"),
+        activity("Weighted Skipping", "CARDIO", ExerciseMetric.DURATION, "Cardio", weighted = true),
+        activity("Jump Rope Intervals", "CARDIO", ExerciseMetric.DURATION, "Cardio"),
+        activity("Stair Climbing", "CARDIO", ExerciseMetric.DURATION, "Cardio"),
+        activity("Elliptical", "CARDIO", ExerciseMetric.DURATION, "Cardio"),
+        activity("Assault Bike", "CARDIO", ExerciseMetric.DURATION, "Cardio"),
+        // Water
+        activity("Swimming", "WATER", ExerciseMetric.DISTANCE_TIME, "Water"),
+        activity("Water Polo", "WATER", ExerciseMetric.DURATION, "Water"),
+        // Climbing — attempts + grade text
+        activity("Bouldering", "CLIMBING", ExerciseMetric.ATTEMPTS_GRADE, "Climbing"),
+        activity("Sport Climbing", "CLIMBING", ExerciseMetric.ATTEMPTS_GRADE, "Climbing"),
+        activity("Top Rope", "CLIMBING", ExerciseMetric.ATTEMPTS_GRADE, "Climbing"),
+        // Sports
+        activity("Football (Soccer)", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Basketball", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Tennis", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Badminton", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Squash", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Cricket", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Rugby", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Volleyball", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Table Tennis", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Golf", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Boxing", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Kickboxing", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Brazilian Jiu-Jitsu", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Wrestling", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Judo", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Karate", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Skateboarding", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Surfing", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Snowboarding", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Skiing", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Dancing", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        activity("Martial Arts Class", "SPORT", ExerciseMetric.DURATION, "Sport"),
+        // Mobility
+        activity("Yoga", "MOBILITY", ExerciseMetric.DURATION, "Mobility"),
+        activity("Pilates", "MOBILITY", ExerciseMetric.DURATION, "Mobility"),
+        activity("Stretching", "MOBILITY", ExerciseMetric.DURATION, "Mobility"),
+        activity("Mobility Flow", "MOBILITY", ExerciseMetric.DURATION, "Mobility"),
+    )
+
+    val exercises: List<ExerciseEntity>
+        get() = allExercises
+
+    private val allExercises: List<ExerciseEntity> = baseExercises +
+        Skills.ALL
+            .filterNot { skill -> baseExercises.any { it.name == skill.name } }
+            .map { skill ->
+                ExerciseEntity(
+                    name = skill.name,
+                    muscleGroup = skillGroup(skill).name,
+                    isWeighted = skill.name.contains("Weighted"),
+                )
+            } +
+        activities
 
     data class SeedEntry(
         val exercise: String,

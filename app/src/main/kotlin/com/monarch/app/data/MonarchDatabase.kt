@@ -38,7 +38,7 @@ import com.monarch.app.data.db.TitleUnlockEntity
         SkillPracticeEntity::class,
         HealthDayEntity::class,
     ],
-    version = 12,
+    version = 13,
     exportSchema = false,
 )
 abstract class MonarchDatabase : RoomDatabase() {
@@ -66,9 +66,20 @@ abstract class MonarchDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_12_13 = object : Migration(12, 13) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Activity dimension: defaults keep every existing row a plain lifting entry.
+                db.execSQL("ALTER TABLE exercises ADD COLUMN metric TEXT NOT NULL DEFAULT 'REPS'")
+                db.execSQL("ALTER TABLE exercises ADD COLUMN category TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN durationSec INTEGER")
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN distanceM REAL")
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN grade TEXT")
+            }
+        }
+
         fun create(context: Context): MonarchDatabase =
             Room.databaseBuilder(context, MonarchDatabase::class.java, "monarch.db")
-                .addMigrations(MIGRATION_11_12)
+                .addMigrations(MIGRATION_11_12, MIGRATION_12_13)
                 .build()
     }
 }

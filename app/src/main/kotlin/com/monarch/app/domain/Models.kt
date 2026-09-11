@@ -2,11 +2,17 @@ package com.monarch.app.domain
 
 enum class MuscleGroup { PULL, PUSH, LEGS, CORE }
 
+/** How a movement is measured. REPS is the existing lifting/calisthenics case. */
+enum class ExerciseMetric { REPS, DURATION, DISTANCE_TIME, ATTEMPTS_GRADE }
+
 data class Exercise(
     val id: Long = 0,
     val name: String,
     val muscleGroup: MuscleGroup,
     val isWeighted: Boolean,
+    val metric: ExerciseMetric = ExerciseMetric.REPS,
+    /** "" for lifting; otherwise e.g. "Cardio", "Sport", "Climbing", "Water", "Mobility". */
+    val category: String = "",
 )
 
 data class PresetEntry(
@@ -39,6 +45,10 @@ data class SessionSet(
     val weightKg: Double? = null,
     val modifiers: String = "",
     val done: Boolean = false,
+    /** All null for lifting sets. */
+    val durationSec: Int? = null,
+    val distanceM: Double? = null,
+    val grade: String? = null,
 )
 
 data class WorkoutSession(

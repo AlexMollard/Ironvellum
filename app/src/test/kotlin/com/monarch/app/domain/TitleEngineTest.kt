@@ -1,6 +1,7 @@
 package com.monarch.app.domain
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -30,6 +31,7 @@ class TitleEngineTest {
             history = emptyList(),
             healthDays = listOf(day),
             practices = emptyList(),
+            exercises = emptyMap(),
         )
         assertEquals(21_000, built.stepsBestDay)
         assertEquals(1, built.stepGoalDays)
@@ -56,6 +58,7 @@ class TitleEngineTest {
                 SkillPractice("Pull-up", 2L, claimed = false),
                 SkillPractice("Pull-up", 3L, claimed = false),
             ),
+            exercises = emptyMap(),
         )
         assertEquals(1, built.skillsMastered)
         assertEquals(2, built.practiceAttempts)
@@ -121,6 +124,13 @@ class TitleEngineTest {
         practiceAttempts = 25,
         trainingStreakDays = 3,
         bestWeekWorkouts = 3,
+        activityMinutes = 60,
+        activityDistanceKm = 10.0,
+        distinctActivities = 3,
+        bestRunKm = 5.0,
+        bestSwimKm = 1.0,
+        hardestGrade = "V1",
+        sportSessions = 1,
     )
 
     /** Asserts a rule flips exactly at its threshold, not one unit below. */
@@ -144,6 +154,18 @@ class TitleEngineTest {
         check(TitleRule.StepsInDay(10_000), 10_000) { l, v -> l.copy(stepsBestDay = v.toInt()) }
         check(TitleRule.StepsLifetime(100_000), 100_000) { l, v -> l.copy(stepsLifetime = v) }
         check(TitleRule.DistanceKmLifetime(50.0), 50) { l, v -> l.copy(distanceKmLifetime = v.toDouble()) }
+        check(TitleRule.ActivityMinutes(60), 60) { l, v -> l.copy(activityMinutes = v.toInt()) }
+        check(TitleRule.ActivityDistanceKm(10.0), 10) { l, v -> l.copy(activityDistanceKm = v.toDouble()) }
+        check(TitleRule.DistinctActivities(3), 3) { l, v -> l.copy(distinctActivities = v.toInt()) }
+        check(TitleRule.LongestRun(5.0), 5) { l, v -> l.copy(bestRunKm = v.toDouble()) }
+        check(TitleRule.LongestSwim(1.0), 1) { l, v -> l.copy(bestSwimKm = v.toDouble()) }
+        // grade rule: flips on recognised grades of equal or higher rank
+        val v1 = TitleRule.HardestGrade("V1")
+        assertTrue(Titles.satisfied(v1, full().copy(hardestGrade = "V1")))
+        assertTrue(Titles.satisfied(v1, full().copy(hardestGrade = "7A"))) // 7A ≈ V4, harder
+        assertFalse(Titles.satisfied(v1, full().copy(hardestGrade = "V0")))
+        assertFalse(Titles.satisfied(v1, full().copy(hardestGrade = "garbage")))
+        assertTrue(Titles.satisfied(TitleRule.HardestGrade("6B"), full().copy(hardestGrade = "V1")))
         check(TitleRule.ActiveKcalInDay(500), 500) { l, v -> l.copy(activeKcalBestDay = v.toInt()) }
         check(TitleRule.SleepMinutesInNight(480), 480) { l, v -> l.copy(sleepBestMinutes = v.toInt()) }
         check(TitleRule.StepGoalDays(10), 10) { l, v -> l.copy(stepGoalDays = v.toInt()) }
@@ -185,6 +207,88 @@ class TitleEngineTest {
         assertEquals("skills mastered", Titles.progress(TitleRule.SkillsMastered(5), full()).unit)
         assertEquals("practice attempts", Titles.progress(TitleRule.PracticeAttempts(25), full()).unit)
         assertEquals("workouts in a week", Titles.progress(TitleRule.WorkoutsInWeek(3), full()).unit)
+    }
+
+    // ---- activity ledger assembly ----
+
+    private val exercises = mapOf(
+        1L to Exercise(name = "Run", muscleGroup = MuscleGroup.LEGS, isWeighted = false, metric = ExerciseMetric.DISTANCE_TIME, category = "Cardio"),
+        2L to Exercise(name = "Swim", muscleGroup = MuscleGroup.CORE, isWeighted = false, metric = ExerciseMetric.DISTANCE_TIME, category = "Water"),
+        3L to Exercise(name = "Boulder", muscleGroup = MuscleGroup.PULL, isWeighted = false, metric = ExerciseMetric.ATTEMPTS_GRADE, category = "Climbing"),
+        4L to Exercise(name = "Football", muscleGroup = MuscleGroup.LEGS, isWeighted = false, metric = ExerciseMetric.DURATION, category = "Sport"),
+        5L to Exercise(name = "Squat", muscleGroup = MuscleGroup.LEGS, isWeighted = true, metric = ExerciseMetric.REPS),
+    )
+
+    private fun activityHistory() = listOf(
+        WorkoutSession(id = 1L, label = "mixed", startedAtMs = 1L) to listOf(
+            SessionSet(exerciseId = 1L, setIndex = 0, reps = 1, durationSec = 3600, distanceM = 5000.0, done = true),
+            SessionSet(exerciseId = 2L, setIndex = 0, reps = 1, distanceM = 1000.0, done = true),
+            SessionSet(exerciseId = 3L, setIndex = 0, reps = 1, grade = "V3", done = true),
+            SessionSet(exerciseId = 4L, setIndex = 0, reps = 1, durationSec = 5400, done = true),
+            SessionSet(exerciseId = 5L, setIndex = 0, reps = 10, weightKg = 100.0, done = true),
+            // undone set must contribute nothing
+            SessionSet(exerciseId = 1L, setIndex = 1, reps = 1, distanceM = 99999.0, done = false),
+        ),
+        WorkoutSession(id = 2L, label = "second run", startedAtMs = 2L) to listOf(
+            // same activity logged again — must not double-count distinct
+            SessionSet(exerciseId = 1L, setIndex = 0, reps = 1, distanceM = 3000.0, done = true),
+        ),
+    )
+
+    @Test
+    fun `ledgerOf derives every activity field`() {
+        val built = Titles.ledgerOf(0, activityHistory(), emptyList(), emptyList(), exercises)
+        // 90 (run) + 60 (football) minutes; swim and climb sets carry no duration
+        assertEquals(150, built.activityMinutes)
+        assertEquals(9.0, built.activityDistanceKm, 0.0001)
+        assertEquals(4, built.distinctActivities)
+        assertEquals(5.0, built.bestRunKm, 0.0001) // best single session, not lifetime sum
+        assertEquals(1.0, built.bestSwimKm, 0.0001)
+        assertEquals("V3", built.hardestGrade)
+        assertEquals(1, built.sportSessions)
+    }
+
+    @Test
+    fun `unrecognised grade never becomes hardest and lifting never counts`() {
+        val history = listOf(
+            WorkoutSession(id = 1L, label = "s", startedAtMs = 1L) to listOf(
+                SessionSet(exerciseId = 3L, setIndex = 0, reps = 1, grade = "insane proj", done = true),
+                SessionSet(exerciseId = 5L, setIndex = 0, reps = 1, grade = "V15", done = true),
+            ),
+        )
+        val built = Titles.ledgerOf(0, history, emptyList(), emptyList(), exercises)
+        assertEquals("", built.hardestGrade)
+        assertFalse(Titles.satisfied(TitleRule.HardestGrade("V1"), built))
+        assertEquals(0, built.activityMinutes)
+        assertEquals(0, built.sportSessions)
+    }
+
+    @Test
+    fun `grade ranking orders V Font and YDS consistently`() {
+        // V-scale internally
+        assertTrue(GradeRank.rank("VB")!! < GradeRank.rank("V0")!!)
+        assertTrue(GradeRank.rank("V4")!! < GradeRank.rank("V5")!!)
+        // Font internally
+        assertTrue(GradeRank.rank("6A")!! < GradeRank.rank("6B")!!)
+        assertTrue(GradeRank.rank("6B")!! < GradeRank.rank("6B+")!!)
+        assertTrue(GradeRank.rank("7C+")!! < GradeRank.rank("8A")!!)
+        // YDS internally
+        assertTrue(GradeRank.rank("5.9")!! < GradeRank.rank("5.10a")!!)
+        assertTrue(GradeRank.rank("5.13b")!! < GradeRank.rank("5.13c")!!)
+        // Cross-system anchors: 6A ≈ V0, 7A ≈ V4, 8A ≈ V8
+        assertEquals(GradeRank.rank("V0"), GradeRank.rank("6A"))
+        assertEquals(GradeRank.rank("V4"), GradeRank.rank("7A"))
+        assertEquals(GradeRank.rank("V8"), GradeRank.rank("8A"))
+        // YDS vs V: 5.12a sits between V5 and V8
+        assertTrue(GradeRank.rank("V5")!! < GradeRank.rank("5.12a")!!)
+        assertTrue(GradeRank.rank("5.12a")!! < GradeRank.rank("V8")!!)
+        // Garbage never ranks
+        assertNull(GradeRank.rank("insane proj"))
+        assertNull(GradeRank.rank("6Z"))
+        assertNull(GradeRank.rank("V99"))
+        assertNull(GradeRank.rank(""))
+        // Garbage never outranks any recognised grade
+        assertTrue((GradeRank.rank("v4") ?: Int.MIN_VALUE) == GradeRank.rank("V4"))
     }
 
     @Test

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CutCornerShape
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import com.monarch.app.domain.Exercise
 import com.monarch.app.domain.MuscleGroup
 import com.monarch.app.domain.Skills
+import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 
@@ -53,11 +55,17 @@ fun ExercisePickerPanel(
 ) {
     var query by remember { mutableStateOf("") }
     var group by remember { mutableStateOf<MuscleGroup?>(null) }
+    var category by remember { mutableStateOf<String?>(null) }
 
     val filtered = exercises
         .filter { group == null || it.muscleGroup == group }
+        .filter { category == null || it.category == category }
         .filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
         .sortedWith(compareBy({ it.muscleGroup.ordinal }, { it.name }))
+    // Grouped for display; a search term filters every group, so only non-empty groups appear.
+    val grouped = activityCategoryOrder(exercises)
+        .map { c -> c to filtered.filter { it.category == c } }
+        .filter { (_, list) -> list.isNotEmpty() }
 
     Column(modifier.fillMaxWidth()) {
         Row(
@@ -123,41 +131,38 @@ fun ExercisePickerPanel(
             }
         }
 
+        Spacer(Modifier.height(8.dp))
+
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            FilterChip("ALL", category == null) { category = null }
+            activityCategoryOrder(exercises).filter { it.isNotBlank() }.forEach { c ->
+                FilterChip(c.uppercase(), category == c) { category = if (category == c) null else c }
+            }
+        }
+
         Spacer(Modifier.height(12.dp))
 
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
-            items(filtered, key = { it.id }) { exercise ->
-                val skill = Skills.forName(exercise.name)
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .clickable { onPick(exercise) }
-                        .padding(vertical = 11.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            exercise.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MonarchColors.Ink,
-                        )
-                        Text(
-                            buildString {
-                                append(exercise.muscleGroup.name.lowercase())
-                                if (exercise.isWeighted) append("  ·  weighted")
-                                if (skill != null) append("  ·  skill ${Skills.tierLabel(skill.tier)} ${skill.line}")
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (skill != null) MonarchColors.SystemGreen else MonarchColors.InkMuted,
-                        )
-                    }
+            grouped.forEach { (cat, list) ->
+                item(key = "header_$cat") {
                     Text(
-                        "+",
-                        style = MaterialTheme.typography.titleMedium,
+                        if (cat.isBlank()) "STRENGTH" else cat.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
                         color = MonarchColors.SovereignGold,
+                        letterSpacing = 2.sp,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color(0xFF101512))
+                            .padding(vertical = 6.dp, horizontal = 4.dp),
                     )
+                }
+                items(list, key = { it.id }) { exercise ->
+                    PickerRow(exercise = exercise, onPick = onPick)
                 }
             }
         }
@@ -210,4 +215,60 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
             letterSpacing = 1.sp,
         )
     }
+}
+@Composable
+private fun PickerRow(exercise: Exercise, onPick: (Exercise) -> Unit) {
+    val skill = Skills.forName(exercise.name)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable { onPick(exercise) }
+            .padding(vertical = 11.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                exercise.name,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MonarchColors.Ink,
+            )
+            Text(
+                buildString {
+                    append(exercise.muscleGroup.name.lowercase())
+                    if (exercise.isWeighted) append("  ·  weighted")
+                    if (skill != null) append("  ·  skill ${Skills.tierLabel(skill.tier)} ${skill.line}")
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = if (skill != null) MonarchColors.SystemGreen else MonarchColors.InkMuted,
+            )
+        }
+        // Metric glyph: shows what the user will be asked to log before they commit.
+        Text(
+            when (exercise.metric) {
+                ExerciseMetric.REPS -> "× reps"
+                ExerciseMetric.DURATION -> "◷ time"
+                ExerciseMetric.DISTANCE_TIME -> "→ distance"
+                ExerciseMetric.ATTEMPTS_GRADE -> "◇ attempts"
+            },
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            "+",
+            style = MaterialTheme.typography.titleMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.SovereignGold,
+        )
+    }
+}
+
+/** "" (strength) first, then the known activity groups, then anything novel alphabetically. */
+private fun activityCategoryOrder(exercises: List<Exercise>): List<String> {
+    val present = exercises.map { it.category }.distinct()
+    val known = listOf("Cardio", "Sport", "Climbing", "Water", "Mobility").filter { it in present }
+    val extra = present.filter { it.isNotBlank() && it !in known }.sorted()
+    return listOf("") + known + extra
 }

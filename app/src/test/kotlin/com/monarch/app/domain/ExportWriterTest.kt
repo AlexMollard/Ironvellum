@@ -37,7 +37,7 @@ class ExportWriterTest {
             exportedAtMs = 999,
         )
 
-        assertTrue(json.startsWith("{\"formatVersion\":2,"))
+        assertTrue(json.startsWith("{\"formatVersion\":3,"))
         assertTrue(json.contains("\"modifiers\":\"\""))
         assertTrue(json.contains("\"name\":\"Pog Champ\""))
         assertTrue(json.contains("\"totalXp\":1234"))
@@ -109,7 +109,7 @@ class ExportWriterTest {
     fun `empty collections render as empty arrays`() {
         val json = ExportWriter.write(PlayerProfile("x", 0), TrainingMode.STRENGTH, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0)
         assertEquals(
-            "{\"formatVersion\":2,\"exportedAtMs\":0," +
+            "{\"formatVersion\":3,\"exportedAtMs\":0," +
                 "\"profile\":{\"name\":\"x\",\"totalXp\":0,\"currentTitleId\":null}," +
                 "\"trainingMode\":\"STRENGTH\"," +
                 "\"presets\":[],\"sessions\":[],\"stats\":[],\"titles\":[],\"skills\":[],\"healthDays\":[]}",

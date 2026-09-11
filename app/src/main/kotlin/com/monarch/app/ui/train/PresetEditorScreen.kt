@@ -46,6 +46,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.Repository
 import com.monarch.app.domain.Exercise
+import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.monarchRepository
@@ -324,7 +325,13 @@ private fun EntryRow(
                             ExercisePickerPanel(
                                 exercises = exercises,
                                 onPick = { exercise ->
-                                    onEntry(entry.copy(exerciseId = exercise.id, exerciseName = exercise.name))
+                                    // A metric switch invalidates the old targets (10 reps ≠ 40 min).
+                                    val defaults = if (exercise.metric == ExerciseMetric.REPS) {
+                                        entry
+                                    } else {
+                                        entry.copy(reps = "", weight = "")
+                                    }
+                                    onEntry(defaults.copy(exerciseId = exercise.id, exerciseName = exercise.name))
                                     expanded = false
                                 },
                                 onDismiss = { expanded = false },
@@ -360,11 +367,39 @@ private fun EntryRow(
                 }
             }
         }
+
         Spacer(Modifier.height(6.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
-            NumberField("Reps", entry.reps, Modifier.weight(1f)) { onEntry(entry.copy(reps = it)) }
-            NumberField("Kg (opt.)", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
+        // Targets follow the movement's metric — sets × reps is meaningless for a 5 km run
+        // or a football match. Non-REPS targets reuse the same fields:
+        // DURATION/ATTEMPTS_GRADE store whole numbers in `reps`; DISTANCE_TIME stores
+        // kilometres in `weight` so save() keeps mapping to targetWeightKg untouched.
+        val metric = exercises.firstOrNull { it.id == entry.exerciseId }?.metric ?: ExerciseMetric.REPS
+        when (metric) {
+            ExerciseMetric.REPS -> {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Reps", entry.reps, Modifier.weight(1f)) { onEntry(entry.copy(reps = it)) }
+                    NumberField("Kg (opt.)", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
+                }
+            }
+            ExerciseMetric.DURATION -> {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Min (target)", entry.reps, Modifier.weight(1f)) { onEntry(entry.copy(reps = it)) }
+                }
+            }
+            ExerciseMetric.DISTANCE_TIME -> {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Km (target)", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
+                }
+            }
+            ExerciseMetric.ATTEMPTS_GRADE -> {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Attempts (target)", entry.reps, Modifier.weight(1f)) { onEntry(entry.copy(reps = it)) }
+                }
+            }
         }
         Spacer(Modifier.height(6.dp))
         OutlinedTextField(

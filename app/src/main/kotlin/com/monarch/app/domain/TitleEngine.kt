@@ -22,6 +22,24 @@ sealed interface TitleRule {
     data class PracticeAttempts(val count: Int) : TitleRule
     data class TrainingStreak(val days: Int) : TitleRule
     data class WorkoutsInWeek(val count: Int) : TitleRule
+
+    // ---- activity deeds ----
+    // Activities are anything with a non-REPS metric (duration, distance/time,
+    // graded attempts). They earn XP on their own curve and never strength.
+    /** Lifetime minutes across all non-REPS activity. */
+    data class ActivityMinutes(val minutes: Int) : TitleRule
+    /** Lifetime distance across all non-REPS activity, in km. */
+    data class ActivityDistanceKm(val km: Double) : TitleRule
+    /** How many different activities have ever been logged (done sets). */
+    data class DistinctActivities(val count: Int) : TitleRule
+    /** Best single-session distance on a Cardio-category activity, in km. */
+    data class LongestRun(val km: Double) : TitleRule
+    /** Best single-session distance on a Water-category activity, in km. */
+    data class LongestSwim(val km: Double) : TitleRule
+    /** Hardest climbing grade ever sent. Free text across V/Font/YDS. */
+    data class HardestGrade(val grade: String) : TitleRule
+    /** Completed sessions that contained any Sport-category work. */
+    data class SportSessions(val count: Int) : TitleRule
 }
 
 data class TitleDef(
@@ -310,6 +328,47 @@ object Titles {
             "Log 500 practice attempts.",
             TitleRule.PracticeAttempts(500),
         ),
+        // ---- Activity deeds ----
+        // Lifetime activity minutes
+        TitleDef("kindled", "Kindled", "Log 60 activity minutes — the fire starts.", TitleRule.ActivityMinutes(60)),
+        TitleDef("restless_shadows", "Restless Shadows", "Log 600 activity minutes in your lifetime.", TitleRule.ActivityMinutes(600)),
+        TitleDef("tireless_wind", "Tireless Wind", "Log 3,000 activity minutes in your lifetime.", TitleRule.ActivityMinutes(3_000)),
+        TitleDef("storm_runner", "Storm Runner", "Log 12,000 activity minutes in your lifetime.", TitleRule.ActivityMinutes(12_000)),
+        TitleDef("wind_that_never_sleeps", "Wind That Never Sleeps", "Log 50,000 activity minutes in your lifetime.", TitleRule.ActivityMinutes(50_000)),
+        // Lifetime activity distance
+        TitleDef("road_of_shadows", "Road of Shadows", "Cover 10 km through logged activities.", TitleRule.ActivityDistanceKm(10.0)),
+        TitleDef("hundred_gate_march", "Hundred-Gate March", "Cover 100 km through logged activities.", TitleRule.ActivityDistanceKm(100.0)),
+        TitleDef("horizon_breaker", "Horizon Breaker", "Cover 500 km through logged activities.", TitleRule.ActivityDistanceKm(500.0)),
+        TitleDef("world_walker", "World Walker", "Cover 2,000 km through logged activities.", TitleRule.ActivityDistanceKm(2_000.0)),
+        TitleDef("beyond_the_map", "Beyond the Map", "Cover 10,000 km through logged activities.", TitleRule.ActivityDistanceKm(10_000.0)),
+        // Distinct activities tried
+        TitleDef("three_paths", "Three Paths", "Try 3 different activities.", TitleRule.DistinctActivities(3)),
+        TitleDef("ten_paths", "Ten Paths", "Try 10 different activities.", TitleRule.DistinctActivities(10)),
+        TitleDef("twenty_five_paths", "Twenty-Five Paths", "Try 25 different activities.", TitleRule.DistinctActivities(25)),
+        TitleDef("fifty_paths", "Fifty Paths", "Try 50 different activities.", TitleRule.DistinctActivities(50)),
+        TitleDef("walker_of_all_roads", "Walker of All Roads", "Try 75 different activities. Nothing is foreign to you.", TitleRule.DistinctActivities(75)),
+        // Single long runs
+        TitleDef("five_k_razor", "Five-K Razor", "Log a 5 km run in a single session.", TitleRule.LongestRun(5.0)),
+        TitleDef("ten_k_hunter", "Ten-K Hunter", "Log a 10 km run in a single session.", TitleRule.LongestRun(10.0)),
+        TitleDef("half_gate_marathon", "Half-Gate Marathon", "Log a 21.1 km run in a single session.", TitleRule.LongestRun(21.1)),
+        TitleDef("gate_marathon", "Gate Marathon", "Log a 42.2 km run in a single session.", TitleRule.LongestRun(42.2)),
+        TitleDef("shadow_ultra", "Shadow Ultra", "Log a 100 km run in a single session. The Gate was never this far.", TitleRule.LongestRun(100.0)),
+        // Single long swims
+        TitleDef("first_water", "First Water", "Log a 1 km swim in a single session.", TitleRule.LongestSwim(1.0)),
+        TitleDef("deep_current", "Deep Current", "Log a 2.5 km swim in a single session.", TitleRule.LongestSwim(2.5)),
+        TitleDef("abyss_lapper", "Abyss Lapper", "Log a 5 km swim in a single session.", TitleRule.LongestSwim(5.0)),
+        TitleDef("leviathan_swimmer", "Leviathan Swimmer", "Log a 10 km swim in a single session.", TitleRule.LongestSwim(10.0)),
+        // Hardest climbing grade
+        TitleDef("first_send", "First Send", "Send a route graded V1 or harder.", TitleRule.HardestGrade("V1")),
+        TitleDef("chalk_dusted", "Chalk Dusted", "Send a route graded V2 or harder.", TitleRule.HardestGrade("V2")),
+        TitleDef("grip_of_the_abyss", "Grip of the Abyss", "Send a route graded V5 or harder.", TitleRule.HardestGrade("V5")),
+        TitleDef("vertical_sovereign", "Vertical Sovereign", "Send a route graded V8 or harder.", TitleRule.HardestGrade("V8")),
+        TitleDef("gravity_defiant", "Gravity Defiant", "Send a route graded V11 or harder. Walls kneel.", TitleRule.HardestGrade("V11")),
+        // Sport sessions
+        TitleDef("first_arena", "First Arena", "Complete a session with sport play in it.", TitleRule.SportSessions(1)),
+        TitleDef("arena_regular", "Arena Regular", "Complete 10 sessions with sport play in them.", TitleRule.SportSessions(10)),
+        TitleDef("field_commander", "Field Commander", "Complete 50 sessions with sport play in them.", TitleRule.SportSessions(50)),
+        TitleDef("champion_of_games", "Champion of Games", "Complete 100 sessions with sport play in them.", TitleRule.SportSessions(100)),
     )
 
     fun byId(id: String): TitleDef? = ALL.firstOrNull { it.id == id }
@@ -331,20 +390,42 @@ object Titles {
         val practiceAttempts: Int = 0,
         val trainingStreakDays: Int = 0,
         val bestWeekWorkouts: Int = 0,
+        val activityMinutes: Int = 0, // lifetime minutes across all non-REPS activity
+        val activityDistanceKm: Double = 0.0,
+        val distinctActivities: Int = 0, // how many different activities ever logged
+        val bestRunKm: Double = 0.0,
+        val bestSwimKm: Double = 0.0,
+        val hardestGrade: String = "", // raw text of hardest recognised climb sent
+        val sportSessions: Int = 0, // completed sessions containing any Sport-category work
     )
 
     /**
      * The one place a ledger is assembled. Unlocking used to build a partial
      * ledger at session-complete (no steps, no skills), so every step, activity
      * and skill title was unreachable no matter what the Codex displayed.
+     *
+     * CALLERS MUST pass the full exercise catalogue in [exercises] (id ->
+     * Exercise). Metric and category live on the Exercise, not the set, so
+     * without the catalogue every activity field would silently stay zero
+     * (sets from unknown exercises are treated as REPS/lifting — never
+     * activity, never strength pollution).
      */
     fun ledgerOf(
         totalXp: Long,
         history: List<Pair<WorkoutSession, List<SessionSet>>>,
         healthDays: List<HealthDay>,
         practices: List<SkillPractice>,
+        // No default: an omitted catalogue would zero every activity deed
+        // without erroring, which is the exact silent-failure class that made
+        // step and skill deeds unreachable before this was centralised.
+        exercises: Map<Long, Exercise>,
     ): Ledger {
         val doneSets = history.flatMap { (_, sets) -> sets.filter { it.done } }
+        val metricOf: (SessionSet) -> ExerciseMetric =
+            { exercises[it.exerciseId]?.metric ?: ExerciseMetric.REPS }
+        val categoryOf: (SessionSet) -> String? = { exercises[it.exerciseId]?.category }
+        // An "activity" is anything not measured in reps; reps stay lifting.
+        val activitySets = doneSets.filter { metricOf(it) != ExerciseMetric.REPS }
         val zone = ZoneId.systemDefault()
         val workoutDates = history
             .map {
@@ -353,6 +434,13 @@ object Titles {
             }
             .toSet()
         val claimed = practices.filter { it.claimed }
+        // Best single-session distance per category, so a 10 km run inside a
+        // mixed session still counts as a 10 km run.
+        fun bestSessionKm(category: String): Double =
+            history.maxOfOrNull { (_, sets) ->
+                sets.filter { it.done && categoryOf(it) == category }
+                    .sumOf { it.distanceM ?: 0.0 }
+            }?.div(1000.0) ?: 0.0
         return Ledger(
             totalXp = totalXp,
             workouts = history.size,
@@ -368,7 +456,26 @@ object Titles {
             stepGoalDays = healthDays.count { it.steps >= STEP_GOAL },
             skillsMastered = claimed.size,
             practiceAttempts = practices.count { !it.claimed },
-            trainingStreakDays = trainingStreakDays(workoutDates),
+            // Sum seconds before dividing so a 30s set isn't floored to zero.
+            activityMinutes = activitySets.sumOf { (it.durationSec ?: 0) }.div(60),
+            activityDistanceKm = activitySets.sumOf { it.distanceM ?: 0.0 }.div(1000.0),
+            distinctActivities = activitySets.map { it.exerciseId }.distinct().size,
+            bestRunKm = bestSessionKm("Cardio"),
+            bestSwimKm = bestSessionKm("Water"),
+            // Only recognised grades can hold the record — garbage text can
+            // never take the hardest-climb crown or award a deed.
+            hardestGrade = doneSets
+                .filter { s ->
+                    !s.grade.isNullOrBlank() &&
+                        (exercises[s.exerciseId]?.metric == ExerciseMetric.ATTEMPTS_GRADE)
+                }
+                // Only recognised grades may hold the record — garbage text
+                // can never take the crown or satisfy a HardestGrade deed.
+                .mapNotNull { s -> s.grade?.takeIf { g -> GradeRank.rank(g) != null } }
+                .maxByOrNull { g -> GradeRank.rank(g) ?: Int.MIN_VALUE } ?: "",
+            sportSessions = history.count { (_, sets) ->
+                sets.any { it.done && exercises[it.exerciseId]?.category == "Sport" }
+            },
             bestWeekWorkouts = bestWeekWorkouts(workoutDates),
         )
     }
@@ -410,6 +517,19 @@ object Titles {
         is TitleRule.PracticeAttempts -> ledger.practiceAttempts >= rule.count
         is TitleRule.TrainingStreak -> ledger.trainingStreakDays >= rule.days
         is TitleRule.WorkoutsInWeek -> ledger.bestWeekWorkouts >= rule.count
+        is TitleRule.ActivityMinutes -> ledger.activityMinutes >= rule.minutes
+        is TitleRule.ActivityDistanceKm -> ledger.activityDistanceKm >= rule.km
+        is TitleRule.DistinctActivities -> ledger.distinctActivities >= rule.count
+        is TitleRule.LongestRun -> ledger.bestRunKm >= rule.km
+        is TitleRule.LongestSwim -> ledger.bestSwimKm >= rule.km
+        is TitleRule.HardestGrade -> {
+            // Both sides must be recognised; an unrecognised rule grade or
+            // ledger grade can never satisfy the deed.
+            val sent = GradeRank.rank(ledger.hardestGrade)
+            val asked = GradeRank.rank(rule.grade)
+            sent != null && asked != null && sent >= asked
+        }
+        is TitleRule.SportSessions -> ledger.sportSessions >= rule.count
     }
 
     /** How far along a rule is: current value, target, and the unit's name. */
@@ -445,6 +565,24 @@ object Titles {
             Progress(ledger.skillsMastered.toLong(), rule.count.toLong(), "skills mastered")
         is TitleRule.PracticeAttempts ->
             Progress(ledger.practiceAttempts.toLong(), rule.count.toLong(), "practice attempts")
+        is TitleRule.ActivityMinutes ->
+            Progress(ledger.activityMinutes.toLong(), rule.minutes.toLong(), "activity minutes")
+        is TitleRule.ActivityDistanceKm ->
+            Progress(ledger.activityDistanceKm.toLong(), rule.km.toLong(), "activity km lifetime")
+        is TitleRule.DistinctActivities ->
+            Progress(ledger.distinctActivities.toLong(), rule.count.toLong(), "activities tried")
+        is TitleRule.LongestRun ->
+            Progress(ledger.bestRunKm.toLong(), rule.km.toLong(), "km in one run")
+        is TitleRule.LongestSwim ->
+            Progress(ledger.bestSwimKm.toLong(), rule.km.toLong(), "km in one swim")
+        is TitleRule.HardestGrade ->
+            Progress(
+                (GradeRank.rank(ledger.hardestGrade) ?: 0).toLong(),
+                (GradeRank.rank(rule.grade) ?: 0).toLong(),
+                "hardest grade",
+            )
+        is TitleRule.SportSessions ->
+            Progress(ledger.sportSessions.toLong(), rule.count.toLong(), "sport sessions")
         is TitleRule.TrainingStreak ->
             Progress(ledger.trainingStreakDays.toLong(), rule.days.toLong(), "day streak")
         is TitleRule.WorkoutsInWeek ->
@@ -462,9 +600,51 @@ object Titles {
         is TitleRule.SleepMinutesInNight -> "Recovery"
         is TitleRule.SkillsMastered, is TitleRule.PracticeAttempts -> "Mastery"
         is TitleRule.TrainingStreak -> "Campaigns"
+        is TitleRule.ActivityMinutes, is TitleRule.ActivityDistanceKm,
+        is TitleRule.DistinctActivities, is TitleRule.LongestRun, is TitleRule.LongestSwim,
+        is TitleRule.HardestGrade, is TitleRule.SportSessions -> "Activities"
     }
 
     /** Returns definitions whose rules are met and that are not in [already]. */
     fun newlyUnlocked(ledger: Ledger, already: Set<String>): List<TitleDef> =
         ALL.filter { it.id !in already && satisfied(it.rule, ledger) }
+}
+
+/**
+ * Cross-system climbing-grade ordering. Grades are free text, so this parses
+ * V-scale, Font and YDS into one approximate hardness index (higher = harder).
+ * Anchors follow common conversion charts: 6A ≈ V0, 7A ≈ V4, 8A ≈ V8;
+ * YDS is anchored 5.11a ≈ V2 (5.12a ≈ V6); each YDS step ≈ one V-grade. The index is
+ * only ever used to order a single "hardest send" — never for scoring.
+ *
+ * Unrecognised text (anything that doesn't parse, e.g. "insane", "5.crap",
+ * "V99", "6Z+") returns null: it never ranks above a recognised grade, never
+ * wins hardestGrade, and never satisfies a HardestGrade deed.
+ */
+object GradeRank {
+    fun rank(text: String): Int? {
+        val g = text.trim().uppercase()
+        // V-scale: VB, V0..V17
+        if (g == "VB") return 0
+        Regex("^V(\\d{1,2})$").find(g)?.let { m ->
+            val n = m.groupValues[1].toInt()
+            return if (n in 0..17) n + 1 else null
+        }
+        Regex("^([4-8])([ABC])(\\+)?$").find(g)?.let { m ->
+            val idx = (m.groupValues[1].toInt() - 4) * 4 +
+                (m.groupValues[2][0] - 'A') +
+                (if (m.groupValues[3] == "+") 1 else 0)
+            return idx - 7 // 6A -> V0
+        }
+        // YDS: 5.0 through 5.15 with optional a-d
+        Regex("^5\\.(\\d{1,2})([ABCD])?$").find(g)?.let { m ->
+            val minor = m.groupValues[1].toInt()
+            if (minor !in 0..15) return null
+            val letter = if (m.groupValues[2].isEmpty()) 0 else m.groupValues[2][0] - 'A'
+            // No floor: 5.9 must still rank below 5.10a; negative just means
+            // "easier than VB", which no deed or anchor ever reaches into.
+            return (minor - 11) * 4 + letter + 3 // 5.12a ≈ V6
+        }
+        return null
+    }
 }

@@ -13,6 +13,10 @@ data class ExerciseEntity(
     val name: String,
     val muscleGroup: String,
     val isWeighted: Boolean,
+    /** Stored as the enum name; "REPS" for every pre-activity row. */
+    val metric: String = "REPS",
+    /** "" for lifting; otherwise e.g. "Cardio", "Sport". */
+    val category: String = "",
 )
 
 @Entity(tableName = "presets")
@@ -85,6 +89,10 @@ data class SetLogEntity(
     val weightKg: Double?,
     val modifiers: String,
     val done: Boolean,
+    /** Activity fields — all null for lifting sets. */
+    val durationSec: Int? = null,
+    val distanceM: Double? = null,
+    val grade: String? = null,
 )
 
 @Entity(tableName = "stats")
@@ -144,4 +152,17 @@ data class HealthDayEntity(
     val activeKcal: Int,
     val sleepMinutes: Int,
     val restingHr: Int?,
+)
+
+/** Projection for the activity ledger: one done activity set with its exercise's metric/category. */
+data class ActivitySetRow(
+    val exerciseId: Long,
+    val exerciseName: String,
+    val metric: String,
+    val category: String,
+    val reps: Int,
+    val weightKg: Double?,
+    val durationSec: Int?,
+    val distanceM: Double?,
+    val grade: String?,
 )

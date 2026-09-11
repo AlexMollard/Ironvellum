@@ -147,6 +147,18 @@ interface SessionDao {
             "WHERE s.exerciseId = :exerciseId ORDER BY x.startedAtMs DESC, s.setIndex ASC",
     )
     fun observeExerciseSets(exerciseId: Long): Flow<List<ExerciseSetRow>>
+
+    /** Done activity (non-REPS) sets from completed sessions, newest first — the title ledger's source. */
+    @Query(
+        "SELECT s.exerciseId AS exerciseId, e.name AS exerciseName, e.metric AS metric, " +
+            "e.category AS category, s.reps AS reps, s.weightKg AS weightKg, " +
+            "s.durationSec AS durationSec, s.distanceM AS distanceM, s.grade AS grade " +
+            "FROM set_logs s JOIN exercises e ON s.exerciseId = e.id " +
+            "JOIN sessions x ON s.sessionId = x.id " +
+            "WHERE s.done = 1 AND x.completedAtMs IS NOT NULL AND e.metric != 'REPS' " +
+            "ORDER BY x.startedAtMs DESC",
+    )
+    suspend fun completedActivitySets(): List<ActivitySetRow>
 }
 
 @Dao

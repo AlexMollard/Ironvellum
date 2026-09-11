@@ -55,7 +55,7 @@ class ExportReaderTest {
     fun `round trip preserves every field of every section`() {
         val archive = ExportReader.read(fullArchiveJson()).getOrThrow()
 
-        assertEquals(2, archive.formatVersion)
+        assertEquals(3, archive.formatVersion)
         assertEquals(999, archive.exportedAtMs)
         assertEquals("Mo\"narch \\ The Türkçe Æon", archive.profile.name)
         assertEquals(123_456_789_012L, archive.profile.totalXp)
@@ -118,6 +118,42 @@ class ExportReaderTest {
     }
 
     @Test
+    fun `session title and both notes survive a real write then read`() {
+        // Regression: the writer omitted these three keys entirely, so every
+        // restore silently blanked the titles and public notes and DESTROYED
+        // the private notes — the one thing in the archive with no other copy.
+        val session = WorkoutSession(
+            id = 4,
+            presetId = null,
+            label = "Push",
+            startedAtMs = 1_000,
+            completedAtMs = 2_000,
+            xpAwarded = 120,
+            strengthScore = 88,
+            title = "Rainy morning \"grind\"",
+            note = "Felt strong on dips.",
+            privateNote = "Shoulder twinge \\ watch it",
+        )
+        val json = ExportWriter.write(
+            profile = PlayerProfile(),
+            trainingMode = TrainingMode.STRENGTH,
+            presets = emptyList(),
+            sessions = listOf(session to emptyList()),
+            stats = emptyList(),
+            titles = emptyList(),
+            skills = emptyList(),
+            healthDays = emptyList(),
+            exportedAtMs = 1,
+        )
+
+        val restored = ExportReader.read(json).getOrThrow().sessions.single().first
+
+        assertEquals("Rainy morning \"grind\"", restored.title)
+        assertEquals("Felt strong on dips.", restored.note)
+        assertEquals("Shoulder twinge \\ watch it", restored.privateNote)
+    }
+
+    @Test
     fun `v1 archive without new sections restores with defaults`() {
         // Hand-written v1-shaped archive: no trainingMode, skills or healthDays.
         val v1 = """
@@ -154,7 +190,7 @@ class ExportReaderTest {
 
     @Test
     fun `future formatVersion fails`() {
-        val future = fullArchiveJson().replace("\"formatVersion\":2", "\"formatVersion\":99")
+        val future = fullArchiveJson().replace("\"formatVersion\":3", "\"formatVersion\":99")
         val result = ExportReader.read(future)
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull()!!.message!!.contains("99"))

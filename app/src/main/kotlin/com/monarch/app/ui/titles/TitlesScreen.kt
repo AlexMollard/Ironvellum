@@ -1,6 +1,7 @@
 package com.monarch.app.ui.titles
 
 import androidx.compose.foundation.background
+import com.monarch.app.domain.Exercise
 import com.monarch.app.domain.HealthDay
 import com.monarch.app.domain.PlayerProfile
 import com.monarch.app.domain.SessionSet
@@ -95,6 +96,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
         repo.observeSkillPractices(),
         repo.observeHistory(),
         repo.observeHealthDays(),
+        repo.observeExercises(),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         val unlocked = values[0] as List<UnlockedTitle>
@@ -105,6 +107,8 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
         val history = values[3] as List<Pair<WorkoutSession, List<SessionSet>>>
         @Suppress("UNCHECKED_CAST")
         val healthDays = values[4] as List<HealthDay>
+        @Suppress("UNCHECKED_CAST")
+        val exercises = values[5] as List<Exercise>
 
         val claimed = practices.filter { it.claimed }
 
@@ -123,6 +127,9 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
                 history = history,
                 healthDays = healthDays,
                 practices = practices,
+                // metric/category live on the Exercise, so activity deeds read
+                // zero without the catalogue
+                exercises = exercises.associateBy { it.id },
             ),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TitlesUi())

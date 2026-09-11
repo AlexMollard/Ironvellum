@@ -6,7 +6,7 @@ package com.monarch.app.domain
  */
 object ExportWriter {
 
-    const val FORMAT_VERSION = 2
+    const val FORMAT_VERSION = 3
 
     fun write(
         profile: PlayerProfile,
@@ -88,6 +88,12 @@ object ExportWriter {
             append(",\"completedAtMs\":").appendNullable(session.completedAtMs) { append(it) }
             append(",\"xpAwarded\":").append(session.xpAwarded)
             append(",\"strengthScore\":").append(session.strengthScore)
+            append(",\"title\":").appendEscaped(session.title)
+            append(",\"note\":").appendEscaped(session.note)
+            // The private note belongs in the user's own archive — it is kept
+            // out of the CLOUD, not out of their backup. Dropping it here meant
+            // a restore silently destroyed it.
+            append(",\"privateNote\":").appendEscaped(session.privateNote)
             append(",\"sets\":[")
             sets.forEachIndexed { ti, set ->
                 if (ti > 0) append(",")

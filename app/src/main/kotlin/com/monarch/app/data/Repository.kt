@@ -1,7 +1,9 @@
 package com.monarch.app.data
 import androidx.room.withTransaction
+import com.monarch.app.domain.ActivityScore
 import com.monarch.app.domain.ArmyClass
 import com.monarch.app.domain.Exercise
+import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.data.db.ExerciseDao
 import com.monarch.app.data.db.HealthDayDao
 import com.monarch.app.data.db.HealthDayEntity
@@ -183,6 +185,14 @@ class Repository(
         return fresh.size
     }
 
+
+    /**
+     * Metric and category live on the Exercise, not the set, so the ledger
+     * needs the whole catalogue to tell a run from a set of pull-ups.
+     */
+    private suspend fun exerciseCatalogue(): Map<Long, Exercise> =
+        exerciseDao.observeAll().first().associate { it.id to it.toDomain() }
+
     // ---------------------------------------------------------------- mapping
 
     private fun ExerciseEntity.toDomain() =
@@ -343,15 +353,34 @@ class Repository(
                 weightKg = s.weightKg,
                 modifiers = s.modifiers,
                 done = s.done,
+                durationSec = s.durationSec,
+                distanceM = s.distanceM,
+                grade = s.grade,
             )
         }.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
     }
 
-    suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) {
+    suspend fun updateSet(
+        setId: Long,
+        reps: Int,
+        weightKg: Double?,
+        done: Boolean,
+        durationSec: Int? = null,
+        distanceM: Double? = null,
+        grade: String? = null,
+    ) {
         val current = sessionDao.setById(setId) ?: return
-        sessionDao.updateSet(current.copy(reps = reps, weightKg = weightKg, done = done))
+        sessionDao.updateSet(
+            current.copy(
+                reps = reps,
+                weightKg = weightKg,
+                done = done,
+                durationSec = durationSec,
+                distanceM = distanceM,
+                grade = grade,
+            ),
+        )
     }
-
     suspend fun addExtraSet(sessionId: Long, exerciseId: Long, reps: Int, weightKg: Double?, modifiers: String): Long {
         val index = sessionDao.setsFor(sessionId).count { it.exerciseId == exerciseId }
         val existing = sessionDao.setsFor(sessionId).firstOrNull { it.exerciseId == exerciseId }
@@ -422,7 +451,24 @@ class Repository(
         val session = sessionDao.byId(sessionId) ?: error("Session $sessionId not found")
         check(session.completedAtMs == null) { "Session already completed" }
         val doneSets = sessionDao.setsFor(sessionId).filter { it.done }
-        val xp = Xp.award(doneSets.size, doneSets.sumOf { it.reps })
+        val latestBodyweight = statDao.observeAll().first().firstOrNull()?.weightKg
+        // Split by metric: lifting XP keeps its existing curve; activities earn
+        // XP from ActivityScore and contribute NOTHING to the strength score.
+        val metrics = exerciseDao.observeAll().first().associate { it.id to it.metric }
+        val liftingSets = doneSets.filter { (metrics[it.exerciseId] ?: "REPS") == "REPS" }
+        val activitySets = doneSets.filter { (metrics[it.exerciseId] ?: "REPS") != "REPS" }
+        val liftingXp = Xp.award(liftingSets.size, liftingSets.sumOf { it.reps })
+        val activityXp = activitySets.sumOf { s ->
+            val metric = runCatching { ExerciseMetric.valueOf(metrics[s.exerciseId] ?: "REPS") }
+                .getOrDefault(ExerciseMetric.REPS)
+            val per = ActivityScore.xp(metric, s.durationSec, s.distanceM, s.weightKg, latestBodyweight ?: 0.0)
+            if (metric == ExerciseMetric.ATTEMPTS_GRADE) per * s.reps else per
+        }
+        val xp = liftingXp + activityXp
+        val sessionStrength = StrengthIndex.sessionScore(
+            liftingSets.map { it.reps to it.weightKg },
+            latestBodyweight,
+        ) ?: 0
 
         // Quest bonus: completing the preset scheduled for today.
         val today = LocalDate.now().dayOfWeek.value
@@ -435,11 +481,6 @@ class Repository(
         val levelBefore = Xp.levelFor(before.totalXp)
         val newTotal = before.totalXp + totalXpGain
 
-        val latestBodyweight = statDao.observeAll().first().firstOrNull()?.weightKg
-        val sessionStrength = StrengthIndex.sessionScore(
-            doneSets.map { it.reps to it.weightKg },
-            latestBodyweight,
-        ) ?: 0
         val lifetimeStrength = before.lifetimeStrength + sessionStrength
         profileDao.setLifetimeStrength(lifetimeStrength)
 
@@ -457,6 +498,7 @@ class Repository(
             history = observeHistory().first(),
             healthDays = observeHealthDays().first(),
             practices = observeSkillPractices().first(),
+            exercises = exerciseCatalogue(),
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         val now = finishedAt
@@ -496,6 +538,9 @@ class Repository(
                     weightKg = s.weightKg,
                     modifiers = s.modifiers,
                     done = s.done,
+                    durationSec = s.durationSec,
+                    distanceM = s.distanceM,
+                    grade = s.grade,
                 )
             }
         }
@@ -613,12 +658,20 @@ class Repository(
         _pendingCelebrations.value = emptyList()
     }
 
+    /**
+     * Every done activity set from completed sessions, for the title ledger:
+     * lifetime minutes, distance, distinct activities, best runs/swims, hardest
+     * grade and sport sessions are all derivable from this one read.
+     */
+    suspend fun completedActivitySets() = sessionDao.completedActivitySets()
+
     /** Ledger over everything logged: sessions, health days and skill practice. */
     suspend fun currentLedger(): Titles.Ledger = Titles.ledgerOf(
         totalXp = profileDao.get()?.totalXp ?: 0L,
         history = observeHistory().first(),
         healthDays = observeHealthDays().first(),
         practices = observeSkillPractices().first(),
+        exercises = exerciseCatalogue(),
     )
 
     // ---------------------------------------------------------------- skills
@@ -671,6 +724,7 @@ class Repository(
             history = observeHistory().first(),
             healthDays = observeHealthDays().first(),
             practices = observeSkillPractices().first(),
+            exercises = exerciseCatalogue(),
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
@@ -739,6 +793,9 @@ class Repository(
                     weightKg = s.weightKg,
                     modifiers = s.modifiers,
                     done = s.done,
+                    durationSec = s.durationSec,
+                    distanceM = s.distanceM,
+                    grade = s.grade,
                 )
             }
         }
@@ -894,6 +951,9 @@ class Repository(
                                 weightKg = s.weightKg,
                                 modifiers = s.modifiers,
                                 done = s.done,
+                                durationSec = s.durationSec,
+                                distanceM = s.distanceM,
+                                grade = s.grade,
                             )
                         },
                     ).size

@@ -88,6 +88,11 @@ object ExportReader {
         completedAtMs = o.long("completedAtMs"),
         xpAwarded = o.int("xpAwarded") ?: 0,
         strengthScore = o.int("strengthScore") ?: 0,
+        // Absent in v1/v2 archives, so default rather than fail — an older
+        // backup must still restore.
+        title = o.str("title") ?: "",
+        note = o.str("note") ?: "",
+        privateNote = o.str("privateNote") ?: "",
     ) to (o.arr("sets") ?: emptyList()).map { s ->
         val set = s as Obj
         SessionSet(
