@@ -35,7 +35,7 @@ object SetRecords {
      */
     fun records(
         history: List<Pair<WorkoutSession, List<SessionSet>>>,
-        bodyweightKg: Double,
+        bodyweightAt: (atMs: Long) -> Double,
         excludeSessionId: Long? = null,
     ): Map<Pair<String, Int>, Record> {
         val best = mutableMapOf<Pair<String, Int>, Record>()
@@ -46,7 +46,10 @@ object SetRecords {
             .forEach { (session, sets) ->
                 if (excludeSessionId != null && session.id == excludeSessionId) return@forEach
                 sets.filter { it.done }.forEach { set ->
-                    val score = StrengthIndex.repScore(set.reps, set.weightKg, bodyweightKg)
+                    // Score with the bodyweight IN FORCE at the session, so a
+                    // later weigh-in never re-scores (shrinks/inflates) an
+                    // already-earned record.
+                    val score = StrengthIndex.repScore(set.reps, set.weightKg, bodyweightAt(session.startedAtMs))
                     val key = set.exerciseName.lowercase().trim() to set.setIndex
                     val existing = best[key]
                     if (existing == null || score > existing.score) {
@@ -65,6 +68,21 @@ object SetRecords {
         return best
     }
 
+    /** Bodyweight as at [atMs]: the most recent reading at or before that moment, else the earliest known, else [fallbackKg]. */
+    fun bodyweightLookup(stats: List<StatEntry>, fallbackKg: Double = 0.0): (Long) -> Double {
+        if (stats.isEmpty()) return { fallbackKg }
+        val sorted = stats.sortedBy { it.takenAtMs }
+        val earliest = sorted.first()
+        return { atMs ->
+            // A set logged before any weigh-in uses the earliest reading: it is
+            // the closest truth available, better than a blind fallback.
+            sorted.lastOrNull { it.takenAtMs <= atMs }?.weightKg ?: earliest.weightKg
+        }
+    }
+
+    // delta keeps a CONCRETE bodyweightKg on purpose: a live attempt happens
+    // now, so today's reading is the correct value — records() is the only
+    // time-aware side. Do not "tidy" this into a lookup.
     fun delta(
         records: Map<Pair<String, Int>, Record>,
         exerciseName: String,

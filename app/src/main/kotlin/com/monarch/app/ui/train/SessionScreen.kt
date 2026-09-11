@@ -104,11 +104,11 @@ class SessionViewModel(
     // Records exclude THIS session: a live set must never become its own benchmark.
     val records: StateFlow<Map<Pair<String, Int>, SetRecords.Record>> = combine(
         repo.observeHistory(),
-        repo.observeStats().map { it.firstOrNull()?.weightKg },
-    ) { history, bodyweight ->
-        if (bodyweight == null) emptyMap()
-        else SetRecords.records(history, bodyweight, excludeSessionId = sessionId)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+        repo.observeStats().map { SetRecords.bodyweightLookup(it) },
+    ) { history, bodyweightAt ->
+        SetRecords.records(history, bodyweightAt, excludeSessionId = sessionId)
+    }
+    .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     val ui: StateFlow<SessionUi> = combine(
         repo.observeSession(sessionId),

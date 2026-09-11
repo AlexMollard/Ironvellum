@@ -19,6 +19,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,6 +37,10 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.Repository
 import com.monarch.app.domain.SessionSet
+import com.monarch.app.domain.Exercise
+import com.monarch.app.domain.Energy
+import com.monarch.app.domain.EnergyConfidence
+import com.monarch.app.domain.EnergyEstimate
 import com.monarch.app.domain.WorkoutSession
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
@@ -45,6 +52,7 @@ import com.monarch.app.ui.theme.MonarchTracking
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 data class WorkoutDetailUi(
@@ -52,17 +60,32 @@ data class WorkoutDetailUi(
     val sets: List<SessionSet> = emptyList(),
     /** True once the history stream has emitted at least once. */
     val loaded: Boolean = false,
+    /** Estimated burn for the session; null when nothing can be computed. */
+    val energy: EnergyEstimate? = null,
 )
 
 class WorkoutDetailViewModel(repo: Repository, private val sessionId: Long) : ViewModel() {
     // The log source of truth is the history stream: a session absent from it
     // is genuinely not viewable, so the screen renders "not found" honestly.
-    val ui: StateFlow<WorkoutDetailUi> = repo.observeHistory()
-        .map { history ->
-            val hit = history.firstOrNull { it.first.id == sessionId }
-            WorkoutDetailUi(session = hit?.first, sets = hit?.second.orEmpty(), loaded = true)
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutDetailUi())
+    val ui: StateFlow<WorkoutDetailUi> = combine(
+        repo.observeHistory(),
+        repo.observeStats().map { it.firstOrNull()?.weightKg },
+        repo.observeExercises(),
+    ) { history, bodyKg, exercises ->
+        val hit = history.firstOrNull { it.first.id == sessionId }
+        val session = hit?.first
+        val sets = hit?.second.orEmpty()
+        // Same pure estimate the stats screen uses; minutes come from the wall
+        // clock when the session was completed.
+        val minutes = session?.completedAtMs
+            ?.let { ((it - session.startedAtMs) / 60_000L).toInt().coerceAtLeast(0) }
+        WorkoutDetailUi(
+            session = session,
+            sets = sets,
+            loaded = true,
+            energy = session?.let { Energy.sessionKcal(sets, exercises.associateBy { it.id }, bodyKg, minutes) },
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutDetailUi())
 }
 
 /**
@@ -140,7 +163,10 @@ fun WorkoutDetailScreen(
                 }
             }
             else -> {
-                DetailHeader(session)
+                // Tapping the kcal readout reveals the formula behind it — a
+                // number without its basis asks for blind trust.
+                var showBasis by remember { mutableStateOf(false) }
+                DetailHeader(session, ui.energy, showBasis) { showBasis = !showBasis }
                 if (session.note.isNotBlank()) {
                     SectionHeader("FIELD NOTE · SHARED")
                     SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.Emerald) {
@@ -186,7 +212,12 @@ fun WorkoutDetailScreen(
 }
 
 @Composable
-private fun DetailHeader(session: WorkoutSession) {
+private fun DetailHeader(
+    session: WorkoutSession,
+    energy: EnergyEstimate?,
+    showBasis: Boolean,
+    onToggleBasis: () -> Unit,
+) {
     val durationMin = session.completedAtMs?.let { done ->
         ((done - session.startedAtMs) / 60_000L).coerceAtLeast(0)
     }
@@ -211,8 +242,55 @@ private fun DetailHeader(session: WorkoutSession) {
             )
             LedgerStat("+${session.xpAwarded}", "XP", MonarchColors.Emerald)
             LedgerStat("${session.strengthScore}", "STRENGTH", MonarchColors.SovereignGold)
+            if (energy != null) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clip(MaterialTheme.shapes.extraSmall).clickable(onClick = onToggleBasis)) {
+                    Text(
+                        "\u2248${energy.kcal}",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = MonarchColors.SystemGreen,
+                    )
+                    Text(
+                        energyConfidenceLabel(energy.confidence),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.InkMuted,
+                        letterSpacing = MonarchTracking.InlineLabel,
+                    )
+                }
+            }
+        }
+        if (showBasis && energy != null) {
+            Spacer(Modifier.height(10.dp))
+            Text(
+                energyBasisCopy(energy),
+                style = MaterialTheme.typography.bodySmall,
+                color = MonarchColors.InkMuted,
+            )
+            energy.missing.forEach { name ->
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Log $name for a sharper estimate.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MonarchColors.SovereignGold,
+                )
+            }
         }
     }
+}
+
+private fun energyConfidenceLabel(confidence: EnergyConfidence): String = when (confidence) {
+    EnergyConfidence.MEASURED -> "KCAL · MEASURED"
+    EnergyConfidence.ESTIMATED -> "KCAL · EST."
+    EnergyConfidence.COARSE -> "KCAL · ROUGH"
+}
+
+private fun energyBasisCopy(energy: EnergyEstimate): String = when (energy.confidence) {
+    EnergyConfidence.MEASURED -> "Measured by Health Connect — not an estimate."
+    EnergyConfidence.ESTIMATED -> "Estimated: ${energy.basis}. MET values come from the Compendium of Physical Activities."
+    // Lifting logs reps, not minutes, so working time is inferred from set count.
+    EnergyConfidence.COARSE -> "Rough estimate: ${energy.basis}. Lifting sets have no logged minutes, so working time is inferred from set count — treat this as a ballpark."
 }
 
 @Composable

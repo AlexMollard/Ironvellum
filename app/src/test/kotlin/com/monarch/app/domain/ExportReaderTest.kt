@@ -190,9 +190,13 @@ class ExportReaderTest {
 
     @Test
     fun `future formatVersion fails`() {
-        val future = fullArchiveJson().replace("\"formatVersion\":3", "\"formatVersion\":99")
+        // Derived from the constant so the guard survives the next format bump.
+        val future = fullArchiveJson().replace(
+            "\"formatVersion\":${ExportWriter.FORMAT_VERSION}",
+            "\"formatVersion\":${ExportWriter.FORMAT_VERSION + 1}",
+        )
         val result = ExportReader.read(future)
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull()!!.message!!.contains("99"))
+        assertTrue(result.exceptionOrNull()!!.message!!.contains("${ExportWriter.FORMAT_VERSION + 1}"))
     }
 }

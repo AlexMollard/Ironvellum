@@ -77,8 +77,8 @@ data class ExplorerUi(
 @OptIn(ExperimentalCoroutinesApi::class)
 class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
 
-    // Bodyweight comes from the same stat feed the session screen uses; no second path.
-    private val bodyweight = repo.observeStats().map { it.firstOrNull()?.weightKg }
+    // Bodyweight history comes from the same stat feed the session screen uses; no second path.
+    private val statsFlow = repo.observeStats()
 
     private val selected = MutableStateFlow<Exercise?>(null)
     val ui: StateFlow<ExplorerUi> = combine(
@@ -88,12 +88,12 @@ class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
             if (ex == null) flowOf(null) else repo.observeExerciseHistory(ex.id)
         },
         repo.observeHistory(),
-        bodyweight,
-    ) { exercises, sel, history, allHistory, bw ->
-        val records = if (sel == null || bw == null) {
+        statsFlow,
+    ) { exercises, sel, history, allHistory, stats ->
+        val records = if (sel == null) {
             emptyMap()
         } else {
-            SetRecords.records(allHistory, bw)
+            SetRecords.records(allHistory, SetRecords.bodyweightLookup(stats))
                 .filterKeys { (name, _) -> name.equals(sel.name, ignoreCase = true) }
                 .mapKeys { (_, record) -> record.setIndex }
         }

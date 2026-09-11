@@ -64,6 +64,11 @@ import com.monarch.app.domain.BodyStats
 import com.monarch.app.domain.StatEntry
 import com.monarch.app.domain.WorkoutSession
 import com.monarch.app.domain.HealthDay
+import com.monarch.app.domain.Exercise
+import com.monarch.app.domain.SessionSet
+import com.monarch.app.domain.Energy
+import com.monarch.app.domain.EnergyConfidence
+import com.monarch.app.domain.EnergyEstimate
 import com.monarch.app.domain.STEP_GOAL
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
@@ -93,15 +98,27 @@ data class StatsUi(
     val scheduledDays: Set<Int> = emptySet(),
     val sessions: List<WorkoutSession> = emptyList(),
     val healthDays: List<HealthDay> = emptyList(),
+    val exercises: Map<Long, Exercise> = emptyMap(),
+    /** Sets per session id, so energy estimates can work the real logged work. */
+    val sessionSets: Map<Long, List<SessionSet>> = emptyMap(),
 )
 
 class StatsViewModel(private val repo: Repository) : ViewModel() {
+    // Five flows exceed combine's arity-4 convenience overload, so the history
+    // group is combined first and joined with the exercise catalogue after.
+    val log: StateFlow<Triple<List<StatEntry>, List<Pair<WorkoutSession, List<SessionSet>>>, List<HealthDay>>> =
+        combine(
+            repo.observeStats(),
+            repo.observeHistory(),
+            repo.observeHealthDays(),
+        ) { stats, history, healthDays ->
+            Triple(stats, history, healthDays)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Triple(emptyList(), emptyList(), emptyList()))
     val ui: StateFlow<StatsUi> = combine(
-        repo.observeStats(),
-        repo.observeHistory(),
+        log,
         repo.observePresets(),
-        repo.observeHealthDays(),
-    ) { stats, history, presets, healthDays ->
+        repo.observeExercises(),
+    ) { (stats, history, healthDays), presets, exercises ->
         StatsUi(
             stats = stats,
             completedDates = history.map {
@@ -111,6 +128,8 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
             scheduledDays = presets.mapNotNull { it.scheduledDay }.toSet(),
             sessions = history.map { it.first }.sortedBy { it.startedAtMs },
             healthDays = healthDays,
+            exercises = exercises.associateBy { it.id },
+            sessionSets = history.associate { it.first.id to it.second },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUi())
 
@@ -390,7 +409,13 @@ fun StatsScreen(
                 Spacer(Modifier.height(24.dp))
             }
         } else {
-            ActivityTab(ui.healthDays)
+            ActivityTab(
+                days = ui.healthDays,
+                latest = ui.stats.firstOrNull(),
+                sessions = ui.sessions,
+                sessionSets = ui.sessionSets,
+                exercises = ui.exercises,
+            )
         }
     }
 
@@ -747,7 +772,13 @@ private fun AddStatDialog(
 }
 
 @Composable
-private fun ActivityTab(days: List<HealthDay>) {
+private fun ActivityTab(
+    days: List<HealthDay>,
+    latest: StatEntry?,
+    sessions: List<WorkoutSession>,
+    sessionSets: Map<Long, List<SessionSet>>,
+    exercises: Map<Long, Exercise>,
+) {
     Column(
         Modifier
             .fillMaxSize()
@@ -808,9 +839,10 @@ private fun ActivityTab(days: List<HealthDay>) {
             }
         }
 
+        energySection(sorted.takeLast(14), latest, sessions, sessionSets, exercises)
         Spacer(Modifier.height(14.dp))
         SectionHeader("Active calories — last 7 days")
-        val kcal7 = last7.filter { it.activeKcal > 0 }
+        val kcal7 = last7
         if (kcal7.isEmpty()) {
             Text(
                 "No active calories recorded yet.",
@@ -818,9 +850,15 @@ private fun ActivityTab(days: List<HealthDay>) {
                 color = MonarchColors.InkMuted,
             )
         } else {
-            val bestKcal = kcal7.maxOf { it.activeKcal }
             kcal7.reversed().forEach { day ->
-                MetricRow(day.date.toString(), "${fmtInt(day.activeKcal)} kcal", day.activeKcal == bestKcal)
+                val burn = dayBurn(day, sessionsOn(day.date, sessions, sessionSets), exercises, latest)
+                val measured = day.activeKcal > 0
+                val value = if (measured) "${fmtInt(day.activeKcal)} kcal" else burn?.let { "${fmtInt(it.kcal)} kcal (est.)" } ?: "—"
+                MetricRow(
+                    day.date.toString() + if (measured) "" else " · estimated",
+                    value,
+                    measured && day.activeKcal == kcal7.maxOf { it.activeKcal },
+                )
             }
         }
 
@@ -840,6 +878,173 @@ private fun ActivityTab(days: List<HealthDay>) {
             }
         }
         Spacer(Modifier.height(24.dp))
+    }
+}
+
+/** Sessions completed on [date], with their logged sets. */
+private fun sessionsOn(
+    date: LocalDate,
+    sessions: List<WorkoutSession>,
+    sessionSets: Map<Long, List<SessionSet>>,
+): List<Pair<WorkoutSession, List<SessionSet>>> = sessions
+    .filter {
+        Instant.ofEpochMilli(it.completedAtMs ?: it.startedAtMs)
+            .atZone(ZoneId.systemDefault()).toLocalDate() == date
+    }
+    .map { it to sessionSets[it.id].orEmpty() }
+
+/**
+ * One day's burn. Measured Health Connect active calories win outright — the
+ * estimate for that day is never added on top of them (rule: never double-count).
+ */
+private fun dayBurn(
+    day: HealthDay,
+    sessionsThatDay: List<Pair<WorkoutSession, List<SessionSet>>>,
+    exercises: Map<Long, Exercise>,
+    latest: StatEntry?,
+): EnergyEstimate? {
+    val stepsEst = if (day.steps > 0) {
+        Energy.stepsKcal(day.steps, day.distanceKm.takeIf { it > 0.0 }, latest?.weightKg, latest?.heightCm)
+    } else {
+        null
+    }
+    val sessionEsts = sessionsThatDay.mapNotNull { (session, sets) ->
+        val minutes = session.completedAtMs?.let { ((it - session.startedAtMs) / 60_000L).toInt().coerceAtLeast(0) }
+        Energy.sessionKcal(sets, exercises, latest?.weightKg, minutes)
+    }
+    return Energy.dayKcal(day.activeKcal.takeIf { it > 0 }, stepsEst, sessionEsts)
+}
+
+@Composable
+private fun energySection(
+    window: List<HealthDay>,
+    latest: StatEntry?,
+    sessions: List<WorkoutSession>,
+    sessionSets: Map<Long, List<SessionSet>>,
+    exercises: Map<Long, Exercise>,
+) {
+    val burns = window.map { dayBurn(it, sessionsOn(it.date, sessions, sessionSets), exercises, latest) }
+    val todayBurn = burns.lastOrNull()
+    val resting = Energy.restingKcalPerDay(latest?.weightKg, latest?.bodyFatPct)
+
+    Spacer(Modifier.height(14.dp))
+    SectionHeader("Energy burn — last 14 days")
+    SystemWindow(Modifier.fillMaxWidth()) {
+        MetricLabel("BURN TODAY")
+        if (todayBurn != null) {
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    fmtInt(todayBurn.kcal),
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    color = MonarchColors.SovereignGold,
+                )
+                Text(
+                    "kcal · ${confidenceWord(todayBurn.confidence)}",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.InkMuted,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    modifier = Modifier.padding(bottom = 4.dp),
+                )
+            }
+        } else {
+            MetricValue("—", "no steps or sessions logged today")
+        }
+
+        Spacer(Modifier.height(10.dp))
+        MetricLabel("DAILY BURN — LAST 14 DAYS")
+        TrendChart(burns.map { it?.kcal?.toDouble() ?: 0.0 })
+        Spacer(Modifier.height(6.dp))
+        EnergyLegend()
+        val measuredCount = window.count { it.activeKcal > 0 }
+        ChartCaption(
+            if (measuredCount == 0) {
+                "All 14 days are MET estimates — Health Connect has not reported active calories."
+            } else {
+                "$measuredCount of ${window.size} days are Health Connect measurements (solid line, green). " +
+                    "Estimates are never added on top of a measured day."
+            }
+        )
+
+        val missingPrompts = buildList {
+            if (latest?.weightKg == null) add("Log your bodyweight to estimate activity burn.")
+            if (latest?.heightCm == null) add("Log your height to estimate steps when distance is missing.")
+        }
+        missingPrompts.forEach { prompt ->
+            Spacer(Modifier.height(6.dp))
+            Text(
+                prompt,
+                style = MaterialTheme.typography.bodySmall,
+                color = MonarchColors.InkMuted,
+            )
+        }
+
+        // Resting rate: Katch-McArdle needs lean mass, so it only exists with body fat.
+        Spacer(Modifier.height(12.dp))
+        MetricLabel("RESTING BURN (KATCH-MCARDLE)")
+        if (resting != null) {
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    fmtInt(resting.kcal),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    color = MonarchColors.SystemGreen,
+                )
+                Text(
+                    "kcal/day at rest · ${confidenceWord(resting.confidence)}",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.InkMuted,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    modifier = Modifier.padding(bottom = 3.dp),
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            ChartCaption(resting.basis)
+        } else {
+            Text(
+                "Log body fat to estimate resting burn.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MonarchColors.InkMuted,
+            )
+        }
+    }
+}
+
+private fun confidenceWord(confidence: EnergyConfidence): String = when (confidence) {
+    EnergyConfidence.MEASURED -> "measured"
+    EnergyConfidence.ESTIMATED -> "estimated"
+    EnergyConfidence.COARSE -> "rough estimate"
+}
+
+@Composable
+private fun EnergyLegend() {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("\u25CF", color = MonarchColors.Emerald, style = MaterialTheme.typography.labelSmall)
+            Text(
+                "measured — Health Connect",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.InkMuted,
+            )
+        }
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            Text("\u25CB", color = MonarchColors.InkMuted, style = MaterialTheme.typography.labelSmall)
+            Text(
+                "estimated — MET model",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.InkMuted,
+            )
+        }
     }
 }
 
