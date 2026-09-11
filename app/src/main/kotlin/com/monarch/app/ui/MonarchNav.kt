@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.WorkspacePremium
@@ -43,6 +44,10 @@ import androidx.navigation.navArgument
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.dashboard.DashboardScreen
 import com.monarch.app.ui.settings.SettingsScreen
+import com.monarch.app.ui.social.SocialScreen
+import com.monarch.app.ui.social.HunterScreen
+import com.monarch.app.ui.train.WorkoutLogScreen
+import com.monarch.app.ui.train.WorkoutDetailScreen
 import com.monarch.app.ui.stats.StatsScreen
 import com.monarch.app.ui.titles.TitlesScreen
 import com.monarch.app.ui.theme.MonarchColors
@@ -59,6 +64,10 @@ object Routes {
     const val STATS = "stats"
     const val TITLES = "titles"
     const val SETTINGS = "settings"
+    const val SOCIAL = "social"
+    const val WORKOUT_LOG = "workout_log"
+    const val WORKOUT_DETAIL = "workout/{sessionId}"
+    const val HUNTER = "hunter/{userId}?name={name}"
     const val PRESET_EDITOR = "preset_editor?presetId={presetId}"
     const val SESSION = "session/{sessionId}"
 
@@ -66,6 +75,10 @@ object Routes {
         if (presetId == null) "preset_editor" else "preset_editor?presetId=$presetId"
 
     fun session(sessionId: Long): String = "session/$sessionId"
+
+    fun workoutDetail(sessionId: Long): String = "workout/$sessionId"
+
+    fun hunter(userId: String, name: String): String = "hunter/$userId?name=$name"
 }
 
 private data class BottomDestination(val route: String, val label: String, val icon: ImageVector)
@@ -81,6 +94,7 @@ fun MonarchRoot() {
         BottomDestination(Routes.PRESETS, "Train", Icons.Outlined.FitnessCenter),
         BottomDestination(Routes.STATS, "Stats", Icons.Outlined.BarChart),
         BottomDestination(Routes.TITLES, "Codex", Icons.Outlined.AutoStories),
+        BottomDestination(Routes.SOCIAL, "Guild", Icons.Outlined.Groups),
         BottomDestination(Routes.SETTINGS, "System", Icons.Outlined.Settings),
     )
 
@@ -199,6 +213,7 @@ fun MonarchRoot() {
                         onStartSession = { id -> navController.navigate(Routes.session(id)) },
                         onQuickSession = { id -> navController.navigate(Routes.session(id)) },
                         onOpenExercises = { navController.navigate(Routes.EXERCISES) },
+                        onOpenLog = { navController.navigate(Routes.WORKOUT_LOG) },
                     )
                 }
                 composable(Routes.EXERCISES) {
@@ -225,6 +240,41 @@ fun MonarchRoot() {
                 composable(Routes.STATS) { StatsScreen() }
                 composable(Routes.TITLES) { TitlesScreen() }
                 composable(Routes.SETTINGS) { SettingsScreen() }
+                composable(Routes.SOCIAL) {
+                    SocialScreen(
+                        onOpenHunter = { userId, name ->
+                            navController.navigate(Routes.hunter(userId, name))
+                        },
+                    )
+                }
+                composable(Routes.WORKOUT_LOG) {
+                    WorkoutLogScreen(
+                        onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                composable(
+                    Routes.WORKOUT_DETAIL,
+                    arguments = listOf(navArgument("sessionId") { type = NavType.LongType }),
+                ) { entry ->
+                    WorkoutDetailScreen(
+                        sessionId = entry.arguments?.getLong("sessionId") ?: 0L,
+                        onBack = { navController.popBackStack() },
+                    )
+                }
+                composable(
+                    Routes.HUNTER,
+                    arguments = listOf(
+                        navArgument("userId") { type = NavType.StringType },
+                        navArgument("name") { type = NavType.StringType; defaultValue = "" },
+                    ),
+                ) { entry ->
+                    HunterScreen(
+                        userId = entry.arguments?.getString("userId").orEmpty(),
+                        displayName = entry.arguments?.getString("name").orEmpty(),
+                        onBack = { navController.popBackStack() },
+                    )
+                }
             }
         }
     }

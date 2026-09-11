@@ -1,5 +1,7 @@
 package com.monarch.app.ui.components
 
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -121,12 +123,18 @@ fun ExercisePickerPanel(
 
         Spacer(Modifier.height(10.dp))
 
+        // Both rails scroll horizontally: muscle groups plus activity
+        // categories no longer fit a phone width, and a fixed Row squeezed the
+        // last chips into one letter per line off the screen edge.
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             FilterChip("ALL", group == null) { group = null }
-            MuscleGroup.entries.forEach { mg ->
+            // Only lifting groups belong here — CARDIO/SPORT/CLIMBING/WATER/
+            // MOBILITY are the category rail below, so listing them twice both
+            // overflowed the row and duplicated the same filter.
+            LIFTING_GROUPS.forEach { mg ->
                 FilterChip(mg.name, group == mg) { group = if (group == mg) null else mg }
             }
         }
@@ -134,7 +142,7 @@ fun ExercisePickerPanel(
         Spacer(Modifier.height(8.dp))
 
         Row(
-            Modifier.fillMaxWidth(),
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             FilterChip("ALL", category == null) { category = null }
@@ -191,6 +199,17 @@ fun ExercisePickerPanel(
     }
 }
 
+/**
+ * The muscle-group rail covers lifting only; the activity groups live on the
+ * category rail, so showing both in one row duplicated the filter and overflowed.
+ */
+private val LIFTING_GROUPS = listOf(
+    MuscleGroup.PULL,
+    MuscleGroup.PUSH,
+    MuscleGroup.LEGS,
+    MuscleGroup.CORE,
+)
+
 @Composable
 private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Box(
@@ -213,6 +232,10 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
             fontFamily = ChakraPetch,
             color = if (selected) MonarchColors.Ink else MonarchColors.InkMuted,
             letterSpacing = 1.sp,
+            // A chip label must never wrap: "CLIMBING" broke into one letter
+            // per line when the row ran out of width.
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }

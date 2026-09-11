@@ -91,6 +91,7 @@ fun PresetsScreen(
     onStartSession: (Long) -> Unit,
     onQuickSession: (Long) -> Unit,
     onOpenExercises: () -> Unit,
+    onOpenLog: () -> Unit,
     viewModel: PresetsViewModel =
         viewModel(factory = viewModelFactory { initializer { PresetsViewModel(monarchRepository()) } }),
 ) {
@@ -120,6 +121,12 @@ fun PresetsScreen(
             MonarchButton(
                 label = "Exercise Explorer",
                 onClick = onOpenExercises,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            MonarchButton(
+                label = "Full Workout Log",
+                onClick = onOpenLog,
                 modifier = Modifier.fillMaxWidth(),
             )
             SectionHeader("Presets")
