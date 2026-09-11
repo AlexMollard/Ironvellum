@@ -49,6 +49,12 @@ data class WorkoutSession(
     val completedAtMs: Long? = null,
     val xpAwarded: Int = 0,
     val strengthScore: Int = 0,
+    /** User-authored title; syncs. "" when unset. */
+    val title: String = "",
+    /** PUBLIC note, visible in the feed; syncs. "" when unset. */
+    val note: String = "",
+    /** Device-only note, never leaves the app. "" when unset. */
+    val privateNote: String = "",
 )
 
 data class StatEntry(

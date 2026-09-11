@@ -2,6 +2,8 @@ package com.monarch.app
 
 import android.app.Application
 import com.monarch.app.data.DbSnapshot
+import com.monarch.app.data.cloud.AccountRepository
+import com.monarch.app.data.cloud.CloudSync
 import com.monarch.app.data.HealthSync
 import com.monarch.app.data.MonarchDatabase
 import com.monarch.app.data.Repository
@@ -17,6 +19,13 @@ class MonarchApp : Application() {
     val healthSync: HealthSync by lazy { HealthSync(this) }
     val repository: Repository by lazy { Repository(database, healthSync) }
 
+    /**
+     * Cloud objects are app-scoped so the auth session is shared: two clients
+     * would mean two sessions and a sign-in that only half the app can see.
+     */
+    val accountRepository: AccountRepository by lazy { AccountRepository() }
+    val cloudSync: CloudSync by lazy { CloudSync(repository, accountRepository) }
+
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     override fun onCreate() {
@@ -30,6 +39,9 @@ class MonarchApp : Application() {
             // Titles used to be awarded only at the moment a workout finished,
             // so anything satisfied by imported health data stayed locked.
             runCatching { repository.reconcileTitles() }
+            // Restore a stored sign-in before any screen asks who we are,
+            // otherwise the social surfaces flash "signed out" on every launch.
+            runCatching { accountRepository.restore() }
         }
         HealthSyncWorker.schedule(this)
     }

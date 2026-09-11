@@ -5,6 +5,8 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import com.monarch.app.MonarchApp
 import com.monarch.app.data.HealthSync
 import com.monarch.app.data.Repository
+import com.monarch.app.data.cloud.AccountRepository
+import com.monarch.app.data.cloud.CloudSync
 
 /** Access the app-scoped repository from any ViewModel factory. */
 fun CreationExtras.monarchRepository(): Repository =
@@ -12,3 +14,13 @@ fun CreationExtras.monarchRepository(): Repository =
 
 fun CreationExtras.monarchHealthSync(): HealthSync =
     (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonarchApp).healthSync
+
+/**
+ * Cloud dependencies are app-scoped like the repository: the auth session must
+ * survive screen changes, and two clients would mean two sessions.
+ */
+fun CreationExtras.monarchAccount(): AccountRepository =
+    (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonarchApp).accountRepository
+
+fun CreationExtras.monarchCloudSync(): CloudSync =
+    (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as MonarchApp).cloudSync

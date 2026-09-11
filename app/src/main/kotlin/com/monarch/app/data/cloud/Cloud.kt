@@ -1,0 +1,63 @@
+package com.monarch.app.data.cloud
+
+import com.monarch.app.BuildConfig
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.auth.Auth
+import io.github.jan.supabase.auth.exception.AuthErrorCode
+import io.github.jan.supabase.auth.exception.AuthRestException
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.exceptions.HttpRequestException
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.exception.PostgrestRestException
+
+/**
+ * Single entry point to the cloud. `configured` is false while the local
+ * project has no Supabase credentials; every repository then answers with a
+ * readable Result.failure instead of crashing or silently doing nothing.
+ */
+object Cloud {
+    val configured: Boolean = BuildConfig.SUPABASE_URL.isNotBlank() && BuildConfig.SUPABASE_KEY.isNotBlank()
+    val googleConfigured: Boolean = configured && BuildConfig.GOOGLE_WEB_CLIENT_ID.isNotBlank()
+
+    @Volatile
+    private var instance: SupabaseClient? = null
+
+    fun client(): SupabaseClient = instance ?: synchronized(this) {
+        instance ?: createSupabaseClient(
+            supabaseUrl = BuildConfig.SUPABASE_URL,
+            supabaseKey = BuildConfig.SUPABASE_KEY,
+        ) {
+            install(Auth)
+            install(Postgrest)
+        }.also { instance = it }
+    }
+
+    val requireConfigured: Result<SupabaseClient>
+        get() = if (configured) {
+            Result.success(client())
+        } else {
+            Result.failure(IllegalStateException("Cloud sync is not configured on this build"))
+        }
+
+    /** Translate the supabase-kt exception zoo into a sentence a player can act on. */
+    fun explain(error: Throwable): String = when (error) {
+        is IllegalStateException -> error.message ?: "Cloud sync is not available"
+        is AuthRestException -> when (error.errorCode) {
+            AuthErrorCode.InvalidCredentials -> "Wrong email or password"
+            AuthErrorCode.UserAlreadyExists -> "That email is already registered — sign in instead"
+            AuthErrorCode.OverEmailSendRateLimit, AuthErrorCode.OverRequestRateLimit ->
+                "Too many attempts — wait a minute and try again"
+            else -> "Sign-in problem: ${error.description ?: error.errorCode?.name ?: "unknown"}"
+        }
+        is PostgrestRestException -> when (error.code) {
+            "23505" -> "That name is already taken by another hunter"
+            "42501" -> "The cloud refused this — you are not allowed to change that record"
+            "23514" -> "The cloud rejected this value as out of range"
+            else -> "Cloud rejected the request: ${error.description ?: error.message}"
+        }
+        is HttpRequestException -> "Could not reach the cloud — check your connection"
+        else -> "Cloud error: ${error.message?.lineSequence()?.firstOrNull() ?: error.javaClass.simpleName}"
+    }
+
+    fun <T> failure(error: Throwable): Result<T> = Result.failure(IllegalStateException(explain(error)))
+}

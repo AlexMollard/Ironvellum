@@ -512,6 +512,24 @@ class Repository(
         ExerciseHistoryCalculator.build(exercise, rows, bodyweight)
     }
 
+
+    /**
+     * Server caps: title <= 80, public note <= 500 (see supabase migration 0002).
+     * Trimming locally means a sync can never fail on a value we already accepted.
+     * The private note has no server constraint — it never leaves the device.
+     */
+    suspend fun setSessionTitle(sessionId: Long, title: String) {
+        sessionDao.setTitle(sessionId, title.trim().take(80))
+    }
+
+    suspend fun setSessionNote(sessionId: Long, note: String) {
+        sessionDao.setNote(sessionId, note.trim().take(500))
+    }
+
+    suspend fun setSessionPrivateNote(sessionId: Long, privateNote: String) {
+        sessionDao.setPrivateNote(sessionId, privateNote)
+    }
+
     private fun SessionEntity.toDomain() = WorkoutSession(
         id = id,
         presetId = presetId,
@@ -520,6 +538,9 @@ class Repository(
         completedAtMs = completedAtMs,
         xpAwarded = xpAwarded,
         strengthScore = strengthScore,
+        title = title,
+        note = note,
+        privateNote = privateNote,
     )
 
     // ---------------------------------------------------------------- stats
@@ -850,6 +871,9 @@ class Repository(
                             completedAtMs = session.completedAtMs,
                             xpAwarded = session.xpAwarded,
                             strengthScore = session.strengthScore,
+                            title = session.title,
+                            note = session.note,
+                            privateNote = session.privateNote,
                         ),
                     )
                     restoredSets += sessionDao.insertSets(

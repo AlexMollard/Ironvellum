@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
@@ -28,10 +29,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.ui.draw.alpha
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.border
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,6 +70,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.monarch.app.data.Repository
 import com.monarch.app.domain.Exercise
 import com.monarch.app.domain.SessionSet
+import com.monarch.app.domain.SetRecords
 import com.monarch.app.domain.StrengthIndex
 import com.monarch.app.domain.WorkoutSession
 import com.monarch.app.domain.Xp
@@ -75,6 +82,7 @@ import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.theme.MonarchColors
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -92,6 +100,15 @@ class SessionViewModel(
     private val repo: Repository,
     private val sessionId: Long,
 ) : ViewModel() {
+
+    // Records exclude THIS session: a live set must never become its own benchmark.
+    val records: StateFlow<Map<Pair<String, Int>, SetRecords.Record>> = combine(
+        repo.observeHistory(),
+        repo.observeStats().map { it.firstOrNull()?.weightKg },
+    ) { history, bodyweight ->
+        if (bodyweight == null) emptyMap()
+        else SetRecords.records(history, bodyweight, excludeSessionId = sessionId)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     val ui: StateFlow<SessionUi> = combine(
         repo.observeSession(sessionId),
@@ -131,6 +148,19 @@ class SessionViewModel(
         viewModelScope.launch { onResult(repo.completeSession(sessionId)) }
     }
 
+    // Save-on-blur handlers: one write per field edit, never per keystroke.
+    fun setSessionTitle(title: String) {
+        viewModelScope.launch { repo.setSessionTitle(sessionId, title) }
+    }
+
+    fun setSessionNote(note: String) {
+        viewModelScope.launch { repo.setSessionNote(sessionId, note) }
+    }
+
+    fun setSessionPrivateNote(privateNote: String) {
+        viewModelScope.launch { repo.setSessionPrivateNote(sessionId, privateNote) }
+    }
+
     fun abandon(onDone: () -> Unit) {
         viewModelScope.launch {
             repo.abandonSession(sessionId)
@@ -146,6 +176,7 @@ fun SessionScreen(
     viewModel: SessionViewModel =
         viewModel(factory = viewModelFactory { initializer { SessionViewModel(monarchRepository(), sessionId) } }),
 ) {
+    val records by viewModel.records.collectAsStateWithLifecycle()
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val exercises by viewModel.exercises.collectAsStateWithLifecycle()
     val bodyweight by viewModel.bodyweight.collectAsStateWithLifecycle()
@@ -266,6 +297,10 @@ fun SessionScreen(
                 sets.sortedBy { it.setIndex }.forEach { set ->
                     SetRow(
                         label = "${set.setIndex + 1}",
+                        exerciseName = set.exerciseName,
+                        setIndex = set.setIndex,
+                        records = records,
+                        bodyweight = bodyweight,
                         reps = set.reps,
                         weightKg = set.weightKg,
                         done = set.done,
@@ -274,6 +309,7 @@ fun SessionScreen(
                         onChange = { r, w, d -> viewModel.updateSet(set.id, r, w, d) },
                     )
                 }
+
             }
         }
 
@@ -288,6 +324,8 @@ fun SessionScreen(
                 .clickable { showExercisePicker = true }
                 .padding(horizontal = 4.dp, vertical = 6.dp),
         )
+        Spacer(Modifier.height(16.dp))
+        SessionNotesEditor(session = session, viewModel = viewModel)
 
         Spacer(Modifier.height(16.dp))
         MonarchButton(
@@ -539,6 +577,10 @@ private fun RewardRow(label: String, value: String) {
 @Composable
 private fun SetRow(
     label: String,
+    exerciseName: String,
+    setIndex: Int,
+    records: Map<Pair<String, Int>, SetRecords.Record>,
+    bodyweight: Double?,
     reps: Int,
     weightKg: Double?,
     done: Boolean,
@@ -598,7 +640,7 @@ private fun SetRow(
             )
         }
         onRemove?.let { remove ->
-            Text(
+                Text(
                 "✕",
                 style = MaterialTheme.typography.titleSmall,
                 fontFamily = ChakraPetch,
@@ -608,8 +650,75 @@ private fun SetRow(
                     .padding(horizontal = 6.dp, vertical = 10.dp),
             )
         }
+        // Fixed-height delta line under the steppers: always allocated, so
+        // live digit changes never reflow the row mid-set.
+        val delta = bodyweight?.let { bw ->
+            SetRecords.delta(records, exerciseName, setIndex, reps, weightKg, bw)
+        }
+        SetDeltaBadge(delta, displaySetNo = setIndex + 1)
     }
 }
+
+/** Glanceable per-set-position PR readout. Copy is deliberately telegraphic. */
+@Composable
+private fun SetDeltaBadge(delta: SetRecords.Delta?, displaySetNo: Int) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .height(16.dp)
+            .padding(start = 44.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (delta == null) return@Row
+        val record = delta.record
+        if (delta.isRecord) {
+            Icon(
+                Icons.Filled.Bolt,
+                contentDescription = "New record",
+                tint = MonarchColors.SovereignGold,
+                modifier = Modifier.size(12.dp),
+            )
+            Text(
+                "NEW PR",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.SovereignGold,
+            )
+            record?.let {
+                Text(
+                    "was ${it.reps}×${prLoad(it.weightKg)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MonarchColors.InkMuted,
+                )
+            }
+        } else if (record == null) {
+            Text(
+                "first set $displaySetNo on record",
+                style = MaterialTheme.typography.labelSmall,
+                color = MonarchColors.InkMuted,
+            )
+        } else {
+            Text(
+                "PR ${record.reps}×${prLoad(record.weightKg)}",
+                style = MaterialTheme.typography.labelSmall,
+                color = MonarchColors.InkMuted,
+            )
+            // Shortfall is muted, never red: a lighter back-off set is normal.
+            val colour = if (delta.deltaScore >= 0.0) MonarchColors.EmeraldBright else MonarchColors.InkMuted
+            Text(
+                (if (delta.deltaScore >= 0.0) "▲ +" else "▽ ") + "%.1f".format(delta.deltaScore),
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = colour,
+            )
+        }
+    }
+}
+
+/** "40kg" or plain "BW" when the PR was a pure bodyweight set. */
+private fun prLoad(weightKg: Double?): String =
+    weightKg?.let { "${formatKg(it)}kg" } ?: "BW"
 
 private fun stepDownKg(kg: Double?): Double? = kg?.minus(2.5)?.takeIf { it > 0.0 }
 
@@ -660,6 +769,133 @@ private fun StepIcon(symbol: String, onClick: () -> Unit) {
             .padding(horizontal = 10.dp, vertical = 2.dp),
     )
 }
+
+
+private const val TITLE_CAP = 80
+private const val PUBLIC_NOTE_CAP = 500
+
+/**
+ * Title + notes editor for the session. Lives at the foot of the active trial,
+ * just above "Claim Victory", so annotations are written while the session is
+ * still open and are already persisted (and synced) by the time it completes.
+ * Public and private notes are deliberately styled to clash: gold/emerald for
+ * what the feed sees, muted + lock glyph for what never leaves the device.
+ */
+@Composable
+private fun SessionNotesEditor(
+    session: WorkoutSession,
+    viewModel: SessionViewModel,
+) {
+    // Seeded once per session; repo writes happen on blur, so we don't echo
+    // the flow back into the fields (that would fight the cursor).
+    var title by remember(session.id) { mutableStateOf(session.title) }
+    var publicNote by remember(session.id) { mutableStateOf(session.note) }
+    var privateNote by remember(session.id) { mutableStateOf(session.privateNote) }
+
+    SystemWindow(accent = MonarchColors.SovereignGold) {
+        Text(
+            "CHRONICLE",
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.SovereignGold,
+            letterSpacing = MonarchTracking.SectionHeader,
+        )
+        Spacer(Modifier.height(10.dp))
+
+        OutlinedTextField(
+            value = title,
+            onValueChange = { title = it.take(TITLE_CAP) },
+            singleLine = true,
+            label = {
+                FieldLabel(
+                    icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = MonarchColors.SovereignGold) },
+                    text = "TITLE · optional, shown on the feed",
+                    color = MonarchColors.SovereignGold,
+                )
+            },
+            placeholder = { Text("Name this trial…", style = MaterialTheme.typography.bodySmall, color = MonarchColors.InkMuted) },
+            trailingIcon = { CharCounter(title.length, TITLE_CAP, MonarchColors.SovereignGold) },
+            colors = fieldColors(accent = MonarchColors.SovereignGold),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { if (!it.isFocused) viewModel.setSessionTitle(title.trim()) },
+        )
+        Spacer(Modifier.height(10.dp))
+
+        OutlinedTextField(
+            value = publicNote,
+            onValueChange = { publicNote = it.take(PUBLIC_NOTE_CAP) },
+            minLines = 2,
+            label = {
+                FieldLabel(
+                    icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = MonarchColors.SystemGreen) },
+                    text = "PUBLIC NOTE · every hunter on the feed can read this",
+                    color = MonarchColors.SystemGreen,
+                )
+            },
+            placeholder = { Text("How did the trial go? Share it…", style = MaterialTheme.typography.bodySmall, color = MonarchColors.InkMuted) },
+            trailingIcon = { CharCounter(publicNote.length, PUBLIC_NOTE_CAP, MonarchColors.SystemGreen) },
+            colors = fieldColors(accent = MonarchColors.SystemGreen),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { if (!it.isFocused) viewModel.setSessionNote(publicNote.trim()) },
+        )
+        Spacer(Modifier.height(10.dp))
+
+        OutlinedTextField(
+            value = privateNote,
+            onValueChange = { privateNote = it },
+            minLines = 2,
+            label = {
+                FieldLabel(
+                    icon = { Icon(Icons.Outlined.Lock, null, Modifier.size(14.dp), tint = MonarchColors.InkMuted) },
+                    text = "PRIVATE NOTE · never leaves this device",
+                    color = MonarchColors.InkMuted,
+                )
+            },
+            placeholder = { Text("For your eyes only…", style = MaterialTheme.typography.bodySmall, color = MonarchColors.InkMuted) },
+            colors = fieldColors(accent = MonarchColors.InkMuted),
+            modifier = Modifier
+                .fillMaxWidth()
+                .onFocusChanged { if (!it.isFocused) viewModel.setSessionPrivateNote(privateNote) },
+        )
+    }
+}
+
+@Composable
+private fun FieldLabel(
+    icon: @Composable () -> Unit,
+    text: String,
+    color: Color,
+) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+        icon()
+        Text(text, style = MaterialTheme.typography.labelSmall, fontFamily = ChakraPetch, color = color)
+    }
+}
+
+/** Counter only appears as the cap nears — no noise while there's room. */
+@Composable
+private fun CharCounter(length: Int, cap: Int, accent: Color) {
+    if (length <= cap * 4 / 5) return
+    val near = length >= cap * 9 / 10
+    Text(
+        "${cap - length}",
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = ChakraPetch,
+        color = if (near) MonarchColors.DangerRed else accent,
+    )
+}
+@Composable
+private fun fieldColors(accent: Color) = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = accent,
+    unfocusedBorderColor = accent.copy(alpha = 0.4f),
+    focusedLabelColor = accent,
+    unfocusedLabelColor = MonarchColors.InkMuted,
+    cursorColor = accent,
+    focusedTextColor = MonarchColors.Ink,
+    unfocusedTextColor = MonarchColors.Ink,
+)
 
 /** Canonical modifier vocabulary — free text drifted ("defecit" vs "deficit"). */
 private val MODIFIER_OPTIONS = listOf(

@@ -55,6 +55,12 @@ data class SessionEntity(
     val completedAtMs: Long?,
     val xpAwarded: Int,
     val strengthScore: Int = 0,
+    /** User-authored session title; syncs to the feed. */
+    val title: String = "",
+    /** PUBLIC note, visible to other players in the feed. */
+    val note: String = "",
+    /** Device-only note. NEVER uploaded - there is no server column for it. */
+    val privateNote: String = "",
 )
 
 @Entity(

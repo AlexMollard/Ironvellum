@@ -1,0 +1,758 @@
+package com.monarch.app.ui.social
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Group
+import androidx.compose.material.icons.outlined.Lock
+import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.monarch.app.BuildConfig
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import androidx.credentials.CredentialManager
+import androidx.credentials.GetCredentialRequest
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.GetCredentialException
+import androidx.credentials.exceptions.NoCredentialException
+import java.math.BigInteger
+import java.security.MessageDigest
+import java.security.SecureRandom
+import com.monarch.app.data.Repository
+import com.monarch.app.data.cloud.Account
+import com.monarch.app.data.cloud.AccountRepository
+import com.monarch.app.data.cloud.Cloud
+import com.monarch.app.data.cloud.CloudSync
+import com.monarch.app.data.cloud.FriendRow
+import com.monarch.app.data.cloud.SyncOutcome
+import com.monarch.app.ui.components.MonarchButton
+import com.monarch.app.ui.components.SectionHeader
+import com.monarch.app.ui.components.SystemWindow
+import com.monarch.app.ui.monarchAccount
+import com.monarch.app.ui.monarchCloudSync
+import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.MonarchColors
+import com.monarch.app.ui.theme.MonarchTracking
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+/** One honest snapshot of the account gate: which panel to show and why. */
+data class AccountUi(
+    val configured: Boolean = Cloud.configured,
+    val account: Account? = null,
+    val busy: Boolean = false,
+    /** The real server/network reason, verbatim — never a generic "failed". */
+    val error: String? = null,
+    val lastSync: SyncOutcome? = null,
+    val friends: List<FriendRow> = emptyList(),
+    val friendsLoading: Boolean = false,
+)
+
+class AccountViewModel(
+    private val accountRepo: AccountRepository,
+    private val cloudSync: CloudSync,
+) : ViewModel() {
+
+    private val _ui = MutableStateFlow(AccountUi(account = accountRepo.account.value))
+    val ui = _ui.asStateFlow()
+
+    init {
+        // Resume a stored session (if any) without blocking the first frame.
+        viewModelScope.launch {
+            setBusy(true)
+            accountRepo.restore()
+            setBusy(false)
+        }
+        // Keep the UI in step with the repository's own session state.
+        viewModelScope.launch {
+            accountRepo.account.collect { acct ->
+                _ui.value = _ui.value.copy(account = acct)
+                if (acct != null) refreshFriends()
+            }
+        }
+    }
+
+    private fun setBusy(busy: Boolean) {
+        _ui.value = _ui.value.copy(busy = busy)
+    }
+
+    /** Extract the genuine reason from a Result failure — shown verbatim. */
+    private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
+
+    fun signIn(email: String, password: String) {
+        viewModelScope.launch {
+            setBusy(true)
+            _ui.value = _ui.value.copy(error = null)
+            accountRepo.signIn(email, password)
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+            setBusy(false)
+        }
+    }
+
+    fun signUp(email: String, password: String, displayName: String) {
+        viewModelScope.launch {
+            setBusy(true)
+            _ui.value = _ui.value.copy(error = null)
+            accountRepo.signUp(email, password, displayName)
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+            setBusy(false)
+        }
+    }
+
+
+    /** Google sign-in: the credential layer already exchanged the ID token; hand it and the raw nonce to the repository. */
+    fun signInWithGoogle(idToken: String, rawNonce: String) {
+        viewModelScope.launch {
+            setBusy(true)
+            _ui.value = _ui.value.copy(error = null)
+            accountRepo.signInWithGoogle(idToken, rawNonce)
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+            setBusy(false)
+        }
+    }
+
+    fun signOut() {
+        viewModelScope.launch {
+            setBusy(true)
+            _ui.value = _ui.value.copy(error = null)
+            accountRepo.signOut().onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+            _ui.value = _ui.value.copy(lastSync = null, friends = emptyList())
+            setBusy(false)
+        }
+    }
+
+    fun setVisibility(visibility: String) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(error = null)
+            accountRepo.setVisibility(visibility)
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+        }
+    }
+
+    fun syncNow() {
+        viewModelScope.launch {
+            setBusy(true)
+            _ui.value = _ui.value.copy(error = null)
+            cloudSync.push()
+                .onSuccess { _ui.value = _ui.value.copy(lastSync = it) }
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+            setBusy(false)
+        }
+    }
+
+    fun refreshFriends() {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(friendsLoading = true)
+            cloudSync.friends()
+                .onSuccess { _ui.value = _ui.value.copy(friends = it) }
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+            _ui.value = _ui.value.copy(friendsLoading = false)
+        }
+    }
+
+    fun acceptFriend(userId: String) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(error = null)
+            cloudSync.acceptFriend(userId)
+                .onSuccess { refreshFriends() }
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+        }
+    }
+
+    fun requestFriend(displayName: String) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(error = null)
+            cloudSync.requestFriend(displayName)
+                .onSuccess { refreshFriends() }
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+        }
+    }
+}
+
+@Composable
+fun AccountScreen(
+    onBack: () -> Unit,
+    viewModel: AccountViewModel = viewModel(
+        factory = viewModelFactory {
+            initializer { AccountViewModel(monarchAccount(), monarchCloudSync()) }
+        },
+    ),
+) {
+    val ui by viewModel.ui.collectAsStateWithLifecycle()
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+    ) {
+        Spacer(Modifier.height(20.dp))
+        Text(
+            "GATEWAY",
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+            letterSpacing = MonarchTracking.ScreenTitle,
+        )
+        Text(
+            "Cloud link for hunters",
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.SystemGreen,
+        )
+        Spacer(Modifier.height(12.dp))
+
+        when {
+            !ui.configured -> NotConfiguredPanel()
+            ui.busy && ui.account == null -> BusyPanel("Linking to the System…")
+            ui.account == null -> AuthPanels(
+                error = ui.error,
+                busy = ui.busy,
+                googleEnabled = Cloud.googleConfigured,
+                onGoogleSignIn = viewModel::signInWithGoogle,
+                onSignIn = viewModel::signIn,
+                onSignUp = viewModel::signUp,
+            )
+            else -> SignedInPanels(
+                ui = ui,
+                onSignOut = viewModel::signOut,
+                onVisibility = viewModel::setVisibility,
+                onSync = viewModel::syncNow,
+                onAccept = viewModel::acceptFriend,
+                onRequest = viewModel::requestFriend,
+                onRefreshFriends = viewModel::refreshFriends,
+            )
+        }
+
+        Spacer(Modifier.height(28.dp))
+    }
+}
+
+@Composable
+private fun NotConfiguredPanel() {
+    SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.DangerRed) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Outlined.VisibilityOff, contentDescription = null, tint = MonarchColors.DangerRed)
+            Text(
+                "CLOUD LINK OFFLINE",
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = MonarchColors.DangerRed,
+                letterSpacing = MonarchTracking.InlineLabel,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "No Supabase endpoint is configured on this device. The gate cannot open — ask the guild to build with SUPABASE_URL and SUPABASE_KEY set.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MonarchColors.InkMuted,
+        )
+    }
+}
+
+@Composable
+private fun BusyPanel(label: String) {
+    SystemWindow(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            CircularProgressIndicator(
+                color = MonarchColors.Emerald,
+                modifier = Modifier.height(18.dp).fillMaxWidth(0.06f),
+            )
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.InkMuted,
+            )
+        }
+    }
+}
+@Composable
+private fun AuthPanels(
+    error: String?,
+    busy: Boolean,
+    googleEnabled: Boolean,
+    onGoogleSignIn: (String, String) -> Unit,
+    onSignIn: (String, String) -> Unit,
+    onSignUp: (String, String, String) -> Unit,
+) {
+    var mode by remember { mutableStateOf(AuthMode.SIGN_IN) }
+
+    // Segmented auth-mode switch, styled after the TRAINING MODE selector.
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(MaterialTheme.colorScheme.surfaceVariant),
+    ) {
+        AuthMode.entries.forEach { m ->
+            val selected = mode == m
+            Box(
+                Modifier
+                    .weight(1f)
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .background(if (selected) MonarchColors.Vault else Color.Transparent)
+                    .clickable { mode = m }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    if (m == AuthMode.SIGN_IN) "SIGN IN" else "SIGN UP",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontFamily = ChakraPetch,
+                    color = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                )
+            }
+        }
+    }
+
+    Spacer(Modifier.height(14.dp))
+
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var displayName by remember { mutableStateOf("") }
+
+    val emailValid = android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
+    val passwordValid = password.length >= 6
+    val nameValid = displayName.trim().length in 2..24
+    val canSubmit = emailValid && passwordValid && (mode == AuthMode.SIGN_IN || nameValid) && !busy
+
+    SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.Rune) {
+        if (googleEnabled) {
+            GoogleGateButton(onToken = onGoogleSignIn)
+            Spacer(Modifier.height(14.dp))
+        }
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it.trim() },
+            label = { Text("Hunter email") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Sigil phrase (min 6)") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (mode == AuthMode.SIGN_UP) {
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                value = displayName,
+                onValueChange = { displayName = it.take(24) },
+                label = { Text("Hunter name (2–24)") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        Spacer(Modifier.height(14.dp))
+        MonarchButton(
+            label = if (mode == AuthMode.SIGN_IN) "Enter the Gate" else "Awaken",
+            onClick = {
+                if (mode == AuthMode.SIGN_IN) onSignIn(email, password)
+                else onSignUp(email, password, displayName.trim())
+            },
+            enabled = canSubmit,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            when {
+                !emailValid && email.isNotEmpty() -> "That email does not read as an email."
+                password.isNotEmpty() && !passwordValid -> "The sigil phrase needs at least 6 characters."
+                mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid ->
+                    "Hunter names run 2–24 characters."
+                else -> "Your training stays yours. Body measurements never leave this device — only sessions, XP and titles sync."
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = MonarchColors.InkMuted,
+        )
+        error?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "The gate refused: $it",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.DangerRed,
+            )
+        }
+    }
+}
+
+/**
+ * "Continue with Google" through Credential Manager. Nonce direction matters:
+ * the SHA-256 hash goes to Google (it hashes the ID token's nonce claim), the
+ * RAW string goes to Supabase (it compares against what Google hashed).
+ */
+@Composable
+private fun GoogleGateButton(onToken: (idToken: String, rawNonce: String) -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var localError by remember { mutableStateOf<String?>(null) }
+
+    Column {
+        MonarchButton(
+            label = "Continue with Google",
+            modifier = Modifier.fillMaxWidth(),
+            onClick = {
+                scope.launch {
+                    localError = null
+                    try {
+                        // Raw nonce first; only its hash ever reaches Google.
+                        val rawNonce = BigInteger(130, SecureRandom()).toString(36)
+                        val hashedNonce = MessageDigest.getInstance("SHA-256")
+                            .digest(rawNonce.toByteArray())
+                            .joinToString("") { "%02x".format(it) }
+                        val option = GetGoogleIdOption.Builder()
+                            .setServerClientId(BuildConfig.GOOGLE_WEB_CLIENT_ID)
+                            .setFilterByAuthorizedAccounts(false)
+                            .setNonce(hashedNonce)
+                            .build()
+                        val request = GetCredentialRequest.Builder()
+                            .addCredentialOption(option)
+                            .build()
+                        val response = CredentialManager.create(context)
+                            .getCredential(context, request)
+                        val idToken = GoogleIdTokenCredential.createFrom(response.credential.data).idToken
+                        onToken(idToken, rawNonce)
+                    } catch (_: GetCredentialCancellationException) {
+                        // The hunter dismissed the sheet — not an error.
+                    } catch (_: NoCredentialException) {
+                        localError = "No Google account found on this device — use the email gate below."
+                    } catch (e: GetCredentialException) {
+                        localError = e.message ?: e.type
+                    } catch (e: Exception) {
+                        localError = e.message ?: e.toString()
+                    }
+                }
+            },
+        )
+        localError?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                it,
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.DangerRed,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SignedInPanels(
+    ui: AccountUi,
+    onSignOut: () -> Unit,
+    onVisibility: (String) -> Unit,
+    onSync: () -> Unit,
+    onAccept: (String) -> Unit,
+    onRequest: (String) -> Unit,
+    onRefreshFriends: () -> Unit,
+) {
+    val acct = ui.account ?: return
+
+    SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.Emerald) {
+        Text(
+            acct.displayName,
+            style = MaterialTheme.typography.headlineMedium,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = MonarchColors.Ink,
+        )
+        Text(
+            acct.email,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+        )
+        Spacer(Modifier.height(14.dp))
+
+        // Visibility selector — same construction as the TRAINING MODE selector.
+        Text(
+            "VISIBILITY",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.SystemGreen,
+            letterSpacing = MonarchTracking.InlineLabel,
+        )
+        Spacer(Modifier.height(10.dp))
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(MaterialTheme.colorScheme.surfaceVariant),
+        ) {
+            listOf(
+                "public" to Icons.Outlined.Public,
+                "friends" to Icons.Outlined.Group,
+                "private" to Icons.Outlined.Lock,
+            ).forEach { (value, icon) ->
+                val selected = acct.visibility == value
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .background(if (selected) MonarchColors.Vault else Color.Transparent)
+                        .clickable { onVisibility(value) }
+                        .padding(vertical = 10.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            icon,
+                            contentDescription = value,
+                            tint = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
+                        )
+                        Text(
+                            value.uppercase(),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = ChakraPetch,
+                            color = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
+                            letterSpacing = MonarchTracking.InlineLabel,
+                        )
+                    }
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            when (acct.visibility) {
+                "public" -> "Every hunter on the board can read your sessions."
+                "friends" -> "Only hunters on your friend list can read your sessions."
+                else -> "No one but you can read your sessions."
+            },
+            style = MaterialTheme.typography.labelSmall,
+            color = MonarchColors.InkMuted,
+        )
+        Spacer(Modifier.height(14.dp))
+        MonarchButton(label = "Sync Now", onClick = onSync, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
+        ui.lastSync?.let { outcome ->
+            Spacer(Modifier.height(8.dp))
+            Text(
+                buildString {
+                    append("Pushed ${outcome.sessions} sessions · ${outcome.sets} sets · ${outcome.titles} titles")
+                    if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
+                },
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = if (outcome.problems.isEmpty()) MonarchColors.Emerald else MonarchColors.SovereignGold,
+            )
+            outcome.problems.forEach { problem ->
+                Text(
+                    "· $problem",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MonarchColors.InkMuted,
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Body measurements — weight, height, body fat, BMI, FFMI — never leave this device. Visibility decides who may read your sessions.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MonarchColors.InkMuted,
+        )
+    }
+
+    SectionHeader("Allies")
+    FriendsPanel(
+        ui = ui,
+        onAccept = onAccept,
+        onRequest = onRequest,
+        onRefresh = onRefreshFriends,
+    )
+
+    Spacer(Modifier.height(14.dp))
+    MonarchButton(
+        label = "Sever the link",
+        onClick = onSignOut,
+        enabled = !ui.busy,
+        gold = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    ui.error?.let {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            it,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.DangerRed,
+        )
+    }
+}
+
+@Composable
+private fun FriendsPanel(
+    ui: AccountUi,
+    onAccept: (String) -> Unit,
+    onRequest: (String) -> Unit,
+    onRefresh: () -> Unit,
+) {
+    var friendName by remember { mutableStateOf("") }
+
+    SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.Rune) {
+        val incoming = ui.friends.filter { it.incoming && !it.accepted }
+        val accepted = ui.friends.filter { it.accepted }
+
+        if (incoming.isEmpty() && accepted.isEmpty() && !ui.friendsLoading) {
+            Text(
+                "No allies yet. Solo is how every hunter starts — invite one by name below.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MonarchColors.InkMuted,
+            )
+            Spacer(Modifier.height(10.dp))
+        }
+
+        incoming.forEach { pending ->
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween,
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        pending.displayName,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.Ink,
+                    )
+                    Text(
+                        "wants to ally with you",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MonarchColors.SovereignGold,
+                    )
+                }
+                MonarchButton(label = "Accept", onClick = { onAccept(pending.userId) })
+            }
+            Spacer(Modifier.height(10.dp))
+        }
+
+        accepted.forEach { friend ->
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Icon(Icons.Outlined.Group, contentDescription = null, tint = MonarchColors.SystemGreen)
+                Text(
+                    friend.displayName,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.Ink,
+                )
+            }
+        }
+
+        if (accepted.isNotEmpty()) {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "${accepted.size} all${if (accepted.size == 1) "y" else "ies"} linked",
+                style = MaterialTheme.typography.labelSmall,
+                color = MonarchColors.InkMuted,
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedTextField(
+                value = friendName,
+                onValueChange = { friendName = it.take(24) },
+                label = { Text("Ally's hunter name") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                modifier = Modifier.weight(1f),
+            )
+            MonarchButton(
+                label = "Invite",
+                onClick = {
+                    onRequest(friendName.trim())
+                    friendName = ""
+                },
+                enabled = friendName.trim().length >= 2 && !ui.friendsLoading,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            if (ui.friendsLoading) "Consulting the roster…" else "Invites reach hunters by their exact name.",
+            style = MaterialTheme.typography.labelSmall,
+            color = MonarchColors.InkMuted,
+        )
+        Spacer(Modifier.height(8.dp))
+        RefreshLink(onClick = onRefresh, label = "Refresh roster")
+    }
+}
+
+@Composable
+private fun RefreshLink(onClick: () -> Unit, label: String) {
+    Text(
+        "\u21BB $label".uppercase(),
+        style = MaterialTheme.typography.labelMedium,
+        fontFamily = ChakraPetch,
+        fontWeight = FontWeight.SemiBold,
+        color = MonarchColors.Emerald,
+        letterSpacing = MonarchTracking.InlineLabel,
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.extraSmall)
+            .clickable { onClick() }
+            .padding(vertical = 4.dp, horizontal = 2.dp),
+    )
+}
+
+private enum class AuthMode { SIGN_IN, SIGN_UP }

@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.monarch.app.data.db.ExerciseDao
 import com.monarch.app.data.db.ExerciseEntity
 import com.monarch.app.data.db.HealthDayDao
@@ -36,7 +38,7 @@ import com.monarch.app.data.db.TitleUnlockEntity
         SkillPracticeEntity::class,
         HealthDayEntity::class,
     ],
-    version = 11,
+    version = 12,
     exportSchema = false,
 )
 abstract class MonarchDatabase : RoomDatabase() {
@@ -55,8 +57,18 @@ abstract class MonarchDatabase : RoomDatabase() {
         // Room must be allowed to throw on an unknown schema rather than
         // silently delete a user's training history (fallbackToDestructiveMigration
         // was removed for exactly that reason — an upgrade wiped all data).
+        private val MIGRATION_11_12 = object : Migration(11, 12) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Feed fields: title and public note sync; privateNote is device-only.
+                db.execSQL("ALTER TABLE sessions ADD COLUMN title TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE sessions ADD COLUMN note TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE sessions ADD COLUMN privateNote TEXT NOT NULL DEFAULT ''")
+            }
+        }
+
         fun create(context: Context): MonarchDatabase =
             Room.databaseBuilder(context, MonarchDatabase::class.java, "monarch.db")
+                .addMigrations(MIGRATION_11_12)
                 .build()
     }
 }

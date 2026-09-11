@@ -67,6 +67,16 @@ interface SessionDao {
     @Update
     suspend fun updateSession(session: SessionEntity)
 
+    @Query("UPDATE sessions SET title = :title WHERE id = :id")
+    suspend fun setTitle(id: Long, title: String)
+
+    @Query("UPDATE sessions SET note = :note WHERE id = :id")
+    suspend fun setNote(id: Long, note: String)
+
+    // Private note stays in Room only - no cloud path touches this column.
+    @Query("UPDATE sessions SET privateNote = :privateNote WHERE id = :id")
+    suspend fun setPrivateNote(id: Long, privateNote: String)
+
     @Query("SELECT * FROM sessions WHERE id = :id")
     suspend fun byId(id: Long): SessionEntity?
 

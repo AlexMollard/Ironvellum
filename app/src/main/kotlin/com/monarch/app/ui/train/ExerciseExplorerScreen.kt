@@ -5,6 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.draw.clip
 import com.monarch.app.ui.theme.ChakraPetch
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -40,6 +44,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.Repository
 import com.monarch.app.domain.Exercise
 import com.monarch.app.domain.ExerciseHistory
+import com.monarch.app.domain.SetRecords
+import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.Skills
 import com.monarch.app.ui.components.ExercisePickerPanel
 import com.monarch.app.ui.components.MonarchButton
@@ -51,10 +57,11 @@ import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
@@ -63,21 +70,34 @@ data class ExplorerUi(
     val exercises: List<Exercise> = emptyList(),
     val selected: Exercise? = null,
     val history: ExerciseHistory? = null,
+    // Best-ever performance per set position (0-based setIndex) of the selected movement.
+    val setRecords: Map<Int, SetRecords.Record> = emptyMap(),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
 
-    private val selected = MutableStateFlow<Exercise?>(null)
+    // Bodyweight comes from the same stat feed the session screen uses; no second path.
+    private val bodyweight = repo.observeStats().map { it.firstOrNull()?.weightKg }
 
+    private val selected = MutableStateFlow<Exercise?>(null)
     val ui: StateFlow<ExplorerUi> = combine(
         repo.observeExercises(),
         selected,
         selected.flatMapLatest { ex ->
             if (ex == null) flowOf(null) else repo.observeExerciseHistory(ex.id)
         },
-    ) { exercises, sel, history ->
-        ExplorerUi(exercises, sel, history)
+        repo.observeHistory(),
+        bodyweight,
+    ) { exercises, sel, history, allHistory, bw ->
+        val records = if (sel == null || bw == null) {
+            emptyMap()
+        } else {
+            SetRecords.records(allHistory, bw)
+                .filterKeys { (name, _) -> name.equals(sel.name, ignoreCase = true) }
+                .mapKeys { (_, record) -> record.setIndex }
+        }
+        ExplorerUi(exercises, sel, history, records)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExplorerUi())
 
     fun pick(exercise: Exercise) {
@@ -193,6 +213,8 @@ fun ExerciseExplorerScreen(
                 ScoreChart(history)
                 Spacer(Modifier.height(14.dp))
                 RepsChart(history)
+                Spacer(Modifier.height(14.dp))
+                SetRecordPanel(ui.setRecords)
                 SectionHeader("Set Log")
                 SetLog(history)
             }
@@ -340,6 +362,73 @@ private fun RepsChart(history: ExerciseHistory) {
             style = MaterialTheme.typography.labelSmall,
             color = MonarchColors.InkMuted,
         )
+    }
+}
+
+/** One line per set position: the standing PR for THAT slot of the movement. */
+@Composable
+private fun SetRecordPanel(records: Map<Int, SetRecords.Record>) {
+    SystemWindow(Modifier.fillMaxWidth()) {
+        Text(
+            "PER-SET RECORDS",
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.SystemGreen,
+            letterSpacing = 2.sp,
+        )
+        Spacer(Modifier.height(6.dp))
+        if (records.isEmpty()) {
+            Text(
+                "No completed sets yet — records appear once you train.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MonarchColors.InkMuted,
+            )
+        } else {
+            records.keys.sorted().forEach { setIndex ->
+                val record = records[setIndex] ?: return@forEach
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "SET ${setIndex + 1}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.InkMuted,
+                    )
+                    Text(
+                        "${record.reps}×" + (record.weightKg?.let { "${formatKg(it)} kg" } ?: "BW"),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MonarchColors.Ink,
+                    )
+                    Column(horizontalAlignment = Alignment.End) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Filled.Bolt,
+                                contentDescription = null,
+                                tint = MonarchColors.SovereignGold,
+                                modifier = Modifier.height(12.dp),
+                            )
+                            Spacer(Modifier.width(2.dp))
+                            Text(
+                                "${record.score.toInt()}",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontFamily = ChakraPetch,
+                                color = MonarchColors.SovereignGold,
+                            )
+                        }
+                        Text(
+                            formatDate(record.achievedAtMs),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MonarchColors.InkMuted,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 

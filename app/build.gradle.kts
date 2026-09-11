@@ -1,7 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
+}
+
+// Backend config lives in local.properties (gitignored). The publishable key is
+// safe in a shipped APK — row-level security is what protects the data — but
+// keeping it out of the repo means a fork gets its own project, not ours.
+val backend = Properties().apply {
+    rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
 android {
@@ -14,6 +24,25 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
+
+        buildConfigField(
+            "String",
+            "SUPABASE_URL",
+            "\"${backend.getProperty("supabase.url", "")}\"",
+        )
+        buildConfigField(
+            "String",
+            "SUPABASE_KEY",
+            "\"${backend.getProperty("supabase.key", "")}\"",
+        )
+        // Google sign-in needs the OAuth *Web* client id (not the Android one):
+        // Credential Manager sends it as the audience, and Supabase validates
+        // the resulting ID token against the same id. Blank disables the button.
+        buildConfigField(
+            "String",
+            "GOOGLE_WEB_CLIENT_ID",
+            "\"${backend.getProperty("google.webClientId", "")}\"",
+        )
     }
 
     buildTypes {
@@ -27,6 +56,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 }
 
@@ -46,6 +76,13 @@ dependencies {
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.work)
+    implementation(platform(libs.supabase.bom))
+    implementation(libs.supabase.auth)
+    implementation(libs.supabase.postgrest)
+    implementation(libs.ktor.client.okhttp)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services)
+    implementation(libs.google.id)
     ksp(libs.androidx.room.compiler)
 
     debugImplementation(libs.androidx.ui.tooling)
