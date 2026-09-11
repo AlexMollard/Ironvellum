@@ -41,7 +41,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monarch.app.domain.TitleDef
 import com.monarch.app.domain.Titles
-import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.theme.ChakraPetch
@@ -105,81 +104,23 @@ fun DeedsBoard(
         mutableStateOf(setOfNotNull(nearestCategory))
     }
     val searching = query.text.isNotBlank()
+    // Claimed showcase starts collapsed: on a phone the five sealed cards
+    // alone push the category sections off-screen. Wearing stays one tap away.
+    var claimedOpen by remember { mutableStateOf(false) }
+
+    // Closest unearned deed — the thing worth chasing today, shown inside the
+    // merged hero panel under every filter.
+    val next = locked
+        .map { it to progressOf.getValue(it.id) }
+        .maxByOrNull { it.second.fraction }
 
     LazyColumn(
         modifier,
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // --- fixed heads: always visible regardless of filter ---------------
-        item(key = "worn") {
-            Column {
-                SectionHeader("Worn Title")
-                SystemWindow(Modifier.fillMaxWidth()) {
-                    Column(Modifier.fillMaxWidth()) {
-                        Text(
-                            equipped?.name?.uppercase() ?: "NO TITLE WORN",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = if (equipped != null) MonarchColors.SovereignGold else MonarchColors.InkMuted,
-                        )
-                        Text(
-                            equipped?.description ?: "Earn a deed below, then wear it.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MonarchColors.InkMuted,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                            CodexStat("HELD", "${earned.size}/${Titles.ALL.size}")
-                            CodexStat("CAMPAIGNS", ledger.workouts.toString())
-                            CodexStat("SETS", ledger.sets.toString())
-                            CodexStat("REPS", ledger.reps.toString())
-                        }
-                    }
-                }
-            }
-        }
-
-        // closest unearned deed — the thing worth chasing today
-        val next = locked
-            .map { it to progressOf.getValue(it.id) }
-            .maxByOrNull { it.second.fraction }
-        if (next != null) {
-            item(key = "closest") {
-                Column {
-                    SectionHeader("Closest Deed")
-                    ClosestDeedCard(next.first, next.second)
-                }
-            }
-        }
-
-        if (earned.isNotEmpty()) {
-            item(key = "claimed-grid") {
-                Column {
-                    SectionHeader("Claimed")
-                    earned.chunked(2).forEach { pair ->
-                        Row(
-                            Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            pair.forEach { def ->
-                                Box(Modifier.weight(1f)) {
-                                    SealCard(
-                                        def = def,
-                                        unlockedAtMs = unlocked[def.id],
-                                        worn = def.id == equippedId,
-                                        onClick = { onEquip(def.id) },
-                                    )
-                                }
-                            }
-                            if (pair.size == 1) Spacer(Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-        }
-
-        // --- search + status rail -------------------------------------------
+        // Controls sit ABOVE the hero on purpose: a filter you cannot see
+        // without scrolling is a filter nobody uses. They are plain items in
+        // this LazyColumn — exactly one scroll container on the screen.
         item(key = "search") {
             DeedSearchField(query, onQueryChange = { query = it })
         }
@@ -197,6 +138,81 @@ fun DeedsBoard(
                         selected = filter == f,
                         onClick = { filter = f },
                     )
+                }
+            }
+        }
+
+        // --- merged hero: what you wear + what to chase next, one panel -----
+        item(key = "hero") {
+            SystemWindow(Modifier.fillMaxWidth()) {
+                Column(Modifier.fillMaxWidth()) {
+                    Text(
+                        equipped?.name?.uppercase() ?: "NO TITLE WORN",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = if (equipped != null) MonarchColors.SovereignGold else MonarchColors.InkMuted,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        equipped?.description ?: "Earn a deed below, then wear it.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MonarchColors.InkMuted,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+                        CodexStat("HELD", "${earned.size}/${Titles.ALL.size}")
+                        CodexStat("CAMPAIGNS", ledger.workouts.toString())
+                        CodexStat("SETS", ledger.sets.toString())
+                        CodexStat("REPS", ledger.reps.toString())
+                    }
+                    if (next != null) {
+                        Spacer(Modifier.height(10.dp))
+                        // Slim divider between the worn half and the chase half.
+                        ProgressTrack(0.02f, tall = false)
+                        Spacer(Modifier.height(8.dp))
+                        ClosestDeedCard(next.first, next.second)
+                    }
+                }
+            }
+        }
+
+        // --- claimed showcase, collapsed by default --------------------------
+        if (earned.isNotEmpty()) {
+            item(key = "claimed-head") {
+                CategoryHeader(
+                    category = "CLAIMED ${earned.size}",
+                    claimed = earned.size,
+                    total = earned.size,
+                    fraction = 1f,
+                    open = claimedOpen,
+                    onClick = { claimedOpen = !claimedOpen },
+                )
+            }
+            if (claimedOpen) {
+                item(key = "claimed-grid") {
+                    Column {
+                        earned.chunked(2).forEach { pair ->
+                            Row(
+                                Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                pair.forEach { def ->
+                                    Box(Modifier.weight(1f)) {
+                                        SealCard(
+                                            def = def,
+                                            unlockedAtMs = unlocked[def.id],
+                                            worn = def.id == equippedId,
+                                            onClick = { onEquip(def.id) },
+                                        )
+                                    }
+                                }
+                                if (pair.size == 1) Spacer(Modifier.weight(1f))
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -255,41 +271,42 @@ fun DeedsBoard(
 
 @Composable
 private fun ClosestDeedCard(def: TitleDef, progress: Titles.Progress) {
-    SystemWindow(Modifier.fillMaxWidth()) {
-        Column(Modifier.fillMaxWidth()) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    def.name,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontFamily = ChakraPetch,
-                    color = MonarchColors.Ink,
-                )
-                Text(
-                    "${(progress.fraction * 100).toInt()}%",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontFamily = ChakraPetch,
-                    color = MonarchColors.SystemGreen,
-                )
-            }
+    // Compact by design: this now lives INSIDE the merged hero panel, not in
+    // its own section, so it must stay a few lines tall.
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
-                def.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MonarchColors.InkMuted,
-            )
-            Spacer(Modifier.height(8.dp))
-            ProgressTrack(progress.fraction, tall = true)
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "${progress.current} / ${progress.target} · ${progress.remaining} ${progress.unit} to go",
-                style = MaterialTheme.typography.labelMedium,
+                def.name.uppercase(),
+                style = MaterialTheme.typography.titleSmall,
                 fontFamily = ChakraPetch,
-                color = MonarchColors.SovereignGold,
+                fontWeight = FontWeight.Bold,
+                color = MonarchColors.Ink,
+                maxLines = 1,
+                softWrap = false,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f, fill = false),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                "${(progress.fraction * 100).toInt()}%",
+                style = MaterialTheme.typography.titleSmall,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.SystemGreen,
             )
         }
+        Spacer(Modifier.height(6.dp))
+        ProgressTrack(progress.fraction, tall = false)
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "${progress.current} / ${progress.target} · ${progress.remaining} ${progress.unit} to go",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.SovereignGold,
+        )
     }
 }
 

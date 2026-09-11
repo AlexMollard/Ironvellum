@@ -19,6 +19,9 @@ data class ProfileDto(
     @SerialName("streak_days") val streakDays: Int = 0,
     @SerialName("titles_count") val titlesCount: Int = 0,
     @SerialName("lifetime_strength") val lifetimeStrength: Long = 0,
+    // The worn title id (null when bare). Names resolve locally via
+    // Titles.byId — never shipped over the wire.
+    @SerialName("current_title_id") val currentTitleId: String? = null,
 )
 
 /** Minimal projection when we only need the generated cloud id back. */
@@ -74,6 +77,8 @@ data class LeaderboardDto(
     @SerialName("titles_count") val titlesCount: Int,
     @SerialName("lifetime_strength") val lifetimeStrength: Long,
     @SerialName("sessions_last_7d") val sessionsLast7d: Int,
+    // The worn title id (null when bare); resolved to a name locally.
+    @SerialName("current_title_id") val currentTitleId: String? = null,
 )
 
 @Serializable
@@ -115,6 +120,9 @@ data class FeedEntry(
     val strengthScore: Int,
     val setsDone: Int,
     val repsDone: Int,
+    val currentTitleId: String?,
+    val likeCount: Int,
+    val likedByMe: Boolean,
 )
 
 @Serializable
@@ -131,6 +139,11 @@ data class FeedEntryDto(
     @SerialName("strength_score") val strengthScore: Int,
     @SerialName("sets_done") val setsDone: Int,
     @SerialName("reps_done") val repsDone: Long,
+    // The worn title id (null when bare).
+    @SerialName("current_title_id") val currentTitleId: String? = null,
+    // Server-computed like aggregates: one request per page, not per card.
+    @SerialName("like_count") val likeCount: Int = 0,
+    @SerialName("liked_by_me") val likedByMe: Boolean = false,
 )
 
 @Serializable
@@ -147,6 +160,7 @@ data class LeaderboardRow(
     val titlesCount: Int,
     val lifetimeStrength: Long,
     val sessionsLast7d: Int,
+    val currentTitleId: String?,
 )
 
 data class FriendRow(
@@ -154,6 +168,32 @@ data class FriendRow(
     val displayName: String,
     val accepted: Boolean,
     val incoming: Boolean,
+)
+
+/** One hunter who liked a session, newest like first. */
+data class Liker(
+    val userId: String,
+    val displayName: String,
+    val likedAtMs: Long,
+)
+
+@Serializable
+data class SessionLikeDto(
+    @SerialName("session_id") val sessionId: String,
+    @SerialName("user_id") val userId: String,
+)
+
+/** Decode-only shape for the profiles embed on session_likes. */
+@Serializable
+data class LikerRowDto(
+    @SerialName("user_id") val userId: String,
+    @SerialName("created_at") val createdAt: String,
+    @SerialName("profiles") val profile: LikerProfileDto? = null,
+)
+
+@Serializable
+data class LikerProfileDto(
+    @SerialName("display_name") val displayName: String,
 )
 
 data class FriendSession(

@@ -22,13 +22,22 @@ import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.WorkspacePremium
+import androidx.compose.material.icons.outlined.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -48,8 +58,12 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.cloud.Cloud
 import com.monarch.app.data.cloud.CloudSync
 import com.monarch.app.data.cloud.FeedEntry
+import com.monarch.app.data.cloud.FriendRow
+import com.monarch.app.data.cloud.Liker
+import com.monarch.app.domain.Titles
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
+import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.monarchAccount
 import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.theme.ChakraPetch
@@ -73,6 +87,13 @@ data class FeedUi(
     /** True once a page came back short of the limit — the board's end is reached. */
     val exhausted: Boolean = false,
     val error: String? = null,
+    /** Ally rows for ADD ALLY buttons; fetched with the feed, never per card. */
+    val friends: Map<String, FriendRow> = emptyMap(),
+    /** Optimistically-sent ally requests, settled from the server once it answers. */
+    val requestedAlly: Set<String> = emptySet(),
+    val likers: Map<String, List<Liker>> = emptyMap(),
+    val likersErrors: Map<String, String> = emptyMap(),
+    val likersLoadingSessionId: String? = null,
 )
 
 class FeedViewModel(
@@ -111,7 +132,11 @@ class FeedViewModel(
         load()
     }
 
-    fun load() {
+    /**
+     * [force] is true only from pull-to-refresh: the backing reads are cached,
+     * so routine recomposition and paging never re-hit the server.
+     */
+    fun load(force: Boolean = false) {
         viewModelScope.launch {
             _ui.value = _ui.value.copy(loading = true, error = null, exhausted = false)
             cloudSync.feed(limit = pageSize)
@@ -121,6 +146,68 @@ class FeedViewModel(
                 }
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
             _ui.value = _ui.value.copy(loading = false)
+            // Ally rows ride along on the same refresh: one cached friends read
+            // covers every card's ADD ALLY button.
+            cloudSync.friends(force = force).onSuccess { rows ->
+                _ui.value = _ui.value.copy(friends = rows.associateBy { it.userId })
+            }
+        }
+    }
+
+    /** Optimistic like toggle: the count flips now, the network call reconciles. */
+    fun toggleLike(entry: FeedEntry) {
+        applyLike(entry.sessionId, !entry.likedByMe)
+        viewModelScope.launch {
+            val call = if (entry.likedByMe) cloudSync.unlike(entry.sessionId) else cloudSync.like(entry.sessionId)
+            call.onFailure {
+                // Roll back so a refused write never leaves a phantom heart.
+                applyLike(entry.sessionId, entry.likedByMe)
+            }
+        }
+    }
+
+    private fun applyLike(sessionId: String, liked: Boolean) {
+        _ui.value = _ui.value.copy(
+            entries = _ui.value.entries.map { current ->
+                if (current.sessionId != sessionId) {
+                    current
+                } else {
+                    current.copy(
+                        likedByMe = liked,
+                        likeCount = (current.likeCount + if (liked) 1 else -1).coerceAtLeast(0),
+                    )
+                }
+            },
+        )
+    }
+
+    /** Owner-only: fetch who liked a session, once — repeat opens read the cache. */
+    fun loadLikers(sessionId: String) {
+        if (sessionId in _ui.value.likers || sessionId in _ui.value.likersErrors) return
+        if (_ui.value.likersLoadingSessionId == sessionId) return
+        _ui.value = _ui.value.copy(likersLoadingSessionId = sessionId)
+        viewModelScope.launch {
+            cloudSync.likers(sessionId)
+                .onSuccess { names -> _ui.value = _ui.value.copy(likers = _ui.value.likers + (sessionId to names)) }
+                .onFailure { reason -> _ui.value = _ui.value.copy(likersErrors = _ui.value.likersErrors + (sessionId to reason.reason())) }
+            _ui.value = _ui.value.copy(likersLoadingSessionId = null)
+        }
+    }
+
+    /** Send an ally request from a feed card; optimistic pending, then settled from server truth. */
+    fun addAlly(userId: String) {
+        // Any existing row means already requested, incoming, or allies — a second
+        // tap must never fire another insert.
+        if (userId in _ui.value.friends || userId in _ui.value.requestedAlly) return
+        _ui.value = _ui.value.copy(requestedAlly = _ui.value.requestedAlly + userId)
+        viewModelScope.launch {
+            cloudSync.requestFriendById(userId)
+                .onSuccess {
+                    cloudSync.friends(force = true).onSuccess { rows ->
+                        _ui.value = _ui.value.copy(friends = rows.associateBy { it.userId })
+                    }
+                }
+                .onFailure { _ui.value = _ui.value.copy(requestedAlly = _ui.value.requestedAlly - userId) }
         }
     }
 
@@ -198,9 +285,17 @@ fun FeedScreen(
             !ui.configured -> NotConfigured()
             !ui.signedIn -> NotSignedIn()
             ui.loading && ui.entries.isEmpty() -> LoadingPanel()
-            ui.entries.isEmpty() && err != null -> ErrorPanel(err, onRetry = viewModel::load)
-            ui.entries.isEmpty() -> EmptyFeed(onRefresh = viewModel::load)
-            else -> Feed(ui, viewModel::load, viewModel::loadMore, onOpenHunter)
+            ui.entries.isEmpty() && err != null -> ErrorPanel(err, onRetry = { viewModel.load(force = true) })
+            ui.entries.isEmpty() -> EmptyFeed(onRefresh = { viewModel.load(force = true) })
+            else -> Feed(
+                ui,
+                onRefresh = { viewModel.load(force = true) },
+                onLoadMore = viewModel::loadMore,
+                onOpenHunter = onOpenHunter,
+                onToggleLike = viewModel::toggleLike,
+                onShowLikers = viewModel::loadLikers,
+                onAddAlly = viewModel::addAlly,
+            )
         }
         Spacer(Modifier.height(28.dp))
     }
@@ -302,12 +397,16 @@ private fun ErrorPanel(reason: String, onRetry: () -> Unit) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Feed(
     ui: FeedUi,
     onRefresh: () -> Unit,
     onLoadMore: () -> Unit,
     onOpenHunter: (String, String) -> Unit,
+    onToggleLike: (FeedEntry) -> Unit,
+    onShowLikers: (String) -> Unit,
+    onAddAlly: (String) -> Unit,
 ) {
     Row(
         Modifier.fillMaxWidth(),
@@ -322,11 +421,11 @@ private fun Feed(
             color = if (ui.error != null) MonarchColors.DangerRed else MonarchColors.InkMuted,
             modifier = Modifier.weight(1f),
         )
-        RefreshLink(onClick = onRefresh, label = "Refresh")
     }
     Spacer(Modifier.height(10.dp))
 
     val listState = rememberLazyListState()
+    val pullState = rememberPullToRefreshState()
     // One trigger at the tail: near the last item, ask for the next page; the
     // VM's guards make repeated triggers harmless.
     val nearEnd by remember {
@@ -339,9 +438,36 @@ private fun Feed(
         if (nearEnd) onLoadMore()
     }
 
-    LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    // Swipe-down is the idiom people expect from a feed; the explicit control
+    // survives only in the empty/error states, where there is no list to pull.
+    PullToRefreshBox(
+        isRefreshing = ui.loading,
+        onRefresh = onRefresh,
+        modifier = Modifier.fillMaxSize(),
+        indicator = {
+            PullToRefreshDefaults.Indicator(
+                state = pullState,
+                isRefreshing = ui.loading,
+                modifier = Modifier.align(Alignment.TopCenter),
+                containerColor = MonarchColors.Vault,
+                color = MonarchColors.EmeraldBright,
+            )
+        },
+        state = pullState,
+    ) {
+        LazyColumn(state = listState, verticalArrangement = Arrangement.spacedBy(10.dp)) {
         items(ui.entries, key = { it.sessionId }) { entry ->
-            FeedCard(entry = entry, isMe = entry.userId == ui.myUserId, onOpenHunter = onOpenHunter)
+            FeedCard(
+                entry = entry,
+                isMe = entry.userId == ui.myUserId,
+                ally = allyStateFor(entry.userId, ui),
+                likers = ui.likers[entry.sessionId],
+                likersError = ui.likersErrors[entry.sessionId],
+                onOpenHunter = onOpenHunter,
+                onToggleLike = onToggleLike,
+                onShowLikers = onShowLikers,
+                onAddAlly = onAddAlly,
+            )
         }
         if (ui.loadingMore) {
             item(key = "loading-more") {
@@ -369,6 +495,18 @@ private fun Feed(
                 )
             }
         }
+        }
+    }
+}
+internal enum class AllyState { None, Pending, Incoming, Ally }
+
+/** Resolve a hunter's ally button state from the cached friends rows plus optimistic requests. */
+private fun allyStateFor(userId: String, ui: FeedUi): AllyState {
+    val row = ui.friends[userId] ?: return if (userId in ui.requestedAlly) AllyState.Pending else AllyState.None
+    return when {
+        row.accepted -> AllyState.Ally
+        row.incoming -> AllyState.Incoming
+        else -> AllyState.Pending // a row we requested and they have not accepted yet
     }
 }
 
@@ -376,9 +514,16 @@ private fun Feed(
 private fun FeedCard(
     entry: FeedEntry,
     isMe: Boolean,
+    ally: AllyState,
+    likers: List<Liker>?,
+    likersError: String?,
     onOpenHunter: (String, String) -> Unit,
+    onToggleLike: (FeedEntry) -> Unit,
+    onShowLikers: (String) -> Unit,
+    onAddAlly: (String) -> Unit,
 ) {
     val accent = if (isMe) MonarchColors.SovereignGold else MonarchColors.Emerald
+    var showLikers by remember { mutableStateOf(false) }
     SystemWindow(Modifier.fillMaxWidth(), accent = accent) {
         Column {
             // Hunter strip: tap anywhere here to open the hunter's profile.
@@ -417,6 +562,18 @@ private fun FeedCard(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    // Worn title resolved locally from the id; omitted entirely when bare.
+                    entry.currentTitleId?.let { Titles.byId(it)?.name }?.let { title ->
+                        Text(
+                            title,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            color = MonarchColors.SovereignGold,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                 }
                 // Level badge.
                 Row(
@@ -435,6 +592,43 @@ private fun FeedCard(
                         fontWeight = FontWeight.SemiBold,
                         color = MonarchColors.SystemGreen,
                     )
+                }
+            }
+            // Explicit ADD ALLY action beside the level badge: hidden for yourself,
+            // settled (PENDING / ALLY) once a row exists so a second tap never fires.
+            if (!isMe) {
+                val (label, tint) = when (ally) {
+                    AllyState.None -> "ADD ALLY" to MonarchColors.EmeraldBright
+                    AllyState.Pending -> "PENDING" to MonarchColors.InkMuted
+                    AllyState.Incoming -> "PENDING" to MonarchColors.SovereignGold
+                    AllyState.Ally -> "ALLY" to MonarchColors.SovereignGold
+                }
+                Box(
+                    Modifier
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .background(MonarchColors.Abyss)
+                        .border(1.dp, if (ally == AllyState.None) MonarchColors.Emerald else MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
+                        .clickable(enabled = ally == AllyState.None) { onAddAlly(entry.userId) }
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Icon(
+                            Icons.Outlined.PersonAdd,
+                            contentDescription = null,
+                            tint = tint,
+                            modifier = Modifier.size(12.dp),
+                        )
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            fontWeight = FontWeight.SemiBold,
+                            color = tint,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
                 }
             }
 
@@ -475,6 +669,120 @@ private fun FeedCard(
 
             Spacer(Modifier.height(10.dp))
             StatStrip(entry)
+
+            Spacer(Modifier.height(8.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // Like toggle: optimistic count, heart reflects likedByMe instantly.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .background(MonarchColors.Abyss)
+                        .border(1.dp, if (entry.likedByMe) MonarchColors.SovereignGold else MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
+                        .clickable { onToggleLike(entry) }
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                ) {
+                    Icon(
+                        if (entry.likedByMe) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
+                        contentDescription = if (entry.likedByMe) "Liked" else "Like",
+                        tint = if (entry.likedByMe) MonarchColors.SovereignGold else MonarchColors.InkMuted,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text(
+                        "${entry.likeCount}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (entry.likedByMe) MonarchColors.SovereignGold else MonarchColors.Ink,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
+                // Owner-only: the count's story is theirs to read. Non-owners get no likers list.
+                if (isMe) {
+                    Text(
+                        "WHO CHEERED",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.EmeraldBright,
+                        letterSpacing = MonarchTracking.InlineLabel,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .clickable {
+                                showLikers = true
+                                onShowLikers(entry.sessionId)
+                            }
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                    )
+                }
+            }
+        }
+    }
+
+    if (showLikers) {
+        Dialog(onDismissRequest = { showLikers = false }) {
+            SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.SovereignGold) {
+                Text(
+                    "CHEERS FROM THE GUILD",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    color = MonarchColors.SovereignGold,
+                    letterSpacing = MonarchTracking.SectionHeader,
+                )
+                Spacer(Modifier.height(10.dp))
+                when {
+                    likers == null && likersError == null -> Text(
+                        "Summoning the cheers…",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.InkMuted,
+                    )
+                    likersError != null -> Text(
+                        "The System refused: $likersError",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MonarchColors.DangerRed,
+                    )
+                    likers!!.isEmpty() -> Text(
+                        "No cheers yet — your deeds still speak for themselves.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MonarchColors.InkMuted,
+                    )
+                    else -> likers.forEach { liker ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 4.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                liker.displayName,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontFamily = ChakraPetch,
+                                color = MonarchColors.Ink,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                relativeTime(liker.likedAtMs),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MonarchColors.InkMuted,
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(12.dp))
+                MonarchButton(label = "Close", onClick = { showLikers = false }, modifier = Modifier.fillMaxWidth())
+            }
         }
     }
 }

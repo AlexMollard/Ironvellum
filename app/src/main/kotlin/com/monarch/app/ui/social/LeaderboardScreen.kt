@@ -3,6 +3,7 @@ package com.monarch.app.ui.social
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
@@ -21,6 +23,9 @@ import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -32,6 +37,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -44,6 +51,7 @@ import com.monarch.app.data.cloud.Cloud
 import com.monarch.app.data.cloud.CloudSync
 import com.monarch.app.data.cloud.FriendSession
 import com.monarch.app.data.cloud.LeaderboardRow
+import com.monarch.app.domain.Titles
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
@@ -70,6 +78,48 @@ data class LeaderboardUi(
     val friendSessions: Map<String, List<FriendSession>> = emptyMap(),
     val friendSessionErrors: Map<String, String> = emptyMap(),
 )
+
+/** Pickable ranking metric; each entry owns its sort key and display formatting. */
+private enum class BoardMetric(val label: String) {
+    Xp("XP"),
+    Level("LEVEL"),
+    Streak("STREAK"),
+    Titles("TITLES"),
+    Strength("STRENGTH"),
+    Last7("7-DAY"),
+    ;
+
+    /** The raw value this metric ranks by. */
+    fun value(row: LeaderboardRow): Long = when (this) {
+        Xp -> row.totalXp
+        Level -> row.level.toLong()
+        Streak -> row.streakDays.toLong()
+        Titles -> row.titlesCount.toLong()
+        Strength -> row.lifetimeStrength
+        Last7 -> row.sessionsLast7d.toLong()
+    }
+
+    /** The big per-row display of this metric's value. */
+    fun format(row: LeaderboardRow): String = when (this) {
+        Xp -> "${row.totalXp} XP"
+        Level -> "LV ${row.level}"
+        Streak -> "${row.streakDays} DAY"
+        Titles -> "${row.titlesCount} TITLES"
+        Strength -> "STR ${row.lifetimeStrength}"
+        Last7 -> "${row.sessionsLast7d} IN 7D"
+    }
+}
+
+/** Local re-sort for the selected metric; XP breaks ties, then name for stability. No network call. */
+private fun sortRows(rows: List<LeaderboardRow>, metric: BoardMetric): List<LeaderboardRow> = rows.sortedWith(
+    compareByDescending<LeaderboardRow> { metric.value(it) }
+        .thenByDescending { it.totalXp }
+        .thenBy { it.displayName },
+)
+
+/** Worn title name resolved locally from the id; null when bare so callers omit the segment cleanly. */
+private fun wornTitle(currentTitleId: String?): String? =
+    currentTitleId?.let { Titles.byId(it)?.name }
 
 class LeaderboardViewModel(
     private val cloudSync: CloudSync,
@@ -166,7 +216,35 @@ fun LeaderboardScreen(
             !ui.signedIn -> NotSignedIn()
             ui.loading && ui.rows.isEmpty() -> LoadingPanel()
             ui.rows.isEmpty() && ui.error == null -> EmptyBoard(onRefresh = viewModel::load)
-            else -> Board(ui, viewModel::toggleFriend, viewModel::load, onOpenFriend)
+            else -> {
+                // Pull-to-refresh replaces the old REFRESH button for the normal signed-in board.
+                // The gesture needs content to grab: in the empty/error states there is nothing to
+                // pull (or the list just failed), so those states keep an explicit retry link.
+                val pullState = remember { PullToRefreshState() }
+                PullToRefreshBox(
+                    isRefreshing = ui.loading,
+                    onRefresh = { viewModel.load() },
+                    state = pullState,
+                    modifier = Modifier.fillMaxWidth(),
+                    indicator = {
+                        // House palette: dark vault plate with emerald stroke instead of default Material.
+                        PullToRefreshDefaults.Indicator(
+                            state = pullState,
+                            isRefreshing = ui.loading,
+                            modifier = Modifier.align(Alignment.TopCenter),
+                            containerColor = MonarchColors.VaultHigh,
+                            color = MonarchColors.EmeraldBright,
+                        )
+                    },
+                ) {
+                    // PullToRefreshBox's content slot is a Box: emitted straight
+                    // into it, every row stacks at the same origin — the podium
+                    // vanished under the pinned self-row. A Column restores flow.
+                    Column(Modifier.fillMaxWidth()) {
+                        Board(ui, viewModel::toggleFriend, viewModel::load, onOpenFriend)
+                    }
+                }
+            }
         }
 
         Spacer(Modifier.height(28.dp))
@@ -243,6 +321,7 @@ private fun EmptyBoard(onRefresh: () -> Unit) {
             color = MonarchColors.InkMuted,
         )
         Spacer(Modifier.height(10.dp))
+        // Kept explicitly: an empty board has nothing to pull down on.
         RefreshLink(onClick = onRefresh, label = "Check again")
     }
 }
@@ -254,26 +333,56 @@ private fun Board(
     onRefresh: () -> Unit,
     onOpenFriend: (String, String) -> Unit,
 ) {
+    var metric by remember { mutableStateOf(BoardMetric.Xp) }
+    val sorted = remember(ui.rows, metric) { sortRows(ui.rows, metric) }
+    val podiumCount = minOf(3, sorted.size)
+    val rest = sorted.drop(podiumCount)
+    // How many non-podium rows we show before collapsing into the pinned self-row.
+    val visibleLimit = 8
+    val myIndex = sorted.indexOfFirst { it.userId == ui.myUserId }
+    val myRank = if (myIndex >= 0) myIndex + 1 else 0
+    val meVisible = myIndex in 0 until (podiumCount + visibleLimit)
+    val visible = rest.take(visibleLimit)
+
     Row(
         Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            if (ui.error != null) "The board flickered: ${ui.error}" else "Standings, newest push first",
+            if (ui.error != null) "The board flickered: ${ui.error}" else "Standings by ${metric.label.lowercase()}",
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = if (ui.error != null) MonarchColors.DangerRed else MonarchColors.InkMuted,
             modifier = Modifier.weight(1f),
         )
-        RefreshLink(onClick = onRefresh, label = "Refresh")
+        // Retry link only survives in the error state; pull-to-refresh covers the healthy path.
+        if (ui.error != null) RefreshLink(onClick = onRefresh, label = "Retry")
     }
     Spacer(Modifier.height(10.dp))
 
-    ui.rows.forEachIndexed { index, row ->
+    MetricChips(selected = metric, onPick = { metric = it })
+    Spacer(Modifier.height(12.dp))
+
+    Podium(sorted.take(podiumCount), metric, ui.myUserId)
+    Spacer(Modifier.height(14.dp))
+
+    if (sorted.size == 1) {
+        Text(
+            "You stand alone on the board. Recruit allies from the GUILD tab to raise the stakes.",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+            modifier = Modifier.padding(bottom = 10.dp),
+        )
+    }
+
+    visible.forEachIndexed { index, row ->
         RankRow(
-            rank = index + 1,
+            rank = podiumCount + index + 1,
             row = row,
+            metric = metric,
+            leaderValue = metric.value(sorted.first()) ,
             isMe = row.userId == ui.myUserId,
             expanded = ui.openFriendUserId == row.userId,
             sessions = ui.friendSessions[row.userId],
@@ -283,12 +392,250 @@ private fun Board(
         )
         Spacer(Modifier.height(10.dp))
     }
+
+    // Always answer "where am I": if the board is long enough that my row was collapsed
+    // out of the visible slice, pin my actual rank to the bottom.
+    if (!meVisible && myRank > 0) {
+        val myRow = sorted[myIndex]
+        Spacer(Modifier.height(4.dp))
+        Text(
+            "— YOUR STANDING —",
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.SovereignGold,
+            letterSpacing = MonarchTracking.InlineLabel,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(6.dp))
+        RankRow(
+            rank = myRank,
+            row = myRow,
+            metric = metric,
+            leaderValue = metric.value(sorted.first()),
+            isMe = true,
+            expanded = false,
+            sessions = null,
+            sessionError = null,
+            onToggle = { onToggleFriend(myRow.userId) },
+            onOpenFriend = { onOpenFriend(myRow.userId, myRow.displayName) },
+        )
+    }
+}
+
+/** Horizontally scrollable chip rail; labels never wrap. */
+@Composable
+private fun MetricChips(selected: BoardMetric, onPick: (BoardMetric) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState()),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        BoardMetric.entries.forEach { candidate ->
+            val active = candidate == selected
+            Text(
+                candidate.label,
+                maxLines = 1,
+                softWrap = false,
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                color = if (active) MonarchColors.Abyss else MonarchColors.InkMuted,
+                modifier = Modifier
+                    .clip(CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+                    .background(if (active) MonarchColors.SovereignGold else Color(0xFF141A18))
+                    .border(
+                        1.dp,
+                        if (active) MonarchColors.SovereignGold else MonarchColors.Rune,
+                        CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                    )
+                    .clickable { onPick(candidate) }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
+    }
+}
+
+/** Three-column podium; missing hunters render as open ally slots, never blank boxes. */
+@Composable
+private fun Podium(
+    top: List<LeaderboardRow>,
+    metric: BoardMetric,
+    myUserId: String?,
+) {
+    // Visual order silver / gold / bronze; plinth heights and emblem sizes step down from the crown.
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        PodiumSlot(
+            row = top.getOrNull(1),
+            rank = 2,
+            metric = metric,
+            isMe = top.getOrNull(1)?.userId == myUserId,
+            plinthHeight = 64.dp,
+            emblemSize = 24.sp,
+            modifier = Modifier.weight(1f),
+        )
+        PodiumSlot(
+            row = top.getOrNull(0),
+            rank = 1,
+            metric = metric,
+            isMe = top.getOrNull(0)?.userId == myUserId,
+            plinthHeight = 92.dp,
+            emblemSize = 32.sp,
+            modifier = Modifier.weight(1f),
+        )
+        PodiumSlot(
+            row = top.getOrNull(2),
+            rank = 3,
+            metric = metric,
+            isMe = top.getOrNull(2)?.userId == myUserId,
+            plinthHeight = 52.dp,
+            emblemSize = 20.sp,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+@Composable
+private fun PodiumSlot(
+    row: LeaderboardRow?,
+    rank: Int,
+    metric: BoardMetric,
+    isMe: Boolean,
+    plinthHeight: androidx.compose.ui.unit.Dp,
+    emblemSize: androidx.compose.ui.unit.TextUnit,
+    modifier: Modifier = Modifier,
+) {
+    val accent = when (rank) {
+        1 -> MonarchColors.SovereignGold
+        2 -> MonarchColors.EmeraldBright
+        else -> Color(0xFFB08A5A) // bronze — no palette token exists for it
+    }
+    val emblem = when (rank) {
+        1 -> "\u2654" // white king — the sovereign seat
+        2 -> "\u265B" // queen
+        else -> "\u265C" // rook
+    }
+    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+        if (row != null) {
+            MonogramBadge(initials(row.displayName), 34.dp, accent, isMe)
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (isMe) "${row.displayName} — YOU" else row.displayName,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = if (isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
+            )
+            wornTitle(row.currentTitleId)?.let { title ->
+                Text(
+                    title,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = if (isMe) MonarchColors.SovereignGold else MonarchColors.InkMuted,
+                )
+            }
+            Text(
+                metric.format(row),
+                maxLines = 1,
+                softWrap = false,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = accent,
+            )
+        } else {
+            Spacer(Modifier.height(38.dp))
+            Text(
+                "ALLY SLOT\nOPEN",
+                maxLines = 2,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.InkMuted,
+            )
+            Text(
+                "invite via GUILD",
+                maxLines = 1,
+                style = MaterialTheme.typography.labelSmall,
+                color = MonarchColors.InkMuted,
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(plinthHeight)
+                .clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
+                .background(
+                    if (row != null) {
+                        Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault))
+                    } else {
+                        Brush.verticalGradient(listOf(MonarchColors.Vault, MonarchColors.Abyss))
+                    },
+                )
+                .border(1.dp, if (row != null) accent else MonarchColors.Rune, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (row != null) {
+                Text(
+                    emblem,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = emblemSize,
+                    color = accent,
+                )
+            } else {
+                Text(
+                    rank.toString(),
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = MonarchColors.Rune,
+                )
+            }
+        }
+    }
+}
+
+private fun initials(name: String): String {
+    val parts = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
+    return when {
+        parts.isEmpty() -> "??"
+        parts.size == 1 -> parts[0].take(2).uppercase()
+        else -> (parts[0].take(1) + parts[1].take(1)).uppercase()
+    }
+}
+
+@Composable
+private fun MonogramBadge(text: String, size: androidx.compose.ui.unit.Dp, accent: Color, isMe: Boolean) {
+    val shape = CutCornerShape(topStart = size / 4, bottomEnd = size / 4)
+    Box(
+        Modifier
+            .size(size)
+            .background(Brush.linearGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)), shape)
+            .border(1.dp, if (isMe) MonarchColors.SovereignGold else accent, shape),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = if (isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
+        )
+    }
 }
 
 @Composable
 private fun RankRow(
     rank: Int,
     row: LeaderboardRow,
+    metric: BoardMetric,
+    leaderValue: Long,
     isMe: Boolean,
     expanded: Boolean,
     sessions: List<FriendSession>?,
@@ -315,6 +662,17 @@ private fun RankRow(
     } else {
         Brush.verticalGradient(listOf(Color(0xFF141A18), Color(0xFF0E1312)))
     }
+    // Intensity bar: this row's metric value relative to the current leader on that metric,
+    // so relative standing is visible without reading numbers. Zero leader → zero-width fill.
+    val intensity = if (leaderValue > 0) (metric.value(row).toFloat() / leaderValue).coerceIn(0f, 1f) else 0f
+    val extras = buildList {
+        if (metric != BoardMetric.Level) add("LV ${row.level}")
+        if (metric != BoardMetric.Xp) add("${row.totalXp} XP")
+        if (metric != BoardMetric.Streak) add("${row.streakDays}-day streak")
+        if (metric != BoardMetric.Titles) add("${row.titlesCount} titles")
+        if (metric != BoardMetric.Strength) add("lifetime strength ${row.lifetimeStrength}")
+        if (metric != BoardMetric.Last7) add("${row.sessionsLast7d} in 7 days")
+    }.joinToString(" · ")
 
     SystemWindow(
         modifier = Modifier.fillMaxWidth(),
@@ -325,42 +683,77 @@ private fun RankRow(
         },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Box(
-                Modifier
-                    .size(40.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .background(Brush.linearGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)))
-                    .border(1.dp, accent, MaterialTheme.shapes.extraSmall),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    emblem,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = if (rank <= 3) 20.sp else 14.sp,
-                    color = if (rank <= 3 || isMe) accent else MonarchColors.InkMuted,
-                )
-            }
+            Text(
+                "#$rank",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = if (rank <= 3 || isMe) accent else MonarchColors.InkMuted,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+            MonogramBadge(initials(row.displayName), 40.dp, accent, isMe)
             Column(Modifier.weight(1f)) {
+                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+                    Text(
+                        if (isMe) "${row.displayName} — YOU" else row.displayName,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = if (isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    Spacer(Modifier.size(8.dp))
+                    Text(
+                        metric.format(row),
+                        maxLines = 1,
+                        softWrap = false,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = accent,
+                    )
+                }
+                wornTitle(row.currentTitleId)?.let { title ->
+                    Text(
+                        title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.SovereignGold,
+                    )
+                }
                 Text(
-                    if (isMe) "${row.displayName} — YOU" else row.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = if (isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
-                )
-                Text(
-                    "LV ${row.level} · ${row.totalXp} XP · ${row.streakDays}-day streak · ${row.sessionsLast7d} in 7 days",
+                    extras,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = MonarchColors.InkMuted,
                 )
             }
         }
+        Spacer(Modifier.height(8.dp))
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(3.dp)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(MonarchColors.Abyss),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(intensity)
+                    .height(3.dp)
+                    .background(Brush.horizontalGradient(listOf(accent, MonarchColors.EmeraldBright))),
+            )
+        }
         if (row.titlesCount > 0 || row.lifetimeStrength > 0) {
             Spacer(Modifier.height(6.dp))
             Text(
-                "${row.titlesCount} titles · lifetime strength $row.lifetimeStrength",
+                "${row.titlesCount} titles · lifetime strength ${row.lifetimeStrength}",
                 style = MaterialTheme.typography.labelSmall,
                 color = MonarchColors.SystemGreen,
             )

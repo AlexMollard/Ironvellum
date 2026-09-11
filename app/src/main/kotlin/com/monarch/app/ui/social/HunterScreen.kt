@@ -29,12 +29,16 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.monarch.app.data.cloud.AccountRepository
+import com.monarch.app.data.cloud.FriendRow
 import com.monarch.app.data.cloud.CloudSync
 import com.monarch.app.data.cloud.FriendSession
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
+import com.monarch.app.ui.monarchAccount
+import com.monarch.app.domain.Titles
 import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
@@ -44,13 +48,21 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-data class HunterUi(
+internal data class HunterUi(
     val loading: Boolean = true,
     val sessions: List<FriendSession> = emptyList(),
     val error: String? = null,
+    val myUserId: String? = null,
+    val allyState: AllyState = AllyState.None,
+    val allyBusy: Boolean = false,
+    /** Worn title resolved locally from the leaderboard cache; null when bare or unknown. */
+    val wornTitle: String? = null,
 )
 
-class HunterViewModel(private val cloud: CloudSync) : ViewModel() {
+internal class HunterViewModel(
+    private val cloud: CloudSync,
+    private val accountRepo: AccountRepository,
+) : ViewModel() {
 
     private val _ui = MutableStateFlow(HunterUi())
     val ui: StateFlow<HunterUi> = _ui.asStateFlow()
@@ -60,30 +72,79 @@ class HunterViewModel(private val cloud: CloudSync) : ViewModel() {
             _ui.value = HunterUi(loading = false, error = "No hunter selected.")
             return
         }
+        _ui.value = HunterUi(myUserId = accountRepo.account.value?.userId)
         viewModelScope.launch {
             _ui.value = _ui.value.copy(loading = true, error = null)
             cloud.friendSessions(userId)
-                .onSuccess { _ui.value = HunterUi(loading = false, sessions = it) }
+                .onSuccess { _ui.value = _ui.value.copy(loading = false, sessions = it) }
                 .onFailure {
-                    _ui.value = HunterUi(
+                    _ui.value = _ui.value.copy(
                         loading = false,
                         // The real reason, not "failed" — RLS refusals read very
                         // differently from being offline.
                         error = it.message ?: it::class.simpleName ?: "Unknown error",
                     )
                 }
+            refreshSocial(userId)
+        }
+    }
+
+    /**
+     * Ally state and worn title ride on cached reads (friends has a 30s TTL,
+     * and the board tab usually already warmed the leaderboard row), so
+     * visiting a hunter costs no extra server chatter.
+     */
+    private suspend fun refreshSocial(userId: String) {
+        cloud.friends().onSuccess { rows ->
+            val row = rows.firstOrNull { it.userId == userId }
+            val state = when {
+                row == null -> AllyState.None
+                row.accepted -> AllyState.Ally
+                row.incoming -> AllyState.Incoming
+                else -> AllyState.Pending
+            }
+            _ui.value = _ui.value.copy(allyState = state, allyBusy = false)
+        }
+        cloud.leaderboard().onSuccess { rows ->
+            val titleId = rows.firstOrNull { it.userId == userId }?.currentTitleId
+            _ui.value = _ui.value.copy(wornTitle = titleId?.let { Titles.byId(it)?.name })
+        }
+    }
+
+    /** Send the ally request; the button settles from server truth once it lands. */
+    fun addAlly(userId: String) {
+        val current = _ui.value
+        if (current.allyState != AllyState.None || current.allyBusy) return
+        _ui.value = current.copy(allyState = AllyState.Pending, allyBusy = true)
+        viewModelScope.launch {
+            cloud.requestFriendById(userId)
+                .onSuccess {
+                    cloud.friends(force = true).onSuccess { rows ->
+                        val row = rows.firstOrNull { it.userId == userId }
+                        _ui.value = _ui.value.copy(
+                            allyState = when {
+                                row == null -> AllyState.None
+                                row.accepted -> AllyState.Ally
+                                row.incoming -> AllyState.Incoming
+                                else -> AllyState.Pending
+                            },
+                            allyBusy = false,
+                        )
+                    }
+                }
+                .onFailure { _ui.value = _ui.value.copy(allyState = AllyState.None, allyBusy = false) }
         }
     }
 }
 
 /** One hunter's shared training, reached from the feed or the leaderboard. */
 @Composable
-fun HunterScreen(
+internal fun HunterScreen(
     userId: String,
     displayName: String,
     onBack: () -> Unit,
     viewModel: HunterViewModel = viewModel(
-        factory = viewModelFactory { initializer { HunterViewModel(monarchCloudSync()) } },
+        factory = viewModelFactory { initializer { HunterViewModel(monarchCloudSync(), monarchAccount()) } },
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
@@ -111,6 +172,32 @@ fun HunterScreen(
             color = MonarchColors.InkMuted,
             letterSpacing = MonarchTracking.SectionHeader,
         )
+        // Worn title under the hunter's name; omitted cleanly when bare.
+        ui.wornTitle?.let { title ->
+            Text(
+                title,
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.SovereignGold,
+            )
+        }
+        // ADD ALLY: hidden for yourself, and settled (PENDING / ALLY) once a
+        // friendship row exists so a second tap never re-fires the request.
+        if (ui.myUserId != null && ui.myUserId != userId) {
+            Spacer(Modifier.height(10.dp))
+            val (label, gold) = when (ui.allyState) {
+                AllyState.None -> "ADD ALLY" to false
+                AllyState.Pending, AllyState.Incoming -> "REQUEST PENDING" to false
+                AllyState.Ally -> "ALLY" to true
+            }
+            MonarchButton(
+                label = label,
+                onClick = { viewModel.addAlly(userId) },
+                gold = gold,
+                enabled = ui.allyState == AllyState.None && !ui.allyBusy,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         Spacer(Modifier.height(14.dp))
 
         when {
