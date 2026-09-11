@@ -1,0 +1,480 @@
+package com.monarch.app.ui.settings
+
+import android.content.Context
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.health.connect.client.PermissionController
+import androidx.health.connect.client.permission.HealthPermission
+import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
+import androidx.health.connect.client.records.BodyFatRecord
+import androidx.health.connect.client.records.DistanceRecord
+import androidx.health.connect.client.records.RestingHeartRateRecord
+import androidx.health.connect.client.records.SleepSessionRecord
+import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.WeightRecord
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.monarch.app.data.HealthSnapshot
+import com.monarch.app.data.HealthSync
+import com.monarch.app.data.Repository
+import com.monarch.app.domain.HealthDay
+import com.monarch.app.domain.TrainingMode
+import com.monarch.app.ui.components.MonarchButton
+import com.monarch.app.ui.components.formatDate
+import com.monarch.app.ui.components.SystemWindow
+import com.monarch.app.ui.monarchHealthSync
+import com.monarch.app.ui.monarchRepository
+import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.MonarchColors
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+private val HEALTH_PERMISSIONS = setOf(
+    HealthPermission.getReadPermission(WeightRecord::class),
+    HealthPermission.getReadPermission(BodyFatRecord::class),
+    HealthPermission.getReadPermission(StepsRecord::class),
+    HealthPermission.getReadPermission(DistanceRecord::class),
+    HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
+    HealthPermission.getReadPermission(SleepSessionRecord::class),
+    HealthPermission.getReadPermission(RestingHeartRateRecord::class),
+)
+
+data class SyncUi(
+    val available: Boolean = true,
+    val syncing: Boolean = false,
+    val result: HealthSnapshot? = null,
+    val message: String? = null,
+    val historySyncing: Boolean = false,
+    val historyWritten: Int? = null,
+    /** Days each metric actually filled: "steps 31 · distance 0 · ...". */
+    val coverage: String? = null,
+)
+
+class SettingsViewModel(
+    private val repo: Repository,
+    private val healthSync: HealthSync,
+) : ViewModel() {
+
+    private val _exporting = MutableStateFlow(false)
+    val exporting: StateFlow<Boolean> = _exporting.asStateFlow()
+
+    private val _sync = MutableStateFlow(SyncUi(available = runCatching { healthSync.available() }.getOrDefault(false)))
+    val sync: StateFlow<SyncUi> = _sync.asStateFlow()
+
+    val profile = repo.observeProfile()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val healthDays = repo.observeHealthDays()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun exportJson(onReady: (String) -> Unit) {
+        if (_exporting.value) return
+        viewModelScope.launch {
+            _exporting.value = true
+            val json = repo.exportJson()
+            _exporting.value = false
+            onReady(json)
+        }
+    }
+
+    fun rename(name: String) {
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch { repo.rename(trimmed) }
+    }
+
+    fun setMode(mode: TrainingMode) {
+        viewModelScope.launch { repo.setTrainingMode(mode) }
+    }
+
+    fun syncFromHealth() {
+        if (_sync.value.syncing) return
+        viewModelScope.launch {
+            _sync.value = _sync.value.copy(syncing = true, message = null)
+
+            // Report the actual reason: device support, provider update, a
+            // missing permission grant and a read error are different problems.
+            when (healthSync.status()) {
+                HealthSync.Status.UNSUPPORTED -> {
+                    _sync.value = _sync.value.copy(
+                        syncing = false,
+                        available = false,
+                        message = "Health Connect isn't available on this device.",
+                    )
+                    return@launch
+                }
+                HealthSync.Status.UPDATE_REQUIRED -> {
+                    _sync.value = _sync.value.copy(
+                        syncing = false,
+                        available = false,
+                        message = "Update Health Connect, then retry.",
+                    )
+                    return@launch
+                }
+                HealthSync.Status.READY -> Unit
+            }
+
+            if (healthSync.grantedPermissions().none { it in HEALTH_PERMISSIONS }) {
+                _sync.value = _sync.value.copy(
+                    syncing = false,
+                    available = true,
+                    message = "Permission not granted yet — allow Weight, Body fat and Steps in Health Connect, then retry.",
+                )
+                return@launch
+            }
+
+            val read = runCatching { healthSync.readSnapshot() }
+            val snapshot = read.getOrNull()
+            if (snapshot == null) {
+                _sync.value = _sync.value.copy(
+                    syncing = false,
+                    available = true,
+                    message = read.exceptionOrNull()
+                        ?.let { "Health Connect read failed: ${it.javaClass.simpleName} ${it.message.orEmpty()}".trim() }
+                        ?: "Health Connect returned no data.",
+                )
+                return@launch
+            }
+            val message: String
+            if (snapshot.weightKg != null) {
+                val latestHeight = repo.observeStats().first().firstOrNull()?.heightCm
+                if (latestHeight != null) {
+                    repo.addStat(snapshot.weightKg, latestHeight, snapshot.bodyFatPct)
+                    message = "Imported into your stat history."
+                } else {
+                    message = "Log a height once manually — after that imports are automatic."
+                }
+            } else {
+                message = "No weight found in Health Connect yet."
+            }
+            _sync.value = _sync.value.copy(syncing = false, result = snapshot, message = message)
+        }
+    }
+
+    fun syncActivityHistory() {
+        if (_sync.value.historySyncing) return
+        viewModelScope.launch {
+            _sync.value = _sync.value.copy(historySyncing = true)
+            val read = runCatching { repo.syncHealthHistory() }
+                .getOrElse { HealthSync.HistoryRead(problems = listOf(it.javaClass.simpleName)) }
+            _sync.value = _sync.value.copy(
+                historySyncing = false,
+                historyWritten = read.days.size,
+                coverage = buildString {
+                    append(
+                        read.coverage.entries.joinToString(" · ") { (metric, days) -> "$metric $days" },
+                    )
+                    read.newestStepAtMs?.let {
+                        append("\nnewest step record ")
+                        append(formatDate(it, "EEE HH:mm"))
+                        append(" from ")
+                        append(
+                            read.stepSources
+                                .map { pkg -> pkg.substringAfterLast('.') }
+                                .joinToString(", ")
+                                .ifBlank { "unknown app" },
+                        )
+                    }
+                }.takeIf { it.isNotBlank() },
+                message = when {
+                    read.days.isNotEmpty() || read.bodyReadings.isNotEmpty() ->
+                        "Activity history updated — ${read.days.size} days, " +
+                            "${read.bodyReadings.size} weigh-ins." +
+                            read.problems.firstOrNull()?.let { " Partial: $it" }.orEmpty()
+                    // never claim success on an empty write again
+                    read.problems.isNotEmpty() -> "Nothing synced — ${read.problems.first()}"
+                    else -> "Nothing synced — Health Connect holds no activity for this window."
+                },
+            )
+        }
+    }
+
+}
+
+@Composable
+fun SettingsScreen(
+    viewModel: SettingsViewModel =
+        viewModel(
+            factory = viewModelFactory {
+                initializer { SettingsViewModel(monarchRepository(), monarchHealthSync()) }
+            },
+        ),
+) {
+    val exporting by viewModel.exporting.collectAsStateWithLifecycle()
+    val sync by viewModel.sync.collectAsStateWithLifecycle()
+    val profile by viewModel.profile.collectAsStateWithLifecycle()
+    val healthDays by viewModel.healthDays.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    var name by remember(profile?.name) { mutableStateOf(profile?.name ?: "") }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        PermissionController.createRequestPermissionResultContract(),
+    ) { _ ->
+        viewModel.syncFromHealth()
+    }
+
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+    ) {
+        Spacer(Modifier.height(24.dp))
+        Text(
+            "SYSTEM",
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+            letterSpacing = 6.sp,
+        )
+        Spacer(Modifier.height(10.dp))
+
+        SystemWindow(Modifier.fillMaxWidth()) {
+            Text(
+                profile?.name ?: "Hunter",
+                style = MaterialTheme.typography.headlineMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it.take(24) },
+                    label = { Text("Claim your name") },
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Text),
+                    modifier = Modifier.weight(1f),
+                )
+                MonarchButton(
+                    label = "Claim",
+                    onClick = { viewModel.rename(name) },
+                    enabled = name.trim().isNotEmpty() && name.trim() != profile?.name,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Monarch is earned — a name is chosen.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MonarchColors.InkMuted,
+            )
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        SystemWindow(Modifier.fillMaxWidth()) {
+            Text(
+                "TRAINING MODE",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.SystemGreen,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
+            ) {
+                TrainingMode.entries.forEach { mode ->
+                    val selected = profile?.trainingMode == mode
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .background(if (selected) MonarchColors.Vault else Color.Transparent)
+                            .clickable { viewModel.setMode(mode) }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            mode.name,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontFamily = ChakraPetch,
+                            color = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
+                            letterSpacing = 2.sp,
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                when (profile?.trainingMode) {
+                    TrainingMode.STRENGTH -> "Clear all sets → load rises, reps reset."
+                    else -> "Double progression: reps climb, then load."
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = MonarchColors.InkMuted,
+            )
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        SystemWindow(Modifier.fillMaxWidth()) {
+            Text(
+                "SAMSUNG HEALTH",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.SystemGreen,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Read weight, body fat and steps from Health Connect. Read-only.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MonarchColors.InkMuted,
+            )
+            Spacer(Modifier.height(10.dp))
+            if (sync.syncing) {
+                CircularProgressIndicator()
+            } else {
+                MonarchButton(
+                    label = "Connect & Sync",
+                    onClick = {
+                        if (sync.available) {
+                            permissionLauncher.launch(HEALTH_PERMISSIONS)
+                        } else {
+                            viewModel.syncFromHealth()
+                        }
+                    },
+                )
+            }
+            sync.result?.let { snapshot ->
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    buildString {
+                        append("\u23F1 ${snapshot.stepsToday} steps today")
+                        // Samsung Health batches its pushes: without the "as of"
+                        // the count just looks wrong against the phone's tally.
+                        snapshot.stepsAsOfMs?.let { append(" (as of ${formatDate(it, "HH:mm")})") }
+                        snapshot.weightKg?.let { append("  ·  $it kg") }
+                        snapshot.bodyFatPct?.let { append("  ·  $it% bf") }
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.SystemGreen,
+                )
+            }
+            if (healthDays.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "${healthDays.size} days synced · ${String.format("%,d", healthDays.sumOf { it.steps })} steps · ${"%.0f".format(healthDays.sumOf { it.distanceKm })} km",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.SystemGreen,
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            if (sync.historySyncing) {
+                CircularProgressIndicator()
+            } else {
+                MonarchButton(
+                    label = "Sync Activity History",
+                    onClick = { viewModel.syncActivityHistory() },
+                )
+            }
+            sync.historyWritten?.let { written ->
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "$written days of activity history written.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MonarchColors.InkMuted,
+                )
+            }
+            sync.coverage?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(it, style = MaterialTheme.typography.labelSmall, color = MonarchColors.InkMuted)
+            }
+            sync.message?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(it, style = MaterialTheme.typography.labelSmall, color = MonarchColors.InkMuted)
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        SystemWindow(Modifier.fillMaxWidth()) {
+            Text(
+                "DATA",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.SystemGreen,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Full JSON archive: presets, routine, sessions, every set, readings, titles.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MonarchColors.InkMuted,
+            )
+            Spacer(Modifier.height(10.dp))
+            if (exporting) {
+                CircularProgressIndicator()
+            } else {
+                MonarchButton(
+                    label = "Export Archive",
+                    onClick = { viewModel.exportJson { json -> shareJson(context, json) } },
+                )
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+        Text(
+            "Monarch v1.0  ·  all data on this device only",
+            style = MaterialTheme.typography.labelSmall,
+            color = MonarchColors.InkMuted,
+            modifier = Modifier.padding(horizontal = 4.dp),
+        )
+        Spacer(Modifier.height(24.dp))
+    }
+}
+
+private fun shareJson(context: Context, json: String) {
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "text/plain"
+        putExtra(Intent.EXTRA_TITLE, "monarch_export.json")
+        putExtra(Intent.EXTRA_TEXT, json)
+    }
+    context.startActivity(Intent.createChooser(intent, "Export Monarch data"))
+}

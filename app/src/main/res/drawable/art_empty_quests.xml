@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Empty quests: sealed gate with dormant rune core. Original artwork. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="96dp" android:height="96dp"
+    android:viewportWidth="96" android:viewportHeight="96">
+    <path android:pathData="M26,84 V42 L44,22 H52 L70,42 V84"
+        android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeColor="#2A2D35"/>
+    <path android:pathData="M38,84 V50 L48,38 H52 L62,50 V84"
+        android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeColor="#2A2D35"/>
+    <path android:pathData="M48,56 a6,6 0 1,0 0.01,0 Z"
+        android:strokeWidth="3" android:strokeColor="#34D399"/>
+    <path android:pathData="M20,84 H76"
+        android:strokeWidth="3" android:strokeLineCap="round" android:strokeColor="#2A2D35"/>
+    <path android:pathData="M48,26 V18 M30,34 L24,28 M66,34 L72,28"
+        android:strokeWidth="3" android:strokeLineCap="round" android:strokeColor="#2A2D35"/>
+</vector>

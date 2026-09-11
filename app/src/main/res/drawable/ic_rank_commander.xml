@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rank III — Commander: winged shield with double chevron. Original artwork. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24,7 L37,12.5 V24 C37,32 31,38.5 24,42.5 C17,38.5 11,32 11,24 V12.5 Z"
+        android:strokeWidth="3" android:strokeLineJoin="round" android:strokeColor="#6FAE8C"/>
+    <path android:pathData="M17,21 L24,14 L31,21 M17,27 L24,20 L31,27"
+        android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeColor="#EDEFF2"/>
+    <path android:pathData="M8,16 L4,19 M8,24 L4,27 M40,16 L44,19 M40,24 L44,27"
+        android:strokeWidth="3" android:strokeLineCap="round" android:strokeColor="#9AA3AD"/>
+</vector>

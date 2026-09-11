@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rank II — Knight: chamfered shield over chevron. Original artwork. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="48" android:viewportHeight="48">
+    <path android:pathData="M24,6 L38,12 V24 C38,32 32,38 24,42 C16,38 10,32 10,24 V12 Z"
+        android:strokeWidth="3" android:strokeLineJoin="round" android:strokeColor="#6FAE8C"/>
+    <path android:pathData="M17,22 L24,15 L31,22"
+        android:strokeWidth="3" android:strokeLineCap="round" android:strokeLineJoin="round" android:strokeColor="#EDEFF2"/>
+    <path android:pathData="M18,29 H30"
+        android:strokeWidth="3" android:strokeLineCap="round" android:strokeColor="#9AA3AD"/>
+</vector>

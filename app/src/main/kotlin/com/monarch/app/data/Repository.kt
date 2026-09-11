@@ -1,0 +1,725 @@
+package com.monarch.app.data
+import androidx.room.withTransaction
+import com.monarch.app.domain.ArmyClass
+import com.monarch.app.domain.Exercise
+import com.monarch.app.data.db.ExerciseDao
+import com.monarch.app.data.db.HealthDayDao
+import com.monarch.app.data.db.HealthDayEntity
+import com.monarch.app.data.db.ExerciseEntity
+import com.monarch.app.data.db.PresetDao
+import com.monarch.app.data.db.PresetEntity
+import com.monarch.app.data.db.PresetEntryEntity
+import com.monarch.app.data.db.ProfileDao
+import com.monarch.app.data.db.ProfileEntity
+import com.monarch.app.data.db.SessionDao
+import com.monarch.app.data.db.SessionEntity
+import com.monarch.app.data.db.SetLogEntity
+import com.monarch.app.data.db.SkillPracticeDao
+import com.monarch.app.data.db.SkillPracticeEntity
+import com.monarch.app.data.db.StatDao
+import com.monarch.app.data.db.StatEntity
+import com.monarch.app.data.db.TitleDao
+import com.monarch.app.data.db.TitleUnlockEntity
+import com.monarch.app.domain.ExerciseHistory
+import com.monarch.app.domain.HealthDay
+import com.monarch.app.domain.ExerciseHistoryCalculator
+import com.monarch.app.domain.ExportWriter
+import com.monarch.app.domain.MuscleGroup
+import com.monarch.app.domain.PresetEntry
+import com.monarch.app.domain.PlayerProfile
+import com.monarch.app.domain.Progression
+import com.monarch.app.domain.SessionSet
+import com.monarch.app.domain.SkillClaimResult
+import com.monarch.app.domain.SkillPractice
+import com.monarch.app.domain.StatEntry
+import com.monarch.app.domain.Skills
+import com.monarch.app.domain.StrengthIndex
+import com.monarch.app.domain.TitleDef
+import com.monarch.app.domain.Titles
+import com.monarch.app.domain.TrainingMode
+import com.monarch.app.domain.UnlockedTitle
+import com.monarch.app.domain.WorkoutPreset
+import com.monarch.app.domain.WorkoutSession
+import com.monarch.app.domain.Xp
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import java.time.LocalDate
+
+class Repository(
+    private val db: MonarchDatabase,
+    private val health: HealthSync? = null,
+) {
+
+    private val exerciseDao = db.exerciseDao()
+    private val presetDao = db.presetDao()
+    private val sessionDao = db.sessionDao()
+    private val statDao = db.statDao()
+    private val profileDao = db.profileDao()
+    private val titleDao = db.titleDao()
+    private val skillPracticeDao = db.skillPracticeDao()
+    private val healthDayDao: HealthDayDao = db.healthDayDao()
+    // ---------------------------------------------------------------- seeding
+
+    suspend fun ensureSeeded() {
+        if (profileDao.get() == null) {
+            profileDao.upsert(ProfileEntity(name = "Hunter", totalXp = 0, currentTitleId = null))
+        }
+        val existingNames = exerciseDao.observeAll().first().map { it.name }.toSet()
+        val missing = Seed.exercises.filterNot { it.name in existingNames }
+        if (missing.isNotEmpty()) {
+            exerciseDao.insertAll(missing)
+        }
+        if (presetDao.count() == 0) {
+            val idByName = exerciseDao.observeAll().first().associate { it.name to it.id }
+            Seed.presets.forEach { spec ->
+                val presetId = presetDao.insertPreset(
+                    PresetEntity(name = spec.name, note = spec.note, scheduledDay = spec.scheduledDay),
+                )
+                presetDao.insertEntries(
+                    spec.entries.mapIndexed { position, entry ->
+                        PresetEntryEntity(
+                            presetId = presetId,
+                            exerciseId = idByName.getValue(entry.exercise),
+                            targetSets = entry.sets,
+                            targetReps = entry.reps,
+                            targetWeightKg = entry.weightKg,
+                            modifiers = entry.modifiers,
+                            position = position,
+                        )
+                    },
+                )
+            }
+        }
+    }
+
+    // ---------------------------------------------------------------- health history
+
+    /** Per-day Health Connect activity history, newest first. */
+    fun observeHealthDays(): Flow<List<HealthDay>> =
+        healthDayDao.observeAll().map { list ->
+            list.map {
+                HealthDay(
+                    date = LocalDate.ofEpochDay(it.epochDay),
+                    steps = it.steps,
+                    distanceKm = it.distanceKm,
+                    activeKcal = it.activeKcal,
+                    sleepMinutes = it.sleepMinutes,
+                    restingHr = it.restingHr,
+                )
+            }
+        }
+
+    /**
+     * Pull the last [days] days from Health Connect into the local cache.
+     * Reports days actually written plus any metric that could not be read, so
+     * the UI never claims a successful sync it did not get.
+     */
+    suspend fun syncHealthHistory(days: Int = 90): HealthSync.HistoryRead {
+        val health = health ?: return HealthSync.HistoryRead(
+            problems = listOf("Health Connect not wired"),
+        )
+        if (!health.available()) return HealthSync.HistoryRead(
+            problems = listOf("Health Connect unavailable"),
+        )
+        val read = runCatching { health.readDailyHistory(days) }
+            .getOrElse { HealthSync.HistoryRead(problems = listOf("read failed: ${it.javaClass.simpleName}")) }
+        healthDayDao.purgeEmpty()
+        if (read.days.isNotEmpty()) {
+            healthDayDao.upsertAll(
+                read.days.map {
+                    HealthDayEntity(
+                        epochDay = it.date.toEpochDay(),
+                        steps = it.steps,
+                        distanceKm = it.distanceKm,
+                        activeKcal = it.activeKcal,
+                        sleepMinutes = it.sleepMinutes,
+                        restingHr = it.restingHr,
+                    )
+                },
+            )
+        }
+        val imported = importBodyReadings(read.bodyReadings)
+        return if (imported == null) {
+            read.copy(
+                problems = read.problems +
+                    "${read.bodyReadings.size} weigh-ins found — log a height once so they can be scored",
+            )
+        } else {
+            read
+        }
+    }
+
+    /**
+     * Writes Health Connect weigh-ins into the stat history, skipping days the
+     * history already covers so repeat syncs never duplicate a reading.
+     * Returns the number imported, or null when no height has ever been logged
+     * (height is not a Health Connect record here, so BMI/FFMI need it once).
+     */
+    private suspend fun importBodyReadings(readings: List<HealthSync.BodyReading>): Int? {
+        if (readings.isEmpty()) return 0
+        val zone = java.time.ZoneId.systemDefault()
+        val existing = statDao.observeAll().first()
+        val coveredDays = existing.map {
+            java.time.Instant.ofEpochMilli(it.takenAtMs).atZone(zone).toLocalDate()
+        }.toSet()
+        val height = existing.firstOrNull()?.heightCm ?: return null
+        val fresh = readings.filterNot { it.date in coveredDays }
+        fresh.forEach {
+            statDao.insert(
+                StatEntity(
+                    takenAtMs = it.takenAtMs,
+                    weightKg = it.weightKg,
+                    heightCm = height,
+                    bodyFatPct = it.bodyFatPct,
+                ),
+            )
+        }
+        return fresh.size
+    }
+
+    // ---------------------------------------------------------------- mapping
+
+    private fun ExerciseEntity.toDomain() =
+        Exercise(id = id, name = name, muscleGroup = MuscleGroup.valueOf(muscleGroup), isWeighted = isWeighted)
+
+    // ---------------------------------------------------------------- exercises
+
+    fun observeExercises(): Flow<List<Exercise>> =
+        exerciseDao.observeAll().map { list -> list.map { it.toDomain() } }
+
+    // ---------------------------------------------------------------- presets
+
+    fun observePresets(): Flow<List<WorkoutPreset>> = combine(
+        presetDao.observePresets(),
+        exerciseDao.observeAll(),
+    ) { presets, exercises ->
+        val names = exercises.associate { it.id to it.name }
+        presets.map { pw ->
+            WorkoutPreset(
+                id = pw.preset.id,
+                name = pw.preset.name,
+                note = pw.preset.note,
+                scheduledDay = pw.preset.scheduledDay,
+                entries = pw.entries.sortedBy { it.position }.map { e ->
+                    PresetEntry(
+                        id = e.id,
+                        exerciseId = e.exerciseId,
+                        exerciseName = names[e.exerciseId] ?: "Unknown",
+                        targetSets = e.targetSets,
+                        targetReps = e.targetReps,
+                        targetWeightKg = e.targetWeightKg,
+                        modifiers = e.modifiers,
+                        position = e.position,
+                    )
+                },
+            )
+        }
+    }
+
+    data class PresetDraftEntry(
+        val exerciseId: Long,
+        val targetSets: Int,
+        val targetReps: Int,
+        val targetWeightKg: Double?,
+        val modifiers: String = "",
+    )
+
+    suspend fun savePreset(
+        presetId: Long?,
+        name: String,
+        note: String,
+        scheduledDay: Int?,
+        entries: List<PresetDraftEntry>,
+    ): Long = db.withTransaction {
+        val id = if (presetId == null) {
+            presetDao.insertPreset(PresetEntity(name = name, note = note, scheduledDay = scheduledDay))
+        } else {
+            presetDao.updatePreset(PresetEntity(id = presetId, name = name, note = note, scheduledDay = scheduledDay))
+            presetDao.clearEntries(presetId)
+            presetId
+        }
+        presetDao.insertEntries(
+            entries.mapIndexed { position, e ->
+                PresetEntryEntity(
+                    presetId = id,
+                    exerciseId = e.exerciseId,
+                    targetSets = e.targetSets,
+                    targetReps = e.targetReps,
+                    targetWeightKg = e.targetWeightKg,
+                    modifiers = e.modifiers,
+                    position = position,
+                )
+            },
+        )
+        id
+    }
+
+    suspend fun deletePreset(presetId: Long) = presetDao.deletePreset(presetId)
+
+    // ---------------------------------------------------------------- sessions
+
+    suspend fun startSessionFromPreset(presetId: Long): Long = db.withTransaction {
+        val pw = presetDao.presetWithEntries(presetId) ?: error("Preset $presetId not found")
+        val sessionId = sessionDao.insertSession(
+            SessionEntity(
+                presetId = presetId,
+                label = pw.preset.name,
+                startedAtMs = System.currentTimeMillis(),
+                completedAtMs = null,
+                xpAwarded = 0,
+            ),
+        )
+        val mode = profileDao.get()?.trainingMode?.let {
+            runCatching { TrainingMode.valueOf(it) }.getOrDefault(TrainingMode.STRENGTH)
+        } ?: TrainingMode.STRENGTH
+        val exerciseById = exerciseDao.let { dao -> pw.entries.map { it.exerciseId }.distinct().mapNotNull { dao.byId(it) } }
+            .associateBy { it.id }
+
+        val sets = pw.entries.sortedBy { it.position }.flatMapIndexed { entryPos, entry ->
+            val exercise = exerciseById[entry.exerciseId]
+            val recent = sessionDao.recentDoneSets(entry.exerciseId)
+            val latestSessionId = recent.firstOrNull()?.sessionId
+            val lastAttempts = recent.takeWhile { it.sessionId == latestSessionId }
+                .sortedBy { it.setIndex }
+                .map { Progression.Attempt(it.weightKg, it.reps) }
+            val recommendation = Progression.fromSets(
+                mode = mode,
+                targetReps = entry.targetReps,
+                minSets = entry.targetSets,
+                sets = lastAttempts,
+                muscleGroup = exercise?.muscleGroup ?: "",
+                exerciseName = exercise?.name ?: "",
+            )
+            (0 until entry.targetSets).map { index ->
+                SetLogEntity(
+                    sessionId = sessionId,
+                    exerciseId = entry.exerciseId,
+                    exercisePosition = entryPos,
+                    setIndex = index,
+                    reps = recommendation.reps,
+                    modifiers = entry.modifiers,
+                    weightKg = recommendation.weightKg ?: entry.targetWeightKg,
+                    done = false,
+                )
+            }
+        }
+        sessionDao.insertSets(sets)
+        sessionId
+    }
+
+    suspend fun startFreeformSession(label: String): Long =
+        sessionDao.insertSession(
+            SessionEntity(
+                presetId = null,
+                label = label.ifBlank { "Freeform" },
+                startedAtMs = System.currentTimeMillis(),
+                completedAtMs = null,
+                xpAwarded = 0,
+            ),
+        )
+
+    fun observeSession(sessionId: Long): Flow<WorkoutSession?> =
+        sessionDao.observeSession(sessionId).map { it?.toDomain() }
+
+    fun observeSessionSets(sessionId: Long): Flow<List<SessionSet>> = combine(
+        sessionDao.observeSets(sessionId),
+        exerciseDao.observeAll(),
+    ) { sets, exercises ->
+        val names = exercises.associate { it.id to it.name }
+        sets.map { s ->
+            SessionSet(
+                id = s.id,
+                exerciseId = s.exerciseId,
+                exerciseName = names[s.exerciseId] ?: "Unknown",
+                exercisePosition = s.exercisePosition,
+                setIndex = s.setIndex,
+                reps = s.reps,
+                weightKg = s.weightKg,
+                modifiers = s.modifiers,
+                done = s.done,
+            )
+        }.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
+    }
+
+    suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) {
+        val current = sessionDao.setById(setId) ?: return
+        sessionDao.updateSet(current.copy(reps = reps, weightKg = weightKg, done = done))
+    }
+
+    suspend fun addExtraSet(sessionId: Long, exerciseId: Long, reps: Int, weightKg: Double?, modifiers: String): Long {
+        val index = sessionDao.setsFor(sessionId).count { it.exerciseId == exerciseId }
+        val existing = sessionDao.setsFor(sessionId).firstOrNull { it.exerciseId == exerciseId }
+        return sessionDao.insertSets(
+            listOf(
+                SetLogEntity(
+                    sessionId = sessionId,
+                    exerciseId = exerciseId,
+                    exercisePosition = existing?.exercisePosition ?: 99,
+                    setIndex = index,
+                    reps = reps,
+                    weightKg = weightKg,
+                    modifiers = existing?.modifiers ?: modifiers,
+                    done = false,
+                ),
+            ),
+        ).first()
+    }
+
+    /**
+     * Removes a set and closes the gap in setIndex — leaving holes would break
+     * ordering and the "Set N" labels. The last set of an exercise is kept so a
+     * movement never silently vanishes mid-session; remove the exercise instead.
+     * Completed sessions are immutable: their XP and strength are already banked.
+     */
+    suspend fun removeSet(setId: Long): Boolean = db.withTransaction {
+        val set = sessionDao.setById(setId) ?: return@withTransaction false
+        val session = sessionDao.byId(set.sessionId) ?: return@withTransaction false
+        if (session.completedAtMs != null) return@withTransaction false
+        val siblings = sessionDao.setsFor(set.sessionId).filter { it.exerciseId == set.exerciseId }
+        if (siblings.size <= 1) return@withTransaction false
+        sessionDao.deleteSet(setId)
+        siblings.asSequence()
+            .filter { it.id != setId }
+            .sortedBy { it.setIndex }
+            .forEachIndexed { index, row ->
+                if (row.setIndex != index) sessionDao.updateSet(row.copy(setIndex = index))
+            }
+        true
+    }
+
+    /**
+     * Modifiers describe the movement, so editing them applies to every set of
+     * that exercise — including ones already ticked off, which is the point:
+     * you realise mid-session that you were working at a deficit all along.
+     */
+    suspend fun setExerciseModifiers(sessionId: Long, exerciseId: Long, modifiers: String) {
+        val session = sessionDao.byId(sessionId) ?: return
+        if (session.completedAtMs != null) return
+        sessionDao.setModifiers(sessionId, exerciseId, modifiers)
+    }
+
+    suspend fun abandonSession(sessionId: Long) = sessionDao.deleteAbandoned(sessionId)
+
+    data class CompletionResult(
+        val xpAwarded: Int,
+        val levelBefore: Int,
+        val levelAfter: Int,
+        val classBefore: String,
+        val classAfter: String,
+        val newTitles: List<TitleDef>,
+        val totalXp: Long,
+        val questBonus: Boolean,
+        val durationMinutes: Long,
+    )
+
+    suspend fun completeSession(sessionId: Long): CompletionResult = db.withTransaction {
+        val session = sessionDao.byId(sessionId) ?: error("Session $sessionId not found")
+        check(session.completedAtMs == null) { "Session already completed" }
+        val doneSets = sessionDao.setsFor(sessionId).filter { it.done }
+        val xp = Xp.award(doneSets.size, doneSets.sumOf { it.reps })
+
+        // Quest bonus: completing the preset scheduled for today.
+        val today = LocalDate.now().dayOfWeek.value
+        val questBonus = session.presetId?.let { pid ->
+            presetDao.presetWithEntries(pid)?.preset?.scheduledDay == today
+        } == true
+        val totalXpGain = xp + if (questBonus) Xp.QUEST_BONUS else 0
+
+        val before = profileDao.get() ?: error("Profile missing")
+        val levelBefore = Xp.levelFor(before.totalXp)
+        val newTotal = before.totalXp + totalXpGain
+
+        val latestBodyweight = statDao.observeAll().first().firstOrNull()?.weightKg
+        val sessionStrength = StrengthIndex.sessionScore(
+            doneSets.map { it.reps to it.weightKg },
+            latestBodyweight,
+        ) ?: 0
+        val lifetimeStrength = before.lifetimeStrength + sessionStrength
+        profileDao.setLifetimeStrength(lifetimeStrength)
+
+        val finishedAt = System.currentTimeMillis()
+        val durationMinutes = ((finishedAt - session.startedAtMs) / 60000L).coerceAtLeast(1)
+        sessionDao.updateSession(
+            session.copy(completedAtMs = finishedAt, xpAwarded = totalXpGain, strengthScore = sessionStrength),
+        )
+        profileDao.addXp(totalXpGain.toLong())
+
+
+        // Full ledger: a partial one here made every step/skill title dead.
+        val ledger = Titles.ledgerOf(
+            totalXp = newTotal,
+            history = observeHistory().first(),
+            healthDays = observeHealthDays().first(),
+            practices = observeSkillPractices().first(),
+        )
+        val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
+        val now = finishedAt
+        titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
+        profileDao.setCurrentTitle(newly.firstOrNull()?.id ?: before.currentTitleId)
+
+        CompletionResult(
+            xpAwarded = totalXpGain,
+            levelBefore = levelBefore,
+            levelAfter = Xp.levelFor(newTotal),
+            classBefore = ArmyClass.forLevel(levelBefore).title,
+            classAfter = ArmyClass.forLevel(Xp.levelFor(newTotal)).title,
+            newTitles = newly,
+            totalXp = newTotal,
+            questBonus = questBonus,
+            durationMinutes = durationMinutes,
+        )
+    }
+
+    fun observeRecentSessions(limit: Int = 5): Flow<List<WorkoutSession>> =
+        sessionDao.observeRecent(limit).map { list -> list.map { it.toDomain() } }
+
+    /** Full activity log: every completed session with its sets. */
+    fun observeHistory(): Flow<List<Pair<WorkoutSession, List<SessionSet>>>> = combine(
+        sessionDao.observeCompletedWithSets(),
+        exerciseDao.observeAll(),
+    ) { sessions, exercises ->
+        val names = exercises.associate { it.id to it.name }
+        sessions.map { sws ->
+            sws.session.toDomain() to sws.sets.map { s ->
+                SessionSet(
+                    id = s.id,
+                    exerciseId = s.exerciseId,
+                    exerciseName = names[s.exerciseId] ?: "Unknown",
+                    setIndex = s.setIndex,
+                    reps = s.reps,
+                    weightKg = s.weightKg,
+                    modifiers = s.modifiers,
+                    done = s.done,
+                )
+            }
+        }
+    }
+
+    /** Complete record of one movement: every logged set plus derived stats. */
+    fun observeExerciseHistory(exerciseId: Long): Flow<ExerciseHistory?> = combine(
+        sessionDao.observeExerciseSets(exerciseId),
+        exerciseDao.observeAll(),
+        statDao.observeAll(),
+    ) { rows, exercises, stats ->
+        val exercise = exercises.firstOrNull { it.id == exerciseId }?.toDomain() ?: return@combine null
+        val bodyweight = stats.firstOrNull()?.weightKg
+        ExerciseHistoryCalculator.build(exercise, rows, bodyweight)
+    }
+
+    private fun SessionEntity.toDomain() = WorkoutSession(
+        id = id,
+        presetId = presetId,
+        label = label,
+        startedAtMs = startedAtMs,
+        completedAtMs = completedAtMs,
+        xpAwarded = xpAwarded,
+        strengthScore = strengthScore,
+    )
+
+    // ---------------------------------------------------------------- stats
+
+    fun observeStats(): Flow<List<StatEntry>> =
+        statDao.observeAll().map { list ->
+            list.map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
+        }
+
+    suspend fun addStat(weightKg: Double, heightCm: Double, bodyFatPct: Double?) {
+        statDao.insert(StatEntity(takenAtMs = System.currentTimeMillis(), weightKg = weightKg, heightCm = heightCm, bodyFatPct = bodyFatPct))
+    }
+
+    suspend fun deleteStat(id: Long) = statDao.delete(id)
+
+    // ---------------------------------------------------------------- profile & titles
+
+    fun observeProfile(): Flow<PlayerProfile?> =
+        profileDao.observe().map {
+            it?.let { p ->
+                PlayerProfile(
+                    name = p.name,
+                    totalXp = p.totalXp,
+                    currentTitleId = p.currentTitleId,
+                    trainingMode = TrainingMode.valueOf(p.trainingMode),
+                )
+            }
+        }
+
+    fun observeTrainingMode(): Flow<TrainingMode> =
+        observeProfile().map { it?.trainingMode ?: TrainingMode.STRENGTH }
+
+    suspend fun setTrainingMode(mode: TrainingMode) = profileDao.setTrainingMode(mode.name)
+
+    fun observeUnlockedTitles(): Flow<List<UnlockedTitle>> =
+        titleDao.observeAll().map { list -> list.map { UnlockedTitle(it.titleId, it.unlockedAtMs) } }
+
+    suspend fun equipTitle(titleId: String?) {
+        require(titleId == null || Titles.byId(titleId) != null) { "Unknown title $titleId" }
+        profileDao.setCurrentTitle(titleId)
+    }
+
+    /**
+     * Unlocks every title the current ledger already satisfies. Awards used to
+     * happen only on session completion with a partial ledger, so anything
+     * driven by steps, activity or skills could never fire; this also repairs
+     * accounts whose data arrived by import or health sync.
+     */
+    suspend fun reconcileTitles(): List<TitleDef> {
+        val ledger = currentLedger()
+        val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
+        if (newly.isEmpty()) return emptyList()
+        val now = System.currentTimeMillis()
+        titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
+        if (profileDao.get()?.currentTitleId == null) {
+            profileDao.setCurrentTitle(newly.first().id)
+        }
+        // Every earned title gets its moment: reconciliation runs before any UI
+        // exists, so the awards wait here until a screen can show them.
+        _pendingCelebrations.value = _pendingCelebrations.value + newly
+        return newly
+    }
+
+    private val _pendingCelebrations = MutableStateFlow<List<TitleDef>>(emptyList())
+
+    /** Titles unlocked outside a session (startup/health sync), awaiting their screen. */
+    val pendingCelebrations: StateFlow<List<TitleDef>> = _pendingCelebrations.asStateFlow()
+
+    fun clearPendingCelebrations() {
+        _pendingCelebrations.value = emptyList()
+    }
+
+    /** Ledger over everything logged: sessions, health days and skill practice. */
+    suspend fun currentLedger(): Titles.Ledger = Titles.ledgerOf(
+        totalXp = profileDao.get()?.totalXp ?: 0L,
+        history = observeHistory().first(),
+        healthDays = observeHealthDays().first(),
+        practices = observeSkillPractices().first(),
+    )
+
+    // ---------------------------------------------------------------- skills
+
+    fun observeSkillPractices(): Flow<List<SkillPractice>> =
+        skillPracticeDao.observeAll().map { list ->
+            list.map {
+                SkillPractice(
+                    skillName = it.skillName,
+                    practicedAtMs = it.practicedAtMs,
+                    claimed = it.claimed,
+                    value = it.value,
+                    weightKg = it.weightKg,
+                )
+            }
+        }
+
+    /**
+     * A measured practice attempt toward the standard — records what was
+     * actually achieved (seconds, reps or metres) and any added load. No XP,
+     * no mastery: claiming is a separate, deliberate act.
+     */
+    suspend fun logSkillPractice(skillName: String, value: Int, weightKg: Double? = null) {
+        require(Skills.forName(skillName) != null) { "Unknown skill $skillName" }
+        require(value >= 0) { "Practice value cannot be negative" }
+        skillPracticeDao.insert(
+            SkillPracticeEntity(
+                skillName = skillName,
+                practicedAtMs = System.currentTimeMillis(),
+                value = value,
+                weightKg = weightKg,
+            ),
+        )
+    }
+
+    /** Claiming mastery: awards skill XP, may level you up and unlock titles. */
+    suspend fun claimSkill(skillName: String): SkillClaimResult = db.withTransaction {
+        val def = Skills.forName(skillName) ?: error("Unknown skill $skillName")
+        check(skillPracticeDao.claim(skillName) == null) { "$skillName already mastered" }
+        val now = System.currentTimeMillis()
+        skillPracticeDao.insert(
+            SkillPracticeEntity(skillName = skillName, practicedAtMs = now, claimed = true),
+        )
+        val before = profileDao.get() ?: error("Profile missing")
+        val levelBefore = Xp.levelFor(before.totalXp)
+        val newTotal = before.totalXp + def.xp
+        profileDao.addXp(def.xp.toLong())
+        val ledger = Titles.ledgerOf(
+            totalXp = newTotal,
+            history = observeHistory().first(),
+            healthDays = observeHealthDays().first(),
+            practices = observeSkillPractices().first(),
+        )
+        val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
+        titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
+        if (newly.isNotEmpty()) {
+            profileDao.setCurrentTitle(newly.first().id)
+        }
+        SkillClaimResult(
+            skill = def,
+            xpAwarded = def.xp,
+            levelBefore = levelBefore,
+            levelAfter = Xp.levelFor(newTotal),
+            totalXp = newTotal,
+            newTitles = newly,
+            unlockedNext = Skills.unlockedBy(skillName),
+        )
+    }
+
+    /** Undo an accidental claim: removes mastery and takes the XP back. */
+    suspend fun unclaimSkill(skillName: String) = db.withTransaction {
+        val def = Skills.forName(skillName) ?: error("Unknown skill $skillName")
+        if (skillPracticeDao.claim(skillName) == null) return@withTransaction
+        skillPracticeDao.deleteClaims(skillName)
+        profileDao.addXp(-def.xp.toLong())
+    }
+
+    suspend fun rename(name: String) {
+        require(name.isNotBlank()) { "Name cannot be blank" }
+        profileDao.setName(name.trim().take(24))
+    }
+
+    // ---------------------------------------------------------------- export
+
+    suspend fun exportJson(): String {
+        val profile = profileDao.get()?.let { PlayerProfile(it.name, it.totalXp, it.currentTitleId) } ?: PlayerProfile()
+        val names = exerciseDao.observeAll().first().associate { it.id to it.name }
+        val presets = presetDao.observePresets().first().map { pw ->
+            WorkoutPreset(
+                id = pw.preset.id,
+                name = pw.preset.name,
+                note = pw.preset.note,
+                scheduledDay = pw.preset.scheduledDay,
+                entries = pw.entries.sortedBy { it.position }.map { e ->
+                    PresetEntry(
+                        id = e.id,
+                        exerciseId = e.exerciseId,
+                        exerciseName = names[e.exerciseId] ?: "Unknown",
+                        targetSets = e.targetSets,
+                        targetReps = e.targetReps,
+                        targetWeightKg = e.targetWeightKg,
+                        modifiers = e.modifiers,
+                        position = e.position,
+                    )
+                },
+            )
+        }
+        val sessions = sessionDao.observeCompletedWithSets().first().map { sws ->
+            sws.session.toDomain() to sws.sets.map { s ->
+                SessionSet(
+                    id = s.id,
+                    exerciseId = s.exerciseId,
+                    exerciseName = names[s.exerciseId] ?: "Unknown",
+                    setIndex = s.setIndex,
+                    reps = s.reps,
+                    weightKg = s.weightKg,
+                    modifiers = s.modifiers,
+                    done = s.done,
+                )
+            }
+        }
+        val stats = statDao.observeAll().first().map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
+        val titles = titleDao.observeAll().first().map { UnlockedTitle(it.titleId, it.unlockedAtMs) }
+        return ExportWriter.write(profile, presets, sessions, stats, titles, System.currentTimeMillis())
+    }
+}
