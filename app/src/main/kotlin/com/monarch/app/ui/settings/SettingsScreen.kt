@@ -3,6 +3,7 @@ package com.monarch.app.ui.settings
 import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -16,14 +17,17 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -61,6 +65,7 @@ import com.monarch.app.ui.monarchHealthSync
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -68,6 +73,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private val HEALTH_PERMISSIONS = setOf(
     HealthPermission.getReadPermission(WeightRecord::class),
@@ -90,6 +96,14 @@ data class SyncUi(
     val coverage: String? = null,
 )
 
+data class ImportUi(
+    val importing: Boolean = false,
+    /** On success a count summary, on failure the reason verbatim from the Result. */
+    val summary: String? = null,
+    /** Reader warnings, first entry plus a count — shown, never swallowed. */
+    val problems: String? = null,
+)
+
 class SettingsViewModel(
     private val repo: Repository,
     private val healthSync: HealthSync,
@@ -98,6 +112,8 @@ class SettingsViewModel(
     private val _exporting = MutableStateFlow(false)
     val exporting: StateFlow<Boolean> = _exporting.asStateFlow()
 
+    private val _import = MutableStateFlow(ImportUi())
+    val import: StateFlow<ImportUi> = _import.asStateFlow()
     private val _sync = MutableStateFlow(SyncUi(available = runCatching { healthSync.available() }.getOrDefault(false)))
     val sync: StateFlow<SyncUi> = _sync.asStateFlow()
 
@@ -114,6 +130,27 @@ class SettingsViewModel(
             val json = repo.exportJson()
             _exporting.value = false
             onReady(json)
+        }
+    }
+
+    fun importArchive(json: String) {
+        if (_import.value.importing) return
+        viewModelScope.launch {
+            _import.value = ImportUi(importing = true)
+            _import.value = repo.importArchive(json).fold(
+                { r ->
+                    ImportUi(
+                        summary = "restored ${r.presets} presets · ${r.sessions} sessions · " +
+                            "${r.sets} sets · ${r.stats} readings · ${r.titles} titles · " +
+                            "${r.skills} skill logs · ${r.healthDays} health days",
+                        // surface the first problem plus how many more, not silence
+                        problems = r.problems.takeIf { it.isNotEmpty() }?.let {
+                            if (it.size == 1) it.first() else "${it.first()} (+${it.size - 1} more)"
+                        },
+                    )
+                },
+                { e -> ImportUi(summary = e.message ?: e.javaClass.simpleName) },
+            )
         }
     }
 
@@ -242,15 +279,53 @@ fun SettingsScreen(
 ) {
     val exporting by viewModel.exporting.collectAsStateWithLifecycle()
     val sync by viewModel.sync.collectAsStateWithLifecycle()
+    val importUi by viewModel.import.collectAsStateWithLifecycle()
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val healthDays by viewModel.healthDays.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var name by remember(profile?.name) { mutableStateOf(profile?.name ?: "") }
+    var confirmImport by remember { mutableStateOf(false) }
 
     val permissionLauncher = rememberLauncherForActivityResult(
         PermissionController.createRequestPermissionResultContract(),
     ) { _ ->
         viewModel.syncFromHealth()
+    }
+
+
+    // Import replaces everything, so the picker only fires after the confirm dialog.
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                // stream reads can stall on slow providers — never block the main thread
+                val json = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)
+                        ?.use { stream -> stream.readBytes().toString(Charsets.UTF_8) }
+                        .orEmpty()
+                }
+                if (json.isNotBlank()) viewModel.importArchive(json)
+            }
+        }
+    }
+
+    if (confirmImport) {
+        AlertDialog(
+            onDismissRequest = { confirmImport = false },
+            title = { Text("Restore this archive?") },
+            text = {
+                Text("Restoring replaces every preset, session, reading, title and skill log currently on this device. This cannot be undone.")
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmImport = false
+                    importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                }) { Text("Restore", color = MonarchColors.DangerRed) }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmImport = false }) { Text("Keep local data") }
+            },
+        )
     }
 
     Column(
@@ -456,6 +531,24 @@ fun SettingsScreen(
                     label = "Export Archive",
                     onClick = { viewModel.exportJson { json -> shareJson(context, json) } },
                 )
+            }
+            Spacer(Modifier.height(10.dp))
+            if (importUi.importing) {
+                CircularProgressIndicator()
+            } else {
+                MonarchButton(
+                    label = "Import Archive",
+                    onClick = { confirmImport = true },
+                    enabled = !exporting,
+                )
+            }
+            importUi.summary?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(it, style = MaterialTheme.typography.labelSmall, color = MonarchColors.InkMuted)
+            }
+            importUi.problems?.let {
+                Spacer(Modifier.height(4.dp))
+                Text(it, style = MaterialTheme.typography.labelSmall, color = MonarchColors.InkMuted)
             }
         }
 

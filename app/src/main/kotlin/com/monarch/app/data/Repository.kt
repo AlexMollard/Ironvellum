@@ -23,6 +23,7 @@ import com.monarch.app.data.db.TitleUnlockEntity
 import com.monarch.app.domain.ExerciseHistory
 import com.monarch.app.domain.HealthDay
 import com.monarch.app.domain.ExerciseHistoryCalculator
+import com.monarch.app.domain.ExportReader
 import com.monarch.app.domain.ExportWriter
 import com.monarch.app.domain.MuscleGroup
 import com.monarch.app.domain.PresetEntry
@@ -682,7 +683,9 @@ class Repository(
     // ---------------------------------------------------------------- export
 
     suspend fun exportJson(): String {
-        val profile = profileDao.get()?.let { PlayerProfile(it.name, it.totalXp, it.currentTitleId) } ?: PlayerProfile()
+        val profile = profileDao.get()?.let {
+            PlayerProfile(it.name, it.totalXp, it.currentTitleId, TrainingMode.valueOf(it.trainingMode))
+        } ?: PlayerProfile()
         val names = exerciseDao.observeAll().first().associate { it.id to it.name }
         val presets = presetDao.observePresets().first().map { pw ->
             WorkoutPreset(
@@ -719,7 +722,209 @@ class Repository(
             }
         }
         val stats = statDao.observeAll().first().map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
+        val skills = skillPracticeDao.observeAll().first().map {
+            SkillPractice(it.skillName, it.practicedAtMs, it.claimed, it.value, it.weightKg)
+        }
+        val healthDays = healthDayDao.observeAll().first().map {
+            HealthDay(
+                date = LocalDate.ofEpochDay(it.epochDay),
+                steps = it.steps,
+                distanceKm = it.distanceKm,
+                activeKcal = it.activeKcal,
+                sleepMinutes = it.sleepMinutes,
+                restingHr = it.restingHr,
+            )
+        }
         val titles = titleDao.observeAll().first().map { UnlockedTitle(it.titleId, it.unlockedAtMs) }
-        return ExportWriter.write(profile, presets, sessions, stats, titles, System.currentTimeMillis())
+        return ExportWriter.write(
+            profile = profile,
+            trainingMode = profile.trainingMode,
+            presets = presets,
+            sessions = sessions,
+            stats = stats,
+            titles = titles,
+            skills = skills,
+            healthDays = healthDays,
+            exportedAtMs = System.currentTimeMillis(),
+        )
+    }
+
+    data class ImportResult(
+        val presets: Int,
+        val sessions: Int,
+        val sets: Int,
+        val stats: Int,
+        val titles: Int,
+        val skills: Int,
+        val healthDays: Int,
+        val problems: List<String>,
+    )
+
+    /**
+     * Full restore from an export archive: wipes user data and replays the
+     * archive inside one transaction, so a mid-way failure cannot leave a
+     * half-restored database. The seeded exercise catalogue survives; archive
+     * exercises are matched by NAME (ids differ between installs) and created
+     * when missing.
+     */
+    suspend fun importArchive(json: String): Result<ImportResult> = Result.runCatching {
+        val archive = ExportReader.read(json).getOrThrow()
+        db.withTransaction {
+                // User data goes; the seeded exercise catalogue stays.
+                presetDao.clearAll()
+                sessionDao.clearAll()
+                statDao.clearAll()
+                titleDao.clearAll()
+                skillPracticeDao.clearAll()
+                healthDayDao.clearAll()
+
+                profileDao.upsert(
+                    ProfileEntity(
+                        name = archive.profile.name,
+                        totalXp = archive.profile.totalXp,
+                        currentTitleId = archive.profile.currentTitleId,
+                        trainingMode = archive.trainingMode.name,
+                    ),
+                )
+
+                // Resolve exercises by name: reuse the seeded catalogue entry on a
+                // case-insensitive hit, otherwise create the movement. The archive
+                // carries no muscle group or weighted flag, so new rows get
+                // defaults and every guess is reported, never silent.
+                val exerciseIdByName = mutableMapOf<String, Long>()
+                val problems = mutableListOf<String>()
+                suspend fun resolveExercise(rawName: String): Long? {
+                    val name = rawName.trim()
+                    if (name.isEmpty()) return null
+                    exerciseIdByName[name.lowercase()]?.let { return it }
+                    val existing = exerciseDao.byName(name)
+                    if (existing != null) {
+                        exerciseIdByName[name.lowercase()] = existing.id
+                        return existing.id
+                    }
+                    val guessedMuscleGroup = MuscleGroup.PULL.name
+                    val newId = exerciseDao.insertAll(
+                        listOf(ExerciseEntity(name = name, muscleGroup = guessedMuscleGroup, isWeighted = true)),
+                    ).first()
+                    exerciseIdByName[name.lowercase()] = newId
+                    problems.add(
+                        "exercise \"$name\" not in catalogue — created with guessed " +
+                            "muscleGroup=$guessedMuscleGroup and isWeighted=true",
+                    )
+                    return newId
+                }
+
+                var restoredSets = 0
+                val presetIdByOldId = mutableMapOf<Long, Long>()
+                archive.presets.forEach { preset ->
+                    val newPresetId = presetDao.insertPreset(
+                        PresetEntity(name = preset.name, note = preset.note, scheduledDay = preset.scheduledDay),
+                    )
+                    preset.id.takeIf { it > 0 }?.let { presetIdByOldId[it] = newPresetId }
+                    presetDao.insertEntries(
+                        preset.entries.sortedBy { it.position }.mapNotNull { entry ->
+                            val exerciseId = resolveExercise(entry.exerciseName)
+                            if (exerciseId == null) {
+                                problems.add("preset \"${preset.name}\" entry dropped: no exercise name")
+                                return@mapNotNull null
+                            }
+                            PresetEntryEntity(
+                                presetId = newPresetId,
+                                exerciseId = exerciseId,
+                                targetSets = entry.targetSets,
+                                targetReps = entry.targetReps,
+                                targetWeightKg = entry.targetWeightKg,
+                                modifiers = entry.modifiers,
+                                position = entry.position,
+                            )
+                        },
+                    )
+                }
+
+                archive.sessions.forEach { (session, sets) ->
+                    val newSessionId = sessionDao.insertSession(
+                        SessionEntity(
+                            presetId = session.presetId?.let { presetIdByOldId[it] },
+                            label = session.label,
+                            startedAtMs = session.startedAtMs,
+                            completedAtMs = session.completedAtMs,
+                            xpAwarded = session.xpAwarded,
+                            strengthScore = session.strengthScore,
+                        ),
+                    )
+                    restoredSets += sessionDao.insertSets(
+                        sets.mapNotNull { s ->
+                            val exerciseId = resolveExercise(s.exerciseName)
+                            if (exerciseId == null) {
+                                problems.add(
+                                    "session \"${session.label}\" set dropped: no exercise name",
+                                )
+                                return@mapNotNull null
+                            }
+                            SetLogEntity(
+                                sessionId = newSessionId,
+                                exerciseId = exerciseId,
+                                exercisePosition = s.exercisePosition,
+                                setIndex = s.setIndex,
+                                reps = s.reps,
+                                weightKg = s.weightKg,
+                                modifiers = s.modifiers,
+                                done = s.done,
+                            )
+                        },
+                    ).size
+                }
+
+                archive.stats.forEach { s ->
+                    statDao.insert(
+                        StatEntity(
+                            takenAtMs = s.takenAtMs,
+                            weightKg = s.weightKg,
+                            heightCm = s.heightCm,
+                            bodyFatPct = s.bodyFatPct,
+                        ),
+                    )
+                }
+                val statCount = archive.stats.size
+                archive.titles.forEach {
+                    titleDao.insertAll(listOf(TitleUnlockEntity(it.titleId, it.unlockedAtMs)))
+                }
+                archive.skills.forEach {
+                    skillPracticeDao.insert(
+                        SkillPracticeEntity(
+                            skillName = it.skillName,
+                            practicedAtMs = it.practicedAtMs,
+                            claimed = it.claimed,
+                            value = it.value,
+                            weightKg = it.weightKg,
+                        ),
+                    )
+                }
+                if (archive.healthDays.isNotEmpty()) {
+                    healthDayDao.upsertAll(
+                        archive.healthDays.map {
+                            HealthDayEntity(
+                                epochDay = it.date.toEpochDay(),
+                                steps = it.steps,
+                                distanceKm = it.distanceKm,
+                                activeKcal = it.activeKcal,
+                                sleepMinutes = it.sleepMinutes,
+                                restingHr = it.restingHr,
+                            )
+                        },
+                    )
+                }
+
+                ImportResult(
+                    presets = archive.presets.size,
+                    sessions = archive.sessions.size,
+                    sets = restoredSets,
+                    stats = statCount,
+                    titles = archive.titles.size,
+                    skills = archive.skills.size,
+                    healthDays = archive.healthDays.size,
+                    problems = problems,
+                )
+            }
     }
 }

@@ -1,6 +1,7 @@
 package com.monarch.app
 
 import android.app.Application
+import com.monarch.app.data.DbSnapshot
 import com.monarch.app.data.HealthSync
 import com.monarch.app.data.MonarchDatabase
 import com.monarch.app.data.Repository
@@ -20,6 +21,9 @@ class MonarchApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Before anything touches Room: a failed migration leaves the data on
+        // disk but unreachable, so the byte copy has to happen first.
+        DbSnapshot.capture(this)
         appScope.launch {
             repository.ensureSeeded()
             runCatching { repository.syncHealthHistory() }

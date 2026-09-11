@@ -10,10 +10,13 @@ object ExportWriter {
 
     fun write(
         profile: PlayerProfile,
+        trainingMode: TrainingMode,
         presets: List<WorkoutPreset>,
         sessions: List<Pair<WorkoutSession, List<SessionSet>>>,
         stats: List<StatEntry>,
         titles: List<UnlockedTitle>,
+        skills: List<SkillPractice>,
+        healthDays: List<HealthDay>,
         exportedAtMs: Long,
     ): String = buildString {
         append("{")
@@ -21,6 +24,8 @@ object ExportWriter {
         append("\"exportedAtMs\":$exportedAtMs,")
         append("\"profile\":")
         appendProfile(profile)
+        append(",\"trainingMode\":")
+        appendEscaped(trainingMode.name)
         append(",\"presets\":")
         appendPresets(presets)
         append(",\"sessions\":")
@@ -29,6 +34,10 @@ object ExportWriter {
         appendStats(stats)
         append(",\"titles\":")
         appendTitles(titles)
+        append(",\"skills\":")
+        appendSkills(skills)
+        append(",\"healthDays\":")
+        appendHealthDays(healthDays)
         append("}")
     }
 
@@ -60,6 +69,7 @@ object ExportWriter {
                 append(",\"targetWeightKg\":")
                 appendNullable(entry.targetWeightKg) { append(it) }
                 append(",\"modifiers\":").appendEscaped(entry.modifiers)
+                append(",\"position\":").append(entry.position)
                 append("}")
             }
             append("]}")
@@ -81,12 +91,15 @@ object ExportWriter {
             append(",\"sets\":[")
             sets.forEachIndexed { ti, set ->
                 if (ti > 0) append(",")
-                append("{\"exerciseId\":").append(set.exerciseId)
+                append("{\"id\":").append(set.id)
+                append(",\"exerciseId\":").append(set.exerciseId)
                 append(",\"exerciseName\":").appendEscaped(set.exerciseName)
+                append(",\"exercisePosition\":").append(set.exercisePosition)
                 append(",\"setIndex\":").append(set.setIndex)
                 append(",\"reps\":").append(set.reps)
                 append(",\"weightKg\":").appendNullable(set.weightKg) { append(it) }
                 append(",\"modifiers\":").appendEscaped(set.modifiers)
+                append(",\"done\":").append(set.done)
                 append("}")
             }
             append("]}")
@@ -113,6 +126,35 @@ object ExportWriter {
             if (i > 0) append(",")
             append("{\"titleId\":").appendEscaped(title.titleId)
             append(",\"unlockedAtMs\":").append(title.unlockedAtMs)
+            append("}")
+        }
+        append("]")
+    }
+
+    private fun StringBuilder.appendSkills(skills: List<SkillPractice>) {
+        append("[")
+        skills.forEachIndexed { i, skill ->
+            if (i > 0) append(",")
+            append("{\"skillName\":").appendEscaped(skill.skillName)
+            append(",\"practicedAtMs\":").append(skill.practicedAtMs)
+            append(",\"claimed\":").append(skill.claimed)
+            append(",\"value\":").append(skill.value)
+            append(",\"weightKg\":").appendNullable(skill.weightKg) { append(it) }
+            append("}")
+        }
+        append("]")
+    }
+
+    private fun StringBuilder.appendHealthDays(healthDays: List<HealthDay>) {
+        append("[")
+        healthDays.forEachIndexed { i, day ->
+            if (i > 0) append(",")
+            append("{\"date\":").appendEscaped(day.date.toString())
+            append(",\"steps\":").append(day.steps)
+            append(",\"distanceKm\":").append(day.distanceKm)
+            append(",\"activeKcal\":").append(day.activeKcal)
+            append(",\"sleepMinutes\":").append(day.sleepMinutes)
+            append(",\"restingHr\":").appendNullable(day.restingHr) { append(it) }
             append("}")
         }
         append("]")

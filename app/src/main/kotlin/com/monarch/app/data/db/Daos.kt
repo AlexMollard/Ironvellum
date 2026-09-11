@@ -22,6 +22,10 @@ interface ExerciseDao {
 
     @Insert
     suspend fun insertAll(exercises: List<ExerciseEntity>): List<Long>
+
+    /** Case-insensitive name lookup — import resolves exercises by name, not id. */
+    @Query("SELECT * FROM exercises WHERE name = :name COLLATE NOCASE LIMIT 1")
+    suspend fun byName(name: String): ExerciseEntity?
 }
 
 @Dao
@@ -50,6 +54,9 @@ interface PresetDao {
 
     @Query("DELETE FROM preset_entries WHERE presetId = :presetId")
     suspend fun clearEntries(presetId: Long)
+    /** Import is a full restore: presets go, their entries follow by cascade. */
+    @Query("DELETE FROM presets")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -118,6 +125,10 @@ interface SessionDao {
     )
     suspend fun completedRepSum(): Int
 
+    /** Import is a full restore: sessions go, their set_logs follow by cascade. */
+    @Query("DELETE FROM sessions")
+    suspend fun clearAll()
+
     /** Every logged set for one movement, joined with its session timestamp, newest first. */
     @Query(
         "SELECT s.sessionId AS sessionId, x.startedAtMs AS atMs, s.setIndex AS setIndex, " +
@@ -138,6 +149,10 @@ interface StatDao {
 
     @Query("DELETE FROM stats WHERE id = :id")
     suspend fun delete(id: Long)
+
+    /** Import is a full restore: stats are replaced wholesale. */
+    @Query("DELETE FROM stats")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -179,6 +194,10 @@ interface SkillPracticeDao {
 
     @Insert
     suspend fun insert(practice: SkillPracticeEntity)
+
+    /** Import is a full restore: practice history is replaced wholesale. */
+    @Query("DELETE FROM skill_practices")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -191,6 +210,10 @@ interface TitleDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertAll(unlocks: List<TitleUnlockEntity>)
+
+    /** Import is a full restore: the unlock ledger is replaced wholesale. */
+    @Query("DELETE FROM title_unlocks")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -210,4 +233,8 @@ interface HealthDayDao {
 
     @Query("SELECT COUNT(*) FROM health_days")
     suspend fun count(): Int
+
+    /** Import is a full restore: health days are replaced wholesale. */
+    @Query("DELETE FROM health_days")
+    suspend fun clearAll()
 }

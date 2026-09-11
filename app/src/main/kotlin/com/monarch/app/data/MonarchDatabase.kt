@@ -50,9 +50,13 @@ abstract class MonarchDatabase : RoomDatabase() {
     abstract fun healthDayDao(): HealthDayDao
 
     companion object {
+        // Version 11 is the shipped baseline. Every future schema change
+        // REQUIRES an explicit Migration registered via addMigrations(...):
+        // Room must be allowed to throw on an unknown schema rather than
+        // silently delete a user's training history (fallbackToDestructiveMigration
+        // was removed for exactly that reason — an upgrade wiped all data).
         fun create(context: Context): MonarchDatabase =
             Room.databaseBuilder(context, MonarchDatabase::class.java, "monarch.db")
-                .fallbackToDestructiveMigration()
                 .build()
     }
 }
