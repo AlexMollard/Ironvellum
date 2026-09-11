@@ -52,9 +52,6 @@ class ExportReaderTest {
             MeasurementEntry(site = MeasurementSite.WAIST, valueCm = 82.5, takenAtMs = 100),
             MeasurementEntry(site = MeasurementSite.UPPER_ARM, valueCm = 36.0, takenAtMs = 200),
         ),
-        measurementGoals = listOf(
-            MeasurementGoal(site = MeasurementSite.WAIST, targetCm = 80.0, setAtMs = 90, startCm = 85.0, achievedAtMs = null),
-        ),
         exportedAtMs = 999,
     )
 
@@ -130,10 +127,6 @@ class ExportReaderTest {
             ),
             archive.measurements,
         )
-        assertEquals(
-            listOf(MeasurementGoal(site = MeasurementSite.WAIST, targetCm = 80.0, setAtMs = 90, startCm = 85.0, achievedAtMs = null)),
-            archive.measurementGoals,
-        )
     }
 
     @Test
@@ -148,7 +141,27 @@ class ExportReaderTest {
         val archive = ExportReader.read(v3).getOrThrow()
 
         assertTrue(archive.measurements.isEmpty())
-        assertTrue(archive.measurementGoals.isEmpty())
+    }
+
+    @Test
+    fun `legacy archive with a measurementGoals section still restores`() {
+        // Goals were removed from the app, but v4 archives written before the
+        // removal carry the section. The reader must ignore it, never fail.
+        val legacy = """
+            {"formatVersion":4,"exportedAtMs":42,
+             "profile":{"name":"Old Hunter","totalXp":55,"currentTitleId":null},
+             "trainingMode":"STRENGTH",
+             "presets":[],"sessions":[],"stats":[],"titles":[],"skills":[],"healthDays":[],
+             "measurements":[{"site":"WAIST","valueCm":82.5,"takenAtMs":100}],
+             "measurementGoals":[{"site":"WAIST","targetCm":80.0,"setAtMs":90,"startCm":85.0,"achievedAtMs":null}]}
+        """.trimIndent()
+
+        val archive = ExportReader.read(legacy).getOrThrow()
+
+        assertEquals(
+            listOf(MeasurementEntry(id = 0, site = MeasurementSite.WAIST, valueCm = 82.5, takenAtMs = 100)),
+            archive.measurements,
+        )
     }
 
     @Test

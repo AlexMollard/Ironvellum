@@ -178,17 +178,22 @@ fun TitlesScreen(
                     viewModel.practice(name, value, load)
                     openSkill = null
                 },
-                onClaim = { viewModel.claim(name); openSkill = null },
-                onUnclaim = { viewModel.unclaim(name); openSkill = null },
+                onClaim = { viewModel.claim(name) },
+                onUnclaim = { viewModel.unclaim(name) },
                 onDismiss = { openSkill = null },
             )
         }
     }
 
+    // The deeds board owns a LazyColumn so a growing catalogue stays lazy, and
+    // a lazy list inside a verticalScroll parent is measured with infinite
+    // height — which crashed the Codex outright. So DEEDS gets a non-scrolling
+    // shell while the other tabs keep the scrolling one.
+    val deedsTab = tab == TitlesTab.DEEDS
     Column(
         Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .then(if (deedsTab) Modifier else Modifier.verticalScroll(rememberScrollState()))
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
@@ -263,9 +268,10 @@ fun TitlesScreen(
             equippedId = ui.currentTitleId,
             ledger = ui.ledger,
             onEquip = { viewModel.equip(it) },
+            // weight(1f) gives the lazy list a real height inside the
+            // non-scrolling shell; fillMaxSize here would fight the header.
+            modifier = Modifier.fillMaxWidth().weight(1f),
         )
-
-        Spacer(Modifier.height(24.dp))
     }
     claimResult?.let { result ->
         AchievementOverlay(

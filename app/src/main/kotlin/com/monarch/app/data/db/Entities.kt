@@ -177,14 +177,3 @@ data class MeasurementEntity(
     val takenAtMs: Long,
 )
 
-@Entity(tableName = "measurement_goals")
-data class MeasurementGoalEntity(
-    /** One goal per site — a new goal replaces the old one. */
-    @PrimaryKey val site: String,
-    val targetCm: Double,
-    val setAtMs: Long,
-    /** Reading when the goal was set — the baseline progress measures from. */
-    val startCm: Double,
-    /** Stamped by logMeasurement the moment a reading satisfies the goal. */
-    val achievedAtMs: Long? = null,
-)

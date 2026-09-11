@@ -1,9 +1,57 @@
 package com.monarch.app.domain
 
-/** Sites worth tracking for a calisthenics/weighted athlete. */
-enum class MeasurementSite(val label: String) {
-    NECK("Neck"), SHOULDERS("Shoulders"), CHEST("Chest"), UPPER_ARM("Upper arm"),
-    FOREARM("Forearm"), WAIST("Waist"), HIPS("Hips"), THIGH("Thigh"), CALF("Calf"),
+/**
+ * Each site carries its own technique note. A circumference is only comparable
+ * to your own past numbers if the tape goes in the same place at the same
+ * tension every time — an inconsistent method produces a trend line that
+ * measures your measuring, not your training.
+ */
+enum class MeasurementSite(val label: String, val howTo: String) {
+    NECK(
+        "Neck",
+        "Just below the Adam's apple, tape level and snug without pressing in. " +
+            "Look straight ahead, shoulders relaxed.",
+    ),
+    SHOULDERS(
+        "Shoulders",
+        "Widest point around the deltoids, arms hanging loose. Keep the tape " +
+            "level front and back — easiest with a mirror.",
+    ),
+    CHEST(
+        "Chest",
+        "Widest part, tape level under the armpits across the nipple line. " +
+            "Measure at the end of a normal exhale, never on a held breath.",
+    ),
+    UPPER_ARM(
+        "Upper arm",
+        "Midway between shoulder and elbow. Pick flexed OR relaxed and keep it " +
+            "that way forever — mixing the two invents gains. Same arm each time.",
+    ),
+    FOREARM(
+        "Forearm",
+        "Widest point below the elbow, arm hanging straight, hand open. " +
+            "A clenched fist adds size that is not there.",
+    ),
+    WAIST(
+        "Waist",
+        "Narrowest point, usually just above the navel. Relaxed belly, normal " +
+            "exhale, no sucking in. Morning before food is the most repeatable.",
+    ),
+    HIPS(
+        "Hips",
+        "Widest point around the glutes, feet together, weight even. " +
+            "Tape level the whole way round.",
+    ),
+    THIGH(
+        "Thigh",
+        "Widest point high on the leg, just below the glute fold. Stand tall, " +
+            "weight on both feet, muscle relaxed. Same leg every time.",
+    ),
+    CALF(
+        "Calf",
+        "Widest point mid-calf, standing with weight even on both feet. " +
+            "Seated or on tiptoe gives a different number.",
+    ),
 }
 
 data class MeasurementEntry(
@@ -11,27 +59,6 @@ data class MeasurementEntry(
     val site: MeasurementSite,
     val takenAtMs: Long,
     val valueCm: Double,
-)
-
-/** A target for one site. Direction is derived from startCm vs targetCm, never asked for. */
-data class MeasurementGoal(
-    val site: MeasurementSite,
-    val targetCm: Double,
-    val setAtMs: Long,
-    /** The reading when the goal was set — the baseline progress measures from. */
-    val startCm: Double,
-    val achievedAtMs: Long? = null,
-)
-
-data class GoalProgress(
-    val goal: MeasurementGoal,
-    val currentCm: Double?,
-    /** 0f..1f from startCm toward targetCm; 1f when reached or passed. */
-    val fraction: Float,
-    val remainingCm: Double,
-    /** Target below start (waist) vs above (arms). */
-    val shrinking: Boolean,
-    val achieved: Boolean,
 )
 
 object Measurements {
@@ -45,30 +72,6 @@ object Measurements {
     /** Newest first. */
     fun history(entries: List<MeasurementEntry>, site: MeasurementSite): List<MeasurementEntry> =
         entries.filter { it.site == site }.sortedByDescending { it.takenAtMs }
-
-    fun progress(goal: MeasurementGoal, entries: List<MeasurementEntry>): GoalProgress {
-        val current = history(entries, goal.site).firstOrNull()?.valueCm
-        val shrinking = goal.targetCm < goal.startCm
-        if (current == null) {
-            return GoalProgress(goal, currentCm = null, fraction = 0f, remainingCm = 0.0, shrinking = shrinking, achieved = false)
-        }
-        val range = goal.targetCm - goal.startCm
-        val raw = if (range == 0.0) {
-            // Zero-width goal: only the exact target counts, never a division.
-            if (current == goal.targetCm) 1.0 else 0.0
-        } else {
-            (current - goal.startCm) / range
-        }
-        val achieved = if (shrinking) current <= goal.targetCm else current >= goal.targetCm
-        return GoalProgress(
-            goal = goal,
-            currentCm = current,
-            fraction = raw.coerceIn(0.0, 1.0).toFloat(),
-            remainingCm = kotlin.math.abs(goal.targetCm - current),
-            shrinking = shrinking,
-            achieved = achieved,
-        )
-    }
 
     /**
      * Change over the trailing [days], anchored at the newest reading for the

@@ -12,7 +12,6 @@ import com.monarch.app.data.db.HealthDayDao
 import com.monarch.app.data.db.HealthDayEntity
 import com.monarch.app.data.db.MeasurementDao
 import com.monarch.app.data.db.MeasurementEntity
-import com.monarch.app.data.db.MeasurementGoalEntity
 import com.monarch.app.data.db.PresetDao
 import com.monarch.app.data.db.PresetEntity
 import com.monarch.app.data.db.PresetEntryEntity
@@ -41,9 +40,8 @@ import com.monarch.app.data.db.TitleUnlockEntity
         SkillPracticeEntity::class,
         HealthDayEntity::class,
         MeasurementEntity::class,
-        MeasurementGoalEntity::class,
     ],
-    version = 14,
+    version = 15,
     exportSchema = false,
 )
 abstract class MonarchDatabase : RoomDatabase() {
@@ -94,21 +92,19 @@ abstract class MonarchDatabase : RoomDatabase() {
                         "`valueCm` REAL NOT NULL, " +
                         "`takenAtMs` INTEGER NOT NULL)",
                 )
-                db.execSQL(
-                    "CREATE TABLE IF NOT EXISTS `measurement_goals` (" +
-                        "`site` TEXT NOT NULL, " +
-                        "`targetCm` REAL NOT NULL, " +
-                        "`setAtMs` INTEGER NOT NULL, " +
-                        "`startCm` REAL NOT NULL, " +
-                        "`achievedAtMs` INTEGER, " +
-                        "PRIMARY KEY(`site`))",
-                )
+            }
+        }
+
+        private val MIGRATION_14_15 = object : Migration(14, 15) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Measurement goals removed: sizes are tracked without targets.
+                db.execSQL("DROP TABLE IF EXISTS measurement_goals")
             }
         }
 
         fun create(context: Context): MonarchDatabase =
             Room.databaseBuilder(context, MonarchDatabase::class.java, "monarch.db")
-                .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14)
+                .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
                 .build()
     }
 }

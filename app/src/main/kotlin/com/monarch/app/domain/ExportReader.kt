@@ -21,10 +21,9 @@ object ExportReader {
         val titles: List<UnlockedTitle>,
         val skills: List<SkillPractice>,
         val healthDays: List<HealthDay>,
-        // Absent in v1-v3 archives, so these default to empty � an older
+        // Absent in v1-v3 archives, so this defaults to empty — an older
         // backup must still restore.
         val measurements: List<MeasurementEntry> = emptyList(),
-        val measurementGoals: List<MeasurementGoal> = emptyList(),
     )
 
     fun read(json: String): Result<Archive> = runCatching {
@@ -44,7 +43,9 @@ object ExportReader {
             skills = (root.arr("skills") ?: emptyList()).map { readSkill(it as Obj) },
             healthDays = (root.arr("healthDays") ?: emptyList()).map { readHealthDay(it as Obj) },
             measurements = (root.arr("measurements") ?: emptyList()).map { readMeasurement(it as Obj) },
-            measurementGoals = (root.arr("measurementGoals") ?: emptyList()).map { readMeasurementGoal(it as Obj) },
+            // Legacy v4 archives may still carry a "measurementGoals" section;
+            // the parser absorbs it and we deliberately ignore it — an old
+            // backup must restore, not fail.
         ).also {
             // A newer archive may carry fields this build cannot understand.
             if (it.formatVersion > ExportWriter.FORMAT_VERSION) {
@@ -148,15 +149,6 @@ object ExportReader {
             ?: fail("measurement missing site"),
         valueCm = o.dbl("valueCm") ?: fail("measurement missing valueCm"),
         takenAtMs = o.long("takenAtMs") ?: fail("measurement missing takenAtMs"),
-    )
-
-    private fun readMeasurementGoal(o: Obj) = MeasurementGoal(
-        site = MeasurementSite.entries.firstOrNull { it.name == o.str("site") }
-            ?: fail("measurement goal missing site"),
-        targetCm = o.dbl("targetCm") ?: fail("measurement goal missing targetCm"),
-        setAtMs = o.long("setAtMs") ?: fail("measurement goal missing setAtMs"),
-        startCm = o.dbl("startCm") ?: fail("measurement goal missing startCm"),
-        achievedAtMs = o.long("achievedAtMs"),
     )
 
     // --- JSON value model ---------------------------------------------------

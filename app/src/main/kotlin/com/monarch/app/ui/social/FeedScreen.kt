@@ -77,7 +77,7 @@ data class FeedUi(
 
 class FeedViewModel(
     private val cloudSync: CloudSync,
-    accountRepo: com.monarch.app.data.cloud.AccountRepository,
+    private val accountRepo: com.monarch.app.data.cloud.AccountRepository,
     private val pageSize: Int = 50,
 ) : ViewModel() {
 
@@ -92,6 +92,22 @@ class FeedViewModel(
     private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
 
     init {
+        // Sign-in happens on a sibling tab AFTER this view model exists, so a
+        // one-shot read of account.value strands the feed on "sign in" forever.
+        // Observe it instead and load the moment a session appears.
+        viewModelScope.launch {
+            accountRepo.account.collect { account ->
+                val wasSignedIn = _ui.value.signedIn
+                _ui.value = _ui.value.copy(
+                    signedIn = account != null,
+                    myUserId = account?.userId,
+                )
+                when {
+                    account != null && !wasSignedIn -> load()
+                    account == null -> _ui.value = _ui.value.copy(entries = emptyList())
+                }
+            }
+        }
         load()
     }
 

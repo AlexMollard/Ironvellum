@@ -18,7 +18,6 @@ object ExportWriter {
         skills: List<SkillPractice>,
         healthDays: List<HealthDay>,
         measurements: List<MeasurementEntry> = emptyList(),
-        measurementGoals: List<MeasurementGoal> = emptyList(),
         exportedAtMs: Long,
     ): String = buildString {
         append("{")
@@ -42,8 +41,6 @@ object ExportWriter {
         appendHealthDays(healthDays)
         append(",\"measurements\":")
         appendMeasurements(measurements)
-        append(",\"measurementGoals\":")
-        appendMeasurementGoals(measurementGoals)
         append("}")
     }
 
@@ -179,20 +176,6 @@ object ExportWriter {
             append("{\"site\":").appendEscaped(m.site.name)
             append(",\"valueCm\":").append(m.valueCm)
             append(",\"takenAtMs\":").append(m.takenAtMs)
-            append("}")
-        }
-        append("]")
-    }
-
-    private fun StringBuilder.appendMeasurementGoals(goals: List<MeasurementGoal>) {
-        append("[")
-        goals.forEachIndexed { i, g ->
-            if (i > 0) append(",")
-            append("{\"site\":").appendEscaped(g.site.name)
-            append(",\"targetCm\":").append(g.targetCm)
-            append(",\"setAtMs\":").append(g.setAtMs)
-            append(",\"startCm\":").append(g.startCm)
-            append(",\"achievedAtMs\":").appendNullable(g.achievedAtMs) { append(it) }
             append("}")
         }
         append("]")
