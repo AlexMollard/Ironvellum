@@ -84,6 +84,12 @@ data class ShadowBoardUi(
     val error: String? = null,
     /** Set once a fetch has completed, so the first selection can trigger a lazy load exactly once. */
     val loaded: Boolean = false,
+    /**
+     * False once the cloud says the board does not exist yet (migration 0008
+     * unapplied). Offering a board that cannot load reads as a connection
+     * fault, so the picker retires itself instead of showing a standing error.
+     */
+    val available: Boolean = true,
 )
 
 /** Which board the BOARD tab shows; the shadow army is deliberately a separate board, not a metric. */
@@ -158,7 +164,17 @@ class LeaderboardViewModel(
             _shadow.value = _shadow.value.copy(loading = true, error = null)
             cloudSync.shadowBoard(force)
                 .onSuccess { _shadow.value = ShadowBoardUi(rows = it, loaded = true) }
-                .onFailure { _shadow.value = _shadow.value.copy(loaded = true, error = it.reason()) }
+                .onFailure { error ->
+                    val reason = error.reason()
+                    _shadow.value = _shadow.value.copy(
+                        loaded = true,
+                        error = reason,
+                        // Distinguish "the cloud has no such board" from a
+                        // transient network failure: only the former retires
+                        // the picker, a dropped connection must stay retryable.
+                        available = !reason.contains("not live yet"),
+                    )
+                }
             _shadow.value = _shadow.value.copy(loading = false)
         }
     }
@@ -168,6 +184,10 @@ class LeaderboardViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {
+        // One probe at construction decides whether SHADOW ARMY is offered at
+        // all. Without it the player's first tap is the discovery mechanism,
+        // and that tap looks like a board that cannot connect.
+        loadShadow()
         viewModelScope.launch {
             accountRepo.account.collect { acct ->
                 _ui.value = _ui.value.copy(
@@ -239,16 +259,19 @@ fun LeaderboardScreen(
             else -> {
                 // Two separate boards behind one tab: the training board measures
                 // what a hunter lifted; the shadow army board measures the vault.
-                // Switching to SHADOW ARMY triggers its first lazy fetch.
-                BoardSelector(
-                    selected = board,
-                    onPick = {
-                        board = it
-                        if (it == Board.Shadow) viewModel.loadShadow()
-                    },
-                )
-                Spacer(Modifier.height(12.dp))
-                if (board == Board.Shadow) {
+                // The picker only appears once the cloud actually has the board —
+                // until then this is exactly the training board it always was.
+                if (shadow.available) {
+                    BoardSelector(
+                        selected = board,
+                        onPick = {
+                            board = it
+                            if (it == Board.Shadow) viewModel.loadShadow()
+                        },
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
+                if (board == Board.Shadow && shadow.available) {
                     ShadowBoard(
                         ui = shadow,
                         myUserId = ui.myUserId,
