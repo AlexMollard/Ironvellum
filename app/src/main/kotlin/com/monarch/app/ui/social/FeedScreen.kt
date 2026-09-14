@@ -900,17 +900,23 @@ private fun MovementLine(entry: FeedEntry) {
     val headline = entry.bestSet?.takeIf { it.isNotBlank() }?.let { "BEST $it" }
         ?: entry.hardestGrade?.takeIf { it.isNotBlank() }?.let { "HARDEST $it" }
         ?: entry.distanceM?.takeIf { it > 0 }?.let { "${formatDistance(it)} COVERED" }
-    if (movements == null && headline == null) return
     val meta = buildList {
         if (entry.movementCount > 0) {
             add("${entry.movementCount} ${if (entry.movementCount == 1) "MOVEMENT" else "MOVEMENTS"}")
         }
         entry.durationSec?.takeIf { it >= 60 }?.let { add(formatDuration(it)) }
     }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
+    // Bail only when there is NOTHING to show. Computing `meta` after an early
+    // return dropped the movement/duration line for a hunt that had no movement
+    // names and no headline — the one case where meta was all it had.
+    if (movements == null && headline == null && meta.isEmpty()) return
+    // Meta-only hunts skip the row entirely: an empty Row with just a weighted
+    // Spacer would draw a blank band above the meta line.
+    if (movements != null || headline != null) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
         if (movements != null) {
             Icon(
                 Icons.Outlined.Category,
@@ -956,6 +962,7 @@ private fun MovementLine(entry: FeedEntry) {
                     softWrap = false,
                 )
             }
+        }
         }
     }
     if (meta.isNotEmpty()) {
