@@ -387,7 +387,7 @@ private fun NotSignedIn() {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "The public feed streams every hunter's shared hunts, and it only opens for awakened accounts. Open Settings → Gateway and sign in to join the watch.",
+            "The public feed streams every hunter's shared hunts, and it only opens for awakened accounts. Open the ALLIES tab above and sign in to join the watch.",
             style = MaterialTheme.typography.bodySmall,
             color = MonarchColors.InkMuted,
         )

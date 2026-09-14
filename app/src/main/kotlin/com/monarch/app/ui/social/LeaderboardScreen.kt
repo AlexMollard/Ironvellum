@@ -347,7 +347,7 @@ private fun NotSignedIn() {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Only hunters with a cloud sigil are ranked. Open Settings → Gateway and sign in or awaken an account to claim your rank.",
+            "Only hunters with a cloud sigil are ranked. Open the ALLIES tab above and sign in or awaken an account to claim your rank.",
             style = MaterialTheme.typography.bodySmall,
             color = MonarchColors.InkMuted,
         )
@@ -379,7 +379,7 @@ private fun EmptyBoard(onRefresh: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "No rivals ranked yet — every throne starts unopposed. Invite allies by hunter name from Settings → Gateway, then return here to see who trains hardest.",
+            "No rivals ranked yet — every throne starts unopposed. Invite allies by hunter name from the ALLIES tab, then return here to see who trains hardest.",
             style = MaterialTheme.typography.bodySmall,
             color = MonarchColors.InkMuted,
         )

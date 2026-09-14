@@ -328,7 +328,17 @@ fun AccountScreen(
         when {
             !ui.configured -> NotConfiguredPanel()
             ui.busy && ui.account == null -> BusyPanel("Linking to the System…")
-            // Signed-in is handled above with pull-to-refresh; unreachable here.
+            // Signed OUT with a configured cloud: this is the gate itself.
+            // Losing this branch left GATEWAY rendering nothing but its own
+            // title, so there was no way to sign in from anywhere in the app.
+            else -> AuthPanels(
+                error = ui.error,
+                busy = ui.busy,
+                googleEnabled = Cloud.googleConfigured,
+                onGoogleSignIn = viewModel::signInWithGoogle,
+                onSignIn = viewModel::signIn,
+                onSignUp = viewModel::signUp,
+            )
         }
 
         Spacer(Modifier.height(28.dp))
