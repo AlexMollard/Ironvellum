@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -190,14 +191,27 @@ private fun LifetimeLedger(history: List<Pair<WorkoutSession, List<SessionSet>>>
         // Strength across the most recent stretch; a longer series just turns
         // to noise at this width, so cap the chart at the last 20 sessions.
         val series = sessions.take(20).map { it.strengthScore.toDouble() }
-        Text(
-            "STRENGTH · LAST ${series.size} SESSIONS",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = MonarchColors.InkMuted,
-            letterSpacing = MonarchTracking.InlineLabel,
-        )
-        TrendChart(values = series, color = MonarchColors.Emerald)
+        // A two-point line is a straight diagonal filling half the panel: it
+        // looks like a trend while carrying no information. Below three
+        // sessions, say so instead of drawing it.
+        if (series.size >= 3) {
+            Text(
+                "STRENGTH · LAST ${series.size} SESSIONS",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.InkMuted,
+                letterSpacing = MonarchTracking.InlineLabel,
+            )
+            TrendChart(values = series, color = MonarchColors.Emerald)
+        } else {
+            Text(
+                "THE TREND LINE OPENS AT THREE SESSIONS",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.InkMuted,
+                letterSpacing = MonarchTracking.InlineLabel,
+            )
+        }
     }
 }
 
@@ -245,6 +259,9 @@ private fun LogRow(session: WorkoutSession, sets: List<SessionSet>, onClick: () 
                     color = MonarchColors.InkMuted,
                 )
             }
+            ScorePill("+${session.xpAwarded}", "XP", MonarchColors.Emerald)
+            Spacer(Modifier.width(8.dp))
+            ScorePill("%,d".format(session.strengthScore), "STR", MonarchColors.SovereignGold)
             // Annotation glyphs so annotated sessions are findable at a glance
             // without opening each one.
             if (session.note.isNotBlank()) {
@@ -265,23 +282,38 @@ private fun LogRow(session: WorkoutSession, sets: List<SessionSet>, onClick: () 
             }
         }
         Spacer(Modifier.height(10.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            StatChip("${sets.map { it.exerciseId }.distinct().size}", "EXERCISES")
-            StatChip("${doneSets.size}/${sets.size}", "SETS")
-            StatChip("${totalReps}", "REPS")
-            StatChip("+${session.xpAwarded}", "XP", MonarchColors.Emerald)
-            StatChip("${session.strengthScore}", "STR", MonarchColors.SovereignGold)
-        }
+        // ONE line of figures, not five chips in a Row. Five unweighted chips
+        // starved the last one, which then wrapped a digit per line and took
+        // the card's height with it — the "empty space" under every row was
+        // that stretched chip.
+        Text(
+            buildString {
+                append(sets.map { it.exerciseId }.distinct().size).append(" exercises")
+                append("  ·  ").append(doneSets.size).append("/").append(sets.size).append(" sets")
+                append("  ·  ").append("%,d".format(totalReps)).append(" reps")
+            },
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
+/**
+ * The two figures worth ranking a session by, as fixed-width pills on the title
+ * row. They sit beside the name rather than in the figure line so the headline
+ * numbers stay scannable down a long log.
+ */
 @Composable
-private fun StatChip(value: String, label: String, accent: androidx.compose.ui.graphics.Color = MonarchColors.InkMuted) {
+private fun ScorePill(value: String, label: String, accent: androidx.compose.ui.graphics.Color) {
     Column(
         Modifier
             .clip(MaterialTheme.shapes.extraSmall)
             .background(MonarchColors.VaultHigh)
-            .padding(horizontal = 10.dp, vertical = 5.dp),
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
             value,
@@ -289,6 +321,8 @@ private fun StatChip(value: String, label: String, accent: androidx.compose.ui.g
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
             color = accent,
+            maxLines = 1,
+            softWrap = false,
         )
         Text(
             label,
@@ -296,6 +330,9 @@ private fun StatChip(value: String, label: String, accent: androidx.compose.ui.g
             fontFamily = ChakraPetch,
             color = MonarchColors.InkMuted,
             letterSpacing = MonarchTracking.InlineLabel,
+            maxLines = 1,
+            softWrap = false,
         )
     }
 }
+

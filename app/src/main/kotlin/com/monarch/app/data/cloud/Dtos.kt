@@ -24,6 +24,41 @@ data class ProfileDto(
     @SerialName("current_title_id") val currentTitleId: String? = null,
 )
 
+/**
+ * The shadow army's shareable aggregate. Kept OUT of [ProfileDto] on purpose:
+ * these columns arrive with migration 0008, and pushing them in the same
+ * statement as the training aggregates would make a pre-migration database
+ * reject the whole profile upsert instead of just the shadow figures.
+ */
+@Serializable
+data class ShadowPushDto(
+    @SerialName("shadow_essence") val shadowEssence: Long,
+    @SerialName("shadow_count") val shadowCount: Int,
+    @SerialName("shadow_rate") val shadowRate: Double,
+)
+
+@Serializable
+data class ShadowBoardDto(
+    @SerialName("id") val id: String,
+    @SerialName("display_name") val displayName: String,
+    @SerialName("current_title_id") val currentTitleId: String? = null,
+    @SerialName("level") val level: Int = 1,
+    @SerialName("shadow_essence") val shadowEssence: Long = 0,
+    @SerialName("shadow_count") val shadowCount: Int = 0,
+    @SerialName("shadow_rate") val shadowRate: Double = 0.0,
+)
+
+/** One hunter's standing on the shadow board. */
+data class ShadowBoardRow(
+    val userId: String,
+    val displayName: String,
+    val currentTitleId: String?,
+    val level: Int,
+    val essence: Long,
+    val shadows: Int,
+    val ratePerHour: Double,
+)
+
 /** Minimal projection when we only need the generated cloud id back. */
 @Serializable
 data class SessionIdDto(

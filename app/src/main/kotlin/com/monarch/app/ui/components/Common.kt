@@ -193,37 +193,6 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
     }
 }
 
-/** Diamond-cut level emblem with a quiet sweeping ring. */
-@Composable
-fun RankBadge(level: Int, modifier: Modifier = Modifier) {
-    val shape = MaterialTheme.shapes.medium
-    Box(
-        modifier
-            .size(64.dp)
-            .drawBehind {
-                drawCircle(
-                    brush = Brush.sweepGradient(listOf(MonarchColors.SovereignGold, MonarchColors.Bracket, MonarchColors.SovereignGold)),
-                    radius = size.minDimension / 2f,
-                    style = Stroke(width = 2.dp.toPx()),
-                )
-            }
-            .padding(5.dp)
-            .clip(shape)
-            .background(Brush.linearGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault))),
-        contentAlignment = Alignment.Center,
-    ) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text("LV", style = MaterialTheme.typography.labelSmall, fontFamily = ChakraPetch, color = MonarchColors.SystemGreen)
-            Text(
-                level.toString(),
-                style = MaterialTheme.typography.headlineSmall,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = MonarchColors.Ink,
-            )
-        }
-    }
-}
 
 /** Primary action: emerald-teal gradient button with press feedback. */
 @Composable

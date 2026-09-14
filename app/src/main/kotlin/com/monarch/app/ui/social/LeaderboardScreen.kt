@@ -50,6 +50,7 @@ import com.monarch.app.data.Repository
 import com.monarch.app.data.cloud.Cloud
 import com.monarch.app.data.cloud.CloudSync
 import com.monarch.app.data.cloud.LeaderboardRow
+import com.monarch.app.data.cloud.ShadowBoardRow
 import com.monarch.app.domain.Titles
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.SystemWindow
@@ -75,6 +76,21 @@ data class LeaderboardUi(
     val loading: Boolean = false,
     val error: String? = null,
 )
+
+/** Snapshot of the shadow army board: rows, loading and failure state, independent of the training board. */
+data class ShadowBoardUi(
+    val rows: List<ShadowBoardRow> = emptyList(),
+    val loading: Boolean = false,
+    val error: String? = null,
+    /** Set once a fetch has completed, so the first selection can trigger a lazy load exactly once. */
+    val loaded: Boolean = false,
+)
+
+/** Which board the BOARD tab shows; the shadow army is deliberately a separate board, not a metric. */
+private enum class Board(val label: String) {
+    Training("TRAINING"),
+    Shadow("SHADOW ARMY"),
+}
 
 /** Pickable ranking metric; each entry owns its sort key and display formatting. */
 private enum class BoardMetric(val label: String) {
@@ -129,6 +145,24 @@ class LeaderboardViewModel(
     )
     val ui = _ui.asStateFlow()
 
+    // The shadow army keeps its own board and its own flow: it never rides the
+    // training leaderboard's state, and the fetch is lazy — only when the
+    // player first selects SHADOW ARMY, not on every screen entry.
+    private val _shadow = MutableStateFlow(ShadowBoardUi())
+    val shadow = _shadow.asStateFlow()
+
+    fun loadShadow(force: Boolean = false) {
+        if (_shadow.value.loading) return
+        if (_shadow.value.loaded && !force) return
+        viewModelScope.launch {
+            _shadow.value = _shadow.value.copy(loading = true, error = null)
+            cloudSync.shadowBoard(force)
+                .onSuccess { _shadow.value = ShadowBoardUi(rows = it, loaded = true) }
+                .onFailure { _shadow.value = _shadow.value.copy(loaded = true, error = it.reason()) }
+            _shadow.value = _shadow.value.copy(loading = false)
+        }
+    }
+
     // Device-local equipped crest frame; only this hunter's own avatar ever wears it.
     val equippedFrame: StateFlow<String?> = repo.observeEquippedFrame()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -169,7 +203,9 @@ fun LeaderboardScreen(
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val shadow by viewModel.shadow.collectAsStateWithLifecycle()
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
+    var board by remember { mutableStateOf(Board.Training) }
 
     Column(
         Modifier
@@ -197,35 +233,55 @@ fun LeaderboardScreen(
             !ui.configured -> NotConfigured()
             !ui.signedIn && ui.loading -> LoadingPanel()
             !ui.signedIn -> NotSignedIn()
-            ui.loading && ui.rows.isEmpty() -> LoadingPanel()
-            ui.rows.isEmpty() && ui.error == null -> EmptyBoard(onRefresh = viewModel::load)
-            ui.rows.isEmpty() && ui.error != null -> ErrorPanel(onRefresh = viewModel::load)
+            ui.loading && ui.rows.isEmpty() && board == Board.Training -> LoadingPanel()
+            ui.rows.isEmpty() && ui.error == null && board == Board.Training -> EmptyBoard(onRefresh = viewModel::load)
+            ui.rows.isEmpty() && ui.error != null && board == Board.Training -> ErrorPanel(onRefresh = viewModel::load)
             else -> {
-                // Pull-to-refresh replaces the old REFRESH button for the normal signed-in board.
-                // The gesture needs content to grab: in the empty/error states there is nothing to
-                // pull (or the list just failed), so those states keep an explicit retry link.
-                val pullState = remember { PullToRefreshState() }
-                PullToRefreshBox(
-                    isRefreshing = ui.loading,
-                    onRefresh = { viewModel.load() },
-                    state = pullState,
-                    modifier = Modifier.fillMaxWidth(),
-                    indicator = {
-                        // House palette: dark vault plate with emerald stroke instead of default Material.
-                        PullToRefreshDefaults.Indicator(
-                            state = pullState,
-                            isRefreshing = ui.loading,
-                            modifier = Modifier.align(Alignment.TopCenter),
-                            containerColor = MonarchColors.VaultHigh,
-                            color = MonarchColors.EmeraldBright,
-                        )
+                // Two separate boards behind one tab: the training board measures
+                // what a hunter lifted; the shadow army board measures the vault.
+                // Switching to SHADOW ARMY triggers its first lazy fetch.
+                BoardSelector(
+                    selected = board,
+                    onPick = {
+                        board = it
+                        if (it == Board.Shadow) viewModel.loadShadow()
                     },
-                ) {
-                    // PullToRefreshBox's content slot is a Box: emitted straight
-                    // into it, every row stacks at the same origin — the podium
-                    // vanished under the pinned self-row. A Column restores flow.
-                    Column(Modifier.fillMaxWidth()) {
-                        Board(ui, viewModel::load, onOpenFriend, equippedFrame)
+                )
+                Spacer(Modifier.height(12.dp))
+                if (board == Board.Shadow) {
+                    ShadowBoard(
+                        ui = shadow,
+                        myUserId = ui.myUserId,
+                        equippedFrame = equippedFrame,
+                        onRefresh = { viewModel.loadShadow(force = true) },
+                    )
+                } else {
+                    // Pull-to-refresh replaces the old REFRESH button for the normal signed-in board.
+                    // The gesture needs content to grab: in the empty/error states there is nothing to
+                    // pull (or the list just failed), so those states keep an explicit retry link.
+                    val pullState = remember { PullToRefreshState() }
+                    PullToRefreshBox(
+                        isRefreshing = ui.loading,
+                        onRefresh = { viewModel.load() },
+                        state = pullState,
+                        modifier = Modifier.fillMaxWidth(),
+                        indicator = {
+                            // House palette: dark vault plate with emerald stroke instead of default Material.
+                            PullToRefreshDefaults.Indicator(
+                                state = pullState,
+                                isRefreshing = ui.loading,
+                                modifier = Modifier.align(Alignment.TopCenter),
+                                containerColor = MonarchColors.VaultHigh,
+                                color = MonarchColors.EmeraldBright,
+                            )
+                        },
+                    ) {
+                        // PullToRefreshBox's content slot is a Box: emitted straight
+                        // into it, every row stacks at the same origin — the podium
+                        // vanished under the pinned self-row. A Column restores flow.
+                        Column(Modifier.fillMaxWidth()) {
+                            Board(ui, viewModel::load, onOpenFriend, equippedFrame)
+                        }
                     }
                 }
             }
@@ -757,3 +813,195 @@ private fun RefreshLink(onClick: () -> Unit, label: String) {
         )
     }
 }
+
+
+/** Segmented TRAINING / SHADOW ARMY picker, styled after the metric chips. */
+@Composable
+private fun BoardSelector(selected: Board, onPick: (Board) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Board.entries.forEach { candidate ->
+            val active = candidate == selected
+            Text(
+                candidate.label,
+                maxLines = 1,
+                softWrap = false,
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                color = if (active) MonarchColors.Abyss else MonarchColors.InkMuted,
+                modifier = Modifier
+                    .clip(CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+                    .background(if (active) MonarchColors.SovereignGold else Color(0xFF141A18))
+                    .border(
+                        1.dp,
+                        if (active) MonarchColors.SovereignGold else MonarchColors.Rune,
+                        CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                    )
+                    .clickable { onPick(candidate) }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
+    }
+}
+
+/** The shadow army board: banked essence rankings, deliberately separate from the training board. */
+@Composable
+private fun ShadowBoard(
+    ui: ShadowBoardUi,
+    myUserId: String?,
+    equippedFrame: String?,
+    onRefresh: () -> Unit,
+) {
+    when {
+        ui.loading && ui.rows.isEmpty() -> LoadingPanel()
+        ui.rows.isEmpty() && ui.error != null -> ShadowErrorPanel(ui.error, onRefresh)
+        ui.rows.isEmpty() -> ShadowEmptyPanel(onRefresh)
+        else -> {
+            val pullState = remember { PullToRefreshState() }
+            PullToRefreshBox(
+                isRefreshing = ui.loading,
+                onRefresh = onRefresh,
+                state = pullState,
+                modifier = Modifier.fillMaxWidth(),
+                indicator = {
+                    PullToRefreshDefaults.Indicator(
+                        state = pullState,
+                        isRefreshing = ui.loading,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        containerColor = MonarchColors.VaultHigh,
+                        color = MonarchColors.EmeraldBright,
+                    )
+                },
+            ) {
+                Column(Modifier.fillMaxWidth()) {
+                    Text(
+                        "This board ranks the shadow army — essence banked, soldiers bound — and stands apart from the training board by design.",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.InkMuted,
+                        modifier = Modifier.padding(bottom = 10.dp),
+                    )
+                    ui.rows.forEachIndexed { index, row ->
+                        ShadowRankRow(
+                            rank = index + 1,
+                            row = row,
+                            isMe = row.userId == myUserId,
+                            equippedFrame = equippedFrame,
+                        )
+                        Spacer(Modifier.height(10.dp))
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** One shadow army row: rank, identity, banked essence as the headline, army figures beneath. */
+@Composable
+private fun ShadowRankRow(
+    rank: Int,
+    row: ShadowBoardRow,
+    isMe: Boolean,
+    equippedFrame: String?,
+) {
+    val accent = if (isMe) MonarchColors.SovereignGold else if (rank == 1) MonarchColors.SovereignGold else MonarchColors.Rune
+    SystemWindow(modifier = Modifier.fillMaxWidth(), accent = accent) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                "#$rank",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = if (rank <= 3 || isMe) accent else MonarchColors.InkMuted,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+            IdentityRow(
+                displayName = if (isMe) "${row.displayName} — YOU" else row.displayName,
+                userId = row.userId,
+                wornTitle = wornTitle(row.currentTitleId),
+                titleId = row.currentTitleId,
+                level = row.level,
+                size = IdentitySize.Standard,
+                // The equipped crest frame is worn by the local hunter alone.
+                frameId = if (isMe) equippedFrame else null,
+                isMe = isMe,
+                trailing = {
+                    Text(
+                        "${formatEssence(row.essence)} ESS",
+                        maxLines = 1,
+                        softWrap = false,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = accent,
+                    )
+                },
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "${row.shadows} shadows · ${formatRate(row.ratePerHour)}",
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+        )
+    }
+}
+
+/** The shadow fetch failed with nothing to show: name the failure, offer one clean retry. */
+@Composable
+private fun ShadowErrorPanel(message: String?, onRefresh: () -> Unit) {
+    SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.DangerRed) {
+        Text(
+            "THE ARMY IS VEILED",
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = MonarchColors.DangerRed,
+            letterSpacing = MonarchTracking.InlineLabel,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            message ?: "The shadow board could not be summoned. Stand fast and try again.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MonarchColors.InkMuted,
+        )
+        Spacer(Modifier.height(12.dp))
+        MonarchButton(label = "RETRY", onClick = onRefresh)
+    }
+}
+
+/** The shadow board answered, but no hunter has banked essence yet. */
+@Composable
+private fun ShadowEmptyPanel(onRefresh: () -> Unit) {
+    SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.Emerald) {
+        Text(
+            "THE ARMY SLEEPS",
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = MonarchColors.EmeraldBright,
+            letterSpacing = MonarchTracking.InlineLabel,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "No hunter has bound shadows yet — the vault is empty and every throne here is unclaimed.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MonarchColors.InkMuted,
+        )
+        Spacer(Modifier.height(10.dp))
+        RefreshLink(onClick = onRefresh, label = "Check again")
+    }
+}
+
+/** Thousands-separated essence, e.g. 12,480. */
+private fun formatEssence(value: Long): String =
+    java.text.NumberFormat.getIntegerInstance().format(value)
+
+/** Extraction rate as e.g. 218.2/H. */
+private fun formatRate(ratePerHour: Double): String = "%.1f/H".format(ratePerHour)

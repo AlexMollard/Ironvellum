@@ -71,6 +71,25 @@ class CloudSync(
                 onConflict = "id"
             }
 
+            // Shadow figures go in a SEPARATE update so a database without
+            // migration 0008 rejects only this, leaving the training sync
+            // intact. Idle state itself never leaves the device — only the
+            // shareable aggregate, so the cloud never holds the accrual clock.
+            val idle = repo.idleSnapshotOnce()
+            if (idle != null) {
+                runCatching {
+                    client.postgrest.from("profiles").update(
+                        ShadowPushDto(
+                            shadowEssence = idle.state.essence,
+                            shadowCount = idle.state.shadows,
+                            shadowRate = idle.rate.perHour,
+                        ),
+                    ) {
+                        filter { eq("id", me.userId) }
+                    }
+                }
+            }
+
             // Sessions first so their cloud ids exist before the sets land.
             val problems = mutableListOf<String>()
             val pushedNow = mutableListOf<Pair<WorkoutSession, List<SessionSet>>>()
@@ -218,6 +237,43 @@ class CloudSync(
                         sessionsLast7d = it.sessionsLast7d,
                         // Names resolve locally via Titles.byId — id only.
                         currentTitleId = it.currentTitleId,
+                    )
+                }
+            }
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /**
+     * The shadow army's board. Separate from [leaderboard] by design: idle
+     * progress must never rank beside strength, or the training board starts
+     * measuring patience instead of what a hunter lifted.
+     *
+     * TTL 60s, matching the training board — banked essence only changes when
+     * someone opens the app and pushes.
+     */
+    suspend fun shadowBoard(force: Boolean = false): Result<List<ShadowBoardRow>> {
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            cache.getOrFetch(
+                key = CloudReadCache.KEY_SHADOW_BOARD,
+                ttlMs = 60_000,
+                force = force,
+                userId = account.account.value?.userId,
+            ) {
+                client.postgrest.from("shadow_board").select {
+                    order("shadow_essence", Order.DESCENDING)
+                    limit(100)
+                }.decodeList<ShadowBoardDto>().map {
+                    ShadowBoardRow(
+                        userId = it.id,
+                        displayName = it.displayName,
+                        currentTitleId = it.currentTitleId,
+                        level = it.level,
+                        essence = it.shadowEssence,
+                        shadows = it.shadowCount,
+                        ratePerHour = it.shadowRate,
                     )
                 }
             }
@@ -611,6 +667,7 @@ class CloudSync(
 private class CloudReadCache {
     companion object {
         const val KEY_LEADERBOARD = "leaderboard"
+        const val KEY_SHADOW_BOARD = "shadow_board"
         const val KEY_FRIENDS = "friends"
         const val KEY_FEED_FIRST_PAGE = "feed:first"
         const val KEY_LIKERS = "likers"

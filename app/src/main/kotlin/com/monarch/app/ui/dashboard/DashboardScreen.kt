@@ -80,7 +80,7 @@ import com.monarch.app.domain.Xp
 import com.monarch.app.ui.components.Achievement
 import com.monarch.app.ui.components.AchievementOverlay
 import com.monarch.app.ui.components.MonarchButton
-import com.monarch.app.ui.components.RankBadge
+import com.monarch.app.ui.components.HunterSigil
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.XpBar
@@ -88,7 +88,6 @@ import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.components.formatDate
-import com.monarch.app.ui.components.CrestBadge
 import com.monarch.app.ui.monarchRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -264,12 +263,6 @@ fun DashboardScreen(
                             maxLines = 1,
                         )
                     }
-                    // The worn crest rides the identity strip: equipping one
-                    // used to be visible only on the social avatars.
-                    equippedFrame?.let { frame ->
-                        CrestBadge(frameId = frame, size = 30.dp)
-                        Spacer(Modifier.width(10.dp))
-                    }
                     // The System gear: settings left the bottom nav, so
                     // this fixed-size tap target rides at the end of the
                     // identity strip — the weighted name column absorbs it,
@@ -287,7 +280,9 @@ fun DashboardScreen(
                             ) { onOpenSettings() }
                             .padding(2.dp),
                     )
-                    RankBadge(level = progress.level)
+                    // Rank and crest as one insignia: the worn crest supplies
+                    // the plate this level sits on.
+                    HunterSigil(level = progress.level, frameId = equippedFrame)
                 }
                 Spacer(Modifier.height(10.dp))
                 XpBar(progress.intoLevel, progress.needed)

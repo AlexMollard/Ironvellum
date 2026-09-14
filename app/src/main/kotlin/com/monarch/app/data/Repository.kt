@@ -75,6 +75,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.firstOrNull
 
 class Repository(
     private val db: MonarchDatabase,
@@ -572,6 +573,10 @@ class Repository(
                     id = s.id,
                     exerciseId = s.exerciseId,
                     exerciseName = names[s.exerciseId] ?: "Unknown",
+                    // Without this every set defaulted to position 0, so the
+                    // session record grouped a five-exercise workout under one
+                    // heading with SET 1 repeating once per exercise.
+                    exercisePosition = s.exercisePosition,
                     setIndex = s.setIndex,
                     reps = s.reps,
                     weightKg = s.weightKg,
@@ -1149,6 +1154,13 @@ class Repository(
     }
 
     /** State plus the live rate, so the screen never recomputes the formula. */
+    /**
+     * One-shot idle snapshot for the cloud push. The observable flow is for the
+     * screen; a sync needs a single value and must not keep a subscription
+     * open, so this takes the first emission and stops.
+     */
+    suspend fun idleSnapshotOnce(): IdleSnapshot? = observeIdleSnapshot().firstOrNull()
+
     fun observeIdleSnapshot(): Flow<IdleSnapshot> = combine(
         observeIdle(),
         observeIdleRate(),

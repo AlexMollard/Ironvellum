@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.border
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
@@ -238,7 +240,13 @@ private fun DetailHeader(
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             LedgerStat(
-                if (durationMin == null) "—" else "${durationMin / 60}h ${durationMin % 60}m",
+                // "0h 0m" for a sub-minute session read as broken data.
+                when {
+                    durationMin == null -> "—"
+                    durationMin < 1L -> "<1m"
+                    durationMin < 60L -> "${durationMin}m"
+                    else -> "${durationMin / 60}h ${durationMin % 60}m"
+                },
                 "DURATION",
             )
             LedgerStat("+${session.xpAwarded}", "XP", MonarchColors.Emerald)
@@ -335,9 +343,15 @@ private fun WorkoutSets(sets: List<SessionSet>) {
                 )
             }
             Spacer(Modifier.height(10.dp))
-            groupSets.forEach { set ->
-                SetRow(set)
-                Spacer(Modifier.height(6.dp))
+            // Sets as a wrapping strip, not one full-width row each: a
+            // five-movement session produced seventeen identical bars and a
+            // screen you had to scroll to read a single number off.
+            FlowRow(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                groupSets.forEach { set -> SetChip(set) }
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -345,48 +359,51 @@ private fun WorkoutSets(sets: List<SessionSet>) {
 }
 
 @Composable
-private fun SetRow(set: SessionSet) {
+private fun SetChip(set: SessionSet) {
     val weight = if (set.weightKg == null || set.weightKg == 0.0) "BW" else "${"%.1f".format(set.weightKg)} kg"
-    Row(
+    Column(
         Modifier
-            .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall)
             .background(if (set.done) MonarchColors.VaultHigh else Color.Transparent)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            // Completed sets get the emerald diamond; skipped ones stay bare.
-            if (set.done) "\u25C6  SET ${set.setIndex + 1}" else "\u25C7  SET ${set.setIndex + 1}",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = if (set.done) MonarchColors.Emerald else MonarchColors.InkMuted,
-            letterSpacing = MonarchTracking.InlineLabel,
-            modifier = Modifier.weight(1f),
-        )
-        if (set.modifiers.isNotBlank()) {
-            Text(
-                set.modifiers.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = MonarchColors.SovereignGold,
-                letterSpacing = MonarchTracking.InlineLabel,
-                // A three-modifier set ("DEFICIT, PAUSE, TEMPO") otherwise pushes
-                // the reps x weight value out of the row.
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .weight(1f, fill = false)
-                    .padding(end = 12.dp),
+            .border(
+                1.dp,
+                if (set.done) MonarchColors.Emerald.copy(alpha = 0.35f) else MonarchColors.Rune,
+                MaterialTheme.shapes.extraSmall,
             )
-        }
+            .padding(horizontal = 10.dp, vertical = 7.dp),
+    ) {
         Text(
             "${set.reps} × $weight",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
             color = if (set.done) MonarchColors.Ink else MonarchColors.InkMuted,
+            maxLines = 1,
+            softWrap = false,
         )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                // Completed sets get the emerald diamond; skipped ones stay bare.
+                if (set.done) "\u25C6 ${set.setIndex + 1}" else "\u25C7 ${set.setIndex + 1}",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = if (set.done) MonarchColors.Emerald else MonarchColors.InkMuted,
+                letterSpacing = MonarchTracking.InlineLabel,
+                maxLines = 1,
+                softWrap = false,
+            )
+            if (set.modifiers.isNotBlank()) {
+                Text(
+                    " · ${set.modifiers.uppercase()}",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.SovereignGold,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
     }
 }
 
