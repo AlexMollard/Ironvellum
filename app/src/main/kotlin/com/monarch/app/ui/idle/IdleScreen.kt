@@ -356,9 +356,9 @@ private fun CollectWindow(pending: Double, justCollected: Long?, onCollect: () -
                 color = MonarchColors.InkMuted,
             )
             Text(
-                // Two decimals: at 10-60 essence/hour the integer part moves
-                // once a minute, which read as frozen.
-                "+" + if (pending < 1_000) "%.2f".format(pending) else formatEssence(pending.toLong()),
+                // Two decimals at every scale: a 1,000+ pending pile froze on
+                // whole units, which is the same deadness the hero total had.
+                "+%,.2f".format(pending),
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 fontSize = 32.sp,
