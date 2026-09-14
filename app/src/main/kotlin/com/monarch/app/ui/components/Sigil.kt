@@ -1,5 +1,11 @@
 package com.monarch.app.ui.components
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.getValue
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -61,14 +67,23 @@ private fun specOf(name: String): SigilSpec {
 fun RelicSigil(
     name: String,
     accent: Color = MonarchColors.EmeraldBright,
+    /** Slow drift for the relic that is actually setting the rate. */
+    spin: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     val spec = remember(name) { specOf(name) }
+    // 48s per revolution: perceptible as life, never as spinning.
+    val drift by rememberInfiniteTransition(label = "sigil").animateFloat(
+        initialValue = 0f,
+        targetValue = if (spin) 360f else 0f,
+        animationSpec = infiniteRepeatable(tween(48_000, easing = LinearEasing)),
+        label = "drift",
+    )
     Canvas(modifier) {
         val radius = min(size.width, size.height) / 2f
         val centre = Offset(size.width / 2f, size.height / 2f)
 
-        rotate(degrees = spec.rotation, pivot = centre) {
+        rotate(degrees = spec.rotation + drift, pivot = centre) {
             // Concentric rings: the relic's "setting".
             repeat(spec.rings) { ring ->
                 val r = radius * (0.92f - ring * 0.16f)

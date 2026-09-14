@@ -338,29 +338,38 @@ private fun ArmyWindow(state: IdleState, rate: IdleRate, pendingExact: Double) {
                 )
                 LivePulse(active = rate.perHour > 0.0)
             }
-            Box {
-                // Drifting shadow motes BEHIND the hero number: the army is
-                // visibly present, not just a figure on a panel.
-                ShadowMotes(shadows = state.shadows, modifier = Modifier.matchParentSize())
-                Text(
-                    liveEssence(state.essence, pendingExact),
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 40.sp,
-                    color = MonarchColors.Ink,
-                    maxLines = 1,
-                    softWrap = false,
-                )
-            }
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                // The RATE dial owns the third slot: arc + centred value.
+            // Hero row: the climbing total on the left, the rate gauge on the
+            // right at a FIXED size. The dial previously lived in a weighted
+            // Row slot with no height, so its arc collapsed to a sliver and was
+            // invisible on device — a gauge needs a square box, not a weight.
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Box(Modifier.weight(1f)) {
+                    // Drifting shadow motes BEHIND the hero number: the army is
+                    // visibly present, not just a figure on a panel.
+                    ShadowMotes(shadows = state.shadows, modifier = Modifier.matchParentSize())
+                    Text(
+                        liveEssence(state.essence, pendingExact),
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 44.sp,
+                        color = MonarchColors.Ink,
+                        maxLines = 1,
+                        softWrap = false,
+                    )
+                }
                 RateDial(
                     perHour = rate.perHour,
                     trainingFactor = rate.trainingFactor,
                     skillFactor = rate.skillFactor,
                     relicMultiplier = state.relicMultiplier,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.size(112.dp),
                 )
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 ArmyStat(
                     label = "SHADOWS",
                     value = state.shadows.toString(),
@@ -472,7 +481,7 @@ private fun RateDial(
     }
     Box(modifier, contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
-            val stroke = 6.dp.toPx()
+            val stroke = 8.dp.toPx()
             val inset = stroke
             val span = 260f
             val start = -220f
@@ -506,12 +515,19 @@ private fun RateDial(
             )
             Text(
                 "${"%.1f".format(perHour)}",
-                style = MaterialTheme.typography.titleMedium,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
-                color = MonarchColors.Emerald,
+                fontSize = 22.sp,
+                color = MonarchColors.EmeraldBright,
                 maxLines = 1,
                 softWrap = false,
+            )
+            Text(
+                "PER HOUR",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                letterSpacing = MonarchTracking.InlineLabel,
+                color = MonarchColors.InkMuted,
             )
         }
     }
@@ -935,7 +951,8 @@ private fun RelicVault(relics: List<RelicHolding>) {
                         RelicSigil(
                             name = relic.name,
                             accent = if (isActive) MonarchColors.EmeraldBright else MonarchColors.InkMuted,
-                            modifier = Modifier.size(44.dp),
+                            spin = isActive,
+                            modifier = Modifier.size(if (isActive) 64.dp else 44.dp),
                         )
                         Column(Modifier.weight(1f)) {
                             Text(
