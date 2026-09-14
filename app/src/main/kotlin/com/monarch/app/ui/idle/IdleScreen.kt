@@ -1,5 +1,6 @@
 package com.monarch.app.ui.idle
 import androidx.compose.animation.core.FastOutSlowInEasing
+import android.content.pm.ApplicationInfo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
@@ -61,6 +62,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.StrokeCap
 import com.monarch.app.data.IdleInputs
 import com.monarch.app.data.IdleSnapshot
@@ -93,6 +95,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.width
+import com.monarch.app.domain.Relics
 
 
 /** What the shadows earned while the app was closed, shown once on arrival. */
@@ -135,6 +142,11 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _away = MutableStateFlow<AwayReport?>(null)
+
+    /** Debug preview only — the caller gates this on a debuggable build. */
+    fun grantCatalogue() {
+        viewModelScope.launch { repo.debugGrantCatalogue() }
+    }
 
     /** The away haul, banked automatically — there is nothing to claim. */
     val away: StateFlow<AwayReport?> = _away.asStateFlow()
@@ -228,6 +240,17 @@ fun IdleScreen(
                 rolls = ui.rolls,
                 onDraw = { viewModel.draw { result -> if (result != null) drawResult = result } },
             )
+            if (debuggableBuild()) {
+                // Debug builds only: previews the whole catalogue on device.
+                // FLAG_DEBUGGABLE is off in a release APK, so this control
+                // cannot ship even if the call site is forgotten.
+                MonarchButton(
+                    label = "Grant full catalogue (debug)",
+                    onClick = viewModel::grantCatalogue,
+                    enabled = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
             CrestCollection(
                 owned = ui.ownedFrames,
                 equipped = ui.equippedFrame,
@@ -286,19 +309,34 @@ private fun achievementFor(result: RollResult): Achievement {
  */
 @Composable
 private fun DrawWindow(rolls: Int, onDraw: () -> Unit) {
+    var oddsOpen by remember { mutableStateOf(false) }
     SystemWindow(accent = MonarchColors.SovereignGold) {
         Column(
             Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            Text(
-                if (rolls > 0) "$rolls DRAW${if (rolls == 1) "" else "S"} WAITING" else "NO DRAWS BANKED",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                letterSpacing = MonarchTracking.InlineLabel,
-                color = if (rolls > 0) MonarchColors.SovereignGold else MonarchColors.InkMuted,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (rolls > 0) "$rolls DRAW${if (rolls == 1) "" else "S"} WAITING" else "NO DRAWS BANKED",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    color = if (rolls > 0) MonarchColors.SovereignGold else MonarchColors.InkMuted,
+                )
+                Spacer(Modifier.width(8.dp))
+                Icon(
+                    Icons.Outlined.Info,
+                    contentDescription = if (oddsOpen) "Hide drop rates" else "Show drop rates",
+                    tint = if (oddsOpen) MonarchColors.SovereignGold else MonarchColors.InkMuted,
+                    modifier = Modifier
+                        .size(18.dp)
+                        .clickable { oddsOpen = !oddsOpen },
+                )
+            }
+            if (oddsOpen) {
+                OddsTable()
+            }
             // A draw pays shadows, a relic OR a crest — a collection screen
             // showing only frames made a relic roll look like a lost crest.
             Text(
@@ -376,8 +414,6 @@ private fun ArmyWindow(state: IdleState, rate: IdleRate, pendingExact: Double) {
                 RateDial(
                     perHour = rate.perHour,
                     trainingFactor = rate.trainingFactor,
-                    skillFactor = rate.skillFactor,
-                    relicMultiplier = state.relicMultiplier,
                     modifier = Modifier.size(112.dp),
                 )
             }
@@ -473,18 +509,13 @@ private const val MOTE_SEED = 867_5309L
 private fun RateDial(
     perHour: Double,
     trainingFactor: Double,
-    skillFactor: Double,
-    relicMultiplier: Double,
     modifier: Modifier = Modifier,
 ) {
-    // Full sweep = floor * 4, the trained-at-cap rate: the floor is recovered
-    // from the live rate by dividing out the observed multipliers, so no
-    // absolute magic number is hardcoded — only Idle's documented x4 cap.
-    val trainedMax = remember(perHour, trainingFactor, skillFactor, relicMultiplier) {
-        val factors = (trainingFactor * skillFactor * relicMultiplier).coerceAtLeast(1e-9)
-        ((perHour / factors) * TRAINED_CAP_MULTIPLIER).coerceAtLeast(1.0)
-    }
-    val fraction = (perHour / trainedMax).coerceIn(0.0, 1.0).toFloat()
+    // The gauge tracks TRAINING saturation against Idle's documented x4 cap —
+    // the one input the hunter actually moves. Measuring the live rate against
+    // a relic-free maximum pinned the needle at full for anyone holding a
+    // relic, which is why it read as stuck.
+    val fraction = (trainingFactor / TRAINED_CAP_MULTIPLIER).coerceIn(0.0, 1.0).toFloat()
     // Animatable from 0 so the sweep tweens into position on open;
     // animateFloatAsState would start AT target and never animate.
     val sweep = remember { Animatable(0f) }
@@ -498,8 +529,11 @@ private fun RateDial(
             val span = 260f
             val start = -220f
             val arcSize = Size(size.width - inset * 2, size.height - inset * 2)
+            // Track is deliberately NOT green: a Rune track under a green-to-
+            // green sweep gradient left no readable edge, so the needle's
+            // position was invisible.
             drawArc(
-                color = MonarchColors.Rune,
+                color = MonarchColors.Vault,
                 startAngle = start,
                 sweepAngle = span,
                 useCenter = false,
@@ -508,7 +542,7 @@ private fun RateDial(
                 style = Stroke(stroke, cap = StrokeCap.Round),
             )
             drawArc(
-                brush = Brush.sweepGradient(listOf(MonarchColors.Emerald, MonarchColors.EmeraldBright)),
+                color = MonarchColors.EmeraldBright,
                 startAngle = start,
                 sweepAngle = span * sweep.value,
                 useCenter = false,
@@ -516,6 +550,27 @@ private fun RateDial(
                 size = arcSize,
                 style = Stroke(stroke, cap = StrokeCap.Round),
             )
+            // Quarter ticks on the track: a gauge with no scale can't be read
+            // even once the fill is legible.
+            val cx = size.width / 2f
+            val cy = size.height / 2f
+            val radius = (size.width - inset * 2) / 2f
+            for (i in 0..4) {
+                val a = ((start + span * i / 4f) * PI / 180.0).toFloat()
+                val outer = radius + stroke * 0.62f
+                val innerR = radius + stroke * 0.18f
+                drawLine(
+                    color = MonarchColors.Rune,
+                    start = Offset(cx + cos(a) * innerR, cy + sin(a) * innerR),
+                    end = Offset(cx + cos(a) * outer, cy + sin(a) * outer),
+                    strokeWidth = stroke * 0.18f,
+                )
+            }
+            // The needle tip: an unambiguous marker for where the value sits.
+            val tip = ((start + span * sweep.value) * PI / 180.0).toFloat()
+            val tipAt = Offset(cx + cos(tip) * radius, cy + sin(tip) * radius)
+            drawCircle(color = MonarchColors.Ink, radius = stroke * 0.62f, center = tipAt)
+            drawCircle(color = MonarchColors.EmeraldBright, radius = stroke * 0.34f, center = tipAt)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -881,14 +936,36 @@ private fun RelicVault(relics: List<RelicHolding>) {
     SectionHeader("RELIC VAULT")
     SystemWindow(accent = MonarchColors.Emerald) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Text(
+                "A relic is a permanent boost to your idle rate, won from a " +
+                    "draw. Every relic you own counts: the strongest at full " +
+                    "weight, the second at a half, the third at a third, and " +
+                    "so on down the vault.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MonarchColors.InkMuted,
+            )
+            if (relics.isNotEmpty()) {
+                Text(
+                    "VAULT TOTAL \u00d7%.2f".format(
+                        Relics.effectiveMultiplier(relics.map { it.multiplier }),
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    color = MonarchColors.EmeraldBright,
+                )
+            }
             if (relics.isEmpty()) {
                 Text(
-                    "No relics drawn yet. A draw can yield one, and the strongest relic sets your rate.",
+                    "Nothing drawn yet.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MonarchColors.InkMuted,
                 )
             } else {
-                relics.forEachIndexed { index, relic ->
+                // Only the relics that actually move the rate are listed. An
+                // uncapped vault ran to a hundred rows and buried every section
+                // below it; the tail contributes fractions of a percent each.
+                relics.take(VAULT_ROWS).forEachIndexed { index, relic ->
                     val isActive = index == 0
                     Row(
                         Modifier.fillMaxWidth().padding(vertical = 4.dp),
@@ -914,7 +991,14 @@ private fun RelicVault(relics: List<RelicHolding>) {
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
-                                if (isActive) "ACTIVE — SETS YOUR RATE" else "HELD",
+                                // Its real contribution, not a flat label: the
+                                // rank sets the weight, so show what it adds.
+                                "+%.2f RATE \u00b7 %s".format(
+                                    (relic.multiplier - 1.0) * Relics.weightAt(index),
+                                    if (isActive) "FULL WEIGHT" else "%d%% WEIGHT".format(
+                                        (Relics.weightAt(index) * 100).toInt(),
+                                    ),
+                                ),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontFamily = ChakraPetch,
                                 letterSpacing = MonarchTracking.InlineLabel,
@@ -934,7 +1018,120 @@ private fun RelicVault(relics: List<RelicHolding>) {
                         )
                     }
                 }
+                if (relics.size > VAULT_ROWS) {
+                    Text(
+                        "+${relics.size - VAULT_ROWS} MORE HELD \u00b7 COUNTED IN THE VAULT TOTAL",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        letterSpacing = MonarchTracking.InlineLabel,
+                        color = MonarchColors.InkMuted,
+                    )
+                }
             }
         }
     }
 }
+
+/**
+ * True only when the APK is built debuggable. Used to gate on-device preview
+ * controls; a release build reports false, so they are unreachable there.
+ */
+@Composable
+private fun debuggableBuild(): Boolean {
+    val context = LocalContext.current
+    return remember(context) {
+        context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+    }
+}
+
+/**
+ * What a draw can actually pay, read straight off [Gacha.DROP_TABLE] — the same
+ * table the roller uses, so the odds shown can never drift from the odds rolled.
+ */
+@Composable
+private fun OddsTable() {
+    Column(
+        Modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Gacha.DROP_TABLE.forEach { odds ->
+            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                Row(Modifier.fillMaxWidth()) {
+                    Text(
+                        odds.rarity.name.uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        letterSpacing = MonarchTracking.InlineLabel,
+                        color = rarityAccent(odds.rarity),
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        formatChance(odds.chance),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = rarityAccent(odds.rarity),
+                    )
+                }
+                if (odds.shadowChance > 0.0) {
+                    OddsLine(
+                        "${odds.shadowsLow}\u2013${odds.shadowsHigh} shadows",
+                        formatChance(odds.shadowChance),
+                    )
+                }
+                if (odds.relicChance > 0.0) {
+                    OddsLine(
+                        "Relic \u00d7%.2f\u2013\u00d7%.2f".format(odds.relicLow, odds.relicHigh),
+                        formatChance(odds.relicChance),
+                    )
+                }
+                if (odds.frameChance > 0.0) {
+                    OddsLine("Crest frame", formatChance(odds.frameChance))
+                }
+            }
+        }
+        Text(
+            "Rarity odds are per draw. The second figure is the split inside " +
+                "that rarity. Shadows join the army, a relic lifts your rate " +
+                "for good, a crest is worn on your hunter.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MonarchColors.InkMuted,
+        )
+    }
+}
+
+@Composable
+private fun OddsLine(label: String, chance: String) {
+    Row(Modifier.fillMaxWidth().padding(start = 10.dp)) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodySmall,
+            color = MonarchColors.InkMuted,
+            modifier = Modifier.weight(1f),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            chance,
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.Ink,
+        )
+    }
+}
+
+/** Whole percents where possible: "1%" reads better than "1.0%". */
+private fun formatChance(fraction: Double): String {
+    val pct = fraction * 100.0
+    return if (pct % 1.0 == 0.0) "${pct.toInt()}%" else "%.1f%%".format(pct)
+}
+
+private fun rarityAccent(rarity: RewardRarity): Color = when (rarity) {
+    RewardRarity.Common -> MonarchColors.InkMuted
+    RewardRarity.Rare -> MonarchColors.SystemGreen
+    RewardRarity.Epic -> MonarchColors.Emerald
+    RewardRarity.Sovereign -> MonarchColors.SovereignGold
+}
+
+/** Relics listed before the tail is summarised: past this each adds < 1%. */
+private const val VAULT_ROWS = 12

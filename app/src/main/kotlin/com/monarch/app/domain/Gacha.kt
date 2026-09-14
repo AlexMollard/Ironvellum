@@ -45,45 +45,69 @@ object Gacha {
         Reward.CrestFrame("monarch", "Monarch Crest"),
     )
 
+    /**
+     * The drop table, declared once. The roller AND the on-screen odds panel
+     * both read this, so what a hunter is told can never drift from what the
+     * roller actually does.
+     *
+     * [chance] is the rarity's share of a draw; [shadowChance] and
+     * [relicChance] are the split WITHIN that rarity, and whatever is left is
+     * a crest frame.
+     */
+    data class Odds(
+        val rarity: RewardRarity,
+        val chance: Double,
+        val shadowChance: Double,
+        val shadowsLow: Int,
+        val shadowsHigh: Int,
+        val relicChance: Double,
+        val relicLow: Double,
+        val relicHigh: Double,
+    ) {
+        val frameChance: Double get() = (1.0 - shadowChance - relicChance).coerceAtLeast(0.0)
+    }
+
+    val DROP_TABLE = listOf(
+        Odds(RewardRarity.Common, 0.60, 1.00, 20, 40, 0.00, 0.0, 0.0),
+        Odds(RewardRarity.Rare, 0.30, 0.60, 60, 120, 0.30, 1.15, 1.35),
+        Odds(RewardRarity.Epic, 0.09, 0.40, 200, 400, 0.40, 1.35, 1.75),
+        Odds(RewardRarity.Sovereign, 0.01, 0.30, 800, 1500, 0.50, 1.75, 2.50),
+    )
+
     /** Deterministic for a given seed — same seed, same result, always. */
     fun roll(seed: Long): RollResult {
         val rng = Random(seed)
-        val rarityRoll = rng.nextDouble() * 100.0
-        val rarity = when {
-            rarityRoll < 60.0 -> RewardRarity.Common
-            rarityRoll < 90.0 -> RewardRarity.Rare
-            rarityRoll < 99.0 -> RewardRarity.Epic
-            else -> RewardRarity.Sovereign
-        }
+        val rarityRoll = rng.nextDouble()
+        // Walk the cumulative rarity shares; the last row absorbs any residue
+        // so a rounding gap can never fall through to no reward at all.
+        var cumulative = 0.0
+        val odds = DROP_TABLE.firstOrNull { row ->
+            cumulative += row.chance
+            rarityRoll < cumulative
+        } ?: DROP_TABLE.last()
         val typeRoll = rng.nextDouble()
         val valueRoll = rng.nextDouble()
-        return when (rarity) {
-            RewardRarity.Common -> RollResult(Reward.Shadows(lerp(20, 40, valueRoll)), rarity)
-            RewardRarity.Rare -> when {
-                typeRoll < 0.60 -> RollResult(Reward.Shadows(lerp(60, 120, valueRoll)), rarity)
-                typeRoll < 0.90 -> RollResult(relic(1.15, 1.35, valueRoll), rarity)
-                else -> RollResult(frame(rng.nextInt(CREST_FRAMES.size)), rarity)
-            }
-            RewardRarity.Epic -> when {
-                typeRoll < 0.40 -> RollResult(Reward.Shadows(lerp(200, 400, valueRoll)), rarity)
-                typeRoll < 0.80 -> RollResult(relic(1.35, 1.75, valueRoll), rarity)
-                else -> RollResult(frame(rng.nextInt(CREST_FRAMES.size)), rarity)
-            }
-            RewardRarity.Sovereign -> when {
-                typeRoll < 0.30 -> RollResult(Reward.Shadows(lerp(800, 1500, valueRoll)), rarity)
-                typeRoll < 0.80 -> RollResult(relic(1.75, 2.50, valueRoll), rarity)
-                else -> RollResult(frame(rng.nextInt(CREST_FRAMES.size)), rarity)
-            }
+        val reward = when {
+            typeRoll < odds.shadowChance ->
+                Reward.Shadows(lerp(odds.shadowsLow, odds.shadowsHigh, valueRoll))
+            typeRoll < odds.shadowChance + odds.relicChance ->
+                relic(odds, valueRoll)
+            else -> frame(rng.nextInt(CREST_FRAMES.size))
         }
+        return RollResult(reward, odds.rarity)
     }
 
     private fun frame(index: Int) = CREST_FRAMES[index]
 
     /**
      * Relic names are composed, not fixed: multipliers are continuous, so every
-     * relic needs its own identity. The name is DERIVED from the value, so the
-     * same roll always yields the same relic, and it doubles as the seed for
-     * the sigil the UI draws.
+     * relic needs its own identity. The name is DERIVED from the rolled value,
+     * so the same roll always yields the same relic, and it doubles as the seed
+     * for the sigil the UI draws.
+     *
+     * The tier word is part of the name because the bands overlap in wording
+     * otherwise: without it the same name could mean x1.20 or x2.30, and a
+     * catalogue keyed by name would silently collapse the two.
      */
     private val RELIC_FORMS = listOf(
         "Fang", "Sigil", "Shard", "Crown", "Chain", "Mirror", "Ember", "Thorn",
@@ -92,14 +116,43 @@ object Gacha {
         "the Shadow", "the Gate", "the Monarch", "the Abyss", "the Vigil", "the Ashen King",
     )
 
-    private fun relic(low: Double, high: Double, t: Double): Reward.Relic {
-        val multiplier = low + (high - low) * t
+    private fun tierWord(rarity: RewardRarity): String = when (rarity) {
+        RewardRarity.Epic -> "Greater "
+        RewardRarity.Sovereign -> "Sovereign "
+        else -> ""
+    }
+
+    private fun relic(odds: Odds, t: Double): Reward.Relic {
+        val multiplier = odds.relicLow + (odds.relicHigh - odds.relicLow) * t
         // Quantised so the name is stable for a multiplier rather than drifting
         // with floating-point noise.
         val key = (multiplier * 1000).toInt()
         val form = RELIC_FORMS[(key / 7) % RELIC_FORMS.size]
         val house = RELIC_HOUSES[(key / 13) % RELIC_HOUSES.size]
-        return Reward.Relic(multiplier, "$form of $house")
+        return Reward.Relic(multiplier, "${tierWord(odds.rarity)}$form of $house")
+    }
+
+    /**
+     * Every relic the roller can actually produce, strongest first. Names are
+     * derived from the quantised multiplier, so the reachable set is finite and
+     * enumerable — used to preview the catalogue.
+     *
+     * Collisions keep the STRONGER relic: an earlier version kept whichever was
+     * seen first, which silently discarded every Sovereign relic whose name
+     * already existed lower down.
+     */
+    fun relicCatalogue(): List<Reward.Relic> {
+        val seen = LinkedHashMap<String, Reward.Relic>()
+        DROP_TABLE.filter { it.relicChance > 0.0 }.forEach { odds ->
+            // Fine sweep: the name changes on multiplier quantisation, so a
+            // dense walk visits every distinct relic in the band.
+            for (i in 0 until 2_000) {
+                val r = relic(odds, i / 2_000.0)
+                val held = seen[r.name]
+                if (held == null || r.multiplier > held.multiplier) seen[r.name] = r
+            }
+        }
+        return seen.values.sortedByDescending { it.multiplier }
     }
 
     /** Inclusive integer lerp driven by a pre-drawn uniform in [0, 1). */

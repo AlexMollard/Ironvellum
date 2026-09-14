@@ -64,6 +64,7 @@ import com.monarch.app.domain.UnlockedTitle
 import com.monarch.app.domain.WorkoutPreset
 import com.monarch.app.domain.WorkoutSession
 import com.monarch.app.domain.Xp
+import com.monarch.app.domain.Relics
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -1210,6 +1211,46 @@ class Repository(
     }
 
     /** Called on level-up: banks one more roll to spend on the Shadow screen. */
+    /**
+     * Debug preview: grants every crest frame and one of every reachable relic
+     * so the whole catalogue can be inspected on a device. Call sites are
+     * gated on a debuggable build; this never runs in a release APK.
+     *
+     * The strongest granted relic also becomes the live rate multiplier, since
+     * owning a relic and not having it apply would be a lie.
+     */
+    /**
+     * Recomputes the live rate multiplier from everything in the vault. Must be
+     * called inside the same transaction as any relic insert: the multiplier is
+     * derived state, and a relic that is owned but not applied is a lie.
+     */
+    private suspend fun applyRelicVault() {
+        val effective = Relics.effectiveMultiplier(gachaDao.relicMultipliers())
+        val state = idleDao.get() ?: IdleStateEntity()
+        idleDao.upsert(state.copy(relicMultiplier = effective))
+    }
+
+    suspend fun debugGrantCatalogue() = db.withTransaction {
+        Gacha.CREST_FRAMES.forEach { frame ->
+            gachaDao.insertFrame(
+                OwnedCrestFrameEntity(frameId = frame.id, ownedAtMs = System.currentTimeMillis()),
+            )
+        }
+        // Idempotent: tapping twice must not double the vault.
+        gachaDao.clearRelics()
+        val relics = Gacha.relicCatalogue()
+        relics.forEach { r ->
+            gachaDao.insertRelic(
+                OwnedRelicEntity(
+                    name = r.name,
+                    multiplier = r.multiplier,
+                    drawnAtMs = System.currentTimeMillis(),
+                ),
+            )
+        }
+        applyRelicVault()
+    }
+
     suspend fun grantRoll(count: Int = 1) = db.withTransaction {
         val current = gachaDao.get() ?: GachaStateEntity()
         gachaDao.upsert(current.copy(rolls = current.rolls + count))
@@ -1229,9 +1270,8 @@ class Repository(
         when (val reward = result.reward) {
             is Reward.Shadows -> grantIdle(reward.count, 1.0)
             is Reward.Relic -> {
-                grantIdle(0, reward.multiplier)
-                // Keep the relic itself, not just its number: the rate uses the
-                // strongest multiplier but the vault has to show what was drawn.
+                // Keep the relic itself, not just its number, then DERIVE the
+                // live multiplier from the whole vault so every relic counts.
                 gachaDao.insertRelic(
                     OwnedRelicEntity(
                         name = reward.name,
@@ -1239,6 +1279,7 @@ class Repository(
                         drawnAtMs = System.currentTimeMillis(),
                     ),
                 )
+                applyRelicVault()
             }
             is Reward.CrestFrame -> gachaDao.insertFrame(
                 OwnedCrestFrameEntity(frameId = reward.id, ownedAtMs = System.currentTimeMillis()),

@@ -345,6 +345,12 @@ interface GachaDao {
     @Query("SELECT * FROM owned_relics ORDER BY multiplier DESC, drawnAtMs DESC")
     fun observeRelics(): Flow<List<OwnedRelicEntity>>
 
+    @Query("SELECT multiplier FROM owned_relics")
+    suspend fun relicMultipliers(): List<Double>
+
+    @Query("DELETE FROM owned_relics")
+    suspend fun clearRelics()
+
     @Insert
     suspend fun insertRelic(relic: OwnedRelicEntity)
 }
