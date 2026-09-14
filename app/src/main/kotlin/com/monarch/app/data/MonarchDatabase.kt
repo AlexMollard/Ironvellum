@@ -8,10 +8,15 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.monarch.app.data.db.ExerciseDao
 import com.monarch.app.data.db.ExerciseEntity
+import com.monarch.app.data.db.GachaDao
+import com.monarch.app.data.db.GachaStateEntity
 import com.monarch.app.data.db.HealthDayDao
 import com.monarch.app.data.db.HealthDayEntity
+import com.monarch.app.data.db.IdleDao
+import com.monarch.app.data.db.IdleStateEntity
 import com.monarch.app.data.db.MeasurementDao
 import com.monarch.app.data.db.MeasurementEntity
+import com.monarch.app.data.db.OwnedCrestFrameEntity
 import com.monarch.app.data.db.PresetDao
 import com.monarch.app.data.db.PresetEntity
 import com.monarch.app.data.db.PresetEntryEntity
@@ -24,12 +29,10 @@ import com.monarch.app.data.db.SkillPracticeDao
 import com.monarch.app.data.db.SkillPracticeEntity
 import com.monarch.app.data.db.StatDao
 import com.monarch.app.data.db.StatEntity
-import com.monarch.app.data.db.TitleDao
-import com.monarch.app.data.db.TitleUnlockEntity
 import com.monarch.app.data.db.SyncStateDao
 import com.monarch.app.data.db.SyncStateEntity
-import com.monarch.app.data.db.IdleDao
-import com.monarch.app.data.db.IdleStateEntity
+import com.monarch.app.data.db.TitleDao
+import com.monarch.app.data.db.TitleUnlockEntity
 
 @Database(
     entities = [
@@ -46,8 +49,10 @@ import com.monarch.app.data.db.IdleStateEntity
         MeasurementEntity::class,
         SyncStateEntity::class,
         IdleStateEntity::class,
+        GachaStateEntity::class,
+        OwnedCrestFrameEntity::class,
     ],
-    version = 17,
+    version = 18,
     exportSchema = false,
 )
 abstract class MonarchDatabase : RoomDatabase() {
@@ -62,8 +67,32 @@ abstract class MonarchDatabase : RoomDatabase() {
     abstract fun measurementDao(): MeasurementDao
     abstract fun syncStateDao(): SyncStateDao
     abstract fun idleDao(): IdleDao
+    abstract fun gachaDao(): GachaDao
 
     companion object {
+        private val MIGRATION_17_18 = object : Migration(17, 18) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Gacha: banked rolls (single row, mirroring idle_state) and
+                // owned crest frames. Column types must match the entities
+                // exactly or Room refuses to open the database (no destructive
+                // fallback by design).
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `gacha_state` (" +
+                        "`id` INTEGER PRIMARY KEY NOT NULL, " +
+                        "`rolls` INTEGER NOT NULL)",
+                )
+                db.execSQL(
+                    "INSERT OR IGNORE INTO `gacha_state` " +
+                        "(`id`, `rolls`) VALUES (1, 0)",
+                )
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `owned_crest_frames` (" +
+                        "`frameId` TEXT PRIMARY KEY NOT NULL, " +
+                        "`ownedAtMs` INTEGER NOT NULL)",
+                )
+            }
+        }
+
         // Version 11 is the shipped baseline. Every future schema change
         // REQUIRES an explicit Migration registered via addMigrations(...):
         // Room must be allowed to throw on an unknown schema rather than
@@ -154,6 +183,7 @@ abstract class MonarchDatabase : RoomDatabase() {
                     MIGRATION_14_15,
                     MIGRATION_15_16,
                     MIGRATION_16_17,
+                    MIGRATION_17_18,
                 )
                 .build()
     }

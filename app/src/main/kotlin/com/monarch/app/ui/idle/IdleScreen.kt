@@ -51,6 +51,11 @@ import com.monarch.app.data.Repository
 import com.monarch.app.domain.Idle
 import com.monarch.app.domain.IdleRate
 import com.monarch.app.domain.IdleState
+import com.monarch.app.domain.Reward
+import com.monarch.app.domain.RewardRarity
+import com.monarch.app.domain.RollResult
+import com.monarch.app.ui.components.Achievement
+import com.monarch.app.ui.components.AchievementOverlay
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
@@ -64,12 +69,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 
+
+/** What the shadows earned while the app was closed, shown once on arrival. */
+data class AwayReport(val essence: Long, val awayMs: Long)
 
 /** Everything the Shadow screen renders, resolved from the repository. */
 data class IdleUi(
     val snapshot: IdleSnapshot? = null,
     val inputs: IdleInputs? = null,
+    /** Banked, unspent shadow draws — earned by levelling, spent here. */
+    val rolls: Int = 0,
 )
 
 class IdleViewModel(private val repo: Repository) : ViewModel() {
@@ -77,14 +90,32 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
     val ui: StateFlow<IdleUi> = combine(
         repo.observeIdleSnapshot(),
         repo.observeIdleInputs(),
-    ) { snapshot, inputs ->
-        IdleUi(snapshot = snapshot, inputs = inputs)
+        repo.observeRolls(),
+    ) { snapshot, inputs, rolls ->
+        IdleUi(snapshot = snapshot, inputs = inputs, rolls = rolls)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), IdleUi())
 
-    /** Transactional on the repo side — double-tap safe. */
-    fun collect(onCollected: (Long) -> Unit) {
+    private val _away = MutableStateFlow<AwayReport?>(null)
+
+    /** The away haul, banked automatically — there is nothing to claim. */
+    val away: StateFlow<AwayReport?> = _away.asStateFlow()
+
+    init {
+        // Essence banks itself the moment you arrive. Making a player press a
+        // button for money they already earned is busywork; what they actually
+        // want is to see what the shadows did while they were gone.
         viewModelScope.launch {
-            onCollected(repo.collectIdle(System.currentTimeMillis()))
+            val state = repo.observeIdle().first()
+            val awayMs = (System.currentTimeMillis() - state.lastCollectedAtMs).coerceAtLeast(0L)
+            val banked = repo.collectIdle(System.currentTimeMillis())
+            if (banked > 0) _away.value = AwayReport(banked, awayMs)
+        }
+    }
+
+    /** Transactional on the repo side — payout and roll spend land together. */
+    fun draw(onDrawn: (RollResult?) -> Unit) {
+        viewModelScope.launch {
+            onDrawn(repo.spendRoll(seed = System.nanoTime()))
         }
     }
 }
@@ -103,8 +134,9 @@ fun IdleScreen(
             withFrameMillis { nowMs = System.currentTimeMillis() }
         }
     }
-    // Last collect result, shown briefly so the banked amount has a landing moment.
-    var justCollected by remember { mutableStateOf<Long?>(null) }
+    val away by viewModel.away.collectAsStateWithLifecycle()
+    // The reveal for a spent draw; null once the overlay finishes so it never re-shows.
+    var drawResult by remember { mutableStateOf<RollResult?>(null) }
 
     val snapshot = ui.snapshot
     val inputs = ui.inputs
@@ -134,21 +166,81 @@ fun IdleScreen(
             ArmyWindow(snapshot.state, snapshot.rate, pendingExact)
             SectionHeader("WHY THE RATE")
             RateWindow(snapshot.rate, inputs)
-            SectionHeader("PENDING")
-            CollectWindow(
-                pending = pendingExact,
-                justCollected = justCollected,
-                onCollect = {
-                    viewModel.collect { amount ->
-                        if (amount > 0) justCollected = amount
-                    }
-                },
-            )
+            if (ui.rolls > 0) {
+                SectionHeader("SHADOW DRAW")
+                DrawWindow(
+                    rolls = ui.rolls,
+                    onDraw = { viewModel.draw { result -> if (result != null) drawResult = result } },
+                )
+            }
+            away?.let { AwayWindow(it) }
             CapWindow()
         }
 
         // Bottom-nav clearance — the collect button must never sit under it.
         Spacer(Modifier.height(120.dp))
+    }
+    drawResult?.let { result ->
+        AchievementOverlay(
+            items = listOf(achievementFor(result)),
+            onDone = { drawResult = null },
+        )
+    }
+}
+
+/**
+ * House-voice copy per rarity tier — the same draw, four different weights of
+ * silence. Accent uses only sanctioned palette tokens.
+ */
+private fun achievementFor(result: RollResult): Achievement {
+    val (tagline, accent) = when (result.rarity) {
+        RewardRarity.Common -> "A WHISPER IN THE DARK" to MonarchColors.InkMuted
+        RewardRarity.Rare -> "THE DARK STIRS" to MonarchColors.SystemGreen
+        RewardRarity.Epic -> "THE DARK BENDS" to MonarchColors.Emerald
+        RewardRarity.Sovereign -> "THE MONARCH ANSWERS" to MonarchColors.SovereignGold
+    }
+    val notes = when (val reward = result.reward) {
+        is Reward.Shadows -> listOf("ARMY +${reward.count} SHADOWS")
+        is Reward.Relic -> listOf("RELIC MULTIPLIER ×${reward.multiplier}")
+        is Reward.CrestFrame -> listOf("CREST FRAME UNLOCKED", "EQUIP IT ON YOUR HUNTER IDENTITY")
+    }
+    return Achievement(
+        banner = "SHADOW DRAWN",
+        tagline = tagline,
+        name = rewardName(result.reward),
+        subtitle = result.rarity.name.uppercase(),
+        notes = notes,
+        accent = accent,
+    )
+}
+
+/**
+ * The draw control. Rendered only while rolls are banked — at zero it is
+ * absent entirely, never a disabled stub — so levelling is the only way in.
+ */
+@Composable
+private fun DrawWindow(rolls: Int, onDraw: () -> Unit) {
+    SystemWindow(accent = MonarchColors.SovereignGold) {
+        Column(
+            Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                "DRAW EARNED BY RANKING UP",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                letterSpacing = MonarchTracking.InlineLabel,
+                color = MonarchColors.InkMuted,
+            )
+            MonarchButton(
+                label = "Draw shadow ($rolls)",
+                onClick = onDraw,
+                enabled = true,
+                gold = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -339,52 +431,51 @@ private fun RateRow(label: String, value: String) {
     }
 }
 
-/** The single obvious action. Pending resets to zero the moment collect banks it. */
+/**
+ * What the shadows earned while you were gone. Banked already — this is a
+ * report, not a transaction. The old collect button asked the player to claim
+ * essence they had already earned, which is busywork, not a game.
+ */
 @Composable
-private fun CollectWindow(pending: Double, justCollected: Long?, onCollect: () -> Unit) {
+private fun AwayWindow(report: AwayReport) {
+    SectionHeader("WHILE YOU WERE AWAY")
     SystemWindow(accent = MonarchColors.SovereignGold) {
         Column(
             Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                "AWAITING COLLECTION",
+                "+%,d".format(report.essence),
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                fontSize = 32.sp,
+                color = MonarchColors.SovereignGold,
+                maxLines = 1,
+                softWrap = false,
+            )
+            Text(
+                "ESSENCE BANKED OVER ${formatAway(report.awayMs)}",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 letterSpacing = MonarchTracking.InlineLabel,
                 color = MonarchColors.InkMuted,
-            )
-            Text(
-                // Two decimals at every scale: a 1,000+ pending pile froze on
-                // whole units, which is the same deadness the hero total had.
-                "+%,.2f".format(pending),
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                fontSize = 32.sp,
-                color = MonarchColors.EmeraldBright,
                 maxLines = 1,
-                softWrap = false,
-            )
-            justCollected?.let { amount ->
-                // Gentle one-line landing for the banked amount; no flash, no snap.
-                Text(
-                    "+${formatEssence(amount)} essence banked",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontFamily = ChakraPetch,
-                    color = MonarchColors.SovereignGold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            MonarchButton(
-                label = if (pending >= 1.0) "Collect essence" else "The vault is empty",
-                onClick = onCollect,
-                enabled = pending >= 1.0,
-                gold = true,
-                modifier = Modifier.fillMaxWidth(),
+                overflow = TextOverflow.Ellipsis,
             )
         }
+    }
+}
+
+/** Away duration in the coarsest honest unit: "3 h 20 m", "2 days". */
+private fun formatAway(ms: Long): String {
+    val minutes = ms / 60_000
+    val hours = minutes / 60
+    val days = hours / 24
+    return when {
+        days >= 1 -> if (days == 1L) "1 DAY" else "$days DAYS"
+        hours >= 1 -> "$hours H ${minutes % 60} M"
+        else -> "$minutes M"
     }
 }
 
@@ -406,3 +497,10 @@ private fun CapWindow() {
 }
 
 private fun formatEssence(value: Long): String = String.format("%,d", value)
+
+/** Display name per reward type — `Reward` has no shared name property. */
+private fun rewardName(reward: Reward): String = when (reward) {
+    is Reward.Shadows -> "${reward.count} Shadows"
+    is Reward.Relic -> reward.name
+    is Reward.CrestFrame -> reward.name
+}

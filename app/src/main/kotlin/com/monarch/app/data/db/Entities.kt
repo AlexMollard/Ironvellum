@@ -204,3 +204,20 @@ data class IdleStateEntity(
     val relicMultiplier: Double = 1.0,
     val lastCollectedAtMs: Long = 0,
 )
+
+/**
+ * Gacha bank: unspent level-up rolls, single row (id = 1, mirroring idle_state).
+ * A null read means "no rolls banked yet" — callers treat it as zero.
+ */
+@Entity(tableName = "gacha_state")
+data class GachaStateEntity(
+    @PrimaryKey val id: Long = 1,
+    val rolls: Int = 0,
+)
+
+/** One owned crest frame per row; id is the stable catalogue id from Gacha. */
+@Entity(tableName = "owned_crest_frames")
+data class OwnedCrestFrameEntity(
+    @PrimaryKey val frameId: String,
+    val ownedAtMs: Long,
+)

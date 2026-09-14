@@ -307,3 +307,26 @@ interface IdleDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(state: IdleStateEntity)
 }
+
+@Dao
+interface GachaDao {
+    // Returns the ROW, mirroring IdleDao: Repository maps it to a count.
+    // Declaring Flow<Int?> against `SELECT *` fails the whole @Database.
+    @Query("SELECT * FROM gacha_state WHERE id = 1")
+    fun observeRolls(): Flow<GachaStateEntity?>
+
+    @Query("SELECT * FROM gacha_state WHERE id = 1")
+    suspend fun get(): GachaStateEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(state: GachaStateEntity)
+
+    @Query("SELECT frameId FROM owned_crest_frames")
+    fun observeOwnedFrames(): Flow<List<String>>
+
+    @Query("SELECT frameId FROM owned_crest_frames")
+    suspend fun ownedFrameIds(): List<String>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertFrame(frame: OwnedCrestFrameEntity)
+}

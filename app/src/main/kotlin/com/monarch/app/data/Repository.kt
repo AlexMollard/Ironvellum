@@ -1,14 +1,15 @@
 package com.monarch.app.data
 import androidx.room.withTransaction
-import com.monarch.app.data.db.SessionWithSets
 import com.monarch.app.data.db.ExerciseDao
 import com.monarch.app.data.db.ExerciseEntity
+import com.monarch.app.data.db.GachaStateEntity
 import com.monarch.app.data.db.HealthDayDao
 import com.monarch.app.data.db.HealthDayEntity
 import com.monarch.app.data.db.IdleDao
 import com.monarch.app.data.db.IdleStateEntity
 import com.monarch.app.data.db.MeasurementDao
 import com.monarch.app.data.db.MeasurementEntity
+import com.monarch.app.data.db.OwnedCrestFrameEntity
 import com.monarch.app.data.db.PresetDao
 import com.monarch.app.data.db.PresetEntity
 import com.monarch.app.data.db.PresetEntryEntity
@@ -16,6 +17,7 @@ import com.monarch.app.data.db.ProfileDao
 import com.monarch.app.data.db.ProfileEntity
 import com.monarch.app.data.db.SessionDao
 import com.monarch.app.data.db.SessionEntity
+import com.monarch.app.data.db.SessionWithSets
 import com.monarch.app.data.db.SetLogEntity
 import com.monarch.app.data.db.SkillPracticeDao
 import com.monarch.app.data.db.SkillPracticeEntity
@@ -33,6 +35,7 @@ import com.monarch.app.domain.ExerciseHistoryCalculator
 import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.domain.ExportReader
 import com.monarch.app.domain.ExportWriter
+import com.monarch.app.domain.Gacha
 import com.monarch.app.domain.HealthDay
 import com.monarch.app.domain.Idle
 import com.monarch.app.domain.IdleRate
@@ -43,6 +46,8 @@ import com.monarch.app.domain.MuscleGroup
 import com.monarch.app.domain.PlayerProfile
 import com.monarch.app.domain.PresetEntry
 import com.monarch.app.domain.Progression
+import com.monarch.app.domain.Reward
+import com.monarch.app.domain.RollResult
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.SkillClaimResult
 import com.monarch.app.domain.SkillPractice
@@ -83,6 +88,7 @@ class Repository(
     private val measurementDao: MeasurementDao = db.measurementDao()
     private val syncStateDao: SyncStateDao = db.syncStateDao()
     private val idleDao: IdleDao = db.idleDao()
+    private val gachaDao = db.gachaDao()
     // ---------------------------------------------------------------- seeding
 
     suspend fun ensureSeeded() {
@@ -1136,6 +1142,39 @@ class Repository(
                 relicMultiplier = maxOf(current.relicMultiplier, relicMultiplier),
             ),
         )
+    }
+
+    fun observeRolls(): Flow<Int> =
+        gachaDao.observeRolls().map { it?.rolls ?: 0 }
+
+    fun observeOwnedFrames(): Flow<Set<String>> =
+        gachaDao.observeOwnedFrames().map { it.toSet() }
+
+    /** Called on level-up: banks one more roll to spend on the Shadow screen. */
+    suspend fun grantRoll(count: Int = 1) = db.withTransaction {
+        val current = gachaDao.get() ?: GachaStateEntity()
+        gachaDao.upsert(current.copy(rolls = current.rolls + count))
+    }
+
+    /**
+     * Spends one banked roll and applies the payout atomically: the decrement,
+     * the draw, and the shadows/relic/frame grant all run inside one
+     * transaction, so a crash can never consume a roll without paying it out.
+     * Returns null when nothing is banked.
+     */
+    suspend fun spendRoll(seed: Long): RollResult? = db.withTransaction {
+        val current = gachaDao.get() ?: GachaStateEntity()
+        if (current.rolls <= 0) return@withTransaction null
+        gachaDao.upsert(current.copy(rolls = current.rolls - 1))
+        val result = Gacha.roll(seed)
+        when (val reward = result.reward) {
+            is Reward.Shadows -> grantIdle(reward.count, 1.0)
+            is Reward.Relic -> grantIdle(0, reward.multiplier)
+            is Reward.CrestFrame -> gachaDao.insertFrame(
+                OwnedCrestFrameEntity(frameId = reward.id, ownedAtMs = System.currentTimeMillis()),
+            )
+        }
+        result
     }
 
     private fun idleInputs(

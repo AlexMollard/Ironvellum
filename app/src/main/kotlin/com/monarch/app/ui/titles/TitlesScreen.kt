@@ -1,30 +1,9 @@
 package com.monarch.app.ui.titles
 
 import androidx.compose.foundation.background
-import com.monarch.app.domain.Exercise
-import com.monarch.app.domain.HealthDay
-import com.monarch.app.domain.PlayerProfile
-import com.monarch.app.domain.SessionSet
-import com.monarch.app.domain.SkillPractice
-import com.monarch.app.domain.UnlockedTitle
-import com.monarch.app.domain.WorkoutSession
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import com.monarch.app.ui.components.Achievement
-import com.monarch.app.ui.components.AchievementOverlay
-import com.monarch.app.domain.SkillClaimResult
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -34,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
@@ -43,10 +23,16 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,16 +44,31 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.Repository
+import com.monarch.app.domain.Exercise
+import com.monarch.app.domain.HealthDay
+import com.monarch.app.domain.PlayerProfile
+import com.monarch.app.domain.SessionSet
+import com.monarch.app.domain.SkillClaimResult
+import com.monarch.app.domain.SkillPractice
 import com.monarch.app.domain.Skills
 import com.monarch.app.domain.Titles
+import com.monarch.app.domain.UnlockedTitle
+import com.monarch.app.domain.WorkoutSession
+import com.monarch.app.ui.components.Achievement
+import com.monarch.app.ui.components.AchievementOverlay
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -150,6 +151,11 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
         viewModelScope.launch { repo.unclaimSkill(skillName) }
     }
 
+
+    /** Levelling banks a shadow draw — called from the existing level-up path. */
+    fun bankLevelRoll() {
+        viewModelScope.launch { repo.grantRoll() }
+    }
     fun dismissClaim() {
         _claim.value = null
     }
@@ -273,6 +279,12 @@ fun TitlesScreen(
             modifier = Modifier.fillMaxWidth().weight(1f),
         )
     }
+    // The claim result is the one place level-ups are already detected; piggyback
+    // the roll grant here in a side-effect, never during composition.
+    LaunchedEffect(claimResult) {
+        val result = claimResult ?: return@LaunchedEffect
+        if (result.levelAfter > result.levelBefore) viewModel.bankLevelRoll()
+    }
     claimResult?.let { result ->
         AchievementOverlay(
             items = buildList {
@@ -294,6 +306,17 @@ fun TitlesScreen(
                             name = "Level ${result.levelAfter}",
                             subtitle = "${result.totalXp} XP TOTAL",
                             accent = MonarchColors.SystemGreen,
+                        ),
+                    )
+                }
+                if (result.levelAfter > result.levelBefore) {
+                    add(
+                        Achievement(
+                            banner = "A SHADOW STIRS",
+                            tagline = "DRAW EARNED",
+                            name = "Shadow Draw Waiting",
+                            subtitle = "SPEND IT ON THE SHADOW SCREEN",
+                            accent = MonarchColors.SovereignGold,
                         ),
                     )
                 }
