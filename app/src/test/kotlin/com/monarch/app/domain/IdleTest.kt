@@ -39,17 +39,21 @@ class IdleTest {
     }
 
     @Test
-    fun `skills compound permanently and dominate one week of training`() {
+    fun `skills help permanently but never out-earn training`() {
         val noSkills = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 300.0, skillsUnlocked = 0, streakDays = 0)
         val skilled = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 300.0, skillsUnlocked = 5, streakDays = 0)
+        // Every unlock is worth something, permanently.
         assertTrue(skilled.perHour > noSkills.perHour)
-        // Balance intent: ~10 skills outweigh the entire weekly training ceiling.
-        val cappedTraining = Idle.rate(state(), sessionsLast7d = 999, volumeLast7d = 1e6, skillsUnlocked = 0, streakDays = 999)
-        val skillsOverCeiling = Idle.rate(state(), sessionsLast7d = 0, volumeLast7d = 0.0, skillsUnlocked = 10, streakDays = 0)
-        assertTrue(skillsOverCeiling.perHour > cappedTraining.perHour)
-        assertEquals(3.5, skilled.skillFactor, 1e-9)
-    }
+        assertEquals(1.2, skilled.skillFactor, 1e-9)
 
+        // Balance intent, inverted from the first draft: the WHOLE skill tree
+        // must not beat a trained week. Training is the engine; skills are trim.
+        val everySkill = Idle.rate(state(), sessionsLast7d = 0, volumeLast7d = 0.0, skillsUnlocked = 95, streakDays = 0)
+        val trainedWeek = Idle.rate(state(), sessionsLast7d = 5, volumeLast7d = 400.0, skillsUnlocked = 0, streakDays = 5)
+        assertTrue(everySkill.perHour < trainedWeek.perHour)
+        // And the bonus is hard-capped, so the catalogue growing cannot inflate it.
+        assertEquals(2.0, everySkill.skillFactor, 1e-9)
+    }
     @Test
     fun `a full day away pays the full rate`() {
         val s = state(lastCollectedAtMs = 0L)

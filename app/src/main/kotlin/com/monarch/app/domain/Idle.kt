@@ -47,17 +47,18 @@ object Idle {
     // Rate floor: with zero recent training the army still scavenges a trickle.
     private const val FLOOR = 10.0
 
-    // Weekly training component saturates here so grinding one week can never
-    // out-run the permanent skill multipliers.
+    // Recent training is the PRIMARY driver: a committed week reaches x4.
     private const val TRAINING_CAP = 30.0
     private const val SESSION_WEIGHT = 3.0     // per session in the last 7 days
     private const val VOLUME_WEIGHT = 0.05     // per rep logged in the last 7 days
     private const val STREAK_WEIGHT = 1.0      // per consecutive day, capped with TRAINING_CAP
 
-    // Permanent per-skill multiplier step (+50% of floor each), capped so
-    // extreme inputs stay finite.
-    private const val SKILL_STEP = 0.5
-    private const val MAX_SKILL_FACTOR = 50.0
+    // Skills are a permanent BONUS, not the engine. +4% each, hard-capped at
+    // x2: at +50% each, two skills already read x2.00 and the full tree would
+    // have reached x43 — the rate became a function of the catalogue rather
+    // than of what you actually lifted this week.
+    private const val SKILL_STEP = 0.04
+    private const val MAX_SKILL_FACTOR = 2.0
 
     // Guards so a corrupt relic multiplier can't push the rate to Infinity.
     private const val MAX_RELIC = 1e6
