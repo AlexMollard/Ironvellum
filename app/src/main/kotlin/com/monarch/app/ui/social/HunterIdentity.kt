@@ -31,6 +31,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.monarch.app.domain.TitleRarity
+import com.monarch.app.domain.Titles
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 
@@ -52,6 +54,9 @@ internal fun IdentityRow(
     size: IdentitySize = IdentitySize.Standard,
     isMe: Boolean = false,
     avatarUrl: String? = null,
+    // The equipped title's id, not its display name: the crest resolves the
+    // rarity from the catalogue so the badge reflects WHAT was earned.
+    titleId: String? = null,
     trailing: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -66,8 +71,6 @@ internal fun IdentityRow(
         IdentitySize.Standard -> 16.sp
         IdentitySize.Hero -> 22.sp
     }
-    val accent = if (isMe) MonarchColors.SovereignGold else MonarchColors.EmeraldBright
-
     // The worn title always sits directly under the name. An earlier version
     // dropped it below the whole row at Hero size, which pushed it far from the
     // name it belongs to; the column is kept wide instead by callers putting
@@ -90,6 +93,7 @@ internal fun IdentityRow(
                 isMe = isMe,
                 avatarUrl = avatarUrl,
                 level = level,
+                titleId = titleId,
             )
             Column(Modifier.weight(1f)) {
                 Text(
@@ -184,19 +188,48 @@ internal fun HunterAvatar(
     isMe: Boolean,
     avatarUrl: String? = null,
     level: Int? = null,
+    titleId: String? = null,
 ) {
     // Stable integer hash — never random, never recomposition-dependent.
     val seed = userId.fold(0) { acc, c -> acc * 31 + c.code }
-    val (plateTop, plateBottom) = CrestPlates[Math.floorMod(seed, CrestPlates.size)]
     val shape = CutCornerShape(topStart = size / 4, bottomEnd = size / 4)
-    // Rank ring colour steps with level; unknown level gets the neutral rune.
-    val ring = when {
-        isMe -> MonarchColors.SovereignGold
-        level == null -> MonarchColors.Rune
-        level < 10 -> MonarchColors.Rune
-        level < 25 -> MonarchColors.SystemGreen
-        level < 50 -> MonarchColors.EmeraldBright
-        else -> MonarchColors.SovereignGold
+    // Channel split: RARITY owns the plate gradient and the frame (colour +
+    // weight), so a Sovereign crest is unmistakable at any size. The LEVEL
+    // ring keeps the border only when the hunter wears no rarity (null or
+    // Common), so the two never fight over the same visual channel. The
+    // interior pattern stays seeded by userId regardless — two hunters in the
+    // same title still look like different people.
+    val rarity = Titles.rarityOf(titleId)
+    val (plateTop, plateBottom) = when (rarity) {
+        // No rarity worn: the deterministic hash plate, as before.
+        null -> CrestPlates[Math.floorMod(seed, CrestPlates.size)]
+        TitleRarity.Common -> CrestPlates[Math.floorMod(seed, CrestPlates.size)]
+        TitleRarity.Rare -> MonarchColors.SystemGreen to MonarchColors.Vault
+        TitleRarity.Epic -> MonarchColors.EmeraldBright to MonarchColors.Vault
+        TitleRarity.Sovereign -> MonarchColors.SovereignGold to MonarchColors.Rune
+    }
+    // Frame: rarity tiers get progressively heavier, brighter borders; Common
+    // and no-rarity crests fall back to the level-stepped ring.
+    val frame = when (rarity) {
+        null, TitleRarity.Common -> when {
+            isMe -> MonarchColors.SovereignGold
+            level == null -> MonarchColors.Rune
+            level < 10 -> MonarchColors.Rune
+            level < 25 -> MonarchColors.SystemGreen
+            level < 50 -> MonarchColors.EmeraldBright
+            else -> MonarchColors.SovereignGold
+        }
+        TitleRarity.Rare -> MonarchColors.EmeraldBright
+        TitleRarity.Epic -> MonarchColors.SovereignGold
+        TitleRarity.Sovereign -> MonarchColors.SovereignGold
+    }
+    val frameWidth = when (rarity) {
+        null, TitleRarity.Common -> 2.dp
+        TitleRarity.Rare -> 2.dp
+        TitleRarity.Epic -> 3.dp
+        // Heaviest frame in the house: a Sovereign crest reads as gold even
+        // at Compact size.
+        TitleRarity.Sovereign -> 3.dp
     }
 
     Box(
@@ -204,7 +237,7 @@ internal fun HunterAvatar(
             .size(size)
             .clip(shape)
             .background(Brush.linearGradient(listOf(plateTop, plateBottom), start = Offset.Zero, end = Offset.Infinite), shape)
-            .border(2.dp, ring, shape),
+            .border(frameWidth, frame, shape),
         contentAlignment = Alignment.Center,
     ) {
         // Seeded geometric backdrop: a rotated triangle plus a rotated square
@@ -234,7 +267,7 @@ internal fun HunterAvatar(
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
-            color = if (isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
+            color = if (rarity == TitleRarity.Sovereign || isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
         )
     }
 }

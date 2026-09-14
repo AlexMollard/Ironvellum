@@ -302,7 +302,7 @@ fun TitlesScreen(
                         Achievement(
                             banner = "TITLE EARNED",
                             name = title.name,
-                            subtitle = title.description.uppercase(),
+                            subtitle = "${title.rarity.name.uppercase()} · ${title.description.uppercase()}",
                         ),
                     )
                 }

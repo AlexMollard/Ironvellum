@@ -454,6 +454,10 @@ class CloudSync(
                     currentTitleId = dto.currentTitleId,
                     likeCount = dto.likeCount,
                     likedByMe = dto.likedByMe,
+                    topMovements = dto.topMovements,
+                    bestSet = dto.bestSet,
+                    movementCount = dto.movementCount,
+                    durationSec = dto.durationSec,
                 )
             }.let { fresh ->
                 // The server's own values are the truth: drop any overlay

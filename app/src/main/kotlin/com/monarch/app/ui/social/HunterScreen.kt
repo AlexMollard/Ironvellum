@@ -43,6 +43,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.SectionHeader
+import com.monarch.app.ui.components.TrendChart
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchAccount
 import com.monarch.app.domain.Titles
@@ -64,6 +65,8 @@ internal data class HunterUi(
     val allyBusy: Boolean = false,
     /** Worn title resolved locally from the leaderboard cache; null when bare or unknown. */
     val wornTitle: String? = null,
+    /** The raw title id behind [wornTitle]; feeds the avatar crest's rarity palette. */
+    val wornTitleId: String? = null,
 )
 
 internal class HunterViewModel(
@@ -113,8 +116,13 @@ internal class HunterViewModel(
             _ui.value = _ui.value.copy(allyState = state, allyBusy = false)
         }
         cloud.leaderboard().onSuccess { rows ->
+            // The hunter's worn title comes from their leaderboard row; the id is
+            // kept too so the crest can show its rarity.
             val titleId = rows.firstOrNull { it.userId == userId }?.currentTitleId
-            _ui.value = _ui.value.copy(wornTitle = titleId?.let { Titles.byId(it)?.name })
+            _ui.value = _ui.value.copy(
+                wornTitle = titleId?.let { Titles.byId(it)?.name },
+                wornTitleId = titleId,
+            )
         }
     }
 
@@ -180,6 +188,7 @@ internal fun HunterScreen(
                 userId = userId,
                 wornTitle = ui.wornTitle,
                 level = null, // level is not in HunterUi; omitted rather than fetched
+                titleId = ui.wornTitleId,
                 size = IdentitySize.Hero,
                 isMe = isMe,
                 modifier = Modifier.weight(1f),
@@ -270,6 +279,96 @@ internal fun HunterScreen(
                         Stat("XP SHARED", "+$xpShared", MonarchColors.EmeraldBright)
                         Stat("BEST STR", bestStr.toString(), MonarchColors.SovereignGold)
                     }
+                }
+
+                // ---- derived record: cadence, strength line, strongest hunt ----
+                // All computed from the sessions already in state — no extra
+                // server chatter, and the former dead space carries rhythm.
+                val dayMs = 24L * 60 * 60 * 1000
+                val now = System.currentTimeMillis()
+                val times = ui.sessions.mapNotNull { it.completedAtMs }.sorted()
+                val daysSince = times.lastOrNull()?.let { ((now - it) / dayMs).toInt() }
+                val perWeek = times.count { now - it <= 28 * dayMs } / 4.0
+                val chrono = ui.sessions.sortedBy { it.completedAtMs ?: Long.MAX_VALUE }
+                val strSeries = chrono.map { it.strengthScore.toDouble() }
+                val best = chrono.maxBy { it.strengthScore }
+
+                SystemWindow(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        Stat(
+                            "LAST HUNT",
+                            daysSince?.let { "${it}D AGO" } ?: "UNRECORDED",
+                            MonarchColors.SystemGreen,
+                        )
+                        Stat("CADENCE", "${"%.1f".format(perWeek)}/WK", MonarchColors.EmeraldBright)
+                        Stat("SETS MOVED", ui.sessions.sumOf { it.sets }.toString(), MonarchColors.SovereignGold)
+                    }
+                }
+
+                // The house line chart: strength across hunts, oldest to newest.
+                SystemWindow(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+                    Text(
+                        "STRENGTH LINE",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.InkMuted,
+                        letterSpacing = MonarchTracking.InlineLabel,
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    if (strSeries.size >= 2) {
+                        TrendChart(strSeries, MonarchColors.SystemGreen)
+                        Spacer(Modifier.height(4.dp))
+                        Text(
+                            "${strSeries.size} hunts on the line · best ${strSeries.max().toInt()}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            color = MonarchColors.InkMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    } else {
+                        // A single hunt cannot draw a line — say so instead of
+                        // leaving a blank canvas.
+                        Text(
+                            "One hunt on record — the line begins with the next.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MonarchColors.InkMuted,
+                        )
+                    }
+                }
+
+                // The signature hunt, framed gold so the record has a summit.
+                SystemWindow(Modifier.fillMaxWidth().padding(bottom = 10.dp), accent = MonarchColors.SovereignGold) {
+                    Text(
+                        "STRONGEST HUNT",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.SovereignGold,
+                        letterSpacing = MonarchTracking.InlineLabel,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        best.title.ifBlank { best.label },
+                        style = MaterialTheme.typography.titleSmall,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = MonarchColors.EmeraldBright,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Spacer(Modifier.height(2.dp))
+                    Text(
+                        "STR ${best.strengthScore} · +${best.xpAwarded} XP" +
+                            (best.completedAtMs?.let { " · ${formatDate(it, "MMM d") }" } ?: ""),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.InkMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
 
                 SectionHeader("Recent hunts")

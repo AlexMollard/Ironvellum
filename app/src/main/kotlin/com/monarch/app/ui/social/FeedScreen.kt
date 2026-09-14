@@ -19,6 +19,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Repeat
@@ -595,6 +598,7 @@ private fun FeedCard(
                 displayName = entry.displayName,
                 userId = entry.userId,
                 wornTitle = entry.currentTitleId?.let { Titles.byId(it)?.name },
+                titleId = entry.currentTitleId,
                 level = entry.level,
                 size = IdentitySize.Hero,
                 isMe = isMe,
@@ -637,6 +641,8 @@ private fun FeedCard(
                     overflow = TextOverflow.Ellipsis,
                 )
             }
+
+            MovementLine(entry)
 
             Spacer(Modifier.height(10.dp))
             StatStrip(entry)
@@ -867,19 +873,134 @@ private fun StatStrip(entry: FeedEntry) {
             .background(Brush.linearGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)))
             .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
             .padding(horizontal = 14.dp, vertical = 10.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Stat(Icons.Outlined.FitnessCenter, "${entry.setsDone}", "SETS")
-        Stat(Icons.Outlined.Repeat, "${entry.repsDone}", "REPS")
-        Stat(Icons.Outlined.Bolt, "+${entry.xpAwarded}", "XP", tint = MonarchColors.Emerald)
-        Stat(Icons.Outlined.WorkspacePremium, "${entry.strengthScore}", "STR", tint = MonarchColors.SovereignGold)
+        // FOUR stats, fixed. Six crammed into one row wrapped "MOVES" to
+        // "MOVE/S" and truncated XP to "+6…" on a 1080px screen; movement count
+        // and duration ride the movement line instead.
+        Stat(Icons.Outlined.FitnessCenter, "${entry.setsDone}", "SETS", modifier = Modifier.weight(1f))
+        Stat(Icons.Outlined.Repeat, "${entry.repsDone}", "REPS", modifier = Modifier.weight(1f))
+        Stat(Icons.Outlined.Bolt, "+${entry.xpAwarded}", "XP", tint = MonarchColors.Emerald, modifier = Modifier.weight(1f))
+        Stat(Icons.Outlined.WorkspacePremium, "${entry.strengthScore}", "STR", tint = MonarchColors.SovereignGold, modifier = Modifier.weight(1f))
+    }
+}
+
+/**
+ * What was trained: the heaviest-volume movement line plus a headline chip for
+ * the best set. Both fields are null for pre-migration sessions, so the whole
+ * block vanishes cleanly instead of rendering empty chips.
+ */
+@Composable
+private fun MovementLine(entry: FeedEntry) {
+    val movements = entry.topMovements?.takeIf { it.isNotBlank() }
+    val bestSet = entry.bestSet?.takeIf { it.isNotBlank() }
+    // Cardio placeholder: "1 x BW" is one unloaded rep, not a set worth
+    // headlining. A real bodyweight set ("6 x BW") keeps its chip.
+    val showBest = bestSet != null && !isCardioPlaceholderSet(bestSet)
+    if (movements == null && !showBest) return
+    val meta = buildList {
+        if (entry.movementCount > 0) {
+            add("${entry.movementCount} ${if (entry.movementCount == 1) "MOVEMENT" else "MOVEMENTS"}")
+        }
+        entry.durationSec?.takeIf { it >= 60 }?.let { add(formatDuration(it)) }
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (movements != null) {
+            Icon(
+                Icons.Outlined.Category,
+                contentDescription = null,
+                tint = MonarchColors.EmeraldBright,
+                modifier = Modifier.size(16.dp),
+            )
+            Text(
+                movements,
+                style = MaterialTheme.typography.bodyMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.InkMuted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        } else {
+            Spacer(Modifier.weight(1f))
+        }
+        if (showBest) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .background(MonarchColors.Abyss)
+                    .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            ) {
+                Icon(
+                    Icons.Outlined.TrendingUp,
+                    contentDescription = null,
+                    tint = MonarchColors.SovereignGold,
+                    modifier = Modifier.size(12.dp),
+                )
+                Text(
+                    "BEST $bestSet",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MonarchColors.SovereignGold,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
+        }
+    }
+    if (meta.isNotEmpty()) {
+        Spacer(Modifier.height(4.dp))
+        Text(
+            meta.joinToString("  ·  "),
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.Rune,
+            letterSpacing = MonarchTracking.InlineLabel,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
+}
+
+/** True for the auto-cardio stamp "1 x BW": unloaded AND a single rep. */
+private fun isCardioPlaceholderSet(bestSet: String): Boolean {
+    val parts = bestSet.split("x").map { it.trim() }
+    val reps = parts.getOrNull(0)?.toIntOrNull() ?: return false
+    val load = parts.getOrNull(1) ?: return false
+    return reps == 1 && load.equals("BW", ignoreCase = true)
+}
+
+/** 48m under the hour, "1h 12m" past it, whole hours drop the zero minutes. */
+private fun formatDuration(sec: Int): String {
+    val h = sec / 3600
+    val m = (sec % 3600) / 60
+    return when {
+        h > 0 && m > 0 -> "${h}h ${m}m"
+        h > 0 -> "${h}h"
+        else -> "${m}m"
     }
 }
 
 @Composable
-private fun Stat(icon: androidx.compose.ui.graphics.vector.ImageVector, value: String, label: String, tint: Color = MonarchColors.InkMuted) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+private fun Stat(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    value: String,
+    label: String,
+    tint: Color = MonarchColors.InkMuted,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(14.dp))
         Column {
             Text(
@@ -888,6 +1009,8 @@ private fun Stat(icon: androidx.compose.ui.graphics.vector.ImageVector, value: S
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.SemiBold,
                 color = MonarchColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
             Text(
                 label,

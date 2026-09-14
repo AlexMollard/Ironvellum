@@ -123,6 +123,13 @@ data class FeedEntry(
     val currentTitleId: String?,
     val likeCount: Int,
     val likedByMe: Boolean,
+    /** Up to 3 heaviest-volume movements, " · "-joined; null for pre-migration sessions. */
+    val topMovements: String?,
+    /** Headline set like "8 x 80.0 kg" or "6 x BW"; null when nothing was loaded. */
+    val bestSet: String?,
+    val movementCount: Int,
+    /** Session duration in seconds; null when a timestamp is missing. */
+    val durationSec: Int?,
 )
 
 @Serializable
@@ -144,6 +151,11 @@ data class FeedEntryDto(
     // Server-computed like aggregates: one request per page, not per card.
     @SerialName("like_count") val likeCount: Int = 0,
     @SerialName("liked_by_me") val likedByMe: Boolean = false,
+    // Session depth: what was trained. Nullable where the view can yield null.
+    @SerialName("top_movements") val topMovements: String? = null,
+    @SerialName("best_set") val bestSet: String? = null,
+    @SerialName("movement_count") val movementCount: Int = 0,
+    @SerialName("duration_sec") val durationSec: Int? = null,
 )
 
 @Serializable

@@ -550,6 +550,7 @@ private fun PodiumSlot(
                 size = avatarSize,
                 isMe = isMe,
                 level = row.level,
+                titleId = row.currentTitleId,
             )
             Spacer(Modifier.height(6.dp))
             Text(
@@ -661,6 +662,7 @@ private fun RankRow(
                 displayName = if (isMe) "${row.displayName} — YOU" else row.displayName,
                 userId = row.userId,
                 wornTitle = wornTitle(row.currentTitleId),
+                titleId = row.currentTitleId,
                 level = row.level,
                 size = IdentitySize.Standard,
                 isMe = isMe,

@@ -39,8 +39,9 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.monarch.app.domain.TitleDef
 import com.monarch.app.domain.Titles
+import com.monarch.app.domain.TitleDef
+import com.monarch.app.domain.TitleRarity
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.theme.ChakraPetch
@@ -73,6 +74,44 @@ private fun DeedFilter.matches(def: TitleDef, unlocked: Map<String, Long>, progr
     }
 }
 
+/** Rarity accent per tier — same tokens the crest will use, so board and avatar agree. */
+private fun rarityColor(rarity: TitleRarity): Color = when (rarity) {
+    TitleRarity.Common -> MonarchColors.InkMuted
+    TitleRarity.Rare -> MonarchColors.SystemGreen
+    TitleRarity.Epic -> MonarchColors.Emerald
+    TitleRarity.Sovereign -> MonarchColors.SovereignGold
+}
+
+@Composable
+private fun RarityChip(rarity: TitleRarity, modifier: Modifier = Modifier) {
+    val accent = rarityColor(rarity)
+    val shape = CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp)
+    // Sovereign must be unmistakable at a glance: gold jewel fill plus a
+    // heavier border. Epic gets a green jewel fill; Rare and Common stay quiet.
+    val bg = when (rarity) {
+        TitleRarity.Sovereign -> Brush.verticalGradient(listOf(Color(0xFF5A3F0C), Color(0xFF1E1606)))
+        TitleRarity.Epic -> Brush.verticalGradient(listOf(Color(0xFF123526), Color(0xFF0C211A)))
+        else -> Brush.verticalGradient(listOf(Color(0xFF161C1A), Color(0xFF111614)))
+    }
+    Box(
+        modifier
+            .background(bg, shape)
+            .border(if (rarity == TitleRarity.Sovereign) 2.dp else 1.dp, accent, shape)
+            .padding(horizontal = 6.dp, vertical = 2.dp),
+    ) {
+        Text(
+            rarity.name.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = 9.sp,
+            fontFamily = ChakraPetch,
+            color = accent,
+            letterSpacing = 1.sp,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
+}
+
 @Composable
 fun DeedsBoard(
     unlocked: Map<String, Long>,
@@ -89,6 +128,10 @@ fun DeedsBoard(
 
     var query by remember { mutableStateOf(TextFieldValue("")) }
     var filter by remember { mutableStateOf(DeedFilter.IN_PROGRESS) }
+    // Rarity narrows independently of the status filter; null = every tier.
+    var rarityFilter by remember { mutableStateOf<TitleRarity?>(null) }
+    // Toggling reorders each section's rows by rarity instead of proximity.
+    var byRarity by remember { mutableStateOf(false) }
 
     // progress per deed computed once; every chip count, sort and row reuses it
     val progressOf = remember(ledger) {
@@ -111,6 +154,7 @@ fun DeedsBoard(
     // Closest unearned deed — the thing worth chasing today, shown inside the
     // merged hero panel under every filter.
     val next = locked
+        .filter { rarityFilter == null || it.rarity == rarityFilter }
         .map { it to progressOf.getValue(it.id) }
         .maxByOrNull { it.second.fraction }
 
@@ -139,23 +183,50 @@ fun DeedsBoard(
                         onClick = { filter = f },
                     )
                 }
-            }
+                // Rarity rail: tapping the selected tier again clears it.
+                // Same horizontalScroll idiom — no chip may wrap.
+                Spacer(Modifier.width(6.dp))
+                TitleRarity.entries.forEach { r ->
+                    val count = Titles.ALL.count { it.rarity == r }
+                    DeedFilterChip(
+                        label = "${r.name.uppercase()} $count",
+                        selected = rarityFilter == r,
+                        onClick = { rarityFilter = if (rarityFilter == r) null else r },
+                    )
+                }
+                DeedFilterChip(
+                    label = if (byRarity) "ORDER · RARITY" else "ORDER · PROXIMITY",
+                    selected = byRarity,
+                    onClick = { byRarity = !byRarity },
+                )
+        }
         }
 
         // --- merged hero: what you wear + what to chase next, one panel -----
         item(key = "hero") {
             SystemWindow(Modifier.fillMaxWidth()) {
                 Column(Modifier.fillMaxWidth()) {
-                    Text(
-                        equipped?.name?.uppercase() ?: "NO TITLE WORN",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = if (equipped != null) MonarchColors.SovereignGold else MonarchColors.InkMuted,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            equipped?.name?.uppercase() ?: "NO TITLE WORN",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontFamily = ChakraPetch,
+                            fontWeight = FontWeight.Bold,
+                            color = if (equipped != null) MonarchColors.SovereignGold else MonarchColors.InkMuted,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        // The worn title's tier — the same chip every deed row shows.
+                        if (equipped != null) {
+                            Spacer(Modifier.width(8.dp))
+                            RarityChip(equipped.rarity)
+                        }
+                    }
                     Text(
                         equipped?.description ?: "Earn a deed below, then wear it.",
                         style = MaterialTheme.typography.bodySmall,
@@ -174,6 +245,56 @@ fun DeedsBoard(
                         ProgressTrack(0.02f, tall = false)
                         Spacer(Modifier.height(8.dp))
                         ClosestDeedCard(next.first, next.second)
+                    }
+                }
+            }
+        }
+
+        // --- high seats: locked Epic + Sovereign deeds, nearest first -------
+        // The chase is only legible if the rarest locked deeds are visible
+        // without digging through collapsed sections.
+        val highSeats = locked
+            .filter { it.rarity.ordinal >= TitleRarity.Epic.ordinal }
+            .map { it to progressOf.getValue(it.id) }
+            .sortedByDescending { it.second.fraction }
+            .take(3)
+        if (highSeats.isNotEmpty() && !searching) {
+            item(key = "high-seats") {
+                SystemWindow(Modifier.fillMaxWidth()) {
+                    Column(Modifier.fillMaxWidth()) {
+                        Text(
+                            "UNCLAIMED HIGH SEATS",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = ChakraPetch,
+                            color = MonarchColors.InkMuted,
+                            letterSpacing = 2.sp,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        highSeats.forEach { (def, progress) ->
+                            Row(
+                                Modifier.fillMaxWidth().padding(bottom = 6.dp),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                RarityChip(def.rarity)
+                                Text(
+                                    def.name.uppercase(),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    fontFamily = ChakraPetch,
+                                    color = rarityColor(def.rarity),
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier.weight(1f),
+                                )
+                                Text(
+                                    "${(progress.fraction * 100).toInt()}%",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontFamily = ChakraPetch,
+                                    color = MonarchColors.SystemGreen,
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -220,20 +341,30 @@ fun DeedsBoard(
         // --- collapsible category sections ----------------------------------
         val visibleSections = locked
             .filter { filter.matches(it, unlocked, progressOf.getValue(it.id)) }
+            .filter { rarityFilter == null || it.rarity == rarityFilter }
             .filter {
                 !searching ||
                     it.name.contains(query.text.trim(), ignoreCase = true) ||
                     it.description.contains(query.text.trim(), ignoreCase = true)
             }
             .groupBy { Titles.category(it.rule) }
-            // proximity order: closest first, then small honest targets;
-            // claimed sink to the bottom of their section
             .mapValues { (_, defs) ->
-                defs.sortedWith(
-                    compareBy<TitleDef> { it.id in unlocked }
-                        .thenByDescending { progressOf.getValue(it.id).fraction }
-                        .thenBy { progressOf.getValue(it.id).target },
-                )
+                if (byRarity) {
+                    // Rarity order: prized deeds first, then the nearest ones.
+                    defs.sortedWith(
+                        compareBy<TitleDef> { it.id in unlocked }
+                            .thenByDescending { it.rarity.ordinal }
+                            .thenByDescending { progressOf.getValue(it.id).fraction },
+                    )
+                } else {
+                    // proximity order: closest first, then small honest targets;
+                    // claimed sink to the bottom of their section
+                    defs.sortedWith(
+                        compareBy<TitleDef> { it.id in unlocked }
+                            .thenByDescending { progressOf.getValue(it.id).fraction }
+                            .thenBy { progressOf.getValue(it.id).target },
+                    )
+                }
             }
 
         // A search term filters every section, so only matching ones appear —
@@ -290,6 +421,7 @@ private fun ClosestDeedCard(def: TitleDef, progress: Titles.Progress) {
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false),
             )
+            RarityChip(def.rarity)
             Spacer(Modifier.width(8.dp))
             Text(
                 "${(progress.fraction * 100).toInt()}%",
@@ -443,6 +575,8 @@ private fun DeedRow(def: TitleDef, progress: Titles.Progress, unlockedAtMs: Long
                         maxLines = 1,
                     )
                 }
+                RarityChip(def.rarity)
+                Spacer(Modifier.width(8.dp))
                 Text(
                     "${progress.current}/${progress.target}",
                     style = MaterialTheme.typography.labelMedium,
@@ -459,6 +593,9 @@ private fun DeedRow(def: TitleDef, progress: Titles.Progress, unlockedAtMs: Long
 @Composable
 private fun SealCard(def: TitleDef, unlockedAtMs: Long?, worn: Boolean, onClick: () -> Unit) {
     val shape = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp)
+    // Seal border carries the rarity accent; worn keeps the gold treatment.
+    val rim = if (worn) MonarchColors.SovereignGold else rarityColor(def.rarity)
+    val rimWidth = if (worn || def.rarity == TitleRarity.Sovereign) 2.dp else 1.dp
     Column(
         Modifier
             .fillMaxWidth()
@@ -469,7 +606,7 @@ private fun SealCard(def: TitleDef, unlockedAtMs: Long?, worn: Boolean, onClick:
                 ),
                 shape,
             )
-            .border(if (worn) 2.dp else 1.dp, MonarchColors.SovereignGold, shape)
+            .border(rimWidth, rim, shape)
             .clickable { onClick() }
             .padding(10.dp),
     ) {
@@ -489,14 +626,21 @@ private fun SealCard(def: TitleDef, unlockedAtMs: Long?, worn: Boolean, onClick:
                 color = MonarchColors.InkMuted,
             )
         }
-        Text(
-            if (worn) "WORN" else "TAP TO WEAR",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            fontSize = 9.sp,
-            color = if (worn) MonarchColors.SovereignGold else MonarchColors.SystemGreen,
-            letterSpacing = 1.sp,
-        )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                if (worn) "WORN" else "TAP TO WEAR",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                fontSize = 9.sp,
+                color = if (worn) MonarchColors.SovereignGold else MonarchColors.SystemGreen,
+                letterSpacing = 1.sp,
+            )
+            RarityChip(def.rarity)
+        }
     }
 }
 
