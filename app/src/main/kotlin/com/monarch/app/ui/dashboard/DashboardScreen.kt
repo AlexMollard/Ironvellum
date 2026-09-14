@@ -10,6 +10,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -178,6 +180,7 @@ fun DashboardScreen(
     onStartSession: (Long) -> Unit,
     onOpenPresets: () -> Unit,
     onOpenCodex: () -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: DashboardViewModel =
         viewModel(factory = viewModelFactory { initializer { DashboardViewModel(monarchRepository()) } }),
 ) {
@@ -254,6 +257,23 @@ fun DashboardScreen(
                             maxLines = 1,
                         )
                     }
+                    // The System gear: settings left the bottom nav, so
+                    // this fixed-size tap target rides at the end of the
+                    // identity strip — the weighted name column absorbs it,
+                    // so the player card itself never moves.
+                    Icon(
+                        Icons.Outlined.Settings,
+                        contentDescription = "System",
+                        tint = MonarchColors.InkMuted,
+                        modifier = Modifier
+                            .size(22.dp)
+                            .clip(CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = null,
+                            ) { onOpenSettings() }
+                            .padding(2.dp),
+                    )
                     RankBadge(level = progress.level)
                 }
                 Spacer(Modifier.height(10.dp))

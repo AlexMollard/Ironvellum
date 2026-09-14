@@ -295,3 +295,15 @@ interface SyncStateDao {
     @Query("DELETE FROM sync_state")
     suspend fun clearAll()
 }
+
+@Dao
+interface IdleDao {
+    @Query("SELECT * FROM idle_state WHERE id = 1")
+    fun observe(): Flow<IdleStateEntity?>
+
+    @Query("SELECT * FROM idle_state WHERE id = 1")
+    suspend fun get(): IdleStateEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsert(state: IdleStateEntity)
+}

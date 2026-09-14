@@ -188,3 +188,19 @@ data class SyncStateEntity(
     val fingerprint: Int,
 )
 
+
+/**
+ * Idle game state, single row (id = 1, mirroring profile). The row is created
+ * by MIGRATION_16_17; a null read means "first launch before any collect" and
+ * callers treat it as the zeroed default.
+ */
+@Entity(tableName = "idle_state")
+data class IdleStateEntity(
+    @PrimaryKey val id: Long = 1,
+    // Zeroed defaults: callers read `idleDao.get() ?: IdleStateEntity()` for the
+    // pre-migration/first-launch case, which needs a no-arg construction.
+    val essence: Long = 0,
+    val shadows: Int = 0,
+    val relicMultiplier: Double = 1.0,
+    val lastCollectedAtMs: Long = 0,
+)

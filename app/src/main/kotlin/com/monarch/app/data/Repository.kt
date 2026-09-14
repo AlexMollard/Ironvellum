@@ -1,15 +1,14 @@
 package com.monarch.app.data
 import androidx.room.withTransaction
-import com.monarch.app.domain.ActivityScore
-import com.monarch.app.domain.ArmyClass
-import com.monarch.app.domain.Exercise
-import com.monarch.app.domain.ExerciseMetric
+import com.monarch.app.data.db.SessionWithSets
 import com.monarch.app.data.db.ExerciseDao
+import com.monarch.app.data.db.ExerciseEntity
 import com.monarch.app.data.db.HealthDayDao
 import com.monarch.app.data.db.HealthDayEntity
+import com.monarch.app.data.db.IdleDao
+import com.monarch.app.data.db.IdleStateEntity
 import com.monarch.app.data.db.MeasurementDao
 import com.monarch.app.data.db.MeasurementEntity
-import com.monarch.app.data.db.ExerciseEntity
 import com.monarch.app.data.db.PresetDao
 import com.monarch.app.data.db.PresetEntity
 import com.monarch.app.data.db.PresetEntryEntity
@@ -22,26 +21,33 @@ import com.monarch.app.data.db.SkillPracticeDao
 import com.monarch.app.data.db.SkillPracticeEntity
 import com.monarch.app.data.db.StatDao
 import com.monarch.app.data.db.StatEntity
-import com.monarch.app.data.db.TitleDao
-import com.monarch.app.data.db.TitleUnlockEntity
 import com.monarch.app.data.db.SyncStateDao
 import com.monarch.app.data.db.SyncStateEntity
+import com.monarch.app.data.db.TitleDao
+import com.monarch.app.data.db.TitleUnlockEntity
+import com.monarch.app.domain.ActivityScore
+import com.monarch.app.domain.ArmyClass
+import com.monarch.app.domain.Exercise
 import com.monarch.app.domain.ExerciseHistory
-import com.monarch.app.domain.HealthDay
 import com.monarch.app.domain.ExerciseHistoryCalculator
+import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.domain.ExportReader
 import com.monarch.app.domain.ExportWriter
+import com.monarch.app.domain.HealthDay
+import com.monarch.app.domain.Idle
+import com.monarch.app.domain.IdleRate
+import com.monarch.app.domain.IdleState
 import com.monarch.app.domain.MeasurementEntry
 import com.monarch.app.domain.MeasurementSite
 import com.monarch.app.domain.MuscleGroup
-import com.monarch.app.domain.PresetEntry
 import com.monarch.app.domain.PlayerProfile
+import com.monarch.app.domain.PresetEntry
 import com.monarch.app.domain.Progression
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.SkillClaimResult
 import com.monarch.app.domain.SkillPractice
-import com.monarch.app.domain.StatEntry
 import com.monarch.app.domain.Skills
+import com.monarch.app.domain.StatEntry
 import com.monarch.app.domain.StrengthIndex
 import com.monarch.app.domain.TitleDef
 import com.monarch.app.domain.Titles
@@ -50,14 +56,16 @@ import com.monarch.app.domain.UnlockedTitle
 import com.monarch.app.domain.WorkoutPreset
 import com.monarch.app.domain.WorkoutSession
 import com.monarch.app.domain.Xp
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
-import java.time.LocalDate
 
 class Repository(
     private val db: MonarchDatabase,
@@ -74,6 +82,7 @@ class Repository(
     private val healthDayDao: HealthDayDao = db.healthDayDao()
     private val measurementDao: MeasurementDao = db.measurementDao()
     private val syncStateDao: SyncStateDao = db.syncStateDao()
+    private val idleDao: IdleDao = db.idleDao()
     // ---------------------------------------------------------------- seeding
 
     suspend fun ensureSeeded() {
@@ -1077,4 +1086,94 @@ class Repository(
                 )
             }
     }
+
+    // ------------------------------------------------------------------ idle
+
+    fun observeIdle(): Flow<IdleState> =
+        idleDao.observe().map { (it ?: IdleStateEntity()).toIdleState() }
+
+    fun observeIdleInputs(): Flow<IdleInputs> = combine(
+        sessionDao.observeCompletedWithSets(),
+        skillPracticeDao.observeAll(),
+    ) { completed, practices -> idleInputs(completed, practices) }
+
+    fun observeIdleRate(): Flow<IdleRate> = combine(
+        observeIdle(),
+        observeIdleInputs(),
+    ) { state, inputs ->
+        Idle.rate(state, inputs.sessionsLast7d, inputs.volumeLast7d, inputs.skillsUnlocked, inputs.streakDays)
+    }
+
+    /** State plus the live rate, so the screen never recomputes the formula. */
+    fun observeIdleSnapshot(): Flow<IdleSnapshot> = combine(
+        observeIdle(),
+        observeIdleRate(),
+    ) { state, rate -> IdleSnapshot(state, rate) }
+
+    /**
+     * Banks everything accrued since the last collect. Read-modify-write runs
+     * inside a transaction, so two racing collects cannot both be paid for the
+     * same interval: the second reads the bumped lastCollectedAtMs and gets 0.
+     */
+    suspend fun collectIdle(nowMs: Long): Long = db.withTransaction {
+        val current = idleDao.get() ?: IdleStateEntity()
+        val state = current.toIdleState()
+        val inputs = idleInputs(sessionDao.observeCompletedWithSets().first(), skillPracticeDao.observeAll().first())
+        val rate = Idle.rate(state, inputs.sessionsLast7d, inputs.volumeLast7d, inputs.skillsUnlocked, inputs.streakDays)
+        val gained = Idle.accrued(state, rate, nowMs)
+        if (gained > 0) {
+            idleDao.upsert(current.copy(essence = state.essence + gained, lastCollectedAtMs = nowMs))
+        }
+        gained
+    }
+
+    /** Gacha hook: adds army size, never lowers an existing relic multiplier. */
+    suspend fun grantIdle(shadows: Int, relicMultiplier: Double) = db.withTransaction {
+        val current = idleDao.get() ?: IdleStateEntity()
+        idleDao.upsert(
+            current.copy(
+                shadows = current.shadows + shadows,
+                relicMultiplier = maxOf(current.relicMultiplier, relicMultiplier),
+            ),
+        )
+    }
+
+    private fun idleInputs(
+        completed: List<SessionWithSets>,
+        practices: List<SkillPracticeEntity>,
+    ): IdleInputs {
+        val weekAgoMs = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L
+        val recent = completed.filter { (it.session.completedAtMs ?: 0L) >= weekAgoMs }
+        val volume = recent.sumOf { (_, sets) ->
+            sets.filter { it.done }.sumOf { (it.weightKg ?: 0.0) * it.reps }
+        }
+        val completedDates = completed.mapNotNull { (session, _) ->
+            session.completedAtMs?.let {
+                Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+            }
+        }.toSet()
+        return IdleInputs(
+            sessionsLast7d = recent.size,
+            volumeLast7d = volume,
+            skillsUnlocked = practices.filter { it.claimed }.map { it.skillName }.distinct().size,
+            streakDays = Titles.trainingStreakDays(completedDates),
+        )
+    }
+
+    private fun IdleStateEntity.toIdleState() =
+        IdleState(essence = essence, shadows = shadows, relicMultiplier = relicMultiplier, lastCollectedAtMs = lastCollectedAtMs)
 }
+
+/** Raw training inputs feeding Idle.rate — exposed for the rate WHY-breakdown. */
+data class IdleInputs(
+    val sessionsLast7d: Int,
+    val volumeLast7d: Double,
+    val skillsUnlocked: Int,
+    val streakDays: Int,
+)
+
+/** Idle state plus the rate the System is currently paying. */
+data class IdleSnapshot(
+    val state: IdleState,
+    val rate: IdleRate,
+)

@@ -28,6 +28,8 @@ import com.monarch.app.data.db.TitleDao
 import com.monarch.app.data.db.TitleUnlockEntity
 import com.monarch.app.data.db.SyncStateDao
 import com.monarch.app.data.db.SyncStateEntity
+import com.monarch.app.data.db.IdleDao
+import com.monarch.app.data.db.IdleStateEntity
 
 @Database(
     entities = [
@@ -43,8 +45,9 @@ import com.monarch.app.data.db.SyncStateEntity
         HealthDayEntity::class,
         MeasurementEntity::class,
         SyncStateEntity::class,
+        IdleStateEntity::class,
     ],
-    version = 16,
+    version = 17,
     exportSchema = false,
 )
 abstract class MonarchDatabase : RoomDatabase() {
@@ -58,6 +61,7 @@ abstract class MonarchDatabase : RoomDatabase() {
     abstract fun healthDayDao(): HealthDayDao
     abstract fun measurementDao(): MeasurementDao
     abstract fun syncStateDao(): SyncStateDao
+    abstract fun idleDao(): IdleDao
 
     companion object {
         // Version 11 is the shipped baseline. Every future schema change
@@ -118,6 +122,29 @@ abstract class MonarchDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_16_17 = object : Migration(16, 17) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Idle game, single row. Column types must match IdleStateEntity
+                // exactly or Room refuses to open the database (there is no
+                // destructive fallback by design). Seed the row so the first
+                // collect has a baseline; lastCollectedAtMs = 0 means the very
+                // first collect pays a capped amount at the floor rate once.
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `idle_state` (" +
+                        "`id` INTEGER PRIMARY KEY NOT NULL, " +
+                        "`essence` INTEGER NOT NULL, " +
+                        "`shadows` INTEGER NOT NULL, " +
+                        "`relicMultiplier` REAL NOT NULL, " +
+                        "`lastCollectedAtMs` INTEGER NOT NULL)",
+                )
+                db.execSQL(
+                    "INSERT OR IGNORE INTO `idle_state` " +
+                        "(`id`, `essence`, `shadows`, `relicMultiplier`, `lastCollectedAtMs`) " +
+                        "VALUES (1, 0, 0, 1.0, 0)",
+                )
+            }
+        }
+
         fun create(context: Context): MonarchDatabase =
             Room.databaseBuilder(context, MonarchDatabase::class.java, "monarch.db")
                 .addMigrations(
@@ -126,6 +153,7 @@ abstract class MonarchDatabase : RoomDatabase() {
                     MIGRATION_13_14,
                     MIGRATION_14_15,
                     MIGRATION_15_16,
+                    MIGRATION_16_17,
                 )
                 .build()
     }

@@ -20,7 +20,7 @@ import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -60,6 +60,7 @@ import com.monarch.app.ui.train.ExerciseExplorerScreen
 import com.monarch.app.ui.train.PresetsScreen
 import com.monarch.app.ui.train.PresetEditorScreen
 import com.monarch.app.ui.train.SessionScreen
+import com.monarch.app.ui.idle.IdleScreen
 
 object Routes {
     const val DASHBOARD = "dashboard"
@@ -67,6 +68,7 @@ object Routes {
     const val EXERCISES = "exercises"
     const val STATS = "stats"
     const val TITLES = "titles"
+    const val IDLE = "idle"
     const val SETTINGS = "settings"
     const val SOCIAL = "social"
     const val WORKOUT_LOG = "workout_log"
@@ -108,7 +110,7 @@ fun MonarchRoot() {
         BottomDestination(Routes.STATS, "Stats", Icons.Outlined.BarChart),
         BottomDestination(Routes.TITLES, "Codex", Icons.Outlined.AutoStories),
         BottomDestination(Routes.SOCIAL, "Guild", Icons.Outlined.Groups),
-        BottomDestination(Routes.SETTINGS, "System", Icons.Outlined.Settings),
+        BottomDestination(Routes.IDLE, "Shadow", Icons.Outlined.Bedtime),
     )
 
     Box(
@@ -217,6 +219,7 @@ fun MonarchRoot() {
                                 restoreState = true
                             }
                         },
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     )
                 }
                 composable(Routes.PRESETS) {
@@ -270,6 +273,7 @@ fun MonarchRoot() {
                         MeasurementDetailScreen(site = site, onBack = { navController.popBackStack() })
                     }
                 }
+                composable(Routes.IDLE) { IdleScreen() }
                 composable(Routes.SOCIAL) {
                     SocialScreen(
                         onOpenHunter = { userId, name ->
