@@ -465,7 +465,13 @@ private fun Podium(
     myUserId: String?,
 ) {
     // Visual order silver / gold / bronze; plinth heights and emblem sizes step down from the crown.
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+    // Bottom alignment is what makes this read as a podium: the plinths share a
+    // floor and step down from the crown, instead of hanging from a ragged top.
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
         PodiumSlot(
             row = top.getOrNull(1),
             rank = 2,
@@ -727,7 +733,9 @@ private fun RankRow(
                 }
                 Text(
                     extras,
-                    maxLines = 1,
+                    // Two lines, because one clipped "lifetime ..." mid-word and
+                    // the rest of the stats were repeated below to compensate.
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
@@ -748,14 +756,6 @@ private fun RankRow(
                     .fillMaxWidth(intensity)
                     .height(3.dp)
                     .background(Brush.horizontalGradient(listOf(accent, MonarchColors.EmeraldBright))),
-            )
-        }
-        if (row.titlesCount > 0 || row.lifetimeStrength > 0) {
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "${row.titlesCount} titles · lifetime strength ${row.lifetimeStrength}",
-                style = MaterialTheme.typography.labelSmall,
-                color = MonarchColors.SystemGreen,
             )
         }
         if (expanded) {

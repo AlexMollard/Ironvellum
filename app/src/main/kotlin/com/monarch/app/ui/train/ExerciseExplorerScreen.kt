@@ -35,6 +35,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -167,11 +168,16 @@ fun ExerciseExplorerScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column {
+                    // The name and its descriptor line have to yield to SWITCH:
+                    // unweighted, a long name ("Jump Rope Intervals" plus a skill
+                    // tier) pushed the control off the right edge.
+                    Column(Modifier.weight(1f)) {
                         Text(
                             selectedExercise.name,
                             style = MaterialTheme.typography.titleLarge,
                             color = MonarchColors.SovereignGold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
                         )
                         val skill = Skills.forName(selectedExercise.name)
                         Text(
@@ -185,8 +191,11 @@ fun ExerciseExplorerScreen(
                             },
                             style = MaterialTheme.typography.labelMedium,
                             color = MonarchColors.SystemGreen,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
+                    Spacer(Modifier.width(10.dp))
                     Text(
                         "SWITCH",
                         style = MaterialTheme.typography.labelMedium,
@@ -399,10 +408,18 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>) {
                         fontFamily = ChakraPetch,
                         color = MonarchColors.InkMuted,
                     )
+                    // Three siblings under SpaceBetween: the middle value is the
+                    // only elastic one, so it takes the slack instead of the
+                    // score/date column being squeezed off the row.
                     Text(
                         "${record.reps}×" + (record.weightKg?.let { "${formatKg(it)} kg" } ?: "BW"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MonarchColors.Ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 10.dp),
                     )
                     Column(horizontalAlignment = Alignment.End) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -457,10 +474,18 @@ private fun SetLog(history: ExerciseHistory) {
                         fontFamily = ChakraPetch,
                         color = MonarchColors.InkMuted,
                     )
+                    // Same three-sibling row as the PR panel: the reps/weight
+                    // value absorbs the slack so a long modifier list cannot
+                    // shove it out of the window.
                     Text(
                         "${set.reps} reps · " + (set.weightKg?.let { "${formatKg(it)} kg" } ?: "BW"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MonarchColors.Ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 10.dp),
                     )
                     Column(horizontalAlignment = Alignment.End) {
                         if (set.modifiers.isNotBlank()) {
@@ -468,6 +493,8 @@ private fun SetLog(history: ExerciseHistory) {
                                 set.modifiers.split(",").joinToString(" · ") { it.trim() },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MonarchColors.SystemGreen,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                         if (!set.done) {

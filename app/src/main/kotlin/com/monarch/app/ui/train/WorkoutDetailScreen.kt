@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -370,7 +371,13 @@ private fun SetRow(set: SessionSet) {
                 fontFamily = ChakraPetch,
                 color = MonarchColors.SovereignGold,
                 letterSpacing = MonarchTracking.InlineLabel,
-                modifier = Modifier.padding(end = 12.dp),
+                // A three-modifier set ("DEFICIT, PAUSE, TEMPO") otherwise pushes
+                // the reps x weight value out of the row.
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .weight(1f, fill = false)
+                    .padding(end = 12.dp),
             )
         }
         Text(
