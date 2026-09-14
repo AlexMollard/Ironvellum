@@ -56,6 +56,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.HealthSnapshot
+import com.monarch.app.data.CrashJournal
 import com.monarch.app.data.HealthSync
 import com.monarch.app.data.Repository
 import com.monarch.app.domain.HealthDay
@@ -77,6 +78,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.Locale
+import androidx.compose.ui.text.intl.Locale as ComposeLocale
 
 private val HEALTH_PERMISSIONS = setOf(
     HealthPermission.getReadPermission(WeightRecord::class),
@@ -304,6 +307,8 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     var name by remember(profile?.name) { mutableStateOf(profile?.name ?: "") }
     var confirmImport by remember { mutableStateOf(false) }
+    var crashCount by remember { mutableStateOf(CrashJournal.crashCount()) }
+    var latestCrash by remember { mutableStateOf(CrashJournal.latestTimestamp()?.substringAfter("—")?.trim().orEmpty()) }
     val bodyProfile by viewModel.bodyProfile.collectAsStateWithLifecycle()
     var heightInput by remember(bodyProfile.first) { mutableStateOf(bodyProfile.first?.toString() ?: "") }
     val heightValid = heightInput.toDoubleOrNull()?.let { it > 0.0 } == true
@@ -558,7 +563,7 @@ fun SettingsScreen(
             if (healthDays.isNotEmpty()) {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "${healthDays.size} days synced · ${String.format("%,d", healthDays.sumOf { it.steps })} steps · ${"%.0f".format(healthDays.sumOf { it.distanceKm })} km",
+                    "${healthDays.size} days synced · ${String.format(numberLocale(), "%,d", healthDays.sumOf { it.steps })} steps · ${"%.0f".format(healthDays.sumOf { it.distanceKm })} km",
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     color = MonarchColors.SystemGreen,
@@ -613,7 +618,7 @@ fun SettingsScreen(
             } else {
                 MonarchButton(
                     label = "Export Archive",
-                    onClick = { viewModel.exportJson { json -> shareJson(context, json) } },
+                    onClick = { viewModel.exportJson { json -> shareText(context, "Export Monarch data", "monarch_export.json", json) } },
                 )
             }
             Spacer(Modifier.height(10.dp))
@@ -637,6 +642,53 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(14.dp))
+
+        SystemWindow(Modifier.fillMaxWidth()) {
+            Text(
+                "DIAGNOSTICS",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.SystemGreen,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(6.dp))
+            if (crashCount == 0) {
+                Text(
+                    "No crashes recorded.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MonarchColors.InkMuted,
+                )
+            } else {
+                Text(
+                    "$crashCount crash record${if (crashCount == 1) "" else "s"} · latest $latestCrash",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.SystemGreen,
+                )
+                Spacer(Modifier.height(10.dp))
+                MonarchButton(
+                    label = "Share Crash Log",
+                    onClick = {
+                        scope.launch(Dispatchers.IO) {
+                            val text = CrashJournal.recent().joinToString("\n\n")
+                            withContext(Dispatchers.Main) {
+                                shareText(context, "Share Monarch crash log", "monarch_crash_log.txt", text)
+                            }
+                        }
+                    },
+                )
+                Spacer(Modifier.height(10.dp))
+                MonarchButton(
+                    label = "Clear Crash Log",
+                    onClick = {
+                        CrashJournal.clear()
+                        crashCount = CrashJournal.crashCount()
+                        latestCrash = CrashJournal.latestTimestamp()?.substringAfter("—")?.trim() ?: ""
+                    },
+                )
+            }
+        }
+        Spacer(Modifier.height(14.dp))
         Text(
             "Monarch v1.0  ·  all data on this device only",
             style = MaterialTheme.typography.labelSmall,
@@ -647,11 +699,19 @@ fun SettingsScreen(
     }
 }
 
-private fun shareJson(context: Context, json: String) {
+private fun shareText(context: Context, title: String, fileName: String, text: String) {
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
-        putExtra(Intent.EXTRA_TITLE, "monarch_export.json")
-        putExtra(Intent.EXTRA_TEXT, json)
+        putExtra(Intent.EXTRA_TITLE, fileName)
+        putExtra(Intent.EXTRA_TEXT, text)
     }
-    context.startActivity(Intent.createChooser(intent, "Export Monarch data"))
+    context.startActivity(Intent.createChooser(intent, title))
 }
+
+/**
+ * The reader's locale, read through Compose's own locale state rather than
+ * `Locale.getDefault()`, so formatted numbers recompose when the device locale
+ * changes instead of keeping the value captured at first composition.
+ */
+@Composable
+private fun numberLocale(): Locale = ComposeLocale.current.platformLocale

@@ -12,6 +12,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import com.monarch.app.data.CrashJournal
+
 
 class MonarchApp : Application() {
 
@@ -30,6 +32,18 @@ class MonarchApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Journal a crash before anything else can fail: the handler must be
+        // in place before the first work runs in this process. It wraps and
+        // delegates to the system handler, so the crash dialog still appears
+        // and the process still dies.
+        runCatching {
+            val info = packageManager.getPackageInfo(packageName, 0)
+            CrashJournal.installMeta(
+                versionName = info.versionName ?: "unknown",
+                versionCode = info.longVersionCode,
+            )
+            CrashJournal.install(this)
+        }
         // Before anything touches Room: a failed migration leaves the data on
         // disk but unreachable, so the byte copy has to happen first.
         DbSnapshot.capture(this)
