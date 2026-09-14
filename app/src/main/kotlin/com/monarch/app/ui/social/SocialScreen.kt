@@ -29,12 +29,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
-import com.monarch.app.ui.theme.MonarchTracking
 
 private enum class GuildTab(val label: String) {
     FEED("FEED"),
     BOARD("BOARD"),
-    GUILD("GUILD"),
+    // "ALLIES", not "GUILD" — the bottom nav tab already says Guild; repeating
+    // it here put GUILD on screen three times.
+    ALLIES("ALLIES"),
 }
 
 /**
@@ -48,14 +49,6 @@ fun SocialScreen(onOpenHunter: (userId: String, displayName: String) -> Unit) {
 
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(18.dp))
-        Text(
-            "GUILD",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = MonarchColors.InkMuted,
-            letterSpacing = MonarchTracking.SectionHeader,
-        )
-        Spacer(Modifier.height(10.dp))
         Row(
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -71,7 +64,10 @@ fun SocialScreen(onOpenHunter: (userId: String, displayName: String) -> Unit) {
             // to the feed rather than popping the whole tab off the stack.
             GuildTab.FEED -> FeedScreen(onOpenHunter = onOpenHunter)
             GuildTab.BOARD -> LeaderboardScreen(onOpenFriend = onOpenHunter)
-            GuildTab.GUILD -> AccountScreen(onBack = { tab = GuildTab.FEED })
+            GuildTab.ALLIES -> AccountScreen(
+                onBack = { tab = GuildTab.FEED },
+                onOpenHunter = onOpenHunter,
+            )
         }
     }
 }

@@ -1,11 +1,14 @@
 package com.monarch.app.ui.social
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -23,7 +26,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -34,9 +36,13 @@ import com.monarch.app.data.cloud.AccountRepository
 import com.monarch.app.data.cloud.FriendRow
 import com.monarch.app.data.cloud.CloudSync
 import com.monarch.app.data.cloud.FriendSession
-import com.monarch.app.ui.components.MonarchButton
-import com.monarch.app.ui.components.SectionHeader
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.fillMaxWidth
 import com.monarch.app.ui.components.SystemWindow
+import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchAccount
 import com.monarch.app.domain.Titles
@@ -150,6 +156,7 @@ internal fun HunterScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     LaunchedEffect(userId) { viewModel.load(userId) }
+    val isMe = ui.myUserId == userId
 
     Column(
         Modifier
@@ -158,46 +165,52 @@ internal fun HunterScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(18.dp))
-        Text(
-            displayName.ifBlank { "HUNTER" }.uppercase(),
-            style = MaterialTheme.typography.headlineMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = MonarchColors.Ink,
-            letterSpacing = 1.sp,
-        )
-        Text(
-            "SHARED TRAINING",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = MonarchColors.InkMuted,
-            letterSpacing = MonarchTracking.SectionHeader,
-        )
-        // Worn title under the hunter's name; omitted cleanly when bare.
-        ui.wornTitle?.let { title ->
-            Text(
-                title,
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = MonarchColors.SovereignGold,
+
+        // Header row: small ghost back control beside the hero identity — the
+        // full-width gradient BACK slab is gone; back is an affordance, not a
+        // billboard.
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            GhostBackButton(onBack)
+            IdentityRow(
+                displayName = displayName,
+                userId = userId,
+                wornTitle = ui.wornTitle,
+                level = null, // level is not in HunterUi; omitted rather than fetched
+                size = IdentitySize.Hero,
+                isMe = isMe,
+                modifier = Modifier.weight(1f),
             )
         }
-        // ADD ALLY: hidden for yourself, and settled (PENDING / ALLY) once a
-        // friendship row exists so a second tap never re-fires the request.
-        if (ui.myUserId != null && ui.myUserId != userId) {
-            Spacer(Modifier.height(10.dp))
-            val (label, gold) = when (ui.allyState) {
-                AllyState.None -> "ADD ALLY" to false
-                AllyState.Pending, AllyState.Incoming -> "REQUEST PENDING" to false
-                AllyState.Ally -> "ALLY" to true
+        Spacer(Modifier.height(8.dp))
+
+        // ADD ALLY stays tappable (a real action); settled states render as a
+        // non-tappable status chip so they never read as a CTA.
+        if (ui.myUserId != null && !isMe) {
+            Spacer(Modifier.height(6.dp))
+            when (ui.allyState) {
+                AllyState.None -> AllyChip(
+                    label = if (ui.allyBusy) "SENDING…" else "ADD ALLY",
+                    tappable = !ui.allyBusy,
+                    gold = false,
+                    onClick = { viewModel.addAlly(userId) },
+                )
+                AllyState.Pending, AllyState.Incoming -> AllyChip(
+                    label = "REQUEST PENDING",
+                    tappable = false,
+                    gold = false,
+                    onClick = {},
+                )
+                AllyState.Ally -> AllyChip(
+                    label = "ALLY",
+                    tappable = false,
+                    gold = true,
+                    onClick = {},
+                )
             }
-            MonarchButton(
-                label = label,
-                onClick = { viewModel.addAlly(userId) },
-                gold = gold,
-                enabled = ui.allyState == AllyState.None && !ui.allyBusy,
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
         Spacer(Modifier.height(14.dp))
 
@@ -244,6 +257,21 @@ internal fun HunterScreen(
             }
 
             else -> {
+                // Stat strip built only from data already in HunterUi
+                // (sessions list) — fills the former dead space below the list.
+                val xpShared = ui.sessions.sumOf { it.xpAwarded }
+                val bestStr = ui.sessions.maxOf { it.strengthScore }
+                SystemWindow(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        Stat("SHARED", ui.sessions.size.toString(), MonarchColors.SystemGreen)
+                        Stat("XP SHARED", "+$xpShared", MonarchColors.EmeraldBright)
+                        Stat("BEST STR", bestStr.toString(), MonarchColors.SovereignGold)
+                    }
+                }
+
                 SectionHeader("Recent hunts")
                 ui.sessions.forEach { session ->
                     SystemWindow(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
@@ -260,7 +288,7 @@ internal fun HunterScreen(
                                 color = MonarchColors.EmeraldBright,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false),
+                                modifier = Modifier.weight(1f),
                             )
                             session.completedAtMs?.let {
                                 Text(
@@ -276,6 +304,8 @@ internal fun HunterScreen(
                                 session.note,
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MonarchColors.InkMuted,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                         Spacer(Modifier.height(8.dp))
@@ -292,9 +322,71 @@ internal fun HunterScreen(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
-        MonarchButton(label = "Back", onClick = onBack, modifier = Modifier.fillMaxWidth())
         Spacer(Modifier.height(20.dp))
+    }
+}
+
+/** Small ghost back control in the header row — bordered, never a gradient slab. */
+@Composable
+private fun GhostBackButton(onBack: () -> Unit) {
+    val shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp)
+    Box(
+        Modifier
+            .clip(shape)
+            .background(Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)), shape)
+            .border(1.dp, MonarchColors.Rune, shape)
+            .clickable(onClick = onBack)
+            .padding(horizontal = 10.dp, vertical = 8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "←",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = MonarchColors.EmeraldBright,
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                "BACK",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = MonarchColors.InkMuted,
+                letterSpacing = MonarchTracking.InlineLabel,
+            )
+        }
+    }
+}
+
+/**
+ * Ally status chip: compact and clearly non-CTA. Only the ADD ALLY state is
+ * actually tappable; ALLY / REQUEST PENDING are pure status.
+ */
+@Composable
+private fun AllyChip(
+    label: String,
+    tappable: Boolean,
+    gold: Boolean,
+    onClick: () -> Unit,
+) {
+    val shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)
+    val accent = if (gold) MonarchColors.SovereignGold else MonarchColors.EmeraldBright
+    Box(
+        Modifier
+            .then(if (tappable) Modifier.clickable(onClick = onClick) else Modifier)
+            .background(Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)), shape)
+            .border(1.dp, accent, shape)
+            .padding(horizontal = 14.dp, vertical = 7.dp),
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = accent,
+            letterSpacing = MonarchTracking.InlineLabel,
+        )
     }
 }
 

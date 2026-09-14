@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.rememberCoroutineScope
@@ -25,6 +26,10 @@ import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -46,6 +51,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -226,6 +232,9 @@ class AccountViewModel(
 @Composable
 fun AccountScreen(
     onBack: () -> Unit,
+    // No-op default keeps existing call sites compiling; the parent wires the
+    // real hunter route in MonarchNav.kt.
+    onOpenHunter: (userId: String, displayName: String) -> Unit = { _, _ -> },
     viewModel: AccountViewModel = viewModel(
         factory = viewModelFactory {
             initializer { AccountViewModel(monarchAccount(), monarchCloudSync()) }
@@ -233,6 +242,51 @@ fun AccountScreen(
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+
+    // One refresh idiom: pull-to-refresh, like the feed and board. The roster
+    // text link is gone. Hosting it here means the signed-in surface owns its
+    // own scroll container — a PullToRefreshBox nested inside a verticalScroll
+    // Column never sees the drag.
+    if (ui.configured && ui.account != null) {
+        val pullState = rememberPullToRefreshState()
+        PullToRefreshBox(
+            isRefreshing = ui.friendsLoading,
+            onRefresh = viewModel::refreshFriends,
+            state = pullState,
+            modifier = Modifier.fillMaxSize(),
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = pullState,
+                    isRefreshing = ui.friendsLoading,
+                    modifier = Modifier.align(Alignment.TopCenter),
+                    containerColor = MonarchColors.Vault,
+                    color = MonarchColors.EmeraldBright,
+                )
+            },
+        ) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+            ) {
+                Spacer(Modifier.height(20.dp))
+                GatewayTitle()
+                SignedInPanels(
+                    ui = ui,
+                    onOpenHunter = onOpenHunter,
+                    onSignOut = viewModel::signOut,
+                    onVisibility = viewModel::setVisibility,
+                    onSync = viewModel::syncNow,
+                    onAccept = viewModel::acceptFriend,
+                    onRequest = viewModel::requestFriend,
+                )
+                Spacer(Modifier.height(28.dp))
+            }
+        }
+        return
+    }
 
     Column(
         Modifier
@@ -242,45 +296,35 @@ fun AccountScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        Text(
-            "GATEWAY",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = MonarchColors.InkMuted,
-            letterSpacing = MonarchTracking.ScreenTitle,
-        )
-        Text(
-            "Cloud link for hunters",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = MonarchColors.SystemGreen,
-        )
-        Spacer(Modifier.height(12.dp))
+        GatewayTitle()
 
         when {
             !ui.configured -> NotConfiguredPanel()
             ui.busy && ui.account == null -> BusyPanel("Linking to the System…")
-            ui.account == null -> AuthPanels(
-                error = ui.error,
-                busy = ui.busy,
-                googleEnabled = Cloud.googleConfigured,
-                onGoogleSignIn = viewModel::signInWithGoogle,
-                onSignIn = viewModel::signIn,
-                onSignUp = viewModel::signUp,
-            )
-            else -> SignedInPanels(
-                ui = ui,
-                onSignOut = viewModel::signOut,
-                onVisibility = viewModel::setVisibility,
-                onSync = viewModel::syncNow,
-                onAccept = viewModel::acceptFriend,
-                onRequest = viewModel::requestFriend,
-                onRefreshFriends = viewModel::refreshFriends,
-            )
+            // Signed-in is handled above with pull-to-refresh; unreachable here.
         }
 
         Spacer(Modifier.height(28.dp))
     }
+}
+
+/** Screen title shared by the signed-in and gate layouts. */
+@Composable
+private fun GatewayTitle() {
+    Text(
+        "GATEWAY",
+        style = MaterialTheme.typography.labelLarge,
+        fontFamily = ChakraPetch,
+        color = MonarchColors.InkMuted,
+        letterSpacing = MonarchTracking.ScreenTitle,
+    )
+    Text(
+        "Cloud link for hunters",
+        style = MaterialTheme.typography.labelLarge,
+        fontFamily = ChakraPetch,
+        color = MonarchColors.SystemGreen,
+    )
+    Spacer(Modifier.height(12.dp))
 }
 
 @Composable
@@ -516,12 +560,12 @@ private fun GoogleGateButton(onToken: (idToken: String, rawNonce: String) -> Uni
 @Composable
 private fun SignedInPanels(
     ui: AccountUi,
+    onOpenHunter: (userId: String, displayName: String) -> Unit,
     onSignOut: () -> Unit,
     onVisibility: (String) -> Unit,
     onSync: () -> Unit,
     onAccept: (String) -> Unit,
     onRequest: (String) -> Unit,
-    onRefreshFriends: () -> Unit,
 ) {
     val acct = ui.account ?: return
 
@@ -532,16 +576,23 @@ private fun SignedInPanels(
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
             color = MonarchColors.Ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
+        // Email styled as a house tag rather than plain grey mono.
         Text(
             acct.email,
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
-            color = MonarchColors.InkMuted,
+            color = MonarchColors.Emerald,
+            letterSpacing = MonarchTracking.InlineLabel,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
-        Spacer(Modifier.height(14.dp))
 
-        // Visibility selector — same construction as the TRAINING MODE selector.
+        // Selected state reuses the hub tab pill treatment (green gradient
+        // fill, bright border, dark ink) so it reads at a glance instead of
+        // relying on text colour alone.
         Text(
             "VISIBILITY",
             style = MaterialTheme.typography.labelMedium,
@@ -550,41 +601,45 @@ private fun SignedInPanels(
             letterSpacing = MonarchTracking.InlineLabel,
         )
         Spacer(Modifier.height(10.dp))
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .clip(MaterialTheme.shapes.extraSmall)
-                .background(MonarchColors.Abyss),
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             listOf(
                 "public" to Icons.Outlined.Public,
                 "friends" to Icons.Outlined.Group,
                 "private" to Icons.Outlined.Lock,
             ).forEach { (value, icon) ->
                 val selected = acct.visibility == value
-                Box(
-                    Modifier
+                val shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier
                         .weight(1f)
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .background(if (selected) MonarchColors.Vault else Color.Transparent)
+                        .background(
+                            if (selected) {
+                                Brush.verticalGradient(
+                                    listOf(MonarchColors.SystemGreen, MonarchColors.Emerald),
+                                )
+                            } else {
+                                Brush.verticalGradient(listOf(MonarchColors.Vault, MonarchColors.Abyss))
+                            },
+                            shape,
+                        )
+                        .border(1.dp, if (selected) MonarchColors.EmeraldBright else MonarchColors.Rune, shape)
                         .clickable { onVisibility(value) }
                         .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Icon(
-                            icon,
-                            contentDescription = value,
-                            tint = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
-                        )
-                        Text(
-                            value.uppercase(),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = ChakraPetch,
-                            color = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
-                            letterSpacing = MonarchTracking.InlineLabel,
-                        )
-                    }
+                    Icon(
+                        icon,
+                        contentDescription = value,
+                        tint = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
+                    )
+                    Text(
+                        value.uppercase(),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = ChakraPetch,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
+                        color = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
+                        letterSpacing = MonarchTracking.InlineLabel,
+                    )
                 }
             }
         }
@@ -619,20 +674,18 @@ private fun SignedInPanels(
                 )
             }
         }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "Body measurements — weight, height, body fat, BMI, FFMI — never leave this device. Visibility decides who may read your sessions.",
-            style = MaterialTheme.typography.labelSmall,
-            color = MonarchColors.InkMuted,
-        )
+        // Privacy facts stay load-bearing; scanning beats a paragraph.
+        PrivacyRow(Icons.Outlined.Lock, MonarchColors.SovereignGold, "Body measurements — weight, height, body fat, BMI, FFMI — never leave this device.")
+        Spacer(Modifier.height(6.dp))
+        PrivacyRow(Icons.Outlined.Public, MonarchColors.Emerald, "Visibility decides who may read your sessions.")
     }
 
     SectionHeader("Allies")
     FriendsPanel(
         ui = ui,
+        onOpenHunter = onOpenHunter,
         onAccept = onAccept,
         onRequest = onRequest,
-        onRefresh = onRefreshFriends,
     )
 
     Spacer(Modifier.height(14.dp))
@@ -654,12 +707,28 @@ private fun SignedInPanels(
     }
 }
 
+/** One icon-led privacy fact, house-styled for scanning. */
+@Composable
+private fun PrivacyRow(icon: ImageVector, tint: Color, text: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = tint)
+        Text(
+            text,
+            style = MaterialTheme.typography.labelSmall,
+            color = MonarchColors.InkMuted,
+        )
+    }
+}
+
 @Composable
 private fun FriendsPanel(
     ui: AccountUi,
+    onOpenHunter: (userId: String, displayName: String) -> Unit,
     onAccept: (String) -> Unit,
     onRequest: (String) -> Unit,
-    onRefresh: () -> Unit,
 ) {
     var friendName by remember { mutableStateOf("") }
 
@@ -685,6 +754,8 @@ private fun FriendsPanel(
                 Column(Modifier.weight(1f)) {
                     Text(
                         pending.displayName,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.titleSmall,
                         fontFamily = ChakraPetch,
                         color = MonarchColors.Ink,
@@ -700,22 +771,20 @@ private fun FriendsPanel(
             Spacer(Modifier.height(10.dp))
         }
 
+        // Allies look like hunters everywhere else — IdentityRow, tappable.
+        // FriendRow carries no level or worn title, so those pass as null.
         accepted.forEach { friend ->
-            Row(
-                Modifier
+            IdentityRow(
+                displayName = friend.displayName,
+                userId = friend.userId,
+                wornTitle = null,
+                level = null,
+                size = IdentitySize.Compact,
+                onClick = { onOpenHunter(friend.userId, friend.displayName) },
+                modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                Icon(Icons.Outlined.Group, contentDescription = null, tint = MonarchColors.SystemGreen)
-                Text(
-                    friend.displayName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontFamily = ChakraPetch,
-                    color = MonarchColors.Ink,
-                )
-            }
+            )
         }
 
         if (accepted.isNotEmpty()) {
@@ -755,25 +824,7 @@ private fun FriendsPanel(
             style = MaterialTheme.typography.labelSmall,
             color = MonarchColors.InkMuted,
         )
-        Spacer(Modifier.height(8.dp))
-        RefreshLink(onClick = onRefresh, label = "Refresh roster")
     }
-}
-
-@Composable
-private fun RefreshLink(onClick: () -> Unit, label: String) {
-    Text(
-        "\u21BB $label".uppercase(),
-        style = MaterialTheme.typography.labelMedium,
-        fontFamily = ChakraPetch,
-        fontWeight = FontWeight.SemiBold,
-        color = MonarchColors.Emerald,
-        letterSpacing = MonarchTracking.InlineLabel,
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.extraSmall)
-            .clickable { onClick() }
-            .padding(vertical = 4.dp, horizontal = 2.dp),
-    )
 }
 
 private enum class AuthMode { SIGN_IN, SIGN_UP }

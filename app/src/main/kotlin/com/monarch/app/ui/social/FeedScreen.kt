@@ -587,134 +587,45 @@ private fun FeedCard(
     var showLikers by remember { mutableStateOf(false) }
     SystemWindow(Modifier.fillMaxWidth(), accent = accent) {
         Column {
-            // Hunter strip: tap anywhere here to open the hunter's profile.
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable { onOpenHunter(entry.userId, entry.displayName) },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Box(
-                    Modifier
-                        .size(36.dp)
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .background(Brush.linearGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)))
-                        .border(1.dp, accent, MaterialTheme.shapes.extraSmall),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    // Two-letter seal from the hunter's name — consistent and never a wrong pictogram.
-                    Text(
-                        entry.displayName.take(2).uppercase(),
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 13.sp,
-                        color = accent,
-                    )
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        if (isMe) "${entry.displayName} — YOU" else entry.displayName,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    // Worn title resolved locally from the id; omitted entirely when bare.
-                    entry.currentTitleId?.let { Titles.byId(it)?.name }?.let { title ->
-                        Text(
-                            title,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            color = MonarchColors.SovereignGold,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                }
-                // Level badge.
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    modifier = Modifier
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .background(MonarchColors.Abyss)
-                        .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                ) {
-                    Text(
-                        "LV ${entry.level}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MonarchColors.SystemGreen,
-                    )
-                }
-            }
-            // Explicit ADD ALLY action beside the level badge: hidden for yourself,
-            // settled (PENDING / ALLY) once a row exists so a second tap never fires.
-            if (!isMe) {
-                val (label, tint) = when (ally) {
-                    AllyState.None -> "ADD ALLY" to MonarchColors.EmeraldBright
-                    AllyState.Pending -> "PENDING" to MonarchColors.InkMuted
-                    AllyState.Incoming -> "PENDING" to MonarchColors.SovereignGold
-                    AllyState.Ally -> "ALLY" to MonarchColors.SovereignGold
-                }
-                Box(
-                    Modifier
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .background(MonarchColors.Abyss)
-                        .border(1.dp, if (ally == AllyState.None) MonarchColors.Emerald else MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
-                        .clickable(enabled = ally == AllyState.None) { onAddAlly(entry.userId) }
-                        .padding(horizontal = 8.dp, vertical = 4.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Icon(
-                            Icons.Outlined.PersonAdd,
-                            contentDescription = null,
-                            tint = tint,
-                            modifier = Modifier.size(12.dp),
-                        )
-                        Text(
-                            label,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.SemiBold,
-                            color = tint,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                    }
-                }
-            }
-
-            entry.completedAtMs?.let { ms ->
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    relativeTime(ms),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = MonarchColors.InkMuted,
-                )
-            }
-
+            // Hunter identity through the shared row; the ally chip rides
+            // trailing so identity looks the same on every social surface.
+            val allyTrailing: (@Composable () -> Unit)? =
+                if (!isMe) { { AllyChip(ally) { onAddAlly(entry.userId) } } } else null
+            IdentityRow(
+                displayName = entry.displayName,
+                userId = entry.userId,
+                wornTitle = entry.currentTitleId?.let { Titles.byId(it)?.name },
+                level = entry.level,
+                size = IdentitySize.Hero,
+                isMe = isMe,
+                trailing = allyTrailing,
+                onClick = { onOpenHunter(entry.userId, entry.displayName) },
+            )
             // User-authored title, falling back to the drill label when untitled.
+            // Generic hunt glyph: no activity-type field exists in FeedEntry yet.
             if (entry.title.isNotBlank() || entry.label.isNotBlank()) {
                 Spacer(Modifier.height(8.dp))
-                Text(
-                    entry.title.ifBlank { entry.label },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = MonarchColors.Ink,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        Icons.Outlined.FitnessCenter,
+                        contentDescription = null,
+                        tint = MonarchColors.EmeraldBright,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text(
+                        entry.title.ifBlank { entry.label },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = MonarchColors.Ink,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
 
             if (entry.note.isNotBlank()) {
@@ -764,24 +675,43 @@ private fun FeedCard(
                         softWrap = false,
                     )
                 }
-                // Owner-only: the count's story is theirs to read. Non-owners get no likers list.
-                if (isMe) {
-                    Text(
-                        "WHO CHEERED",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = MonarchColors.EmeraldBright,
-                        letterSpacing = MonarchTracking.InlineLabel,
-                        maxLines = 1,
-                        softWrap = false,
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .clickable {
-                                showLikers = true
-                                onShowLikers(entry.sessionId)
-                            }
-                            .padding(horizontal = 8.dp, vertical = 6.dp),
-                    )
+                // Owner-only: the count's story is theirs to read. Non-owners
+                // get no likers list. Timestamp rides the same row, right-aligned.
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (isMe) {
+                        Text(
+                            "WHO CHEERED",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            color = MonarchColors.EmeraldBright,
+                            letterSpacing = MonarchTracking.InlineLabel,
+                            maxLines = 1,
+                            softWrap = false,
+                            modifier = Modifier
+                                .clip(MaterialTheme.shapes.extraSmall)
+                                .clickable {
+                                    showLikers = true
+                                    onShowLikers(entry.sessionId)
+                                }
+                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                        )
+                    }
+                    entry.completedAtMs?.let { ms ->
+                        // relativeTime already falls back to the date for
+                        // anything older than yesterday, so printing both
+                        // rendered "Sept 11 · Sept 11 · 14:53".
+                        Text(
+                            stamp(ms),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            color = MonarchColors.InkMuted,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
                 }
             }
             // Reserved-height failure line: the space exists whether or not a
@@ -882,16 +812,58 @@ private fun FeedCard(
     }
 }
 
-/** Icon + short-value stat strip: sets, reps, XP, strength. */
+/**
+ * Ally state as a status chip riding the identity row's trailing slot. Only a
+ * genuine ADD ALLY offer is tappable; settled states render inert so they never
+ * look like a primary CTA.
+ */
+@Composable
+private fun AllyChip(ally: AllyState, onAddAlly: () -> Unit) {
+    val (label, tint) = when (ally) {
+        AllyState.None -> "ADD ALLY" to MonarchColors.EmeraldBright
+        AllyState.Pending -> "PENDING" to MonarchColors.InkMuted
+        AllyState.Incoming -> "PENDING" to MonarchColors.SovereignGold
+        AllyState.Ally -> "ALLY" to MonarchColors.SovereignGold
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(MonarchColors.Abyss)
+            .border(1.dp, if (ally == AllyState.None) MonarchColors.Emerald else MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
+            .clickable(enabled = ally == AllyState.None) { onAddAlly() }
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+    ) {
+        Icon(
+            Icons.Outlined.PersonAdd,
+            contentDescription = null,
+            tint = tint,
+            modifier = Modifier.size(12.dp),
+        )
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.SemiBold,
+            color = tint,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
+}
+
+/** Icon + short-value stat strip — the card's spine, not a footnote. */
 @Composable
 private fun StatStrip(entry: FeedEntry) {
     Row(
         Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall)
-            .background(MonarchColors.Abyss)
+            // Gradient plate gives the spine weight over the flat card body.
+            .background(Brush.linearGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)))
             .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -942,6 +914,18 @@ private fun relativeTime(ms: Long): String {
         then.toLocalDate() == now.toLocalDate().minusDays(1) -> "yesterday"
         else -> formatDate(ms, "MMM d")
     }
+}
+
+/**
+ * One stamp per card. Recent hunts read relatively ("2h ago"); anything older
+ * than yesterday gets the absolute date and time. Printing both produced
+ * "Sept 11 · Sept 11 · 14:53", because relativeTime already falls back to the
+ * date itself.
+ */
+private fun stamp(ms: Long): String {
+    val relative = relativeTime(ms)
+    val absolute = formatDate(ms)
+    return if (relative == formatDate(ms, "MMM d")) absolute else "$relative · $absolute"
 }
 
 @Composable

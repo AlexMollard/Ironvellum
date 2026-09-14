@@ -511,35 +511,34 @@ private fun PodiumSlot(
     }
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         if (row != null) {
-            MonogramBadge(initials(row.displayName), 34.dp, accent, isMe)
-            Spacer(Modifier.height(4.dp))
-            Text(
-                if (isMe) "${row.displayName} — YOU" else row.displayName,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = if (isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
-            )
-            wornTitle(row.currentTitleId)?.let { title ->
+            // The plinth carries its hunter: identity + metric value sit in a flush cap
+            // welded to the plinth block by shared width, continuous gradient and accent
+            // border, instead of floating above an empty-looking box.
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .background(Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)))
+                    .border(1.dp, accent, CutCornerShape(topStart = 8.dp))
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                IdentityRow(
+                    displayName = if (isMe) "${row.displayName} — YOU" else row.displayName,
+                    userId = row.userId,
+                    wornTitle = wornTitle(row.currentTitleId),
+                    level = row.level,
+                    size = IdentitySize.Compact,
+                    isMe = isMe,
+                )
                 Text(
-                    title,
+                    metric.format(row),
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    softWrap = false,
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
-                    color = if (isMe) MonarchColors.SovereignGold else MonarchColors.InkMuted,
+                    color = accent,
                 )
             }
-            Text(
-                metric.format(row),
-                maxLines = 1,
-                softWrap = false,
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = accent,
-            )
         } else {
             Spacer(Modifier.height(38.dp))
             Text(
@@ -556,19 +555,17 @@ private fun PodiumSlot(
                 style = MaterialTheme.typography.labelSmall,
                 color = MonarchColors.InkMuted,
             )
+            // Occupied slots sit flush on the plinth; only the empty slot keeps a gap.
+            Spacer(Modifier.height(6.dp))
         }
-        Spacer(Modifier.height(6.dp))
+        // Shared plinth block: bottom-aligned floor, stepped height, rank emblem.
         Box(
             Modifier
                 .fillMaxWidth()
                 .height(plinthHeight)
                 .clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
                 .background(
-                    if (row != null) {
-                        Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault))
-                    } else {
-                        Brush.verticalGradient(listOf(MonarchColors.Vault, MonarchColors.Abyss))
-                    },
+                    Brush.verticalGradient(listOf(MonarchColors.Vault, MonarchColors.Abyss))
                 )
                 .border(1.dp, if (row != null) accent else MonarchColors.Rune, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)),
             contentAlignment = Alignment.Center,
@@ -594,35 +591,6 @@ private fun PodiumSlot(
     }
 }
 
-private fun initials(name: String): String {
-    val parts = name.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
-    return when {
-        parts.isEmpty() -> "??"
-        parts.size == 1 -> parts[0].take(2).uppercase()
-        else -> (parts[0].take(1) + parts[1].take(1)).uppercase()
-    }
-}
-
-@Composable
-private fun MonogramBadge(text: String, size: androidx.compose.ui.unit.Dp, accent: Color, isMe: Boolean) {
-    val shape = CutCornerShape(topStart = size / 4, bottomEnd = size / 4)
-    Box(
-        Modifier
-            .size(size)
-            .background(Brush.linearGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)), shape)
-            .border(1.dp, if (isMe) MonarchColors.SovereignGold else accent, shape),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = if (isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
-        )
-    }
-}
-
 @Composable
 private fun RankRow(
     rank: Int,
@@ -639,12 +607,6 @@ private fun RankRow(
         rank == 2 -> MonarchColors.EmeraldBright
         rank == 3 -> Color(0xFFB08A5A) // bronze — no palette token exists for it
         else -> MonarchColors.Rune
-    }
-    val emblem = when (rank) {
-        1 -> "\u2654" // white king — the sovereign seat
-        2 -> "\u265B" // queen
-        3 -> "\u265C" // rook
-        else -> rank.toString()
     }
     val fill = if (isMe) {
         Brush.verticalGradient(listOf(Color(0xFF2A2312), Color(0xFF171307)))
@@ -677,20 +639,15 @@ private fun RankRow(
                 color = if (rank <= 3 || isMe) accent else MonarchColors.InkMuted,
                 modifier = Modifier.padding(top = 2.dp),
             )
-            MonogramBadge(initials(row.displayName), 40.dp, accent, isMe)
-            Column(Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        if (isMe) "${row.displayName} — YOU" else row.displayName,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = if (isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    Spacer(Modifier.size(8.dp))
+            // Shared identity component: avatar crest, name, worn title and level chip.
+            IdentityRow(
+                displayName = if (isMe) "${row.displayName} — YOU" else row.displayName,
+                userId = row.userId,
+                wornTitle = wornTitle(row.currentTitleId),
+                level = row.level,
+                size = IdentitySize.Standard,
+                isMe = isMe,
+                trailing = {
                     Text(
                         metric.format(row),
                         maxLines = 1,
@@ -700,30 +657,23 @@ private fun RankRow(
                         fontWeight = FontWeight.Bold,
                         color = accent,
                     )
-                }
-                wornTitle(row.currentTitleId)?.let { title ->
-                    Text(
-                        title,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = MonarchColors.SovereignGold,
-                    )
-                }
-                Text(
-                    extras,
-                    // Two lines, because one clipped "lifetime ..." mid-word and
-                    // the rest of the stats were repeated below to compensate.
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = MonarchColors.InkMuted,
-                )
-            }
+                },
+            )
         }
         Spacer(Modifier.height(8.dp))
+        Text(
+            extras,
+            // Two lines, because one clipped "lifetime ..." mid-word and
+            // the rest of the stats were repeated below to compensate.
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+        )
+        Spacer(Modifier.height(8.dp))
+        // Intensity bar: this row's metric value relative to the current leader on that metric,
+        // so relative standing is visible without reading numbers. Zero leader → zero-width fill.
         Box(
             Modifier
                 .fillMaxWidth()
@@ -740,7 +690,6 @@ private fun RankRow(
         }
     }
 }
-
 @Composable
 private fun RefreshLink(onClick: () -> Unit, label: String) {
     Row(
