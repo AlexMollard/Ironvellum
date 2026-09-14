@@ -1,0 +1,84 @@
+# Continuous integration for Monarch.
+#
+# Runs on every push and pull request: debug build, unit tests, release lint.
+# Reports are uploaded as build artifacts.
+#
+# Secrets: this repo reads backend config from local.properties (gitignored).
+# On CI we generate that file from repository secrets when they exist, and
+# write blank values otherwise — blank credentials are valid for a debug
+# build (they disable the Supabase/Google features at runtime via
+# `Cloud.configured`). Secrets are passed through the environment rather
+# than interpolated into the command line so they are never echoed into the
+# job log; GitHub additionally masks secret values in logs.
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      MONARCH_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      MONARCH_SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      MONARCH_GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+    steps:
+      - name: Check out sources
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          # Open-source (MIT) cache provider; free for all repositories.
+          cache-provider: basic
+
+      # local.properties does not exist on a fresh clone. Generate it: real
+      # values from repository secrets when configured, blanks otherwise.
+      # sdk.dir is intentionally omitted — the runner provides the Android
+      # SDK location via ANDROID_HOME, which the Android Gradle Plugin picks
+      # up automatically.
+      - name: Generate local.properties
+        run: |
+          {
+            echo "supabase.url=${MONARCH_SUPABASE_URL:-}"
+            echo "supabase.key=${MONARCH_SUPABASE_KEY:-}"
+            echo "google.webClientId=${MONARCH_GOOGLE_WEB_CLIENT_ID:-}"
+          } > local.properties
+
+      - name: Assemble debug
+        run: ./gradlew :app:assembleDebug
+
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Release lint
+        run: ./gradlew :app:lintRelease
+
+      - name: Upload lint reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: lint-reports
+          path: |
+            app/build/reports/lint-results-release.html
+            app/build/reports/lint-results-release.xml
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: test-reports
+          path: |
+            app/build/reports/tests/testDebugUnitTest/
+            app/build/test-results/testDebugUnitTest/

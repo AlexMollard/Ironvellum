@@ -1,0 +1,114 @@
+# Play Data Safety form — answer sheet for Monarch
+
+Filled-in answers for Play Console → Policy → App content → Data safety, with
+the code that justifies each answer. Written 2026-09-15 against commit HEAD.
+
+Code references:
+- `AM` = `app/src/main/AndroidManifest.xml`
+- `CS` = `app/src/main/kotlin/com/monarch/app/data/cloud/CloudSync.kt`
+- `AR` = `app/src/main/kotlin/com/monarch/app/data/cloud/AccountRepository.kt`
+- `HS` = `app/src/main/kotlin/com/monarch/app/data/HealthSync.kt`
+- `RP` = `app/src/main/kotlin/com/monarch/app/data/Repository.kt`
+- `M1`/`M2`/`M8` = `supabase/migrations/0001_init.sql` / `0002…` / `0008…`
+
+## Form-level answers
+
+- **Does your app collect or share any of the required user data types?** Yes
+  (for signed-in users only; the data types below).
+- **Is all of the user data collected by your app encrypted in transit?** Yes —
+  all cloud traffic is HTTPS/TLS via Supabase PostgREST over Ktor/OkHttp
+  (`CS`; Supabase project URL is HTTPS). Health Connect reads are on-device
+  IPC, no network involved.
+- **Do you provide a way for users to request that their data is deleted?**
+  **NO — see OPEN QUESTION Q1.** Answer honestly; fix Q1 before shipping if
+  possible.
+
+## Per data type
+
+### Profile info — display name (collected, shared)
+- Collected: **Yes** (user types it at sign-in). Shared: **Yes** (feed,
+  leaderboard, friendships). Optional: **Yes** (only if you sign in).
+- Purpose: App functionality — account management and social features.
+- Code: `CS` pushes `displayName` to `profiles`; `M1` defines the column and
+  RLS (`can_view`).
+
+### Fitness info — workouts (collected, shared)
+- Collected: **Yes** — completed sessions with label, public title, public
+  note (≤500 chars), timestamps, XP, strength score; set rows (exercise name,
+  reps, weight kg, modifiers, duration, distance, grade). Shared: **Yes**,
+  subject to the profile visibility setting (default `friends`) enforced by
+  RLS. Optional: **Yes** (sign-in only).
+- Purpose: App functionality — syncing training history across the social
+  features.
+- Code: `CS` `push()`; `M1` `sessions`/`session_sets`; `M2` adds `title`/`note`
+  to `sessions`; `M3` adds duration/distance/grade.
+
+### Fitness info — Health Connect data (NOT collected)
+- The app **reads** steps, distance, active calories, sleep, resting heart
+  rate, weight, body fat from Health Connect (`AM`, 7 `READ_*` permissions;
+  `HS`). These reads stay **on the device** (stored in the local `health_days`
+  Room table, `RP.syncHealthHistory`). They are **never uploaded** — the cloud
+  schema has no table for them, and `push()` sends none of them.
+- Data Safety: declare as **not collected, not shared**. But you MUST complete
+  the **Health apps declaration** and the Health Connect permissions
+  declaration in Play Console because the manifest declares the permissions
+  (see `docs/RELEASE_CHECKLIST.md`).
+- Weight/body-fat read from Health Connect feeds local stat tracking only;
+  user-entered body measurements (`measurements` table, `RP` "device-only by
+  design") also never leave the device (`M1` header comment).
+
+### Fitness info — idle-game aggregates (collected, shared)
+- Shadow essence / shadow count / shadow rate are pushed as profile columns.
+  Optional (sign-in only), shared per visibility.
+- Code: `CS` `ShadowPushDto`; `M8` `profiles` columns; `M8` header: "the cloud
+  never holds the accrual clock".
+
+### Identifiers — Google account user ID (collected, not shared beyond backend)
+- Sign-in is Google via Credential Manager (`AR`); Supabase auth issues an
+  internal UUID used as the row key in every table. Purpose: account
+  management. Optional (sign-in only). Not shared with third parties.
+
+### App interactions — likes, friend requests (collected, shared)
+- `session_likes`, `friendships` (`M1`, `M4`). Optional; purpose: social
+  features.
+
+### Inferred / advertising data
+- **None.** No analytics, ads, or ad ID usage anywhere in
+  `gradle/libs.versions.toml` or `app/build.gradle.kts`.
+
+## Deletion
+
+Currently: uninstall removes all local data; **no in-app deletion path exists
+for cloud rows** (verified: no `deleteUser`/`deleteAccount`/bulk cloud delete
+call anywhere under `app/src/main/kotlin` or `supabase/`). Server schema
+supports owner-only deletes via RLS (`profiles_delete`, `sessions_write`,
+etc., `M1`), so deletion is technically possible per-row, but no user-facing
+flow exists.
+
+## OPEN QUESTIONS (owner must decide; do not submit the form until resolved)
+
+- **Q1 — Deletion mechanism:** Play requires either an in-app/path-to-request
+  deletion mechanism or the Data Safety answer "no deletion available", which
+  risks rejection for an app with social accounts. Recommended before ship: an
+  in-app "delete cloud data" action (Supabase `auth.deleteUser` / cascading
+  deletes) or a documented support email. Until then the honest form answer is
+  "no", which may block review.
+- **Q2 — Privacy policy URL:** must be a public, non-geofenced, non-editable
+  URL identical in Play Console, in-app, and on the web. Owner must host
+  `PRIVACY.md` somewhere permanent. Open.
+- **Q3 — Google OAuth consent screen:** currently in Testing mode; only test
+  users can sign in. Publishing it (and whether it needs verification for the
+  requested scopes) is an owner decision. Open.
+- **Q4 — Supabase project contact/retention policy:** how long the project
+  owner retains cloud data for inactive accounts is not encoded anywhere; the
+  privacy policy currently says "while the project exists". Confirm or amend.
+- **Q5 — Health Connect permissions declaration:** the Google Health Connect
+  API Request form must have been submitted for these seven data types before
+  shipping; whether it has been is unknown from the repo. Open.
+
+## Policy sources (checked 2026-09-15)
+
+- Data safety section: https://support.google.com/googleplay/android-developer/answer/10787469
+- Health apps declaration: https://support.google.com/googleplay/android-developer/answer/14738291
+- Health Content and Services policy: https://support.google.com/googleplay/android-developer/answer/16679511
+- Health Connect access declaration: https://developer.android.com/health-and-fitness/health-connect/declare-access
