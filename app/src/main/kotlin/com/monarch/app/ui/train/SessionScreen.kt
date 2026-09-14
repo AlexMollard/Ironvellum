@@ -589,14 +589,21 @@ private fun SetRow(
     onRemove: (() -> Unit)? = null,
     onChange: (Int, Double?, Boolean) -> Unit,
 ) {
-    Row(
+    // The controls are one row; the PR delta is a line UNDER them. It used to be
+    // a sibling inside the row calling fillMaxWidth(), which ate the whole width
+    // and starved the two weight(1f) stepper columns to zero - LOAD and REPS
+    // wrapped one letter per line and the steppers vanished.
+    Column(
         Modifier
             .fillMaxWidth()
             .alpha(if (done) 0.6f else 1f)
             .padding(vertical = 3.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
         Checkbox(checked = done, onCheckedChange = { onChange(reps, weightKg, it) })
         Text(
             label,
@@ -641,16 +648,17 @@ private fun SetRow(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        onRemove?.let { remove ->
+            onRemove?.let { remove ->
                 Text(
-                "✕",
-                style = MaterialTheme.typography.titleSmall,
-                fontFamily = ChakraPetch,
-                color = MonarchColors.InkMuted,
-                modifier = Modifier
-                    .clickable { remove() }
-                    .padding(horizontal = 6.dp, vertical = 10.dp),
-            )
+                    "✕",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.InkMuted,
+                    modifier = Modifier
+                        .clickable { remove() }
+                        .padding(horizontal = 6.dp, vertical = 10.dp),
+                )
+            }
         }
         // Fixed-height delta line under the steppers: always allocated, so
         // live digit changes never reflow the row mid-set.
