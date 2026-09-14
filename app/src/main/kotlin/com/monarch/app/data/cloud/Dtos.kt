@@ -25,6 +25,31 @@ data class ProfileDto(
 )
 
 /**
+ * Read-only projection of the caller's own profile aggregates, fetched before
+ * every aggregate push so cumulative totals merge monotonically instead of
+ * blindly overwriting (a fresh install or local reset would otherwise push
+ * LV 1 / 0 XP over a healthy cloud row). Only the columns this merge needs.
+ */
+@Serializable
+data class ProfileAggregatesDto(
+    @SerialName("level") val level: Int? = null,
+    @SerialName("total_xp") val totalXp: Long? = null,
+    @SerialName("titles_count") val titlesCount: Int? = null,
+    @SerialName("lifetime_strength") val lifetimeStrength: Long? = null,
+)
+
+/**
+ * Read-only counterpart to [ShadowPushDto] for the monotonic merge of the
+ * cumulative shadow aggregates. Decode-only, never sent; only fetched inside
+ * the shadow block's own error isolation (migration 0008).
+ */
+@Serializable
+data class ShadowAggregatesDto(
+    @SerialName("shadow_essence") val essence: Long = 0,
+    @SerialName("shadow_count") val count: Int = 0,
+)
+
+/**
  * The shadow army's shareable aggregate. Kept OUT of [ProfileDto] on purpose:
  * these columns arrive with migration 0008, and pushing them in the same
  * statement as the training aggregates would make a pre-migration database

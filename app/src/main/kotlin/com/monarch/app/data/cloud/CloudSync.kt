@@ -54,34 +54,73 @@ class CloudSync(
             val streakDays = Titles.trainingStreakDays(completedDates(completed.map { it.first }))
             val lifetimeStrength = history.sumOf { (session, _) -> session.strengthScore.toLong() }
 
-            // Aggregates only: level, xp, streak, title count, lifetime strength.
-            client.postgrest.from("profiles").upsert(
-                ProfileDto(
-                    id = me.userId,
-                    displayName = me.displayName,
-                    visibility = me.visibility,
-                    level = level,
-                    totalXp = profile.totalXp,
-                    streakDays = streakDays,
-                    titlesCount = titles.size,
-                    lifetimeStrength = lifetimeStrength,
-                    currentTitleId = profile.currentTitleId,
-                ),
-            ) {
-                onConflict = "id"
+            val problems = mutableListOf<String>()
+            // Cumulative aggregates (level, xp, titles, lifetime strength)
+            // merge MONOTONICALLY: read our own cloud row first and send
+            // max(local, remote). A fresh install or a local database reset
+            // would otherwise overwrite LV 2 / 120 XP with LV 1 / 0 XP and
+            // permanently destroy the only server-side copy. streak_days is
+            // NOT merged — a streak legitimately resets to 0 after missed
+            // days, so maxing it would keep a dead streak alive forever; it
+            // pushes its live local value.
+            val remote = runCatching {
+                client.postgrest.from("profiles").select(Columns.list(
+                    "level", "total_xp", "titles_count", "lifetime_strength",
+                )) {
+                    filter { eq("id", me.userId) }
+                }.decodeList<ProfileAggregatesDto>().firstOrNull()
+            }.getOrElse { error ->
+                // A failed read must never degrade into a blind overwrite.
+                // Skip the aggregate write entirely, leave the cloud row
+                // untouched, and report it so the UI can call the sync
+                // partial. Sessions/titles below still sync.
+                problems += "Profile aggregates were not synced: ${Cloud.explain(error)}"
+                null
+            }
+            if (remote != null) {
+                client.postgrest.from("profiles").upsert(
+                    ProfileDto(
+                        id = me.userId,
+                        displayName = me.displayName,
+                        visibility = me.visibility,
+                        level = maxOf(level, remote.level ?: level),
+                        totalXp = maxOf(profile.totalXp, remote.totalXp ?: profile.totalXp),
+                        streakDays = streakDays,
+                        titlesCount = maxOf(titles.size, remote.titlesCount ?: titles.size),
+                        lifetimeStrength = maxOf(
+                            lifetimeStrength,
+                            remote.lifetimeStrength ?: lifetimeStrength,
+                        ),
+                        currentTitleId = profile.currentTitleId,
+                    ),
+                ) {
+                    onConflict = "id"
+                }
             }
 
             // Shadow figures go in a SEPARATE update so a database without
             // migration 0008 rejects only this, leaving the training sync
             // intact. Idle state itself never leaves the device — only the
             // shareable aggregate, so the cloud never holds the accrual clock.
+            // essence and count are cumulative and merge monotonically like
+            // the training totals; shadow_rate is NOT — it is a current-state
+            // reading that legitimately falls (e.g. after collecting shadows)
+            // and always pushes its live value. Both the read and the write
+            // live inside this runCatching, so a pre-migration database (no
+            // shadow columns) skips the whole block without touching the
+            // training sync above.
             val idle = repo.idleSnapshotOnce()
             if (idle != null) {
                 runCatching {
+                    val remoteShadow = client.postgrest.from("profiles").select(
+                        Columns.list("shadow_essence", "shadow_count"),
+                    ) {
+                        filter { eq("id", me.userId) }
+                    }.decodeList<ShadowAggregatesDto>().firstOrNull()
                     client.postgrest.from("profiles").update(
                         ShadowPushDto(
-                            shadowEssence = idle.state.essence,
-                            shadowCount = idle.state.shadows,
+                            shadowEssence = maxOf(idle.state.essence, remoteShadow?.essence ?: 0L),
+                            shadowCount = maxOf(idle.state.shadows, remoteShadow?.count ?: 0),
                             shadowRate = idle.rate.perHour,
                         ),
                     ) {
@@ -91,7 +130,6 @@ class CloudSync(
             }
 
             // Sessions first so their cloud ids exist before the sets land.
-            val problems = mutableListOf<String>()
             val pushedNow = mutableListOf<Pair<WorkoutSession, List<SessionSet>>>()
             val sessionDtos = pending.map { (session, _) ->
                 SessionDto(
