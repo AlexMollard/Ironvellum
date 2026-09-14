@@ -199,33 +199,19 @@ fun IdleScreen(
             ArmyWindow(snapshot.state, snapshot.rate, pendingExact)
             SectionHeader("WHY THE RATE")
             RateWindow(snapshot.rate, inputs)
-            if (ui.rolls > 0) {
-                SectionHeader("SHADOW DRAW")
-                DrawWindow(
-                    rolls = ui.rolls,
-                    onDraw = { viewModel.draw { result -> if (result != null) drawResult = result } },
-                )
-                // The section itself stays absent at zero frames — a lone
-                // hint here, only while draws are banked, is the whole nudge.
-                if (ui.ownedFrames.isEmpty()) {
-                    Text(
-                        "A drawn crest frame will be worn here.",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = ChakraPetch,
-                        color = MonarchColors.InkMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-            }
-            if (ui.ownedFrames.isNotEmpty()) {
-                CrestCollection(
-                    owned = ui.ownedFrames,
-                    equipped = ui.equippedFrame,
-                    onEquip = viewModel::equipFrame,
-                )
-            }
+            // Draws and the collection are ALWAYS visible. Hiding them until
+            // the first level-up made the whole feature undiscoverable — a
+            // collection screen should show the vault, not an empty wall.
+            SectionHeader("SHADOW DRAW")
+            DrawWindow(
+                rolls = ui.rolls,
+                onDraw = { viewModel.draw { result -> if (result != null) drawResult = result } },
+            )
+            CrestCollection(
+                owned = ui.ownedFrames,
+                equipped = ui.equippedFrame,
+                onEquip = viewModel::equipFrame,
+            )
             away?.let { AwayWindow(it) }
             CapWindow()
         }
@@ -755,11 +741,11 @@ private fun FactorRow(label: String, value: String, share: Float) {
         }
     }
 }
-
 /**
- * CREST COLLECTION: every owned frame, tappable to equip/unequip. Rendered
- * ONLY when the hunter owns at least one frame — never an empty stub.
- * Swatch visuals reuse the EXACT treatment HunterAvatar uses via FrameRender's
+ * CREST COLLECTION: the FULL catalogue, not just owned frames — a collection
+ * screen that hides everything unowned made the gacha undiscoverable. Owned
+ * frames are tappable to equip/unequip; locked ones render dimmed with a draw
+ * hint. Swatches reuse the EXACT treatment HunterAvatar uses via FrameRender's
  * shared crestFrameTreatment() — no local approximation.
  */
 @Composable
@@ -771,78 +757,107 @@ private fun CrestCollection(
     SectionHeader("CREST COLLECTION")
     SystemWindow(accent = MonarchColors.SovereignGold) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Gacha.CREST_FRAMES
-                .filter { it.id in owned }
-                .forEach { frame ->
-                    val treatment = crestFrameTreatment(frame.id)
-                    val isEquipped = frame.id == equipped
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable { onEquip(if (isEquipped) null else frame.id) }
-                            .padding(vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    ) {
-                        CrestSwatch(treatment = treatment)
-                        Column(Modifier.weight(1f)) {
-                            Text(
-                                frame.name,
-                                style = MaterialTheme.typography.titleSmall,
-                                fontFamily = ChakraPetch,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MonarchColors.Ink,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                            Text(
-                                if (isEquipped) "EQUIPPED — TAP TO REMOVE" else "TAP TO WEAR",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = ChakraPetch,
-                                letterSpacing = MonarchTracking.InlineLabel,
-                                color = if (isEquipped) MonarchColors.SovereignGold else MonarchColors.InkMuted,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                        if (isEquipped) {
-                            Box(
+            Gacha.CREST_FRAMES.forEach { frame ->
+                val isOwned = frame.id in owned
+                val isEquipped = frame.id == equipped
+                val treatment = crestFrameTreatment(frame.id)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .then(
+                            if (isOwned) {
+                                Modifier.clickable { onEquip(if (isEquipped) null else frame.id) }
+                            } else {
                                 Modifier
-                                    .size(10.dp)
-                                    .border(2.dp, MonarchColors.SovereignGold, CircleShape),
-                            )
-                        }
+                            },
+                        )
+                        .alpha(if (isOwned) 1f else 0.45f)
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    CrestSwatch(treatment = if (isOwned) treatment else null, locked = !isOwned)
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            frame.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontFamily = ChakraPetch,
+                            fontWeight = FontWeight.SemiBold,
+                            color = if (isOwned) MonarchColors.Ink else MonarchColors.InkMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            when {
+                                isEquipped -> "EQUIPPED — TAP TO REMOVE"
+                                isOwned -> "TAP TO WEAR"
+                                else -> "NOT YET DRAWN"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            letterSpacing = MonarchTracking.InlineLabel,
+                            color = when {
+                                isEquipped -> MonarchColors.SovereignGold
+                                isOwned -> MonarchColors.EmeraldBright
+                                else -> MonarchColors.InkMuted
+                            },
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                    if (isEquipped) {
+                        Box(
+                            Modifier
+                                .size(10.dp)
+                                .border(2.dp, MonarchColors.SovereignGold, CircleShape),
+                        )
                     }
                 }
+            }
         }
     }
 }
 
 /**
- * A small swatch using the avatar's frame treatment: plate gradient, frame
- * border, optional second ring — the same channel split HunterAvatar uses.
+ * A small swatch using the avatar's frame treatment. Locked frames pass
+ * `treatment = null`: a dim plate still shows the SHAPE of what could drop,
+ * without revealing its colours.
  */
 @Composable
-private fun CrestSwatch(treatment: CrestFrameTreatment?) {
-    val t = treatment ?: return
+private fun CrestSwatch(treatment: CrestFrameTreatment?, locked: Boolean = false) {
+    val t = treatment
     Box(
         Modifier
             .size(40.dp)
             .background(
-                Brush.verticalGradient(listOf(t.plateTop, t.plateBottom)),
+                if (t == null) {
+                    Brush.verticalGradient(listOf(MonarchColors.Vault, MonarchColors.Abyss))
+                } else {
+                    Brush.verticalGradient(listOf(t.plateTop, t.plateBottom))
+                },
                 RoundedCornerShape(10.dp),
             )
-            .border(t.frameWidth, t.frameColor, RoundedCornerShape(10.dp)),
+            .border(
+                if (t == null) 1.dp else t.frameWidth,
+                if (t == null) MonarchColors.Rune else t.frameColor,
+                RoundedCornerShape(10.dp),
+            ),
         contentAlignment = Alignment.Center,
     ) {
         // Optional outer ring, inset like the avatar's, for double-ring frames.
-        t.outerRing?.let { ring ->
+        t?.outerRing?.let { ring ->
             Box(
                 Modifier
                     .size(46.dp)
                     .border(1.5.dp, ring, RoundedCornerShape(13.dp)),
             )
         }
-        Box(Modifier.size(12.dp).background(t.frameColor, CircleShape))
+        Text(
+            if (t == null) "\u25C7" else "\u25C6",
+            style = MaterialTheme.typography.titleSmall,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = if (t == null) MonarchColors.InkMuted else t.initialColor,
+        )
     }
 }

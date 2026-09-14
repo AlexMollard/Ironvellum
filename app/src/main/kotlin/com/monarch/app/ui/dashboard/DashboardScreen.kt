@@ -62,6 +62,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
 import com.monarch.app.R
 import com.monarch.app.data.Repository
 import com.monarch.app.domain.ArmyClass
@@ -391,12 +392,23 @@ fun DashboardScreen(
         }
 
         Spacer(Modifier.height(12.dp))
+        // Today's quest counts as done when a session started from THIS preset
+        // was completed today — otherwise the panel kept offering the same
+        // quest after it was already finished.
+        val todayStart = java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        val questDoneToday = selectedPreset != null && isTodaySelected && ui.recent.any {
+            it.presetId == selectedPreset.id && (it.completedAtMs ?: 0L) >= todayStart
+        }
 
         // The quest panel takes every remaining pixel: the exercise list grows
         // into the slack instead of leaving dead space above the nav bar.
         SystemWindow(
             Modifier.fillMaxWidth().weight(1f),
-            accent = if (isTodaySelected) MonarchColors.SystemGreen else MonarchColors.Rune,
+            accent = when {
+                questDoneToday -> MonarchColors.SovereignGold
+                isTodaySelected -> MonarchColors.SystemGreen
+                else -> MonarchColors.Rune
+            },
         ) {
             Row(
                 Modifier.fillMaxWidth(),
@@ -439,43 +451,77 @@ fun DashboardScreen(
                     )
                 }
                 Spacer(Modifier.height(10.dp))
-                Column(
-                    // rows spread into the panel's slack instead of leaving a
-                    // void above the button, with hairlines making it a manifest
-                    Modifier.weight(1f),
-                    verticalArrangement = Arrangement.SpaceEvenly,
-                ) {
-                    selectedPreset.entries.forEachIndexed { index, entry ->
-                        Row(
-                            Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            Box(Modifier.size(4.dp).background(MonarchColors.SystemGreen))
-                            Text(
-                                entry.exerciseName,
-                                style = MaterialTheme.typography.labelMedium,
-                                color = MonarchColors.Ink,
-                                modifier = Modifier.weight(1f),
-                                maxLines = 1,
-                            )
-                            Text(
-                                "${entry.targetSets}\u00D7${entry.targetReps}",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontFamily = ChakraPetch,
-                                color = MonarchColors.SystemGreen,
-                            )
-                        }
-                        if (index != selectedPreset.entries.lastIndex) {
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(MonarchColors.Rune))
+                if (questDoneToday) {
+                    // The done state replaces the manifest entirely: the
+                    // SpaceEvenly rows Column is weighted, so rendering both
+                    // made six exercises collide with the complete text.
+                    Column(
+                        Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            "QUEST COMPLETE",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontFamily = ChakraPetch,
+                            fontWeight = FontWeight.Bold,
+                            color = MonarchColors.SovereignGold,
+                            letterSpacing = 1.sp,
+                        )
+                        Text(
+                            "The System is satisfied. A new quest rises tomorrow.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MonarchColors.InkMuted,
+                        )
+                        Spacer(Modifier.weight(1f))
+                        Text(
+                            "6 MOVES · 22 SETS · DONE",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            letterSpacing = MonarchTracking.InlineLabel,
+                            color = MonarchColors.InkMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                } else {
+                    Column(
+                        // rows spread into the panel's slack instead of leaving a
+                        // void above the button, with hairlines making it a manifest
+                        Modifier.weight(1f),
+                        verticalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        selectedPreset.entries.forEachIndexed { index, entry ->
+                            Row(
+                                Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            ) {
+                                Box(Modifier.size(4.dp).background(MonarchColors.SystemGreen))
+                                Text(
+                                    entry.exerciseName,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MonarchColors.Ink,
+                                    modifier = Modifier.weight(1f),
+                                    maxLines = 1,
+                                )
+                                Text(
+                                    "${entry.targetSets}\u00D7${entry.targetReps}",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontFamily = ChakraPetch,
+                                    color = MonarchColors.SystemGreen,
+                                )
+                            }
+                            if (index != selectedPreset.entries.lastIndex) {
+                                Box(Modifier.fillMaxWidth().height(1.dp).background(MonarchColors.Rune))
+                            }
                         }
                     }
+                    MonarchButton(
+                        label = if (isTodaySelected) "Accept Quest" else "Start Anyway",
+                        onClick = { viewModel.beginPreset(selectedPreset.id, onStartSession) },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
-                MonarchButton(
-                    label = if (isTodaySelected) "Accept Quest" else "Start Anyway",
-                    onClick = { viewModel.beginPreset(selectedPreset.id, onStartSession) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
             } else {
                 Text(
                     "REST DAY",

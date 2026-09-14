@@ -27,6 +27,7 @@ import com.monarch.app.data.db.SyncStateDao
 import com.monarch.app.data.db.SyncStateEntity
 import com.monarch.app.data.db.TitleDao
 import com.monarch.app.data.db.TitleUnlockEntity
+import com.monarch.app.data.db.GachaDao
 import com.monarch.app.domain.ActivityScore
 import com.monarch.app.domain.ArmyClass
 import com.monarch.app.domain.Exercise
@@ -532,6 +533,14 @@ class Repository(
         val now = finishedAt
         titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
         profileDao.setCurrentTitle(newly.firstOrNull()?.id ?: before.currentTitleId)
+
+        // A level-up from ANY source banks shadow draws — workout XP included.
+        // Without this, levelling through sessions never paid out at all.
+        val levelsGained = Xp.levelFor(newTotal) - levelBefore
+        if (levelsGained > 0) {
+            val g = gachaDao.get() ?: GachaStateEntity()
+            gachaDao.upsert(g.copy(rolls = g.rolls + levelsGained))
+        }
 
         CompletionResult(
             xpAwarded = totalXpGain,
