@@ -4,21 +4,17 @@ package com.monarch.app.domain
  * Shadow army idle maths. Training sets the RATE; idle time only collects at
  * that rate. Nothing here touches XP, strength score, or the training board —
  * this is a parallel economy with its own leaderboard later.
- *
  * Rate formula (per hour):
  *   perHour = FLOOR * trainingFactor * skillFactor * relicMultiplier
  *   trainingFactor = 1 + min(TRAINING_CAP, sessionsLast7d * SESSION_WEIGHT
  *                              + volumeLast7d * VOLUME_WEIGHT
  *                              + streakDays * STREAK_WEIGHT) / FLOOR
- *   skillFactor    = 1 + SKILL_STEP * skillsUnlocked (capped)
+ *   skillFactor    = 1 + SKILL_CEILING * (1 - e^(-SKILL_RATE * skillsUnlocked))
  *
- * Balance intent: skills are PERMANENT and pull the whole curve up forever,
- * while recent training saturates at TRAINING_CAP (a fixed ceiling on the
- * weekly component). Each unlocked skill adds half the floor again, so ten
- * skills triple the rate and beat the entire weekly training ceiling — after
- * ~a dozen unlocks the skill tree, not this week's sessions, dominates.
- * Recent training still matters early and for players who ignore the tree,
- * and decay to the floor punishes stopping.
+ * Balance intent: RECENT TRAINING is the engine — a committed week reaches x4
+ * and dominates everything else. Skills are a permanent bonus that approaches
+ * x2 asymptotically, so every unlock helps forever but the whole tree can
+ * never out-earn a trained week. Decay to the floor punishes stopping.
  */
 data class IdleState(
     val essence: Long,
@@ -53,12 +49,12 @@ object Idle {
     private const val VOLUME_WEIGHT = 0.05     // per rep logged in the last 7 days
     private const val STREAK_WEIGHT = 1.0      // per consecutive day, capped with TRAINING_CAP
 
-    // Skills are a permanent BONUS, not the engine. +4% each, hard-capped at
-    // x2: at +50% each, two skills already read x2.00 and the full tree would
-    // have reached x43 — the rate became a function of the catalogue rather
-    // than of what you actually lifted this week.
-    private const val SKILL_STEP = 0.04
-    private const val MAX_SKILL_FACTOR = 2.0
+    // Skills are a permanent BONUS, not the engine, and they approach x2
+    // asymptotically rather than hitting a wall: at +4% flat with a x2 cap the
+    // ceiling arrived at 25 unlocks and every skill after that was worthless.
+    // This way the 90th unlock still adds something, just far less than the 2nd.
+    private const val SKILL_CEILING = 1.0   // maximum ADDED on top of 1.0
+    const val SKILL_RATE = 0.045    // approach speed per unlock
 
     // Guards so a corrupt relic multiplier can't push the rate to Infinity.
     private const val MAX_RELIC = 1e6
@@ -79,7 +75,9 @@ object Idle {
         val trainingRaw = sessions * SESSION_WEIGHT + volume * VOLUME_WEIGHT + streak * STREAK_WEIGHT
         val trainingFactor = 1.0 + trainingRaw.coerceIn(0.0, TRAINING_CAP) / FLOOR
 
-        val skillFactor = (1.0 + skills * SKILL_STEP).coerceAtMost(MAX_SKILL_FACTOR)
+        // Asymptotic: 2 skills ~x1.09, 25 ~x1.67, 95 ~x1.99 — always rising,
+        // never reaching x2, so no unlock is ever dead weight.
+        val skillFactor = 1.0 + SKILL_CEILING * (1.0 - kotlin.math.exp(-SKILL_RATE * skills))
 
         val relic = when {
             !state.relicMultiplier.isFinite() -> 1.0

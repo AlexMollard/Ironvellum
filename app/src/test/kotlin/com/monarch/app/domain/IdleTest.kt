@@ -42,17 +42,23 @@ class IdleTest {
     fun `skills help permanently but never out-earn training`() {
         val noSkills = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 300.0, skillsUnlocked = 0, streakDays = 0)
         val skilled = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 300.0, skillsUnlocked = 5, streakDays = 0)
-        // Every unlock is worth something, permanently.
-        assertTrue(skilled.perHour > noSkills.perHour)
-        assertEquals(1.2, skilled.skillFactor, 1e-9)
+        // 5 skills on the asymptote: 1 + ceiling * (1 - e^(-rate * 5)).
+        assertEquals(1.0 + (1.0 - kotlin.math.exp(-Idle.SKILL_RATE * 5)), skilled.skillFactor, 1e-9)
+        // Every unlock still adds something, however deep into the tree, but
+        // the bonus is bounded — the whole tree stays under x2.
+        val deeper = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 300.0, skillsUnlocked = 50, streakDays = 0)
+        assertTrue(deeper.skillFactor > skilled.skillFactor)
+        assertTrue(deeper.skillFactor < 2.0)
 
         // Balance intent, inverted from the first draft: the WHOLE skill tree
         // must not beat a trained week. Training is the engine; skills are trim.
         val everySkill = Idle.rate(state(), sessionsLast7d = 0, volumeLast7d = 0.0, skillsUnlocked = 95, streakDays = 0)
         val trainedWeek = Idle.rate(state(), sessionsLast7d = 5, volumeLast7d = 400.0, skillsUnlocked = 0, streakDays = 5)
         assertTrue(everySkill.perHour < trainedWeek.perHour)
-        // And the bonus is hard-capped, so the catalogue growing cannot inflate it.
-        assertEquals(2.0, everySkill.skillFactor, 1e-9)
+        // Asymptotic means x2 is a LIMIT, never reached — the 95-tree is close
+        // but below it, and the catalogue growing cannot inflate it further.
+        assertTrue(everySkill.skillFactor < 2.0)
+        assertTrue(everySkill.skillFactor > 1.9)
     }
     @Test
     fun `a full day away pays the full rate`() {
