@@ -322,9 +322,9 @@ private fun CollectWindow(pending: Long, justCollected: Long?, onCollect: () -> 
 private fun CapWindow() {
     SystemWindow(accent = MonarchColors.Bracket) {
         Text(
-            "The shadows labour hardest for the first ${Idle.FULL_RATE_HOURS.toInt()} hours, " +
-                "tire as the day wears on, and rest entirely after ${Idle.OFFLINE_CAP_HOURS}. " +
-                "Return once a day and little is lost.",
+            "The shadows hold full strength for ${Idle.FULL_RATE_HOURS.toInt()} hours, " +
+                "then tire over the next ${Idle.TAPER_WINDOW_HOURS.toInt()} — but they never stop, " +
+                "labouring on at a tenth of their strength until you return.",
             style = MaterialTheme.typography.bodyMedium,
             color = MonarchColors.InkMuted,
             textAlign = TextAlign.Start,

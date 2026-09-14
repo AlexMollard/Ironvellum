@@ -31,21 +31,18 @@ data class IdleRate(val perHour: Double, val trainingFactor: Double, val skillFa
 
 object Idle {
 
-    /**
-     * Hard stop: nothing accrues past a full day away. A real hunter opens this
-     * app once a day, maybe twice — a 12h ceiling punished the normal case.
-     */
-    const val OFFLINE_CAP_HOURS = 24
-
-    /** The first stretch away pays the full rate. */
-    const val FULL_RATE_HOURS = 6.0
+    /** The army works at FULL output for a whole day before it tires at all. */
+    const val FULL_RATE_HOURS = 24.0
 
     /**
-     * Past FULL_RATE_HOURS the MARGINAL rate decays with this time constant, so
-     * a day away still pays well (~13h of essence) while two days pays the same:
-     * checking in daily is rewarded, leaving the phone in a drawer is not.
+     * After the full day, output falls off linearly across this window down to
+     * [MIN_EFFICIENCY] — and then holds there forever. The shadows never stop
+     * working; they just work badly while you are gone.
      */
-    private const val TAPER_HOURS = 8.0
+    const val TAPER_WINDOW_HOURS = 48.0
+
+    /** Output never drops below a tenth of the army's rate, however long you are away. */
+    const val MIN_EFFICIENCY = 0.10
 
     // Rate floor: with zero recent training the army still scavenges a trickle.
     private const val FLOOR = 10.0
@@ -93,29 +90,44 @@ object Idle {
     }
 
     /**
-     * Essence banked for time away. The curve is full rate for the first
-     * [FULL_RATE_HOURS], then the marginal rate decays exponentially, and the
-     * clock stops entirely at [OFFLINE_CAP_HOURS].
+     * Essence banked for time away. Three phases, and the army NEVER stops:
      *
-     * Integrating the decay gives effective hours:
-     *   full + TAPER * (1 - e^-(t - full)/TAPER)
-     * so 6h away pays 6h, 24h away pays ~13.2h, and 3 days away pays the same
-     * ~13.2h as one — daily check-ins win, a drawer does not.
+     *  - 0 .. 24h        full output, an untouched day costs you nothing
+     *  - 24 .. 72h       output falls linearly from 100% to [MIN_EFFICIENCY]
+     *  - beyond 72h      output holds at [MIN_EFFICIENCY] forever
+     *
+     * Effective hours are the integral of that efficiency, computed piecewise
+     * so every value can be checked by hand:
+     *   24h  -> 24.0
+     *   48h  -> 24 + 24 * 0.775  = 42.6
+     *   72h  -> 24 + 48 * 0.55   = 50.4
+     *   7d   -> 50.4 + 96 * 0.10 = 60.0
      */
     fun accrued(state: IdleState, rate: IdleRate, nowMs: Long): Long {
         val elapsedMs = nowMs - state.lastCollectedAtMs
         // Clock moved backwards (manual change, timezone/DST shift): collect nothing.
         if (elapsedMs <= 0L) return 0L
-        val hours = minOf(elapsedMs, OFFLINE_CAP_HOURS * 3_600_000L).toDouble() / 3_600_000.0
-        val effectiveHours = if (hours <= FULL_RATE_HOURS) {
-            hours
-        } else {
-            FULL_RATE_HOURS + TAPER_HOURS * (1.0 - kotlin.math.exp(-(hours - FULL_RATE_HOURS) / TAPER_HOURS))
+        val hours = elapsedMs.toDouble() / 3_600_000.0
+        val taperEnd = FULL_RATE_HOURS + TAPER_WINDOW_HOURS
+        val effectiveHours = when {
+            hours <= FULL_RATE_HOURS -> hours
+            hours <= taperEnd -> {
+                // Average of the start and end efficiency over the elapsed slice
+                // of the ramp — the area of a trapezium.
+                val into = hours - FULL_RATE_HOURS
+                val endEfficiency = 1.0 - (1.0 - MIN_EFFICIENCY) * (into / TAPER_WINDOW_HOURS)
+                FULL_RATE_HOURS + into * (1.0 + endEfficiency) / 2.0
+            }
+            else -> {
+                val rampArea = TAPER_WINDOW_HOURS * (1.0 + MIN_EFFICIENCY) / 2.0
+                FULL_RATE_HOURS + rampArea + (hours - taperEnd) * MIN_EFFICIENCY
+            }
         }
         val perHour = if (rate.perHour.isFinite()) rate.perHour.coerceAtLeast(0.0) else 0.0
         val amount = perHour * effectiveHours
         if (!amount.isFinite()) return 0L
-        return amount.toLong()
+        // Saturate rather than wrap: an absence measured in years still fits.
+        return if (amount >= Long.MAX_VALUE.toDouble()) Long.MAX_VALUE else amount.toLong()
     }
 
     fun collect(state: IdleState, rate: IdleRate, nowMs: Long): IdleState {

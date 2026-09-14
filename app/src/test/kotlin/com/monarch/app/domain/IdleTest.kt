@@ -51,31 +51,42 @@ class IdleTest {
     }
 
     @Test
-    fun `three days away collects only the offline cap`() {
+    fun `a full day away pays the full rate`() {
         val s = state(lastCollectedAtMs = 0L)
         val rate = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 200.0, skillsUnlocked = 0, streakDays = 0)
-        val gained = Idle.accrued(s, rate, nowMs = 3 * dayMs)
-        val capped = Idle.accrued(s, rate, nowMs = Idle.OFFLINE_CAP_HOURS * 3_600_000L)
-        assertEquals(capped, gained)
-        assertTrue(gained > 0L)
+        // 24h is the whole point: a hunter who opens the app once a day loses nothing.
+        val day = Idle.accrued(s, rate, nowMs = dayMs)
+        assertEquals((rate.perHour * 24).toLong(), day)
     }
 
     @Test
-    fun `time away pays full rate at first then tapers`() {
+    fun `output tapers after a day but never stops`() {
         val s = state(lastCollectedAtMs = 0L)
         val rate = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 200.0, skillsUnlocked = 0, streakDays = 0)
-        val hour = 3_600_000L
 
-        // Inside the full-rate window an hour away is worth an hour of rate.
-        val sixHours = Idle.accrued(s, rate, nowMs = 6 * hour)
-        assertEquals((rate.perHour * 6).toLong(), sixHours)
+        val oneDay = Idle.accrued(s, rate, nowMs = dayMs)
+        val threeDays = Idle.accrued(s, rate, nowMs = 3 * dayMs)
+        val sevenDays = Idle.accrued(s, rate, nowMs = 7 * dayMs)
 
-        // A full day is worth materially more than six hours, but far less than
-        // 24x — the marginal rate decays once the full-rate window closes.
-        val fullDay = Idle.accrued(s, rate, nowMs = 24 * hour)
-        assertTrue(fullDay > sixHours)
-        assertTrue(fullDay < (rate.perHour * 24).toLong())
-        assertTrue(fullDay > (rate.perHour * 12).toLong())
+        // Still growing at every horizon — the army never fully stops.
+        assertTrue(threeDays > oneDay)
+        assertTrue(sevenDays > threeDays)
+        // But the extra days are worth far less than the first: 48h of taper
+        // adds ~26.4 effective hours, while the next 96h add only ~9.6.
+        assertTrue(threeDays - oneDay < 2 * oneDay)
+        assertTrue(sevenDays - threeDays < threeDays - oneDay)
+    }
+
+    @Test
+    fun `a long absence still earns the ten percent floor`() {
+        val s = state(lastCollectedAtMs = 0L)
+        val rate = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 200.0, skillsUnlocked = 0, streakDays = 0)
+        val thirty = Idle.accrued(s, rate, nowMs = 30 * dayMs)
+        val thirtyOne = Idle.accrued(s, rate, nowMs = 31 * dayMs)
+        // A day deep into the floor pays exactly 10% of a day at full output.
+        // Each accrual truncates independently, so allow a single unit of slack.
+        val floorDay = (rate.perHour * 24 * Idle.MIN_EFFICIENCY).toLong()
+        assertTrue(kotlin.math.abs((thirtyOne - thirty) - floorDay) <= 1L)
     }
 
     @Test
