@@ -54,8 +54,8 @@ import com.monarch.app.data.db.OwnedRelicEntity
         OwnedCrestFrameEntity::class,
         OwnedRelicEntity::class,
     ],
-    version = 21,
-    exportSchema = false,
+    version = MonarchDatabase.VERSION,
+    exportSchema = true,
 )
 abstract class MonarchDatabase : RoomDatabase() {
     abstract fun exerciseDao(): ExerciseDao
@@ -72,6 +72,8 @@ abstract class MonarchDatabase : RoomDatabase() {
     abstract fun gachaDao(): GachaDao
 
     companion object {
+        /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
+        const val VERSION = 21
         // Height and sex move onto the profile (set once in Settings) so the
         // stat log no longer asks for height on every reading. heightCm is
         // backfilled from the newest stat row that actually carries one; with
@@ -225,20 +227,26 @@ abstract class MonarchDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Single source of truth for the migration chain. Every future schema
+         * change REQUIRES adding its Migration here AND bumping `version`.
+         */
+        val MIGRATIONS: Array<Migration> = arrayOf(
+            MIGRATION_11_12,
+            MIGRATION_12_13,
+            MIGRATION_13_14,
+            MIGRATION_14_15,
+            MIGRATION_15_16,
+            MIGRATION_16_17,
+            MIGRATION_17_18,
+            MIGRATION_18_19,
+            MIGRATION_19_20,
+            MIGRATION_20_21,
+        )
+
         fun create(context: Context): MonarchDatabase =
             Room.databaseBuilder(context, MonarchDatabase::class.java, "monarch.db")
-                .addMigrations(
-                    MIGRATION_11_12,
-                    MIGRATION_12_13,
-                    MIGRATION_13_14,
-                    MIGRATION_14_15,
-                    MIGRATION_15_16,
-                    MIGRATION_16_17,
-                    MIGRATION_17_18,
-                    MIGRATION_18_19,
-                    MIGRATION_19_20,
-                    MIGRATION_20_21,
-                )
+                .addMigrations(*MIGRATIONS)
                 .build()
     }
 }
