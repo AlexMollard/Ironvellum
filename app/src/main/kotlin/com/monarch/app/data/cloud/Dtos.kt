@@ -88,11 +88,17 @@ data class FriendshipDto(
     @SerialName("accepted") val accepted: Boolean,
 )
 
-/** Narrow name lookup so a pending friend's hidden profile still decodes. */
+/**
+ * Narrow profile lookup so a pending friend's hidden profile still decodes.
+ * Carries the worn title and level too: the select is already `*`, so an ally's
+ * crest can show its rarity without a second request.
+ */
 @Serializable
 data class ProfileNameDto(
     @SerialName("id") val id: String,
     @SerialName("display_name") val displayName: String,
+    @SerialName("level") val level: Int? = null,
+    @SerialName("current_title_id") val currentTitleId: String? = null,
 )
 
 @Serializable
@@ -190,6 +196,9 @@ data class FriendRow(
     val displayName: String,
     val accepted: Boolean,
     val incoming: Boolean,
+    /** Null when their profile is hidden from us (pending, friends-only). */
+    val level: Int? = null,
+    val currentTitleId: String? = null,
 )
 
 /** One hunter who liked a session, newest like first. */

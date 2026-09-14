@@ -259,21 +259,26 @@ class CloudSync(
                 // Pending profiles of "friends"-visibility hunters may be
                 // hidden from us — those decode as a fallback name instead
                 // of failing.
-                val names = if (counterpartIds.isEmpty()) {
+                // Keyed by id so the crest can read the worn title's rarity;
+                // a hidden profile simply yields no entry.
+                val profiles = if (counterpartIds.isEmpty()) {
                     emptyMap()
                 } else {
                     client.postgrest.from("profiles").select {
                         filter { isIn("id", counterpartIds) }
-                    }.decodeList<ProfileNameDto>().associate { it.id to it.displayName }
+                    }.decodeList<ProfileNameDto>().associateBy { it.id }
                 }
                 rows.map { row ->
                     val other = if (row.requesterId == me.userId) row.addresseeId else row.requesterId
+                    val profile = profiles[other]
                     FriendRow(
                         userId = other,
-                        displayName = names[other] ?: "Hidden hunter",
+                        displayName = profile?.displayName ?: "Hidden hunter",
                         accepted = row.accepted,
                         // Incoming = they asked us and it is not accepted yet.
                         incoming = row.addresseeId == me.userId && !row.accepted,
+                        level = profile?.level,
+                        currentTitleId = profile?.currentTitleId,
                     )
                 }
             }

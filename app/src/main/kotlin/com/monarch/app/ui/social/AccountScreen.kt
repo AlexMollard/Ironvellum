@@ -84,6 +84,7 @@ import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
+import com.monarch.app.domain.Titles
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -776,13 +777,15 @@ private fun FriendsPanel(
         }
 
         // Allies look like hunters everywhere else — IdentityRow, tappable.
-        // FriendRow carries no level or worn title, so those pass as null.
+        // Title and level now ride along on the friends read, so an ally's crest
+        // shows its rarity here exactly as it does on the board and the feed.
         accepted.forEach { friend ->
             IdentityRow(
                 displayName = friend.displayName,
                 userId = friend.userId,
-                wornTitle = null,
-                level = null,
+                wornTitle = friend.currentTitleId?.let { Titles.byId(it)?.name },
+                level = friend.level,
+                titleId = friend.currentTitleId,
                 size = IdentitySize.Compact,
                 onClick = { onOpenHunter(friend.userId, friend.displayName) },
                 modifier = Modifier
