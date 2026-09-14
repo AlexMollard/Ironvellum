@@ -72,6 +72,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import androidx.annotation.DrawableRes
+import androidx.compose.ui.res.painterResource
+import com.monarch.app.R
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.draw.clip
 
 data class TitlesUi(
     val unlocked: Map<String, Long> = emptyMap(),
@@ -257,7 +262,7 @@ fun TitlesScreen(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Skills.LINES.forEach { line ->
-                    TabPill(line.uppercase(), line == treeLine) { treeLine = line }
+                    TabPill(line.uppercase(), line == treeLine, lineArt(line)) { treeLine = line }
                 }
             }
             Spacer(Modifier.height(14.dp))
@@ -335,31 +340,52 @@ fun TitlesScreen(
 private enum class TitlesTab { DEEDS, TREE, JOURNAL }
 
 @Composable
-private fun TabPill(label: String, selected: Boolean, onClick: () -> Unit) {
-    Text(
-        label,
-        style = MaterialTheme.typography.labelMedium,
-        fontFamily = ChakraPetch,
-        fontWeight = FontWeight.Bold,
-        color = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
-        letterSpacing = 2.sp,
-        modifier = Modifier
-            .background(
-                if (selected) {
-                    Brush.verticalGradient(listOf(MonarchColors.SovereignGold, Color(0xFFB8860B)))
-                } else {
-                    Brush.verticalGradient(listOf(Color(0xFF141A18), Color(0xFF0E1312)))
-                },
-                CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
-            )
-            .border(
-                1.dp,
-                if (selected) MonarchColors.SovereignGold else MonarchColors.Rune,
-                CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
-            )
+/**
+ * Line art for a skill line, where the set provides one. Six of the ten lines
+ * have a drawn mark; the rest show their name alone rather than a stand-in.
+ */
+@DrawableRes
+private fun lineArt(line: String): Int? = when (line.lowercase()) {
+    "pull" -> R.drawable.ic_line_pull
+    "push" -> R.drawable.ic_line_push
+    "legs" -> R.drawable.ic_line_legs
+    "handstand" -> R.drawable.ic_line_handstand
+    "lever" -> R.drawable.ic_line_lever
+    "planche" -> R.drawable.ic_line_planche
+    else -> null
+}
+
+@Composable
+private fun TabPill(label: String, selected: Boolean, art: Int? = null, onClick: () -> Unit) {
+    val shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp)
+    Row(
+        Modifier
+            .clip(shape)
+            .background(if (selected) MonarchColors.SystemGreen else MonarchColors.VaultHigh)
             .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-    )
+            .padding(horizontal = 12.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (art != null) {
+            Icon(
+                painter = painterResource(art),
+                contentDescription = null,
+                tint = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
+            letterSpacing = 2.sp,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
 }
 
 

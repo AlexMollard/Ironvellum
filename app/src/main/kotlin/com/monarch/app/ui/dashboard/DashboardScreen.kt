@@ -98,6 +98,7 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import androidx.compose.foundation.layout.heightIn
 
 data class DashboardUi(
     val profile: PlayerProfile? = null,
@@ -542,6 +543,17 @@ fun DashboardScreen(
                     "Nothing scheduled. Recover, or pick another day above.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MonarchColors.InkMuted,
+                )
+                // The rest-day art was drawn for this panel and never wired in,
+                // leaving the quest card's slack as dead space.
+                Spacer(Modifier.weight(1f))
+                Image(
+                    painter = painterResource(R.drawable.art_empty_quests),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 160.dp)
+                        .alpha(0.55f),
                 )
                 Spacer(Modifier.weight(1f))
             }

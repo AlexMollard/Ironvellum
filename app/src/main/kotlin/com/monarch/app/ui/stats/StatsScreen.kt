@@ -88,6 +88,12 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import com.monarch.app.domain.Sex
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.res.painterResource
+import com.monarch.app.R
+import java.util.Locale
 
 // Genuinely unique chart/band colours that have no MonarchColors token — kept in one
 // place so they aren't scattered; everything else must reference MonarchColors.
@@ -320,11 +326,26 @@ fun StatsScreen(
                 MeasurementsPanel(onOpenSite = onOpenMeasurement)
                 SectionHeader("Readings")
                 if (ui.stats.isEmpty()) {
-                    Text(
-                        "No readings yet. The System knows nothing of your vessel.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MonarchColors.InkMuted,
-                    )
+                    // Empty-state art drawn for this screen and never wired in.
+                    Column(
+                        Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Image(
+                            painter = painterResource(R.drawable.art_empty_stats),
+                            contentDescription = null,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(max = 150.dp)
+                                .alpha(0.55f),
+                        )
+                        Spacer(Modifier.height(10.dp))
+                        Text(
+                            "No readings yet. The System knows nothing of your vessel.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MonarchColors.InkMuted,
+                        )
+                    }
                 }
                 ui.stats.forEach { stat ->
                     SystemWindow(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
@@ -958,7 +979,7 @@ private fun ActivityTab(
             }
         }
 
-        energySection(sorted.takeLast(14), latest, sessions, sessionSets, exercises)
+        EnergySection(sorted.takeLast(14), latest, sessions, sessionSets, exercises)
         Spacer(Modifier.height(14.dp))
         SectionHeader("Active calories — last 7 days")
         val kcal7 = last7
@@ -1035,7 +1056,7 @@ private fun dayBurn(
 }
 
 @Composable
-private fun energySection(
+private fun EnergySection(
     window: List<HealthDay>,
     latest: StatEntry?,
     sessions: List<WorkoutSession>,
@@ -1168,7 +1189,7 @@ private fun EnergyLegend() {
 }
 
 
-private fun fmtInt(v: Int): String = String.format("%,d", v)
+private fun fmtInt(v: Int): String = String.format(Locale.getDefault(), "%,d", v)
 
 private fun fmtSleep(minutes: Int): String = "${minutes / 60}h ${minutes % 60}m"
 

@@ -98,6 +98,7 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.width
 import com.monarch.app.domain.Relics
+import java.util.Locale
 
 
 /** What the shadows earned while the app was closed, shown once on arrival. */
@@ -797,7 +798,9 @@ private fun CapWindow() {
     }
 }
 
-private fun formatEssence(value: Long): String = String.format("%,d", value)
+// Grouping separators follow the reader's locale, stated explicitly so the
+// format never silently depends on the JVM default.
+private fun formatEssence(value: Long): String = String.format(Locale.getDefault(), "%,d", value)
 
 /** Display name per reward type — `Reward` has no shared name property. */
 private fun rewardName(reward: Reward): String = when (reward) {
