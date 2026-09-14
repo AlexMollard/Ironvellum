@@ -1,5 +1,10 @@
 package com.monarch.app.ui.idle
-
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,7 +15,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -21,8 +28,10 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +65,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+
 /** Everything the Shadow screen renders, resolved from the repository. */
 data class IdleUi(
     val snapshot: IdleSnapshot? = null,
@@ -85,12 +95,12 @@ fun IdleScreen(
         viewModel(factory = viewModelFactory { initializer { IdleViewModel(monarchRepository()) } }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    // Heartbeat so the pending figure visibly climbs while the screen is open.
+    // Frame-rate heartbeat: the pending figure climbs continuously rather than
+    // stepping once a second, so the screen reads as alive.
     var nowMs by remember { mutableLongStateOf(System.currentTimeMillis()) }
     LaunchedEffect(Unit) {
         while (true) {
-            nowMs = System.currentTimeMillis()
-            delay(1_000)
+            withFrameMillis { nowMs = System.currentTimeMillis() }
         }
     }
     // Last collect result, shown briefly so the banked amount has a landing moment.
@@ -118,13 +128,15 @@ fun IdleScreen(
                 )
             }
         } else {
-            ArmyWindow(snapshot.state, snapshot.rate)
+            // Exact, unrounded accrual so both the hero total and the pending
+            // figure climb every frame instead of jumping on a poll.
+            val pendingExact = Idle.accruedExact(snapshot.state, snapshot.rate, nowMs)
+            ArmyWindow(snapshot.state, snapshot.rate, pendingExact)
             SectionHeader("WHY THE RATE")
             RateWindow(snapshot.rate, inputs)
-            val pending = Idle.accrued(snapshot.state, snapshot.rate, nowMs)
             SectionHeader("PENDING")
             CollectWindow(
-                pending = pending,
+                pending = pendingExact,
                 justCollected = justCollected,
                 onCollect = {
                     viewModel.collect { amount ->
@@ -140,24 +152,34 @@ fun IdleScreen(
     }
 }
 
-/** The army at a glance: banked essence, shadow count, active rate per hour. */
+/**
+ * The army at a glance. The headline total is banked essence PLUS what is
+ * accruing right now, so the number visibly climbs while you watch it — a
+ * static total was the main reason this screen felt dead.
+ */
 @Composable
-private fun ArmyWindow(state: IdleState, rate: IdleRate) {
+private fun ArmyWindow(state: IdleState, rate: IdleRate, pendingExact: Double) {
     SystemWindow(accent = MonarchColors.Emerald) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "ESSENCE",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    color = MonarchColors.InkMuted,
+                    modifier = Modifier.weight(1f),
+                )
+                LivePulse(active = rate.perHour > 0.0)
+            }
             Text(
-                "ESSENCE",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                letterSpacing = MonarchTracking.InlineLabel,
-                color = MonarchColors.InkMuted,
-            )
-            Text(
-                formatEssence(state.essence),
+                liveEssence(state.essence, pendingExact),
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 fontSize = 40.sp,
                 color = MonarchColors.Ink,
+                maxLines = 1,
+                softWrap = false,
             )
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 ArmyStat(
@@ -178,6 +200,50 @@ private fun ArmyWindow(state: IdleState, rate: IdleRate) {
             }
         }
     }
+}
+
+/**
+ * Slow breathing dot: proof the army is working right now. Deliberately a
+ * gentle 1.6s sine — the house rule forbids hard flashing indicators.
+ */
+@Composable
+private fun LivePulse(active: Boolean) {
+    if (!active) return
+    val transition = rememberInfiniteTransition(label = "pulse")
+    val alpha by transition.animateFloat(
+        initialValue = 0.25f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(1_600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse,
+        ),
+        label = "pulseAlpha",
+    )
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Box(
+            Modifier
+                .size(8.dp)
+                .alpha(alpha)
+                .background(MonarchColors.EmeraldBright, CircleShape),
+        )
+        Text(
+            "WORKING",
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            letterSpacing = MonarchTracking.InlineLabel,
+            color = MonarchColors.EmeraldBright,
+            modifier = Modifier.alpha(alpha),
+        )
+    }
+}
+
+/**
+ * Banked + accruing, with two decimals below a thousand so the digits actually
+ * move at a realistic rate (10-60 essence/hour is a fraction per second).
+ */
+private fun liveEssence(banked: Long, pendingExact: Double): String {
+    val total = banked.toDouble() + pendingExact.coerceAtLeast(0.0)
+    return if (total < 1_000) "%.2f".format(total) else formatEssence(total.toLong())
 }
 
 @Composable
@@ -272,7 +338,7 @@ private fun RateRow(label: String, value: String) {
 
 /** The single obvious action. Pending resets to zero the moment collect banks it. */
 @Composable
-private fun CollectWindow(pending: Long, justCollected: Long?, onCollect: () -> Unit) {
+private fun CollectWindow(pending: Double, justCollected: Long?, onCollect: () -> Unit) {
     SystemWindow(accent = MonarchColors.SovereignGold) {
         Column(
             Modifier.fillMaxWidth(),
@@ -287,13 +353,15 @@ private fun CollectWindow(pending: Long, justCollected: Long?, onCollect: () -> 
                 color = MonarchColors.InkMuted,
             )
             Text(
-                "+${formatEssence(pending)}",
+                // Two decimals: at 10-60 essence/hour the integer part moves
+                // once a minute, which read as frozen.
+                "+" + if (pending < 1_000) "%.2f".format(pending) else formatEssence(pending.toLong()),
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 fontSize = 32.sp,
                 color = MonarchColors.EmeraldBright,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
+                softWrap = false,
             )
             justCollected?.let { amount ->
                 // Gentle one-line landing for the banked amount; no flash, no snap.
@@ -307,9 +375,9 @@ private fun CollectWindow(pending: Long, justCollected: Long?, onCollect: () -> 
                 )
             }
             MonarchButton(
-                label = if (pending > 0) "Collect essence" else "The vault is empty",
+                label = if (pending >= 1.0) "Collect essence" else "The vault is empty",
                 onClick = onCollect,
-                enabled = pending > 0,
+                enabled = pending >= 1.0,
                 gold = true,
                 modifier = Modifier.fillMaxWidth(),
             )

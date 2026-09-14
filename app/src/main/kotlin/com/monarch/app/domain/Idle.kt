@@ -104,9 +104,20 @@ object Idle {
      *   7d   -> 50.4 + 96 * 0.10 = 60.0
      */
     fun accrued(state: IdleState, rate: IdleRate, nowMs: Long): Long {
+        val amount = accruedExact(state, rate, nowMs)
+        // Saturate rather than wrap: an absence measured in years still fits.
+        return if (amount >= Long.MAX_VALUE.toDouble()) Long.MAX_VALUE else amount.toLong()
+    }
+
+    /**
+     * The same curve, undivided by truncation, so a live counter can climb
+     * smoothly instead of stepping once a second. Banking always goes through
+     * [accrued] — this is for display only.
+     */
+    fun accruedExact(state: IdleState, rate: IdleRate, nowMs: Long): Double {
         val elapsedMs = nowMs - state.lastCollectedAtMs
         // Clock moved backwards (manual change, timezone/DST shift): collect nothing.
-        if (elapsedMs <= 0L) return 0L
+        if (elapsedMs <= 0L) return 0.0
         val hours = elapsedMs.toDouble() / 3_600_000.0
         val taperEnd = FULL_RATE_HOURS + TAPER_WINDOW_HOURS
         val effectiveHours = when {
@@ -125,9 +136,7 @@ object Idle {
         }
         val perHour = if (rate.perHour.isFinite()) rate.perHour.coerceAtLeast(0.0) else 0.0
         val amount = perHour * effectiveHours
-        if (!amount.isFinite()) return 0L
-        // Saturate rather than wrap: an absence measured in years still fits.
-        return if (amount >= Long.MAX_VALUE.toDouble()) Long.MAX_VALUE else amount.toLong()
+        return if (amount.isFinite()) amount else 0.0
     }
 
     fun collect(state: IdleState, rate: IdleRate, nowMs: Long): IdleState {
