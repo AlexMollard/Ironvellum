@@ -65,6 +65,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import com.monarch.app.data.IdleInputs
 import com.monarch.app.data.IdleSnapshot
 import com.monarch.app.data.Repository
+import com.monarch.app.data.RelicHolding
 import com.monarch.app.domain.Idle
 import com.monarch.app.domain.IdleRate
 import com.monarch.app.domain.IdleState
@@ -123,6 +124,13 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), IdleUi())
 
+    /**
+     * Relics ride their own flow: `combine` tops out at five typed sources and
+     * the vault is independent of the army snapshot anyway.
+     */
+    val relics: StateFlow<List<RelicHolding>> = repo.observeRelics()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     private val _away = MutableStateFlow<AwayReport?>(null)
 
     /** The away haul, banked automatically — there is nothing to claim. */
@@ -168,6 +176,7 @@ fun IdleScreen(
         }
     }
     val away by viewModel.away.collectAsStateWithLifecycle()
+    val relics by viewModel.relics.collectAsStateWithLifecycle()
     // The reveal for a spent draw; null once the overlay finishes so it never re-shows.
     var drawResult by remember { mutableStateOf<RollResult?>(null) }
 
@@ -212,6 +221,7 @@ fun IdleScreen(
                 equipped = ui.equippedFrame,
                 onEquip = viewModel::equipFrame,
             )
+            RelicVault(relics = relics)
             away?.let { AwayWindow(it) }
             CapWindow()
         }
@@ -888,5 +898,65 @@ private fun CrestSwatch(treatment: CrestFrameTreatment?, locked: Boolean = false
             fontWeight = FontWeight.Bold,
             color = if (t == null) MonarchColors.InkMuted else t.initialColor,
         )
+    }
+}
+
+/**
+ * RELIC VAULT: every relic a draw produced. The rate only uses the strongest,
+ * so the top row is marked ACTIVE and the rest read as history — without this
+ * a relic draw left nothing to look at but a bare multiplier on the army panel.
+ */
+@Composable
+private fun RelicVault(relics: List<RelicHolding>) {
+    SectionHeader("RELIC VAULT")
+    SystemWindow(accent = MonarchColors.Emerald) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            if (relics.isEmpty()) {
+                Text(
+                    "No relics drawn yet. A draw can yield one, and the strongest relic sets your rate.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MonarchColors.InkMuted,
+                )
+            } else {
+                relics.forEachIndexed { index, relic ->
+                    val isActive = index == 0
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                relic.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontFamily = ChakraPetch,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MonarchColors.Ink,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                if (isActive) "ACTIVE — SETS YOUR RATE" else "HELD",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = ChakraPetch,
+                                letterSpacing = MonarchTracking.InlineLabel,
+                                color = if (isActive) MonarchColors.EmeraldBright else MonarchColors.InkMuted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        Text(
+                            "×%.2f".format(relic.multiplier),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontFamily = ChakraPetch,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isActive) MonarchColors.EmeraldBright else MonarchColors.InkMuted,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+                }
+            }
+        }
     }
 }

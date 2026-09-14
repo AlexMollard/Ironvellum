@@ -340,4 +340,11 @@ interface GachaDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertFrame(frame: OwnedCrestFrameEntity)
+
+    // Relics, strongest first: the rate uses the best one, the vault shows all.
+    @Query("SELECT * FROM owned_relics ORDER BY multiplier DESC, drawnAtMs DESC")
+    fun observeRelics(): Flow<List<OwnedRelicEntity>>
+
+    @Insert
+    suspend fun insertRelic(relic: OwnedRelicEntity)
 }

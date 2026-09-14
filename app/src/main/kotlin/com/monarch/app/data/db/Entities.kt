@@ -230,3 +230,16 @@ data class OwnedCrestFrameEntity(
     @PrimaryKey val frameId: String,
     val ownedAtMs: Long,
 )
+
+/**
+ * A relic a draw produced. The idle rate uses the STRONGEST multiplier, but a
+ * relic still has a name and a moment it was drawn — discarding those left the
+ * hunter with a bare ×1.24 and no way to see what earned it.
+ */
+@Entity(tableName = "owned_relics")
+data class OwnedRelicEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    val name: String,
+    val multiplier: Double,
+    val drawnAtMs: Long,
+)

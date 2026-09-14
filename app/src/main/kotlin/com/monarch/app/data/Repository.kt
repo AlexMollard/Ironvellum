@@ -28,6 +28,7 @@ import com.monarch.app.data.db.SyncStateEntity
 import com.monarch.app.data.db.TitleDao
 import com.monarch.app.data.db.TitleUnlockEntity
 import com.monarch.app.data.db.GachaDao
+import com.monarch.app.data.db.OwnedRelicEntity
 import com.monarch.app.domain.ActivityScore
 import com.monarch.app.domain.ArmyClass
 import com.monarch.app.domain.Exercise
@@ -1186,6 +1187,11 @@ class Repository(
     fun observeOwnedFrames(): Flow<Set<String>> =
         gachaDao.observeOwnedFrames().map { it.toSet() }
 
+    /** Every relic drawn, strongest first; the rate uses the top one. */
+    fun observeRelics(): Flow<List<RelicHolding>> = gachaDao.observeRelics().map { rows ->
+        rows.map { RelicHolding(it.id, it.name, it.multiplier, it.drawnAtMs) }
+    }
+
     fun observeEquippedFrame(): Flow<String?> = gachaDao.observeEquipped()
 
     /**
@@ -1222,7 +1228,18 @@ class Repository(
         val result = Gacha.roll(seed)
         when (val reward = result.reward) {
             is Reward.Shadows -> grantIdle(reward.count, 1.0)
-            is Reward.Relic -> grantIdle(0, reward.multiplier)
+            is Reward.Relic -> {
+                grantIdle(0, reward.multiplier)
+                // Keep the relic itself, not just its number: the rate uses the
+                // strongest multiplier but the vault has to show what was drawn.
+                gachaDao.insertRelic(
+                    OwnedRelicEntity(
+                        name = reward.name,
+                        multiplier = reward.multiplier,
+                        drawnAtMs = System.currentTimeMillis(),
+                    ),
+                )
+            }
             is Reward.CrestFrame -> gachaDao.insertFrame(
                 OwnedCrestFrameEntity(frameId = reward.id, ownedAtMs = System.currentTimeMillis()),
             )
@@ -1268,4 +1285,12 @@ data class IdleInputs(
 data class IdleSnapshot(
     val state: IdleState,
     val rate: IdleRate,
+)
+
+/** One drawn relic, for the Shadow screen's vault. */
+data class RelicHolding(
+    val id: Long,
+    val name: String,
+    val multiplier: Double,
+    val drawnAtMs: Long,
 )

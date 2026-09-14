@@ -33,6 +33,7 @@ import com.monarch.app.data.db.SyncStateDao
 import com.monarch.app.data.db.SyncStateEntity
 import com.monarch.app.data.db.TitleDao
 import com.monarch.app.data.db.TitleUnlockEntity
+import com.monarch.app.data.db.OwnedRelicEntity
 
 @Database(
     entities = [
@@ -51,8 +52,9 @@ import com.monarch.app.data.db.TitleUnlockEntity
         IdleStateEntity::class,
         GachaStateEntity::class,
         OwnedCrestFrameEntity::class,
+        OwnedRelicEntity::class,
     ],
-    version = 20,
+    version = 21,
     exportSchema = false,
 )
 abstract class MonarchDatabase : RoomDatabase() {
@@ -94,6 +96,28 @@ abstract class MonarchDatabase : RoomDatabase() {
         private val MIGRATION_19_20 = object : Migration(19, 20) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE gacha_state ADD COLUMN equippedFrame TEXT")
+            }
+        }
+
+        // Relic vault: every relic a draw produced. The rate still uses the
+        // strongest multiplier; this table is what lets the hunter SEE them.
+        private val MIGRATION_20_21 = object : Migration(20, 21) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `owned_relics` (" +
+                        "`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`name` TEXT NOT NULL, " +
+                        "`multiplier` REAL NOT NULL, " +
+                        "`drawnAtMs` INTEGER NOT NULL)",
+                )
+                // Backfill: a relic drawn before this table existed lives only
+                // as idle_state.relicMultiplier. Without this the vault reads
+                // empty while the army panel still shows the multiplier.
+                db.execSQL(
+                    "INSERT INTO `owned_relics` (`name`, `multiplier`, `drawnAtMs`) " +
+                        "SELECT 'Nameless Relic', `relicMultiplier`, `lastCollectedAtMs` " +
+                        "FROM `idle_state` WHERE `relicMultiplier` > 1.0",
+                )
             }
         }
 
@@ -213,6 +237,7 @@ abstract class MonarchDatabase : RoomDatabase() {
                     MIGRATION_17_18,
                     MIGRATION_18_19,
                     MIGRATION_19_20,
+                    MIGRATION_20_21,
                 )
                 .build()
     }
