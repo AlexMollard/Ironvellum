@@ -238,12 +238,15 @@ private fun LivePulse(active: Boolean) {
 }
 
 /**
- * Banked + accruing, with two decimals below a thousand so the digits actually
- * move at a realistic rate (10-60 essence/hour is a fraction per second).
+ * Banked + accruing, always to two decimals so the digits visibly move at
+ * realistic rates (10-60 essence/hour is a fraction per second).
  */
 private fun liveEssence(banked: Long, pendingExact: Double): String {
     val total = banked.toDouble() + pendingExact.coerceAtLeast(0.0)
-    return if (total < 1_000) "%.2f".format(total) else formatEssence(total.toLong())
+    // Two decimals at EVERY magnitude: falling back to whole units past 1,000
+    // froze the counter again — at 20/hour the integer moves once every three
+    // minutes. Grouped so six figures stay readable.
+    return "%,.2f".format(total)
 }
 
 @Composable
