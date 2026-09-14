@@ -47,16 +47,18 @@ object Cloud {
             AuthErrorCode.UserAlreadyExists -> "That email is already registered — sign in instead"
             AuthErrorCode.OverEmailSendRateLimit, AuthErrorCode.OverRequestRateLimit ->
                 "Too many attempts — wait a minute and try again"
-            else -> "Sign-in problem: ${error.description ?: error.errorCode?.name ?: "unknown"}"
+            else -> "The gate refused this sign-in — try again in a moment"
         }
         is PostgrestRestException -> when (error.code) {
             "23505" -> "That name is already taken by another hunter"
             "42501" -> "The cloud refused this — you are not allowed to change that record"
             "23514" -> "The cloud rejected this value as out of range"
-            else -> "Cloud rejected the request: ${error.description ?: error.message}"
+            else -> "The cloud refused this request — try again"
         }
         is HttpRequestException -> "Could not reach the cloud — check your connection"
-        else -> "Cloud error: ${error.message?.lineSequence()?.firstOrNull() ?: error.javaClass.simpleName}"
+        // Never interpolate exception text: Credential Manager and the auth
+        // SDK leak API internals that read as debug noise to a hunter.
+        else -> "The System stumbled — try again in a moment"
     }
 
     fun <T> failure(error: Throwable): Result<T> = Result.failure(IllegalStateException(explain(error)))

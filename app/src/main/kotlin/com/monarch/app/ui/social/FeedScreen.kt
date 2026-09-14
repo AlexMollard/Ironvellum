@@ -87,6 +87,8 @@ data class FeedUi(
     /** True once a page came back short of the limit — the board's end is reached. */
     val exhausted: Boolean = false,
     val error: String? = null,
+    /** Last page fetch failed, scoped to paging so one flaky page never blocks the board. */
+    val pagingError: String? = null,
     /** Ally rows for ADD ALLY buttons; fetched with the feed, never per card. */
     val friends: Map<String, FriendRow> = emptyMap(),
     /** Optimistically-sent ally requests, settled from the server once it answers. */
@@ -94,6 +96,8 @@ data class FeedUi(
     val likers: Map<String, List<Liker>> = emptyMap(),
     val likersErrors: Map<String, String> = emptyMap(),
     val likersLoadingSessionId: String? = null,
+    /** Per-card like failures; keyed by sessionId so the message sits on the tapped card. */
+    val likeErrors: Map<String, String> = emptyMap(),
 )
 
 class FeedViewModel(
@@ -109,6 +113,9 @@ class FeedViewModel(
 
     /** Oldest completedAtMs seen — the cursor for the next page. */
     private var oldestMs: Long? = null
+
+    /** Sessions with a like/unlike call in flight; blocks the double-tap re-fire that drifts the count. */
+    private val likeCallsInFlight = mutableSetOf<String>()
 
     private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
 
@@ -138,7 +145,7 @@ class FeedViewModel(
      */
     fun load(force: Boolean = false) {
         viewModelScope.launch {
-            _ui.value = _ui.value.copy(loading = true, error = null, exhausted = false)
+            _ui.value = _ui.value.copy(loading = true, error = null, pagingError = null, exhausted = false)
             cloudSync.feed(limit = pageSize)
                 .onSuccess { page ->
                     oldestMs = page.mapNotNull { it.completedAtMs }.minOrNull()
@@ -156,13 +163,24 @@ class FeedViewModel(
 
     /** Optimistic like toggle: the count flips now, the network call reconciles. */
     fun toggleLike(entry: FeedEntry) {
-        applyLike(entry.sessionId, !entry.likedByMe)
+        // One wire call per session at a time: a rapid double-tap before
+        // recomposition would pass the same stale entry twice and drift the
+        // optimistic count by two for a single like.
+        if (entry.sessionId in likeCallsInFlight) return
+        likeCallsInFlight += entry.sessionId
+        // Decide the toggle from current state, not the possibly-stale entry copy.
+        val wasLiked = _ui.value.entries.firstOrNull { it.sessionId == entry.sessionId }?.likedByMe ?: entry.likedByMe
+        _ui.value = _ui.value.copy(likeErrors = _ui.value.likeErrors - entry.sessionId)
+        applyLike(entry.sessionId, !wasLiked)
         viewModelScope.launch {
-            val call = if (entry.likedByMe) cloudSync.unlike(entry.sessionId) else cloudSync.like(entry.sessionId)
+            val call = if (wasLiked) cloudSync.unlike(entry.sessionId) else cloudSync.like(entry.sessionId)
             call.onFailure {
-                // Roll back so a refused write never leaves a phantom heart.
-                applyLike(entry.sessionId, entry.likedByMe)
+                // Roll back so a refused write never leaves a phantom heart, and
+                // tell the hunter — a silent rollback reads as a dead button.
+                applyLike(entry.sessionId, wasLiked)
+                _ui.value = _ui.value.copy(likeErrors = _ui.value.likeErrors + (entry.sessionId to it.reason()))
             }
+            likeCallsInFlight -= entry.sessionId
         }
     }
 
@@ -190,8 +208,22 @@ class FeedViewModel(
             cloudSync.likers(sessionId)
                 .onSuccess { names -> _ui.value = _ui.value.copy(likers = _ui.value.likers + (sessionId to names)) }
                 .onFailure { reason -> _ui.value = _ui.value.copy(likersErrors = _ui.value.likersErrors + (sessionId to reason.reason())) }
+
             _ui.value = _ui.value.copy(likersLoadingSessionId = null)
         }
+    }
+    /**
+     * Retry a failed likers fetch: evict the cached error so loadLikers' guard
+     * opens — without the eviction the dialog would show the same failure forever.
+     */
+    fun retryLikers(sessionId: String) {
+        _ui.value = _ui.value.copy(likersErrors = _ui.value.likersErrors - sessionId)
+        loadLikers(sessionId)
+    }
+
+    /** Closing the dialog drops the cached failure so the next open gets a fresh attempt. */
+    fun dismissLikersError(sessionId: String) {
+        _ui.value = _ui.value.copy(likersErrors = _ui.value.likersErrors - sessionId)
     }
 
     /** Send an ally request from a feed card; optimistic pending, then settled from server truth. */
@@ -219,9 +251,12 @@ class FeedViewModel(
      */
     fun loadMore() {
         val current = _ui.value
-        if (current.loading || current.loadingMore || current.exhausted || current.error != null) return
+        // A stale pagingError must not block the next attempt: the error is
+        // cleared here and re-set only if this page fails too, so one flaky
+        // page never wedges infinite scroll until a full refresh.
+        if (current.loading || current.loadingMore || current.exhausted) return
         val cursor = oldestMs ?: return
-        _ui.value = current.copy(loadingMore = true)
+        _ui.value = current.copy(loadingMore = true, pagingError = null)
         viewModelScope.launch {
             cloudSync.feed(limit = pageSize, beforeMs = cursor)
                 .onSuccess { page ->
@@ -236,7 +271,7 @@ class FeedViewModel(
                         if (oldestMs == null || newest < oldestMs!!) oldestMs = newest
                     }
                 }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+                .onFailure { _ui.value = _ui.value.copy(pagingError = it.reason()) }
             _ui.value = _ui.value.copy(loadingMore = false)
         }
     }
@@ -289,6 +324,8 @@ fun FeedScreen(
             ui.entries.isEmpty() -> EmptyFeed(onRefresh = { viewModel.load(force = true) })
             else -> Feed(
                 ui,
+                onRetryLikers = viewModel::retryLikers,
+                onLikersClosed = viewModel::dismissLikersError,
                 onRefresh = { viewModel.load(force = true) },
                 onLoadMore = viewModel::loadMore,
                 onOpenHunter = onOpenHunter,
@@ -407,6 +444,8 @@ private fun Feed(
     onToggleLike: (FeedEntry) -> Unit,
     onShowLikers: (String) -> Unit,
     onAddAlly: (String) -> Unit,
+    onRetryLikers: (String) -> Unit,
+    onLikersClosed: (String) -> Unit,
 ) {
     Row(
         Modifier.fillMaxWidth(),
@@ -434,7 +473,10 @@ private fun Feed(
             last >= listState.layoutInfo.totalItemsCount - 3 && listState.layoutInfo.totalItemsCount > 0
         }
     }
-    LaunchedEffect(nearEnd) {
+    // Keyed on the item count too: if an appended page still leaves the last
+    // visible item within 3 of the end, `nearEnd` alone would never re-fire and
+    // paging would stall. The VM's loadingMore guard keeps this one request.
+    LaunchedEffect(nearEnd, ui.entries.size) {
         if (nearEnd) onLoadMore()
     }
 
@@ -465,9 +507,25 @@ private fun Feed(
                 likersError = ui.likersErrors[entry.sessionId],
                 onOpenHunter = onOpenHunter,
                 onToggleLike = onToggleLike,
+                likeError = ui.likeErrors[entry.sessionId],
+                onRetryLikers = onRetryLikers,
+                onLikersClosed = onLikersClosed,
                 onShowLikers = onShowLikers,
                 onAddAlly = onAddAlly,
             )
+        }
+        if (ui.pagingError != null) {
+            item(key = "paging-error") {
+                Text(
+                    "Older hunts slipped away — keep pulling to try again.",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.DangerRed,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                )
+            }
         }
         if (ui.loadingMore) {
             item(key = "loading-more") {
@@ -517,10 +575,13 @@ private fun FeedCard(
     ally: AllyState,
     likers: List<Liker>?,
     likersError: String?,
+    likeError: String?,
     onOpenHunter: (String, String) -> Unit,
     onToggleLike: (FeedEntry) -> Unit,
     onShowLikers: (String) -> Unit,
     onAddAlly: (String) -> Unit,
+    onRetryLikers: (String) -> Unit,
+    onLikersClosed: (String) -> Unit,
 ) {
     val accent = if (isMe) MonarchColors.SovereignGold else MonarchColors.Emerald
     var showLikers by remember { mutableStateOf(false) }
@@ -723,11 +784,30 @@ private fun FeedCard(
                     )
                 }
             }
+            // Reserved-height failure line: the space exists whether or not a
+            // like failed, so surfacing the message never reflows the card.
+            Box(Modifier.fillMaxWidth().height(18.dp)) {
+                if (likeError != null) {
+                    Text(
+                        "The System refused your cheer",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.DangerRed,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
         }
     }
 
     if (showLikers) {
-        Dialog(onDismissRequest = { showLikers = false }) {
+        // Dismissal evicts the cached failure so the next open retries fresh
+        // instead of showing the same error forever.
+        Dialog(onDismissRequest = {
+            showLikers = false
+            onLikersClosed(entry.sessionId)
+        }) {
             SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.SovereignGold) {
                 Text(
                     "CHEERS FROM THE GUILD",
@@ -745,11 +825,19 @@ private fun FeedCard(
                         fontFamily = ChakraPetch,
                         color = MonarchColors.InkMuted,
                     )
-                    likersError != null -> Text(
-                        "The System refused: $likersError",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MonarchColors.DangerRed,
-                    )
+                    likersError != null -> Column {
+                        Text(
+                            "The System refused: $likersError",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MonarchColors.DangerRed,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                        MonarchButton(
+                            label = "TRY AGAIN",
+                            onClick = { onRetryLikers(entry.sessionId) },
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                     likers!!.isEmpty() -> Text(
                         "No cheers yet — your deeds still speak for themselves.",
                         style = MaterialTheme.typography.bodySmall,
@@ -781,7 +869,14 @@ private fun FeedCard(
                     }
                 }
                 Spacer(Modifier.height(12.dp))
-                MonarchButton(label = "Close", onClick = { showLikers = false }, modifier = Modifier.fillMaxWidth())
+                MonarchButton(
+                    label = "Close",
+                    onClick = {
+                        showLikers = false
+                        onLikersClosed(entry.sessionId)
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
         }
     }

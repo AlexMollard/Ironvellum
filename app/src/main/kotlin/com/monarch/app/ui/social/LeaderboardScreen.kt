@@ -18,7 +18,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -47,15 +46,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.monarch.app.data.cloud.Cloud
 import com.monarch.app.data.cloud.CloudSync
-import com.monarch.app.data.cloud.FriendSession
+import com.monarch.app.data.cloud.Cloud
 import com.monarch.app.data.cloud.LeaderboardRow
 import com.monarch.app.domain.Titles
 import com.monarch.app.ui.components.MonarchButton
-import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
-import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchAccount
 import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.theme.ChakraPetch
@@ -65,7 +61,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
-/** Full snapshot of the leader board gate: config, session, data, and per-friend drill state. */
+/** Full snapshot of the leader board gate: config, session, and data state. */
 data class LeaderboardUi(
     val configured: Boolean = Cloud.configured,
     val signedIn: Boolean = false,
@@ -73,10 +69,6 @@ data class LeaderboardUi(
     val rows: List<LeaderboardRow> = emptyList(),
     val loading: Boolean = false,
     val error: String? = null,
-    /** Which friend's panel is expanded, and what was loaded into it. */
-    val openFriendUserId: String? = null,
-    val friendSessions: Map<String, List<FriendSession>> = emptyMap(),
-    val friendSessionErrors: Map<String, String> = emptyMap(),
 )
 
 /** Pickable ranking metric; each entry owns its sort key and display formatting. */
@@ -141,7 +133,6 @@ class LeaderboardViewModel(
                 if (acct != null && _ui.value.rows.isEmpty()) load()
             }
         }
-        load()
     }
 
     private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
@@ -156,25 +147,6 @@ class LeaderboardViewModel(
         }
     }
 
-    /** Expand/collapse a friend's recent sessions; loads on first open. */
-    fun toggleFriend(userId: String) {
-        val current = _ui.value.openFriendUserId
-        if (current == userId) {
-            _ui.value = _ui.value.copy(openFriendUserId = null)
-            return
-        }
-        _ui.value = _ui.value.copy(openFriendUserId = userId)
-        if (userId in _ui.value.friendSessions || userId in _ui.value.friendSessionErrors) return
-        viewModelScope.launch {
-            cloudSync.friendSessions(userId)
-                .onSuccess { sessions ->
-                    _ui.value = _ui.value.copy(friendSessions = _ui.value.friendSessions + (userId to sessions))
-                }
-                .onFailure { reason ->
-                    _ui.value = _ui.value.copy(friendSessionErrors = _ui.value.friendSessionErrors + (userId to reason.reason()))
-                }
-        }
-    }
 }
 
 @Composable
@@ -216,6 +188,7 @@ fun LeaderboardScreen(
             !ui.signedIn -> NotSignedIn()
             ui.loading && ui.rows.isEmpty() -> LoadingPanel()
             ui.rows.isEmpty() && ui.error == null -> EmptyBoard(onRefresh = viewModel::load)
+            ui.rows.isEmpty() && ui.error != null -> ErrorPanel(onRefresh = viewModel::load)
             else -> {
                 // Pull-to-refresh replaces the old REFRESH button for the normal signed-in board.
                 // The gesture needs content to grab: in the empty/error states there is nothing to
@@ -241,7 +214,7 @@ fun LeaderboardScreen(
                     // into it, every row stacks at the same origin — the podium
                     // vanished under the pinned self-row. A Column restores flow.
                     Column(Modifier.fillMaxWidth()) {
-                        Board(ui, viewModel::toggleFriend, viewModel::load, onOpenFriend)
+                        Board(ui, viewModel::load, onOpenFriend)
                     }
                 }
             }
@@ -326,10 +299,32 @@ private fun EmptyBoard(onRefresh: () -> Unit) {
     }
 }
 
+/** Load failed with nothing on the board: name the failure and offer one clean retry. */
+@Composable
+private fun ErrorPanel(onRefresh: () -> Unit) {
+    SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.DangerRed) {
+        Text(
+            "THE BOARD FLICKERED",
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = MonarchColors.DangerRed,
+            letterSpacing = MonarchTracking.InlineLabel,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "The System could not summon the rankings. Stand fast and try again.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MonarchColors.InkMuted,
+        )
+        Spacer(Modifier.height(12.dp))
+        RefreshLink(onClick = onRefresh, label = "Retry")
+    }
+}
+
 @Composable
 private fun Board(
     ui: LeaderboardUi,
-    onToggleFriend: (String) -> Unit,
     onRefresh: () -> Unit,
     onOpenFriend: (String, String) -> Unit,
 ) {
@@ -384,10 +379,6 @@ private fun Board(
             metric = metric,
             leaderValue = metric.value(sorted.first()) ,
             isMe = row.userId == ui.myUserId,
-            expanded = ui.openFriendUserId == row.userId,
-            sessions = ui.friendSessions[row.userId],
-            sessionError = ui.friendSessionErrors[row.userId],
-            onToggle = { onToggleFriend(row.userId) },
             onOpenFriend = { onOpenFriend(row.userId, row.displayName) },
         )
         Spacer(Modifier.height(10.dp))
@@ -414,10 +405,6 @@ private fun Board(
             metric = metric,
             leaderValue = metric.value(sorted.first()),
             isMe = true,
-            expanded = false,
-            sessions = null,
-            sessionError = null,
-            onToggle = { onToggleFriend(myRow.userId) },
             onOpenFriend = { onOpenFriend(myRow.userId, myRow.displayName) },
         )
     }
@@ -643,10 +630,6 @@ private fun RankRow(
     metric: BoardMetric,
     leaderValue: Long,
     isMe: Boolean,
-    expanded: Boolean,
-    sessions: List<FriendSession>?,
-    sessionError: String?,
-    onToggle: () -> Unit,
     onOpenFriend: () -> Unit,
 ) {
     // Podium ranks get distinct emblems: gold for the sovereign, silvered emerald for 2, bronze for 3.
@@ -683,10 +666,7 @@ private fun RankRow(
     SystemWindow(
         modifier = Modifier.fillMaxWidth(),
         accent = accent,
-        onClick = {
-            onToggle()
-            onOpenFriend()
-        },
+        onClick = onOpenFriend,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
@@ -757,71 +737,6 @@ private fun RankRow(
                     .height(3.dp)
                     .background(Brush.horizontalGradient(listOf(accent, MonarchColors.EmeraldBright))),
             )
-        }
-        if (expanded) {
-            Spacer(Modifier.height(12.dp))
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .background(MonarchColors.Abyss)
-                    .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
-                    .padding(10.dp),
-            ) {
-                when {
-                    sessionError != null -> Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        Icon(Icons.Outlined.Lock, contentDescription = null, tint = MonarchColors.InkMuted, modifier = Modifier.size(14.dp))
-                        Text(
-                            if (sessionError.contains("denied", ignoreCase = true) || sessionError.contains("permission", ignoreCase = true)) {
-                                "Not shared with you — this hunter's visibility does not include you."
-                            } else {
-                                "The System refused: $sessionError"
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MonarchColors.InkMuted,
-                        )
-                    }
-                    sessions == null -> Text(
-                        "Drawing their recent sessions…",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = MonarchColors.InkMuted,
-                    )
-                    sessions.isEmpty() -> Text(
-                        "No recent sessions recorded.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MonarchColors.InkMuted,
-                    )
-                    else -> sessions.forEach { session ->
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 3.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    session.label,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontFamily = ChakraPetch,
-                                    color = MonarchColors.Ink,
-                                )
-                                Text(
-                                    session.completedAtMs?.let { formatDate(it) } ?: "unfinished",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MonarchColors.InkMuted,
-                                )
-                            }
-                            Text(
-                                "+${session.xpAwarded} XP · STR ${session.strengthScore} · ${session.sets} sets",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = ChakraPetch,
-                                color = MonarchColors.SystemGreen,
-                            )
-                        }
-                    }
-                }
-            }
         }
     }
 }

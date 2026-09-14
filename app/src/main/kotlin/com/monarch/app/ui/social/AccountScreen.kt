@@ -106,7 +106,9 @@ class AccountViewModel(
         // Resume a stored session (if any) without blocking the first frame.
         viewModelScope.launch {
             setBusy(true)
-            accountRepo.restore()
+            // A failed restore must not look like "signed out": surface the
+            // real reason or the gate sits blank with no explanation.
+            accountRepo.restore().onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
             setBusy(false)
         }
         // Keep the UI in step with the repository's own session state.
@@ -161,8 +163,14 @@ class AccountViewModel(
         viewModelScope.launch {
             setBusy(true)
             _ui.value = _ui.value.copy(error = null)
-            accountRepo.signOut().onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            _ui.value = _ui.value.copy(lastSync = null, friends = emptyList())
+            accountRepo.signOut()
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+                // Local UI state is wiped only after the server actually
+                // severed the session — clearing on failure left the user
+                // signed in behind a friends-less, signed-out-looking UI.
+                .onSuccess {
+                    _ui.value = _ui.value.copy(lastSync = null, friends = emptyList())
+                }
             setBusy(false)
         }
     }
@@ -331,7 +339,7 @@ private fun AuthPanels(
         Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall)
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(MonarchColors.Abyss),
     ) {
         AuthMode.entries.forEach { m ->
             val selected = mode == m
@@ -443,13 +451,20 @@ private fun AuthPanels(
 private fun GoogleGateButton(onToken: (idToken: String, rawNonce: String) -> Unit) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    var inFlight by remember { mutableStateOf(false) }
     var localError by remember { mutableStateOf<String?>(null) }
 
     Column {
         MonarchButton(
             label = "Continue with Google",
             modifier = Modifier.fillMaxWidth(),
+            // Same busy-guard as the other MonarchButtons ("Sync Now",
+            // "Sever the link"): a second tap mid-flow would fire a parallel
+            // Credential Manager request and duplicate the sign-in.
+            enabled = !inFlight,
             onClick = {
+                if (inFlight) return@MonarchButton
+                inFlight = true
                 scope.launch {
                     localError = null
                     try {
@@ -475,9 +490,13 @@ private fun GoogleGateButton(onToken: (idToken: String, rawNonce: String) -> Uni
                     } catch (_: NoCredentialException) {
                         localError = "No Google account found on this device — use the email gate below."
                     } catch (e: GetCredentialException) {
-                        localError = e.message ?: e.type
+                        // Credential Manager messages are API internals —
+                        // they never reach the hunter verbatim.
+                        localError = Cloud.explain(e)
                     } catch (e: Exception) {
-                        localError = e.message ?: e.toString()
+                        localError = Cloud.explain(e)
+                    } finally {
+                        inFlight = false
                     }
                 }
             },
@@ -535,7 +554,7 @@ private fun SignedInPanels(
             Modifier
                 .fillMaxWidth()
                 .clip(MaterialTheme.shapes.extraSmall)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(MonarchColors.Abyss),
         ) {
             listOf(
                 "public" to Icons.Outlined.Public,

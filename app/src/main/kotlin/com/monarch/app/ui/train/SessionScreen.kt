@@ -745,7 +745,7 @@ private fun Stepper(
     Row(
         modifier
             .clip(MaterialTheme.shapes.extraSmall)
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .background(MonarchColors.Abyss)
             .padding(horizontal = 2.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,

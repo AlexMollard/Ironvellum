@@ -24,6 +24,8 @@ import com.monarch.app.data.db.StatDao
 import com.monarch.app.data.db.StatEntity
 import com.monarch.app.data.db.TitleDao
 import com.monarch.app.data.db.TitleUnlockEntity
+import com.monarch.app.data.db.SyncStateDao
+import com.monarch.app.data.db.SyncStateEntity
 import com.monarch.app.domain.ExerciseHistory
 import com.monarch.app.domain.HealthDay
 import com.monarch.app.domain.ExerciseHistoryCalculator
@@ -71,6 +73,7 @@ class Repository(
     private val skillPracticeDao = db.skillPracticeDao()
     private val healthDayDao: HealthDayDao = db.healthDayDao()
     private val measurementDao: MeasurementDao = db.measurementDao()
+    private val syncStateDao: SyncStateDao = db.syncStateDao()
     // ---------------------------------------------------------------- seeding
 
     suspend fun ensureSeeded() {
@@ -638,6 +641,18 @@ class Repository(
     }
 
     suspend fun deleteMeasurement(id: Long) = measurementDao.delete(id)
+
+    // ------------------------------------------------------------- sync state
+
+    /** Fingerprints of the sessions the last successful push uploaded. */
+    suspend fun pushWatermark(): Map<Long, Int> =
+        syncStateDao.all().associate { it.sessionId to it.fingerprint }
+
+    /** Called only after a push succeeds; prunes sessions deleted since. */
+    suspend fun recordPushWatermark(fingerprints: Map<Long, Int>) {
+        syncStateDao.upsertAll(fingerprints.map { SyncStateEntity(it.key, it.value) })
+        syncStateDao.pruneExcept(fingerprints.keys.toList())
+    }
 
     // ---------------------------------------------------------------- profile & titles
 

@@ -35,15 +35,26 @@ class AccountRepository {
 
     private suspend fun requireClient(): Result<SupabaseClient> = Cloud.requireConfigured
 
-    /** Resume a persisted session on app start. Quiet success when signed out. */
-    suspend fun restore() {
-        val client = requireClient().getOrElse { return }
+    /** Resume a persisted session on app start. Quiet success when signed out;
+     *  a failed import surfaces as a Result — silently swallowing it left the
+     *  user "signed out" forever with no explanation on any social tab. */
+    suspend fun restore(): Result<Unit> {
+        val client = requireClient().getOrElse { return failure(it) }
         // supabase-kt persists the session in its SessionManager but does not
         // import it automatically: load then import (refreshing if stale).
-        val session = runCatching { client.auth.sessionManager.loadSessionOrNull() }.getOrNull() ?: return
-        runCatching { client.auth.importSession(session) }
-        val user = client.auth.currentUserOrNull() ?: return
-        loadAccount(user.id, user.email ?: "")?.let { _account.value = it }
+        val session = runCatching { client.auth.sessionManager.loadSessionOrNull() }.getOrNull()
+            ?: return Result.success(Unit)
+        return runCatching {
+            client.auth.importSession(session)
+            val user = client.auth.currentUserOrNull()
+            // Statement, not an expression: a trailing `?.let` inferred the
+            // lambda as Unit? and the function no longer returned Result<Unit>.
+            if (user != null) {
+                loadAccount(user.id, user.email ?: "")?.let { _account.value = it }
+            }
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
     }
 
     suspend fun signUp(email: String, password: String, displayName: String): Result<Account> {
@@ -72,11 +83,33 @@ class AccountRepository {
             if (error is io.github.jan.supabase.postgrest.exception.PostgrestRestException &&
                 error.code == "23505"
             ) {
-                signIn(email, password).getOrThrow()
+                try {
+                    signIn(email, password).getOrThrow()
+                } catch (missing: ProfileMissingException) {
+                    // Re-attempt the row for the signed-in user; a failing
+                    // repair is translated, never shown as raw SDK text.
+                    try {
+                        repairProfileForCurrentUser(name)
+                    } catch (repair: Exception) {
+                        throw IllegalStateException(Cloud.explain(repair))
+                    }
+                    loadSignedInAccount(email)
+                        ?: throw IllegalStateException(
+                            "Your sigil is known to the System, but the hunter record could not be restored — try signing in again",
+                        )
+                }
             } else {
                 throw IllegalStateException(Cloud.explain(error))
             }
         }
+    }
+
+    /** Re-insert the profiles row for an auth user whose first insert failed. */
+    private suspend fun repairProfileForCurrentUser(displayName: String) {
+        val client = Cloud.client()
+        val user = client.auth.currentUserOrNull()
+            ?: throw ProfileMissingException()
+        client.postgrest.from("profiles").insert(ProfileDto(id = user.id, displayName = displayName))
     }
 
     suspend fun signIn(email: String, password: String): Result<Account> {
@@ -87,8 +120,11 @@ class AccountRepository {
                 this.password = password
             }
             loadSignedInAccount(email)
-                ?: throw IllegalStateException("Signed in, but your hunter profile is missing")
+                ?: throw ProfileMissingException()
         }.recoverCatching { error ->
+            // signUp's 23505 recovery keys on this sentinel: rethrow it as-is
+            // so the profile repair path can catch it.
+            if (error is ProfileMissingException) throw error
             throw IllegalStateException(Cloud.explain(error))
         }
     }
@@ -149,7 +185,12 @@ class AccountRepository {
                 return
             } catch (error: io.github.jan.supabase.postgrest.exception.PostgrestRestException) {
                 if (error.code != "23505" || suffix > 99) throw error
-                name = "$base $suffix" // keeps inside the 2..24 char check
+                // The DB caps display_name at 24 chars ("between 2 and 24"),
+                // so the suffix must shorten the base, not extend the whole
+                // name past the cap — a 24-char base + " 1" would trip the
+                // check constraint and kill the retry loop.
+                val suffixText = " $suffix"
+                name = base.take(24 - suffixText.length) + suffixText
                 suffix++
             }
         }
@@ -226,3 +267,9 @@ internal fun requireAccount(account: AccountRepository): Result<Account> {
         Result.success(current)
     }
 }
+
+/** Sentinel: auth succeeded but the profiles row is absent — recoverable by
+ *  re-inserting the row, not by telling the user to sign up again. */
+private class ProfileMissingException : IllegalStateException(
+    "Signed in, but your hunter profile is missing",
+)

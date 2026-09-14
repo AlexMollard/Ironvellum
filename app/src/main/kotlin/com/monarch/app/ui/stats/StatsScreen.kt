@@ -182,7 +182,7 @@ fun StatsScreen(
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp)
                 .clip(MaterialTheme.shapes.small)
-                .background(MaterialTheme.colorScheme.surfaceVariant),
+                .background(MonarchColors.Abyss),
         ) {
             StatsTab.entries.forEach { entry ->
                 val selected = tab == entry

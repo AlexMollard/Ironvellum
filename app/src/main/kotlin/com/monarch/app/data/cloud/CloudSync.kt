@@ -3,8 +3,10 @@ package com.monarch.app.data.cloud
 import com.monarch.app.data.Repository
 import com.monarch.app.data.cloud.Cloud.failure
 import com.monarch.app.domain.PlayerProfile
+import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.Titles
 import com.monarch.app.domain.Xp
+import com.monarch.app.domain.WorkoutSession
 import io.github.jan.supabase.postgrest.exception.PostgrestRestException
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.from
@@ -13,6 +15,7 @@ import io.github.jan.supabase.postgrest.query.Order
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import java.util.Objects
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -29,6 +32,8 @@ class CloudSync(
 ) {
     // Read cache + single-flight for the social reads. See CloudReadCache.
     private val cache = CloudReadCache()
+    // Push watermark lives in Room (`sync_state`), read per push below.
+
     suspend fun push(): Result<SyncOutcome> {
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
@@ -38,6 +43,13 @@ class CloudSync(
             val titles = repo.observeUnlockedTitles().first()
 
             val completed = history.filter { (session, _) -> session.completedAtMs != null }
+            // Push only what changed since the last successful sync: a new
+            // session differs from "never pushed", an edited one from its old
+            // fingerprint — so edits re-push without any updated-at column.
+            val watermark = repo.pushWatermark()
+            val pending = completed.filter { (session, sets) ->
+                watermark[session.id] != pushFingerprint(session, sets)
+            }
             val level = Xp.progress(profile.totalXp).level
             val streakDays = Titles.trainingStreakDays(completedDates(completed.map { it.first }))
             val lifetimeStrength = history.sumOf { (session, _) -> session.strengthScore.toLong() }
@@ -61,7 +73,8 @@ class CloudSync(
 
             // Sessions first so their cloud ids exist before the sets land.
             val problems = mutableListOf<String>()
-            val sessionDtos = completed.map { (session, _) ->
+            val pushedNow = mutableListOf<Pair<WorkoutSession, List<SessionSet>>>()
+            val sessionDtos = pending.map { (session, _) ->
                 SessionDto(
                     userId = me.userId,
                     localId = session.id,
@@ -81,18 +94,31 @@ class CloudSync(
                     onConflict = "user_id,local_id"
                 }
             }
-            val cloudIds = client.postgrest.from("sessions").select {
-                filter { eq("user_id", me.userId) }
-            }.decodeList<SessionIdDto>().associate { it.localId to it.id }
+            // Nothing changed means no ids to resolve; an empty isIn() filter
+            // is not a valid PostgREST query, so skip the round trip outright.
+            val pendingIds = pending.map { it.first.id }
+            val cloudIds = if (pendingIds.isEmpty()) {
+                emptyMap()
+            } else {
+                client.postgrest.from("sessions").select {
+                    filter {
+                        eq("user_id", me.userId)
+                        // Only the ids this push actually needs — the old
+                        // unfiltered select re-downloaded every session row.
+                        isIn("local_id", pendingIds)
+                    }
+                }.decodeList<SessionIdDto>().associate { it.localId to it.id }
+            }
 
             var setCount = 0
             val setDtos = buildList {
-                completed.forEach { (session, sets) ->
+                pending.forEach { (session, sets) ->
                     val cloudId = cloudIds[session.id]
                     if (cloudId == null) {
                         problems += "Session \"${session.label}\" could not be matched on the cloud"
                         return@forEach
                     }
+                    pushedNow += session to sets
                     sets.forEach { set ->
                         if (set.exerciseName.isBlank()) {
                             problems += "A set in \"${session.label}\" has no exercise name and was skipped"
@@ -120,6 +146,17 @@ class CloudSync(
                     onConflict = "session_id,exercise_name,set_index"
                 }
             }
+
+            // Watermark is PERSISTED, not process-local: an in-memory map made
+            // every cold start re-upload the whole completed history. Written
+            // only here, after the upserts above succeeded, so a failed push
+            // re-pushes; rows for locally deleted sessions are pruned.
+            val advanced = watermark + pushedNow.associate { (session, sets) ->
+                session.id to pushFingerprint(session, sets)
+            }
+            repo.recordPushWatermark(
+                advanced.filterKeys { id -> completed.any { it.first.id == id } },
+            )
 
             val titleDtos = titles.map {
                 EarnedTitleDto(
@@ -229,7 +266,6 @@ class CloudSync(
                         filter { isIn("id", counterpartIds) }
                     }.decodeList<ProfileNameDto>().associate { it.id to it.displayName }
                 }
-
                 rows.map { row ->
                     val other = if (row.requesterId == me.userId) row.addresseeId else row.requesterId
                     FriendRow(
@@ -254,10 +290,17 @@ class CloudSync(
             return Result.failure(IllegalStateException("Type a hunter's name first"))
         }
         return runCatching {
-            // ilike without % wildcards is a case-insensitive exact match,
-            // mirroring the DB's unique index on lower(display_name).
+            // ilike treats % _ and \\ as wildcards/escapes; a raw name like
+            // "50%er" would match half the roster — an over-broad download
+            // that also lets a wildcard name probe which profiles exist.
+            // Escaping keeps this a literal case-insensitive match (the exact
+            // post-filter below still confirms the one intended hunter).
+            val escaped = name
+                .replace("\\", "\\\\")
+                .replace("%", "\\%")
+                .replace("_", "\\_")
             val matches = client.postgrest.from("profiles").select {
-                filter { ilike("display_name", name) }
+                filter { ilike("display_name", escaped) }
             }.decodeList<ProfileNameDto>()
             val exact = matches.firstOrNull { it.displayName.equals(name, ignoreCase = true) }
                 ?: throw IllegalStateException("No hunter is named \"$name\"")
@@ -376,8 +419,9 @@ class CloudSync(
      * TTL 20s on the FIRST page only: the feed is browsed by scrolling back
      * and forth, and a screen re-entry or tab switch within 20s should not
      * re-download 50 rows. Older pages are not cached — they are append-only
-     * per scroll position and each is requested once anyway. Like taps update
-     * the cached copy in place, so counts stay truthful inside the TTL.
+     * per scroll position and each is requested once anyway. Like taps are
+     * recorded as an overlay applied to every handed-out page, so older
+     * (paged) entries reflect the optimistic state too, not just page one.
      */
     suspend fun feed(
         limit: Int = 50,
@@ -411,6 +455,11 @@ class CloudSync(
                     likeCount = dto.likeCount,
                     likedByMe = dto.likedByMe,
                 )
+            }.let { fresh ->
+                // The server's own values are the truth: drop any overlay
+                // entry it already reflects before the page is cached.
+                cache.reconcileLikes(fresh)
+                fresh
             }
         }
         return runCatching {
@@ -424,7 +473,7 @@ class CloudSync(
                 )
             } else {
                 fetch()
-            }
+            }.let { cache.applyLikes(it) }
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
@@ -440,14 +489,12 @@ class CloudSync(
             ) {
                 onConflict = "session_id,user_id"
             }
-            // Optimistic: patch the cached first page instead of refetching it.
-            cache.updateFeedPage { entry ->
-                if (entry.sessionId != sessionId || entry.likedByMe) {
-                    entry
-                } else {
-                    entry.copy(likedByMe = true, likeCount = entry.likeCount + 1)
-                }
-            }
+            // Optimistic: record the overlay the feed applies at hand-out —
+            // this also covers older paged entries, which are never cached.
+            cache.recordLike(sessionId, liked = true)
+            // The owner's "WHO CHEERED" dialog must show the fresh cheer,
+            // not a 30s-old cached list.
+            cache.invalidate("${CloudReadCache.KEY_LIKERS}:$sessionId")
             Unit
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
@@ -464,13 +511,8 @@ class CloudSync(
                     eq("user_id", me.userId)
                 }
             }
-            cache.updateFeedPage { entry ->
-                if (entry.sessionId != sessionId || !entry.likedByMe) {
-                    entry
-                } else {
-                    entry.copy(likedByMe = false, likeCount = (entry.likeCount - 1).coerceAtLeast(0))
-                }
-            }
+            cache.recordLike(sessionId, liked = false)
+            cache.invalidate("${CloudReadCache.KEY_LIKERS}:$sessionId")
             Unit
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
@@ -481,21 +523,36 @@ class CloudSync(
      * Who liked a session, newest first. One PostgREST embed
      * (session_likes -> profiles) so the owner sees names without a second
      * round trip. An RLS refusal is a visibility answer, worded as such.
+     *
+     * TTL 30s, same reasoning as [friends]: likes arrive only when someone
+     * acts, and our own like/unlike invalidates the key immediately, so a
+     * just-added cheer is visible the moment the owner opens the dialog
+     * while repeated dialog opens inside 30s share one request.
      */
     suspend fun likers(sessionId: String): Result<List<Liker>> {
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         return runCatching {
-            client.postgrest.from("session_likes").select(
-                Columns.raw("user_id, created_at, profiles(display_name)"),
+            cache.getOrFetch(
+                key = "${CloudReadCache.KEY_LIKERS}:$sessionId",
+                ttlMs = 30_000,
+                force = false,
+                userId = account.account.value?.userId,
             ) {
-                filter { eq("session_id", sessionId) }
-                order("created_at", Order.DESCENDING)
-            }.decodeList<LikerRowDto>().map { row ->
-                Liker(
-                    userId = row.userId,
-                    displayName = row.profile?.displayName ?: "Hidden hunter",
-                    likedAtMs = Instant.parse(row.createdAt).toEpochMilli(),
-                )
+                client.postgrest.from("session_likes").select(
+                    Columns.raw("user_id, created_at, profiles(display_name)"),
+                ) {
+                    filter { eq("session_id", sessionId) }
+                    order("created_at", Order.DESCENDING)
+                    // The list is a name wall, not a ledger; a cap keeps the
+                    // payload bounded no matter how viral a session gets.
+                    limit(50)
+                }.decodeList<LikerRowDto>().map { row ->
+                    Liker(
+                        userId = row.userId,
+                        displayName = row.profile?.displayName ?: "Hidden hunter",
+                        likedAtMs = Instant.parse(row.createdAt).toEpochMilli(),
+                    )
+                }
             }
         }.recoverCatching { error ->
             if (error is PostgrestRestException && error.code == "42501") {
@@ -511,6 +568,23 @@ class CloudSync(
                 Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
             }
         }.toSet()
+
+    /**
+     * Content fingerprint of one completed session — every field the push
+     * uploads, sets included. Equality with the stored watermark means "the
+     * cloud already holds exactly this", so the session is skipped.
+     */
+    private fun pushFingerprint(session: WorkoutSession, sets: List<SessionSet>): Int = Objects.hash(
+        session.label,
+        session.title,
+        session.note,
+        session.completedAtMs,
+        session.xpAwarded,
+        session.strengthScore,
+        sets.map { set ->
+            listOf(set.exerciseName, set.setIndex, set.reps, set.weightKg, set.modifiers, set.done)
+        },
+    )
 }
 
 /**
@@ -519,14 +593,16 @@ class CloudSync(
  * every recomposition/screen entry, not to be a source of truth.
  *
  * Per-key slots hold either a timed [Entry] or an in-flight
- * [CompletableDeferred]; concurrent identical calls await the deferred, so a
- * paging trigger and a pull-to-refresh share ONE request instead of issuing N.
+ * [CompletableDeferred]; concurrent identical non-forced calls await the
+ * deferred, so a paging trigger and a re-entry share ONE request instead of
+ * issuing N. A forced (pull-to-refresh) caller never joins — see [getOrFetch].
  */
 private class CloudReadCache {
     companion object {
         const val KEY_LEADERBOARD = "leaderboard"
         const val KEY_FRIENDS = "friends"
         const val KEY_FEED_FIRST_PAGE = "feed:first"
+        const val KEY_LIKERS = "likers"
     }
 
     private class Entry(val value: Any?, val expiresAtMs: Long)
@@ -549,21 +625,31 @@ private class CloudReadCache {
         val mine: CompletableDeferred<Any?> = lock.withLock {
             if (ownerUserId != userId) {
                 // Account changed (sign-in/sign-out/switch): wipe everything.
+                // The like overlay is user-scoped optimism too — a switched
+                // account must not inherit the previous one's taps.
+                likeOverlay.clear()
                 slots.clear()
                 ownerUserId = userId
             }
             val existing = slots[key]
             when {
-                // Someone else's request is in the air: await it below rather
-                // than issuing a duplicate — that is the single-flight.
+                existing is Entry && !force && existing.expiresAtMs > System.currentTimeMillis() -> {
+                    @Suppress("UNCHECKED_CAST")
+                    return existing.value as T
+                }
+                // A forced caller NEVER joins an in-flight request: that
+                // request may predate the refresh, and joining would hand the
+                // refresher exactly the pre-refresh result it came to replace
+                // (the pull-to-refresh defect). Install a fresh slot; the old
+                // deferred keeps serving its own waiters, and its settlement
+                // no-ops below because the slot is no longer "ours".
+                force -> CompletableDeferred<Any?>().also { slots[key] = it }
+                // Non-forced single-flight: someone else's request is in the
+                // air, so await it instead of issuing a duplicate.
                 existing is CompletableDeferred<*> -> {
                     @Suppress("UNCHECKED_CAST")
                     joined = existing as CompletableDeferred<Any?>
                     existing
-                }
-                existing is Entry && !force && existing.expiresAtMs > System.currentTimeMillis() -> {
-                    @Suppress("UNCHECKED_CAST")
-                    return existing.value as T
                 }
                 else -> CompletableDeferred<Any?>().also { slots[key] = it }
             }
@@ -595,13 +681,50 @@ private class CloudReadCache {
         lock.withLock { slots.remove(key) }
     }
 
-    /** Patch the cached feed page in place (optimistic like counts). */
-    suspend fun updateFeedPage(transform: (FeedEntry) -> FeedEntry) {
+    // sessionId -> (count delta, likedByMe): the optimistic like state for
+    // feed entries the cache does not hold — older paged pages are never
+    // cached, so the overlay is the only way their taps show immediately.
+    private val likeOverlay = HashMap<String, Pair<Int, Boolean>>()
+
+    suspend fun recordLike(sessionId: String, liked: Boolean) {
         lock.withLock {
-            val entry = slots[KEY_FEED_FIRST_PAGE] as? Entry ?: return
-            @Suppress("UNCHECKED_CAST")
-            val list = entry.value as? List<FeedEntry> ?: return
-            slots[KEY_FEED_FIRST_PAGE] = Entry(list.map(transform), entry.expiresAtMs)
+            val current = likeOverlay[sessionId]
+            val delta = when {
+                // Toggling back to the server's last-seen state cancels out.
+                current == null -> if (liked) 1 else -1
+                current.second == liked -> current.first
+                liked -> current.first + 1
+                else -> current.first - 1
+            }
+            likeOverlay[sessionId] = delta to liked
+        }
+    }
+
+    /** Drop overlay entries a fresh page already reflects: the server caught up. */
+    suspend fun reconcileLikes(entries: List<FeedEntry>) {
+        lock.withLock {
+            entries.forEach { entry ->
+                val overlay = likeOverlay[entry.sessionId] ?: return@forEach
+                if (entry.likedByMe == overlay.second) likeOverlay.remove(entry.sessionId)
+            }
+        }
+    }
+
+    /** Apply the overlay at hand-out so paged entries mirror the taps too. */
+    suspend fun applyLikes(entries: List<FeedEntry>): List<FeedEntry> {
+        lock.withLock {
+            if (likeOverlay.isEmpty()) return entries
+            return entries.map { entry ->
+                val overlay = likeOverlay[entry.sessionId]
+                if (overlay == null || entry.likedByMe == overlay.second) {
+                    entry
+                } else {
+                    entry.copy(
+                        likedByMe = overlay.second,
+                        likeCount = (entry.likeCount + overlay.first).coerceAtLeast(0),
+                    )
+                }
+            }
         }
     }
 }

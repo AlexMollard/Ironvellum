@@ -177,3 +177,14 @@ data class MeasurementEntity(
     val takenAtMs: Long,
 )
 
+/**
+ * Push watermark: the fingerprint of each completed session as it was last
+ * uploaded successfully. Persisted (not held in memory) because a process-local
+ * watermark makes every cold start re-upload the whole training history.
+ */
+@Entity(tableName = "sync_state")
+data class SyncStateEntity(
+    @PrimaryKey val sessionId: Long,
+    val fingerprint: Int,
+)
+

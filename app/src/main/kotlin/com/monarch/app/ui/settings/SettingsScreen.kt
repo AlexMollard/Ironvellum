@@ -392,7 +392,7 @@ fun SettingsScreen(
                 Modifier
                     .fillMaxWidth()
                     .clip(MaterialTheme.shapes.extraSmall)
-                    .background(MaterialTheme.colorScheme.surfaceVariant),
+                    .background(MonarchColors.Abyss),
             ) {
                 TrainingMode.entries.forEach { mode ->
                     val selected = profile?.trainingMode == mode

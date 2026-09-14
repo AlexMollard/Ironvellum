@@ -278,3 +278,20 @@ interface MeasurementDao {
     suspend fun clearAll()
 
 }
+
+@Dao
+interface SyncStateDao {
+    @Query("SELECT * FROM sync_state")
+    suspend fun all(): List<SyncStateEntity>
+
+    /** Recorded only after a push succeeds, so a failure re-pushes. */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(rows: List<SyncStateEntity>)
+
+    /** Drops watermarks for sessions that no longer exist locally. */
+    @Query("DELETE FROM sync_state WHERE sessionId NOT IN (:keep)")
+    suspend fun pruneExcept(keep: List<Long>)
+
+    @Query("DELETE FROM sync_state")
+    suspend fun clearAll()
+}

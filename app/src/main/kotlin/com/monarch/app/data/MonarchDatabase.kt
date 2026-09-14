@@ -26,6 +26,8 @@ import com.monarch.app.data.db.StatDao
 import com.monarch.app.data.db.StatEntity
 import com.monarch.app.data.db.TitleDao
 import com.monarch.app.data.db.TitleUnlockEntity
+import com.monarch.app.data.db.SyncStateDao
+import com.monarch.app.data.db.SyncStateEntity
 
 @Database(
     entities = [
@@ -40,8 +42,9 @@ import com.monarch.app.data.db.TitleUnlockEntity
         SkillPracticeEntity::class,
         HealthDayEntity::class,
         MeasurementEntity::class,
+        SyncStateEntity::class,
     ],
-    version = 15,
+    version = 16,
     exportSchema = false,
 )
 abstract class MonarchDatabase : RoomDatabase() {
@@ -54,6 +57,7 @@ abstract class MonarchDatabase : RoomDatabase() {
     abstract fun skillPracticeDao(): SkillPracticeDao
     abstract fun healthDayDao(): HealthDayDao
     abstract fun measurementDao(): MeasurementDao
+    abstract fun syncStateDao(): SyncStateDao
 
     companion object {
         // Version 11 is the shipped baseline. Every future schema change
@@ -102,9 +106,27 @@ abstract class MonarchDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_15_16 = object : Migration(15, 16) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                // Push watermark. Without it every cold start re-uploaded the
+                // entire completed history on the first sync.
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_state` (" +
+                        "`sessionId` INTEGER PRIMARY KEY NOT NULL, " +
+                        "`fingerprint` INTEGER NOT NULL)",
+                )
+            }
+        }
+
         fun create(context: Context): MonarchDatabase =
             Room.databaseBuilder(context, MonarchDatabase::class.java, "monarch.db")
-                .addMigrations(MIGRATION_11_12, MIGRATION_12_13, MIGRATION_13_14, MIGRATION_14_15)
+                .addMigrations(
+                    MIGRATION_11_12,
+                    MIGRATION_12_13,
+                    MIGRATION_13_14,
+                    MIGRATION_14_15,
+                    MIGRATION_15_16,
+                )
                 .build()
     }
 }
