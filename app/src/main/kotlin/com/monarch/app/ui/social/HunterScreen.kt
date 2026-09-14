@@ -1,17 +1,20 @@
 package com.monarch.app.ui.social
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,6 +26,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -32,28 +37,27 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.monarch.app.data.Repository
 import com.monarch.app.data.cloud.AccountRepository
-import com.monarch.app.data.cloud.FriendRow
 import com.monarch.app.data.cloud.CloudSync
+import com.monarch.app.data.cloud.FriendRow
 import com.monarch.app.data.cloud.FriendSession
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.fillMaxWidth
-import com.monarch.app.ui.components.SystemWindow
+import com.monarch.app.domain.Titles
 import com.monarch.app.ui.components.SectionHeader
+import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.TrendChart
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchAccount
-import com.monarch.app.domain.Titles
 import com.monarch.app.ui.monarchCloudSync
+import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 internal data class HunterUi(
@@ -72,10 +76,15 @@ internal data class HunterUi(
 internal class HunterViewModel(
     private val cloud: CloudSync,
     private val accountRepo: AccountRepository,
+    private val repo: Repository,
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(HunterUi())
     val ui: StateFlow<HunterUi> = _ui.asStateFlow()
+
+    // Device-local equipped crest frame; only worn when viewing one's own profile.
+    val equippedFrame: StateFlow<String?> = repo.observeEquippedFrame()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun load(userId: String) {
         if (userId.isBlank()) {
@@ -159,10 +168,11 @@ internal fun HunterScreen(
     displayName: String,
     onBack: () -> Unit,
     viewModel: HunterViewModel = viewModel(
-        factory = viewModelFactory { initializer { HunterViewModel(monarchCloudSync(), monarchAccount()) } },
+        factory = viewModelFactory { initializer { HunterViewModel(monarchCloudSync(), monarchAccount(), monarchRepository()) } },
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     LaunchedEffect(userId) { viewModel.load(userId) }
     val isMe = ui.myUserId == userId
 
@@ -191,6 +201,7 @@ internal fun HunterScreen(
                 titleId = ui.wornTitleId,
                 size = IdentitySize.Hero,
                 isMe = isMe,
+                frameId = if (isMe) equippedFrame else null,
                 modifier = Modifier.weight(1f),
             )
         }

@@ -46,19 +46,24 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import com.monarch.app.data.cloud.CloudSync
+import com.monarch.app.data.Repository
 import com.monarch.app.data.cloud.Cloud
+import com.monarch.app.data.cloud.CloudSync
 import com.monarch.app.data.cloud.LeaderboardRow
 import com.monarch.app.domain.Titles
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.monarchAccount
 import com.monarch.app.ui.monarchCloudSync
+import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** Full snapshot of the leader board gate: config, session, and data state. */
@@ -116,12 +121,17 @@ private fun wornTitle(currentTitleId: String?): String? =
 class LeaderboardViewModel(
     private val cloudSync: CloudSync,
     private val accountRepo: com.monarch.app.data.cloud.AccountRepository,
+    private val repo: Repository,
 ) : ViewModel() {
 
     private val _ui = MutableStateFlow(
         LeaderboardUi(signedIn = accountRepo.account.value != null, myUserId = accountRepo.account.value?.userId),
     )
     val ui = _ui.asStateFlow()
+
+    // Device-local equipped crest frame; only this hunter's own avatar ever wears it.
+    val equippedFrame: StateFlow<String?> = repo.observeEquippedFrame()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     init {
         viewModelScope.launch {
@@ -154,11 +164,12 @@ fun LeaderboardScreen(
     onOpenFriend: (userId: String, displayName: String) -> Unit,
     viewModel: LeaderboardViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { LeaderboardViewModel(monarchCloudSync(), monarchAccount()) }
+            initializer { LeaderboardViewModel(monarchCloudSync(), monarchAccount(), monarchRepository()) }
         },
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
 
     Column(
         Modifier
@@ -214,7 +225,7 @@ fun LeaderboardScreen(
                     // into it, every row stacks at the same origin — the podium
                     // vanished under the pinned self-row. A Column restores flow.
                     Column(Modifier.fillMaxWidth()) {
-                        Board(ui, viewModel::load, onOpenFriend)
+                        Board(ui, viewModel::load, onOpenFriend, equippedFrame)
                     }
                 }
             }
@@ -327,6 +338,7 @@ private fun Board(
     ui: LeaderboardUi,
     onRefresh: () -> Unit,
     onOpenFriend: (String, String) -> Unit,
+    equippedFrame: String?,
 ) {
     var metric by remember { mutableStateOf(BoardMetric.Xp) }
     val sorted = remember(ui.rows, metric) { sortRows(ui.rows, metric) }
@@ -359,7 +371,7 @@ private fun Board(
     MetricChips(selected = metric, onPick = { metric = it })
     Spacer(Modifier.height(12.dp))
 
-    Podium(sorted.take(podiumCount), metric, ui.myUserId)
+    Podium(sorted.take(podiumCount), metric, ui.myUserId, equippedFrame)
     Spacer(Modifier.height(14.dp))
 
     if (sorted.size == 1) {
@@ -379,6 +391,7 @@ private fun Board(
             metric = metric,
             leaderValue = metric.value(sorted.first()) ,
             isMe = row.userId == ui.myUserId,
+            equippedFrame = equippedFrame,
             onOpenFriend = { onOpenFriend(row.userId, row.displayName) },
         )
         Spacer(Modifier.height(10.dp))
@@ -405,6 +418,7 @@ private fun Board(
             metric = metric,
             leaderValue = metric.value(sorted.first()),
             isMe = true,
+            equippedFrame = equippedFrame,
             onOpenFriend = { onOpenFriend(myRow.userId, myRow.displayName) },
         )
     }
@@ -450,6 +464,7 @@ private fun Podium(
     top: List<LeaderboardRow>,
     metric: BoardMetric,
     myUserId: String?,
+    equippedFrame: String?,
 ) {
     // Visual order silver / gold / bronze; plinth heights and emblem sizes step down from the crown.
     // Bottom alignment is what makes this read as a podium: the plinths share a
@@ -466,6 +481,7 @@ private fun Podium(
             rank = 2,
             metric = metric,
             isMe = top.getOrNull(1)?.userId == myUserId,
+            equippedFrame = equippedFrame,
             plinthHeight = 26.dp,
             emblemSize = 24.sp,
             avatarSize = 44.dp,
@@ -476,6 +492,7 @@ private fun Podium(
             rank = 1,
             metric = metric,
             isMe = top.getOrNull(0)?.userId == myUserId,
+            equippedFrame = equippedFrame,
             plinthHeight = 52.dp,
             emblemSize = 34.sp,
             avatarSize = 56.dp,
@@ -486,6 +503,7 @@ private fun Podium(
             rank = 3,
             metric = metric,
             isMe = top.getOrNull(2)?.userId == myUserId,
+            equippedFrame = equippedFrame,
             plinthHeight = 14.dp,
             emblemSize = 20.sp,
             avatarSize = 40.dp,
@@ -500,6 +518,7 @@ private fun PodiumSlot(
     rank: Int,
     metric: BoardMetric,
     isMe: Boolean,
+    equippedFrame: String?,
     plinthHeight: androidx.compose.ui.unit.Dp,
     emblemSize: androidx.compose.ui.unit.TextUnit,
     avatarSize: androidx.compose.ui.unit.Dp,
@@ -551,6 +570,7 @@ private fun PodiumSlot(
                 isMe = isMe,
                 level = row.level,
                 titleId = row.currentTitleId,
+                frameId = if (isMe) equippedFrame else null,
             )
             Spacer(Modifier.height(6.dp))
             Text(
@@ -616,6 +636,7 @@ private fun RankRow(
     metric: BoardMetric,
     leaderValue: Long,
     isMe: Boolean,
+    equippedFrame: String?,
     onOpenFriend: () -> Unit,
 ) {
     // Podium ranks get distinct emblems: gold for the sovereign, silvered emerald for 2, bronze for 3.
@@ -665,6 +686,7 @@ private fun RankRow(
                 titleId = row.currentTitleId,
                 level = row.level,
                 size = IdentitySize.Standard,
+                frameId = if (isMe) equippedFrame else null,
                 isMe = isMe,
                 trailing = {
                     Text(

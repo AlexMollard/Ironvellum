@@ -20,29 +20,29 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.TrendingUp
-import androidx.compose.material.icons.outlined.FitnessCenter
-import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material.icons.outlined.Repeat
-import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Repeat
+import androidx.compose.material.icons.outlined.Schedule
+import androidx.compose.material.icons.outlined.TrendingUp
+import androidx.compose.material.icons.outlined.WorkspacePremium
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,17 +59,19 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.monarch.app.data.Repository
 import com.monarch.app.data.cloud.Cloud
 import com.monarch.app.data.cloud.CloudSync
 import com.monarch.app.data.cloud.FeedEntry
 import com.monarch.app.data.cloud.FriendRow
 import com.monarch.app.data.cloud.Liker
 import com.monarch.app.domain.Titles
+import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
-import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.monarchAccount
 import com.monarch.app.ui.monarchCloudSync
+import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
@@ -77,7 +79,10 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** Snapshot of the public board: gate, entries, paging cursor, and refresh state. */
@@ -107,6 +112,7 @@ data class FeedUi(
 class FeedViewModel(
     private val cloudSync: CloudSync,
     private val accountRepo: com.monarch.app.data.cloud.AccountRepository,
+    private val repo: Repository,
     private val pageSize: Int = 50,
 ) : ViewModel() {
 
@@ -114,6 +120,10 @@ class FeedViewModel(
         FeedUi(signedIn = accountRepo.account.value != null, myUserId = accountRepo.account.value?.userId),
     )
     val ui = _ui.asStateFlow()
+
+    // Device-local equipped crest frame; only the signed-in hunter's own card wears it.
+    val equippedFrame: StateFlow<String?> = repo.observeEquippedFrame()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** Oldest completedAtMs seen — the cursor for the next page. */
     private var oldestMs: Long? = null
@@ -286,11 +296,12 @@ fun FeedScreen(
     onOpenHunter: (userId: String, displayName: String) -> Unit,
     viewModel: FeedViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { FeedViewModel(monarchCloudSync(), monarchAccount()) }
+            initializer { FeedViewModel(monarchCloudSync(), monarchAccount(), monarchRepository()) }
         },
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
 
     Column(
         Modifier
@@ -336,6 +347,7 @@ fun FeedScreen(
                 onToggleLike = viewModel::toggleLike,
                 onShowLikers = viewModel::loadLikers,
                 onAddAlly = viewModel::addAlly,
+                equippedFrame = equippedFrame,
             )
         }
         Spacer(Modifier.height(28.dp))
@@ -437,7 +449,6 @@ private fun ErrorPanel(reason: String, onRetry: () -> Unit) {
         RefreshLink(onClick = onRetry, label = "Try again")
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Feed(
@@ -450,6 +461,7 @@ private fun Feed(
     onAddAlly: (String) -> Unit,
     onRetryLikers: (String) -> Unit,
     onLikersClosed: (String) -> Unit,
+    equippedFrame: String?,
 ) {
     Row(
         Modifier.fillMaxWidth(),
@@ -506,6 +518,7 @@ private fun Feed(
             FeedCard(
                 entry = entry,
                 isMe = entry.userId == ui.myUserId,
+                equippedFrame = equippedFrame,
                 ally = allyStateFor(entry.userId, ui),
                 likers = ui.likers[entry.sessionId],
                 likersError = ui.likersErrors[entry.sessionId],
@@ -571,11 +584,11 @@ private fun allyStateFor(userId: String, ui: FeedUi): AllyState {
         else -> AllyState.Pending // a row we requested and they have not accepted yet
     }
 }
-
 @Composable
 private fun FeedCard(
     entry: FeedEntry,
     isMe: Boolean,
+    equippedFrame: String?,
     ally: AllyState,
     likers: List<Liker>?,
     likersError: String?,
@@ -602,6 +615,7 @@ private fun FeedCard(
                 level = entry.level,
                 size = IdentitySize.Hero,
                 isMe = isMe,
+                frameId = if (isMe) equippedFrame else null,
                 onClick = { onOpenHunter(entry.userId, entry.displayName) },
             )
             // User-authored title, falling back to the drill label when untitled.

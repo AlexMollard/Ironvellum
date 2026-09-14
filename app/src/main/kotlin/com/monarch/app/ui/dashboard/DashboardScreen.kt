@@ -88,6 +88,7 @@ import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.components.formatDate
+import com.monarch.app.ui.components.CrestBadge
 import com.monarch.app.ui.monarchRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -111,6 +112,10 @@ data class DashboardUi(
 class DashboardViewModel(private val repo: Repository) : ViewModel() {
 
     private val selectedDay = MutableStateFlow(LocalDate.now().dayOfWeek.value)
+
+    /** The worn crest, shown on the player card. Device-local, its own flow. */
+    val equippedFrame: StateFlow<String?> = repo.observeEquippedFrame()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     val ui: StateFlow<DashboardUi> = combine(
         repo.observeProfile(),
@@ -187,6 +192,7 @@ fun DashboardScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val selectedDay by viewModel.selected.collectAsStateWithLifecycle()
+    val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     val profile = ui.profile
     val progress = Xp.progress(profile?.totalXp ?: 0L)
     val today = LocalDate.now()
@@ -257,6 +263,12 @@ fun DashboardScreen(
                             letterSpacing = MonarchTracking.InlineLabel,
                             maxLines = 1,
                         )
+                    }
+                    // The worn crest rides the identity strip: equipping one
+                    // used to be visible only on the social avatars.
+                    equippedFrame?.let { frame ->
+                        CrestBadge(frameId = frame, size = 30.dp)
+                        Spacer(Modifier.width(10.dp))
                     }
                     // The System gear: settings left the bottom nav, so
                     // this fixed-size tap target rides at the end of the

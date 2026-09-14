@@ -29,9 +29,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.monarch.app.domain.Gacha
 import com.monarch.app.ui.social.crestFrameTreatment
@@ -62,6 +64,7 @@ fun CrestRail(
             val frame = Gacha.CREST_FRAMES[index]
             CrestPlate(
                 frameId = frame.id,
+                slot = index,
                 frameName = frame.name,
                 isOwned = frame.id in owned,
                 isEquipped = frame.id == equipped,
@@ -74,6 +77,7 @@ fun CrestRail(
 @Composable
 private fun CrestPlate(
     frameId: String,
+    slot: Int,
     frameName: String,
     isOwned: Boolean,
     isEquipped: Boolean,
@@ -112,6 +116,11 @@ private fun CrestPlate(
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
+                // FIXED footprint, always the widest ring's size. Sizing to
+                // content made ringed and equipped frames taller than plain
+                // ones, so the rail's height changed while scrolling and every
+                // section below it shifted down.
+                .size(plateSize + 24.dp)
                 .then(
                     if (isOwned) {
                         Modifier.clickable { onEquip(if (isEquipped) null else frameId) }
@@ -119,7 +128,9 @@ private fun CrestPlate(
                         Modifier
                     },
                 )
-                .alpha(if (isOwned) 1f else 0.28f),
+                // 0.28 hid the art entirely; the plate must still be worth
+                // looking at before it is earned.
+                .alpha(if (isOwned) 1f else 0.46f),
         ) {
             // Optional equipped breathing ring — outermost, only when worn.
             if (isEquipped) {
@@ -145,12 +156,30 @@ private fun CrestPlate(
                         Brush.verticalGradient(listOf(plateTop, plateBottom)),
                         shape,
                     )
+                    // Diagonal sheen: a flat gradient read as a coloured
+                    // rectangle; this makes the plate read as struck metal.
+                    .background(
+                        Brush.linearGradient(
+                            0f to Color.White.copy(alpha = 0.10f),
+                            0.45f to Color.Transparent,
+                            1f to Color.Black.copy(alpha = 0.22f),
+                        ),
+                        shape,
+                    )
                     .border(frameWidth, frameColor, shape),
             ) {
+                // Engraved inner hairline, inset from the frame — the detail
+                // that separates a badge from a bordered box.
+                Box(
+                    Modifier
+                        .size(plateSize - 10.dp)
+                        .border(1.dp, frameColor.copy(alpha = 0.35f), shape),
+                )
                 // Procedural heraldic emblem in the frame's own colours: a
                 // letter read as a placeholder and made all ten plates alike.
                 CrestEmblem(
                     seed = frameId,
+                    variant = slot,
                     primary = initialColor,
                     secondary = frameColor,
                     modifier = Modifier.size(plateSize * 0.72f),
@@ -184,6 +213,44 @@ private fun CrestPlate(
             },
             letterSpacing = MonarchTracking.InlineLabel,
             maxLines = 1,
+        )
+    }
+}
+
+/**
+ * The worn crest at a glance, for surfaces that are not the collection — the
+ * home screen player card above all. Equipping a crest only showed up on the
+ * social avatars, so the thing you chose was invisible where you actually live.
+ *
+ * Fixed size by design: the player card's identity strip must not reflow when a
+ * crest is equipped or removed.
+ */
+@Composable
+fun CrestBadge(frameId: String, size: Dp = 30.dp, modifier: Modifier = Modifier) {
+    val treatment = crestFrameTreatment(frameId)
+    val slot = Gacha.CREST_FRAMES.indexOfFirst { it.id == frameId }.coerceAtLeast(0)
+    val shape = CutCornerShape(topStart = size / 4, bottomEnd = size / 4)
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = modifier
+            .size(size)
+            .background(
+                Brush.verticalGradient(
+                    listOf(
+                        treatment?.plateTop ?: MonarchColors.VaultHigh,
+                        treatment?.plateBottom ?: MonarchColors.Vault,
+                    ),
+                ),
+                shape,
+            )
+            .border(treatment?.frameWidth ?: 2.dp, treatment?.frameColor ?: MonarchColors.Rune, shape),
+    ) {
+        CrestEmblem(
+            seed = frameId,
+            variant = slot,
+            primary = treatment?.initialColor ?: MonarchColors.InkMuted,
+            secondary = treatment?.frameColor ?: MonarchColors.Rune,
+            modifier = Modifier.size(size * 0.74f),
         )
     }
 }
