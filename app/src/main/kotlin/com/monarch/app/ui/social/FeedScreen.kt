@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -587,10 +588,9 @@ private fun FeedCard(
     var showLikers by remember { mutableStateOf(false) }
     SystemWindow(Modifier.fillMaxWidth(), accent = accent) {
         Column {
-            // Hunter identity through the shared row; the ally chip rides
-            // trailing so identity looks the same on every social surface.
-            val allyTrailing: (@Composable () -> Unit)? =
-                if (!isMe) { { AllyChip(ally) { onAddAlly(entry.userId) } } } else null
+            // Identity header carries only the LV chip, so the worn title keeps a
+            // wide column and sits directly under the name. The ally control is
+            // bulky, so it rides the action row at the card's foot instead.
             IdentityRow(
                 displayName = entry.displayName,
                 userId = entry.userId,
@@ -598,7 +598,6 @@ private fun FeedCard(
                 level = entry.level,
                 size = IdentitySize.Hero,
                 isMe = isMe,
-                trailing = allyTrailing,
                 onClick = { onOpenHunter(entry.userId, entry.displayName) },
             )
             // User-authored title, falling back to the drill label when untitled.
@@ -674,6 +673,10 @@ private fun FeedCard(
                         maxLines = 1,
                         softWrap = false,
                     )
+                }
+                if (!isMe) {
+                    Spacer(Modifier.width(8.dp))
+                    AllyChip(ally) { onAddAlly(entry.userId) }
                 }
                 // Owner-only: the count's story is theirs to read. Non-owners
                 // get no likers list. Timestamp rides the same row, right-aligned.

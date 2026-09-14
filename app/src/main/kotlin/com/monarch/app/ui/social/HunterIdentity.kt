@@ -68,11 +68,10 @@ internal fun IdentityRow(
     }
     val accent = if (isMe) MonarchColors.SovereignGold else MonarchColors.EmeraldBright
 
-    // At Hero size the worn title moves BELOW the row: sharing the name's
-    // column with the LV and ally chips left it ~15 characters wide, so
-    // "Shadow Marcher" truncated while a third of the card sat empty.
-    val titleBelow = size == IdentitySize.Hero && wornTitle != null
-
+    // The worn title always sits directly under the name. An earlier version
+    // dropped it below the whole row at Hero size, which pushed it far from the
+    // name it belongs to; the column is kept wide instead by callers putting
+    // bulky chips elsewhere (the feed's ally chip lives on the action row).
     Column(
         modifier = modifier
             // Tappable only when the caller asked for it, so a plain status row
@@ -103,8 +102,7 @@ internal fun IdentityRow(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                // Non-hero sizes keep the title tucked under the name.
-                if (wornTitle != null && !titleBelow) {
+                if (wornTitle != null) {
                     WornTitle(wornTitle)
                 }
             }
@@ -115,10 +113,6 @@ internal fun IdentityRow(
             if (trailing != null) {
                 trailing()
             }
-        }
-        if (titleBelow) {
-            Spacer(Modifier.height(2.dp))
-            WornTitle(wornTitle!!, Modifier.padding(start = badgeSize + 12.dp))
         }
     }
 }
@@ -188,7 +182,7 @@ internal fun HunterAvatar(
     displayName: String,
     size: Dp,
     isMe: Boolean,
-    avatarUrl: String?,
+    avatarUrl: String? = null,
     level: Int? = null,
 ) {
     // Stable integer hash — never random, never recomposition-dependent.

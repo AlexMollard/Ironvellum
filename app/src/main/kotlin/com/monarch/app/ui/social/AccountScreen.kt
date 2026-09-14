@@ -282,7 +282,9 @@ fun AccountScreen(
                     onAccept = viewModel::acceptFriend,
                     onRequest = viewModel::requestFriend,
                 )
-                Spacer(Modifier.height(28.dp))
+                // Clears the bottom nav bar: 28.dp left SEVER THE LINK half
+                // hidden behind it at the end of the scroll.
+                Spacer(Modifier.height(120.dp))
             }
         }
         return
@@ -589,7 +591,9 @@ private fun SignedInPanels(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
-
+        // The email and the VISIBILITY label collided without this: adjacent
+        // label-sized lines with no gap read as one overlapping block.
+        Spacer(Modifier.height(18.dp))
         // Selected state reuses the hub tab pill treatment (green gradient
         // fill, bright border, dark ink) so it reads at a glance instead of
         // relying on text colour alone.

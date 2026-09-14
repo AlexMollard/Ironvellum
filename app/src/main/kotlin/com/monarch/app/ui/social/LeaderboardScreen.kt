@@ -459,13 +459,16 @@ private fun Podium(
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         verticalAlignment = Alignment.Bottom,
     ) {
+        // Floors step 2 / 1 / 3 so the sovereign stands tallest; the avatar steps
+        // with it so rank reads from size as well as height.
         PodiumSlot(
             row = top.getOrNull(1),
             rank = 2,
             metric = metric,
             isMe = top.getOrNull(1)?.userId == myUserId,
-            plinthHeight = 64.dp,
+            plinthHeight = 26.dp,
             emblemSize = 24.sp,
+            avatarSize = 44.dp,
             modifier = Modifier.weight(1f),
         )
         PodiumSlot(
@@ -473,8 +476,9 @@ private fun Podium(
             rank = 1,
             metric = metric,
             isMe = top.getOrNull(0)?.userId == myUserId,
-            plinthHeight = 92.dp,
-            emblemSize = 32.sp,
+            plinthHeight = 52.dp,
+            emblemSize = 34.sp,
+            avatarSize = 56.dp,
             modifier = Modifier.weight(1f),
         )
         PodiumSlot(
@@ -482,8 +486,9 @@ private fun Podium(
             rank = 3,
             metric = metric,
             isMe = top.getOrNull(2)?.userId == myUserId,
-            plinthHeight = 52.dp,
+            plinthHeight = 14.dp,
             emblemSize = 20.sp,
+            avatarSize = 40.dp,
             modifier = Modifier.weight(1f),
         )
     }
@@ -497,6 +502,7 @@ private fun PodiumSlot(
     isMe: Boolean,
     plinthHeight: androidx.compose.ui.unit.Dp,
     emblemSize: androidx.compose.ui.unit.TextUnit,
+    avatarSize: androidx.compose.ui.unit.Dp,
     modifier: Modifier = Modifier,
 ) {
     val accent = when (rank) {
@@ -509,38 +515,85 @@ private fun PodiumSlot(
         2 -> "\u265B" // queen
         else -> "\u265C" // rook
     }
-    Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
+    val shape = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp)
+    // ONE card per slot, not a cap welded to a plinth: the two-box version left a
+    // visible seam and squeezed an IdentityRow so hard that the hunter's NAME was
+    // ellipsized away entirely, leaving bare initials. A podium slot is a vertical
+    // card, so it is built as one.
+    Column(
+        modifier
+            .clip(shape)
+            .background(
+                if (row != null) {
+                    Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Abyss))
+                } else {
+                    Brush.verticalGradient(listOf(MonarchColors.Vault, MonarchColors.Abyss))
+                },
+            )
+            .border(1.dp, if (row != null) accent else MonarchColors.Rune, shape)
+            .padding(horizontal = 6.dp, vertical = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
         if (row != null) {
-            // The plinth carries its hunter: identity + metric value sit in a flush cap
-            // welded to the plinth block by shared width, continuous gradient and accent
-            // border, instead of floating above an empty-looking box.
-            Column(
-                Modifier
-                    .fillMaxWidth()
-                    .background(Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)))
-                    .border(1.dp, accent, CutCornerShape(topStart = 8.dp))
-                    .padding(horizontal = 8.dp, vertical = 6.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                IdentityRow(
-                    displayName = if (isMe) "${row.displayName} — YOU" else row.displayName,
-                    userId = row.userId,
-                    wornTitle = wornTitle(row.currentTitleId),
-                    level = row.level,
-                    size = IdentitySize.Compact,
-                    isMe = isMe,
-                )
+            // Rank emblem crowns the card instead of floating in an empty box below.
+            Text(
+                emblem,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                fontSize = emblemSize,
+                color = accent,
+            )
+            Spacer(Modifier.height(6.dp))
+            HunterAvatar(
+                userId = row.userId,
+                displayName = row.displayName,
+                size = avatarSize,
+                isMe = isMe,
+                level = row.level,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                if (isMe) "YOU" else row.displayName,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = if (isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            wornTitle(row.currentTitleId)?.let { title ->
                 Text(
-                    metric.format(row),
+                    title,
                     maxLines = 1,
-                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
-                    color = accent,
+                    color = MonarchColors.SovereignGold,
+                    modifier = Modifier.fillMaxWidth(),
                 )
             }
+            Spacer(Modifier.height(4.dp))
+            Text(
+                metric.format(row),
+                maxLines = 1,
+                softWrap = false,
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = accent,
+            )
         } else {
-            Spacer(Modifier.height(38.dp))
+            Text(
+                rank.toString(),
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                fontSize = 14.sp,
+                color = MonarchColors.Rune,
+            )
+            Spacer(Modifier.height(8.dp))
             Text(
                 "ALLY SLOT\nOPEN",
                 maxLines = 2,
@@ -549,45 +602,9 @@ private fun PodiumSlot(
                 fontFamily = ChakraPetch,
                 color = MonarchColors.InkMuted,
             )
-            Text(
-                "invite via GUILD",
-                maxLines = 1,
-                style = MaterialTheme.typography.labelSmall,
-                color = MonarchColors.InkMuted,
-            )
-            // Occupied slots sit flush on the plinth; only the empty slot keeps a gap.
-            Spacer(Modifier.height(6.dp))
         }
-        // Shared plinth block: bottom-aligned floor, stepped height, rank emblem.
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(plinthHeight)
-                .clip(CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
-                .background(
-                    Brush.verticalGradient(listOf(MonarchColors.Vault, MonarchColors.Abyss))
-                )
-                .border(1.dp, if (row != null) accent else MonarchColors.Rune, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)),
-            contentAlignment = Alignment.Center,
-        ) {
-            if (row != null) {
-                Text(
-                    emblem,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = emblemSize,
-                    color = accent,
-                )
-            } else {
-                Text(
-                    rank.toString(),
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    color = MonarchColors.Rune,
-                )
-            }
-        }
+        // The stepped floor: rank 1 stands tallest, so the trio reads as a podium.
+        Spacer(Modifier.height(plinthHeight))
     }
 }
 
