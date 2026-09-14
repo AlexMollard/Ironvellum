@@ -263,22 +263,42 @@ private fun DrawWindow(rolls: Int, onDraw: () -> Unit) {
         Column(
             Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                "DRAW EARNED BY RANKING UP",
+                if (rolls > 0) "$rolls DRAW${if (rolls == 1) "" else "S"} WAITING" else "NO DRAWS BANKED",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 letterSpacing = MonarchTracking.InlineLabel,
+                color = if (rolls > 0) MonarchColors.SovereignGold else MonarchColors.InkMuted,
+            )
+            // A draw pays shadows, a relic OR a crest — a collection screen
+            // showing only frames made a relic roll look like a lost crest.
+            Text(
+                "Every rank-up earns one draw. A draw yields shadows for the " +
+                    "army, a relic that lifts your rate, or a crest frame worn " +
+                    "on your hunter.",
+                style = MaterialTheme.typography.bodySmall,
                 color = MonarchColors.InkMuted,
             )
-            MonarchButton(
-                label = "Draw shadow ($rolls)",
-                onClick = onDraw,
-                enabled = true,
-                gold = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            if (rolls > 0) {
+                MonarchButton(
+                    label = "Draw shadow ($rolls)",
+                    onClick = onDraw,
+                    enabled = true,
+                    gold = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            } else {
+                // No dead button: state the path to the next draw instead.
+                Text(
+                    "RANK UP TO EARN THE NEXT DRAW",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    color = MonarchColors.InkMuted,
+                )
+            }
         }
     }
 }
@@ -757,6 +777,15 @@ private fun CrestCollection(
     SectionHeader("CREST COLLECTION")
     SystemWindow(accent = MonarchColors.SovereignGold) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            // Crests are ONE of three draw outcomes, so the header says how
+            // many exist and how many are yours — a relic roll is not a miss.
+            Text(
+                "${owned.size} OF ${Gacha.CREST_FRAMES.size} CRESTS DRAWN",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                letterSpacing = MonarchTracking.InlineLabel,
+                color = MonarchColors.InkMuted,
+            )
             Gacha.CREST_FRAMES.forEach { frame ->
                 val isOwned = frame.id in owned
                 val isEquipped = frame.id == equipped
