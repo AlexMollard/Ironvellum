@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -50,6 +51,12 @@ data class Achievement(
     val xp: Int? = null,
     val notes: List<String> = emptyList(),
     val accent: Color = MonarchColors.SovereignGold,
+    /**
+     * Seed for procedurally generated art shown above the name. Relics have
+     * continuous values, so their art cannot ship as an asset — it is composed
+     * from this seed instead. Null = a text-only moment.
+     */
+    val sigilSeed: String? = null,
 )
 
 /**
@@ -142,6 +149,16 @@ fun AchievementOverlay(items: List<Achievement>, onDone: () -> Unit) {
                         .padding(horizontal = 22.dp, vertical = 16.dp),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        item.sigilSeed?.let { seed ->
+                            // The reveal's centrepiece: art generated from the
+                            // reward itself, so a relic draw looks like a find.
+                            RelicSigil(
+                                name = seed,
+                                accent = item.accent,
+                                modifier = Modifier.size(96.dp),
+                            )
+                            Spacer(Modifier.height(10.dp))
+                        }
                         if (item.tagline.isNotBlank()) {
                             Text(
                                 item.tagline,

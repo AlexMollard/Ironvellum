@@ -81,6 +81,7 @@ import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
+import com.monarch.app.ui.components.RelicSigil
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -250,7 +251,7 @@ private fun achievementFor(result: RollResult): Achievement {
     }
     val notes = when (val reward = result.reward) {
         is Reward.Shadows -> listOf("ARMY +${reward.count} SHADOWS")
-        is Reward.Relic -> listOf("RELIC MULTIPLIER ×${reward.multiplier}")
+        is Reward.Relic -> listOf("RATE MULTIPLIER ×%.2f".format(reward.multiplier))
         is Reward.CrestFrame -> listOf("CREST FRAME UNLOCKED", "EQUIP IT ON YOUR HUNTER IDENTITY")
     }
     return Achievement(
@@ -260,6 +261,10 @@ private fun achievementFor(result: RollResult): Achievement {
         subtitle = result.rarity.name.uppercase(),
         notes = notes,
         accent = accent,
+        // Only relics. A shadows payout is a number, not an object, and a
+        // crest already has its own plate treatment in the collection — a
+        // generic sigil there would misrepresent the frame that was won.
+        sigilSeed = (result.reward as? Reward.Relic)?.name,
     )
 }
 
@@ -925,6 +930,13 @@ private fun RelicVault(relics: List<RelicHolding>) {
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
+                        // Procedural sigil: the relic's own name is the seed,
+                        // so a continuous multiplier still gets unique art.
+                        RelicSigil(
+                            name = relic.name,
+                            accent = if (isActive) MonarchColors.EmeraldBright else MonarchColors.InkMuted,
+                            modifier = Modifier.size(44.dp),
+                        )
                         Column(Modifier.weight(1f)) {
                             Text(
                                 relic.name,

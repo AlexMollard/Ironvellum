@@ -79,8 +79,28 @@ object Gacha {
 
     private fun frame(index: Int) = CREST_FRAMES[index]
 
-    private fun relic(low: Double, high: Double, t: Double) =
-        Reward.Relic(low + (high - low) * t, "Relic Sigil")
+    /**
+     * Relic names are composed, not fixed: multipliers are continuous, so every
+     * relic needs its own identity. The name is DERIVED from the value, so the
+     * same roll always yields the same relic, and it doubles as the seed for
+     * the sigil the UI draws.
+     */
+    private val RELIC_FORMS = listOf(
+        "Fang", "Sigil", "Shard", "Crown", "Chain", "Mirror", "Ember", "Thorn",
+    )
+    private val RELIC_HOUSES = listOf(
+        "the Shadow", "the Gate", "the Monarch", "the Abyss", "the Vigil", "the Ashen King",
+    )
+
+    private fun relic(low: Double, high: Double, t: Double): Reward.Relic {
+        val multiplier = low + (high - low) * t
+        // Quantised so the name is stable for a multiplier rather than drifting
+        // with floating-point noise.
+        val key = (multiplier * 1000).toInt()
+        val form = RELIC_FORMS[(key / 7) % RELIC_FORMS.size]
+        val house = RELIC_HOUSES[(key / 13) % RELIC_HOUSES.size]
+        return Reward.Relic(multiplier, "$form of $house")
+    }
 
     /** Inclusive integer lerp driven by a pre-drawn uniform in [0, 1). */
     private fun lerp(low: Int, high: Int, t: Double) = low + ((high - low) * t).toInt()
