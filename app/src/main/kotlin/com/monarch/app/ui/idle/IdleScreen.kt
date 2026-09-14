@@ -1,6 +1,5 @@
 package com.monarch.app.ui.idle
 import androidx.compose.animation.core.FastOutSlowInEasing
-import android.content.pm.ApplicationInfo
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
@@ -62,7 +61,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.StrokeCap
 import com.monarch.app.data.IdleInputs
 import com.monarch.app.data.IdleSnapshot
@@ -143,10 +141,6 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
 
     private val _away = MutableStateFlow<AwayReport?>(null)
 
-    /** Debug preview only — the caller gates this on a debuggable build. */
-    fun grantCatalogue() {
-        viewModelScope.launch { repo.debugGrantCatalogue() }
-    }
 
     /** The away haul, banked automatically — there is nothing to claim. */
     val away: StateFlow<AwayReport?> = _away.asStateFlow()
@@ -240,17 +234,6 @@ fun IdleScreen(
                 rolls = ui.rolls,
                 onDraw = { viewModel.draw { result -> if (result != null) drawResult = result } },
             )
-            if (debuggableBuild()) {
-                // Debug builds only: previews the whole catalogue on device.
-                // FLAG_DEBUGGABLE is off in a release APK, so this control
-                // cannot ship even if the call site is forgotten.
-                MonarchButton(
-                    label = "Grant full catalogue (debug)",
-                    onClick = viewModel::grantCatalogue,
-                    enabled = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
             CrestCollection(
                 owned = ui.ownedFrames,
                 equipped = ui.equippedFrame,
@@ -515,7 +498,7 @@ private fun RateDial(
     // the one input the hunter actually moves. Measuring the live rate against
     // a relic-free maximum pinned the needle at full for anyone holding a
     // relic, which is why it read as stuck.
-    val fraction = (trainingFactor / TRAINED_CAP_MULTIPLIER).coerceIn(0.0, 1.0).toFloat()
+    val fraction = (trainingFactor / Idle.MAX_TRAINING_FACTOR).coerceIn(0.0, 1.0).toFloat()
     // Animatable from 0 so the sweep tweens into position on open;
     // animateFloatAsState would start AT target and never animate.
     val sweep = remember { Animatable(0f) }
@@ -600,8 +583,6 @@ private fun RateDial(
     }
 }
 
-/** Full-sweep reference: Idle's documented x4 trained-week cap over the floor. */
-private const val TRAINED_CAP_MULTIPLIER = 4.0
 
 /**
  * Slow breathing dot: proof the army is working right now. Deliberately a
@@ -711,16 +692,16 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
             RateRow("STREAK", "${inputs.streakDays} D")
             // Each factor's bar is its SHARE of the two combined, so the
             // relative weight of training vs. permanent skill reads at a glance.
-            val combined = rate.trainingFactor + rate.skillFactor
             FactorRow(
                 label = "TRAINING FACTOR",
                 value = "×${"%.2f".format(rate.trainingFactor)}",
-                share = (rate.trainingFactor / combined).toFloat(),
+                // How far up its OWN ceiling, not its share of the product.
+                share = ((rate.trainingFactor - 1.0) / (Idle.MAX_TRAINING_FACTOR - 1.0)).toFloat(),
             )
             FactorRow(
                 label = "SKILL FACTOR",
                 value = "×${"%.2f".format(rate.skillFactor)}",
-                share = (rate.skillFactor / combined).toFloat(),
+                share = ((rate.skillFactor - 1.0) / (Idle.MAX_SKILL_FACTOR - 1.0)).toFloat(),
             )
         }
     }
@@ -1032,17 +1013,6 @@ private fun RelicVault(relics: List<RelicHolding>) {
     }
 }
 
-/**
- * True only when the APK is built debuggable. Used to gate on-device preview
- * controls; a release build reports false, so they are unreachable there.
- */
-@Composable
-private fun debuggableBuild(): Boolean {
-    val context = LocalContext.current
-    return remember(context) {
-        context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
-    }
-}
 
 /**
  * What a draw can actually pay, read straight off [Gacha.DROP_TABLE] — the same

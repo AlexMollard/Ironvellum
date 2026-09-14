@@ -6,10 +6,17 @@ import org.junit.Test
 
 class IdleTest {
 
+    /**
+     * A real collection baseline. 0 is the "never collected" sentinel, so the
+     * curve tests must measure from a stamped moment or they are asserting the
+     * fresh-account guard instead of the accrual curve.
+     */
+    private val base = 1_700_000_000_000L
+
     private fun state(
         essence: Long = 0L,
         relic: Double = 1.0,
-        lastCollectedAtMs: Long = 0L,
+        lastCollectedAtMs: Long = base,
     ) = IdleState(
         essence = essence,
         shadows = 1,
@@ -62,21 +69,21 @@ class IdleTest {
     }
     @Test
     fun `a full day away pays the full rate`() {
-        val s = state(lastCollectedAtMs = 0L)
+        val s = state()
         val rate = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 200.0, skillsUnlocked = 0, streakDays = 0)
         // 24h is the whole point: a hunter who opens the app once a day loses nothing.
-        val day = Idle.accrued(s, rate, nowMs = dayMs)
+        val day = Idle.accrued(s, rate, nowMs = base + dayMs)
         assertEquals((rate.perHour * 24).toLong(), day)
     }
 
     @Test
     fun `output tapers after a day but never stops`() {
-        val s = state(lastCollectedAtMs = 0L)
+        val s = state()
         val rate = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 200.0, skillsUnlocked = 0, streakDays = 0)
 
-        val oneDay = Idle.accrued(s, rate, nowMs = dayMs)
-        val threeDays = Idle.accrued(s, rate, nowMs = 3 * dayMs)
-        val sevenDays = Idle.accrued(s, rate, nowMs = 7 * dayMs)
+        val oneDay = Idle.accrued(s, rate, nowMs = base + dayMs)
+        val threeDays = Idle.accrued(s, rate, nowMs = base + 3 * dayMs)
+        val sevenDays = Idle.accrued(s, rate, nowMs = base + 7 * dayMs)
 
         // Still growing at every horizon — the army never fully stops.
         assertTrue(threeDays > oneDay)
@@ -89,10 +96,10 @@ class IdleTest {
 
     @Test
     fun `a long absence still earns the ten percent floor`() {
-        val s = state(lastCollectedAtMs = 0L)
+        val s = state()
         val rate = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 200.0, skillsUnlocked = 0, streakDays = 0)
-        val thirty = Idle.accrued(s, rate, nowMs = 30 * dayMs)
-        val thirtyOne = Idle.accrued(s, rate, nowMs = 31 * dayMs)
+        val thirty = Idle.accrued(s, rate, nowMs = base + 30 * dayMs)
+        val thirtyOne = Idle.accrued(s, rate, nowMs = base + 31 * dayMs)
         // A day deep into the floor pays exactly 10% of a day at full output.
         // Each accrual truncates independently, so allow a single unit of slack.
         val floorDay = (rate.perHour * 24 * Idle.MIN_EFFICIENCY).toLong()
@@ -101,13 +108,13 @@ class IdleTest {
 
     @Test
     fun `clock moved backwards collects nothing and stays safe`() {
-        val s = state(essence = 500L, lastCollectedAtMs = 10 * dayMs)
+        val s = state(essence = 500L, lastCollectedAtMs = base + 10 * dayMs)
         val rate = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 200.0, skillsUnlocked = 0, streakDays = 0)
-        assertEquals(0L, Idle.accrued(s, rate, nowMs = 10 * dayMs))
-        val after = Idle.collect(s, rate, nowMs = 5 * dayMs)
+        assertEquals(0L, Idle.accrued(s, rate, nowMs = base + 10 * dayMs))
+        val after = Idle.collect(s, rate, nowMs = base + 5 * dayMs)
         // Balance unchanged, collection point reset — never a negative balance.
         assertEquals(500L, after.essence)
-        assertEquals(5 * dayMs, after.lastCollectedAtMs)
+        assertEquals(base + 5 * dayMs, after.lastCollectedAtMs)
         assertTrue(after.essence >= 0L)
     }
 
@@ -126,20 +133,20 @@ class IdleTest {
         assertTrue(rate.skillFactor.isFinite())
 
         val hugeEssence = Long.MAX_VALUE - 10L
-        val s = state(essence = hugeEssence, relic = Double.MAX_VALUE, lastCollectedAtMs = 0L)
-        val collected = Idle.collect(s, rate, nowMs = 100 * dayMs)
+        val s = state(essence = hugeEssence, relic = Double.MAX_VALUE, lastCollectedAtMs = base)
+        val collected = Idle.collect(s, rate, nowMs = base + 100 * dayMs)
         assertTrue(collected.essence >= hugeEssence)
         assertTrue(collected.essence >= 0L)
 
-        val empty = Idle.collect(state(), rate, nowMs = 100 * dayMs)
+        val empty = Idle.collect(state(), rate, nowMs = base + 100 * dayMs)
         assertTrue(empty.essence >= 0L)
     }
 
     @Test
     fun `collect banks exactly the accrued amount then nothing while time stands still`() {
-        val s = state(essence = 1_000L, lastCollectedAtMs = 0L)
+        val s = state(essence = 1_000L, lastCollectedAtMs = base)
         val rate = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 200.0, skillsUnlocked = 0, streakDays = 0)
-        val now = 6 * 3_600_000L
+        val now = base + 6 * 3_600_000L
         val expected = Idle.accrued(s, rate, now)
         assertTrue(expected > 0L)
 
@@ -151,5 +158,22 @@ class IdleTest {
         val second = Idle.collect(first, rate, now)
         assertEquals(first.essence, second.essence)
         assertEquals(0L, Idle.accrued(first, rate, now))
+    }
+
+    @Test
+    fun `a fresh account with no baseline banks nothing`() {
+        // A new idle_state row carries lastCollectedAtMs = 0. The curve never
+        // stops paying, so the epoch read as a 56-year absence and a brand new
+        // hunter opened the Shadow screen to ~497,000 banked essence.
+        val fresh = state(lastCollectedAtMs = 0L)
+        val rate = Idle.rate(fresh, sessionsLast7d = 0, volumeLast7d = 0.0, skillsUnlocked = 0, streakDays = 0)
+        val now = 1_800_000_000_000L
+        assertEquals(0L, Idle.accrued(fresh, rate, nowMs = now))
+        assertEquals(0.0, Idle.accruedExact(fresh, rate, nowMs = now), 1e-9)
+        // Collecting stamps the baseline, so accrual starts from that moment.
+        val stamped = Idle.collect(fresh, rate, nowMs = now)
+        assertEquals(0L, stamped.essence)
+        assertEquals(now, stamped.lastCollectedAtMs)
+        assertTrue(Idle.accrued(stamped, rate, nowMs = now + 3_600_000L) > 0L)
     }
 }

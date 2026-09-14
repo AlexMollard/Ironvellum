@@ -54,6 +54,15 @@ object Idle {
     // ceiling arrived at 25 unlocks and every skill after that was worthless.
     // This way the 90th unlock still adds something, just far less than the 2nd.
     private const val SKILL_CEILING = 1.0   // maximum ADDED on top of 1.0
+
+    /**
+     * Ceilings the UI needs to draw progress against. Exposed here so a screen
+     * can never drift from the curve: the rate dial previously hardcoded its
+     * own 4.0 and the factor bars showed each factor's SHARE of the combined
+     * product, which drew a half-full bar for two untrained x1.00 factors.
+     */
+    val MAX_TRAINING_FACTOR = 1.0 + TRAINING_CAP / FLOOR
+    val MAX_SKILL_FACTOR = 1.0 + SKILL_CEILING
     const val SKILL_RATE = 0.045    // approach speed per unlock
 
     // Guards so a corrupt relic multiplier can't push the rate to Infinity.
@@ -114,6 +123,11 @@ object Idle {
      * [accrued] — this is for display only.
      */
     fun accruedExact(state: IdleState, rate: IdleRate, nowMs: Long): Double {
+        // No baseline yet: a freshly created idle_state row carries
+        // lastCollectedAtMs = 0, and because the curve never stops paying, the
+        // epoch reads as a 56-year absence and banks half a million essence on
+        // a brand new account. No baseline means nothing has been earned.
+        if (state.lastCollectedAtMs <= 0L) return 0.0
         val elapsedMs = nowMs - state.lastCollectedAtMs
         // Clock moved backwards (manual change, timezone/DST shift): collect nothing.
         if (elapsedMs <= 0L) return 0.0
