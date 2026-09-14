@@ -133,3 +133,130 @@ fun RelicSigil(
         }
     }
 }
+
+/**
+ * Procedural heraldic emblem for a crest frame.
+ *
+ * A crest plate carrying a single letter looked like a placeholder, and the ten
+ * catalogue frames were distinguishable only by border colour. The emblem is
+ * composed from the frame's id, so each crest has its own mark while staying in
+ * the palette its treatment already defines.
+ *
+ * Four archetypes — crown, chevrons, orbit, rune grid — keep the set visually
+ * varied rather than ten rotations of one shape.
+ */
+@Composable
+fun CrestEmblem(
+    seed: String,
+    primary: Color,
+    secondary: Color = primary,
+    modifier: Modifier = Modifier,
+) {
+    val s = remember(seed) { seedOf(seed) }
+    Canvas(modifier) {
+        val w = size.width
+        val h = size.height
+        val unit = min(w, h)
+        val cx = w / 2f
+        val cy = h / 2f
+        val line = unit * 0.055f
+        // A small per-frame tilt plus bit-driven detail below: hashing the
+        // archetype alone collided (three of ten frames drew the same crown).
+        val tilt = ((s / 23) % 17 - 8).toFloat()
+
+        rotate(degrees = tilt, pivot = Offset(cx, cy)) {
+        when (s % 4) {
+            // CROWN: points rising from a base bar — rank made literal.
+            0 -> {
+                val points = 3 + (s / 5) % 3
+                val baseY = cy + unit * 0.26f
+                val path = Path()
+                path.moveTo(cx - unit * 0.30f, baseY)
+                for (i in 0 until points) {
+                    val x0 = cx - unit * 0.30f + unit * 0.60f * i / points
+                    val x1 = cx - unit * 0.30f + unit * 0.60f * (i + 0.5f) / points
+                    val x2 = cx - unit * 0.30f + unit * 0.60f * (i + 1f) / points
+                    // Point height from seed bits, not alternation: the crown's
+                    // silhouette becomes part of the frame's identity.
+                    val rise = 0.14f + 0.06f * (((s shr (i * 2)) and 3))
+                    path.lineTo(x1, cy - unit * rise)
+                    path.lineTo(x2, baseY)
+                    if (i == 0) path.moveTo(x0, baseY)
+                }
+                path.close()
+                drawPath(path, color = primary.copy(alpha = 0.85f), style = Stroke(width = line))
+                drawPath(path, color = primary.copy(alpha = 0.14f))
+                drawLine(
+                    color = secondary,
+                    start = Offset(cx - unit * 0.32f, baseY),
+                    end = Offset(cx + unit * 0.32f, baseY),
+                    strokeWidth = line,
+                )
+            }
+            // CHEVRONS: a stacked rank insignia.
+            1 -> {
+                val rows = 2 + (s / 7) % 3
+                repeat(rows) { i ->
+                    val y = cy - unit * 0.16f + unit * 0.17f * i
+                    val span = unit * (0.30f - 0.04f * i)
+                    val path = Path()
+                    path.moveTo(cx - span, y + unit * 0.10f)
+                    path.lineTo(cx, y - unit * 0.06f)
+                    path.lineTo(cx + span, y + unit * 0.10f)
+                    drawPath(
+                        path,
+                        color = (if (i == 0) secondary else primary).copy(alpha = 0.9f - 0.18f * i),
+                        style = Stroke(width = line),
+                    )
+                }
+            }
+            // ORBIT: a core with satellites — the shadow army in miniature.
+            2 -> {
+                val pips = 4 + (s / 11) % 4
+                val r = unit * 0.28f
+                drawCircle(
+                    color = primary.copy(alpha = 0.45f),
+                    radius = r,
+                    center = Offset(cx, cy),
+                    style = Stroke(width = line * 0.7f),
+                )
+                repeat(pips) { i ->
+                    val a = (2.0 * PI * i / pips + (s % 30) / 10.0).toFloat()
+                    drawCircle(
+                        color = secondary,
+                        radius = unit * 0.045f,
+                        center = Offset(cx + cos(a) * r, cy + sin(a) * r),
+                    )
+                }
+                drawCircle(color = primary, radius = unit * 0.09f, center = Offset(cx, cy))
+            }
+            // RUNE GRID: a sealed glyph, the most abstract of the four.
+            else -> {
+                val bars = 2 + (s / 13) % 3
+                val half = unit * 0.26f
+                drawRect(
+                    color = primary.copy(alpha = 0.5f),
+                    topLeft = Offset(cx - half, cy - half),
+                    size = androidx.compose.ui.geometry.Size(half * 2, half * 2),
+                    style = Stroke(width = line * 0.8f),
+                )
+                repeat(bars) { i ->
+                    val t2 = (i + 1f) / (bars + 1f)
+                    drawLine(
+                        color = secondary.copy(alpha = 0.85f),
+                        start = Offset(cx - half, cy - half + half * 2 * t2),
+                        end = Offset(cx + half * (if (i % 2 == 0) 0.4f else 1f), cy - half + half * 2 * t2),
+                        strokeWidth = line,
+                    )
+                }
+                drawLine(
+                    color = primary,
+                    start = Offset(cx, cy - half * 1.25f),
+                    end = Offset(cx, cy + half * 1.25f),
+                    strokeWidth = line * 0.8f,
+                )
+            }
+        }
+        }
+    }
+}

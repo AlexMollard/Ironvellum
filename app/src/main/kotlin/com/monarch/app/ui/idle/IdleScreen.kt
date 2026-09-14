@@ -82,6 +82,8 @@ import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.components.RelicSigil
+import com.monarch.app.ui.components.CrestRail
+import com.monarch.app.ui.components.ShadowBackdrop
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -184,6 +186,15 @@ fun IdleScreen(
     val snapshot = ui.snapshot
     val inputs = ui.inputs
 
+    Box(Modifier.fillMaxSize()) {
+        // Atmosphere behind everything: gradient wash, a breathing glow under
+        // the hero, and an ambient field that thickens with the army. The page
+        // was flat black with one moving number — this is what gives it depth.
+        ShadowBackdrop(
+            shadows = snapshot?.state?.shadows ?: 0,
+            active = (snapshot?.rate?.perHour ?: 0.0) > 0.0,
+            modifier = Modifier.matchParentSize(),
+        )
     Column(
         Modifier
             .fillMaxSize()
@@ -229,6 +240,7 @@ fun IdleScreen(
 
         // Bottom-nav clearance — the collect button must never sit under it.
         Spacer(Modifier.height(120.dp))
+    }
     }
     drawResult?.let { result ->
         AchievementOverlay(
@@ -793,11 +805,9 @@ private fun FactorRow(label: String, value: String, share: Float) {
     }
 }
 /**
- * CREST COLLECTION: the FULL catalogue, not just owned frames — a collection
- * screen that hides everything unowned made the gacha undiscoverable. Owned
- * frames are tappable to equip/unequip; locked ones render dimmed with a draw
- * hint. Swatches reuse the EXACT treatment HunterAvatar uses via FrameRender's
- * shared crestFrameTreatment() — no local approximation.
+ * CREST COLLECTION: the whole catalogue as a horizontal rail of large plates,
+ * so the per-frame art is actually visible. A vertical list of ten 40.dp
+ * swatches showed none of it and read as filler.
  */
 @Composable
 private fun CrestCollection(
@@ -806,76 +816,15 @@ private fun CrestCollection(
     onEquip: (String?) -> Unit,
 ) {
     SectionHeader("CREST COLLECTION")
-    SystemWindow(accent = MonarchColors.SovereignGold) {
-        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            // Crests are ONE of three draw outcomes, so the header says how
-            // many exist and how many are yours — a relic roll is not a miss.
-            Text(
-                "${owned.size} OF ${Gacha.CREST_FRAMES.size} CRESTS DRAWN",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                letterSpacing = MonarchTracking.InlineLabel,
-                color = MonarchColors.InkMuted,
-            )
-            Gacha.CREST_FRAMES.forEach { frame ->
-                val isOwned = frame.id in owned
-                val isEquipped = frame.id == equipped
-                val treatment = crestFrameTreatment(frame.id)
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .then(
-                            if (isOwned) {
-                                Modifier.clickable { onEquip(if (isEquipped) null else frame.id) }
-                            } else {
-                                Modifier
-                            },
-                        )
-                        .alpha(if (isOwned) 1f else 0.45f)
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    CrestSwatch(treatment = if (isOwned) treatment else null, locked = !isOwned)
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            frame.name,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.SemiBold,
-                            color = if (isOwned) MonarchColors.Ink else MonarchColors.InkMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            when {
-                                isEquipped -> "EQUIPPED — TAP TO REMOVE"
-                                isOwned -> "TAP TO WEAR"
-                                else -> "NOT YET DRAWN"
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            letterSpacing = MonarchTracking.InlineLabel,
-                            color = when {
-                                isEquipped -> MonarchColors.SovereignGold
-                                isOwned -> MonarchColors.EmeraldBright
-                                else -> MonarchColors.InkMuted
-                            },
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    if (isEquipped) {
-                        Box(
-                            Modifier
-                                .size(10.dp)
-                                .border(2.dp, MonarchColors.SovereignGold, CircleShape),
-                        )
-                    }
-                }
-            }
-        }
-    }
+    Text(
+        "${owned.size} OF ${Gacha.CREST_FRAMES.size} CRESTS DRAWN",
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = ChakraPetch,
+        letterSpacing = MonarchTracking.InlineLabel,
+        color = MonarchColors.InkMuted,
+        modifier = Modifier.padding(bottom = 10.dp),
+    )
+    CrestRail(owned = owned, equipped = equipped, onEquip = onEquip)
 }
 
 /**
