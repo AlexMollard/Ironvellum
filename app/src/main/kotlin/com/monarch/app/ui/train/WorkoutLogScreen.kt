@@ -117,7 +117,7 @@ fun WorkoutLogScreen(
                     Text(
                         "\u25C7",
                         fontSize = 34.sp,
-                        color = MonarchColors.Rune,
+                        color = MonarchColors.InkMuted,
                     )
                     Spacer(Modifier.height(12.dp))
                     Text(

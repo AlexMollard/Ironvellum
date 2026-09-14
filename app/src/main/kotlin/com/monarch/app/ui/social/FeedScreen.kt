@@ -928,7 +928,9 @@ private fun MovementLine(entry: FeedEntry) {
                 movements,
                 style = MaterialTheme.typography.bodyMedium,
                 fontFamily = ChakraPetch,
-                color = MonarchColors.InkMuted,
+                // The movements ARE the post's substance, so they read at full
+                // ink rather than the muted tone used for incidental meta.
+                color = MonarchColors.Ink,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
@@ -971,7 +973,9 @@ private fun MovementLine(entry: FeedEntry) {
             meta.joinToString("  ·  "),
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
-            color = MonarchColors.Rune,
+            // Rune is the border token (#2A2D35): as text on Vault it was
+            // near-invisible. InkMuted is the muted TEXT token.
+            color = MonarchColors.InkMuted,
             letterSpacing = MonarchTracking.InlineLabel,
             maxLines = 1,
             softWrap = false,

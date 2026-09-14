@@ -592,7 +592,7 @@ private fun PodiumSlot(
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 fontSize = 14.sp,
-                color = MonarchColors.Rune,
+                color = MonarchColors.InkMuted,
             )
             Spacer(Modifier.height(8.dp))
             Text(
