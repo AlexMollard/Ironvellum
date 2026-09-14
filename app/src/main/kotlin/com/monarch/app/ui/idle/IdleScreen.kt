@@ -1,10 +1,21 @@
 package com.monarch.app.ui.idle
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.monarch.app.domain.Gacha
+import kotlin.random.Random
+import kotlin.math.PI
+import kotlin.math.cos
+import kotlin.math.sin
+import androidx.compose.ui.geometry.Size
+import androidx.compose.animation.core.Animatable
+import com.monarch.app.ui.social.CrestFrameTreatment
+import com.monarch.app.ui.social.crestFrameTreatment
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,6 +56,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.ui.graphics.StrokeCap
 import com.monarch.app.data.IdleInputs
 import com.monarch.app.data.IdleSnapshot
 import com.monarch.app.data.Repository
@@ -83,6 +100,9 @@ data class IdleUi(
     val inputs: IdleInputs? = null,
     /** Banked, unspent shadow draws — earned by levelling, spent here. */
     val rolls: Int = 0,
+    /** Owned cosmetic crest frames (frameId set) and the one currently worn. */
+    val ownedFrames: Set<String> = emptySet(),
+    val equippedFrame: String? = null,
 )
 
 class IdleViewModel(private val repo: Repository) : ViewModel() {
@@ -91,8 +111,16 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
         repo.observeIdleSnapshot(),
         repo.observeIdleInputs(),
         repo.observeRolls(),
-    ) { snapshot, inputs, rolls ->
-        IdleUi(snapshot = snapshot, inputs = inputs, rolls = rolls)
+        repo.observeOwnedFrames(),
+        repo.observeEquippedFrame(),
+    ) { snapshot, inputs, rolls, ownedFrames, equippedFrame ->
+        IdleUi(
+            snapshot = snapshot,
+            inputs = inputs,
+            rolls = rolls,
+            ownedFrames = ownedFrames,
+            equippedFrame = equippedFrame,
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), IdleUi())
 
     private val _away = MutableStateFlow<AwayReport?>(null)
@@ -110,6 +138,11 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
             val banked = repo.collectIdle(System.currentTimeMillis())
             if (banked > 0) _away.value = AwayReport(banked, awayMs)
         }
+    }
+
+    /** Cosmetic only — the repository rejects equipping a frame not owned. */
+    fun equipFrame(frameId: String?) {
+        viewModelScope.launch { repo.equipFrame(frameId) }
     }
 
     /** Transactional on the repo side — payout and roll spend land together. */
@@ -171,6 +204,26 @@ fun IdleScreen(
                 DrawWindow(
                     rolls = ui.rolls,
                     onDraw = { viewModel.draw { result -> if (result != null) drawResult = result } },
+                )
+                // The section itself stays absent at zero frames — a lone
+                // hint here, only while draws are banked, is the whole nudge.
+                if (ui.ownedFrames.isEmpty()) {
+                    Text(
+                        "A drawn crest frame will be worn here.",
+                        style = MaterialTheme.typography.bodySmall,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.InkMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            }
+            if (ui.ownedFrames.isNotEmpty()) {
+                CrestCollection(
+                    owned = ui.ownedFrames,
+                    equipped = ui.equippedFrame,
+                    onEquip = viewModel::equipFrame,
                 )
             }
             away?.let { AwayWindow(it) }
@@ -264,16 +317,29 @@ private fun ArmyWindow(state: IdleState, rate: IdleRate, pendingExact: Double) {
                 )
                 LivePulse(active = rate.perHour > 0.0)
             }
-            Text(
-                liveEssence(state.essence, pendingExact),
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                fontSize = 40.sp,
-                color = MonarchColors.Ink,
-                maxLines = 1,
-                softWrap = false,
-            )
+            Box {
+                // Drifting shadow motes BEHIND the hero number: the army is
+                // visibly present, not just a figure on a panel.
+                ShadowMotes(shadows = state.shadows, modifier = Modifier.matchParentSize())
+                Text(
+                    liveEssence(state.essence, pendingExact),
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 40.sp,
+                    color = MonarchColors.Ink,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                // The RATE dial owns the third slot: arc + centred value.
+                RateDial(
+                    perHour = rate.perHour,
+                    trainingFactor = rate.trainingFactor,
+                    skillFactor = rate.skillFactor,
+                    relicMultiplier = state.relicMultiplier,
+                    modifier = Modifier.weight(1f),
+                )
                 ArmyStat(
                     label = "SHADOWS",
                     value = state.shadows.toString(),
@@ -284,15 +350,154 @@ private fun ArmyWindow(state: IdleState, rate: IdleRate, pendingExact: Double) {
                     value = "×${"%.2f".format(state.relicMultiplier)}",
                     modifier = Modifier.weight(1f),
                 )
-                ArmyStat(
-                    label = "RATE",
-                    value = "${"%.1f".format(rate.perHour)}/H",
-                    modifier = Modifier.weight(1f),
-                )
             }
         }
     }
 }
+
+/**
+ * Shadow motes: a handful of dots drifting behind the essence hero. The
+ * count scales with the army (minOf(12, shadows)); nothing at zero shadows.
+ * One shared infinite phase (linear, 12s loop) drives every mote; per-mote
+ * offsets come from a SEEDED Random remembered across recompositions, so the
+ * drift is deterministic per composition and never jumps.
+ */
+@Composable
+private fun ShadowMotes(shadows: Int, modifier: Modifier = Modifier) {
+    if (shadows <= 0) return
+    val count = minOf(12, shadows)
+    // Seed constant, not Random(): recomposition must never re-shuffle motes.
+    val motes = remember(count) {
+        Random(MOTE_SEED).let { rng ->
+            List(count) {
+                Mote(
+                    x = rng.nextFloat(),
+                    y = rng.nextFloat(),
+                    radius = 1.5f + rng.nextFloat() * 2.5f,
+                    phase = rng.nextFloat(),
+                    drift = 6f + rng.nextFloat() * 10f, // px excursion either way
+                )
+            }
+        }
+    }
+    val transition = rememberInfiniteTransition(label = "motes")
+    val t by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 12_000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart,
+        ),
+        label = "motePhase",
+    )
+    Canvas(modifier) {
+        motes.forEach { mote ->
+            // Smooth Lissajous-style wander around the mote's home point.
+            val angle = (t + mote.phase) * 2f * PI.toFloat()
+            val x = mote.x * size.width + cos(angle) * mote.drift
+            val y = mote.y * size.height + sin(angle * 0.7f) * mote.drift * 0.6f
+            // Breathing alpha in the same slow register as the drift.
+            val alpha = 0.12f + 0.18f * (0.5f + 0.5f * sin(angle * 1.3f))
+            drawCircle(
+                color = MonarchColors.EmeraldBright.copy(alpha = alpha),
+                radius = mote.radius,
+                center = Offset(x, y),
+            )
+        }
+    }
+}
+
+private data class Mote(
+    val x: Float,
+    val y: Float,
+    val radius: Float,
+    val phase: Float,
+    val drift: Float,
+)
+
+/** Stable seed so the mote field is identical every session and composition. */
+private const val MOTE_SEED = 867_5309L
+
+/**
+ * The RATE dial: an arc whose sweep is the army's rate against the FULL
+ * TRAINED rate. The reference max is DERIVED, not hardcoded: the floor rate
+ * is recovered from the live rate by dividing out the observed factors and
+ * relic (perHour = floor * trainingFactor * skillFactor * relic), then the
+ * full sweep is floor * 4 — the x4 multiplier a committed training week
+ * reaches, per Idle's documented balance. The sweep tweens in on open; with
+ * animations disabled it simply snaps to its final, readable position.
+ */
+@Composable
+private fun RateDial(
+    perHour: Double,
+    trainingFactor: Double,
+    skillFactor: Double,
+    relicMultiplier: Double,
+    modifier: Modifier = Modifier,
+) {
+    // Full sweep = floor * 4, the trained-at-cap rate: the floor is recovered
+    // from the live rate by dividing out the observed multipliers, so no
+    // absolute magic number is hardcoded — only Idle's documented x4 cap.
+    val trainedMax = remember(perHour, trainingFactor, skillFactor, relicMultiplier) {
+        val factors = (trainingFactor * skillFactor * relicMultiplier).coerceAtLeast(1e-9)
+        ((perHour / factors) * TRAINED_CAP_MULTIPLIER).coerceAtLeast(1.0)
+    }
+    val fraction = (perHour / trainedMax).coerceIn(0.0, 1.0).toFloat()
+    // Animatable from 0 so the sweep tweens into position on open;
+    // animateFloatAsState would start AT target and never animate.
+    val sweep = remember { Animatable(0f) }
+    LaunchedEffect(fraction) {
+        sweep.animateTo(fraction, tween(900, easing = FastOutSlowInEasing))
+    }
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Canvas(Modifier.fillMaxSize()) {
+            val stroke = 6.dp.toPx()
+            val inset = stroke
+            val span = 260f
+            val start = -220f
+            val arcSize = Size(size.width - inset * 2, size.height - inset * 2)
+            drawArc(
+                color = MonarchColors.Rune,
+                startAngle = start,
+                sweepAngle = span,
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = arcSize,
+                style = Stroke(stroke, cap = StrokeCap.Round),
+            )
+            drawArc(
+                brush = Brush.sweepGradient(listOf(MonarchColors.Emerald, MonarchColors.EmeraldBright)),
+                startAngle = start,
+                sweepAngle = span * sweep.value,
+                useCenter = false,
+                topLeft = Offset(inset, inset),
+                size = arcSize,
+                style = Stroke(stroke, cap = StrokeCap.Round),
+            )
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                "RATE",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                letterSpacing = MonarchTracking.InlineLabel,
+                color = MonarchColors.InkMuted,
+            )
+            Text(
+                "${"%.1f".format(perHour)}",
+                style = MaterialTheme.typography.titleMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = MonarchColors.Emerald,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
+    }
+}
+
+/** Full-sweep reference: Idle's documented x4 trained-week cap over the floor. */
+private const val TRAINED_CAP_MULTIPLIER = 4.0
 
 /**
  * Slow breathing dot: proof the army is working right now. Deliberately a
@@ -400,8 +605,19 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
             RateRow("VOLUME · 7 DAYS", "${"%,.0f".format(inputs.volumeLast7d)} KG")
             RateRow("SKILLS UNLOCKED", "${inputs.skillsUnlocked}")
             RateRow("STREAK", "${inputs.streakDays} D")
-            RateRow("TRAINING FACTOR", "×${"%.2f".format(rate.trainingFactor)}")
-            RateRow("SKILL FACTOR", "×${"%.2f".format(rate.skillFactor)}")
+            // Each factor's bar is its SHARE of the two combined, so the
+            // relative weight of training vs. permanent skill reads at a glance.
+            val combined = rate.trainingFactor + rate.skillFactor
+            FactorRow(
+                label = "TRAINING FACTOR",
+                value = "×${"%.2f".format(rate.trainingFactor)}",
+                share = (rate.trainingFactor / combined).toFloat(),
+            )
+            FactorRow(
+                label = "SKILL FACTOR",
+                value = "×${"%.2f".format(rate.skillFactor)}",
+                share = (rate.skillFactor / combined).toFloat(),
+            )
         }
     }
 }
@@ -503,4 +719,130 @@ private fun rewardName(reward: Reward): String = when (reward) {
     is Reward.Shadows -> "${reward.count} Shadows"
     is Reward.Relic -> reward.name
     is Reward.CrestFrame -> reward.name
+}
+
+/**
+ * A factor row with a share bar beneath it. The bar fills from 0 to the
+ * factor's share over 600ms on first composition — a gentle establish move,
+ * not a flash; with animations disabled it simply starts full.
+ */
+@Composable
+private fun FactorRow(label: String, value: String, share: Float) {
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        RateRow(label, value)
+        // Animatable from 0 (not animateFloatAsState, which starts AT target
+        // on first composition and would never animate) — a gentle establish
+        // fill, 600ms; with animations disabled it lands at full instantly.
+        val fill = remember { Animatable(0f) }
+        LaunchedEffect(share) {
+            fill.animateTo(share.coerceIn(0.05f, 1f), tween(600, easing = FastOutSlowInEasing))
+        }
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(4.dp)
+                .background(MonarchColors.Rune, RoundedCornerShape(2.dp)),
+        ) {
+            Box(
+                Modifier
+                    .fillMaxWidth(fill.value)
+                    .height(4.dp)
+                    .background(
+                        Brush.horizontalGradient(listOf(MonarchColors.Emerald, MonarchColors.EmeraldBright)),
+                        RoundedCornerShape(2.dp),
+                    ),
+            )
+        }
+    }
+}
+
+/**
+ * CREST COLLECTION: every owned frame, tappable to equip/unequip. Rendered
+ * ONLY when the hunter owns at least one frame — never an empty stub.
+ * Swatch visuals reuse the EXACT treatment HunterAvatar uses via FrameRender's
+ * shared crestFrameTreatment() — no local approximation.
+ */
+@Composable
+private fun CrestCollection(
+    owned: Set<String>,
+    equipped: String?,
+    onEquip: (String?) -> Unit,
+) {
+    SectionHeader("CREST COLLECTION")
+    SystemWindow(accent = MonarchColors.SovereignGold) {
+        Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+            Gacha.CREST_FRAMES
+                .filter { it.id in owned }
+                .forEach { frame ->
+                    val treatment = crestFrameTreatment(frame.id)
+                    val isEquipped = frame.id == equipped
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .clickable { onEquip(if (isEquipped) null else frame.id) }
+                            .padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        CrestSwatch(treatment = treatment)
+                        Column(Modifier.weight(1f)) {
+                            Text(
+                                frame.name,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontFamily = ChakraPetch,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MonarchColors.Ink,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            Text(
+                                if (isEquipped) "EQUIPPED — TAP TO REMOVE" else "TAP TO WEAR",
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = ChakraPetch,
+                                letterSpacing = MonarchTracking.InlineLabel,
+                                color = if (isEquipped) MonarchColors.SovereignGold else MonarchColors.InkMuted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        if (isEquipped) {
+                            Box(
+                                Modifier
+                                    .size(10.dp)
+                                    .border(2.dp, MonarchColors.SovereignGold, CircleShape),
+                            )
+                        }
+                    }
+                }
+        }
+    }
+}
+
+/**
+ * A small swatch using the avatar's frame treatment: plate gradient, frame
+ * border, optional second ring — the same channel split HunterAvatar uses.
+ */
+@Composable
+private fun CrestSwatch(treatment: CrestFrameTreatment?) {
+    val t = treatment ?: return
+    Box(
+        Modifier
+            .size(40.dp)
+            .background(
+                Brush.verticalGradient(listOf(t.plateTop, t.plateBottom)),
+                RoundedCornerShape(10.dp),
+            )
+            .border(t.frameWidth, t.frameColor, RoundedCornerShape(10.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        // Optional outer ring, inset like the avatar's, for double-ring frames.
+        t.outerRing?.let { ring ->
+            Box(
+                Modifier
+                    .size(46.dp)
+                    .border(1.5.dp, ring, RoundedCornerShape(13.dp)),
+            )
+        }
+        Box(Modifier.size(12.dp).background(t.frameColor, CircleShape))
+    }
 }

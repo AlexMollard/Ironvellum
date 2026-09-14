@@ -57,6 +57,8 @@ internal fun IdentityRow(
     // The equipped title's id, not its display name: the crest resolves the
     // rarity from the catalogue so the badge reflects WHAT was earned.
     titleId: String? = null,
+    // Equipped gacha crest frame; null = today's rarity/level rendering.
+    frameId: String? = null,
     trailing: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -94,6 +96,7 @@ internal fun IdentityRow(
                 avatarUrl = avatarUrl,
                 level = level,
                 titleId = titleId,
+                frameId = frameId,
             )
             Column(Modifier.weight(1f)) {
                 Text(
@@ -166,6 +169,44 @@ internal fun initials(name: String): String {
 }
 
 // Palette plates the crest can draw on — greens/gold/dark-warm only, no blue.
+
+/**
+ * The visual treatment one gacha crest frame applies to a hunter crest. The
+ * frame OWNS the plate gradient, the border (colour + weight), the monogram
+ * colour and — for the elite frames — an extra outer ring drawn by wrapping
+ * the avatar in a thin second border of the same cut-corner shape.
+ */
+internal data class CrestFrameTreatment(
+    val plateTop: Color,
+    val plateBottom: Color,
+    val frameColor: Color,
+    val frameWidth: Dp,
+    val initialColor: Color,
+    /** Extra outer ring; the level ring yields this channel to the frame. */
+    val outerRing: Color? = null,
+)
+
+/**
+ * Per-frame look, built ONLY from MonarchColors tokens plus shape/layer
+ * composition — no bitmaps, no custom art. Unknown ids return null so an
+ * equipped id that fell out of the catalogue degrades to today's rendering.
+ */
+internal fun crestFrameTreatment(frameId: String): CrestFrameTreatment? = when (frameId) {
+    "iron" -> CrestFrameTreatment(MonarchColors.VaultHigh, MonarchColors.Vault, MonarchColors.Rune, 2.dp, MonarchColors.InkMuted)
+    "bronze" -> CrestFrameTreatment(MonarchColors.Rune, MonarchColors.Vault, MonarchColors.SovereignGold.copy(alpha = 0.55f), 2.dp, MonarchColors.SovereignGold)
+    "silver" -> CrestFrameTreatment(MonarchColors.Rune, MonarchColors.Vault, MonarchColors.Ink, 2.dp, MonarchColors.Ink)
+    "gold" -> CrestFrameTreatment(MonarchColors.VaultHigh, MonarchColors.Vault, MonarchColors.SovereignGold, 3.dp, MonarchColors.SovereignGold)
+    "jade" -> CrestFrameTreatment(MonarchColors.VaultHigh, MonarchColors.Vault, MonarchColors.EmeraldBright, 2.dp, MonarchColors.EmeraldBright, MonarchColors.Emerald)
+    "crimson" -> CrestFrameTreatment(MonarchColors.VaultHigh, MonarchColors.Vault, MonarchColors.DangerRed, 3.dp, MonarchColors.DangerRed)
+    "obsidian" -> CrestFrameTreatment(MonarchColors.Abyss, MonarchColors.Vault, MonarchColors.Bracket, 3.dp, MonarchColors.Ink)
+    "aurora" -> CrestFrameTreatment(MonarchColors.VaultHigh, MonarchColors.Vault, MonarchColors.EmeraldBright, 2.dp, MonarchColors.EmeraldBright, MonarchColors.SovereignGold)
+    // Inverted: near-black plate with a pale border and pale initials.
+    "void" -> CrestFrameTreatment(MonarchColors.Abyss, MonarchColors.Abyss, MonarchColors.InkMuted, 2.dp, MonarchColors.Ink)
+    // Double gold ring — the top of the catalogue.
+    "monarch" -> CrestFrameTreatment(MonarchColors.VaultHigh, MonarchColors.Vault, MonarchColors.SovereignGold, 3.dp, MonarchColors.SovereignGold, MonarchColors.SovereignGold)
+    else -> null
+}
+
 private val CrestPlates = listOf(
     MonarchColors.EmeraldBright to MonarchColors.Vault,
     MonarchColors.SystemGreen to MonarchColors.VaultHigh,
@@ -189,7 +230,9 @@ internal fun HunterAvatar(
     avatarUrl: String? = null,
     level: Int? = null,
     titleId: String? = null,
+    frameId: String? = null,
 ) {
+
     // Stable integer hash — never random, never recomposition-dependent.
     val seed = userId.fold(0) { acc, c -> acc * 31 + c.code }
     val shape = CutCornerShape(topStart = size / 4, bottomEnd = size / 4)
@@ -199,19 +242,28 @@ internal fun HunterAvatar(
     // Common), so the two never fight over the same visual channel. The
     // interior pattern stays seeded by userId regardless — two hunters in the
     // same title still look like different people.
+    /**
+     * Channel split when a gacha frame is equipped: the FRAME owns the plate
+     * gradient, the border and the monogram colour (its whole look), while
+     * the LEVEL ring is fully yielded — a worn frame replaces the level/rarity
+     * border treatment rather than stacking on it, so the two never fight for
+     * the same visual channel. With frameId null or unknown, the rarity owns
+     * the plate gradient and the level ring keeps the border, byte-identical
+     * to the pre-frame rendering.
+     */
+    val frameTreatment = frameId?.let { crestFrameTreatment(it) }
     val rarity = Titles.rarityOf(titleId)
-    val (plateTop, plateBottom) = when (rarity) {
-        // No rarity worn: the deterministic hash plate, as before.
-        null -> CrestPlates[Math.floorMod(seed, CrestPlates.size)]
-        TitleRarity.Common -> CrestPlates[Math.floorMod(seed, CrestPlates.size)]
-        TitleRarity.Rare -> MonarchColors.SystemGreen to MonarchColors.Vault
-        TitleRarity.Epic -> MonarchColors.EmeraldBright to MonarchColors.Vault
-        TitleRarity.Sovereign -> MonarchColors.SovereignGold to MonarchColors.Rune
+    val (plateTop, plateBottom) = when {
+        frameTreatment != null -> frameTreatment.plateTop to frameTreatment.plateBottom
+        rarity == null -> CrestPlates[Math.floorMod(seed, CrestPlates.size)]
+        rarity == TitleRarity.Common -> CrestPlates[Math.floorMod(seed, CrestPlates.size)]
+        rarity == TitleRarity.Rare -> MonarchColors.SystemGreen to MonarchColors.Vault
+        rarity == TitleRarity.Epic -> MonarchColors.EmeraldBright to MonarchColors.Vault
+        else -> MonarchColors.SovereignGold to MonarchColors.Rune
     }
-    // Frame: rarity tiers get progressively heavier, brighter borders; Common
-    // and no-rarity crests fall back to the level-stepped ring.
-    val frame = when (rarity) {
-        null, TitleRarity.Common -> when {
+    val frame = when {
+        frameTreatment != null -> frameTreatment.frameColor
+        rarity == null || rarity == TitleRarity.Common -> when {
             isMe -> MonarchColors.SovereignGold
             level == null -> MonarchColors.Rune
             level < 10 -> MonarchColors.Rune
@@ -219,22 +271,35 @@ internal fun HunterAvatar(
             level < 50 -> MonarchColors.EmeraldBright
             else -> MonarchColors.SovereignGold
         }
-        TitleRarity.Rare -> MonarchColors.EmeraldBright
-        TitleRarity.Epic -> MonarchColors.SovereignGold
-        TitleRarity.Sovereign -> MonarchColors.SovereignGold
+        rarity == TitleRarity.Rare -> MonarchColors.EmeraldBright
+        rarity == TitleRarity.Epic -> MonarchColors.SovereignGold
+        else -> MonarchColors.SovereignGold
     }
-    val frameWidth = when (rarity) {
-        null, TitleRarity.Common -> 2.dp
-        TitleRarity.Rare -> 2.dp
-        TitleRarity.Epic -> 3.dp
-        // Heaviest frame in the house: a Sovereign crest reads as gold even
-        // at Compact size.
-        TitleRarity.Sovereign -> 3.dp
+    val frameWidth = when {
+        frameTreatment != null -> frameTreatment.frameWidth
+        rarity == TitleRarity.Epic || rarity == TitleRarity.Sovereign -> 3.dp
+        else -> 2.dp
     }
+    // Elite frames draw their second ring by padding the avatar inside a thin
+    // wrapper border of the same cut-corner shape; 0 padding = no wrapper.
+    val ringPad = if (frameTreatment?.outerRing != null) 3.dp else 0.dp
+    val outerColor = frameTreatment?.outerRing
 
     Box(
         Modifier
-            .size(size)
+            .size(size + ringPad * 2)
+            .then(
+                if (outerColor != null) {
+                    Modifier.border(
+                        1.5.dp,
+                        outerColor,
+                        CutCornerShape(topStart = (size + ringPad * 2) / 4, bottomEnd = (size + ringPad * 2) / 4),
+                    )
+                } else {
+                    Modifier
+                },
+            )
+            .padding(ringPad)
             .clip(shape)
             .background(Brush.linearGradient(listOf(plateTop, plateBottom), start = Offset.Zero, end = Offset.Infinite), shape)
             .border(frameWidth, frame, shape),
@@ -267,7 +332,8 @@ internal fun HunterAvatar(
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
-            color = if (rarity == TitleRarity.Sovereign || isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
+            color = frameTreatment?.initialColor
+                ?: if (rarity == TitleRarity.Sovereign || isMe) MonarchColors.SovereignGold else MonarchColors.Ink,
         )
     }
 }

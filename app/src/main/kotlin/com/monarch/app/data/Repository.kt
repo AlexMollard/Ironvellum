@@ -1177,6 +1177,23 @@ class Repository(
     fun observeOwnedFrames(): Flow<Set<String>> =
         gachaDao.observeOwnedFrames().map { it.toSet() }
 
+    fun observeEquippedFrame(): Flow<String?> = gachaDao.observeEquipped()
+
+    /**
+     * Equips (or unequips with null) a crest frame. Cosmetic only, so a frame
+     * the hunter does not own is silently refused (returns false) rather than
+     * thrown — the ownership check reads owned_crest_frames inside the same
+     * transaction as the write, so a concurrent draw can never race it.
+     */
+    suspend fun equipFrame(frameId: String?): Boolean = db.withTransaction {
+        if (frameId != null && frameId !in gachaDao.ownedFrameIds()) {
+            return@withTransaction false
+        }
+        val current = gachaDao.get() ?: GachaStateEntity()
+        gachaDao.upsert(current.copy(equippedFrame = frameId))
+        true
+    }
+
     /** Called on level-up: banks one more roll to spend on the Shadow screen. */
     suspend fun grantRoll(count: Int = 1) = db.withTransaction {
         val current = gachaDao.get() ?: GachaStateEntity()

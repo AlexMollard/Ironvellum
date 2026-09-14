@@ -218,6 +218,10 @@ data class IdleStateEntity(
 data class GachaStateEntity(
     @PrimaryKey val id: Long = 1,
     val rolls: Int = 0,
+    // Cosmetic override: id from Gacha.CREST_FRAMES worn on the hunter crest.
+    // Carried on the entity (nullable) so every copy()/upsert of the single
+    // row preserves it instead of wiping the equipped choice.
+    val equippedFrame: String? = null,
 )
 
 /** One owned crest frame per row; id is the stable catalogue id from Gacha. */

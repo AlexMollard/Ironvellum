@@ -52,7 +52,7 @@ import com.monarch.app.data.db.TitleUnlockEntity
         GachaStateEntity::class,
         OwnedCrestFrameEntity::class,
     ],
-    version = 19,
+    version = 20,
     exportSchema = false,
 )
 abstract class MonarchDatabase : RoomDatabase() {
@@ -85,6 +85,15 @@ abstract class MonarchDatabase : RoomDatabase() {
                         "(SELECT heightCm FROM stats WHERE heightCm > 0 " +
                         "ORDER BY takenAtMs DESC, id DESC LIMIT 1)",
                 )
+            }
+        }
+
+        // Equipped crest frame: which catalogue frame the hunter wears on
+        // their crest. Nullable column, default NULL = nothing worn. Column
+        // type must match GachaStateEntity.equippedFrame (String?) exactly.
+        private val MIGRATION_19_20 = object : Migration(19, 20) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE gacha_state ADD COLUMN equippedFrame TEXT")
             }
         }
 
@@ -203,6 +212,7 @@ abstract class MonarchDatabase : RoomDatabase() {
                     MIGRATION_16_17,
                     MIGRATION_17_18,
                     MIGRATION_18_19,
+                    MIGRATION_19_20,
                 )
                 .build()
     }

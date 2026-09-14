@@ -334,6 +334,10 @@ interface GachaDao {
     @Query("SELECT frameId FROM owned_crest_frames")
     suspend fun ownedFrameIds(): List<String>
 
+    // Equipped crest frame on the single row; null = nothing worn.
+    @Query("SELECT equippedFrame FROM gacha_state WHERE id = 1")
+    fun observeEquipped(): Flow<String?>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertFrame(frame: OwnedCrestFrameEntity)
 }
