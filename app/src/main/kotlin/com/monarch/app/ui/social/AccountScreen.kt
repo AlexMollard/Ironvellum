@@ -19,6 +19,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Lock
@@ -52,6 +53,7 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -76,6 +78,7 @@ import com.monarch.app.data.cloud.Cloud
 import com.monarch.app.data.cloud.CloudSync
 import com.monarch.app.data.cloud.FriendRow
 import com.monarch.app.data.cloud.SyncOutcome
+import com.monarch.app.data.cloud.isUnclaimedHandle
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
@@ -99,6 +102,11 @@ data class AccountUi(
     val lastSync: SyncOutcome? = null,
     val friends: List<FriendRow> = emptyList(),
     val friendsLoading: Boolean = false,
+    /** Inline failure of the last CLAIM attempt — house copy, never a trace. */
+    val claimError: String? = null,
+    val claimBusy: Boolean = false,
+    /** Skip lives only in the ViewModel: no persisted nag-flag, one skip per session. */
+    val claimSkipped: Boolean = false,
 )
 
 class AccountViewModel(
@@ -190,6 +198,21 @@ class AccountViewModel(
         }
     }
 
+    fun claimName(raw: String) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(claimBusy = true, claimError = null)
+            accountRepo.updateDisplayName(raw)
+                // Local state update happens inside the repository, so every
+                // surface flips to the claimed name with the cloud write.
+                .onFailure { _ui.value = _ui.value.copy(claimError = it.reason()) }
+            _ui.value = _ui.value.copy(claimBusy = false)
+        }
+    }
+
+    fun skipClaim() {
+        _ui.value = _ui.value.copy(claimSkipped = true)
+    }
+
     fun syncNow() {
         viewModelScope.launch {
             setBusy(true)
@@ -273,7 +296,6 @@ fun AccountScreen(
                     .padding(horizontal = 16.dp),
             ) {
                 Spacer(Modifier.height(20.dp))
-                GatewayTitle()
                 SignedInPanels(
                     ui = ui,
                     onOpenHunter = onOpenHunter,
@@ -282,6 +304,8 @@ fun AccountScreen(
                     onSync = viewModel::syncNow,
                     onAccept = viewModel::acceptFriend,
                     onRequest = viewModel::requestFriend,
+                    onClaim = viewModel::claimName,
+                    onSkipClaim = viewModel::skipClaim,
                 )
                 // Clears the bottom nav bar: 28.dp left SEVER THE LINK half
                 // hidden behind it at the end of the scroll.
@@ -569,6 +593,8 @@ private fun SignedInPanels(
     onSync: () -> Unit,
     onAccept: (String) -> Unit,
     onRequest: (String) -> Unit,
+    onClaim: (String) -> Unit,
+    onSkipClaim: () -> Unit,
 ) {
     val acct = ui.account ?: return
 
@@ -684,6 +710,18 @@ private fun SignedInPanels(
         Spacer(Modifier.height(6.dp))
         PrivacyRow(Icons.Outlined.Public, MonarchColors.Emerald, "Visibility decides who may read your sessions.")
     }
+    // One-time claim prompt: visible after sign-in, but the surface around it
+    // stays fully usable — skip hides it for the session, nothing nags twice.
+    if (isUnclaimedHandle(acct.displayName) && !ui.claimSkipped) {
+        Spacer(Modifier.height(14.dp))
+        ClaimNamePanel(
+            currentHandle = acct.displayName,
+            error = ui.claimError,
+            busy = ui.claimBusy,
+            onClaim = onClaim,
+            onSkip = onSkipClaim,
+        )
+    }
 
     SectionHeader("Allies")
     FriendsPanel(
@@ -725,6 +763,99 @@ private fun PrivacyRow(icon: ImageVector, tint: Color, text: String) {
             style = MaterialTheme.typography.labelSmall,
             color = MonarchColors.InkMuted,
         )
+    }
+}
+
+/**
+ * One-time "CLAIM YOUR NAME" prompt for Google users still carrying their
+ * seeded Hunter#### handle. The name is how other hunters find and add you —
+ * so claiming it matters, but skipping must never trap the user here.
+ */
+@Composable
+private fun ClaimNamePanel(
+    currentHandle: String,
+    error: String?,
+    busy: Boolean,
+    onClaim: (String) -> Unit,
+    onSkip: () -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    // Mirror the server rule exactly: letters, digits, spaces; 2..24 trimmed.
+    val cleaned = name.filter { it.isLetterOrDigit() || it == ' ' }.trim()
+    val valid = cleaned.length in 2..24
+
+    SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.SovereignGold) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Icon(Icons.Outlined.Badge, contentDescription = null, tint = MonarchColors.SovereignGold)
+            Text(
+                "CLAIM YOUR NAME",
+                style = MaterialTheme.typography.titleMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = MonarchColors.Ink,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "This name is how other hunters find and add you.",
+            style = MaterialTheme.typography.labelMedium,
+            color = MonarchColors.InkMuted,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.height(10.dp))
+        Text(
+            "Currently: $currentHandle",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            value = name,
+            onValueChange = { name = it.take(24) },
+            label = { Text("Hunter name (2–24)") },
+            singleLine = true,
+            enabled = !busy,
+            isError = name.isNotBlank() && !valid,
+            supportingText = {
+                if (name.isNotBlank() && !valid) {
+                    Text("2–24 characters, letters and numbers")
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(12.dp))
+        MonarchButton(
+            label = "Claim",
+            onClick = { onClaim(cleaned) },
+            enabled = valid && !busy,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            "KEEP HUNT#### — SKIP",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+            letterSpacing = MonarchTracking.InlineLabel,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(enabled = !busy) { onSkip() }
+                .padding(vertical = 6.dp),
+            textAlign = TextAlign.Center,
+        )
+        error?.let {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                it,
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.DangerRed,
+            )
+        }
     }
 }
 

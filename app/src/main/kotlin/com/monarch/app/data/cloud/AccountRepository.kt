@@ -11,8 +11,6 @@ import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
 
 data class Account(
     val userId: String,
@@ -145,14 +143,14 @@ class AccountRepository {
             val user = client.auth.currentUserOrNull()
                 ?: throw IllegalStateException("Google sign-in returned no user")
             val email = user.email ?: ""
-            // Google users get no profiles row automatically: derive a
-            // starting handle from the Google name, else the email local-part.
+            // Google users get no profiles row automatically: seed a neutral
+            // handle they can later claim as a real name.
             val existing = loadAccount(user.id, email)
             if (existing != null) {
                 _account.value = existing
                 existing
             } else {
-                createProfileForNewGoogleUser(client, user.id, email, user.userMetadata)
+                createProfileForNewGoogleUser(client, user.id)
                 val created = loadAccount(user.id, email)
                     ?: throw IllegalStateException("Signed in with Google, but your hunter profile is missing")
                 _account.value = created
@@ -170,11 +168,10 @@ class AccountRepository {
     private suspend fun createProfileForNewGoogleUser(
         client: SupabaseClient,
         userId: String,
-        email: String,
-        metadata: JsonObject?,
     ) {
-        val metaName = (metadata?.get("name") as? JsonPrimitive)?.content
-        val base = sanitizeHandle(metaName ?: email.substringBefore('@'))
+        // A Google account must NOT lock the handle to the real legal name:
+        // seed a neutral, deterministic Hunter handle the user can claim later.
+        val base = neutralHandle(userId)
         var name = base
         var suffix = 1
         while (true) {
@@ -205,6 +202,47 @@ class AccountRepository {
             else -> "Hunter" + cleaned.ifEmpty { "0" }
         }
     }
+
+    /**
+     * Unclaimed convention: "Hunter" + 4 digits derived from the userId hash —
+     * stable across sign-ins (String.hashCode is spec-fixed, never Random) so
+     * the same account always regenerates the same seed handle.
+     */
+    private fun neutralHandle(userId: String): String =
+        "Hunter" + ((userId.hashCode() and Int.MAX_VALUE) % 10_000).toString().padStart(4, '0')
+
+    /**
+     * Claim a real name. For a MANUAL claim, "that name is taken" beats
+     * silently renaming the user — so unlike profile creation, a 23505 on the
+     * update fails explicitly with house copy instead of retrying a suffix.
+     */
+    suspend fun updateDisplayName(raw: String): Result<Unit> {
+        val current = _account.value
+            ?: return Result.failure(IllegalStateException("Sign in before claiming a name"))
+        val client = requireClient().getOrElse { return failure(it) }
+        val name = sanitizeHandle(raw)
+        if (name.length < 2) {
+            return Result.failure(IllegalStateException("Your name needs at least 2 characters"))
+        }
+        return runCatching {
+            client.postgrest.from("profiles").update(
+                {
+                    set("display_name", name)
+                },
+            ) {
+                filter { eq("id", current.userId) }
+            }
+            _account.value = current.copy(displayName = name)
+        }.recoverCatching { error ->
+            val taken = error is io.github.jan.supabase.postgrest.exception.PostgrestRestException &&
+                error.code == "23505"
+            throw IllegalStateException(
+                if (taken) "That name is already taken — another hunter got there first"
+                else Cloud.explain(error),
+            )
+        }
+    }
+
 
     suspend fun signOut(): Result<Unit> {
         val client = requireClient().getOrElse { return failure(it) }
@@ -257,6 +295,11 @@ class AccountRepository {
         }
     }
 }
+/** A seeded handle the user has not replaced with a name of their own. */
+fun isUnclaimedHandle(name: String?): Boolean = name != null && UnclaimedHandle.matches(name)
+
+private val UnclaimedHandle = Regex("^Hunter\\d{4}$")
+
 
 /** Signed-out guard for cloud features that need an identity. */
 internal fun requireAccount(account: AccountRepository): Result<Account> {

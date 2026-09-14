@@ -100,6 +100,7 @@ data class StatEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val takenAtMs: Long,
     val weightKg: Double,
+    /** Height is now profile-owned; 0.0 sentinel on a row means "profile height not set yet". */
     val heightCm: Double,
     val bodyFatPct: Double?,
 )
@@ -111,6 +112,10 @@ data class ProfileEntity(
     val currentTitleId: String?,
     val lifetimeStrength: Long = 0,
     val trainingMode: String = "STRENGTH",
+    /** Set once in Settings, stamped onto every new stat row. Null = never set. */
+    val heightCm: Double? = null,
+    /** Sex enum name; feeds the Navy body-fat estimator. */
+    val sex: String = "MALE",
 )
 
 @Entity(tableName = "skill_practices")

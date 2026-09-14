@@ -52,7 +52,7 @@ import com.monarch.app.data.db.TitleUnlockEntity
         GachaStateEntity::class,
         OwnedCrestFrameEntity::class,
     ],
-    version = 18,
+    version = 19,
     exportSchema = false,
 )
 abstract class MonarchDatabase : RoomDatabase() {
@@ -70,6 +70,24 @@ abstract class MonarchDatabase : RoomDatabase() {
     abstract fun gachaDao(): GachaDao
 
     companion object {
+        // Height and sex move onto the profile (set once in Settings) so the
+        // stat log no longer asks for height on every reading. heightCm is
+        // backfilled from the newest stat row that actually carries one; with
+        // no stats the column simply stays NULL and Settings prompts for it.
+        // Column types must match ProfileEntity exactly or Room refuses to
+        // open the database (no destructive fallback by design).
+        private val MIGRATION_18_19 = object : Migration(18, 19) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE profile ADD COLUMN heightCm REAL")
+                db.execSQL("ALTER TABLE profile ADD COLUMN sex TEXT NOT NULL DEFAULT 'MALE'")
+                db.execSQL(
+                    "UPDATE profile SET heightCm = " +
+                        "(SELECT heightCm FROM stats WHERE heightCm > 0 " +
+                        "ORDER BY takenAtMs DESC, id DESC LIMIT 1)",
+                )
+            }
+        }
+
         private val MIGRATION_17_18 = object : Migration(17, 18) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 // Gacha: banked rolls (single row, mirroring idle_state) and
@@ -184,6 +202,7 @@ abstract class MonarchDatabase : RoomDatabase() {
                     MIGRATION_15_16,
                     MIGRATION_16_17,
                     MIGRATION_17_18,
+                    MIGRATION_18_19,
                 )
                 .build()
     }

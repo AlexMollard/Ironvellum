@@ -44,6 +44,7 @@ import com.monarch.app.domain.MeasurementEntry
 import com.monarch.app.domain.MeasurementSite
 import com.monarch.app.domain.MuscleGroup
 import com.monarch.app.domain.PlayerProfile
+import com.monarch.app.domain.Sex
 import com.monarch.app.domain.PresetEntry
 import com.monarch.app.domain.Progression
 import com.monarch.app.domain.Reward
@@ -169,31 +170,24 @@ class Repository(
                 },
             )
         }
-        val imported = importBodyReadings(read.bodyReadings)
-        return if (imported == null) {
-            read.copy(
-                problems = read.problems +
-                    "${read.bodyReadings.size} weigh-ins found — log a height once so they can be scored",
-            )
-        } else {
-            read
-        }
+        importBodyReadings(read.bodyReadings)
+        return read
     }
 
     /**
      * Writes Health Connect weigh-ins into the stat history, skipping days the
      * history already covers so repeat syncs never duplicate a reading.
-     * Returns the number imported, or null when no height has ever been logged
-     * (height is not a Health Connect record here, so BMI/FFMI need it once).
+     * Height comes from the profile (Settings); when it is unset the row uses
+     * the 0.0 sentinel — weight history still matters on its own.
      */
-    private suspend fun importBodyReadings(readings: List<HealthSync.BodyReading>): Int? {
+    private suspend fun importBodyReadings(readings: List<HealthSync.BodyReading>): Int {
         if (readings.isEmpty()) return 0
         val zone = java.time.ZoneId.systemDefault()
         val existing = statDao.observeAll().first()
         val coveredDays = existing.map {
             java.time.Instant.ofEpochMilli(it.takenAtMs).atZone(zone).toLocalDate()
         }.toSet()
-        val height = existing.firstOrNull()?.heightCm ?: return null
+        val height = profileDao.get()?.heightCm ?: 0.0
         val fresh = readings.filterNot { it.date in coveredDays }
         fresh.forEach {
             statDao.insert(
@@ -629,8 +623,22 @@ class Repository(
             list.map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
         }
 
-    suspend fun addStat(weightKg: Double, heightCm: Double, bodyFatPct: Double?) {
-        statDao.insert(StatEntity(takenAtMs = System.currentTimeMillis(), weightKg = weightKg, heightCm = heightCm, bodyFatPct = bodyFatPct))
+    /**
+     * Height is profile-owned (Settings), so the caller never supplies it: the
+     * profile height is stamped onto the row. With no height on record the row
+     * still lands (weight history stands alone) using the 0.0 sentinel, which
+     * every BMI/FFMI consumer already guards via BodyStats' <= 0 checks.
+     */
+    suspend fun addStat(weightKg: Double, bodyFatPct: Double?) {
+        val heightCm = profileDao.get()?.heightCm ?: 0.0
+        statDao.insert(
+            StatEntity(
+                takenAtMs = System.currentTimeMillis(),
+                weightKg = weightKg,
+                heightCm = heightCm,
+                bodyFatPct = bodyFatPct,
+            ),
+        )
     }
 
     suspend fun deleteStat(id: Long) = statDao.delete(id)
@@ -687,6 +695,20 @@ class Repository(
         observeProfile().map { it?.trainingMode ?: TrainingMode.STRENGTH }
 
     suspend fun setTrainingMode(mode: TrainingMode) = profileDao.setTrainingMode(mode.name)
+
+    /**
+     * Body profile (height + sex) for Settings and the stat-log estimator.
+     * Unknown stored sex strings fall back to MALE rather than crashing.
+     */
+    fun observeBodyProfile(): Flow<Pair<Double?, Sex>> =
+        profileDao.observe().map { p ->
+            val sex = p?.sex?.let { s -> runCatching { Sex.valueOf(s) }.getOrNull() } ?: Sex.MALE
+            p?.heightCm to sex
+        }
+
+    suspend fun setHeight(heightCm: Double) = profileDao.setHeight(heightCm)
+
+    suspend fun setSex(sex: Sex) = profileDao.setSex(sex.name)
 
     fun observeUnlockedTitles(): Flow<List<UnlockedTitle>> =
         titleDao.observeAll().map { list -> list.map { UnlockedTitle(it.titleId, it.unlockedAtMs) } }
@@ -931,12 +953,17 @@ class Repository(
                 healthDayDao.clearAll()
                 measurementDao.clearAll()
 
+                // The archive carries no height or sex (device-only profile
+                // fields), so the local values survive a restore.
+                val local = profileDao.get()
                 profileDao.upsert(
                     ProfileEntity(
                         name = archive.profile.name,
                         totalXp = archive.profile.totalXp,
                         currentTitleId = archive.profile.currentTitleId,
                         trainingMode = archive.trainingMode.name,
+                        heightCm = local?.heightCm,
+                        sex = local?.sex ?: "MALE",
                     ),
                 )
 

@@ -201,6 +201,13 @@ interface ProfileDao {
 
     @Query("UPDATE profile SET currentTitleId = :titleId WHERE id = 1")
     suspend fun setCurrentTitle(titleId: String?)
+
+    @Query("UPDATE profile SET heightCm = :heightCm WHERE id = 1")
+    suspend fun setHeight(heightCm: Double?)
+
+    @Query("UPDATE profile SET sex = :sex WHERE id = 1")
+    suspend fun setSex(sex: String)
+
 }
 
 @Dao

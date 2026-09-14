@@ -57,6 +57,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.lifecycle.viewmodel.initializer
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.text.style.TextOverflow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.data.Repository
@@ -80,10 +82,12 @@ import com.monarch.app.ui.theme.MonarchTracking
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.map
 import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
+import com.monarch.app.domain.Sex
 
 // Genuinely unique chart/band colours that have no MonarchColors token — kept in one
 // place so they aren't scattered; everything else must reference MonarchColors.
@@ -102,6 +106,8 @@ data class StatsUi(
     val exercises: Map<Long, Exercise> = emptyMap(),
     /** Sets per session id, so energy estimates can work the real logged work. */
     val sessionSets: Map<Long, List<SessionSet>> = emptyMap(),
+    /** Profile-owned height (Settings); null until the hunter sets it once. */
+    val profileHeight: Double? = null,
 )
 
 class StatsViewModel(private val repo: Repository) : ViewModel() {
@@ -119,7 +125,8 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
         log,
         repo.observePresets(),
         repo.observeExercises(),
-    ) { (stats, history, healthDays), presets, exercises ->
+        repo.observeBodyProfile(),
+    ) { (stats, history, healthDays), presets, exercises, bodyProfile ->
         StatsUi(
             stats = stats,
             completedDates = history.map {
@@ -131,6 +138,7 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
             healthDays = healthDays,
             exercises = exercises.associateBy { it.id },
             sessionSets = history.associate { it.first.id to it.second },
+            profileHeight = bodyProfile.first,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUi())
 
@@ -138,9 +146,21 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
         viewModelScope.launch { repo.deleteStat(id) }
     }
 
-    fun addStat(weightKg: Double, heightCm: Double, bodyFatPct: Double?) {
-        viewModelScope.launch { repo.addStat(weightKg, heightCm, bodyFatPct) }
+    fun addStat(weightKg: Double, bodyFatPct: Double?) {
+        viewModelScope.launch { repo.addStat(weightKg, bodyFatPct) }
     }
+
+    /** Profile sex; feeds the body-fat estimator's formula choice. */
+    val sex: StateFlow<Sex> = repo.observeBodyProfile()
+        .map { it.second }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Sex.MALE)
+
+    /** Latest measured circumference per site, for the estimator prefill. */
+    val latestMeasurements: StateFlow<Map<MeasurementSite, Double>> = repo.observeMeasurements()
+        .map { entries ->
+            entries.sortedBy { it.takenAtMs }.associate { it.site to it.valueCm }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     fun syncHealthHistory(days: Int = 90) {
         viewModelScope.launch { repo.syncHealthHistory(days) }
@@ -221,7 +241,11 @@ fun StatsScreen(
                     ) {
                         MetricLabel("BMI")
                         val bmi = latest?.let { BodyStats.bmi(it.weightKg, it.heightCm) }
-                        MetricValue(bmi?.toString() ?: "—", bmi?.let { BodyStats.bmiCategory(it) } ?: "log weight & height")
+                        MetricValue(
+                            bmi?.toString() ?: "—",
+                            bmi?.let { BodyStats.bmiCategory(it) }
+                                ?: "set height in Settings",
+                        )
                         Spacer(Modifier.height(6.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Text(
@@ -286,7 +310,7 @@ fun StatsScreen(
                 }
                 Spacer(Modifier.height(14.dp))
                 MonarchButton(
-                    "Log weight / height / body fat",
+                    "Log weight / body fat",
                     onClick = { showAdd = true },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -317,7 +341,9 @@ fun StatsScreen(
                                 val bmi = BodyStats.bmi(stat.weightKg, stat.heightCm)
                                 Text(
                                     buildString {
-                                        append("${stat.weightKg} kg · ${stat.heightCm} cm")
+                                        append("${stat.weightKg} kg")
+                                        // 0.0 is the heightless sentinel, never a real height.
+                                        if (stat.heightCm > 0.0) append(" · ${stat.heightCm} cm")
                                         stat.bodyFatPct?.let { append(" · $it% bf") }
                                         bmi?.let { append(" · BMI $it") }
                                     },
@@ -430,10 +456,12 @@ fun StatsScreen(
     if (showAdd) {
         AddStatDialog(
             initialWeight = latest?.weightKg?.toString() ?: "",
-            initialHeight = latest?.heightCm?.toString() ?: "",
+            heightCm = ui.profileHeight,
+            sex = viewModel.sex.collectAsStateWithLifecycle().value,
+            measurements = viewModel.latestMeasurements.collectAsStateWithLifecycle().value,
             onDismiss = { showAdd = false },
-            onConfirm = { weight, height, bf ->
-                viewModel.addStat(weight, height, bf)
+            onConfirm = { weight, bf ->
+                viewModel.addStat(weight, bf)
                 showAdd = false
             },
         )
@@ -725,59 +753,142 @@ private fun CalendarLegend(color: Color, label: String) {
 @Composable
 private fun AddStatDialog(
     initialWeight: String,
-    initialHeight: String,
+    heightCm: Double?,
+    sex: Sex,
+    measurements: Map<MeasurementSite, Double>,
     onDismiss: () -> Unit,
-    onConfirm: (Double, Double, Double?) -> Unit,
+    onConfirm: (Double, Double?) -> Unit,
 ) {
-    var weight by remember { mutableStateOf(initialWeight) }
-    var height by remember { mutableStateOf(initialHeight) }
-    var bodyFat by remember { mutableStateOf("") }
-    val valid = weight.toDoubleOrNull() != null && height.toDoubleOrNull() != null &&
-        (bodyFat.isBlank() || bodyFat.toDoubleOrNull() != null)
+    val weight = remember { mutableStateOf(initialWeight) }
+    val bodyFat = remember { mutableStateOf("") }
+    val bfValue = bodyFat.value.toDoubleOrNull()
+    val validWeight = weight.value.toDoubleOrNull()?.let { it > 0.0 } == true
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text("New reading") },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    // Estimator state: prefill the tapes from the hunter's latest measurements.
+    var showEstimator by remember { mutableStateOf(false) }
+    val neck = remember { mutableStateOf(measurements[MeasurementSite.NECK]?.toString() ?: "") }
+    val waist = remember { mutableStateOf(measurements[MeasurementSite.WAIST]?.toString() ?: "") }
+    val hips = remember { mutableStateOf(measurements[MeasurementSite.HIPS]?.toString() ?: "") }
+    val estimate = if (showEstimator) BodyStats.estimateBodyFatNavy(
+        sex, heightCm ?: 0.0,
+        neck.value.toDoubleOrNull() ?: 0.0,
+        waist.value.toDoubleOrNull() ?: 0.0,
+        hips.value.toDoubleOrNull(),
+    ) else null
+
+    Dialog(onDismissRequest = onDismiss) {
+        SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.Emerald) {
+            Column(
+                Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    "LOG BODY READING",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontFamily = ChakraPetch,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    color = MonarchColors.Emerald,
+                )
                 OutlinedTextField(
-                    value = weight,
-                    onValueChange = { weight = it.filter { c -> c.isDigit() || c == '.' }.take(7) },
+                    value = weight.value,
+                    onValueChange = { weight.value = it },
                     label = { Text("Weight (kg)") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
-                    value = height,
-                    onValueChange = { height = it.filter { c -> c.isDigit() || c == '.' }.take(7) },
-                    label = { Text("Height (cm)") },
+                    value = bodyFat.value,
+                    onValueChange = { bodyFat.value = it },
+                    label = { Text("Body fat % — optional") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.fillMaxWidth(),
                 )
-                OutlinedTextField(
-                    value = bodyFat,
-                    onValueChange = { bodyFat = it.filter { c -> c.isDigit() || c == '.' }.take(6) },
-                    label = { Text("Body fat % (optional, unlocks FFMI)") },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(
-                enabled = valid,
-                onClick = {
-                    onConfirm(
-                        weight.toDoubleOrNull() ?: return@TextButton,
-                        height.toDoubleOrNull() ?: return@TextButton,
-                        bodyFat.toDoubleOrNull(),
+                if (heightCm == null || heightCm <= 0.0) {
+                    // BMI/FFMI need it, but logging must not demand it every time.
+                    Text(
+                        "Set your height once in SETTINGS to unlock BMI and FFMI.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MonarchColors.InkMuted,
                     )
-                },
-            ) { Text("Record") }
-        },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
-    )
+                }
+                TextButton(onClick = { showEstimator = !showEstimator }) {
+                    Text(
+                        if (showEstimator) "HIDE ESTIMATOR" else "ESTIMATE FOR ME",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        letterSpacing = MonarchTracking.InlineLabel,
+                    )
+                }
+                if (showEstimator) {
+                    // US Navy circumference method, pre-filled from the latest
+                    // measurements the hunter already logged.
+                    Text(
+                        "Navy tape method from your neck, waist" +
+                            if (sex == Sex.FEMALE) " and hip measurements." else " and measurements.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MonarchColors.InkMuted,
+                    )
+                    listOf("NECK (cm)" to neck, "WAIST (cm)" to waist).forEach { (label, field) ->
+                        OutlinedTextField(
+                            value = field.value,
+                            onValueChange = { field.value = it },
+                            label = { Text(label) },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    if (sex == Sex.FEMALE) {
+                        OutlinedTextField(
+                            value = hips.value,
+                            onValueChange = { hips.value = it },
+                            label = { Text("HIPS (cm)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            estimate?.let { "~$it% BODY FAT" } ?: "Tapes not complete",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = ChakraPetch,
+                            color = if (estimate != null) MonarchColors.EmeraldBright else MonarchColors.InkMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TextButton(
+                            enabled = estimate != null,
+                            onClick = {
+                                estimate?.let {
+                                    bodyFat.value = it.toString()
+                                    showEstimator = false
+                                }
+                            },
+                        ) { Text("USE") }
+                    }
+                }
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text("Cancel") }
+                    MonarchButton(
+                        label = "LOG IT",
+                        onClick = { onConfirm(weight.value.toDoubleOrNull() ?: 0.0, bfValue) },
+                        enabled = validWeight,
+                        gold = true,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+        }
+    }
 }
+
 
 @Composable
 private fun ActivityTab(

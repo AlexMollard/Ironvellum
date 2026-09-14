@@ -50,4 +50,40 @@ class BodyStatsTest {
         assertEquals("Excellent (3-5 yrs training)", BodyStats.ffmiCategory(22.5))
         assertEquals("Approaching natural ceiling", BodyStats.ffmiCategory(24.0))
     }
+
+    @Test
+    fun `navy estimate of male reference body`() {
+        // Hodgdon & Beckett male form: 495 / (1.0324 - 0.19077*log10(85-38)
+        // + 0.15456*log10(178)) - 450 = 16.43 -> 16.4
+        assertEquals(
+            16.4,
+            BodyStats.estimateBodyFatNavy(Sex.MALE, heightCm = 178.0, neckCm = 38.0, waistCm = 85.0, hipCm = null)!!,
+            0.05,
+        )
+    }
+
+    @Test
+    fun `navy estimate of female reference body uses hips`() {
+        // 495 / (1.29579 - 0.35004*log10(72+96-32) + 0.221*log10(165)) - 450 = 26.4
+        assertEquals(
+            26.4,
+            BodyStats.estimateBodyFatNavy(Sex.FEMALE, heightCm = 165.0, neckCm = 32.0, waistCm = 72.0, hipCm = 96.0)!!,
+            0.05,
+        )
+    }
+
+    @Test
+    fun `navy estimate is null on missing or nonpositive inputs`() {
+        assertNull(BodyStats.estimateBodyFatNavy(Sex.MALE, 0.0, 38.0, 85.0, null))
+        assertNull(BodyStats.estimateBodyFatNavy(Sex.MALE, 178.0, 0.0, 85.0, null))
+        assertNull(BodyStats.estimateBodyFatNavy(Sex.MALE, 178.0, 38.0, -1.0, null))
+        assertNull(BodyStats.estimateBodyFatNavy(Sex.FEMALE, 165.0, 32.0, 72.0, null)) // hip required
+        assertNull(BodyStats.estimateBodyFatNavy(Sex.FEMALE, 165.0, 32.0, 72.0, 0.0))
+    }
+
+    @Test
+    fun `navy estimate rejects geometrically impossible tape sets`() {
+        // Male waist must exceed neck, or the log argument goes non-positive.
+        assertNull(BodyStats.estimateBodyFatNavy(Sex.MALE, 178.0, 40.0, 38.0, null))
+    }
 }

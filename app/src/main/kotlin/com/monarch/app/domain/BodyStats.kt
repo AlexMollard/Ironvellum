@@ -1,5 +1,8 @@
 package com.monarch.app.domain
 
+/** Feeds the Navy body-fat estimator; stored on the profile as its name. */
+enum class Sex { MALE, FEMALE }
+
 object BodyStats {
 
     fun bmi(weightKg: Double, heightCm: Double): Double? {
@@ -33,4 +36,34 @@ object BodyStats {
     }
 
     private fun round1(value: Double): Double = Math.round(value * 10.0) / 10.0
+
+    /**
+     * US Navy circumference method (Hodgdon & Beckett, 1984). All inputs in cm;
+     * the hip circumference is only used for the FEMALE formula. Returns null —
+     * never a guess — when any required input is missing or non-positive, or
+     * when the log argument goes non-positive (e.g. waist <= neck for males).
+     */
+    fun estimateBodyFatNavy(
+        sex: Sex,
+        heightCm: Double,
+        neckCm: Double,
+        waistCm: Double,
+        hipCm: Double?,
+    ): Double? {
+        if (heightCm <= 0.0 || neckCm <= 0.0 || waistCm <= 0.0) return null
+        val factor = when (sex) {
+            Sex.MALE -> {
+                if (waistCm - neckCm <= 0.0) return null
+                1.0324 - 0.19077 * Math.log10(waistCm - neckCm) + 0.15456 * Math.log10(heightCm)
+            }
+            Sex.FEMALE -> {
+                val hip = hipCm ?: return null
+                if (hip <= 0.0) return null
+                if (waistCm + hip - neckCm <= 0.0) return null
+                1.29579 - 0.35004 * Math.log10(waistCm + hip - neckCm) + 0.22100 * Math.log10(heightCm)
+            }
+        }
+        if (factor <= 0.0) return null
+        return round1(495.0 / factor - 450.0)
+    }
 }

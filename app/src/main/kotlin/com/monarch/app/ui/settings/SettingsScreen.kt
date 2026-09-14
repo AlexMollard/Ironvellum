@@ -5,6 +5,7 @@ import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -58,6 +59,7 @@ import com.monarch.app.data.HealthSnapshot
 import com.monarch.app.data.HealthSync
 import com.monarch.app.data.Repository
 import com.monarch.app.domain.HealthDay
+import com.monarch.app.domain.Sex
 import com.monarch.app.domain.TrainingMode
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.formatDate
@@ -121,8 +123,22 @@ class SettingsViewModel(
     val profile = repo.observeProfile()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** Profile-owned height and sex, edited in the BODY PROFILE window. */
+    val bodyProfile: StateFlow<Pair<Double?, Sex>> = repo.observeBodyProfile()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null to Sex.MALE)
+
     val healthDays = repo.observeHealthDays()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    fun setHeight(raw: String) {
+        val cm = raw.trim().toDoubleOrNull()
+        if (cm != null && cm > 0.0) viewModelScope.launch { repo.setHeight(cm) }
+    }
+
+    fun setSex(sex: Sex) {
+        viewModelScope.launch { repo.setSex(sex) }
+    }
+
 
     fun exportJson(onReady: (String) -> Unit) {
         if (_exporting.value) return
@@ -215,12 +231,13 @@ class SettingsViewModel(
             }
             val message: String
             if (snapshot.weightKg != null) {
-                val latestHeight = repo.observeStats().first().firstOrNull()?.heightCm
-                if (latestHeight != null) {
-                    repo.addStat(snapshot.weightKg, latestHeight, snapshot.bodyFatPct)
-                    message = "Imported into your stat history."
+                // Height is stamped from the profile inside addStat; no height
+                // on record yet means the row lands heightless (BMI stays "—").
+                repo.addStat(snapshot.weightKg, snapshot.bodyFatPct)
+                message = if (bodyProfile.value.first == null) {
+                    "Imported into your stat history. Set your height below to unlock BMI."
                 } else {
-                    message = "Log a height once manually — after that imports are automatic."
+                    "Imported into your stat history."
                 }
             } else {
                 message = "No weight found in Health Connect yet."
@@ -287,6 +304,9 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     var name by remember(profile?.name) { mutableStateOf(profile?.name ?: "") }
     var confirmImport by remember { mutableStateOf(false) }
+    val bodyProfile by viewModel.bodyProfile.collectAsStateWithLifecycle()
+    var heightInput by remember(bodyProfile.first) { mutableStateOf(bodyProfile.first?.toString() ?: "") }
+    val heightValid = heightInput.toDoubleOrNull()?.let { it > 0.0 } == true
 
     val permissionLauncher = rememberLauncherForActivityResult(
         PermissionController.createRequestPermissionResultContract(),
@@ -378,6 +398,68 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(14.dp))
+
+        // Height is set ONCE here, not re-asked on every stat log; sex feeds
+        // the Navy body-fat estimator in the stats log.
+        SystemWindow(Modifier.fillMaxWidth()) {
+            Text(
+                "BODY PROFILE",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.SystemGreen,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(10.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                OutlinedTextField(
+                    value = heightInput,
+                    onValueChange = { heightInput = it.filter { c -> c.isDigit() || c == '.' }.take(6) },
+                    label = { Text(if (bodyProfile.first == null) "Height (cm) — required for BMI" else "Height (cm)") },
+                    singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    modifier = Modifier.weight(1f),
+                )
+                MonarchButton(
+                    label = "Save",
+                    onClick = { viewModel.setHeight(heightInput) },
+                    enabled = heightValid,
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .background(MonarchColors.Abyss),
+            ) {
+                Sex.entries.forEach { sex ->
+                    val selected = bodyProfile.second == sex
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .background(if (selected) MonarchColors.Vault else Color.Transparent)
+                            .clickable { viewModel.setSex(sex) }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            sex.name,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontFamily = ChakraPetch,
+                            color = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
+                            letterSpacing = 2.sp,
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Height powers BMI, FFMI and step estimates. Sex picks the body-fat formula.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MonarchColors.InkMuted,
+            )
+        }
 
         SystemWindow(Modifier.fillMaxWidth()) {
             Text(
