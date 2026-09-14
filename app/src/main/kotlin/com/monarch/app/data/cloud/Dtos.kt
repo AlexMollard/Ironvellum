@@ -125,8 +125,16 @@ data class FeedEntry(
     val likedByMe: Boolean,
     /** Up to 3 heaviest-volume movements, " · "-joined; null for pre-migration sessions. */
     val topMovements: String?,
-    /** Headline set like "8 x 80.0 kg" or "6 x BW"; null when nothing was loaded. */
+    /**
+     * Headline set like "8 x 80.0 kg" or "6 x BW". Null when the hunt had no
+     * load-bearing set at all — a run or a climb, whose substance is the
+     * distance or the grade below, not a set.
+     */
     val bestSet: String?,
+    /** Metres covered, null when the hunt covered none. */
+    val distanceM: Double?,
+    /** Hardest grade attempted, free text (V-scale, Font, YDS all differ). */
+    val hardestGrade: String?,
     val movementCount: Int,
     /** Session duration in seconds; null when a timestamp is missing. */
     val durationSec: Int?,
@@ -156,6 +164,8 @@ data class FeedEntryDto(
     @SerialName("best_set") val bestSet: String? = null,
     @SerialName("movement_count") val movementCount: Int = 0,
     @SerialName("duration_sec") val durationSec: Int? = null,
+    @SerialName("distance_m") val distanceM: Double? = null,
+    @SerialName("hardest_grade") val hardestGrade: String? = null,
 )
 
 @Serializable

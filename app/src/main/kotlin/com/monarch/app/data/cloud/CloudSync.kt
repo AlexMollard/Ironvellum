@@ -456,6 +456,8 @@ class CloudSync(
                     likedByMe = dto.likedByMe,
                     topMovements = dto.topMovements,
                     bestSet = dto.bestSet,
+                    distanceM = dto.distanceM,
+                    hardestGrade = dto.hardestGrade,
                     movementCount = dto.movementCount,
                     durationSec = dto.durationSec,
                 )

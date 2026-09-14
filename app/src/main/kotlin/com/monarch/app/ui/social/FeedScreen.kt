@@ -893,11 +893,14 @@ private fun StatStrip(entry: FeedEntry) {
 @Composable
 private fun MovementLine(entry: FeedEntry) {
     val movements = entry.topMovements?.takeIf { it.isNotBlank() }
-    val bestSet = entry.bestSet?.takeIf { it.isNotBlank() }
-    // Cardio placeholder: "1 x BW" is one unloaded rep, not a set worth
-    // headlining. A real bodyweight set ("6 x BW") keeps its chip.
-    val showBest = bestSet != null && !isCardioPlaceholderSet(bestSet)
-    if (movements == null && !showBest) return
+    // The view decides a hunt's shape: `best_set` is null unless a genuinely
+    // load-bearing set exists, so a run no longer reports "1 x BW" and this
+    // screen needs no cardio special-case of its own. A run's substance is its
+    // distance, a climb's is its grade — headline whichever the hunt has.
+    val headline = entry.bestSet?.takeIf { it.isNotBlank() }?.let { "BEST $it" }
+        ?: entry.hardestGrade?.takeIf { it.isNotBlank() }?.let { "HARDEST $it" }
+        ?: entry.distanceM?.takeIf { it > 0 }?.let { "${formatDistance(it)} COVERED" }
+    if (movements == null && headline == null) return
     val meta = buildList {
         if (entry.movementCount > 0) {
             add("${entry.movementCount} ${if (entry.movementCount == 1) "MOVEMENT" else "MOVEMENTS"}")
@@ -927,7 +930,7 @@ private fun MovementLine(entry: FeedEntry) {
         } else {
             Spacer(Modifier.weight(1f))
         }
-        if (showBest) {
+        if (headline != null) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
@@ -944,7 +947,7 @@ private fun MovementLine(entry: FeedEntry) {
                     modifier = Modifier.size(12.dp),
                 )
                 Text(
-                    "BEST $bestSet",
+                    headline,
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.SemiBold,
@@ -969,15 +972,12 @@ private fun MovementLine(entry: FeedEntry) {
     }
 }
 
-/** True for the auto-cardio stamp "1 x BW": unloaded AND a single rep. */
-private fun isCardioPlaceholderSet(bestSet: String): Boolean {
-    val parts = bestSet.split("x").map { it.trim() }
-    val reps = parts.getOrNull(0)?.toIntOrNull() ?: return false
-    val load = parts.getOrNull(1) ?: return false
-    return reps == 1 && load.equals("BW", ignoreCase = true)
-}
 
 /** 48m under the hour, "1h 12m" past it, whole hours drop the zero minutes. */
+/** Metres read as km past 1000 — "10.0 KM" beats "10000 M" on a card. */
+private fun formatDistance(metres: Double): String =
+    if (metres >= 1000) "%.1f KM".format(metres / 1000) else "${metres.toInt()} M"
+
 private fun formatDuration(sec: Int): String {
     val h = sec / 3600
     val m = (sec % 3600) / 60
