@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exclude the Room database (and WAL/SHM sidecars) from cloud backup and device-to-device transfer: body measurements never leave this device. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <exclude domain="database" path="monarch.db" />
+        <exclude domain="database" path="monarch.db-wal" />
+        <exclude domain="database" path="monarch.db-shm" />
+    </cloud-backup>
+    <device-transfer>
+        <exclude domain="database" path="monarch.db" />
+        <exclude domain="database" path="monarch.db-wal" />
+        <exclude domain="database" path="monarch.db-shm" />
+    </device-transfer>
+</data-extraction-rules>

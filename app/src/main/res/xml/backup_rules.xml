@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Exclude the Room database (and WAL/SHM sidecars) from cloud backups: body measurements never leave this device. -->
+<full-backup-content>
+    <exclude domain="database" path="monarch.db" />
+    <exclude domain="database" path="monarch.db-wal" />
+    <exclude domain="database" path="monarch.db-shm" />
+</full-backup-content>
