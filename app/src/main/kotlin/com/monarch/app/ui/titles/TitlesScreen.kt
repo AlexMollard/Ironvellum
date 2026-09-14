@@ -144,17 +144,19 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }
 
     fun claim(skillName: String) {
-        viewModelScope.launch { _claim.value = repo.claimSkill(skillName) }
+        viewModelScope.launch {
+            val result = repo.claimSkill(skillName)
+            // The roll is banked HERE, at the one place a level-up is produced.
+            // Granting it from a LaunchedEffect keyed on the result double-paid
+            // whenever composition restarted (a rotation) while the overlay was
+            // still showing that same claim.
+            if (result.levelAfter > result.levelBefore) repo.grantRoll()
+            _claim.value = result
+        }
     }
 
     fun unclaim(skillName: String) {
         viewModelScope.launch { repo.unclaimSkill(skillName) }
-    }
-
-
-    /** Levelling banks a shadow draw — called from the existing level-up path. */
-    fun bankLevelRoll() {
-        viewModelScope.launch { repo.grantRoll() }
     }
     fun dismissClaim() {
         _claim.value = null
@@ -278,12 +280,6 @@ fun TitlesScreen(
             // non-scrolling shell; fillMaxSize here would fight the header.
             modifier = Modifier.fillMaxWidth().weight(1f),
         )
-    }
-    // The claim result is the one place level-ups are already detected; piggyback
-    // the roll grant here in a side-effect, never during composition.
-    LaunchedEffect(claimResult) {
-        val result = claimResult ?: return@LaunchedEffect
-        if (result.levelAfter > result.levelBefore) viewModel.bankLevelRoll()
     }
     claimResult?.let { result ->
         AchievementOverlay(
