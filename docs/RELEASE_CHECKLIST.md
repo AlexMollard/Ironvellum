@@ -54,14 +54,33 @@ Run all three; all must pass before anything is uploaded:
 
 ## 4. Supabase migrations
 
-1. Check what is applied vs staged. **`supabase/migrations/0008_shadow_board.sql`
-   is STAGED AND NOT APPLIED** — it `ALTER`s the live `profiles` table (adds
-   `shadow_essence`, `shadow_count`, `shadow_rate`) and creates the
-   `shadow_board` view. Apply it only on explicit go-ahead; the client degrades
-   gracefully without it (the shadow push is swallowed separately from training
-   sync, `CloudSync.kt`).
-2. Apply pending migrations to the production project (supabase CLI or SQL
-   editor) and smoke-test sign-in + sync against production before the release.
+Four files are STAGED AND NOT APPLIED. Order matters, and one of them must go
+out with its matching app build.
+
+| file | what it does | urgency |
+|---|---|---|
+| `0008_shadow_board.sql` | adds the shadow columns and the board view | optional; the client degrades gracefully without it (the shadow push is swallowed separately from training sync) |
+| `0009_backend_hardening.sql` | closes the friendship oracle, bounds feed text, blocks future-dated sessions, drops a dead view, pins a search path | **apply first — until it lands, anyone holding the shipped publishable key can enumerate the accepted-friendship graph, including for hunters who chose `private`** |
+| `0010_hunter_discovery.sql` | adds `find_hunter()` | apply before relying on friend requests: without it a by-name lookup returns nothing and the app reports that a real hunter does not exist |
+| `0011_server_side_aggregates.sql` | revokes direct writes to the ranked columns, derives level and title count, bounds the rest | **apply WITH the matching app build, never before** — the revoke makes an older client's profile upsert fail |
+
+1. Confirm what is already applied, then apply the pending files in numeric
+   order (supabase CLI or the SQL editor). Everything from `0005` onward is
+   idempotent and may be re-run; `0001`–`0004` are immutable.
+2. Re-run the assertion suite against a throwaway database first if the schema
+   changed at all — CI does this on every push, but it is the one check that
+   proves the guarantees still hold:
+
+   ```bash
+   docker run -d --rm --name pg -e POSTGRES_PASSWORD=probe -p 5432:5432 postgres:16
+   psql -h localhost -U postgres -f supabase/test/supabase_stub.sql
+   for f in supabase/migrations/*.sql; do psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f "$f"; done
+   psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/test/assert_all.sql
+   ```
+3. Smoke-test sign-in, a sync, and one friend request against production before
+   the release. The `find_hunter` and `push_aggregates` call paths are
+   compile-verified only — no local harness speaks PostgREST, so the first real
+   round trip is their first proof.
 
 ## 5. Backend / Google Cloud Console
 
