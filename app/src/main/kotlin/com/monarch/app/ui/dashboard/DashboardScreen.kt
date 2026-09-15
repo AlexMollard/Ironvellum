@@ -50,8 +50,8 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -340,7 +340,11 @@ fun DashboardScreen(
         // the height by the font scale. Stock reads 891, largest display with
         // 2x text reads 347 — the only configuration measured to lose the
         // button, and the only one that drops the gauges.
-        val linesOfRoom = LocalConfiguration.current.screenHeightDp.toFloat() / LocalDensity.current.fontScale
+        // containerSize, not screenHeightDp: it reports the WINDOW, so this
+        // still holds in split screen where the app owns half the display.
+        val density = LocalDensity.current
+        val windowHeightDp = with(density) { LocalWindowInfo.current.containerSize.height.toDp().value }
+        val linesOfRoom = windowHeightDp / density.fontScale
         val roomForGauges = linesOfRoom >= 400f
 
         if (roomForGauges) {
