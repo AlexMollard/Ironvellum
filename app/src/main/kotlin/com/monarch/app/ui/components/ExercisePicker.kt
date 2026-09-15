@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
@@ -109,7 +111,16 @@ fun ExercisePickerPanel(
                     singleLine = true,
                     textStyle = MaterialTheme.typography.bodyMedium.copy(color = MonarchColors.Ink),
                     cursorBrush = SolidColor(MonarchColors.SystemGreen),
-                    modifier = Modifier.fillMaxWidth(),
+                    // The placeholder below is a SIBLING Text, so the field
+                    // itself announced nothing and a screen reader landed on an
+                    // unlabelled input. The magnifier stays decorative: naming
+                    // both would read the same thing twice.
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        // A single line of text measured 20dp, under the WCAG AA
+                        // floor; the row's own padding supplies the visual height.
+                        .heightIn(min = 24.dp)
+                        .semantics { contentDescription = "Search movements" },
                 )
                 if (query.isEmpty()) {
                     Text(
@@ -233,7 +244,12 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
             )
             .inkBorder(if (selected) MonarchColors.SystemGreen else MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .clickable { onClick() }
+            // 23dp sat under even the WCAG AA 24dp floor. 32dp matches the
+            // Material chip height and the deeds board's filter pills, and only
+            // adds a few density pixels here.
+            .heightIn(min = 32.dp)
             .padding(horizontal = 9.dp, vertical = 5.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             label,

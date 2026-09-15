@@ -5,6 +5,9 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -124,12 +127,80 @@ class AccessibilityChecksTest {
         )
     }
 
+    /**
+     * Walks back until the nav bar is on screen, so one full-screen surface
+     * cannot strand the rest of the sweep.
+     */
+    private fun returnToNavigation() {
+        repeat(4) {
+            val navPresent = compose.onAllNodesWithContentDescription("Court")
+                .fetchSemanticsNodes().isNotEmpty()
+            if (navPresent) return
+            compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        }
+    }
+
+    /**
+     * The six destinations are only the front door. This app is deliberately
+     * icon-forward, so the screens BEHIND each tab are where an unlabelled
+     * glyph hides — and a control an accessibility service cannot announce is
+     * invisible to the hunter using one, however good it looks.
+     */
+    @Test
+    fun surfacesBehindEachTabAreAnnounceableToo() {
+        val unlabelled = mutableListOf<String>()
+        val tooSmall = mutableListOf<String>()
+
+        for ((destination, surface) in DEEPER_SURFACES) {
+            // Some surfaces replace the nav bar entirely, so each iteration
+            // walks back to it rather than assuming it is still there.
+            returnToNavigation()
+            compose.onNodeWithContentDescription(destination).performClick()
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+            // Sub-surfaces are reached by their own label; skip any this build
+            // does not show rather than failing on a missing feature.
+            if (compose.onAllNodesWithText(surface, substring = true).fetchSemanticsNodes().isEmpty()) continue
+            compose.onAllNodesWithText(surface, substring = true).onFirst().performClick()
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+            val where = "$destination/$surface"
+            unlabelled += unlabelledControls().map { "$where: $it" }
+            tooSmall += controlsBelowTheAccessibleFloor().map { "$where: $it" }
+        }
+
+        assertEquals(
+            "controls an accessibility service cannot announce, behind a tab",
+            emptyList<String>(),
+            unlabelled,
+        )
+        assertEquals(
+            "controls below the WCAG floor of ${WCAG_FLOOR_DP.toInt()}dp, behind a tab",
+            emptyList<String>(),
+            tooSmall,
+        )
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun <T> SemanticsConfiguration.valueOrNull(key: SemanticsPropertyKey<T>): T? =
         firstOrNull { it.key == key }?.value as? T
 
     private companion object {
         val DESTINATIONS = listOf("Train", "Stats", "Codex", "Guild", "Shadow", "Court")
+
+        /**
+         * destination to the sub-surface reached from it. Only surfaces that
+         * need no account, so the sweep never depends on a signed-in session.
+         */
+        val DEEPER_SURFACES = listOf(
+            "Codex" to "SKILL TREE",
+            "Codex" to "JOURNAL",
+            "Stats" to "TRAINING",
+            "Stats" to "ACTIVITY",
+            "Train" to "EXERCISE EXPLORER",
+            // Last: the settings screen replaces the nav bar, so nothing can
+            // be reached after it without going back.
+            "Court" to "System",
+        )
         const val FRAME_BUDGET_MS = 1_200L
         const val MIN_TARGET_DP = 48f
         const val WCAG_FLOOR_DP = 24f
