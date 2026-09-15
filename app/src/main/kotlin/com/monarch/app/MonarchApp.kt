@@ -7,6 +7,7 @@ import com.monarch.app.data.cloud.CloudSync
 import com.monarch.app.data.HealthSync
 import com.monarch.app.data.MonarchDatabase
 import com.monarch.app.data.Repository
+import com.monarch.app.ui.theme.InkStyle
 import com.monarch.app.data.HealthSyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,6 +48,12 @@ class MonarchApp : Application() {
         // Before anything touches Room: a failed migration leaves the data on
         // disk but unreachable, so the byte copy has to happen first.
         DbSnapshot.capture(this)
+        // Mirror the stored display preference into the holder the ink
+        // primitives read. Collected for the process lifetime so a flip in
+        // Settings redraws every surface immediately.
+        appScope.launch {
+            repository.observeInkStyle().collect { InkStyle.enabled = it }
+        }
         appScope.launch {
             repository.ensureSeeded()
             runCatching { repository.syncHealthHistory() }

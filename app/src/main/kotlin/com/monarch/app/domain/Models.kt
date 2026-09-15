@@ -85,6 +85,8 @@ data class PlayerProfile(
     val totalXp: Long = 0,
     val currentTitleId: String? = null,
     val trainingMode: TrainingMode = TrainingMode.STRENGTH,
+    /** Hand-drawn chrome; a display choice, surfaced in Settings. */
+    val inkStyle: Boolean = true,
 )
 
 data class SkillPractice(

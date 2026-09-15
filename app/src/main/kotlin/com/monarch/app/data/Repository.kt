@@ -703,6 +703,7 @@ class Repository(
                     totalXp = p.totalXp,
                     currentTitleId = p.currentTitleId,
                     trainingMode = TrainingMode.valueOf(p.trainingMode),
+                    inkStyle = p.inkStyle,
                 )
             }
         }
@@ -711,6 +712,11 @@ class Repository(
         observeProfile().map { it?.trainingMode ?: TrainingMode.STRENGTH }
 
     suspend fun setTrainingMode(mode: TrainingMode) = profileDao.setTrainingMode(mode.name)
+
+    /** Hand-drawn chrome on or off; mirrored into InkStyle so draw code can read it. */
+    fun observeInkStyle(): Flow<Boolean> = profileDao.observe().map { it?.inkStyle ?: true }
+
+    suspend fun setInkStyle(on: Boolean) = profileDao.setInkStyle(on)
 
     /**
      * Body profile (height + sex) for Settings and the stat-log estimator.
@@ -865,7 +871,13 @@ class Repository(
 
     suspend fun exportJson(): String {
         val profile = profileDao.get()?.let {
-            PlayerProfile(it.name, it.totalXp, it.currentTitleId, TrainingMode.valueOf(it.trainingMode))
+            PlayerProfile(
+                it.name,
+                it.totalXp,
+                it.currentTitleId,
+                TrainingMode.valueOf(it.trainingMode),
+                it.inkStyle,
+            )
         } ?: PlayerProfile()
         val names = exerciseDao.observeAll().first().associate { it.id to it.name }
         val presets = presetDao.observePresets().first().map { pw ->

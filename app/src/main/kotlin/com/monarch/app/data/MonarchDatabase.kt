@@ -73,7 +73,7 @@ abstract class MonarchDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 21
+        const val VERSION = 22
         // Height and sex move onto the profile (set once in Settings) so the
         // stat log no longer asks for height on every reading. heightCm is
         // backfilled from the newest stat row that actually carries one; with
@@ -231,6 +231,19 @@ abstract class MonarchDatabase : RoomDatabase() {
          * Single source of truth for the migration chain. Every future schema
          * change REQUIRES adding its Migration here AND bumping `version`.
          */
+        /**
+         * The hand-drawn ink treatment is a display preference, so it lives with
+         * the other Settings values on the profile. Defaults to on: that is the
+         * app's look, and the toggle exists to leave it, not to opt in.
+         */
+        private val MIGRATION_21_22 = object : Migration(21, 22) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE profile ADD COLUMN inkStyle INTEGER NOT NULL DEFAULT 1",
+                )
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -242,6 +255,7 @@ abstract class MonarchDatabase : RoomDatabase() {
             MIGRATION_18_19,
             MIGRATION_19_20,
             MIGRATION_20_21,
+            MIGRATION_21_22,
         )
 
         fun create(context: Context): MonarchDatabase =

@@ -3,6 +3,9 @@ package com.monarch.app.ui.theme
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -39,6 +42,20 @@ import kotlin.random.Random
  * from a seeded Random, keyed on the panel's own size. An unseeded Random would
  * re-roll on every recomposition and the whole UI would visibly crawl.
  */
+
+/**
+ * Whether the hand-drawn treatment is on.
+ *
+ * Held as observable state rather than a CompositionLocal because the ink
+ * primitives are DrawScope and Modifier functions called from draw lambdas,
+ * where a local is not in scope. Reading state here means a flip redraws every
+ * surface without restarting the activity.
+ *
+ * The flag is mirrored from the stored profile at startup; see MonarchTheme.
+ */
+object InkStyle {
+    var enabled by mutableStateOf(true)
+}
 
 /** Segments per edge. Too few reads as a polygon; too many smooths back into a straight line. */
 private const val SEGMENTS_PER_EDGE = 7
@@ -98,6 +115,13 @@ class InkEdgeShape(
         bottomStart: Float,
         layoutDirection: LayoutDirection,
     ): Outline {
+        if (!InkStyle.enabled) {
+            // Clean mode is the original cut-corner silhouette, not a wobble set
+            // to zero: a plain rectangle would lose the app's old geometry.
+            return Outline.Generic(
+                cutCornerPath(size, topStart, topEnd, bottomEnd, bottomStart),
+            )
+        }
         val corner = maxOf(topStart, topEnd, bottomEnd, bottomStart)
         // Bound the wander by the surface's own short side: the 6px that looks
         // drawn on a tall panel eats a noticeable slice off a 56dp button, which
@@ -207,6 +231,7 @@ private fun grainTile(seed: Int, density: Float): ImageBitmap {
  * rebuilding either per frame would allocate a bitmap on every draw.
  */
 fun Modifier.paperGrain(seed: Int = 0): Modifier = this.drawWithCache {
+    if (!InkStyle.enabled) return@drawWithCache onDrawBehind { }
     val tile = grainTile(seed, density)
     val brush = ShaderBrush(ImageShader(tile, TileMode.Repeated, TileMode.Repeated))
     onDrawBehind { drawRect(brush) }
@@ -225,6 +250,10 @@ fun DrawScope.inkTick(
     color: Color,
     widthPx: Float,
 ) {
+    if (!InkStyle.enabled) {
+        drawLine(color, from, to, widthPx, StrokeCap.Round)
+        return
+    }
     val steps = 4
     repeat(steps) { i ->
         val t0 = i.toFloat() / steps
@@ -263,6 +292,10 @@ fun Modifier.inkBorder(
         is Outline.Rounded -> Path().apply { addRoundRect(outline.roundRect) }
         is Outline.Rectangle -> Path().apply { addRect(outline.rect) }
     }
+    if (!InkStyle.enabled) {
+        drawPath(path, color, style = Stroke(width.toPx()))
+        return@drawBehind
+    }
     drawPath(path, color.copy(alpha = color.alpha * 0.35f), style = Stroke(width.toPx() * 2.6f))
     drawPath(path, color, style = Stroke(width.toPx()))
 }
@@ -284,6 +317,13 @@ fun DrawScope.inkRail(
 ) {
     val h = size.height
     val mid = h / 2f
+    if (!InkStyle.enabled) {
+        drawRect(color = track, size = size)
+        if (fraction > 0f) {
+            drawRect(brush = fill, size = Size(size.width * fraction.coerceIn(0f, 1f), h))
+        }
+        return
+    }
     val segments = (size.width / 24f).toInt().coerceIn(6, 40)
     val rng = Random(seed)
 
@@ -337,6 +377,12 @@ fun Modifier.inkHairline(
     // Orientation from the box itself: the same stroke serves a row divider and
     // a vertical separator, so callers never pick an axis by hand.
     val vertical = size.height > size.width
+    if (!InkStyle.enabled) {
+        val t = thickness.toPx()
+        if (vertical) drawRect(color, Offset((size.width - t) / 2f, 0f), Size(t, size.height))
+        else drawRect(color, Offset(0f, (size.height - t) / 2f), Size(size.width, t))
+        return@drawBehind
+    }
     val length = if (vertical) size.height else size.width
     val across = (if (vertical) size.width else size.height) / 2f
     val rng = Random(seed + length.roundToInt())
@@ -381,6 +427,10 @@ fun DrawScope.inkStroke(
     seed: Int = 0,
     taperEnds: Boolean = true,
 ) {
+    if (!InkStyle.enabled) {
+        drawLine(color, from, to, widthPx, StrokeCap.Round)
+        return
+    }
     val dx = to.x - from.x
     val dy = to.y - from.y
     val len = kotlin.math.sqrt(dx * dx + dy * dy)
@@ -428,6 +478,18 @@ fun DrawScope.inkArc(
     taperEnds: Boolean = true,
 ) {
     if (sweepDeg == 0f || radius <= 0f) return
+    if (!InkStyle.enabled) {
+        drawArc(
+            color = color,
+            startAngle = startDeg,
+            sweepAngle = sweepDeg,
+            useCenter = false,
+            topLeft = Offset(center.x - radius, center.y - radius),
+            size = Size(radius * 2, radius * 2),
+            style = Stroke(width = widthPx, cap = StrokeCap.Round),
+        )
+        return
+    }
     val arcLen = (kotlin.math.PI / 180.0 * kotlin.math.abs(sweepDeg) * radius).toFloat()
     val segments = (arcLen / 22f).toInt().coerceIn(4, 64)
     val rng = Random(seed + radius.roundToInt())
@@ -453,4 +515,27 @@ fun DrawScope.inkArc(
             cap = StrokeCap.Round,
         )
     }
+}
+
+/**
+ * The pre-ink silhouette: a rectangle with the top-start and bottom-end corners
+ * cut, which is what every Monarch surface looked like before the brush pass.
+ * Used when the hand-drawn style is switched off.
+ */
+private fun cutCornerPath(
+    size: Size,
+    topStart: Float,
+    topEnd: Float,
+    bottomEnd: Float,
+    bottomStart: Float,
+): Path = Path().apply {
+    moveTo(topStart, 0f)
+    lineTo(size.width - topEnd, 0f)
+    if (topEnd > 0f) lineTo(size.width, topEnd)
+    lineTo(size.width, size.height - bottomEnd)
+    if (bottomEnd > 0f) lineTo(size.width - bottomEnd, size.height)
+    lineTo(bottomStart, size.height)
+    if (bottomStart > 0f) lineTo(0f, size.height - bottomStart)
+    lineTo(0f, topStart)
+    close()
 }

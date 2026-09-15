@@ -68,6 +68,18 @@ unusable art (the rejected PNG is still written, for inspection only):
 The backdrop rule needs both halves: one piece came back as a white paper
 square inside a ragged border, which passed a corners-only check.
 
+### Toggle
+
+The treatment is a user choice, not a hardcoded look: **Settings -> APPEARANCE**
+switches between `INK` and `CLEAN`. It persists on the profile row
+(`inkStyle`, added by `MIGRATION_21_22`) and is mirrored into
+`InkStyle.enabled`, which every ink primitive reads at draw time - so a flip
+repaints immediately with no restart.
+
+`CLEAN` is not "wobble set to zero". Each primitive falls back to the geometry
+the app shipped with: cut-corner silhouettes, even rules, flat rails, true arcs,
+single-pass borders, and no paper grain.
+
 ### Status: on hold
 
 The `google-antigravity` image route is **quota-exhausted**

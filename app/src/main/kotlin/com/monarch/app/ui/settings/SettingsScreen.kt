@@ -68,6 +68,7 @@ import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.monarchHealthSync
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.theme.MonarchColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -183,6 +184,10 @@ class SettingsViewModel(
 
     fun setMode(mode: TrainingMode) {
         viewModelScope.launch { repo.setTrainingMode(mode) }
+    }
+
+    fun setInkStyle(on: Boolean) {
+        viewModelScope.launch { repo.setInkStyle(on) }
     }
 
     fun syncFromHealth() {
@@ -510,6 +515,61 @@ fun SettingsScreen(
                 when (profile?.trainingMode) {
                     TrainingMode.STRENGTH -> "Clear all sets → load rises, reps reset."
                     else -> "Double progression: reps climb, then load."
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = MonarchColors.InkMuted,
+            )
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        // Appearance: the ink treatment is the app's look, so this exists to
+        // leave it rather than to opt in. Off restores the original cut-corner
+        // geometry - plain rules, even rails, true arcs - not a broken version
+        // of the brush.
+        SystemWindow {
+            Text(
+                "APPEARANCE",
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.SystemGreen,
+                letterSpacing = MonarchTracking.SectionHeader,
+            )
+            Spacer(Modifier.height(10.dp))
+            val inkOn = profile?.inkStyle ?: true
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .background(MonarchColors.Abyss),
+            ) {
+                listOf(true to "INK", false to "CLEAN").forEach { (value, label) ->
+                    val selected = inkOn == value
+                    Box(
+                        Modifier
+                            .weight(1f)
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .background(if (selected) MonarchColors.Vault else Color.Transparent)
+                            .clickable { viewModel.setInkStyle(value) }
+                            .padding(vertical = 10.dp),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.labelLarge,
+                            fontFamily = ChakraPetch,
+                            color = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
+                            letterSpacing = 2.sp,
+                        )
+                    }
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                if (inkOn) {
+                    "Hand-drawn edges, paper grain and brushed rules."
+                } else {
+                    "Straight edges and even rules, as the app first shipped."
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = MonarchColors.InkMuted,
