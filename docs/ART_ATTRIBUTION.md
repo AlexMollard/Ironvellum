@@ -48,6 +48,14 @@ screens cannot drift apart:
   the same ink, and holding the number twice drifted the first time it was
   tried.
 
+The enforcement point is `_ink_tint_from_theme()` in `tools/art.py`, which
+regexes `val Ink = Color(0xFF……)` out of `Theme.kt` at import time. Renaming or
+moving that token breaks generation loudly with the path it tried, which is the
+intended failure: the alternative considered was declaring `tools/art.py` as an
+input to the unit-test task, but that keeps the number in two places and only
+*detects* disagreement. The generator already depends on this repo's layout
+(it writes into `app/src/main/res/`), so reading one token adds no new coupling.
+
 Every run self-audits and a failing audit exits nonzero rather than emitting
 unusable art (the rejected PNG is still written, for inspection only):
 
