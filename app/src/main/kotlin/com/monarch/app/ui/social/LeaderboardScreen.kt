@@ -613,7 +613,7 @@ private fun PodiumSlot(
         2 -> "\u265B" // queen
         else -> "\u265C" // rook
     }
-    val shape = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp)
+    val shape = MaterialTheme.shapes.small
     // ONE card per slot, not a cap welded to a plinth: the two-box version left a
     // visible seam and squeezed an IdentityRow so hard that the hunter's NAME was
     // ellipsized away entirely, leaving bare initials. A podium slot is a vertical

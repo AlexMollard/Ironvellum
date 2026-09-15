@@ -174,6 +174,7 @@ fun SkillJournal(
             .forEachIndexed { index, (name, count) ->
                 val def = Skills.forName(name)
                 val best = attempts.filter { it.skillName == name }.maxOfOrNull { it.value } ?: 0
+                val rowShape = MaterialTheme.shapes.small
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -182,12 +183,12 @@ fun SkillJournal(
                             Brush.horizontalGradient(
                                 listOf(Color(0xFF17211C), Color(0xFF0E1311)),
                             ),
-                            CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                            rowShape,
                         )
                         .border(
                             1.dp,
                             if (index == 0) MonarchColors.SovereignGold else MonarchColors.Rune,
-                            CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
+                            rowShape,
                         )
                         .clickable { onSelect(name) }
                         .padding(10.dp),
@@ -392,7 +393,7 @@ private fun LineCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val shape = CutCornerShape(topStart = 9.dp, bottomEnd = 9.dp)
+    val shape = MaterialTheme.shapes.small
     val complete = done == total && total > 0
     Column(
         modifier

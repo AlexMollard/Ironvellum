@@ -230,11 +230,15 @@ fun SkillDetailDialog(
                     Spacer(Modifier.height(8.dp))
 
                     // hero readout: one big number, big tap targets either side
+                    // One shape value for fill and border: two instances could
+                    // silently diverge, and a drawn edge must trace the same
+                    // line twice or it reads as a double outline.
+                    val readoutShape = MaterialTheme.shapes.small
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFF101614), CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
-                            .border(1.dp, MonarchColors.Rune, CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp))
+                            .background(Color(0xFF101614), readoutShape)
+                            .border(1.dp, MonarchColors.Rune, readoutShape)
                             .padding(vertical = 10.dp, horizontal = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,

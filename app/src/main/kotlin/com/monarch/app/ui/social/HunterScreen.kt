@@ -480,7 +480,7 @@ private fun AllyChip(
     gold: Boolean,
     onClick: () -> Unit,
 ) {
-    val shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)
+    val shape = MaterialTheme.shapes.small
     val accent = if (gold) MonarchColors.SovereignGold else MonarchColors.EmeraldBright
     Box(
         Modifier

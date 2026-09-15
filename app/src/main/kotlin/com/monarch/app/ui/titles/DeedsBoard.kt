@@ -592,7 +592,7 @@ private fun DeedRow(def: TitleDef, progress: Titles.Progress, unlockedAtMs: Long
 
 @Composable
 private fun SealCard(def: TitleDef, unlockedAtMs: Long?, worn: Boolean, onClick: () -> Unit) {
-    val shape = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp)
+    val shape = MaterialTheme.shapes.small
     // Seal border carries the rarity accent; worn keeps the gold treatment.
     val rim = if (worn) MonarchColors.SovereignGold else rarityColor(def.rarity)
     val rimWidth = if (worn || def.rarity == TitleRarity.Sovereign) 2.dp else 1.dp
