@@ -535,10 +535,20 @@ object Titles {
         )
     }
 
-    /** Consecutive days with a completed workout, counting back from today. */
-    fun trainingStreakDays(dates: Set<LocalDate>): Int {
+    /**
+     * Consecutive days with a completed workout, counting back from [today].
+     *
+     * A day of rest does not break the streak the moment midnight passes: if
+     * today has no workout yet, counting starts at yesterday, so a hunter who
+     * trains every day but opens the app before training still sees the streak
+     * they earned. Two consecutive empty days do break it.
+     *
+     * [today] is a parameter so the boundaries above are testable; production
+     * callers take the default and stay device-local, matching the zone the
+     * dates themselves were bucketed in.
+     */
+    fun trainingStreakDays(dates: Set<LocalDate>, today: LocalDate = LocalDate.now()): Int {
         if (dates.isEmpty()) return 0
-        val today = LocalDate.now()
         var day = if (today in dates) today else today.minusDays(1)
         var streak = 0
         while (day in dates) {

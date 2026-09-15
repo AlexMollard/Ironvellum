@@ -336,6 +336,18 @@ open-work list.
   evidence of exclusion. Recorded as a gap rather than a pass — proving what
   the backup actually contains needs a device signed into a Google account.
 
+  The two headline calendar numbers had no test of their own. The title rules
+  for streak and best-week were covered by setting the ledger field directly,
+  which never runs the arithmetic that produces it — and `trainingStreakDays`
+  read `LocalDate.now()` internally, so its boundaries were unreachable from a
+  test at all. `today` is now a defaulted parameter (production callers
+  unchanged, still device-local in the same zone the dates were bucketed in) and
+  twelve cases cover the grace day, a two-day gap, gaps after old history,
+  month/leap-day/year boundaries, dates ahead of a backwards clock, and the
+  rolling seven-day window being `[start, start+7)` rather than a calendar week.
+  Mutation-proven both ways: dropping the grace day fails one, widening the
+  window to eight days fails another.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
