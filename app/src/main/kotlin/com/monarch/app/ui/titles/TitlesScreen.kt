@@ -59,6 +59,7 @@ import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
+import com.monarch.app.ui.components.MonarchTabPill
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import java.time.Instant
@@ -227,9 +228,9 @@ fun TitlesScreen(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-            TabPill("DEEDS", tab == TitlesTab.DEEDS) { tab = TitlesTab.DEEDS }
-            TabPill("SKILL TREE", tab == TitlesTab.TREE) { tab = TitlesTab.TREE }
-            TabPill("JOURNAL", tab == TitlesTab.JOURNAL) { tab = TitlesTab.JOURNAL }
+            MonarchTabPill("DEEDS", tab == TitlesTab.DEEDS) { tab = TitlesTab.DEEDS }
+            MonarchTabPill("SKILL TREE", tab == TitlesTab.TREE) { tab = TitlesTab.TREE }
+            MonarchTabPill("JOURNAL", tab == TitlesTab.JOURNAL) { tab = TitlesTab.JOURNAL }
         }
 
         if (tab == TitlesTab.JOURNAL) {
@@ -261,7 +262,7 @@ fun TitlesScreen(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Skills.LINES.forEach { line ->
-                    TabPill(line.uppercase(), line == treeLine, lineArt(line)) { treeLine = line }
+                    MonarchTabPill(line.uppercase(), line == treeLine, art = lineArt(line)) { treeLine = line }
                 }
             }
             Spacer(Modifier.height(14.dp))
@@ -354,40 +355,5 @@ private fun lineArt(line: String): Int? = when (line.lowercase()) {
     else -> null
 }
 
-@Composable
-private fun TabPill(label: String, selected: Boolean, art: Int? = null, onClick: () -> Unit) {
-    // Tab pills sit directly above inked cards, so a machined corner here
-    // was the most visible geometric leftover. The short-side cap keeps
-    // the wander subtle at this height.
-    val shape = MaterialTheme.shapes.small
-    Row(
-        Modifier
-            .clip(shape)
-            .background(if (selected) MonarchColors.SystemGreen else MonarchColors.VaultHigh)
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 7.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        if (art != null) {
-            Icon(
-                painter = painterResource(art),
-                contentDescription = null,
-                tint = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
-                modifier = Modifier.size(16.dp),
-            )
-        }
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
-            letterSpacing = 2.sp,
-            maxLines = 1,
-            softWrap = false,
-        )
-    }
-}
 
 

@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.monarch.app.ui.components.MonarchTabPill
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 
@@ -53,7 +54,7 @@ fun SocialScreen(onOpenHunter: (userId: String, displayName: String) -> Unit) {
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             GuildTab.entries.forEach { entry ->
-                TabPill(entry.label, entry == tab) { tab = entry }
+                MonarchTabPill(entry.label, entry == tab) { tab = entry }
             }
         }
         Spacer(Modifier.height(14.dp))
@@ -71,36 +72,3 @@ fun SocialScreen(onOpenHunter: (userId: String, displayName: String) -> Unit) {
     }
 }
 
-/** Same pill treatment as the Codex tabs, so the two hubs read as siblings. */
-@Composable
-private fun TabPill(label: String, selected: Boolean, onClick: () -> Unit) {
-    // Tab pills sit directly above inked cards, so a machined corner here
-    // was the most visible geometric leftover. The short-side cap keeps
-    // the wander subtle at this height.
-    val shape = MaterialTheme.shapes.small
-    Text(
-        label,
-        style = MaterialTheme.typography.labelMedium,
-        fontFamily = ChakraPetch,
-        fontWeight = FontWeight.Bold,
-        color = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
-        letterSpacing = 2.sp,
-        modifier = Modifier
-            .background(
-                if (selected) {
-                    Brush.verticalGradient(
-                        listOf(MonarchColors.SystemGreen, MonarchColors.Emerald),
-                    )
-                } else {
-                    Brush.verticalGradient(listOf(Color(0xFF141A18), Color(0xFF0E1312)))
-                },
-                shape,
-            )
-            .border(1.dp, if (selected) MonarchColors.EmeraldBright else MonarchColors.Rune, shape)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { onClick() }
-            .padding(horizontal = 14.dp, vertical = 7.dp),
-    )
-}

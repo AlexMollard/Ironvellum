@@ -22,6 +22,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -129,6 +131,65 @@ fun SystemWindow(
         ) {
             body()
         }
+    }
+}
+
+/**
+ * The tab pill used by every hub (Guild, Codex, and anything added later).
+ *
+ * There were two private copies of this, and they had already drifted: one drew
+ * a gradient with a border, the other a flat fill - while its own comment
+ * claimed the two hubs "read as siblings". Converting both to the ink shape
+ * would have preserved that lie, so they share one implementation instead.
+ */
+@Composable
+fun MonarchTabPill(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    art: Int? = null,
+    onClick: () -> Unit,
+) {
+    val shape = MaterialTheme.shapes.small
+    Row(
+        modifier
+            .background(
+                if (selected) {
+                    Brush.verticalGradient(
+                        listOf(MonarchColors.SystemGreen, MonarchColors.Emerald),
+                    )
+                } else {
+                    Brush.verticalGradient(listOf(Color(0xFF141A18), Color(0xFF0E1312)))
+                },
+                shape,
+            )
+            .border(1.dp, if (selected) MonarchColors.EmeraldBright else MonarchColors.Rune, shape)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { onClick() }
+            .padding(horizontal = 13.dp, vertical = 7.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (art != null) {
+            Icon(
+                painter = painterResource(art),
+                contentDescription = null,
+                tint = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
+                modifier = Modifier.size(16.dp),
+            )
+        }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
+            letterSpacing = MonarchTracking.InlineLabel,
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
 @Composable

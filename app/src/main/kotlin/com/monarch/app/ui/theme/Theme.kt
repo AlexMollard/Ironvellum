@@ -119,9 +119,15 @@ private val MonarchTypography: Typography
         )
     }
 
-// Ink edges for anything big enough to show a brush wobble; the geometric cut
-// corner survives only at extraSmall, where a 1.4dp wander on a 3dp corner
-// reads as a rendering fault rather than a drawn line.
+// Ink edges everywhere except extraSmall.
+//
+// The original rule was "corners under 8dp stay geometric, because the wander
+// eats a small corner". Bounding the wander by the surface's short side
+// removed that reason, so 6dp pills were inked too rather than being kept as
+// silent exceptions. What survives is a different limit: a facet is ~55px, so
+// a surface much smaller than that can only ever get the 3-facet minimum and
+// renders as a lopsided polygon. extraSmall exists for those clips - icon
+// touch targets and 2-3dp inset chips - not as a style choice.
 //
 // Distinct salts stop a button, a chip and a panel from sharing one traced
 // outline.
