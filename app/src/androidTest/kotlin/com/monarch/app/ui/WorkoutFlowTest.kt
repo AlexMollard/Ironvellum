@@ -29,6 +29,13 @@ import org.junit.runner.RunWith
  * the DAOs — and none of that proves the loop is wired together. This drives it
  * through the real UI against the real database, which is the only way the
  * wiring is actually exercised.
+ *
+ * Everything here polls rather than sampling the tree once, and that is not
+ * belt-and-braces: the dashboard seeds its catalogue asynchronously, so the
+ * quest button does not exist on the first frame, and the session assembles off
+ * the main thread behind a "Summoning session…" placeholder. Reading once
+ * reports an empty screen and looks exactly like a missing feature — several
+ * failures during this test's development were that, not real defects.
  */
 @RunWith(AndroidJUnit4::class)
 class WorkoutFlowTest {
