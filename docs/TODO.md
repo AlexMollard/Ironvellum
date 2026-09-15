@@ -75,14 +75,25 @@ open-work list.
   Shadow): palette, padding, no overflow, tappable metric tiles, line-chart
   captions. Two suspected defects turned out to be misreads of the screenshot —
   settle layout questions with the accessibility dump's bounds, not pixels.
-- **Large system font scale, verified on device at 1.5x.** Three defects found
-  and fixed: the six nav labels wrapped mid-word then clipped, the rank and
-  class line was cut mid-phrase ("E-Rank · the"), and the worn title cut
-  without an ellipsis. Nav labels now hold their design size — the icon and the
-  content description carry the meaning, neither of which scaling affects.
-  Measured from the accessibility dump rather than by eye: at 1.5x the last
-  label ends at 1053px of 1080. The quest card degrades gracefully, showing
-  fewer movements rather than clipping a row.
+- **Large system font scale, measured on device at 1.0x, 1.5x and 2.0x.** Three
+  defects found and fixed: the six nav labels wrapped mid-word and then clipped,
+  the rank and class line was cut mid-phrase ("E-Rank · the" instead of "the
+  Awakened"), and the worn title cut without an ellipsis.
+
+  Nav labels are pinned to their design size rather than merely capped — both
+  `fontSize` **and** `letterSpacing` are declared in `sp`, so clamping only the
+  size still let the label grow ~10% at 1.5x and ~20% at 2.0x. Caught by
+  comparing dump widths across scales, not by looking: `Court` read
+  102 -> 112 -> 123px. With the tracking clamped too, all three scales now
+  measure identically (`Court` 102px, `Shadow` 139px ending at 1047px of 1080).
+
+  Deliberate tradeoff: six slots cannot share one screen width at 2.0x however
+  they wrap, and the label is supplementary — the icon carries the meaning, and
+  the `contentDescription` a screen reader announces is unaffected by scaling.
+
+  Not measured: the other screens at 2.0x, and no test guards this — the
+  instrumented suite runs at the device's own font scale, so a regression here
+  would need the same manual `settings put system font_scale` sweep.
 - **Lint's 10 remaining warnings.** Audited individually, all deliberate: 8 are
   `ModifierParameter` ordering convention, and the 2 asking for a plain
   `Modifier` default are the two composables that must carry their own size

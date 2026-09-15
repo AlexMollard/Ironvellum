@@ -228,7 +228,14 @@ fun MonarchRoot() {
                                     // which scaling never affects.
                                     maxLines = 1,
                                     softWrap = false,
+                                    // Both the size AND the tracking are
+                                    // declared in sp, so clamping only the
+                                    // size still let the label grow ~10% at
+                                    // 1.5x and ~20% at 2x (measured from the
+                                    // dump: 102 -> 112 -> 123px).
                                     fontSize = MaterialTheme.typography.labelMedium.fontSize /
+                                        LocalDensity.current.fontScale,
+                                    letterSpacing = MaterialTheme.typography.labelMedium.letterSpacing /
                                         LocalDensity.current.fontScale,
                                 )
                             }
