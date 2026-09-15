@@ -529,9 +529,12 @@ private fun RateDial(
             inkArc(gaugeCentre, gaugeRadius, start, span * sweep.value, MonarchColors.EmeraldBright, stroke, seed = 83)
             // Quarter ticks on the track: a gauge with no scale can't be read
             // even once the fill is legible.
-            val cx = size.width / 2f
-            val cy = size.height / 2f
-            val radius = (size.width - inset * 2) / 2f
+            // Same centre and radius as the arcs above: deriving these from
+            // width alone agreed only because the dial is square, and would
+            // have floated the ticks off the ring the moment it wasn't.
+            val cx = gaugeCentre.x
+            val cy = gaugeCentre.y
+            val radius = gaugeRadius
             for (i in 0..4) {
                 val a = ((start + span * i / 4f) * PI / 180.0).toFloat()
                 val outer = radius + stroke * 0.62f
