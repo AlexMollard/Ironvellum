@@ -45,6 +45,7 @@ import com.monarch.app.domain.Skills
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.components.InkRail
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import kotlin.math.sin
 import kotlin.random.Random
@@ -443,7 +444,7 @@ private fun StepGlyph(symbol: String, onClick: () -> Unit) {
         Modifier
             .size(44.dp)
             .background(Color(0xFF16201C), MaterialTheme.shapes.small)
-            .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.small)
+            .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.small, 1.dp)
             .clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {

@@ -41,6 +41,7 @@ import com.monarch.app.domain.MuscleGroup
 import com.monarch.app.domain.Skills
 import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 
 /**
@@ -95,7 +96,7 @@ fun ExercisePickerPanel(
             Modifier
                 .fillMaxWidth()
                 .background(Color(0xFF141A18), MaterialTheme.shapes.extraSmall)
-                .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
+                .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
                 .padding(horizontal = 10.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -221,7 +222,7 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
                 },
                 MaterialTheme.shapes.extraSmall,
             )
-            .border(1.dp, if (selected) MonarchColors.SystemGreen else MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
+            .inkBorder(if (selected) MonarchColors.SystemGreen else MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .clickable { onClick() }
             .padding(horizontal = 9.dp, vertical = 5.dp),
     ) {

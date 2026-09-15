@@ -56,6 +56,7 @@ import com.monarch.app.ui.components.TrendChart
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.map
@@ -140,7 +141,7 @@ fun ExerciseExplorerScreen(
                 letterSpacing = 2.sp,
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.extraSmall)
-                    .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
+                    .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
                     .clickable { onBack() }
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )

@@ -35,6 +35,7 @@ import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.components.InkRail
 import com.monarch.app.ui.theme.inkHairline
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import java.time.Instant
 import java.time.LocalDate
@@ -295,11 +296,7 @@ fun SkillJournal(
                                 ),
                                 MaterialTheme.shapes.small,
                             )
-                            .border(
-                                1.dp,
-                                if (entry.claimed) MonarchColors.SovereignGold else MonarchColors.Rune,
-                                MaterialTheme.shapes.small,
-                            )
+                            .inkBorder(if (entry.claimed) MonarchColors.SovereignGold else MonarchColors.Rune, MaterialTheme.shapes.small, 1.dp)
                             .padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

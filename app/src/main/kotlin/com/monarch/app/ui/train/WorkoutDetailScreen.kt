@@ -50,6 +50,7 @@ import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import kotlinx.coroutines.flow.SharingStarted
@@ -365,11 +366,7 @@ private fun SetChip(set: SessionSet) {
         Modifier
             .clip(MaterialTheme.shapes.extraSmall)
             .background(if (set.done) MonarchColors.VaultHigh else Color.Transparent)
-            .border(
-                1.dp,
-                if (set.done) MonarchColors.Emerald.copy(alpha = 0.35f) else MonarchColors.Rune,
-                MaterialTheme.shapes.extraSmall,
-            )
+            .inkBorder(if (set.done) MonarchColors.Emerald.copy(alpha = 0.35f) else MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .padding(horizontal = 10.dp, vertical = 7.dp),
     ) {
         Text(

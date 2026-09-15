@@ -401,3 +401,49 @@ fun DrawScope.inkStroke(
         )
     }
 }
+
+/**
+ * An arc drawn as a brush sweep rather than a machined ring.
+ *
+ * A perfect circle is as obviously machine-made as a ruled line: constant
+ * width, constant radius, no lift. This walks the sweep in short segments,
+ * breathing the width and drifting the radius, and tapers both ends unless the
+ * caller wants a hard stop.
+ */
+fun DrawScope.inkArc(
+    center: Offset,
+    radius: Float,
+    startDeg: Float,
+    sweepDeg: Float,
+    color: Color,
+    widthPx: Float,
+    seed: Int = 0,
+    taperEnds: Boolean = true,
+) {
+    if (sweepDeg == 0f || radius <= 0f) return
+    val arcLen = (kotlin.math.PI / 180.0 * kotlin.math.abs(sweepDeg) * radius).toFloat()
+    val segments = (arcLen / 22f).toInt().coerceIn(4, 64)
+    val rng = Random(seed + radius.roundToInt())
+    val drift = (widthPx * 0.22f).coerceAtMost(2.2f)
+
+    fun pointAt(deg: Float, r: Float): Offset {
+        val rad = (deg * kotlin.math.PI / 180.0).toFloat()
+        return Offset(center.x + kotlin.math.cos(rad) * r, center.y + kotlin.math.sin(rad) * r)
+    }
+
+    for (i in 0 until segments) {
+        val t0 = i.toFloat() / segments
+        val t1 = (i + 1).toFloat() / segments
+        val ends = if (taperEnds) (minOf(t0, 1f - t0) / 0.5f).coerceIn(0f, 1f) else 1f
+        val weight = (0.62f + rng.nextFloat() * 0.38f) * (0.4f + 0.6f * ends)
+        val r0 = radius + (rng.nextFloat() - 0.5f) * 2f * drift
+        val r1 = radius + (rng.nextFloat() - 0.5f) * 2f * drift
+        drawLine(
+            color = color.copy(alpha = color.alpha * (0.6f + 0.4f * weight)),
+            start = pointAt(startDeg + sweepDeg * t0, r0),
+            end = pointAt(startDeg + sweepDeg * t1, r1),
+            strokeWidth = widthPx * (0.6f + 0.4f * weight),
+            cap = StrokeCap.Round,
+        )
+    }
+}

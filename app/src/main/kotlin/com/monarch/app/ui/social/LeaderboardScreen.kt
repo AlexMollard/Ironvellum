@@ -58,6 +58,7 @@ import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.components.InkRail
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -525,11 +526,7 @@ private fun MetricChips(selected: BoardMetric, onPick: (BoardMetric) -> Unit) {
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.small)
                     .background(if (active) MonarchColors.SovereignGold else Color(0xFF141A18))
-                    .border(
-                        1.dp,
-                        if (active) MonarchColors.SovereignGold else MonarchColors.Rune,
-                        MaterialTheme.shapes.small,
-                    )
+                    .inkBorder(if (active) MonarchColors.SovereignGold else MonarchColors.Rune, MaterialTheme.shapes.small, 1.dp)
                     .clickable { onPick(candidate) }
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
@@ -851,11 +848,7 @@ private fun BoardSelector(selected: Board, onPick: (Board) -> Unit) {
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.small)
                     .background(if (active) MonarchColors.SovereignGold else Color(0xFF141A18))
-                    .border(
-                        1.dp,
-                        if (active) MonarchColors.SovereignGold else MonarchColors.Rune,
-                        MaterialTheme.shapes.small,
-                    )
+                    .inkBorder(if (active) MonarchColors.SovereignGold else MonarchColors.Rune, MaterialTheme.shapes.small, 1.dp)
                     .clickable { onPick(candidate) }
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )

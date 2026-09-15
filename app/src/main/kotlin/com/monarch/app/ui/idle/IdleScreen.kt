@@ -80,6 +80,7 @@ import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.components.InkRail
 import com.monarch.app.ui.theme.inkBorder
+import com.monarch.app.ui.theme.inkArc
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.components.RelicSigil
@@ -517,24 +518,12 @@ private fun RateDial(
             // Track is deliberately NOT green: a Rune track under a green-to-
             // green sweep gradient left no readable edge, so the needle's
             // position was invisible.
-            drawArc(
-                color = MonarchColors.Vault,
-                startAngle = start,
-                sweepAngle = span,
-                useCenter = false,
-                topLeft = Offset(inset, inset),
-                size = arcSize,
-                style = Stroke(stroke, cap = StrokeCap.Round),
-            )
-            drawArc(
-                color = MonarchColors.EmeraldBright,
-                startAngle = start,
-                sweepAngle = span * sweep.value,
-                useCenter = false,
-                topLeft = Offset(inset, inset),
-                size = arcSize,
-                style = Stroke(stroke, cap = StrokeCap.Round),
-            )
+            // Brushed sweeps, same reason as the step gauge: a machined ring
+            // is a straight line bent into a circle.
+            val gaugeCentre = Offset(size.width / 2f, size.height / 2f)
+            val gaugeRadius = minOf(arcSize.width, arcSize.height) / 2f
+            inkArc(gaugeCentre, gaugeRadius, start, span, MonarchColors.Vault, stroke, seed = 81, taperEnds = false)
+            inkArc(gaugeCentre, gaugeRadius, start, span * sweep.value, MonarchColors.EmeraldBright, stroke, seed = 83)
             // Quarter ticks on the track: a gauge with no scale can't be read
             // even once the fill is legible.
             val cx = size.width / 2f
@@ -881,11 +870,7 @@ private fun CrestSwatch(treatment: CrestFrameTreatment?, locked: Boolean = false
                 },
                 MaterialTheme.shapes.small,
             )
-            .border(
-                if (t == null) 1.dp else t.frameWidth,
-                if (t == null) MonarchColors.Rune else t.frameColor,
-                MaterialTheme.shapes.small,
-            ),
+            .inkBorder(if (t == null) MonarchColors.Rune else t.frameColor, MaterialTheme.shapes.small, if (t == null) 1.dp else t.frameWidth),
         contentAlignment = Alignment.Center,
     ) {
         // Optional outer ring, inset like the avatar's, for double-ring frames.
@@ -893,7 +878,7 @@ private fun CrestSwatch(treatment: CrestFrameTreatment?, locked: Boolean = false
             Box(
                 Modifier
                     .size(46.dp)
-                    .border(1.5.dp, ring, MaterialTheme.shapes.small),
+                    .inkBorder(ring, MaterialTheme.shapes.small, 1.5.dp),
             )
         }
         Text(

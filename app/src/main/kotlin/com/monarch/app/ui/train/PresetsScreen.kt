@@ -44,6 +44,7 @@ import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -144,7 +145,7 @@ fun PresetsScreen(
                             Box(
                                 Modifier
                                     .clip(MaterialTheme.shapes.extraSmall)
-                                    .border(1.dp, MonarchColors.SovereignGold, MaterialTheme.shapes.extraSmall)
+                                    .inkBorder(MonarchColors.SovereignGold, MaterialTheme.shapes.extraSmall, 1.dp)
                                     .padding(horizontal = 8.dp, vertical = 4.dp),
                             ) {
                                 Text(DAY_LABELS[it] ?: "", style = MaterialTheme.typography.labelSmall, color = MonarchColors.SovereignGold)
@@ -188,7 +189,7 @@ fun PresetsScreen(
                             color = MonarchColors.InkMuted,
                             modifier = Modifier
                                 .clip(MaterialTheme.shapes.extraSmall)
-                                .border(1.dp, MonarchColors.InkMuted.copy(alpha = 0.4f), MaterialTheme.shapes.extraSmall)
+                                .inkBorder(MonarchColors.InkMuted.copy(alpha = 0.4f), MaterialTheme.shapes.extraSmall, 1.dp)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,

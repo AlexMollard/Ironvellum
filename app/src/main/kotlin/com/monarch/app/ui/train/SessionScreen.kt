@@ -83,6 +83,7 @@ import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchTracking
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -230,7 +231,7 @@ fun SessionScreen(
                 color = MonarchColors.DangerRed,
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.extraSmall)
-                    .border(1.dp, MonarchColors.DangerRed.copy(alpha = 0.6f), MaterialTheme.shapes.extraSmall)
+                    .inkBorder(MonarchColors.DangerRed.copy(alpha = 0.6f), MaterialTheme.shapes.extraSmall, 1.dp)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,

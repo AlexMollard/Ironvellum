@@ -73,6 +73,7 @@ import com.monarch.app.ui.monarchAccount
 import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import java.time.Instant
@@ -674,7 +675,7 @@ private fun FeedCard(
                     modifier = Modifier
                         .clip(MaterialTheme.shapes.extraSmall)
                         .background(MonarchColors.Abyss)
-                        .border(1.dp, if (entry.likedByMe) MonarchColors.SovereignGold else MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
+                        .inkBorder(if (entry.likedByMe) MonarchColors.SovereignGold else MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
                         .clickable { onToggleLike(entry) }
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                 ) {
@@ -854,7 +855,7 @@ private fun AllyChip(ally: AllyState, onAddAlly: () -> Unit) {
         modifier = Modifier
             .clip(MaterialTheme.shapes.extraSmall)
             .background(MonarchColors.Abyss)
-            .border(1.dp, if (ally == AllyState.None) MonarchColors.Emerald else MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
+            .inkBorder(if (ally == AllyState.None) MonarchColors.Emerald else MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .clickable(enabled = ally == AllyState.None) { onAddAlly() }
             .padding(horizontal = 8.dp, vertical = 4.dp),
     ) {
@@ -885,7 +886,7 @@ private fun StatStrip(entry: FeedEntry) {
             .clip(MaterialTheme.shapes.extraSmall)
             // Gradient plate gives the spine weight over the flat card body.
             .background(Brush.linearGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)))
-            .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
+            .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -959,7 +960,7 @@ private fun MovementLine(entry: FeedEntry) {
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.extraSmall)
                     .background(MonarchColors.Abyss)
-                    .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
+                    .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
                     .padding(horizontal = 8.dp, vertical = 4.dp),
             ) {
                 Icon(

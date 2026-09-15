@@ -86,6 +86,8 @@ import com.monarch.app.ui.components.XpBar
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.components.InkRail
 import com.monarch.app.ui.theme.inkHairline
+import com.monarch.app.ui.theme.inkArc
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.components.formatDate
@@ -659,27 +661,15 @@ private fun StepGauge(steps: Int, goal: Int, modifier: Modifier = Modifier) {
             val stroke = 7.dp.toPx()
             val inset = stroke / 2
             val arcSize = Size(size.width - stroke, size.height - stroke)
-            drawArc(
-                color = MonarchColors.Rune,
-                startAngle = 135f,
-                sweepAngle = 270f,
-                useCenter = false,
-                topLeft = Offset(inset, inset),
-                size = arcSize,
-                style = Stroke(width = stroke, cap = StrokeCap.Round),
-            )
+            // Brushed sweeps: a constant-width, constant-radius ring is as
+            // machine-made as a ruled line. The gradient is dropped because a
+            // brush carries one colour at a time; the ring hue still reports
+            // whether the goal was met.
+            val centre = Offset(size.width / 2f, size.height / 2f)
+            val radius = (minOf(arcSize.width, arcSize.height)) / 2f
+            inkArc(centre, radius, 135f, 270f, MonarchColors.Rune, stroke, seed = 71, taperEnds = false)
             if (fraction > 0f) {
-                drawArc(
-                    brush = Brush.sweepGradient(
-                        listOf(MonarchColors.SystemGreen, ring, MonarchColors.SystemGreen),
-                    ),
-                    startAngle = 135f,
-                    sweepAngle = 270f * fraction,
-                    useCenter = false,
-                    topLeft = Offset(inset, inset),
-                    size = arcSize,
-                    style = Stroke(width = stroke, cap = StrokeCap.Round),
-                )
+                inkArc(centre, radius, 135f, 270f * fraction, ring, stroke, seed = 73)
             }
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -790,7 +780,7 @@ private fun DayTile(day: Int, isToday: Boolean) {
                 if (isToday) Brush.verticalGradient(listOf(Color(0xFF1E3A2C), Color(0xFF16281E)))
                 else Brush.verticalGradient(listOf(Color(0xFF121B16), Color(0xFF0F1712)))
             )
-            .border(1.dp, if (isToday) MonarchColors.SystemGreen else MonarchColors.Rune, MaterialTheme.shapes.extraSmall),
+            .inkBorder(if (isToday) MonarchColors.SystemGreen else MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
