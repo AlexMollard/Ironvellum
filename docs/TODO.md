@@ -484,6 +484,37 @@ open-work list.
   because the UI strings are Kotlin literals rather than resources, so nothing
   expands them. Expansion risk is covered by the font-scale axis instead.
 
+  **A jank investigation that did not support its own first conclusion.** The
+  data layer had been measured at five years; the screens never had, so I
+  seeded the app's real database with 1,000 sessions (via `am instrument`
+  directly — the Gradle task uninstalls the app afterwards and takes the data
+  with it) and measured scroll sweeps with `dumpsys gfxinfo`. First reading:
+  Train 57% janky and Stats 51% with data against 26% and 22% on an empty
+  database, while Codex — whose content does not depend on the data — sat at
+  27% either way. That looked like a clean data-dependent signal, and it named
+  real per-frame work: `groupBy` over every session ever logged inside a
+  `LazyColumn` content lambda, and full sorts of every weight reading inside
+  composition. The Stats sorts are now derived once per data change with
+  `remember`. The Train-side grouping was tried the same way and **reverted**:
+  a `LazyListScope` lambda is not composable, so memoising it meant hoisting
+  the `ui.history` read into the parent body, and that added a recomposition
+  hop before the grouped list appears — which broke
+  `WorkoutLogRendersHistoryTest` under its paused test clock. Attributed by
+  running that test against `HEAD`'s copy of the one file (passes) and mine
+  (fails). An optimisation with no measurable benefit does not get to weaken a
+  passing test; if it is ever shown to matter, the grouping belongs in the
+  ViewModel flow instead.
+
+  **But the fix produced no measurable improvement** (Train 57.0 -> 53.9, Stats
+  51.1 -> 50.8), and Codex — data-independent, unchanged code — read 49.6% on
+  that same run against 26.8% before. So I measured the noise instead of
+  trusting it: five identical sweeps of one screen span **26.5% to 37.6%, an
+  11-point range**. The original 26 -> 57 gap is barely outside that band, and
+  the fix's effect is well inside it. The honest verdict: this emulator's
+  software renderer cannot attribute frame time, the memoisation is justified
+  algorithmically rather than by measurement, and a real-device jank number is
+  still owed. The throwaway seeder was deleted and the device cleared.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day

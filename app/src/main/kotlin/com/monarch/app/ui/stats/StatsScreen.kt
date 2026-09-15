@@ -272,7 +272,14 @@ fun StatsScreen(
                 Spacer(Modifier.height(10.dp))
                 SystemWindow(Modifier.fillMaxWidth()) {
                     MetricLabel("WEIGHT")
-                    val weights = ui.stats.sortedBy { it.takenAtMs }.map { it.weightKg }
+                    // Derived once per data change rather than on every
+                    // recomposition. The saving is algorithmic, not measured: on a
+                    // software-rendered emulator identical scroll sweeps vary by
+                    // ±11 points of janky frames, which is too noisy to attribute
+                    // anything to. A real-device measurement is still owed.
+                    val weights = remember(ui.stats) {
+                        ui.stats.sortedBy { it.takenAtMs }.map { it.weightKg }
+                    }
                     MetricValueBig(latest?.weightKg?.toString() ?: "—", "kg")
                     if (weights.size >= 2) {
                         Spacer(Modifier.height(8.dp))
@@ -288,7 +295,10 @@ fun StatsScreen(
                 Spacer(Modifier.height(10.dp))
                 SystemWindow(Modifier.fillMaxWidth()) {
                     MetricLabel("BMI HISTORY")
-                    val bmis = ui.stats.sortedBy { it.takenAtMs }.mapNotNull { BodyStats.bmi(it.weightKg, it.heightCm) }
+                    val bmis = remember(ui.stats) {
+                        ui.stats.sortedBy { it.takenAtMs }
+                            .mapNotNull { BodyStats.bmi(it.weightKg, it.heightCm) }
+                    }
                     if (bmis.size >= 2) {
                         TrendChart(bmis, MonarchColors.SystemGreen, fromZero = false)
                         ChartCaption("Latest ${bmis.last()} — ${BodyStats.bmiCategory(bmis.last())}")
@@ -379,11 +389,12 @@ fun StatsScreen(
                 Spacer(Modifier.height(16.dp))
                 SystemWindow(Modifier.fillMaxWidth()) {
                     MetricLabel("CUMULATIVE XP")
-                    val cumulative = runningXp(ui.sessions)
+                    val cumulative = remember(ui.sessions) { runningXp(ui.sessions) }
+                    val totalXp = remember(ui.sessions) { ui.sessions.sumOf { it.xpAwarded } }
                     if (cumulative.size >= 2) {
                         TrendChart(cumulative, MonarchColors.SystemGreen)
                         ChartCaption(
-                            "${ui.sessions.sumOf { it.xpAwarded }} XP across ${ui.sessions.size} campaigns",
+                            "$totalXp XP across ${ui.sessions.size} campaigns",
                         )
                     } else {
                         ChartCaption("Complete workouts to draw the line.")
@@ -913,6 +924,16 @@ private fun AddStatDialog(
 }
 
 
+/** Step aggregates derived once per data change rather than per frame. */
+private data class StepsDerived(
+    val byDate: Map<java.time.LocalDate, com.monarch.app.domain.HealthDay>,
+    val sorted: List<com.monarch.app.domain.HealthDay>,
+    val last7: List<com.monarch.app.domain.HealthDay>,
+    val avg7: Int,
+    val bestDay: com.monarch.app.domain.HealthDay,
+    val lifetime: Int,
+)
+
 @Composable
 private fun ActivityTab(
     days: List<HealthDay>,
@@ -942,13 +963,27 @@ private fun ActivityTab(
             return
         }
 
+        // One derivation per data change. Every line below walks the whole
+        // health history, and a scroll recomposes this section continuously.
         val today = LocalDate.now()
-        val byDate = days.associateBy { it.date }
-        val sorted = days.sortedBy { it.date }
-        val last7 = sorted.filter { it.date > today.minusDays(7) }
-        val avg7 = if (last7.isEmpty()) 0 else last7.sumOf { it.steps } / last7.size
-        val bestDay = days.maxBy { it.steps }
-        val lifetime = days.sumOf { it.steps }
+        val derived = remember(days) {
+            val sorted = days.sortedBy { it.date }
+            val last7 = sorted.filter { it.date > today.minusDays(7) }
+            StepsDerived(
+                byDate = days.associateBy { it.date },
+                sorted = sorted,
+                last7 = last7,
+                avg7 = if (last7.isEmpty()) 0 else last7.sumOf { it.steps } / last7.size,
+                bestDay = days.maxBy { it.steps },
+                lifetime = days.sumOf { it.steps },
+            )
+        }
+        val byDate = derived.byDate
+        val sorted = derived.sorted
+        val last7 = derived.last7
+        val avg7 = derived.avg7
+        val bestDay = derived.bestDay
+        val lifetime = derived.lifetime
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ActivityTile("TODAY'S STEPS", fmtInt(byDate[today]?.steps ?: 0), today.toString(), Modifier.weight(1f))
