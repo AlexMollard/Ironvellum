@@ -130,9 +130,17 @@ open-work list.
   configuration available (landscape + largest display size + 2.0x text) and the
   primary content of all six is reachable with zero swipes, as are the live
   session screen and settings. Court was the only vulnerable screen because it
-  is the only one that does not scroll. Not verified: the preset editor in that
-  configuration — the `[ EDIT ]` entry point was not reachable by the tap
-  helper there, which is a harness gap, not a finding either way.
+  is the only one that does not scroll.
+
+  The preset editor took three attempts, and every failure was the harness
+  rather than the app: tapping coordinates from a dump taken BEFORE scrolling
+  taps whatever moved into that spot, so the editor never opened and the
+  "unreachable" searches were scrolling the presets list behind it. Taking the
+  bounds and the tap in the same breath opens it, and `Save Preset` is reachable
+  (2 swipes at stock, 7 at the largest display size with 2.0x text, in both
+  orientations). The first pattern was wrong too — that button is a
+  Material `Button`, so its label stays `Save Preset` rather than being
+  uppercased the way `MonarchButton` does it.
 
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
