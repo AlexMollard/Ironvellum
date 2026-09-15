@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -132,7 +131,10 @@ fun MonarchRoot() {
                     ) {
                         destinations.forEach { destination ->
                             val selected = currentRoute == destination.route
-                            val slotShape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp)
+                            // Theme shape, not a local cut corner: the nav is
+                            // the one chrome element on every screen, so it has
+                            // to carry the same hand-drawn edge as the panels.
+                            val slotShape = MaterialTheme.shapes.small
                             Column(
                                 modifier = Modifier
                                     .weight(1f)

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -140,13 +139,17 @@ fun AchievementOverlay(items: List<Achievement>, onDone: () -> Unit) {
                     textAlign = TextAlign.Center,
                 )
                 Spacer(Modifier.height(14.dp))
+                val rewardShape = MaterialTheme.shapes.medium
                 Box(
                     Modifier
                         .background(
                             Brush.verticalGradient(listOf(Color(0xFF6B4C11), Color(0xFF241905))),
-                            CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp),
+                            rewardShape,
                         )
-                        .border(2.dp, item.accent, CutCornerShape(topStart = 14.dp, bottomEnd = 14.dp))
+                        // One shape value, used twice: the fill and the border
+                        // previously built two separate instances, so any future
+                        // change had to be made in both places to stay aligned.
+                        .border(2.dp, item.accent, rewardShape)
                         .padding(horizontal = 22.dp, vertical = 16.dp),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {

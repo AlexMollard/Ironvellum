@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -44,7 +43,9 @@ fun HunterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier) {
     val plateBottom = treatment?.plateBottom ?: MonarchColors.Vault
     val frameColor = treatment?.frameColor ?: MonarchColors.Rune
     val accent = treatment?.initialColor ?: MonarchColors.SystemGreen
-    val shape = CutCornerShape(topStart = 10.dp, bottomEnd = 10.dp)
+    // The sigil sits on the home player card, next to inked panels; a
+    // geometric cut corner here is the one edge that would look machined.
+    val shape = MaterialTheme.shapes.small
 
     Row(
         modifier
