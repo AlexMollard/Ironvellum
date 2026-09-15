@@ -389,6 +389,9 @@ fun Modifier.inkHairline(
     val rng = Random(seed + length.roundToInt())
     val segments = (length / 30f).toInt().coerceIn(4, 32)
     val base = thickness.toPx()
+    // Shared joint offsets, so the rule reads as one stroke rather than a row
+    // of disconnected dashes.
+    val drifts = FloatArray(segments + 1) { (rng.nextFloat() - 0.5f) * base * 0.6f }
     for (i in 0 until segments) {
         val t0 = i.toFloat() / segments
         val a = length * t0
@@ -396,8 +399,8 @@ fun Modifier.inkHairline(
         // Ends lift; the middle carries the ink.
         val ends = minOf(t0, 1f - t0) / 0.5f
         val weight = (0.45f + rng.nextFloat() * 0.55f) * (0.35f + 0.65f * ends)
-        val drift1 = (rng.nextFloat() - 0.5f) * base * 0.6f
-        val drift2 = (rng.nextFloat() - 0.5f) * base * 0.6f
+        val drift1 = drifts[i]
+        val drift2 = drifts[i + 1]
         drawLine(
             color = color.copy(alpha = color.alpha * (0.5f + 0.5f * weight)),
             start = if (vertical) Offset(across + drift1, a) else Offset(a, across + drift1),
@@ -443,13 +446,16 @@ fun DrawScope.inkStroke(
     val ny = dx / len
     val rng = Random(seed + len.roundToInt())
     val drift = (widthPx * 0.55f).coerceAtMost(1.6f)
+    // One offset per joint, shared by both segments meeting there: independent
+    // endpoints leave a visible notch at every junction.
+    val offs = FloatArray(segments + 1) { (rng.nextFloat() - 0.5f) * 2f * drift }
     for (i in 0 until segments) {
         val t0 = i.toFloat() / segments
         val t1 = (i + 1).toFloat() / segments
         val ends = if (taperEnds) (minOf(t0, 1f - t0) / 0.5f).coerceIn(0f, 1f) else 1f
         val weight = (0.5f + rng.nextFloat() * 0.5f) * (0.3f + 0.7f * ends)
-        val o1 = (rng.nextFloat() - 0.5f) * 2f * drift
-        val o2 = (rng.nextFloat() - 0.5f) * 2f * drift
+        val o1 = offs[i]
+        val o2 = offs[i + 1]
         drawLine(
             color = color.copy(alpha = color.alpha * (0.55f + 0.45f * weight)),
             start = Offset(from.x + dx * t0 + nx * o1, from.y + dy * t0 + ny * o1),
@@ -501,17 +507,24 @@ fun DrawScope.inkArc(
         return Offset(center.x + kotlin.math.cos(rad) * r, center.y + kotlin.math.sin(rad) * r)
     }
 
+    // One radius per JOINT, shared by the two segments that meet there. Drawing
+    // each segment with its own two radii left every joint mismatched by up to
+    // 2x the drift - a ring of notches rather than one stroke - and on a closed
+    // 360 sweep the wrap point showed it worst. The last joint of a full sweep
+    // reuses the first, so the ring closes on itself exactly.
+    val closed = kotlin.math.abs(sweepDeg) >= 359.9f
+    val radii = FloatArray(segments + 1) { radius + (rng.nextFloat() - 0.5f) * 2f * drift }
+    if (closed) radii[segments] = radii[0]
+
     for (i in 0 until segments) {
         val t0 = i.toFloat() / segments
         val t1 = (i + 1).toFloat() / segments
         val ends = if (taperEnds) (minOf(t0, 1f - t0) / 0.5f).coerceIn(0f, 1f) else 1f
         val weight = (0.62f + rng.nextFloat() * 0.38f) * (0.4f + 0.6f * ends)
-        val r0 = radius + (rng.nextFloat() - 0.5f) * 2f * drift
-        val r1 = radius + (rng.nextFloat() - 0.5f) * 2f * drift
         drawLine(
             color = color.copy(alpha = color.alpha * (0.6f + 0.4f * weight)),
-            start = pointAt(startDeg + sweepDeg * t0, r0),
-            end = pointAt(startDeg + sweepDeg * t1, r1),
+            start = pointAt(startDeg + sweepDeg * t0, radii[i]),
+            end = pointAt(startDeg + sweepDeg * t1, radii[i + 1]),
             strokeWidth = widthPx * (0.6f + 0.4f * weight),
             cap = StrokeCap.Round,
         )
