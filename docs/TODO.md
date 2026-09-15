@@ -199,6 +199,13 @@ open-work list.
   log's rows once and found 5, which is correct lazy behaviour rather than a
   defect, so the assertion had to scroll and accumulate instead.
 
+  Both of those tests seed the app's OWN database (a second handle on the file
+  is the divergence trap on `DbSnapshot`), so they now clear the sessions table
+  before AND after. Without the cleanup every run left 60 more sessions behind,
+  which would eventually break the flow tests that reason about today's quest —
+  for a reason invisible in their own code. Checked by running the whole
+  instrumented suite twice in a row rather than once.
+
 
 
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`

@@ -11,6 +11,7 @@ import com.monarch.app.MonarchApp
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -43,6 +44,8 @@ class WorkoutLogRendersHistoryTest {
         val app = InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as MonarchApp
         runBlocking {
+            (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as MonarchApp)
+                .database.openHelper.writableDatabase.execSQL("DELETE FROM sessions")
             val repo = app.repository
             val preset = repo.observePresets().first().first()
             val sessionId = repo.startSessionFromPreset(preset.id)
@@ -53,6 +56,19 @@ class WorkoutLogRendersHistoryTest {
         }
         compose.mainClock.autoAdvance = false
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+    }
+
+    /**
+     * These tests seed the app's OWN database, so they must leave it as they
+     * found it: without this every run adds sessions, the next run measures a
+     * different app, and the flow tests that reason about today's quest start
+     * failing for reasons nobody can see.
+     */
+    @After
+    fun clearSeededSessions() {
+        val app = InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as MonarchApp
+        app.database.openHelper.writableDatabase.execSQL("DELETE FROM sessions")
     }
 
     @Test

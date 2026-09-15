@@ -16,6 +16,7 @@ import com.monarch.app.data.db.SessionEntity
 import com.monarch.app.data.db.SetLogEntity
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import org.junit.After
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
@@ -45,6 +46,8 @@ class CappedListsHoldAtScaleTest {
         val app = InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as MonarchApp
         runBlocking {
+            (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as MonarchApp)
+                .database.openHelper.writableDatabase.execSQL("DELETE FROM sessions")
             val exercises = app.database.exerciseDao().observeAll().first()
             val day = 86_400_000L
             val start = System.currentTimeMillis() - SEEDED * day
@@ -96,6 +99,19 @@ class CappedListsHoldAtScaleTest {
             if (seen > 0) return seen
         }
         return seen
+    }
+
+    /**
+     * These tests seed the app's OWN database, so they must leave it as they
+     * found it: without this every run adds sessions, the next run measures a
+     * different app, and the flow tests that reason about today's quest start
+     * failing for reasons nobody can see.
+     */
+    @After
+    fun clearSeededSessions() {
+        val app = InstrumentationRegistry.getInstrumentation()
+            .targetContext.applicationContext as MonarchApp
+        app.database.openHelper.writableDatabase.execSQL("DELETE FROM sessions")
     }
 
     @Test
