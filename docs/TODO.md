@@ -152,6 +152,13 @@ open-work list.
   ignored for a foreground app (background it first), and the instrumented gate
   uninstalls the app, so a sweep straight after one tests an empty launcher.
 
+  Offline was checked in airplane mode: the app launches, Court renders with its
+  resume CTA, and Guild degrades to its sign-in prompt rather than hanging or
+  crashing (crash buffer empty). Logging itself never touches the network — it
+  is Room, covered by the instrumented suite — so the part that remains
+  unverified is the SIGNED-IN sync path offline, which needs credentials and is
+  listed under the gaps above rather than claimed here.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
