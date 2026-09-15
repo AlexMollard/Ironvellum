@@ -93,6 +93,47 @@ class ExportRoundTripTest {
         assertEquals(20.0, logged.weightKg!!, 0.001)
     }
 
+    @Test
+    fun aRejectedArchiveLeavesTheExistingTrainingAlone() = runTest {
+        // Same fixture, smaller: one completed session is enough to notice loss.
+        val preset = db.presetDao().observePresets().first().first().preset
+        val sessionId = repo.startSessionFromPreset(preset.id)
+        repo.updateSet(db.sessionDao().setsFor(sessionId).first().id, reps = 5, weightKg = 40.0, done = true)
+        repo.completeSession(sessionId)
+        val completedBefore = db.sessionDao().completedCount()
+        val setsBefore = db.sessionDao().setsFor(sessionId).size
+        assertTrue("the fixture must have training to lose", completedBefore > 0 && setsBefore > 0)
+
+        // Anything a hunter could plausibly hand the importer: a foreign
+        // document, a truncated archive, and one whose training mode this
+        // build has never heard of.
+        val hostile = listOf(
+            "not json at all",
+            "{\"formatVersion\":1,\"exportedAtMs\":1,\"profile\":{\"name\":\"x\"",
+            "{\"formatVersion\":1,\"exportedAtMs\":1,\"profile\":{\"name\":\"x\",\"totalXp\":1}," +
+                "\"trainingMode\":\"POWERBUILDING\",\"presets\":[],\"sessions\":[],\"stats\":[],\"titles\":[]}",
+        )
+        for (json in hostile) {
+            val result = repo.importArchive(json)
+            assertTrue("this must be refused, not applied: $json", result.isFailure)
+            // A rejected file must cost the hunter nothing. Two independent
+            // things guarantee that — validation runs before the clears, and
+            // the clears run inside a transaction — so mutating either one
+            // alone still passes here (measured). This fails when BOTH are
+            // gone, which is the only state where training is actually lost.
+            assertEquals(
+                "a refused import must not touch the completed sessions",
+                completedBefore,
+                db.sessionDao().completedCount(),
+            )
+            assertEquals(
+                "a refused import must not touch the logged sets",
+                setsBefore,
+                db.sessionDao().setsFor(sessionId).size,
+            )
+        }
+    }
+
     private companion object {
         /** Never the app's live database. */
         const val TEST_DB = "monarch-export-roundtrip-test.db"
