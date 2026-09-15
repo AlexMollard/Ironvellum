@@ -64,6 +64,7 @@ import com.monarch.app.domain.TrainingMode
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.components.InkSpinner
+import com.monarch.app.ui.components.InkSegmented
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.monarchHealthSync
 import com.monarch.app.ui.monarchRepository
@@ -442,33 +443,11 @@ fun SettingsScreen(
                 )
             }
             Spacer(Modifier.height(10.dp))
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .background(MonarchColors.Abyss),
-            ) {
-                Sex.entries.forEach { sex ->
-                    val selected = bodyProfile.second == sex
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .background(if (selected) MonarchColors.Vault else Color.Transparent)
-                            .clickable { viewModel.setSex(sex) }
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            sex.name,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontFamily = ChakraPetch,
-                            color = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
-                            letterSpacing = 2.sp,
-                        )
-                    }
-                }
-            }
+            InkSegmented(
+                options = Sex.entries.map { it to it.name },
+                selected = bodyProfile.second,
+                onPick = { viewModel.setSex(it) },
+            )
             Spacer(Modifier.height(8.dp))
             Text(
                 "Height powers BMI, FFMI and step estimates. Sex picks the body-fat formula.",
@@ -486,33 +465,11 @@ fun SettingsScreen(
                 letterSpacing = 2.sp,
             )
             Spacer(Modifier.height(10.dp))
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .background(MonarchColors.Abyss),
-            ) {
-                TrainingMode.entries.forEach { mode ->
-                    val selected = profile?.trainingMode == mode
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .background(if (selected) MonarchColors.Vault else Color.Transparent)
-                            .clickable { viewModel.setMode(mode) }
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            mode.name,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontFamily = ChakraPetch,
-                            color = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
-                            letterSpacing = 2.sp,
-                        )
-                    }
-                }
-            }
+            InkSegmented(
+                options = TrainingMode.entries.map { it to it.name },
+                selected = profile?.trainingMode ?: TrainingMode.STRENGTH,
+                onPick = { viewModel.setMode(it) },
+            )
             Spacer(Modifier.height(8.dp))
             Text(
                 when (profile?.trainingMode) {
@@ -540,33 +497,11 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(10.dp))
             val inkOn = profile?.inkStyle ?: true
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .background(MonarchColors.Abyss),
-            ) {
-                listOf(true to "INK", false to "CLEAN").forEach { (value, label) ->
-                    val selected = inkOn == value
-                    Box(
-                        Modifier
-                            .weight(1f)
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .background(if (selected) MonarchColors.Vault else Color.Transparent)
-                            .clickable { viewModel.setInkStyle(value) }
-                            .padding(vertical = 10.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            label,
-                            style = MaterialTheme.typography.labelLarge,
-                            fontFamily = ChakraPetch,
-                            color = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
-                            letterSpacing = 2.sp,
-                        )
-                    }
-                }
-            }
+            InkSegmented(
+                options = listOf(true to "INK", false to "CLEAN"),
+                selected = inkOn,
+                onPick = { viewModel.setInkStyle(it) },
+            )
             Spacer(Modifier.height(8.dp))
             Text(
                 if (inkOn) {

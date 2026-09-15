@@ -84,6 +84,7 @@ import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.monarchAccount
 import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.components.InkSegmented
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.domain.Titles
@@ -428,34 +429,12 @@ private fun AuthPanels(
 ) {
     var mode by remember { mutableStateOf(AuthMode.SIGN_IN) }
 
-    // Segmented auth-mode switch, styled after the TRAINING MODE selector.
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(MonarchColors.Abyss),
-    ) {
-        AuthMode.entries.forEach { m ->
-            val selected = mode == m
-            Box(
-                Modifier
-                    .weight(1f)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .background(if (selected) MonarchColors.Vault else Color.Transparent)
-                    .clickable { mode = m }
-                    .padding(vertical = 10.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    if (m == AuthMode.SIGN_IN) "SIGN IN" else "SIGN UP",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontFamily = ChakraPetch,
-                    color = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
-                    letterSpacing = MonarchTracking.InlineLabel,
-                )
-            }
-        }
-    }
+    // Segmented auth-mode switch: the shared inked picker.
+    InkSegmented(
+        options = AuthMode.entries.map { it to if (it == AuthMode.SIGN_IN) "SIGN IN" else "SIGN UP" },
+        selected = mode,
+        onPick = { mode = it },
+    )
 
     Spacer(Modifier.height(14.dp))
 

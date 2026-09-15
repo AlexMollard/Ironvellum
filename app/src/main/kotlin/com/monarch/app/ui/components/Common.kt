@@ -382,3 +382,55 @@ fun InkSpinner(
         )
     }
 }
+
+/**
+ * The app's segmented picker, drawn as ink.
+ *
+ * There were five hand-rolled copies of this (auth mode, sex, training mode,
+ * appearance, stats tabs), each a Row clipped to a shape with a fill per
+ * segment. They all read as machined for the same reason the picker's section
+ * header did: a FILL has no drawn edge to see - the wobble is there, but a
+ * two-to-eleven luminance step against the page hides it. The brushed border is
+ * what makes the hand visible, so it lives here once.
+ */
+@Composable
+fun <T> InkSegmented(
+    options: List<Pair<T, String>>,
+    selected: T,
+    onPick: (T) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val shape = MaterialTheme.shapes.extraSmall
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(MonarchColors.Abyss)
+            .inkBorder(MonarchColors.Rune, shape, 1.dp),
+    ) {
+        options.forEach { (value, label) ->
+            val isOn = value == selected
+            Box(
+                Modifier
+                    .weight(1f)
+                    .clip(shape)
+                    .background(if (isOn) MonarchColors.Vault else Color.Transparent)
+                    .then(
+                        if (isOn) Modifier.inkBorder(MonarchColors.SystemGreen, shape, 1.dp) else Modifier,
+                    )
+                    .clickable { onPick(value) }
+                    .padding(vertical = 10.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontFamily = ChakraPetch,
+                    color = if (isOn) MonarchColors.SystemGreen else MonarchColors.InkMuted,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    maxLines = 1,
+                )
+            }
+        }
+    }
+}

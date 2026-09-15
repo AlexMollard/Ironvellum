@@ -50,6 +50,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewModelScope
 import com.monarch.app.ui.components.SectionHeader
+import com.monarch.app.ui.components.InkSegmented
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.TrendChart
 import androidx.lifecycle.ViewModel
@@ -204,36 +205,12 @@ fun StatsScreen(
         Spacer(Modifier.height(12.dp))
 
         // Segmented control
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .clip(MaterialTheme.shapes.small)
-                .background(MonarchColors.Abyss),
-        ) {
-            StatsTab.entries.forEach { entry ->
-                val selected = tab == entry
-                Box(
-                    Modifier
-                        .weight(1f)
-                        // Ink, not extraSmall: this chip is large enough to
-                        // show a drawn edge, unlike the tiny clips extraSmall exists for.
-                        .clip(MaterialTheme.shapes.small)
-                        .background(if (selected) MonarchColors.VaultHigh else Color.Transparent)
-                        .clickable { tab = entry }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        entry.label,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontFamily = ChakraPetch,
-                        color = if (selected) MonarchColors.SystemGreen else MonarchColors.InkMuted,
-                        letterSpacing = MonarchTracking.InlineLabel,
-                    )
-                }
-            }
-        }
+        InkSegmented(
+            options = StatsTab.entries.map { it to it.label },
+            selected = tab,
+            onPick = { tab = it },
+            modifier = Modifier.padding(horizontal = 16.dp),
+        )
 
         if (tab == StatsTab.BODY) {
             Column(
