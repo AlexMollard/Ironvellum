@@ -37,6 +37,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -423,6 +425,9 @@ fun StatsScreen(
                             modifier = Modifier
                                 .clip(MaterialTheme.shapes.extraSmall)
                                 .clickable { month = month.minusMonths(1) }
+                                // "←" is announced as a character, which tells a
+                                // screen-reader user nothing about what it does.
+                                .semantics { contentDescription = "Previous month" }
                                 .padding(horizontal = 10.dp, vertical = 2.dp),
                         )
                         Text(
@@ -437,6 +442,7 @@ fun StatsScreen(
                             modifier = Modifier
                                 .clip(MaterialTheme.shapes.extraSmall)
                                 .clickable { month = month.plusMonths(1) }
+                                .semantics { contentDescription = "Next month" }
                                 .padding(horizontal = 10.dp, vertical = 2.dp),
                         )
                     }

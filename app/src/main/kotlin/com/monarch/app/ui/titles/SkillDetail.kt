@@ -33,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -247,7 +249,7 @@ fun SkillDetailDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        StepGlyph("−") { attempt = (attempt - attemptStep(skill)).coerceAtLeast(0) }
+                        StepGlyph("−", "Fewer") { attempt = (attempt - attemptStep(skill)).coerceAtLeast(0) }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 attempt.toString(),
@@ -268,7 +270,7 @@ fun SkillDetailDialog(
                                 letterSpacing = 2.sp,
                             )
                         }
-                        StepGlyph("+") { attempt += attemptStep(skill) }
+                        StepGlyph("+", "More") { attempt += attemptStep(skill) }
                     }
 
                     Spacer(Modifier.height(8.dp))
@@ -318,7 +320,7 @@ fun SkillDetailDialog(
                                 letterSpacing = 2.sp,
                             )
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                StepGlyph("−") { load = (load - 2.5).coerceAtLeast(0.0) }
+                                StepGlyph("−", "Less added load") { load = (load - 2.5).coerceAtLeast(0.0) }
                                 Text(
                                     if (load <= 0.0) "BW" else "${formatLoad(load)}kg",
                                     style = MaterialTheme.typography.titleMedium,
@@ -326,7 +328,7 @@ fun SkillDetailDialog(
                                     fontWeight = FontWeight.Bold,
                                     color = MonarchColors.Ink,
                                 )
-                                StepGlyph("+") { load += 2.5 }
+                                StepGlyph("+", "More added load") { load += 2.5 }
                             }
                         }
                     } else {
@@ -443,13 +445,16 @@ private fun QuickChip(
 
 /** Chunky ± target: 44dp of tappable area, not a text glyph you have to hunt. */
 @Composable
-private fun StepGlyph(symbol: String, onClick: () -> Unit) {
+private fun StepGlyph(symbol: String, label: String, onClick: () -> Unit) {
     Box(
         Modifier
             .size(44.dp)
             .background(Color(0xFF16201C), MaterialTheme.shapes.small)
             .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.small, 1.dp)
-            .clickable { onClick() },
+            .clickable { onClick() }
+            // The glyph is announced as a bare character: "−" says nothing
+            // about what it steps. The label carries the meaning instead.
+            .semantics { contentDescription = label },
         contentAlignment = Alignment.Center,
     ) {
         Text(

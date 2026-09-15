@@ -42,18 +42,32 @@ class AccessibilityChecksTest {
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
     }
 
-    /** Controls that an accessibility service would announce as nothing at all. */
+    /**
+     * Controls an accessibility service would announce as nothing useful.
+     *
+     * A label of "−" or "›" passes a naive non-blank check and still tells a
+     * screen-reader user nothing: it is read as a punctuation character, not
+     * as what the control does. An icon-forward UI has to name its glyphs.
+     */
     private fun unlabelledControls(): List<String> {
         val nodes = compose.onAllNodes(hasClickAction()).fetchSemanticsNodes()
-        return nodes.filter { it.boundsInRoot.size.width > 0f }.mapNotNull { node ->
+        return nodes.filter { it.size.width > 0 }.mapNotNull { node ->
             val described = node.config.valueOrNull(SemanticsProperties.ContentDescription)
-                ?.any { it.isNotBlank() } == true
+                ?.any { it.saysSomething() } == true
             val texted = node.config.valueOrNull(SemanticsProperties.Text)
-                ?.any { it.text.isNotBlank() } == true
+                ?.any { it.text.saysSomething() } == true
             if (described || texted) null
-            else "role=${node.config.valueOrNull(SemanticsProperties.Role)} at ${node.boundsInRoot}"
+            else {
+                val announced = node.config.valueOrNull(SemanticsProperties.Text)
+                    ?.joinToString(" ") { it.text }.orEmpty()
+                "role=${node.config.valueOrNull(SemanticsProperties.Role)} " +
+                    "announces=\"$announced\" at ${node.boundsInRoot}"
+            }
         }
     }
+
+    /** A label has to carry a word, not just a symbol. */
+    private fun String.saysSomething(): Boolean = any { it.isLetterOrDigit() }
 
     /**
      * The NAV BAR specifically must meet the 48dp minimum: it is the only
@@ -243,6 +257,9 @@ class AccessibilityChecksTest {
             // sheet and the preset editor are wall-to-wall glyph steppers,
             // which is exactly where an unannounceable control hides.
             listOf("Codex", "SKILL TREE", "Dead Hang"),
+            // The load stepper only composes once load is on: reach it through
+            // its own entry point rather than leaving those glyphs unmeasured.
+            listOf("Codex", "SKILL TREE", "Dead Hang", "ADD LOAD"),
             listOf("Train", "[ EDIT ]"),
             // The settings screen replaces the nav bar, so it goes late.
             listOf("Court", "System"),

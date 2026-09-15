@@ -38,6 +38,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -254,7 +256,11 @@ fun PresetEditorScreen(
                             // Material's button shape is a stadium; the theme's is drawn.
                             shape = MaterialTheme.shapes.small,
                             onClick = { viewModel.setScheduledDay(day) },
-                            modifier = Modifier.weight(1f),
+                            modifier = Modifier
+                                .weight(1f)
+                                // The unscheduled option is drawn as "—", which a
+                                // screen reader announces as a dash. Say what it means.
+                                .semantics { contentDescription = label.takeIf { day != null } ?: "No scheduled day" },
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                         ) {
                             Text(
