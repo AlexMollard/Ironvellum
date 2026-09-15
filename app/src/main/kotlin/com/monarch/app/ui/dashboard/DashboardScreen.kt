@@ -550,9 +550,12 @@ fun DashboardScreen(
                 Image(
                     painter = painterResource(R.drawable.art_empty_quests),
                     contentDescription = null,
+                    // The asset is a 96dp square: fillMaxWidth + heightIn let its
+                    // intrinsic size win, so it rendered postage-stamp sized in a
+                    // panel with room to spare. An explicit square scales it.
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 240.dp)
+                        .align(Alignment.CenterHorizontally)
+                        .size(200.dp)
                         .alpha(0.6f),
                 )
                 Spacer(Modifier.weight(1f))
