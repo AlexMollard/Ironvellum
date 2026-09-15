@@ -44,6 +44,7 @@ import com.monarch.app.domain.IdleRate
 import com.monarch.app.domain.IdleState
 import com.monarch.app.domain.MeasurementEntry
 import com.monarch.app.domain.MeasurementSite
+import com.monarch.app.domain.BodyLimits
 import com.monarch.app.domain.MuscleGroup
 import com.monarch.app.domain.PlayerProfile
 import com.monarch.app.domain.Sex
@@ -646,7 +647,14 @@ class Repository(
      * still lands (weight history stands alone) using the 0.0 sentinel, which
      * every BMI/FFMI consumer already guards via BodyStats' <= 0 checks.
      */
+    /**
+     * Defence in depth: the screens gate on [BodyLimits], and so does this —
+     * an archive import or a future caller must not be able to write a figure
+     * the maths cannot survive.
+     */
     suspend fun addStat(weightKg: Double, bodyFatPct: Double?) {
+        require(BodyLimits.validWeight(weightKg)) { "weight $weightKg kg is outside ${BodyLimits.WEIGHT_KG}" }
+        require(BodyLimits.validBodyFat(bodyFatPct)) { "body fat $bodyFatPct% is outside ${BodyLimits.BODY_FAT_PCT}" }
         val heightCm = profileDao.get()?.heightCm ?: 0.0
         statDao.insert(
             StatEntity(
@@ -729,7 +737,10 @@ class Repository(
             p?.heightCm to sex
         }
 
-    suspend fun setHeight(heightCm: Double) = profileDao.setHeight(heightCm)
+    suspend fun setHeight(heightCm: Double) {
+        require(BodyLimits.validHeight(heightCm)) { "height $heightCm cm is outside ${BodyLimits.HEIGHT_CM}" }
+        profileDao.setHeight(heightCm)
+    }
 
     suspend fun setSex(sex: Sex) = profileDao.setSex(sex.name)
 
@@ -1093,7 +1104,15 @@ class Repository(
                     ).size
                 }
 
-                archive.stats.forEach { s ->
+                // Drop implausible readings rather than refusing the restore:
+                // an archive written before these bounds existed may carry a
+                // fat-fingered figure, and losing one weigh-in beats losing
+                // the whole import. Kept out of the count so the summary does
+                // not claim rows it discarded.
+                val usableStats = archive.stats.filter {
+                    BodyLimits.validWeight(it.weightKg) && BodyLimits.validBodyFat(it.bodyFatPct)
+                }
+                usableStats.forEach { s ->
                     statDao.insert(
                         StatEntity(
                             takenAtMs = s.takenAtMs,
@@ -1103,7 +1122,7 @@ class Repository(
                         ),
                     )
                 }
-                val statCount = archive.stats.size
+                val statCount = usableStats.size
                 archive.titles.forEach {
                     titleDao.insertAll(listOf(TitleUnlockEntity(it.titleId, it.unlockedAtMs)))
                 }

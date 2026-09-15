@@ -59,6 +59,7 @@ import com.monarch.app.data.HealthSnapshot
 import com.monarch.app.data.CrashJournal
 import com.monarch.app.data.HealthSync
 import com.monarch.app.data.Repository
+import com.monarch.app.domain.BodyLimits
 import com.monarch.app.domain.HealthDay
 import com.monarch.app.domain.Sex
 import com.monarch.app.domain.TrainingMode
@@ -141,7 +142,7 @@ class SettingsViewModel(
 
     fun setHeight(raw: String) {
         val cm = raw.trim().toDoubleOrNull()
-        if (cm != null && cm > 0.0) viewModelScope.launch { repo.setHeight(cm) }
+        if (BodyLimits.validHeight(cm)) viewModelScope.launch { repo.setHeight(cm!!) }
     }
 
     fun setSex(sex: Sex) {
@@ -332,7 +333,7 @@ fun SettingsScreen(
     }
     val bodyProfile by viewModel.bodyProfile.collectAsStateWithLifecycle()
     var heightInput by remember(bodyProfile.first) { mutableStateOf(bodyProfile.first?.toString() ?: "") }
-    val heightValid = heightInput.toDoubleOrNull()?.let { it > 0.0 } == true
+    val heightValid = BodyLimits.validHeight(heightInput.toDoubleOrNull())
 
     val permissionLauncher = rememberLauncherForActivityResult(
         PermissionController.createRequestPermissionResultContract(),

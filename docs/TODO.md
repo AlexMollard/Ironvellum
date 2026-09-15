@@ -117,6 +117,33 @@ open-work list.
   `AccountRepository`'s handle reaches `profiles.display_name`, and it validates
   `2..24` at both the screen (`nameValid`) and the call. `CloudSync` pushes
   `me.displayName` (the account handle), never the local profile name.
+- **Body figures are bounded now; positivity was the only check.** Weight,
+  height and body fat each accepted anything `> 0.0`. A slipped decimal on body
+  fat — "500" instead of "50.0" — reaches Katch-McArdle as **lean mass of
+  -320 kg** and a resting burn of **-6542 kcal**, presented to the hunter as a
+  fact about their own body, with a chart drawn to match. Nothing crashed,
+  which is exactly why nothing caught it. `BodyLimits` declares wide, plausible
+  ranges (weight 20-400 kg, height 50-272 cm — the tallest recorded human —
+  body fat 2-75%, absent still valid because the caliper reading is optional);
+  the weigh-in dialog and the height field gate on it, and the repository
+  re-checks on the way in as defence in depth. Import **filters** implausible
+  readings instead of throwing: an archive written before these bounds may
+  carry a typo, and losing one weigh-in beats losing the whole restore.
+  Verified on device against the clickable node's own enabled state:
+
+  | entry | LOG IT |
+  |---|---|
+  | empty weight | disabled |
+  | weight 82.5 | enabled |
+  | body fat 500 | **disabled** |
+  | body fat 18 | enabled |
+  | weight 9000 | **disabled** |
+
+  Reading that took three attempts: `enabled` sits on the clickable ancestor,
+  not on the `LOG IT` text node, and the child reports `true` regardless. Same
+  shape as the segmented control whose `selected` state I misread earlier —
+  **when a dump disagrees with the code, check which node you are reading
+  before believing either.**
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:

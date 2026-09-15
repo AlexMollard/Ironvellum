@@ -64,6 +64,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.data.Repository
+import com.monarch.app.domain.BodyLimits
 import com.monarch.app.domain.BodyStats
 import com.monarch.app.domain.StatEntry
 import com.monarch.app.domain.WorkoutSession
@@ -792,7 +793,10 @@ private fun AddStatDialog(
     val weight = remember { mutableStateOf(initialWeight) }
     val bodyFat = remember { mutableStateOf("") }
     val bfValue = bodyFat.value.toDoubleOrNull()
-    val validWeight = weight.value.toDoubleOrNull()?.let { it > 0.0 } == true
+    // Bounded, not merely positive: a typo'd body fat of 500 used to reach
+    // Katch-McArdle and show a negative resting burn as fact.
+    val validWeight = BodyLimits.validWeight(weight.value.toDoubleOrNull())
+    val validBodyFat = bodyFat.value.isBlank() && bfValue == null || BodyLimits.validBodyFat(bfValue)
 
     // Estimator state: prefill the tapes from the hunter's latest measurements.
     var showEstimator by remember { mutableStateOf(false) }
@@ -913,7 +917,7 @@ private fun AddStatDialog(
                     MonarchButton(
                         label = "LOG IT",
                         onClick = { onConfirm(weight.value.toDoubleOrNull() ?: 0.0, bfValue) },
-                        enabled = validWeight,
+                        enabled = validWeight && validBodyFat,
                         gold = true,
                         modifier = Modifier.weight(1f),
                     )
