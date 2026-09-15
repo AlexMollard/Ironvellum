@@ -32,9 +32,12 @@ open-work list.
 
 ## Verification gaps (honest, not deferred work)
 
-- `find_hunter()` and `push_aggregates()` are **compile-verified only** from
-  here. No local harness speaks PostgREST, so the first real round trip against
-  the deployed project is their first proof. The SQL halves are proven in
+- `find_hunter()` and `push_aggregates()` still need one real PostgREST round
+  trip against the deployed project; no local harness speaks it. What is no
+  longer unverified is the part that used to be loose strings: the argument
+  names are declared in `PushAggregatesArgs` / `FindHunterArgs` and checked
+  against the `create function` signatures and the encoded body, so only the
+  transport remains unproven. The SQL halves are proven in
   `supabase/test/assert_all.sql`.
 - The `backend` and `instrumented` CI jobs have never run on GitHub's runners —
   a CI change is only truly tested by CI. Both were replayed locally command for
@@ -420,6 +423,19 @@ open-work list.
   Verified the library contract from the artifact rather than from memory: the
   typed `rpc(function, T)` overload I first assumed does not exist in the
   pinned version, and the compiler listed the two real candidates.
+
+  The social boards are views over `profiles`, and the suite asserted they
+  carry `security_invoker = true` but never read a row through them. The
+  setting turns out to be necessary and not sufficient: a board wrapped in a
+  `SECURITY DEFINER` function leaks every hunter while the setting still reads
+  true, and that mutation is caught **only** by reading the board as a
+  stranger. Four assertions added (stranger sees no friends-only hunter, friend
+  sees them, reader sees themselves, on both boards) taking the count of
+  `perform assert_true` calls in that suite to 30. Two of the four mutations I tried were already caught by existing
+  table-level checks — recorded honestly, since the new value is narrower than
+  it first looked: a definer-wrapped board, and a narrowed `can_view()` that
+  makes both boards read empty for everyone while every refusal check still
+  passes.
 
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed

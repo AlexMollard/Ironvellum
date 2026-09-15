@@ -135,6 +135,7 @@ end $$;
 do $$
 declare
     ayla uuid := 'a5500000-0000-4000-8000-000000000001';
+    borin uuid := 'a5500000-0000-4000-8000-000000000002';
     cass uuid := 'a5500000-0000-4000-8000-000000000003';
     n int;
     xp bigint;
@@ -179,6 +180,39 @@ begin
     -- ...and without leaking the profile behind the name.
     select count(*) into n from profiles where id = ayla;
     perform assert_true(n = 0, 'a stranger can read a friends-only profile');
+    reset role;
+
+    -- The boards are VIEWS over profiles, and the suite already asserts they
+    -- carry security_invoker = true. That setting is necessary but not
+    -- sufficient: a board wrapped in a SECURITY DEFINER function leaks every
+    -- row while the setting still reads true (verified — that mutation is
+    -- caught only here), and a narrowed can_view() makes the boards read empty
+    -- for everyone while every refusal check still passes. So read the boards
+    -- as a stranger, as a friend, and as the reader themselves.
+    perform set_config('probe.uid', cass::text, true);
+    set local role authenticated;
+
+    select count(*) into n from leaderboard where id = ayla;
+    perform assert_true(n = 0, 'leaderboard leaks a friends-only hunter to a stranger: the view is not security_invoker');
+    select count(*) into n from shadow_board where id = ayla;
+    perform assert_true(n = 0, 'shadow_board leaks a friends-only hunter to a stranger');
+
+    -- ...and the same reader must still see their own row, or the boards are
+    -- simply broken rather than private.
+    select count(*) into n from leaderboard where id = cass;
+    perform assert_true(n = 1, 'leaderboard hides the reader from themselves');
+    select count(*) into n from shadow_board where id = cass;
+    perform assert_true(n = 1, 'shadow_board hides the reader from themselves');
+    reset role;
+
+    -- A friend MUST be visible, otherwise the zero above would pass for the
+    -- wrong reason (a board that shows nobody anything).
+    perform set_config('probe.uid', borin::text, true);
+    set local role authenticated;
+    select count(*) into n from leaderboard where id = ayla;
+    perform assert_true(n = 1, 'leaderboard hides an accepted friend: the board would always read empty');
+    select count(*) into n from shadow_board where id = ayla;
+    perform assert_true(n = 1, 'shadow_board hides an accepted friend');
     reset role;
 
     -- 0011 F1: no ranked column may be written directly.
