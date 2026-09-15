@@ -167,3 +167,64 @@ jobs:
         with:
           name: instrumented-results
           path: app/build/outputs/androidTest-results/
+
+  # The Supabase schema carries guarantees no Kotlin test can see: which tables
+  # have RLS, which functions a hunter may execute, which columns they may
+  # write, whether a feed row can pin itself. Those were each established by a
+  # migration to close a specific review finding, and a later migration can
+  # undo one silently. This applies the whole chain to a throwaway Postgres and
+  # asserts every guarantee still holds.
+  backend:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: probe
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGHOST: localhost
+      PGUSER: postgres
+      PGPASSWORD: probe
+    steps:
+      - name: Check out sources
+        uses: actions/checkout@v7
+
+      - name: Install psql
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends postgresql-client
+
+      # The stub stands in for the parts of a hosted project the migrations
+      # assume: the auth schema, auth.uid(), and the anon/authenticated roles.
+      - name: Stand up the schema
+        run: |
+          psql -v ON_ERROR_STOP=1 -q -f supabase/test/supabase_stub.sql
+          for f in supabase/migrations/*.sql; do
+            echo "applying $f"
+            psql -v ON_ERROR_STOP=1 -q -f "$f"
+          done
+
+      # Re-applying must be a no-op for every migration that CLAIMS to be
+      # idempotent — that claim is load-bearing, because it is how these files
+      # reach the live project. 0001-0004 deliberately do not claim it: they are
+      # declared immutable ("already applied"), and all hardening lands in later
+      # files instead. So the claim itself selects what gets re-applied, which
+      # means a new hardening migration is covered the moment it says so.
+      - name: Re-apply the idempotent migrations
+        run: |
+          for f in supabase/migrations/*.sql; do
+            if grep -qi "idempotent" "$f"; then
+              echo "re-applying $f"
+              psql -v ON_ERROR_STOP=1 -q -f "$f"
+            else
+              echo "skipping $f (declared immutable)"
+            fi
+          done
+
+      - name: Assert the backend guarantees
+        run: psql -v ON_ERROR_STOP=1 -f supabase/test/assert_all.sql
