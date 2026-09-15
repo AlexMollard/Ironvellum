@@ -17,18 +17,24 @@ import androidx.compose.ui.unit.sp
 import com.monarch.app.R
 
 object MonarchColors {
-    val Abyss = Color(0xFF0B0C0F) // neutral void
-    val Vault = Color(0xFF15171B) // neutral panel
-    val VaultHigh = Color(0xFF1B1E24) // raised panel
-    val Emerald = Color(0xFF34D399) // emerald: XP and success
+    // Paper tones: warm charcoal, not blue-grey. Ink needs something to sit on.
+    val Abyss = Color(0xFF0C0C0B) // deepest paper
+    val Vault = Color(0xFF171715) // panel paper
+    val VaultHigh = Color(0xFF1E1E1B) // raised paper
+
+    // Colour survives ONLY where it carries information a monochrome UI would
+    // destroy: progression, rarity, earned moments, danger.
+    val Emerald = Color(0xFF34D399) // XP and success
     val EmeraldBright = Color(0xFF6EE7B7)
     val SystemGreen = Color(0xFF6FAE8C) // muted green accent
     val SovereignGold = Color(0xFFF2C14E) // earned moments only
     val DangerRed = Color(0xFFEF5350)
-    val Ink = Color(0xFFEDEFF2)
-    val InkMuted = Color(0xFF9AA3AD)
-    val Rune = Color(0xFF2A2D35) // neutral structure lines
-    val Bracket = Color(0xFF3A3F4A) // neutral corner ticks
+
+    // Ink itself: the structural palette is monochrome by design.
+    val Ink = Color(0xFFEFEDE6) // bone ink, matches tools/art.py INK_TINT
+    val InkMuted = Color(0xFFA3A099)
+    val Rune = Color(0xFF32302B) // structure lines
+    val Bracket = Color(0xFF4A473F) // brush ticks
 }
 
 /** The three sanctioned letter-spacing values; use these, never ad-hoc sp literals. */

@@ -43,18 +43,28 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
+import com.monarch.app.ui.theme.inkBorder
+import com.monarch.app.ui.theme.inkTick
+import com.monarch.app.ui.theme.paperGrain
+import com.monarch.app.ui.theme.rememberInkShape
 import java.time.Instant
 import java.time.ZoneId
 import com.monarch.app.ui.theme.MonarchTracking
 import java.time.format.DateTimeFormatter
 
+// Warm charcoal rather than the old blue-grey: ink sits on paper, and the
+// paper is what the fill represents.
 private val WindowFill = Brush.verticalGradient(
-    listOf(Color(0xFF191B20), Color(0xFF101216)),
+    listOf(Color(0xFF1A1A18), Color(0xFF111110)),
 )
 
 /**
- * A Solo-Leveling "system window": cut-corner panel with calm structural
- * brackets and a faint green energy fill. The most reused surface in Monarch.
+ * The app's primary surface, drawn as ink on paper: a hand-drawn edge, paper
+ * grain, and tapered brush ticks where the old HUD had hairline brackets.
+ *
+ * The most reused surface in Monarch (~90 call sites), which is exactly why the
+ * ink treatment lives HERE and not in the screens - every screen inherits it
+ * and none of them can drift.
  */
 @Composable
 fun SystemWindow(
@@ -63,33 +73,50 @@ fun SystemWindow(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = MaterialTheme.shapes.small
-    val border = BorderStroke(1.dp, accent)
+    // Salt the wobble per accent so neighbouring panels are not traced from the
+    // same hand-drawn outline.
+    val shape = rememberInkShape(accent.hashCode())
     val body: @Composable () -> Unit = {
         Column(
             Modifier
                 .fillMaxWidth()
                 .drawBehind {
-                    val tick = 10.dp.toPx()
-                    val stroke = 2.5.dp.toPx()
-                    val bracket = MonarchColors.Bracket
-                    drawLine(bracket, Offset(0f, tick), Offset(0f, 0f), stroke, StrokeCap.Round)
-                    drawLine(bracket, Offset(0f, 0f), Offset(tick, 0f), stroke, StrokeCap.Round)
-                    drawLine(bracket, Offset(size.width, size.height - tick), Offset(size.width, size.height), stroke, StrokeCap.Round)
-                    drawLine(bracket, Offset(size.width, size.height), Offset(size.width - tick, size.height), stroke, StrokeCap.Round)
+                    val tick = 12.dp.toPx()
+                    val stroke = 3.dp.toPx()
+                    // Accent tints only the brush ticks. Driving the whole
+                    // outline with it turned an accent panel into a thick neon
+                    // frame once the ink border gained its bleed pass.
+                    inkTick(Offset(0f, tick), Offset(0f, 0f), accent, stroke)
+                    inkTick(Offset(0f, 0f), Offset(tick, 0f), accent, stroke)
+                    inkTick(
+                        Offset(size.width, size.height - tick),
+                        Offset(size.width, size.height),
+                        accent,
+                        stroke,
+                    )
+                    inkTick(
+                        Offset(size.width, size.height),
+                        Offset(size.width - tick, size.height),
+                        accent,
+                        stroke,
+                    )
                 }
                 .padding(16.dp),
             content = content,
         )
     }
+    val surfaceModifier = modifier
+        .background(WindowFill, shape)
+        .paperGrain(accent.hashCode())
+        // Structure is always ink; the panel's identity comes from its ticks.
+        .inkBorder(MonarchColors.Rune, shape)
     if (onClick != null) {
         Surface(
             onClick = onClick,
             shape = shape,
             color = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            border = border,
-            modifier = modifier.background(WindowFill, shape),
+            modifier = surfaceModifier,
         ) {
             body()
         }
@@ -98,8 +125,7 @@ fun SystemWindow(
             shape = shape,
             color = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            border = border,
-            modifier = modifier.background(WindowFill, shape),
+            modifier = surfaceModifier,
         ) {
             body()
         }
@@ -209,7 +235,9 @@ fun MonarchButton(
     val colors = if (gold) {
         listOf(Color(0xFFF2C14E), Color(0xFFC98A2B))
     } else {
-        listOf(Color(0xFF34D399), Color(0xFF0EA5A5))
+        // Moss, not teal: 0xFF0EA5A5 read as cyan on device and broke the
+        // warm-green palette rule the rest of the app follows.
+        listOf(Color(0xFF34D399), Color(0xFF2E7D55))
     }
     val shape = MaterialTheme.shapes.small
     Box(
