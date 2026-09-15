@@ -126,6 +126,14 @@ open-work list.
   which is why the panel must drop its weight AND the page scroll together.
   Either change on its own loses the button; both together carry it.
 
+  With Court fixed, every other destination was swept in the worst
+  configuration available (landscape + largest display size + 2.0x text) and the
+  primary content of all six is reachable with zero swipes, as are the live
+  session screen and settings. Court was the only vulnerable screen because it
+  is the only one that does not scroll. Not verified: the preset editor in that
+  configuration — the `[ EDIT ]` entry point was not reachable by the tap
+  helper there, which is a harness gap, not a finding either way.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
