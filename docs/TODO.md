@@ -212,9 +212,22 @@ open-work list.
   only appear there: `assembleRelease` is clean at 7.2 MB, debug-signed with
   `apksigner` (verify returns 0, `CN=Android Debug`), installed, and all six
   destinations render with an empty crash buffer. Still unexercised in release:
-  the Supabase DTO serializers, which only run once signed in — that is the
-  shape R8 breaks most often, so it stays on the owner's list rather than being
-  claimed here.
+  the Supabase DTO serializers' actual HTTP round trip, which needs credentials.
+  The two failure modes behind that worry were checked directly in the APK
+  though, and both are closed:
+
+  - **Serializer stripping.** Concatenating the dex and probing for names that
+    must survive: `$$serializer` x16, and `ProfileDto`, `SessionDto`,
+    `SessionSetDto`, `FeedEntry`, `ProfileNameDto`, `MonarchDatabase_Impl` all
+    present. Kept names mean decoding will not fail for want of a serializer.
+  - **The ServiceLoader engine trap.** The APK's `META-INF/services` entries ARE
+    renamed (`dn1`, `fd0`, `hd2`, …), which is exactly what breaks ktor engine
+    discovery in release — but `Cloud.client()` names the engine at compile time
+    (`httpEngine = OkHttp.create()`), so nothing depends on that discovery.
+    `okhttp3` and `OkHttpEngine` are both in the dex.
+
+  `bundleRelease` also builds clean at 9.4 MB, which packages by a different
+  path from the APK.
 
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
