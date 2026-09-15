@@ -159,6 +159,17 @@ open-work list.
   unverified is the SIGNED-IN sync path offline, which needs credentials and is
   listed under the gaps above rather than claimed here.
 
+  Scale was measured for the first time: 1,000 completed sessions with 5,000
+  sets — four sessions a week for five years — inserted into an isolated
+  database, then the three read paths that load on a UI thread were timed.
+  Journal 76ms, titles ledger 122ms, export 131ms, completed count 0ms on an
+  emulator. The guard now fails above 1,500ms, which keeps roughly an order of
+  magnitude of headroom for slower hardware while still catching the regression
+  that matters (an accidental N+1 or a scan per row lands in seconds). The
+  first draft used 4,000ms, which with 30x headroom would never have failed —
+  the numbers came from deliberately setting the budget to 1ms and reading the
+  assertion, which also proved the check fires.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
