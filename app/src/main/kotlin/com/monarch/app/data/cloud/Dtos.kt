@@ -2,6 +2,10 @@ package com.monarch.app.data.cloud
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
 
 /*
  * Wire types for the Supabase REST API. Every @SerialName must match the
@@ -278,3 +282,41 @@ data class SyncOutcome(
     val titles: Int,
     val problems: List<String>,
 )
+
+/*
+ * RPC argument shapes. These exist so the parameter names are declared in ONE
+ * place and can be checked against the function signatures in
+ * supabase/migrations — a hand-built JsonObject puts the same strings at the
+ * call site where nothing can verify them, and a renamed parameter fails only
+ * at runtime, on a user's device, as a 404 from PostgREST.
+ */
+
+/** Arguments of `push_aggregates` (supabase/migrations/0011_server_side_aggregates.sql). */
+@Serializable
+data class PushAggregatesArgs(
+    @SerialName("p_total_xp") val totalXp: Long,
+    @SerialName("p_lifetime_strength") val lifetimeStrength: Long,
+    @SerialName("p_streak_days") val streakDays: Int,
+    @SerialName("p_shadow_essence") val shadowEssence: Long,
+    @SerialName("p_shadow_count") val shadowCount: Int,
+    @SerialName("p_shadow_rate") val shadowRate: Double,
+)
+
+/** Arguments of `find_hunter` (supabase/migrations/0010_hunter_discovery.sql). */
+@Serializable
+data class FindHunterArgs(
+    @SerialName("name") val name: String,
+)
+
+/** RPC names, declared once so the guard test and the call sites cannot drift. */
+const val RPC_PUSH_AGGREGATES = "push_aggregates"
+const val RPC_FIND_HUNTER = "find_hunter"
+
+/**
+ * Encodes a typed RPC argument shape into the JsonObject the pinned
+ * postgrest-kt `rpc` overload takes. The indirection is the point: parameter
+ * names live in the @Serializable class above, where the schema guard can see
+ * them, instead of as loose strings at the call site.
+ */
+internal inline fun <reified T> rpcArgs(args: T): JsonObject =
+    Json.encodeToJsonElement(args).jsonObject

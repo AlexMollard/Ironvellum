@@ -89,15 +89,17 @@ class CloudSync(
             suspend fun pushDerivedAggregates() {
                 runCatching {
                     client.postgrest.rpc(
-                        "push_aggregates",
-                        buildJsonObject {
-                            put("p_total_xp", profile.totalXp)
-                            put("p_lifetime_strength", lifetimeStrength)
-                            put("p_streak_days", streakDays)
-                            put("p_shadow_essence", idle?.state?.essence ?: 0L)
-                            put("p_shadow_count", idle?.state?.shadows ?: 0)
-                            put("p_shadow_rate", idle?.rate?.perHour ?: 0.0)
-                        },
+                        RPC_PUSH_AGGREGATES,
+                        rpcArgs(
+                            PushAggregatesArgs(
+                                totalXp = profile.totalXp,
+                                lifetimeStrength = lifetimeStrength,
+                                streakDays = streakDays,
+                                shadowEssence = idle?.state?.essence ?: 0L,
+                                shadowCount = idle?.state?.shadows ?: 0,
+                                shadowRate = idle?.rate?.perHour ?: 0.0,
+                            ),
+                        ),
                     )
                 }.onFailure { error ->
                     // A pre-0011 database has no such function. Report it and
@@ -381,8 +383,8 @@ class CloudSync(
             // cannot be walked to enumerate the roster and reveals nothing the
             // caller did not already type.
             val matches = client.postgrest.rpc(
-                "find_hunter",
-                buildJsonObject { put("name", name) },
+                RPC_FIND_HUNTER,
+                rpcArgs(FindHunterArgs(name = name)),
             ).decodeList<ProfileNameDto>()
             val exact = matches.firstOrNull { it.displayName.equals(name, ignoreCase = true) }
                 ?: throw IllegalStateException("No hunter is named \"$name\"")

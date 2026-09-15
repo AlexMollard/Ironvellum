@@ -2,6 +2,7 @@ package com.monarch.app.data.cloud
 
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.elementNames
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -144,5 +145,60 @@ class WireNamesMatchSchemaTest {
         for (col in listOf("level", "total_xp", "streak_days", "titles_count", "lifetime_strength", "shadow_essence")) {
             assertTrue("profiles is missing the ranked column $col", col in profiles)
         }
+    }
+
+    /** Parameter names of a `create function` signature in the migrations. */
+    private fun functionParams(fn: String): Set<String> {
+        val re = Regex("""create (?:or replace )?function $fn\s*\(([\s\S]*?)\)\s*returns""")
+        val sig = migrations.mapNotNull { re.find(it)?.groupValues?.get(1) }.lastOrNull()
+        requireNotNull(sig) { "no definition of function $fn in the migrations" }
+        return sig.split(',')
+            .mapNotNull { it.trim().split(Regex("""\s+""")).firstOrNull() }
+            .filter { it.isNotEmpty() }
+            .toSet()
+    }
+
+    @Test
+    fun `rpc argument names match the function signatures`() {
+        // A renamed parameter is a 404 from PostgREST on a user's device: the
+        // aggregates push is wrapped in runCatching, so the failure is a cloud
+        // row that silently stops updating rather than a crash.
+        for ((fn, dto) in listOf(
+            RPC_PUSH_AGGREGATES to PushAggregatesArgs.serializer().descriptor,
+            RPC_FIND_HUNTER to FindHunterArgs.serializer().descriptor,
+        )) {
+            val params = functionParams(fn)
+            assertTrue("no parameters parsed for $fn — the parser is broken", params.isNotEmpty())
+            val unknown = dto.elementNames.toSet() - params
+            assertTrue(
+                "$fn() is called with argument(s) it does not declare: $unknown (declared: ${params.sorted()})",
+                unknown.isEmpty(),
+            )
+            assertEquals(
+                "$fn() declares parameters the client never sends, so they take SQL defaults or fail",
+                params.sorted(),
+                dto.elementNames.sorted(),
+            )
+        }
+    }
+
+    @Test
+    fun `the encoded rpc payload carries the declared names`() {
+        // rpcArgs() is what actually crosses the wire; a correct descriptor with
+        // a broken encoder would still send the wrong body.
+        val body = rpcArgs(
+            PushAggregatesArgs(
+                totalXp = 1_234,
+                lifetimeStrength = 99,
+                streakDays = 7,
+                shadowEssence = 4_096,
+                shadowCount = 3,
+                shadowRate = 12.5,
+            ),
+        )
+        assertEquals(functionParams(RPC_PUSH_AGGREGATES).sorted(), body.keys.sorted())
+        assertEquals("1234", body["p_total_xp"].toString())
+        assertEquals("12.5", body["p_shadow_rate"].toString())
+        assertEquals("""{"name":"Kaisel"}""", rpcArgs(FindHunterArgs("Kaisel")).toString())
     }
 }

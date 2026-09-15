@@ -401,6 +401,26 @@ open-work list.
   select list ends at its own `from` — not at the `from` inside the correlated
   sub-select that computes `sessions_last_7d`.
 
+  The same stringly-typed hole existed on the RPC calls, which this file listed
+  as "compile-verified only": `push_aggregates` took six hand-written
+  `put("p_...")` keys and `find_hunter` one, none of them checkable. A renamed
+  parameter is a 404 from PostgREST, and because the aggregates push is wrapped
+  in `runCatching` (deliberately, so a pre-0011 database doesn't fail the whole
+  sync) the symptom is a cloud row that silently stops updating — the
+  leaderboard freezes and nothing reports why. The names now live in
+  `PushAggregatesArgs` / `FindHunterArgs` and are encoded by `rpcArgs()`, since
+  the pinned postgrest-kt `rpc` overload takes only a `JsonObject`. Two tests
+  check them against the `create function` signatures and against the encoded
+  body, because a correct descriptor with a broken encoder would still send the
+  wrong payload. Caught by mutation from both sides: renaming the argument
+  client-side and renaming the parameter in migration 0011 each fail both
+  tests. Removing an argument entirely does not even compile now, which is
+  better than a test — that is the point of the typed shape.
+
+  Verified the library contract from the artifact rather than from memory: the
+  typed `rpc(function, T)` overload I first assumed does not exist in the
+  pinned version, and the compiler listed the two real candidates.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
