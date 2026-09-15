@@ -27,7 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import com.monarch.app.ui.theme.InkCircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -597,7 +597,7 @@ private fun LivePulse(active: Boolean) {
             Modifier
                 .size(8.dp)
                 .alpha(alpha)
-                .background(MonarchColors.EmeraldBright, CircleShape),
+                .background(MonarchColors.EmeraldBright, InkCircleShape(7)),
         )
         Text(
             "WORKING",

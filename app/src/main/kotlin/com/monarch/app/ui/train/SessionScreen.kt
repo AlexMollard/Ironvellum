@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import com.monarch.app.ui.theme.InkCircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -770,7 +770,7 @@ private fun StepIcon(symbol: String, onClick: () -> Unit) {
         fontFamily = ChakraPetch,
         color = MonarchColors.SystemGreen,
         modifier = Modifier
-            .clip(CircleShape)
+            .clip(InkCircleShape(7))
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,

@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +35,8 @@ import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.components.InkRail
 import com.monarch.app.ui.theme.inkHairline
 import com.monarch.app.ui.theme.inkBorder
+import com.monarch.app.ui.theme.InkPlateShape
+import androidx.compose.ui.platform.LocalDensity
 import com.monarch.app.ui.theme.MonarchColors
 import java.time.Instant
 import java.time.LocalDate
@@ -441,7 +442,8 @@ private fun LineCard(
 /** Two-letter line seal: consistent, legible, and never a wrong pictogram. */
 @Composable
 private fun MonogramBadge(text: String, size: androidx.compose.ui.unit.Dp) {
-    val shape = CutCornerShape(topStart = size / 4, bottomEnd = size / 4)
+    val plateCut = with(LocalDensity.current) { (size / 4).toPx() }
+    val shape = InkPlateShape(plateCut, salt = 35)
     Box(
         Modifier
             .size(size)

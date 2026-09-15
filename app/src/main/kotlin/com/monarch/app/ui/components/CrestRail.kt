@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import com.monarch.app.domain.Gacha
 import com.monarch.app.ui.social.crestFrameTreatment
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.InkPlateShape
+import androidx.compose.ui.platform.LocalDensity
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 
@@ -107,7 +108,8 @@ private fun CrestPlate(
     )
 
     val plateSize = 96.dp
-    val shape = CutCornerShape(topStart = plateSize / 4, bottomEnd = plateSize / 4)
+    val plateCut = with(LocalDensity.current) { (plateSize / 4).toPx() }
+    val shape = InkPlateShape(plateCut, salt = 31)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,

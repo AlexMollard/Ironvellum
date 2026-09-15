@@ -34,6 +34,9 @@ import androidx.compose.ui.unit.sp
 import com.monarch.app.domain.TitleRarity
 import com.monarch.app.domain.Titles
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkBorder
+import com.monarch.app.ui.theme.InkPlateShape
+import androidx.compose.ui.platform.LocalDensity
 import com.monarch.app.ui.theme.MonarchColors
 
 /** One hunter's identity, rendered the same way on every social surface. */
@@ -235,7 +238,8 @@ internal fun HunterAvatar(
 
     // Stable integer hash — never random, never recomposition-dependent.
     val seed = userId.fold(0) { acc, c -> acc * 31 + c.code }
-    val shape = CutCornerShape(topStart = size / 4, bottomEnd = size / 4)
+    val plateCut = with(LocalDensity.current) { (size / 4).toPx() }
+    val shape = InkPlateShape(plateCut, salt = 33)
     // Channel split: RARITY owns the plate gradient and the frame (colour +
     // weight), so a Sovereign crest is unmistakable at any size. The LEVEL
     // ring keeps the border only when the hunter wears no rarity (null or
@@ -283,6 +287,7 @@ internal fun HunterAvatar(
     // Elite frames draw their second ring by padding the avatar inside a thin
     // wrapper border of the same cut-corner shape; 0 padding = no wrapper.
     val ringPad = if (frameTreatment?.outerRing != null) 3.dp else 0.dp
+    val outerCut = with(LocalDensity.current) { ((size + ringPad * 2) / 4).toPx() }
     val outerColor = frameTreatment?.outerRing
 
     Box(
@@ -290,10 +295,10 @@ internal fun HunterAvatar(
             .size(size + ringPad * 2)
             .then(
                 if (outerColor != null) {
-                    Modifier.border(
-                        1.5.dp,
+                    Modifier.inkBorder(
                         outerColor,
-                        CutCornerShape(topStart = (size + ringPad * 2) / 4, bottomEnd = (size + ringPad * 2) / 4),
+                        InkPlateShape(outerCut, salt = 37),
+                        1.5.dp,
                     )
                 } else {
                     Modifier

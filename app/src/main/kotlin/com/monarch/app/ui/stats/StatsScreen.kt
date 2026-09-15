@@ -15,7 +15,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
+import com.monarch.app.ui.theme.InkCircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -719,7 +719,7 @@ private fun CalendarGrid(
                                 Box(
                                     Modifier
                                         .size(32.dp)
-                                        .clip(CircleShape)
+                                        .clip(InkCircleShape(7))
                                         .background(
                                             if (completed) {
                                                 Brush.verticalGradient(listOf(MonarchColors.EmeraldBright, CalendarConquered))
@@ -730,7 +730,7 @@ private fun CalendarGrid(
                                         .border(
                                             width = if (isToday) 1.5.dp else 0.dp,
                                             color = MonarchColors.SovereignGold,
-                                            shape = CircleShape,
+                                            shape = InkCircleShape(7),
                                         ),
                                     contentAlignment = Alignment.Center,
                                 ) {
@@ -747,7 +747,7 @@ private fun CalendarGrid(
                                 Box(
                                     Modifier
                                         .size(4.dp)
-                                        .clip(CircleShape)
+                                        .clip(InkCircleShape(7))
                                         .background(
                                             when {
                                                 completed -> CalendarConquered
@@ -773,7 +773,7 @@ private fun CalendarGrid(
 @Composable
 private fun CalendarLegend(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Box(Modifier.size(8.dp).clip(CircleShape).background(color))
+        Box(Modifier.size(8.dp).clip(InkCircleShape(7)).background(color))
         Text(label, style = MaterialTheme.typography.labelSmall, color = MonarchColors.InkMuted)
     }
 }

@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -538,4 +539,130 @@ private fun cutCornerPath(
     if (bottomStart > 0f) lineTo(0f, size.height - bottomStart)
     lineTo(0f, topStart)
     close()
+}
+
+/** Wobble as a fraction of radius for a drawn circle. Past this it stops reading as round. */
+private const val CIRCLE_WOBBLE = 0.035f
+
+/** Vertices around a drawn circle. Enough to stay round, few enough to stay hand-made. */
+private const val CIRCLE_STEPS = 28
+
+/**
+ * A circle drawn by hand rather than struck with a compass.
+ *
+ * A perfect circle is as machine-made as a ruled line, so avatars, dots and
+ * calendar cells kept looking like the old design even after every edge was
+ * brushed. The radius breathes around the sweep; the result is still round
+ * enough to read as a circle at 16dp.
+ */
+class InkCircleShape(private val salt: Int = 0) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density,
+    ): Outline {
+        val r = minOf(size.width, size.height) / 2f
+        val cx = size.width / 2f
+        val cy = size.height / 2f
+        if (!InkStyle.enabled || r <= 0f) {
+            return Outline.Generic(
+                Path().apply { addOval(Rect(cx - r, cy - r, cx + r, cy + r)) },
+            )
+        }
+        // Seeded on the size, like every other ink shape, so the wobble cannot
+        // crawl between recompositions.
+        val rng = Random(size.width.roundToInt() * 13 + salt)
+        val wob = r * CIRCLE_WOBBLE
+        val path = Path()
+        for (i in 0 until CIRCLE_STEPS) {
+            val a = (2.0 * kotlin.math.PI * i / CIRCLE_STEPS).toFloat()
+            val rr = r + (rng.nextFloat() - 0.5f) * 2f * wob
+            val x = cx + kotlin.math.cos(a) * rr
+            val y = cy + kotlin.math.sin(a) * rr
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        return Outline.Generic(path)
+    }
+
+    override fun equals(other: Any?): Boolean = other is InkCircleShape && other.salt == salt
+
+    override fun hashCode(): Int = salt
+}
+
+/**
+ * A dot laid down with a brush: slightly off-round, slightly uneven in weight.
+ * For the small drawn markers - tree nodes, calendar ticks - that drawCircle
+ * renders as perfect discs.
+ */
+fun DrawScope.inkDot(center: Offset, radius: Float, color: Color, seed: Int = 0) {
+    if (!InkStyle.enabled) {
+        drawCircle(color, radius, center)
+        return
+    }
+    val rng = Random(seed + radius.roundToInt())
+    val steps = 14
+    val path = Path()
+    for (i in 0 until steps) {
+        val a = (2.0 * kotlin.math.PI * i / steps).toFloat()
+        val rr = radius * (1f + (rng.nextFloat() - 0.5f) * 0.18f)
+        val x = center.x + kotlin.math.cos(a) * rr
+        val y = center.y + kotlin.math.sin(a) * rr
+        if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+    }
+    path.close()
+    drawPath(path, color)
+}
+
+/**
+ * The crest plate: a rectangle with two deeply cut corners, drawn by hand.
+ *
+ * InkEdgeShape cannot serve here - it ignores corner radii by design, so it
+ * would flatten the plate's silhouette into a wobbly rectangle. This keeps the
+ * cut geometry and jitters the vertices along it, which is why the crest still
+ * reads as a diamond-cut plate rather than a box.
+ *
+ * `cut` is the corner depth in px, matching what CutCornerShape was given.
+ */
+class InkPlateShape(private val cut: Float, private val salt: Int = 0) : Shape {
+    override fun createOutline(
+        size: Size,
+        layoutDirection: LayoutDirection,
+        density: Density,
+    ): Outline {
+        val c = cut.coerceAtMost(minOf(size.width, size.height) / 2f)
+        val w = size.width
+        val h = size.height
+        val corners = listOf(
+            Offset(c, 0f), Offset(w, 0f), Offset(w, h - c), Offset(w - c, h), Offset(0f, h), Offset(0f, c),
+        )
+        val path = Path()
+        if (!InkStyle.enabled) {
+            corners.forEachIndexed { i, p -> if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y) }
+            path.close()
+            return Outline.Generic(path)
+        }
+        val rng = Random(w.roundToInt() * 7 + salt)
+        val wob = (minOf(w, h) * 0.02f).coerceIn(1.2f, 4f)
+        fun j() = (rng.nextFloat() - 0.5f) * 2f * wob
+        // Walk each edge in a few steps so the cut sides wander too, not just
+        // the vertices.
+        corners.forEachIndexed { i, from ->
+            val to = corners[(i + 1) % corners.size]
+            val steps = 3
+            for (s in 0 until steps) {
+                val tt = s.toFloat() / steps
+                val x = from.x + (to.x - from.x) * tt + j()
+                val y = from.y + (to.y - from.y) * tt + j()
+                if (i == 0 && s == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+        }
+        path.close()
+        return Outline.Generic(path)
+    }
+
+    override fun equals(other: Any?): Boolean =
+        other is InkPlateShape && other.cut == cut && other.salt == salt
+
+    override fun hashCode(): Int = cut.hashCode() * 31 + salt
 }

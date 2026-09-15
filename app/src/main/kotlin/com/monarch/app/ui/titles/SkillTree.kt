@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
+import com.monarch.app.ui.theme.InkCircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -203,7 +203,7 @@ private fun SkillRow(
                     .align(Alignment.CenterEnd)
                     .padding(end = dotOffset - NodeDot / 2)
                     .size(NodeDot)
-                    .clip(CircleShape)
+                    .clip(InkCircleShape(7))
                     .background(
                         when {
                             mastered -> MonarchColors.SovereignGold

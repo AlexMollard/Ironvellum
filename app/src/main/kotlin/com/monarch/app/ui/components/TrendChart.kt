@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import com.monarch.app.ui.theme.InkStyle
 import com.monarch.app.ui.theme.inkStroke
 import com.monarch.app.ui.theme.MonarchColors
 
@@ -72,9 +73,27 @@ fun TrendChart(
                     if (i == 0) moveTo(xFor(i), yFor(v)) else lineTo(xFor(i), yFor(v))
                 }
             }
-            // The trend itself stays a path - a data series must not lie about
-            // its values - but it is stroked with a brushy weight and round caps.
-            drawPath(line, color = color, style = Stroke(width = 3.2.dp.toPx(), cap = StrokeCap.Round))
+            // The series is brushed segment by segment BETWEEN the computed
+            // points. The coordinates are untouched - a chart that wobbles its
+            // data misreports a measurement - so only the stroke weight and
+            // alpha breathe along the line.
+            if (InkStyle.enabled) {
+                val w = 3.2.dp.toPx()
+                val rng = kotlin.random.Random(values.size * 31)
+                values.forEachIndexed { i, v ->
+                    if (i == 0) return@forEachIndexed
+                    val weight = 0.7f + rng.nextFloat() * 0.5f
+                    drawLine(
+                        color = color.copy(alpha = color.alpha * (0.75f + 0.25f * weight)),
+                        start = Offset(xFor(i - 1), yFor(values[i - 1])),
+                        end = Offset(xFor(i), yFor(v)),
+                        strokeWidth = w * weight,
+                        cap = StrokeCap.Round,
+                    )
+                }
+            } else {
+                drawPath(line, color = color, style = Stroke(width = 3.2.dp.toPx(), cap = StrokeCap.Round))
+            }
         }
 
         goal?.let { g ->
