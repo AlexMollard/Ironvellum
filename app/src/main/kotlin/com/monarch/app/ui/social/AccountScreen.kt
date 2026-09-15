@@ -1,7 +1,6 @@
 package com.monarch.app.ui.social
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -84,6 +83,7 @@ import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.monarchAccount
 import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.components.InkSegmented
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
@@ -660,7 +660,7 @@ private fun SignedInPanels(
                             },
                             shape,
                         )
-                        .border(1.dp, if (selected) MonarchColors.EmeraldBright else MonarchColors.Rune, shape)
+                        .inkBorder(if (selected) MonarchColors.EmeraldBright else MonarchColors.Rune, shape, 1.dp)
                         .clickable { onVisibility(value) }
                         .padding(vertical = 10.dp),
                 ) {

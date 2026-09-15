@@ -4,7 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.foundation.border
+import com.monarch.app.ui.theme.inkBorder
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -227,7 +227,7 @@ private fun SkillRow(
                         else -> Brush.horizontalGradient(listOf(Color(0xFF101512), Color(0xFF0C100E)))
                     },
                 )
-                .border(1.dp, accent.copy(alpha = if (unlocked || mastered) 1f else 0.45f), shape)
+                .inkBorder(accent.copy(alpha = if (unlocked || mastered) 1f else 0.45f), shape, 1.dp)
                 .clickable { onClick() }
                 .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,

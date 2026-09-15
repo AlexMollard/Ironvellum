@@ -13,6 +13,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
 import com.monarch.app.ui.theme.InkStyle
+import com.monarch.app.ui.theme.inkDot
 import com.monarch.app.ui.theme.inkStroke
 import com.monarch.app.ui.theme.MonarchColors
 
@@ -117,10 +118,11 @@ fun TrendChart(
         val bestIndex = values.indexOf(values.max())
         values.forEachIndexed { i, v ->
             val isEdge = i == values.lastIndex || i == bestIndex
-            drawCircle(
-                color = if (isEdge) gold else color,
-                radius = if (isEdge) 5.5f else 3f,
+            inkDot(
                 center = Offset(xFor(i), yFor(v)),
+                radius = if (isEdge) 5.5f else 3f,
+                color = if (isEdge) gold else color,
+                seed = i,
             )
         }
     }

@@ -1,7 +1,6 @@
 package com.monarch.app.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +20,7 @@ import androidx.compose.ui.unit.sp
 import com.monarch.app.domain.Gacha
 import com.monarch.app.ui.social.crestFrameTreatment
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.inkHairline
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
@@ -63,7 +63,11 @@ fun HunterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier) {
             )
             // Capped at 2.dp: the collection's 3.dp frames are fine on a 96.dp
             // plate but shout at this size.
-            .border(minOf(treatment?.frameWidth ?: 2.dp, 2.dp), frameColor, shape)
+            .inkBorder(
+                color = frameColor,
+                shape = shape,
+                width = minOf(treatment?.frameWidth ?: 2.dp, 2.dp),
+            )
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(9.dp),

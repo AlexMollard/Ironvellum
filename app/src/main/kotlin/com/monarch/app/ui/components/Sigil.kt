@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
 import com.monarch.app.ui.theme.inkArc
 import com.monarch.app.ui.theme.inkStroke
+import com.monarch.app.ui.theme.inkDot
 import com.monarch.app.ui.theme.MonarchColors
 import kotlin.math.PI
 import kotlin.math.cos
@@ -140,10 +141,13 @@ fun RelicSigil(
             drawPath(path, color = accent.copy(alpha = 0.16f))
 
             // Core: the brightest point, scaled by how deep the star cuts.
-            drawCircle(
-                color = accent,
-                radius = radius * 0.10f * (1f + spec.innerScale),
+            // The core is the star's heart; a machined disc would read as
+            // a punched hole, so it gets the same brush as the rest.
+            inkDot(
                 center = centre,
+                radius = radius * 0.10f * (1f + spec.innerScale),
+                color = accent,
+                seed = seedOf(name),
             )
         }
     }
@@ -295,16 +299,20 @@ fun CrestEmblem(
                 2 -> {
                     val pips = 4 + (s / 11) % 4
                     val r = unit * 0.30f
-                    drawCircle(
-                        color = secondary.copy(alpha = 0.55f),
-                        radius = r,
+                    inkArc(
                         center = Offset(cx, cy),
-                        style = Stroke(width = line * 0.5f),
+                        radius = r,
+                        startDeg = 0f,
+                        sweepDeg = 360f,
+                        color = secondary.copy(alpha = 0.55f),
+                        widthPx = line * 0.5f,
+                        seed = s,
+                        taperEnds = false,
                     )
                     repeat(pips) { i ->
                         val a = (2.0 * PI * i / pips + (s % 30) / 10.0).toFloat()
                         val c = Offset(cx + cos(a) * r, cy + sin(a) * r)
-                        drawCircle(color = secondary, radius = unit * 0.055f, center = c)
+                        inkDot(center = c, radius = unit * 0.055f, color = secondary, seed = i * 31)
                         drawCircle(
                             color = Color.White.copy(alpha = 0.22f),
                             radius = unit * 0.022f,
@@ -312,11 +320,15 @@ fun CrestEmblem(
                         )
                     }
                     drawCircle(brush = body, radius = unit * 0.17f, center = Offset(cx, cy))
-                    drawCircle(
-                        color = secondary,
-                        radius = unit * 0.17f,
+                    inkArc(
                         center = Offset(cx, cy),
-                        style = Stroke(width = line * 0.5f),
+                        radius = unit * 0.17f,
+                        startDeg = 0f,
+                        sweepDeg = 360f,
+                        color = secondary,
+                        widthPx = line * 0.5f,
+                        seed = s + 3,
+                        taperEnds = false,
                     )
                     // Specular glint: the core reads as a polished stone.
                     drawCircle(
@@ -341,11 +353,13 @@ fun CrestEmblem(
                         val f = (i + 1f) / (bars + 1f)
                         val y = cy - half + half * 2 * f
                         val reach = half * 0.62f * (1f - kotlin.math.abs(f - 0.5f))
-                        drawLine(
+                        inkStroke(
+                            from = Offset(cx - reach, y),
+                            to = Offset(cx + reach, y),
                             color = Color.Black.copy(alpha = 0.55f),
-                            start = Offset(cx - reach, y),
-                            end = Offset(cx + reach, y),
-                            strokeWidth = line * 0.8f,
+                            widthPx = line * 0.8f,
+                            seed = i * 13,
+                            taperEnds = false,
                         )
                     }
                     drawLine(
@@ -379,14 +393,15 @@ fun CrestEmblem(
                 5 -> {
                     val leaves = 4
                     listOf(-1f, 1f).forEach { dir ->
-                        drawArc(
+                        inkArc(
+                            center = Offset(cx, cy),
+                            radius = unit * 0.27f,
+                            startDeg = if (dir < 0) 118f else 242f,
+                            sweepDeg = dir * 104f,
                             color = secondary.copy(alpha = 0.55f),
-                            startAngle = if (dir < 0) 118f else 242f,
-                            sweepAngle = dir * 104f,
-                            useCenter = false,
-                            topLeft = Offset(cx - unit * 0.27f, cy - unit * 0.27f),
-                            size = Size(unit * 0.54f, unit * 0.54f),
-                            style = Stroke(width = line * 0.45f),
+                            widthPx = line * 0.45f,
+                            seed = if (dir < 0) 41 else 43,
+                            taperEnds = false,
                         )
                         repeat(leaves) { i ->
                             val f = (i + 0.5f) / leaves
@@ -480,8 +495,18 @@ fun CrestEmblem(
                     p.close()
                     drawPath(p, brush = body)
                     drawPath(p, color = secondary, style = Stroke(width = line * 0.6f))
-                    drawCircle(color = Color.Black.copy(alpha = 0.72f), radius = unit * 0.10f, center = Offset(cx, cy))
-                    drawCircle(color = secondary, radius = unit * 0.04f, center = Offset(cx, cy))
+                    inkDot(
+                        center = Offset(cx, cy),
+                        radius = unit * 0.10f,
+                        color = Color.Black.copy(alpha = 0.72f),
+                        seed = s + 7,
+                    )
+                    inkDot(
+                        center = Offset(cx, cy),
+                        radius = unit * 0.04f,
+                        color = secondary,
+                        seed = s + 9,
+                    )
                     drawCircle(
                         color = Color.White.copy(alpha = 0.25f),
                         radius = unit * 0.025f,
@@ -521,10 +546,11 @@ fun CrestEmblem(
         repeat(pipCount) { i ->
             val step = unit * 0.075f
             val x = cx + (i - (pipCount - 1) / 2f) * step
-            drawCircle(
-                color = secondary.copy(alpha = 0.75f),
-                radius = unit * 0.018f,
+            inkDot(
                 center = Offset(x, cy + unit * 0.42f),
+                radius = unit * 0.018f,
+                color = secondary.copy(alpha = 0.75f),
+                seed = i * 19,
             )
         }
     }

@@ -2,7 +2,6 @@ package com.monarch.app.ui
 
 import android.net.Uri
 
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +54,7 @@ import com.monarch.app.ui.stats.StatsScreen
 import com.monarch.app.ui.titles.TitlesScreen
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.inkStroke
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.ChakraPetch
@@ -166,7 +166,7 @@ fun MonarchRoot() {
                                         },
                                     )
                                     .then(
-                                        if (selected) Modifier.border(1.dp, MonarchColors.Emerald, slotShape) else Modifier,
+                                        if (selected) Modifier.inkBorder(MonarchColors.Emerald, slotShape) else Modifier,
                                     )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },

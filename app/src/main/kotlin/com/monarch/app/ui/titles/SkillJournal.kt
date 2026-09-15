@@ -2,7 +2,6 @@ package com.monarch.app.ui.titles
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -207,8 +206,7 @@ fun SkillJournal(
                             ),
                             rowShape,
                         )
-                        .border(
-                            1.dp,
+                        .inkBorder(
                             if (index == 0) MonarchColors.SovereignGold else MonarchColors.Rune,
                             rowShape,
                         )
@@ -372,7 +370,7 @@ private fun StatTile(label: String, value: String, modifier: Modifier = Modifier
                 Brush.verticalGradient(listOf(Color(0xFF16201C), Color(0xFF0D1210))),
                 shape,
             )
-            .border(1.dp, if (gold) MonarchColors.SovereignGold else MonarchColors.Rune, shape)
+            .inkBorder(if (gold) MonarchColors.SovereignGold else MonarchColors.Rune, shape, 1.dp)
             .padding(vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
@@ -420,7 +418,7 @@ private fun LineCard(
                 Brush.verticalGradient(listOf(Color(0xFF17211C), Color(0xFF0D1210))),
                 shape,
             )
-            .border(1.dp, if (complete) MonarchColors.SovereignGold else MonarchColors.Rune, shape)
+            .inkBorder(if (complete) MonarchColors.SovereignGold else MonarchColors.Rune, shape, 1.dp)
             .clickable { onClick() }
             .padding(10.dp),
     ) {
@@ -469,7 +467,7 @@ private fun MonogramBadge(text: String, size: androidx.compose.ui.unit.Dp) {
                 Brush.verticalGradient(listOf(Color(0xFF1D2B24), Color(0xFF111815))),
                 shape,
             )
-            .border(1.dp, MonarchColors.SystemGreen, shape),
+            .inkBorder(MonarchColors.SystemGreen, shape),
         contentAlignment = Alignment.Center,
     ) {
         Text(

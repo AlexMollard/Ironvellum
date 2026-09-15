@@ -2,7 +2,6 @@ package com.monarch.app.ui.stats
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -76,6 +75,7 @@ import com.monarch.app.domain.MeasurementSite
 import com.monarch.app.domain.STEP_GOAL
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.inkStroke
 import com.monarch.app.ui.theme.MonarchColors
 import kotlinx.coroutines.flow.StateFlow
@@ -707,10 +707,10 @@ private fun CalendarGrid(
                                                 Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
                                             },
                                         )
-                                        .border(
-                                            width = if (isToday) 1.5.dp else 0.dp,
-                                            color = MonarchColors.SovereignGold,
-                                            shape = InkCircleShape(7),
+                                        .inkBorder(
+                                            MonarchColors.SovereignGold,
+                                            InkCircleShape(7),
+                                            if (isToday) 1.5.dp else 0.dp,
                                         ),
                                     contentAlignment = Alignment.Center,
                                 ) {

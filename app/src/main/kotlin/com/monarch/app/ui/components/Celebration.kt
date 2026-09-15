@@ -8,7 +8,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,7 +36,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
+import com.monarch.app.ui.theme.inkDot
 import kotlin.math.sin
 import kotlin.random.Random
 import androidx.compose.runtime.mutableIntStateOf
@@ -116,11 +117,12 @@ fun AchievementOverlay(items: List<Achievement>, onDone: () -> Unit) {
                     val phase = (wave + sp) % 1f
                     val x = size.width * sx + sin((phase + sp) * 6.28f) * 26f
                     val y = size.height * (sy * 0.9f + 0.05f) - phase * size.height * 0.55f * rise
-                    drawCircle(
-                        color = if (sp > 0.55f) item.accent else MonarchColors.SystemGreen,
+                    inkDot(
+                        color = (if (sp > 0.55f) item.accent else MonarchColors.SystemGreen)
+                            .copy(alpha = (1f - phase) * 0.85f),
                         radius = 1.6f + sp * 3.4f,
                         center = Offset(x, y.coerceIn(0f, size.height)),
-                        alpha = (1f - phase) * 0.85f,
+                        seed = (sx * 997 + sy * 131).toInt(),
                     )
                 }
             }
@@ -149,7 +151,7 @@ fun AchievementOverlay(items: List<Achievement>, onDone: () -> Unit) {
                         // One shape value, used twice: the fill and the border
                         // previously built two separate instances, so any future
                         // change had to be made in both places to stay aligned.
-                        .border(2.dp, item.accent, rewardShape)
+                        .inkBorder(item.accent, rewardShape, 2.dp)
                         .padding(horizontal = 22.dp, vertical = 16.dp),
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {

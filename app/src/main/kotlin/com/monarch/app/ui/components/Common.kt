@@ -13,7 +13,6 @@ import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -119,7 +118,7 @@ fun SystemWindow(
         .background(WindowFill, shape)
         .paperGrain(accent.hashCode())
         // Structure is always ink; the panel's identity comes from its ticks.
-        .inkBorder(MonarchColors.Rune, shape)
+        .inkBorder(MonarchColors.Rune, shape, 1.dp)
     if (onClick != null) {
         Surface(
             onClick = onClick,
@@ -171,7 +170,7 @@ fun MonarchTabPill(
                 },
                 shape,
             )
-            .border(1.dp, if (selected) MonarchColors.EmeraldBright else MonarchColors.Rune, shape)
+            .inkBorder(if (selected) MonarchColors.EmeraldBright else MonarchColors.Rune, shape, 1.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -326,7 +325,7 @@ fun MonarchButton(
                 if (enabled) Brush.linearGradient(colors)
                 else Brush.linearGradient(listOf(Color(0xFF1E3026), Color(0xFF16211B))),
             )
-            .border(1.dp, if (enabled) Color(0x5934D399) else MonarchColors.Rune, shape)
+            .inkBorder(if (enabled) Color(0x5934D399) else MonarchColors.Rune, shape, 1.dp)
             .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {

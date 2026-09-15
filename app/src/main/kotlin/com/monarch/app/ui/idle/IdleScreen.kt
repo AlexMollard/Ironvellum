@@ -2,7 +2,6 @@ package com.monarch.app.ui.idle
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -80,6 +79,8 @@ import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.components.InkRail
 import com.monarch.app.ui.theme.inkBorder
+import com.monarch.app.ui.theme.inkDot
+import com.monarch.app.ui.theme.inkStroke
 import com.monarch.app.ui.theme.inkArc
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
@@ -533,18 +534,19 @@ private fun RateDial(
                 val a = ((start + span * i / 4f) * PI / 180.0).toFloat()
                 val outer = radius + stroke * 0.62f
                 val innerR = radius + stroke * 0.18f
-                drawLine(
+                inkStroke(
+                    from = Offset(cx + cos(a) * innerR, cy + sin(a) * innerR),
+                    to = Offset(cx + cos(a) * outer, cy + sin(a) * outer),
                     color = MonarchColors.Rune,
-                    start = Offset(cx + cos(a) * innerR, cy + sin(a) * innerR),
-                    end = Offset(cx + cos(a) * outer, cy + sin(a) * outer),
-                    strokeWidth = stroke * 0.18f,
+                    widthPx = stroke * 0.18f,
+                    seed = 89,
                 )
             }
             // The needle tip: an unambiguous marker for where the value sits.
             val tip = ((start + span * sweep.value) * PI / 180.0).toFloat()
             val tipAt = Offset(cx + cos(tip) * radius, cy + sin(tip) * radius)
-            drawCircle(color = MonarchColors.Ink, radius = stroke * 0.62f, center = tipAt)
-            drawCircle(color = MonarchColors.EmeraldBright, radius = stroke * 0.34f, center = tipAt)
+            inkDot(center = tipAt, radius = stroke * 0.62f, color = MonarchColors.Ink, seed = 91)
+            inkDot(center = tipAt, radius = stroke * 0.34f, color = MonarchColors.EmeraldBright, seed = 93)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -632,7 +634,7 @@ private fun ArmyStat(label: String, value: String, modifier: Modifier = Modifier
             )
             // Clipped to an ink shape but never inked: without the bleed-plus-firm
             // border pass this tile read flat beside every other inked surface.
-            .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.small)
+            .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.small, 1.dp)
             .padding(12.dp),
     ) {
         Text(
