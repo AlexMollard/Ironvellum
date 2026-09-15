@@ -133,6 +133,13 @@ class HealthSync(private val context: Context) {
 
     suspend fun readDailyHistory(days: Int): HistoryRead {
         if (!available()) return HistoryRead(problems = listOf("Health Connect unavailable"))
+        // Nothing granted at all: every aggregate below would be rejected by the
+        // platform, so the daily worker was throwing seven SecurityExceptions
+        // per run against a service that can never answer it. A PARTIAL grant
+        // still proceeds — each metric is isolated, so the ones allowed read.
+        if (grantedPermissions().isEmpty()) {
+            return HistoryRead(problems = listOf("Health Connect permissions not granted"))
+        }
         val client = HealthConnectClient.getOrCreate(context)
         val zone = ZoneId.systemDefault()
         val end = LocalDate.now(zone)
