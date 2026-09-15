@@ -31,7 +31,9 @@ object MonarchColors {
     val DangerRed = Color(0xFFEF5350)
 
     // Ink itself: the structural palette is monochrome by design.
-    val Ink = Color(0xFFEFEDE6) // bone ink, matches tools/art.py INK_TINT
+    // Exactly tools/art.py INK_TINT (232, 232, 228): generated artwork and UI
+    // text must be the same ink, or the "one hand" claim is decorative only.
+    val Ink = Color(0xFFE8E8E4)
     val InkMuted = Color(0xFFA3A099)
     val Rune = Color(0xFF32302B) // structure lines
     val Bracket = Color(0xFF4A473F) // brush ticks
