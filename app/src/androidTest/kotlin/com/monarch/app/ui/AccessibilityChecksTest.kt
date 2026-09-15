@@ -287,6 +287,31 @@ class AccessibilityChecksTest {
         }
     }
 
+    /**
+     * Filter chips narrow a list rather than moving between screens, so they
+     * read as checkboxes — but the question is the same one: which filters are
+     * on? Tapping a chip must flip exactly that chip's reported state.
+     */
+    @Test
+    fun filterChipsSayWhetherTheyAreOn() {
+        returnToNavigation()
+        compose.onNodeWithContentDescription("Codex").performClick()
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+
+        fun chipSelected(label: String): Boolean =
+            compose.onAllNodesWithText(label, substring = true).fetchSemanticsNodes()
+                .any { it.config.valueOrNull(SemanticsProperties.Selected) == true }
+
+        // The board opens on IN PROGRESS, so its state is known before any tap.
+        assertEquals("the default deed filter must report itself on", true, chipSelected("IN PROGRESS"))
+        assertEquals("a filter that is off must say so", false, chipSelected("LOCKED"))
+
+        compose.onAllNodesWithText("LOCKED", substring = true).onFirst().performClick()
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        assertEquals("the tapped filter must report itself on", true, chipSelected("LOCKED"))
+        assertEquals("the previous filter must report itself off", false, chipSelected("IN PROGRESS"))
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun <T> SemanticsConfiguration.valueOrNull(key: SemanticsPropertyKey<T>): T? =
         firstOrNull { it.key == key }?.value as? T

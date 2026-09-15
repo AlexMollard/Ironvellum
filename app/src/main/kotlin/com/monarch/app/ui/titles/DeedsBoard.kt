@@ -38,6 +38,9 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monarch.app.domain.Titles
@@ -497,6 +500,13 @@ private fun DeedFilterChip(label: String, selected: Boolean, onClick: () -> Unit
             )
             .inkBorder(if (selected) MonarchColors.SystemGreen else MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .clickable { onClick() }
+            // A filter chip narrows a list rather than navigating, so it reads
+            // as a checkbox rather than a tab — but either way the fill that
+            // marks it active has to reach semantics.
+            .semantics {
+                role = Role.Checkbox
+                this.selected = selected
+            }
             // 23dp was under even the WCAG AA 24dp floor. 32dp matches the
             // Material chip height and only adds a few density pixels.
             .heightIn(min = 32.dp)

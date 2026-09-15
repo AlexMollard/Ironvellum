@@ -19,6 +19,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -244,6 +247,12 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
             )
             .inkBorder(if (selected) MonarchColors.SystemGreen else MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .clickable { onClick() }
+            // Same as the deeds filters: a chip that narrows the list still has
+            // to tell a screen reader whether it is on.
+            .semantics {
+                role = Role.Checkbox
+                this.selected = selected
+            }
             // 23dp sat under even the WCAG AA 24dp floor. 32dp matches the
             // Material chip height and the deeds board's filter pills, and only
             // adds a few density pixels here.
