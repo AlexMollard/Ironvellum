@@ -26,14 +26,14 @@ class SeedOnFreshInstallTest {
     @Before
     fun setUp() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
-        context.deleteDatabase("monarch.db")
-        db = MonarchDatabase.create(context)
+        context.deleteDatabase(TEST_DB)
+        db = MonarchDatabase.create(context, TEST_DB)
     }
 
     @After
     fun tearDown() {
         db.close()
-        context.deleteDatabase("monarch.db")
+        context.deleteDatabase(TEST_DB)
     }
 
     @Test
@@ -65,5 +65,11 @@ class SeedOnFreshInstallTest {
             )
             assertEquals("Preset ${spec.name} entry count", spec.entries.size, withEntries?.entries?.size)
         }
+    }
+
+    private companion object {
+        /** Never the app's live database: deleting that under the running
+         *  Application left its open Room instance serving an empty file. */
+        const val TEST_DB = "monarch-seed-test.db"
     }
 }

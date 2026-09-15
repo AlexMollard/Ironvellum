@@ -36,14 +36,14 @@ class UnknownStoredEnumTest {
     @Before
     fun setUp() {
         context = InstrumentationRegistry.getInstrumentation().targetContext
-        context.deleteDatabase("monarch.db")
-        db = MonarchDatabase.create(context)
+        context.deleteDatabase(TEST_DB)
+        db = MonarchDatabase.create(context, TEST_DB)
     }
 
     @After
     fun tearDown() {
         db.close()
-        context.deleteDatabase("monarch.db")
+        context.deleteDatabase(TEST_DB)
     }
 
     private suspend fun storeProfileWithMode(mode: String) {
@@ -77,5 +77,11 @@ class UnknownStoredEnumTest {
         // The export is the recovery path, so it must complete and carry the
         // fallback rather than propagating the bad string.
         assertEquals(true, json.contains("\"trainingMode\":\"STRENGTH\""))
+    }
+
+    private companion object {
+        /** Never the app's live database: deleting that under the running
+         *  Application left its open Room instance serving an empty file. */
+        const val TEST_DB = "monarch-enum-test.db"
     }
 }

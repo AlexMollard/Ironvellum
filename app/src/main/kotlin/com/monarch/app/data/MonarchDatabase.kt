@@ -270,8 +270,16 @@ abstract class MonarchDatabase : RoomDatabase() {
             MIGRATION_22_23,
         )
 
-        fun create(context: Context): MonarchDatabase =
-            Room.databaseBuilder(context, MonarchDatabase::class.java, "monarch.db")
+        const val NAME = "monarch.db"
+
+        /**
+         * [name] exists so instrumented tests can open an isolated file. They
+         * used to delete and recreate the live database underneath the running
+         * app, and the Application's already-open Room instance then served an
+         * empty file — "no such table" from whichever screen queried first.
+         */
+        fun create(context: Context, name: String = NAME): MonarchDatabase =
+            Room.databaseBuilder(context, MonarchDatabase::class.java, name)
                 .addMigrations(*MIGRATIONS)
                 .build()
     }
