@@ -374,6 +374,33 @@ open-work list.
   one an unused val) and "passed" while proving nothing; a mutation that does
   not change behaviour is not evidence.
 
+  Following the clobber, I audited whether any earlier commit had quietly
+  shrunk a test file: three did, and all three were legitimate — six
+  measurement-goal tests died with the goals feature the owner reversed, one
+  typeface-weight test died with a reverted typeface, and three aggregate-DTO
+  tests moved server-side into `supabase/test/aggregates_probe.sql` (the reason
+  is written in the test file's own header). No silent losses but mine.
+
+  That audit did surface a real gap. `Dtos.kt` opens by stating the rule the
+  whole cloud read path rests on — every `@SerialName` must match its
+  snake_case column exactly — and **nothing enforced it**. kotlinx does not
+  fail on a mismatch, it decodes the default, so a typo in `shadow_essence`
+  shows a leaderboard where every hunter has 0 essence: a wrong ranking
+  presented as fact, no error anywhere, and the client-side names are invisible
+  to the SQL probes. `WireNamesMatchSchemaTest` now reads the migrations that
+  define those relations (base tables plus their later `add column`s, and the
+  last definition of each view) and checks the serial names against them.
+  Proven in both directions: three DTO typos each fail their own case, and
+  dropping `shadow_rate` from the view in the migration fails too. The guard
+  also asserts it parsed something, because a schema-parsing test that finds no
+  columns would otherwise pass vacuously forever.
+
+  Writing it found two bugs in my own parser first, both caught because the
+  test failed loudly rather than silently: one `alter table` may carry several
+  `add column` clauses (0002 adds `title` and `note` together), and a view's
+  select list ends at its own `from` — not at the `from` inside the correlated
+  sub-select that computes `sessions_last_7d`.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
