@@ -154,12 +154,21 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          ram-size: 4096M
+          # 3 GB, not 4: the job died silently mid-Gradle with no error and no
+          # annotation, which is the shape of the runner's OOM killer. Gradle at
+          # -Xmx4g plus a Kotlin daemon inheriting the same plus a 4 GB emulator
+          # does not fit a 16 GB runner alongside the page cache.
+          ram-size: 3072M
           # The ink treatment animates continuously and the flow tests drive the
           # test clock by hand; system animations on top of that only add jitter.
           disable-animations: true
           emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none
-          script: ./gradlew :app:connectedDebugAndroidTest
+          script: |
+            free -h; df -h /
+            ./gradlew :app:connectedDebugAndroidTest \
+              -Dorg.gradle.jvmargs="-Xmx2500m -Dfile.encoding=UTF-8" \
+              -Pkotlin.daemon.jvmargs=-Xmx1536m
+            free -h
 
       - name: Upload instrumented results
         if: always()
