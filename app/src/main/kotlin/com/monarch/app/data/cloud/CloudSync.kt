@@ -72,27 +72,27 @@ class CloudSync(
                 onConflict = "id"
             }
 
-            // The ranked numbers are DERIVED server-side from the rows pushed
-            // below — set rows for XP, earned titles for the count, sessions
-            // for strength — because anything the client states, a crafted
-            // request can state too. The monotonic max() that used to live in
-            // mergeAggregates now lives inside the function, where it cannot
-            // be bypassed: a fresh install still cannot walk a real hunter's
-            // totals backwards.
+            // The ranked numbers now go through push_aggregates(), because the
+            // client no longer holds the privilege to write them: a crafted
+            // PATCH is refused at the column grant rather than merged.
             //
-            // Streak and the shadow figures are passed in because the server
-            // has nothing to derive them from: a streak needs the local
-            // training calendar, and idle state never leaves the device by
-            // design. The function bounds both rather than trusting them.
+            // XP and strength are still OUR numbers - the award includes
+            // activity curves and the quest bonus, which the server cannot
+            // derive without owning the whole economy - but the function bounds
+            // them, derives titles_count from the rows it can see, and derives
+            // level from the XP so the two can never disagree. The monotonic
+            // max() that used to live in mergeAggregates lives there too.
             //
-            // This runs LAST, after sessions/sets/titles, or it would derive
-            // from rows that have not arrived yet.
+            // This runs LAST, after sessions/sets/titles, so titles_count is
+            // derived from rows that have actually arrived.
             val idle = repo.idleSnapshotOnce()
             suspend fun pushDerivedAggregates() {
                 runCatching {
                     client.postgrest.rpc(
                         "push_aggregates",
                         buildJsonObject {
+                            put("p_total_xp", profile.totalXp)
+                            put("p_lifetime_strength", lifetimeStrength)
                             put("p_streak_days", streakDays)
                             put("p_shadow_essence", idle?.state?.essence ?: 0L)
                             put("p_shadow_count", idle?.state?.shadows ?: 0)

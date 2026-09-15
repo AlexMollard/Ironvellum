@@ -4,10 +4,11 @@
 --   forged_patch            ERROR: permission denied for column total_xp
 --   forged_insert           ERROR: permission denied for column total_xp
 --   rename_still_allowed    1     the columns a hunter really owns still write
---   xp_after_push           100   3 done sets x15 + 30 done reps + 25, from the SET rows
---   level_after_push        2     100 cumulative XP is level 2
+--   xp_after_push           420   the claim, accepted but bounded
+--   level_after_push        3     derived from the XP, never claimed separately
 --   titles_after_push       1
---   never_walks_backwards   100   a partial sync cannot lower a real total
+--   never_walks_backwards   420   a reinstall reporting 0 cannot lower it
+--   xp_ceiling_holds        100000000  an absurd claim is clamped, not stored
 --   curve_matches_kotlin    t     the SQL curve agrees at every threshold
 \set ON_ERROR_STOP 0
 
@@ -53,14 +54,13 @@ insert into earned_titles (user_id, title_id, unlocked_at) values
 on conflict do nothing;
 
 \echo '--- the RPC derives the numbers from the rows'
-select push_aggregates(5, 1200, 3, 12.5);
+select push_aggregates(420, 900, 5, 1200, 3, 12.5);
 select total_xp as xp_after_push, level as level_after_push, titles_count as titles_after_push,
        streak_days, shadow_essence
 from profiles where id = 'ffff0000-0000-4000-8000-00000000000f';
 
-\echo '--- a second push with the sets gone must not walk the total backwards'
-delete from session_sets where session_id = 'f5555555-0000-4000-8000-000000000001';
-select push_aggregates(0, 0, 0, 0);
+\echo '--- a reinstall reporting nothing must not walk the total backwards'
+select push_aggregates(0, 0, 0, 0, 0, 0);
 select total_xp as never_walks_backwards from profiles
 where id = 'ffff0000-0000-4000-8000-00000000000f';
 
@@ -73,3 +73,12 @@ select bool_and(monarch_level(50::bigint * n * (n - 1)) = n
                 and monarch_level(50::bigint * n * (n - 1) - 1) = n - 1)
     as curve_matches_kotlin
 from generate_series(2, 40) as g(n);
+
+\echo '--- an absurd claim is clamped to the ceiling, not stored'
+set role authenticated;
+set probe.uid = 'ffff0000-0000-4000-8000-00000000000f';
+select push_aggregates(9223372036854775807, 9223372036854775807, 99999, 9223372036854775807, 99999999, 1e12);
+select total_xp as xp_ceiling_holds, shadow_essence as essence_ceiling_holds,
+       streak_days as streak_ceiling_holds
+from profiles where id = 'ffff0000-0000-4000-8000-00000000000f';
+reset role;
