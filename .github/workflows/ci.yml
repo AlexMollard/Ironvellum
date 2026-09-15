@@ -102,3 +102,68 @@ jobs:
           path: |
             app/build/reports/tests/testDebugUnitTest/
             app/build/test-results/testDebugUnitTest/
+
+  # The instrumented suite is where migrations against real SQLite, navigation
+  # reachability, the accessibility floors and the three user journeys are
+  # actually proven. The build job only COMPILES them, so without this they can
+  # go red for weeks and nobody would know until someone attached a phone.
+  instrumented:
+    runs-on: ubuntu-latest
+    env:
+      MONARCH_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      MONARCH_SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      MONARCH_GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+    steps:
+      - name: Check out sources
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Generate local.properties
+        run: |
+          {
+            echo "supabase.url=${MONARCH_SUPABASE_URL:-}"
+            echo "supabase.key=${MONARCH_SUPABASE_KEY:-}"
+            echo "google.webClientId=${MONARCH_GOOGLE_WEB_CLIENT_ID:-}"
+          } > local.properties
+
+      # KVM is what makes an x86_64 emulator usable on a runner; without it the
+      # boot takes long enough to time out.
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Instrumented tests
+        uses: reactivecircus/android-emulator-runner@v2.38.0
+        with:
+          # API 35 google_apis x86_64: the same image the local MonarchEmu AVD
+          # runs, so a CI failure reproduces locally without a second guess.
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 4096M
+          # The ink treatment animates continuously and the flow tests drive the
+          # test clock by hand; system animations on top of that only add jitter.
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none
+          script: ./gradlew :app:connectedDebugAndroidTest
+
+      - name: Upload instrumented results
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: instrumented-results
+          path: app/build/outputs/androidTest-results/

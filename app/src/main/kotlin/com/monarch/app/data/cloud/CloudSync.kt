@@ -584,7 +584,7 @@ class CloudSync(
         }
     }
 
-    /** Idempotent: an upsert on (session_id, user_id) makes a double tap a no-op, never an error. */
+    /** Idempotent: a double tap is a no-op, never an error. */
     suspend fun like(sessionId: String): Result<Unit> {
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
@@ -592,7 +592,14 @@ class CloudSync(
             client.postgrest.from("session_likes").upsert(
                 SessionLikeDto(sessionId = sessionId, userId = me.userId),
             ) {
+                // DO NOTHING, not merge-duplicates. session_likes deliberately
+                // has no UPDATE policy, so a like can never be re-pointed at
+                // another row - which also means an upsert that takes the
+                // conflict path is REFUSED by RLS. Re-liking a session the
+                // cached feed still shows as unliked raised "the cloud refused
+                // this" rather than doing nothing.
                 onConflict = "session_id,user_id"
+                ignoreDuplicates = true
             }
             // Optimistic: record the overlay the feed applies at hand-out —
             // this also covers older paged entries, which are never cached.

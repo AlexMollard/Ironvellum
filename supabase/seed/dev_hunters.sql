@@ -12,6 +12,17 @@
 --   friends -> must appear only once a friendship is accepted
 --   private -> must never appear anywhere but its own account
 
+-- Refuses to run anywhere but a development database. This file writes
+-- directly into auth.users and bypasses RLS as the migration owner, so
+-- applying it to production would mint five live identities and a
+-- private-visibility ghost profile. Nothing mechanical kept it out before.
+do $$
+begin
+    if current_database() not in ('postgres', 'monarch_dev', 'postgres_dev') then
+        raise exception 'dev_hunters.sql must never run outside a dev database (got %)', current_database();
+    end if;
+end $$;
+
 \set alex '0ce6bdfe-0aec-47f6-859e-e79f24ead0df'
 
 -- ---------------------------------------------------------------- accounts
