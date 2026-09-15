@@ -142,6 +142,16 @@ open-work list.
   Material `Button`, so its label stays `Save Preset` rather than being
   uppercased the way `MonarchButton` does it.
 
+  Process death was checked too: with a live session open, the app was
+  backgrounded and its process killed for real (`pidof` empty afterwards), then
+  relaunched from the launcher. No crash — the crash buffer is empty — and the
+  session survives, because it lives in Room rather than in memory: Court offers
+  `RESUME · Quick Session` and reopening it lands back on `TRIAL IN PROGRESS`.
+  Navigation position is not restored, which is a deliberate non-goal: the work
+  is safe and one tap away. Two traps voided the first attempts — `am kill` is
+  ignored for a foreground app (background it first), and the instrumented gate
+  uninstalls the app, so a sweep straight after one tests an empty launcher.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
