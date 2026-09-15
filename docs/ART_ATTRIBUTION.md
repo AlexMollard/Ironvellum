@@ -45,10 +45,17 @@ screens cannot drift apart:
   the wrong polarity for a panel at luminance 23 - so ink density becomes alpha
   and every piece is re-tinted to one bone tone.
 
-Every run self-audits and the command fails rather than emitting unusable art:
-chroma (no colour), contrast (how much ink would bury into the panel), and
-backdrop (corners AND total opaque coverage, because one piece came back as a
-white paper square inside a ragged border and passed a corners-only check).
+Every run self-audits and a failing audit exits nonzero rather than emitting
+unusable art (the rejected PNG is still written, for inspection only):
+
+| audit | fails when |
+|---|---|
+| chroma | more than 5% of opaque pixels are tinted (max-min channel > 24) |
+| contrast | more than 25% of the ink sits at or below the panel's luminance (23) |
+| backdrop | any corner is opaque, **or** more than 55% of the image is opaque |
+
+The backdrop rule needs both halves: one piece came back as a white paper
+square inside a ragged border, which passed a corners-only check.
 
 ### Status: on hold
 
@@ -69,6 +76,14 @@ python tools/art.py --style ink "<subject>" \
   -o app/src/main/res/drawable-nodpi/art_empty_<name>.png \
   --size 512 --alpha --colors 64
 ```
+
+All three empty states must swap together or one screen keeps the old style:
+
+| drawable | call site |
+|---|---|
+| `art_empty_quests` | `ui/dashboard/DashboardScreen.kt` (rest-day quest panel) |
+| `art_empty_stats` | `ui/stats/StatsScreen.kt` (Readings section) |
+| `art_empty_skills` | `ui/titles/SkillJournal.kt:227` |
 
 ## Rank emblem set
 
