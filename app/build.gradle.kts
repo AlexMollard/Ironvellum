@@ -98,6 +98,14 @@ android {
                 signingConfig = signingConfigs.getByName("release")
             }
         }
+        debug {
+            // Ships the en-XA / ar-XB pseudolocale resources. Without them a
+            // per-app locale of ar-XB is filtered out as unsupported and falls
+            // back to English, so an RTL check silently measures an LTR layout
+            // and reports no problems — which is what happened the first time
+            // this was tried.
+            isPseudoLocalesEnabled = true
+        }
     }
     sourceSets {
         // Exported Room schema JSONs, consumed by MigrationTestHelper on device.

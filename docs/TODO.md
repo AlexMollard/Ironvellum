@@ -463,6 +463,27 @@ open-work list.
   `expected:<1000> but was:<500>` — a silent half-restore is exactly the
   failure a hunter would not notice until it was too late.
 
+  `supportsRtl="true"` had been declared since the first manifest and never
+  exercised. It holds: no absolute-direction API appears anywhere in the UI
+  (`AbsoluteAlignment`, `Alignment.CenterLeft`, `TextAlign.Left`,
+  `absolutePadding`, `absoluteOffset` — zero hits), and all six destinations
+  render with nothing off-screen and nothing squished in a mirrored layout,
+  crash buffer empty.
+
+  **Two false "clean" results came first, and only a control caught them.** The
+  developer-options route (`settings put global debug.force_rtl 1`) changed
+  nothing, and neither did a per-app locale of `ar-XB`: positions came back
+  **byte-identical** to the LTR run (`HUNTER` at x1=195 both times). Per-app
+  locales are filtered against the locales the APK actually ships, so `ar-XB`
+  fell back to English and the sweep measured an LTR layout while reporting no
+  problems. Debug builds now set `isPseudoLocalesEnabled = true`, after which
+  the same probe shows `HUNTER` at x1=195 LTR versus x1=601 RTL — the layout
+  demonstrably flipped before any claim was made about it.
+
+  Honest limit: the `en-XA` pseudolocale cannot test text expansion here,
+  because the UI strings are Kotlin literals rather than resources, so nothing
+  expands them. Expansion risk is covered by the font-scale axis instead.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
