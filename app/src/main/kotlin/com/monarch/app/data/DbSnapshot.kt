@@ -11,6 +11,13 @@ import java.io.File
  * the repository — the data is intact on disk but unreachable. A byte copy taken
  * before the first open is the only snapshot that survives that case, so it is
  * deliberately dumb: no schema knowledge, no serialisation, no Room.
+ *
+ * There is deliberately NO restore function here, and adding a naive one is a
+ * trap: copying a .bak over the live file while Room holds it open leaves the
+ * open instance writing into the unlinked inode while new opens see the
+ * restored file — the two diverge silently. A restore must close and rebuild
+ * the Room instance (or clear and repopulate through it), so it belongs
+ * wherever the database instance is owned, not in this dumb copier.
  */
 object DbSnapshot {
 

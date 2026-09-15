@@ -271,19 +271,25 @@ fun DashboardScreen(
                     // this fixed-size tap target rides at the end of the
                     // identity strip — the weighted name column absorbs it,
                     // so the player card itself never moves.
-                    Icon(
-                        Icons.Outlined.Settings,
-                        contentDescription = "System",
-                        tint = MonarchColors.InkMuted,
-                        modifier = Modifier
-                            .size(22.dp)
+                    // The glyph stays 22dp; the TARGET is 48dp. .size() before
+                    // .clickable() made the tappable area the glyph itself.
+                    Box(
+                        Modifier
+                            .size(48.dp)
                             .clip(MaterialTheme.shapes.small)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
-                            ) { onOpenSettings() }
-                            .padding(2.dp),
-                    )
+                            ) { onOpenSettings() },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            Icons.Outlined.Settings,
+                            contentDescription = "System",
+                            tint = MonarchColors.InkMuted,
+                            modifier = Modifier.size(22.dp),
+                        )
+                    }
                     // Rank and crest as one insignia: the worn crest supplies
                     // the plate this level sits on.
                     HunterSigil(level = progress.level, frameId = equippedFrame)

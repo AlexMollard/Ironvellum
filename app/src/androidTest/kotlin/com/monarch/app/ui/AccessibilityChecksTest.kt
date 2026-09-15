@@ -74,20 +74,48 @@ class AccessibilityChecksTest {
         }
     }
 
+    /**
+     * WCAG 2.5.8 AA sets 24dp as the floor for a target; Material's 48dp is the
+     * stricter platform guidance. Both are enforced where they belong: 48dp for
+     * the nav bar above, 24dp for EVERY tappable control here.
+     *
+     * The 24-48 band is deliberately left alone: the dense chips and list rows
+     * sit inside padded panels, and forcing them to 48dp would relayout the
+     * information design. That is the owner's call, not a defect.
+     */
+    private fun controlsBelowTheAccessibleFloor(): List<String> {
+        val density = compose.density.density
+        val minPx = WCAG_FLOOR_DP * density
+        return compose.onAllNodes(hasClickAction()).fetchSemanticsNodes()
+            .filter { it.boundsInRoot.size.width > 0f }
+            .mapNotNull { node ->
+                val size = node.boundsInRoot.size
+                if (size.width >= minPx && size.height >= minPx) null
+                else "%.0fx%.0f dp".format(size.width / density, size.height / density)
+            }
+    }
+
     @Test
     fun everyTappableControlIsAnnounceableAndHittable() {
         val unlabelled = mutableListOf<String>()
+        val tooSmall = mutableListOf<String>()
 
         for (destination in DESTINATIONS) {
             compose.onNodeWithContentDescription(destination).performClick()
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
             unlabelled += unlabelledControls().map { "$destination: $it" }
+            tooSmall += controlsBelowTheAccessibleFloor().map { "$destination: $it" }
         }
 
         assertEquals(
             "tappable controls an accessibility service cannot announce",
             emptyList<String>(),
             unlabelled,
+        )
+        assertEquals(
+            "tappable controls below the WCAG floor of ${WCAG_FLOOR_DP.toInt()}dp",
+            emptyList<String>(),
+            tooSmall,
         )
         assertEquals(
             "navigation targets below the ${MIN_TARGET_DP.toInt()}dp minimum",
@@ -104,5 +132,6 @@ class AccessibilityChecksTest {
         val DESTINATIONS = listOf("Train", "Stats", "Codex", "Guild", "Shadow", "Court")
         const val FRAME_BUDGET_MS = 1_200L
         const val MIN_TARGET_DP = 48f
+        const val WCAG_FLOOR_DP = 24f
     }
 }

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -464,10 +465,11 @@ private fun DeedSearchField(query: TextFieldValue, onQueryChange: (TextFieldValu
                 cursorBrush = Brush.horizontalGradient(listOf(MonarchColors.SystemGreen, MonarchColors.SystemGreen)),
                 // The placeholder is a sibling Text, so the field itself
                 // announced nothing: a screen reader landed on an unlabelled
-                // input. The icon stays decorative (null) — the parent label
-                // is what should be read, not both.
                 modifier = Modifier
                     .fillMaxWidth()
+                    // A single line of text measured 20dp, under the WCAG AA
+                    // floor; the row's own padding supplies the visual height.
+                    .heightIn(min = 24.dp)
                     .semantics { contentDescription = "Search deeds" },
             )
             if (query.text.isEmpty()) {
@@ -495,7 +497,11 @@ private fun DeedFilterChip(label: String, selected: Boolean, onClick: () -> Unit
             )
             .inkBorder(if (selected) MonarchColors.SystemGreen else MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .clickable { onClick() }
+            // 23dp was under even the WCAG AA 24dp floor. 32dp matches the
+            // Material chip height and only adds a few density pixels.
+            .heightIn(min = 32.dp)
             .padding(horizontal = 9.dp, vertical = 5.dp),
+        contentAlignment = Alignment.Center,
     ) {
         Text(
             label,
