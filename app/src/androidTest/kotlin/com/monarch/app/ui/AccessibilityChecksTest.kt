@@ -257,6 +257,36 @@ class AccessibilityChecksTest {
         }
     }
 
+    /**
+     * The same question one level in: the Codex pills and the Stats segmented
+     * control both mark the open tab with a fill and an ink edge. Each row must
+     * report exactly one of its own tabs as selected, and it must move when a
+     * different tab is opened.
+     */
+    @Test
+    fun tabRowsInsideAScreenSayWhichTabIsOpen() {
+        for ((destination, tabs) in TAB_ROWS) {
+            returnToNavigation()
+            compose.onNodeWithContentDescription(destination).performClick()
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+
+            for (tab in tabs) {
+                compose.onAllNodesWithText(tab, substring = true).onFirst().performClick()
+                compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+                val selected = tabs.filter { candidate ->
+                    compose.onAllNodesWithText(candidate, substring = true)
+                        .fetchSemanticsNodes()
+                        .any { it.config.valueOrNull(SemanticsProperties.Selected) == true }
+                }
+                assertEquals(
+                    "in $destination, opening $tab should leave exactly it selected",
+                    listOf(tab),
+                    selected,
+                )
+            }
+        }
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun <T> SemanticsConfiguration.valueOrNull(key: SemanticsPropertyKey<T>): T? =
         firstOrNull { it.key == key }?.value as? T
@@ -290,6 +320,12 @@ class AccessibilityChecksTest {
             // Truly last: starting a session leaves a live trial whose abandon
             // prompt sits between the sweep and the nav bar.
             listOf("Train", "QUICK SESSION"),
+        )
+
+        /** destination to the tab labels of one row inside it. */
+        val TAB_ROWS = listOf(
+            "Codex" to listOf("DEEDS", "SKILL TREE", "JOURNAL"),
+            "Stats" to listOf("BODY", "TRAINING", "ACTIVITY"),
         )
         const val FRAME_BUDGET_MS = 1_200L
         const val MIN_TARGET_DP = 48f

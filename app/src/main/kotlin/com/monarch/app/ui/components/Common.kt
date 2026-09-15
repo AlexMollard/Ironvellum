@@ -45,6 +45,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monarch.app.ui.theme.ChakraPetch
@@ -175,6 +179,13 @@ fun MonarchTabPill(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
             ) { onClick() }
+            // Selection is a gradient and a brighter ink edge — invisible to a
+            // screen reader, which would otherwise read every tab identically
+            // and give no clue which one is open.
+            .semantics {
+                role = Role.Tab
+                this.selected = selected
+            }
             .padding(horizontal = 13.dp, vertical = 7.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -418,6 +429,14 @@ fun <T> InkSegmented(
                         if (isOn) Modifier.inkBorder(MonarchColors.SystemGreen, shape, 1.dp) else Modifier,
                     )
                     .clickable { onPick(value) }
+                    // Same reason as the tab pills: the inset fill and ink edge
+                    // that mark the active segment carry no semantics.
+                    .semantics {
+                        role = Role.Tab
+                        // `this.` is load-bearing: the enclosing function's own
+                        // `selected` parameter shadows the semantics property.
+                        this.selected = isOn
+                    }
                     .padding(vertical = 10.dp),
                 contentAlignment = Alignment.Center,
             ) {
