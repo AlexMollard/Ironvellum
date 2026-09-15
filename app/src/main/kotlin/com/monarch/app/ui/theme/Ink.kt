@@ -500,9 +500,19 @@ fun DrawScope.inkArc(
         return
     }
     val arcLen = (kotlin.math.PI / 180.0 * kotlin.math.abs(sweepDeg) * radius).toFloat()
-    val segments = (arcLen / 22f).toInt().coerceIn(4, 64)
+    // Segments must be long RELATIVE TO THE STROKE, not a fixed 22px: at a
+    // gauge's 21px width that made every segment a round-capped dot, and the
+    // per-segment weight jitter then rendered the sweep as a chain of beads.
+    val segLen = maxOf(22f, widthPx * 2.2f)
+    // Floor of 2, not 4: a short sweep (a gauge at 25%) was being forced back
+    // into stubby segments by a minimum count, which is what beaded it while
+    // the long track beside it stayed smooth.
+    val segments = (arcLen / segLen).roundToInt().coerceIn(2, 64)
     val rng = Random(seed + radius.roundToInt())
-    val drift = (widthPx * 0.22f).coerceAtMost(2.2f)
+    // A thick stroke shows width jitter far more than a hairline does, so the
+    // amplitude shrinks as the brush gets fatter.
+    val jitter = (10f / widthPx).coerceIn(0.4f, 1f)
+    val drift = (widthPx * 0.22f).coerceAtMost(2.2f) * jitter
 
     fun pointAt(deg: Float, r: Float): Offset {
         val rad = (deg * kotlin.math.PI / 180.0).toFloat()
@@ -518,11 +528,18 @@ fun DrawScope.inkArc(
     val radii = FloatArray(segments + 1) { radius + (rng.nextFloat() - 0.5f) * 2f * drift }
     if (closed) radii[segments] = radii[0]
 
+    // Weight per JOINT too, averaged across each segment. Rolling an
+    // independent weight per segment stepped the width at every joint; with a
+    // round cap that reads as a bead rather than a brush drag, which is exactly
+    // how the rate dial rendered. Sharing the joint halves each step.
+    val weights = FloatArray(segments + 1) { 1f - rng.nextFloat() * 0.38f * jitter }
+    if (closed) weights[segments] = weights[0]
+
     for (i in 0 until segments) {
         val t0 = i.toFloat() / segments
         val t1 = (i + 1).toFloat() / segments
         val ends = if (taperEnds) (minOf(t0, 1f - t0) / 0.5f).coerceIn(0f, 1f) else 1f
-        val weight = (0.62f + rng.nextFloat() * 0.38f) * (0.4f + 0.6f * ends)
+        val weight = (weights[i] + weights[i + 1]) / 2f * (0.4f + 0.6f * ends)
         drawLine(
             color = color.copy(alpha = color.alpha * (0.6f + 0.4f * weight)),
             start = pointAt(startDeg + sweepDeg * t0, radii[i]),

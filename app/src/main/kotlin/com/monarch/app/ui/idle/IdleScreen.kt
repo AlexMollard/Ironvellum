@@ -523,7 +523,9 @@ private fun RateDial(
             // is a straight line bent into a circle.
             val gaugeCentre = Offset(size.width / 2f, size.height / 2f)
             val gaugeRadius = minOf(arcSize.width, arcSize.height) / 2f
-            inkArc(gaugeCentre, gaugeRadius, start, span, MonarchColors.Vault, stroke, seed = 81, taperEnds = false)
+            // Rune, not Vault: against this panel a Vault track was invisible,
+            // so the sweep read as a stroke floating in space with no scale.
+            inkArc(gaugeCentre, gaugeRadius, start, span, MonarchColors.Rune, stroke, seed = 81, taperEnds = false)
             inkArc(gaugeCentre, gaugeRadius, start, span * sweep.value, MonarchColors.EmeraldBright, stroke, seed = 83)
             // Quarter ticks on the track: a gauge with no scale can't be read
             // even once the fill is legible.
