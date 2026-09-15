@@ -550,12 +550,14 @@ fun DashboardScreen(
                 Image(
                     painter = painterResource(R.drawable.art_empty_quests),
                     contentDescription = null,
-                    // The asset is a 96dp square: fillMaxWidth + heightIn let its
-                    // intrinsic size win, so it rendered postage-stamp sized in a
-                    // panel with room to spare. An explicit square scales it.
+                    // Explicit size: fillMaxWidth + heightIn let the vector's
+                    // intrinsic size win and it rendered postage-stamp small.
+                    // 180dp against a 59-unit viewport puts the 3-unit stroke at
+                    // ~9dp, matching the readings art so the two empty states
+                    // carry the same line weight.
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .size(200.dp)
+                        .size(180.dp)
                         .alpha(0.6f),
                 )
                 Spacer(Modifier.weight(1f))
