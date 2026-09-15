@@ -134,6 +134,51 @@ class ExportRoundTripTest {
         }
     }
 
+    @Test
+    fun anArchiveFromAnotherInstallBringsItsMovementsWithoutDuplicatingOurs() = runTest {
+        val preset = db.presetDao().observePresets().first().first().preset
+        val sessionId = repo.startSessionFromPreset(preset.id)
+        val firstSet = db.sessionDao().setsFor(sessionId).first()
+        val movement = db.exerciseDao().byId(firstSet.exerciseId)!!.name
+        repo.updateSet(firstSet.id, reps = 6, weightKg = 30.0, done = true)
+        repo.completeSession(sessionId)
+        val archive = repo.exportJson()
+        val catalogueBefore = db.exerciseDao().count()
+
+        // Exercise ids differ between installs, so the importer matches on NAME
+        // and creates what it cannot find. The premise is asserted against the
+        // database, not assumed: the catalogue is seeded from two places
+        // (Seed.kt and the skill tree), so "surely absent" guesses are wrong.
+        val foreign = "Sandbag Zercher Carry"
+        assertEquals("the fixture name must be unknown here", null, db.exerciseDao().byName(foreign))
+        val fromElsewhere = archive.replace(movement, foreign)
+        assertTrue("the rename must have taken", fromElsewhere.contains(foreign))
+
+        val imported = repo.importArchive(fromElsewhere)
+        assertTrue("import failed: ${imported.exceptionOrNull()?.message}", imported.isSuccess)
+        assertEquals(
+            "the foreign movement must be created, exactly once",
+            catalogueBefore + 1,
+            db.exerciseDao().count(),
+        )
+        val restoredNames = db.sessionDao().observeCompletedWithSets().first()
+            .flatMap { it.sets }.map { it.exerciseId }.distinct()
+            .mapNotNull { db.exerciseDao().byId(it)?.name }
+        assertTrue("the restored sets must reference it: $restoredNames", restoredNames.contains(foreign))
+
+        // Now the trap: the same archive SHOUTED is still our own movement.
+        // Matching case-sensitively would mint a duplicate catalogue row on
+        // every restore — which is how a catalogue silently fills with
+        // near-identical movements.
+        val shouted = archive.replace(movement, movement.uppercase())
+        assertTrue(repo.importArchive(shouted).isSuccess)
+        assertEquals(
+            "a case variant of a known movement must not create a second row",
+            catalogueBefore + 1,
+            db.exerciseDao().count(),
+        )
+    }
+
     private companion object {
         /** Never the app's live database. */
         const val TEST_DB = "monarch-export-roundtrip-test.db"
