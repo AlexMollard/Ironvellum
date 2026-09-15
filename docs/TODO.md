@@ -91,9 +91,13 @@ open-work list.
   they wrap, and the label is supplementary — the icon carries the meaning, and
   the `contentDescription` a screen reader announces is unaffected by scaling.
 
-  Not measured: the other screens at 2.0x, and no test guards this — the
-  instrumented suite runs at the device's own font scale, so a regression here
-  would need the same manual `settings put system font_scale` sweep.
+  All six destinations and five deeper surfaces were then swept at 2.0x and
+  measured for two failures the eye misses: any text node crossing the screen
+  edge, and any label squished into a narrow multi-line column (the
+  one-letter-per-line shape). Zero of each. Still no automated guard — the
+  instrumented suite runs at the device's own font scale, so a regression needs
+  the same `settings put system font_scale` sweep, and the check is the dump
+  measurement rather than a screenshot.
 - **Lint's 10 remaining warnings.** Audited individually, all deliberate: 8 are
   `ModifierParameter` ordering convention, and the 2 asking for a plain
   `Modifier` default are the two composables that must carry their own size
