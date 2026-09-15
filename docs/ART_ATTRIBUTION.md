@@ -43,7 +43,10 @@ screens cannot drift apart:
   beside untinted ones and the set stopped looking like one hand.
 - **Bone ink on transparency.** Monochrome ink is drawn dark on paper, which is
   the wrong polarity for a panel at luminance 23 - so ink density becomes alpha
-  and every piece is re-tinted to one bone tone.
+  and every piece is re-tinted to one bone tone. That tone is **read from
+  `MonarchColors.Ink` in `Theme.kt`**, not copied: UI text and artwork must be
+  the same ink, and holding the number twice drifted the first time it was
+  tried.
 
 Every run self-audits and a failing audit exits nonzero rather than emitting
 unusable art (the rejected PNG is still written, for inspection only):

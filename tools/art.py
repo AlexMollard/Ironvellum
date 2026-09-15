@@ -28,6 +28,7 @@ import base64
 import io
 import json
 import pathlib
+import re
 import subprocess
 import sys
 import urllib.error
@@ -198,8 +199,31 @@ def postprocess(
     im.save(out, format="PNG", optimize=True)
     return out.getvalue()
 
-# One bone tone for every piece, so screens cannot drift apart on colour.
-INK_TINT = (232, 232, 228)
+
+def _ink_tint_from_theme() -> tuple[int, int, int]:
+    """Read the bone tone straight off the app's own theme token.
+
+    The UI text ink and the artwork ink must be the same colour or the
+    "one hand" style claim is decorative. Holding the number in two places and
+    testing that they agree was tried and failed twice over: the comment
+    drifted (EFEDE6 vs E8E8E4), and the test that would have caught it never
+    ran, because Gradle does not track a Python file as a test input.
+
+    So there is only one source of truth now - Theme.kt - and drift is
+    impossible by construction rather than merely detected.
+    """
+    theme = (
+        pathlib.Path(__file__).resolve().parent.parent
+        / "app/src/main/kotlin/com/monarch/app/ui/theme/Theme.kt"
+    )
+    match = re.search(r"val Ink = Color\(0xFF([0-9A-Fa-f]{6})\)", theme.read_text(encoding="utf-8"))
+    if not match:
+        sys.exit(f"cannot read 'val Ink' from {theme}; the theme token was renamed")
+    hex_rgb = match.group(1)
+    return tuple(int(hex_rgb[i : i + 2], 16) for i in (0, 2, 4))  # type: ignore[return-value]
+
+
+INK_TINT = _ink_tint_from_theme()
 
 
 def ink_to_alpha(im, tint: tuple[int, int, int] = INK_TINT):
