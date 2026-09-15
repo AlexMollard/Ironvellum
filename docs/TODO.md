@@ -277,6 +277,21 @@ open-work list.
   (`PeriodicWorkRequestBuilder(Duration.ofDays(1))`) rather than claimed as
   observed.
 
+  StrictMode is now installed in debug builds (log, never crash), because
+  nothing in this project would otherwise notice main-thread disk or network
+  work — the way an app earns an ANR on a cold morning with a big database. It
+  immediately reported 183 violations on launch, two of them ours:
+  `CrashJournal.install` (directory checks) and `DbSnapshot.capture` (the byte
+  copy), with the slowest single read at 72ms.
+
+  Both were then measured rather than assumed: the snapshot copies a 0.3 MB
+  database in **11 ms** at 1,000 sessions, and it is throttled to one copy a
+  day, so the cost lands on a single cold start and is not an ANR. Moving it
+  off the main thread would race Room's first open — the capture has to finish
+  before anything touches the database — so the defence is a budget instead:
+  the timing test fails above 150ms. The rest of the violations are framework
+  work at startup (`ActivityThread`, preference and profile loading), not ours.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day

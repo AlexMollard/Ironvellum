@@ -113,6 +113,29 @@ class FiveYearsOfTrainingTest {
         )
     }
 
+    @Test
+    fun theDailySnapshotDoesNotFreezeLaunchAtFiveYears() = runBlocking {
+        // DbSnapshot.capture() runs on the MAIN thread in Application.onCreate,
+        // before Room opens, and copies the database byte for byte. It is
+        // throttled to one copy a day, so the cost lands on a single launch —
+        // but that launch is a cold start the hunter is watching.
+        val dbFile = context.getDatabasePath(TEST_DB)
+        db.close()
+        val sizeMb = dbFile.length() / 1048576.0
+        val started = System.nanoTime()
+        val snapshot = DbSnapshot.capture(context, TEST_DB)
+        val tookMs = (System.nanoTime() - started) / 1_000_000
+
+        assertTrue("nothing was copied", snapshot != null && snapshot.length() > 0)
+        assertTrue(
+            "copying a %.1f MB database took %d ms on the main thread at %d sessions"
+                .format(sizeMb, tookMs, SESSIONS),
+            tookMs < SNAPSHOT_BUDGET_MS,
+        )
+        snapshot?.delete()
+        db = MonarchDatabase.create(context, TEST_DB)
+    }
+
     private companion object {
         const val TEST_DB = "monarch-five-years-test.db"
 
@@ -129,5 +152,14 @@ class FiveYearsOfTrainingTest {
          * with 30x headroom would never fail, which is no guard at all.
          */
         const val BUDGET_MS = 1_500L
+
+        /**
+         * Measured at this data size: a 0.3 MB database copies in 11 ms, so the
+         * main-thread snapshot in `Application.onCreate` is real disk I/O but
+         * not an ANR. 150ms leaves room for slower storage while still failing
+         * if the copy stops being cheap — moving it off the main thread would
+         * race Room's first open, so the defence is that it stays fast.
+         */
+        const val SNAPSHOT_BUDGET_MS = 150L
     }
 }

@@ -1,6 +1,7 @@
 package com.monarch.app
 
 import android.app.Application
+import android.os.StrictMode
 import com.monarch.app.data.DbSnapshot
 import com.monarch.app.data.cloud.AccountRepository
 import com.monarch.app.data.cloud.CloudSync
@@ -33,6 +34,20 @@ class MonarchApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // Debug only, and log rather than crash: main-thread disk or network
+        // work is how an app earns an ANR on a cold morning with a big
+        // database, and nothing else in this project would notice it.
+        if (BuildConfig.DEBUG) {
+            StrictMode.setThreadPolicy(
+                StrictMode.ThreadPolicy.Builder()
+                    .detectDiskReads()
+                    .detectDiskWrites()
+                    .detectNetwork()
+                    .detectCustomSlowCalls()
+                    .penaltyLog()
+                    .build(),
+            )
+        }
         // Journal a crash before anything else can fail: the handler must be
         // in place before the first work runs in this process. It wraps and
         // delegates to the system handler, so the crash dialog still appears
