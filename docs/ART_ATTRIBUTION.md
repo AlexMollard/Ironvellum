@@ -27,6 +27,49 @@ Nothing is sourced from a third-party icon set.
 | `mipmap-anydpi-v26/ic_launcher.xml` | adaptive icon composition (no artwork) | — | project licence | — |
 | `mipmap-anydpi-v26/ic_launcher_round.xml` | adaptive round icon composition (no artwork) | — | project licence | — |
 
+## House style: monochrome ink (adopted)
+
+Original artwork for this project is generated with `tools/art.py`, which wraps
+Google `gemini-3.1-flash-image` through omp's `google-antigravity` provider
+(local headroom proxy -> Cloud Code Assist). Generated pieces are project-licensed.
+
+The style is a contract held in the script, not a per-request instruction, so
+screens cannot drift apart:
+
+- **`ink`** (house default) - sumi-e brush work, visible dry-brush texture,
+  imperfect hand-painted edges. Chosen over `line` (read as a stock pictogram)
+  and `woodcut` (hard square frame, invented lettering).
+- **Black ink only.** Colour is banned outright, not steered: tinted pieces sat
+  beside untinted ones and the set stopped looking like one hand.
+- **Bone ink on transparency.** Monochrome ink is drawn dark on paper, which is
+  the wrong polarity for a panel at luminance 23 - so ink density becomes alpha
+  and every piece is re-tinted to one bone tone.
+
+Every run self-audits and the command fails rather than emitting unusable art:
+chroma (no colour), contrast (how much ink would bury into the panel), and
+backdrop (corners AND total opaque coverage, because one piece came back as a
+white paper square inside a ragged border and passed a corners-only check).
+
+### Status: on hold
+
+The `google-antigravity` image route is **quota-exhausted**
+(`QUOTA_EXHAUSTED`, `cloudcode-pa.googleapis.com`); the error carries a
+`quotaResetDelay` - last seen `4h38m`, so check it rather than guessing. The
+allowance is small enough that a single throwaway probe can consume it, so
+spend the window on real subjects only.
+
+The shipped `art_empty_*` assets remain the original vectors listed
+above; nothing half-finished is wired in. Approved ink compositions (gate,
+balance scale, bare tree) are parked in `.tmp/art-parked/` at 256px -
+recovered from a preview composite, so they are NOT release-quality and exist
+only as a reference for re-prompting. When quota resets, regenerate at 512px:
+
+```
+python tools/art.py --style ink "<subject>" \
+  -o app/src/main/res/drawable-nodpi/art_empty_<name>.png \
+  --size 512 --alpha --colors 64
+```
+
 ## Rank emblem set
 
 `ic_rank_soldier` → `ic_rank_knight` → `ic_rank_commander` are an original
