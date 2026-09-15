@@ -638,14 +638,15 @@ fun DashboardScreen(
                 Image(
                     painter = painterResource(R.drawable.art_empty_quests),
                     contentDescription = null,
-                    // Explicit size: fillMaxWidth + heightIn let the vector's
-                    // intrinsic size win and it rendered postage-stamp small.
-                    // 180dp against a 59-unit viewport puts the 3-unit stroke at
-                    // ~9dp, matching the readings art so the two empty states
-                    // carry the same line weight.
+                    // Explicit size: fillMaxWidth + heightIn let the intrinsic
+                    // size win and it rendered postage-stamp small. The rest-day
+                    // panel owns the page's slack, so the art gets most of it —
+                    // but only when there IS slack: below the short-window
+                    // threshold the page scrolls and the quest button has to
+                    // stay reachable, so the art gives the room back.
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .size(180.dp)
+                        .size(if (shortWindow) 160.dp else 280.dp)
                         .alpha(0.6f),
                 )
                 Spacer(Modifier.weight(1f))
