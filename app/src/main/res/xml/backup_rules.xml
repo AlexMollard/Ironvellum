@@ -4,4 +4,11 @@
     <exclude domain="database" path="monarch.db" />
     <exclude domain="database" path="monarch.db-wal" />
     <exclude domain="database" path="monarch.db-shm" />
+    <!--
+      The snapshots are byte copies of the database, so excluding monarch.db
+      while backing these up would leak exactly the data the exclusion exists
+      to protect. The crash journal carries stack traces from this device.
+    -->
+    <exclude domain="file" path="db-snapshots" />
+    <exclude domain="file" path="crash" />
 </full-backup-content>

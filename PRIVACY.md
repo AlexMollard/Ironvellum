@@ -17,6 +17,13 @@ Checked against the codebase on 2026-09-15.
 - **Body measurements never leave the device.** The cloud schema deliberately
   has no table for them (`supabase/migrations/0001_init.sql`, header comment;
   `Repository.kt` "measurements — device-only by design").
+- **The database is excluded from Android's backups.** Android would otherwise
+  copy app data to your Google account and to a new phone during device
+  transfer. `monarch.db`, its write-ahead sidecars, the local snapshot copies
+  of it, and the crash journal are all excluded in every domain
+  (`app/src/main/res/xml/backup_rules.xml`,
+  `app/src/main/res/xml/data_extraction_rules.xml`), so your training data and
+  measurements stay on the device that recorded them.
 
 ## What the app stores on your device
 

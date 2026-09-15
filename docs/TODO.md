@@ -319,6 +319,23 @@ open-work list.
   second path with its own failure mode. Driven on device: the chooser opens and
   `cache/exports/monarch_export.json` is written, crash buffer empty.
 
+  A privacy hole of my own making, found by checking the backup rules against
+  what is actually on disk: `monarch.db` is excluded from cloud backup and
+  device transfer, but `DbSnapshot` writes **byte-for-byte copies of that same
+  database** into `files/db-snapshots/`, and the `file` domain is backed up by
+  default. The exclusion was being defeated by the safety net added beside it.
+  Both rule files now exclude `db-snapshots` and `crash` in every domain
+  (cloud-backup and device-transfer), confirmed present in the packaged APK.
+  The export staging directory needs no rule — `cache` is never backed up.
+  Verified as far as this emulator allows: the rules are byte-present in the
+  packaged APK (`db-snapshots`, `crash`, `monarch.db` all appear in both files)
+  and the platform parses them with no error. A payload-level proof was
+  attempted and **failed for harness reasons, not app reasons**: the local
+  transport stored nothing for this package, and a control build with the
+  exclusions stripped out stored nothing either, so an absent payload was no
+  evidence of exclusion. Recorded as a gap rather than a pass — proving what
+  the backup actually contains needs a device signed into a Google account.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
