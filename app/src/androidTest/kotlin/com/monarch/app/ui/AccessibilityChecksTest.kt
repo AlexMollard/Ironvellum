@@ -4,6 +4,7 @@ import androidx.compose.ui.semantics.SemanticsConfiguration
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.SemanticsPropertyKey
 import androidx.compose.ui.test.hasClickAction
+import androidx.compose.ui.test.isHeading
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
@@ -310,6 +311,24 @@ class AccessibilityChecksTest {
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         assertEquals("the tapped filter must report itself on", true, chipSelected("LOCKED"))
         assertEquals("the previous filter must report itself off", false, chipSelected("IN PROGRESS"))
+    }
+
+    /**
+     * A screen reader navigates long screens by heading, not by swiping every
+     * control. These three are the longest scrolls in the app, so each has to
+     * expose its sections as headings rather than as ordinary text.
+     */
+    @Test
+    fun longScreensExposeTheirSectionsAsHeadings() {
+        val without = mutableListOf<String>()
+        for (destination in listOf("Stats", "Shadow", "Train")) {
+            returnToNavigation()
+            compose.onNodeWithContentDescription(destination).performClick()
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+            val headings = compose.onAllNodes(isHeading()).fetchSemanticsNodes().size
+            if (headings == 0) without += destination
+        }
+        assertEquals("screens with no heading to navigate by", emptyList<String>(), without)
     }
 
     @Suppress("UNCHECKED_CAST")

@@ -46,6 +46,8 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -241,13 +243,23 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             // Ink, not gold: a section marker decorates, it does not report
             // anything earned, and gold is reserved for what is.
-            Text("\u25E0", color = MonarchColors.Bracket, fontSize = 12.sp)
+            // Decorative: without clearing it, a screen reader announces the
+            // glyph as a character before every section name.
+            Text(
+                "\u25E0",
+                color = MonarchColors.Bracket,
+                fontSize = 12.sp,
+                modifier = Modifier.clearAndSetSemantics {},
+            )
             Text(
                 text = text.uppercase(),
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 color = MonarchColors.InkMuted,
                 letterSpacing = MonarchTracking.SectionHeader,
+                // Marks the section so a screen reader can jump between them
+                // instead of swiping through every control in between.
+                modifier = Modifier.semantics { heading() },
             )
         }
     }
