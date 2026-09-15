@@ -61,6 +61,14 @@ private const val WOBBLE_PER_CORNER = 0.22f
  */
 private const val WOBBLE_PER_SHORT_SIDE = 0.025f
 
+/**
+ * Floor in px, so a small element still shows a hand.
+ *
+ * ~0.5dp at 3x. Below this the edge measures as straight on device (a badge at
+ * 0.7px read 1px peak-to-peak), which defeats the point of inking small chrome.
+ */
+private const val WOBBLE_MIN_PX = 1.4f
+
 /** Hard ceiling in px. Past this an edge stops reading as drawn and starts reading as broken. */
 private const val WOBBLE_MAX_PX = 6f
 
@@ -91,12 +99,17 @@ class InkEdgeShape(
         layoutDirection: LayoutDirection,
     ): Outline {
         val corner = maxOf(topStart, topEnd, bottomEnd, bottomStart)
-        // Also bound the wander by the surface's own short side: the same 6px
-        // that looks drawn on a tall panel eats a noticeable slice off a 56dp
-        // button's edge, which is what made the wide buttons look torn.
+        // Bound the wander by the surface's own short side: the 6px that looks
+        // drawn on a tall panel eats a noticeable slice off a 56dp button, which
+        // is what made the wide buttons read as torn.
+        //
+        // The floor matters as much as the ceiling. A 100x28px badge came out at
+        // 0.7px of drift - measured at 1px peak-to-peak on device, which is
+        // straight to the eye. WOBBLE_MIN_PX keeps small filled elements visibly
+        // drawn; clips with no fill show nothing either way.
         val shortSide = minOf(size.width, size.height)
         val wobble = minOf(corner * WOBBLE_PER_CORNER, shortSide * WOBBLE_PER_SHORT_SIDE)
-            .coerceIn(0.5f, WOBBLE_MAX_PX)
+            .coerceIn(WOBBLE_MIN_PX, WOBBLE_MAX_PX)
         val pts = inkEdgePoints(size.width, size.height, wobble, salt)
         val path = Path()
         path.moveTo(pts[0], pts[1])
