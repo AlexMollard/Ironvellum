@@ -215,7 +215,9 @@ fun StatsScreen(
                 Box(
                     Modifier
                         .weight(1f)
-                        .clip(MaterialTheme.shapes.extraSmall)
+                        // Ink, not extraSmall: this chip is large enough to
+                        // show a drawn edge, unlike the tiny clips extraSmall exists for.
+                        .clip(MaterialTheme.shapes.small)
                         .background(if (selected) MonarchColors.VaultHigh else Color.Transparent)
                         .clickable { tab = entry }
                         .padding(vertical = 10.dp),

@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -75,7 +74,10 @@ fun SocialScreen(onOpenHunter: (userId: String, displayName: String) -> Unit) {
 /** Same pill treatment as the Codex tabs, so the two hubs read as siblings. */
 @Composable
 private fun TabPill(label: String, selected: Boolean, onClick: () -> Unit) {
-    val shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp)
+    // Tab pills sit directly above inked cards, so a machined corner here
+    // was the most visible geometric leftover. The short-side cap keeps
+    // the wander subtle at this height.
+    val shape = MaterialTheme.shapes.small
     Text(
         label,
         style = MaterialTheme.typography.labelMedium,

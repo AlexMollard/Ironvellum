@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Lock
@@ -357,7 +356,10 @@ private fun lineArt(line: String): Int? = when (line.lowercase()) {
 
 @Composable
 private fun TabPill(label: String, selected: Boolean, art: Int? = null, onClick: () -> Unit) {
-    val shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp)
+    // Tab pills sit directly above inked cards, so a machined corner here
+    // was the most visible geometric leftover. The short-side cap keeps
+    // the wander subtle at this height.
+    val shape = MaterialTheme.shapes.small
     Row(
         Modifier
             .clip(shape)
