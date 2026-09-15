@@ -112,6 +112,14 @@ open-work list.
   What actually found the real defect was checking sentinel strings —
   `ACCEPT QUEST` was simply absent from the dump.
 
+  A sentinel sweep then covered 18 primary controls across all six
+  destinations at 1.0x and 2.0x. Two read as regressions — `BEGIN` on Train and
+  `SHADOW DRAW` on Shadow — and both were **false positives**: each is reachable
+  after one swipe (y=698 and y=909). That is the rule the method needs: on a
+  scrolling screen, absence from the first viewport means nothing. Court is the
+  only non-scrolling destination, which is exactly why a missing button there
+  was real. No further defects found.
+
   Still no automated guard: the instrumented suite runs at the device's own
   font scale, so a regression needs a manual `settings put system font_scale`
   sweep, and the check must be sentinel strings plus measured geometry rather
