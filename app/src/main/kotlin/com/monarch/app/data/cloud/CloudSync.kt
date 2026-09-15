@@ -79,19 +79,19 @@ class CloudSync(
             }
             if (remote != null) {
                 client.postgrest.from("profiles").upsert(
-                    ProfileDto(
-                        id = me.userId,
-                        displayName = me.displayName,
-                        visibility = me.visibility,
-                        level = maxOf(level, remote.level ?: level),
-                        totalXp = maxOf(profile.totalXp, remote.totalXp ?: profile.totalXp),
-                        streakDays = streakDays,
-                        titlesCount = maxOf(titles.size, remote.titlesCount ?: titles.size),
-                        lifetimeStrength = maxOf(
-                            lifetimeStrength,
-                            remote.lifetimeStrength ?: lifetimeStrength,
+                    mergeAggregates(
+                        local = ProfileDto(
+                            id = me.userId,
+                            displayName = me.displayName,
+                            visibility = me.visibility,
+                            level = level,
+                            totalXp = profile.totalXp,
+                            streakDays = streakDays,
+                            titlesCount = titles.size,
+                            lifetimeStrength = lifetimeStrength,
+                            currentTitleId = profile.currentTitleId,
                         ),
-                        currentTitleId = profile.currentTitleId,
+                        remote = remote,
                     ),
                 ) {
                     onConflict = "id"
@@ -691,6 +691,33 @@ class CloudSync(
         },
     )
 }
+
+/**
+ * The monotonic aggregate merge, extracted so it can be tested: this is the one
+ * rule in the app whose failure destroys data that exists nowhere else.
+ *
+ * A fresh install or a local database reset starts at LV 1 / 0 XP. Pushing that
+ * blindly would overwrite the only server-side copy of a real profile, so every
+ * cumulative field takes `max(local, remote)`.
+ *
+ * `streakDays` is deliberately NOT merged: a streak legitimately falls to 0
+ * after missed days, and maxing it would keep a dead streak alive forever.
+ * `displayName`, `visibility` and `currentTitleId` are live choices, not
+ * cumulative counters, so the local value always wins.
+ *
+ * A null remote column means "unknown", not zero, and must leave the local
+ * value untouched.
+ */
+internal fun mergeAggregates(local: ProfileDto, remote: ProfileAggregatesDto): ProfileDto =
+    local.copy(
+        level = maxOf(local.level, remote.level ?: local.level),
+        totalXp = maxOf(local.totalXp, remote.totalXp ?: local.totalXp),
+        titlesCount = maxOf(local.titlesCount, remote.titlesCount ?: local.titlesCount),
+        lifetimeStrength = maxOf(
+            local.lifetimeStrength,
+            remote.lifetimeStrength ?: local.lifetimeStrength,
+        ),
+    )
 
 /**
  * In-memory TTL cache with single-flight for the social reads. Deliberately
