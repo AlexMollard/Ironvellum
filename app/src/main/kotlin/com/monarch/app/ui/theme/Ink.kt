@@ -1,5 +1,7 @@
 package com.monarch.app.ui.theme
 
+import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -37,61 +39,100 @@ import kotlin.random.Random
  * re-roll on every recomposition and the whole UI would visibly crawl.
  */
 
-/** How far an edge may wander from true, in dp. Past ~2dp it reads as broken, not hand-drawn. */
-private const val EDGE_WOBBLE_DP = 1.4f
-
 /** Segments per edge. Too few reads as a polygon; too many smooths back into a straight line. */
 private const val SEGMENTS_PER_EDGE = 7
 
 /**
+ * How much of the declared corner size becomes edge wander.
+ *
+ * Tying wobble to the corner size rather than a fixed dp does two things: the
+ * amount of "hand" scales with the size class (a panel wanders more than a
+ * chip), and it is density-correct for free, because CornerBasedShape hands the
+ * corner down already resolved to pixels.
+ */
+private const val WOBBLE_PER_CORNER = 0.22f
+
+/** Hard ceiling in px. Past this an edge stops reading as drawn and starts reading as broken. */
+private const val WOBBLE_MAX_PX = 6f
+
+/**
  * A rectangle whose edges were drawn by hand rather than snapped to pixels.
  *
- * Replaces CutCornerShape for ink surfaces. The corners stay square-ish; it is
- * the slight drift ALONG each edge that sells the brush, so the wobble is
- * applied perpendicular to the edge direction.
+ * Extends CornerBasedShape so it can be installed directly into the Material
+ * `Shapes` set - Material requires that type, so a plain `Shape` cannot be a
+ * theme shape, and every control would otherwise keep its HUD corner.
+ *
+ * The declared corner radii are deliberately NOT drawn as corners; they are
+ * read as an intensity hint. An ink edge has no radius.
  */
-class InkEdgeShape(private val salt: Int = 0) : Shape {
+class InkEdgeShape(
+    private val salt: Int = 0,
+    topStart: CornerSize = CornerSize(8.dp),
+    topEnd: CornerSize = CornerSize(8.dp),
+    bottomEnd: CornerSize = CornerSize(8.dp),
+    bottomStart: CornerSize = CornerSize(8.dp),
+) : CornerBasedShape(topStart, topEnd, bottomEnd, bottomStart) {
 
     override fun createOutline(
         size: Size,
+        topStart: Float,
+        topEnd: Float,
+        bottomEnd: Float,
+        bottomStart: Float,
         layoutDirection: LayoutDirection,
-        density: Density,
     ): Outline {
-        val wobble = with(density) { EDGE_WOBBLE_DP.dp.toPx() }
-        // Seed from the size so a given panel is stable frame to frame, and two
-        // differently-sized panels still get different edges.
-        val rng = Random(size.width.roundToInt() * 31 + size.height.roundToInt() * 17 + salt)
+        val corner = maxOf(topStart, topEnd, bottomEnd, bottomStart)
+        val wobble = (corner * WOBBLE_PER_CORNER).coerceIn(0.5f, WOBBLE_MAX_PX)
+        val pts = inkEdgePoints(size.width, size.height, wobble, salt)
         val path = Path()
-
-        fun jitter() = (rng.nextFloat() - 0.5f) * 2f * wobble
-
-        // Walk the four edges, emitting points that drift off the true line.
-        val w = size.width
-        val h = size.height
-        path.moveTo(jitter(), jitter())
-        for (i in 1..SEGMENTS_PER_EDGE) {
-            val t = i.toFloat() / SEGMENTS_PER_EDGE
-            path.lineTo(w * t, jitter())
-        }
-        for (i in 1..SEGMENTS_PER_EDGE) {
-            val t = i.toFloat() / SEGMENTS_PER_EDGE
-            path.lineTo(w + jitter(), h * t)
-        }
-        for (i in 1..SEGMENTS_PER_EDGE) {
-            val t = i.toFloat() / SEGMENTS_PER_EDGE
-            path.lineTo(w * (1f - t), h + jitter())
-        }
-        for (i in 1..SEGMENTS_PER_EDGE) {
-            val t = i.toFloat() / SEGMENTS_PER_EDGE
-            path.lineTo(jitter(), h * (1f - t))
+        path.moveTo(pts[0], pts[1])
+        var i = 2
+        while (i < pts.size) {
+            path.lineTo(pts[i], pts[i + 1])
+            i += 2
         }
         path.close()
         return Outline.Generic(path)
     }
 
+    override fun copy(
+        topStart: CornerSize,
+        topEnd: CornerSize,
+        bottomEnd: CornerSize,
+        bottomStart: CornerSize,
+    ): CornerBasedShape = InkEdgeShape(salt, topStart, topEnd, bottomEnd, bottomStart)
+
     override fun equals(other: Any?): Boolean = other is InkEdgeShape && other.salt == salt
 
     override fun hashCode(): Int = salt
+}
+
+/**
+ * The hand-drawn rectangle as flat x,y pairs.
+ *
+ * Kept free of Compose and Android types on purpose: the one contract that
+ * really matters here - identical input produces an identical edge - is
+ * otherwise only observable by staring at a running phone. As a pure function
+ * it is provable on the JVM, and a regression to an unseeded Random (which
+ * would make every surface crawl during recomposition) fails a test instead of
+ * shipping.
+ */
+fun inkEdgePoints(width: Float, height: Float, wobble: Float, salt: Int): FloatArray {
+    val rng = Random(width.roundToInt() * 31 + height.roundToInt() * 17 + salt)
+    val pts = FloatArray((SEGMENTS_PER_EDGE * 4 + 1) * 2)
+    var n = 0
+    fun put(x: Float, y: Float) {
+        pts[n++] = x
+        pts[n++] = y
+    }
+    fun jitter() = (rng.nextFloat() - 0.5f) * 2f * wobble
+
+    put(jitter(), jitter())
+    for (i in 1..SEGMENTS_PER_EDGE) put(width * (i.toFloat() / SEGMENTS_PER_EDGE), jitter())
+    for (i in 1..SEGMENTS_PER_EDGE) put(width + jitter(), height * (i.toFloat() / SEGMENTS_PER_EDGE))
+    for (i in 1..SEGMENTS_PER_EDGE) put(width * (1f - i.toFloat() / SEGMENTS_PER_EDGE), height + jitter())
+    for (i in 1..SEGMENTS_PER_EDGE) put(jitter(), height * (1f - i.toFloat() / SEGMENTS_PER_EDGE))
+    return pts
 }
 
 /**

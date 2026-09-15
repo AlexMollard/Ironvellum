@@ -117,12 +117,18 @@ private val MonarchTypography: Typography
         )
     }
 
+// Ink edges for anything big enough to show a brush wobble; the geometric cut
+// corner survives only at extraSmall, where a 1.4dp wander on a 3dp corner
+// reads as a rendering fault rather than a drawn line.
+//
+// Distinct salts stop a button, a chip and a panel from sharing one traced
+// outline.
 private val MonarchShapes = Shapes(
     extraSmall = CutCornerShape(3.dp),
-    small = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
-    medium = CutCornerShape(topStart = 12.dp, bottomEnd = 12.dp),
-    large = CutCornerShape(topStart = 16.dp, bottomEnd = 16.dp),
-    extraLarge = CutCornerShape(20.dp),
+    small = InkEdgeShape(salt = 11),
+    medium = InkEdgeShape(salt = 23),
+    large = InkEdgeShape(salt = 37),
+    extraLarge = InkEdgeShape(salt = 53),
 )
 
 /** Monarch is always dark — the System never sleeps. Dynamic color is deliberately unused. */

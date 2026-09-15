@@ -131,12 +131,13 @@ fun SystemWindow(
         }
     }
 }
-
 @Composable
 fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     Column(modifier.padding(top = 28.dp, bottom = 10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("\u25E0", color = MonarchColors.SovereignGold, fontSize = 12.sp)
+            // Ink, not gold: a section marker decorates, it does not report
+            // anything earned, and gold is reserved for what is.
+            Text("\u25E0", color = MonarchColors.Bracket, fontSize = 12.sp)
             Text(
                 text = text.uppercase(),
                 style = MaterialTheme.typography.labelLarge,
