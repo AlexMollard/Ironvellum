@@ -416,14 +416,31 @@ def main() -> None:
     with open(args.out, "wb") as f:
         f.write(png)
     print(f"{args.out}: {len(png)} bytes PNG ({args.style}, from {mime})")
-    print(f"  chroma:   {chroma_audit(png)}")
-    print(f"  contrast: {contrast_audit(png)}")
-    backdrop = backdrop_audit(png)
+    chroma, contrast, backdrop = (
+        chroma_audit(png),
+        contrast_audit(png),
+        backdrop_audit(png),
+    )
+    print(f"  chroma:   {chroma}")
+    print(f"  contrast: {contrast}")
     print(f"  backdrop: {backdrop}")
-    # Shipping an unkeyed tile onto a dark panel is a visible defect, so this
-    # fails the command rather than printing a warning nobody reads.
-    if args.alpha and "NOT KEYED" in backdrop:
-        sys.exit("keying failed - refusing to pass this off as usable art")
+    # Every audit is a gate, not a note. A printed warning ships anyway when
+    # the caller is a loop that only reads exit codes - which is how two
+    # buried-ink pieces got written before this existed.
+    failures = [
+        name
+        for name, verdict, gated in (
+            ("keying", backdrop, args.alpha),
+            ("contrast", contrast, args.alpha),
+            ("chroma", chroma, True),
+        )
+        if gated and ("NOT KEYED" in verdict or "LOW CONTRAST" in verdict or "DRIFT" in verdict)
+    ]
+    if failures:
+        sys.exit(
+            f"{', '.join(failures)} failed - refusing to pass this off as usable art. "
+            f"The PNG at {args.out} is written for inspection but is not shippable."
+        )
 
 
 if __name__ == "__main__":
