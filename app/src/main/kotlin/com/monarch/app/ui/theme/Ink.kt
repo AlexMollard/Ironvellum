@@ -642,7 +642,11 @@ class InkPlateShape(private val cut: Float, private val salt: Int = 0) : Shape {
             path.close()
             return Outline.Generic(path)
         }
-        val rng = Random(w.roundToInt() * 7 + salt)
+        // Seeded on the salt ALONE, not on the size. Concentric plates - a crest
+        // and the ring around it - must share a jitter sequence, or each wobbles
+        // independently and the pair reads as a double exposure. A constant salt
+        // still means a stable outline, so nothing crawls.
+        val rng = Random(salt)
         val wob = (minOf(w, h) * 0.02f).coerceIn(1.2f, 4f)
         fun j() = (rng.nextFloat() - 0.5f) * 2f * wob
         // Walk each edge in a few steps so the cut sides wander too, not just

@@ -297,7 +297,7 @@ internal fun HunterAvatar(
                 if (outerColor != null) {
                     Modifier.inkBorder(
                         outerColor,
-                        InkPlateShape(outerCut, salt = 37),
+                        InkPlateShape(outerCut, salt = 33),
                         1.5.dp,
                     )
                 } else {
