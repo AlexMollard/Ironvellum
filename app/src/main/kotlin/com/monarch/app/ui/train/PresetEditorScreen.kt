@@ -248,6 +248,8 @@ fun PresetEditorScreen(
                     chunk.forEach { (day, label) ->
                         val selected = ui.scheduledDay == day
                         OutlinedButton(
+                            // Material's button shape is a stadium; the theme's is drawn.
+                            shape = MaterialTheme.shapes.small,
                             onClick = { viewModel.setScheduledDay(day) },
                             modifier = Modifier.weight(1f),
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
@@ -282,6 +284,8 @@ fun PresetEditorScreen(
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Button(
+                // Material's button shape is a stadium; the theme's is drawn.
+                shape = MaterialTheme.shapes.small,
                 onClick = { viewModel.save(onDone) },
                 enabled = ui.name.isNotBlank() && ui.entries.isNotEmpty(),
                 modifier = Modifier.weight(1f),
@@ -289,7 +293,7 @@ fun PresetEditorScreen(
                 Text("Save Preset")
             }
             if (ui.presetId != null) {
-                OutlinedButton(onClick = { viewModel.delete(onDone) }) {
+                OutlinedButton(onClick = { viewModel.delete(onDone) }, shape = MaterialTheme.shapes.small) {
                     Text("Delete", color = MaterialTheme.colorScheme.error)
                 }
             }
@@ -317,7 +321,7 @@ private fun EntryRow(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box {
-                OutlinedButton(onClick = { expanded = true }) {
+                OutlinedButton(onClick = { expanded = true }, shape = MaterialTheme.shapes.small) {
                     Text(entry.exerciseName.ifBlank { "Pick exercise" })
                 }
                 if (expanded) {
