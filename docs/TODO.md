@@ -27,6 +27,7 @@ open-work list.
 | Server-authoritative XP economy | Today: ranked columns are unwritable, level and title count derived, XP/strength bounded monotonic claims. Alternative: move activity curves, quest detection and reconciliation server-side | **Don't.** It ends offline-first XP, makes the device's number provisional, and creates a permanent dual implementation. Revisit only if the boards become competitive |
 | XP ceiling value | `100000000` (level 1414) | Tunable one-liner in `0011`. Tighter (`10^7` ≈ level 450) is still decades of real training |
 | Touch targets in the 24–48dp band | WCAG AA (24dp) enforced everywhere and Material 48dp on the nav. Dense chips and list rows sit between | A layout/design call: forcing 48dp relayouts the information design |
+| Court at 2.0x font: manifest or single screen | The quest card fits the day, the program name and the button, but not the movement rows (4 at 1.0x, 0 at 2.0x). (a) keep today's degradation; (b) let the dashboard scroll above 1.5x; (c) drop the step ring at large scales to buy ~294px | **(a)**, currently shipped: a lost list is one tap away in Train, a lost button is not. Full measurements under the font-scale entry below |
 
 ## Verification gaps (honest, not deferred work)
 
