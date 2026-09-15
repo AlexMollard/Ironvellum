@@ -16,6 +16,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.util.Objects
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.buildJsonObject
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Mutex
@@ -389,18 +391,18 @@ class CloudSync(
             return Result.failure(IllegalStateException("Type a hunter's name first"))
         }
         return runCatching {
-            // ilike treats % _ and \\ as wildcards/escapes; a raw name like
-            // "50%er" would match half the roster — an over-broad download
-            // that also lets a wildcard name probe which profiles exist.
-            // Escaping keeps this a literal case-insensitive match (the exact
-            // post-filter below still confirms the one intended hunter).
-            val escaped = name
-                .replace("\\", "\\\\")
-                .replace("%", "\\%")
-                .replace("_", "\\_")
-            val matches = client.postgrest.from("profiles").select {
-                filter { ilike("display_name", escaped) }
-            }.decodeList<ProfileNameDto>()
+            // Discovery goes through find_hunter(), not a select on `profiles`.
+            // A select is governed by `profiles_read using (can_view(id))`, and
+            // for a stranger can_view is false precisely BECAUSE you are not
+            // friends yet — so the lookup returned nothing and told the hunter
+            // that a real person did not exist. The RPC is an exact, trimmed,
+            // case-insensitive match returning only (id, display_name), so it
+            // cannot be walked to enumerate the roster and reveals nothing the
+            // caller did not already type.
+            val matches = client.postgrest.rpc(
+                "find_hunter",
+                buildJsonObject { put("name", name) },
+            ).decodeList<ProfileNameDto>()
             val exact = matches.firstOrNull { it.displayName.equals(name, ignoreCase = true) }
                 ?: throw IllegalStateException("No hunter is named \"$name\"")
             if (exact.id == me.userId) {
