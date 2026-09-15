@@ -1,5 +1,6 @@
 package com.monarch.app.data.cloud
 
+import kotlinx.serialization.json.Json
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -99,5 +100,23 @@ class MergeAggregatesTest {
         assertEquals("private", merged.visibility)
         assertEquals("monarch", merged.currentTitleId)
         assertEquals(40, merged.level)
+    }
+
+    @Test
+    fun `the merge reads the same column names the query asks for`() {
+        // Constructing the DTO in Kotlin cannot catch @SerialName drift, and
+        // drift here fails in the data-destroying direction: a renamed column
+        // decodes to null, the merge then keeps the fresh-install value, and
+        // the push overwrites a real cloud profile. So decode the exact row
+        // shape push() selects (CloudSync.kt:67 Columns.list) instead.
+        val row = """
+            {"level":7,"total_xp":5400,"titles_count":12,"lifetime_strength":98000}
+        """.trimIndent()
+        val remote = Json.decodeFromString<ProfileAggregatesDto>(row)
+        val merged = mergeAggregates(local = local(level = 1, totalXp = 0), remote = remote)
+        assertEquals(7, merged.level)
+        assertEquals(5400, merged.totalXp)
+        assertEquals(12, merged.titlesCount)
+        assertEquals(98_000, merged.lifetimeStrength)
     }
 }
