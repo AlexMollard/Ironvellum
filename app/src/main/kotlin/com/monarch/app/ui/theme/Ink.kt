@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import kotlin.math.roundToInt
+import androidx.compose.ui.graphics.StrokeJoin
 import kotlin.random.Random
 
 /**
@@ -138,15 +139,7 @@ class InkEdgeShape(
         val wobble = minOf(corner * WOBBLE_PER_CORNER, shortSide * WOBBLE_PER_SHORT_SIDE)
             .coerceIn(WOBBLE_MIN_PX, maxOf(WOBBLE_MIN_PX, WOBBLE_MAX_PX))
         val pts = inkEdgePoints(size.width, size.height, wobble, salt)
-        val path = Path()
-        path.moveTo(pts[0], pts[1])
-        var i = 2
-        while (i < pts.size) {
-            path.lineTo(pts[i], pts[i + 1])
-            i += 2
-        }
-        path.close()
-        return Outline.Generic(path)
+        return Outline.Generic(smoothClosedPath(pts))
     }
 
     override fun copy(
@@ -201,6 +194,37 @@ fun inkEdgePoints(width: Float, height: Float, wobble: Float, salt: Int): FloatA
     for (i in 1..across) put(width * (1f - i.toFloat() / across), height + jitter())
     for (i in 1..down) put(jitter(), height * (1f - i.toFloat() / down))
     return pts
+}
+
+/**
+ * Turns a ring of jittered points into a SMOOTH closed path.
+ *
+ * The points used to be joined with `lineTo`, which made every one of them a
+ * sharp kink: at ~55px facets on a 450dpi screen that reads as a torn zig-zag
+ * rather than a drawn line, and a stroked kink with a miter join throws a spike
+ * — the bright notch that showed at panel corners on the phone.
+ *
+ * Each original point becomes a quadratic CONTROL point and the midpoints
+ * become anchors, so the curve passes between the jittered points instead of
+ * through them. The wander survives; the corners stop being corners.
+ */
+private fun smoothClosedPath(pts: FloatArray): Path {
+    val n = pts.size / 2
+    val path = Path()
+    if (n < 3) return path
+    fun x(i: Int) = pts[((i % n) + n) % n * 2]
+    fun y(i: Int) = pts[((i % n) + n) % n * 2 + 1]
+    var mx = (x(0) + x(1)) / 2f
+    var my = (y(0) + y(1)) / 2f
+    path.moveTo(mx, my)
+    for (i in 1..n) {
+        val nx = (x(i) + x(i + 1)) / 2f
+        val ny = (y(i) + y(i + 1)) / 2f
+        path.quadraticTo(x(i), y(i), nx, ny)
+        mx = nx; my = ny
+    }
+    path.close()
+    return path
 }
 
 /**
@@ -295,12 +319,16 @@ fun Modifier.inkBorder(
         is Outline.Rounded -> Path().apply { addRoundRect(outline.roundRect) }
         is Outline.Rectangle -> Path().apply { addRect(outline.rect) }
     }
+    // Round join and cap, always: a jittered outline has near-180-degree turns,
+    // and the default MITER join turns those into spikes that shoot past the
+    // surface — visible as a bright notch at a panel's corner on device.
+    fun stroke(px: Float) = Stroke(px, cap = StrokeCap.Round, join = StrokeJoin.Round)
     if (!InkStyle.enabled) {
-        drawPath(path, color, style = Stroke(width.toPx()))
+        drawPath(path, color, style = stroke(width.toPx()))
         return@drawBehind
     }
-    drawPath(path, color.copy(alpha = color.alpha * 0.35f), style = Stroke(width.toPx() * 2.6f))
-    drawPath(path, color, style = Stroke(width.toPx()))
+    drawPath(path, color.copy(alpha = color.alpha * 0.35f), style = stroke(width.toPx() * 2.6f))
+    drawPath(path, color, style = stroke(width.toPx()))
 }
 
 /**
@@ -605,16 +633,14 @@ class InkCircleShape(private val salt: Int = 0) : Shape {
         // crawl between recompositions.
         val rng = Random(size.width.roundToInt() * 13 + salt)
         val wob = r * CIRCLE_WOBBLE
-        val path = Path()
+        val ring = FloatArray(CIRCLE_STEPS * 2)
         for (i in 0 until CIRCLE_STEPS) {
             val a = (2.0 * kotlin.math.PI * i / CIRCLE_STEPS).toFloat()
             val rr = r + (rng.nextFloat() - 0.5f) * 2f * wob
-            val x = cx + kotlin.math.cos(a) * rr
-            val y = cy + kotlin.math.sin(a) * rr
-            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            ring[i * 2] = cx + kotlin.math.cos(a) * rr
+            ring[i * 2 + 1] = cy + kotlin.math.sin(a) * rr
         }
-        path.close()
-        return Outline.Generic(path)
+        return Outline.Generic(smoothClosedPath(ring))
     }
 
     override fun equals(other: Any?): Boolean = other is InkCircleShape && other.salt == salt
@@ -635,15 +661,14 @@ fun DrawScope.inkDot(center: Offset, radius: Float, color: Color, seed: Int = 0)
     val rng = Random(seed + radius.roundToInt())
     val steps = 14
     val path = Path()
+    val ring = FloatArray(steps * 2)
     for (i in 0 until steps) {
         val a = (2.0 * kotlin.math.PI * i / steps).toFloat()
         val rr = radius * (1f + (rng.nextFloat() - 0.5f) * 0.18f)
-        val x = center.x + kotlin.math.cos(a) * rr
-        val y = center.y + kotlin.math.sin(a) * rr
-        if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        ring[i * 2] = center.x + kotlin.math.cos(a) * rr
+        ring[i * 2 + 1] = center.y + kotlin.math.sin(a) * rr
     }
-    path.close()
-    drawPath(path, color)
+    drawPath(smoothClosedPath(ring), color)
 }
 
 /**
@@ -683,18 +708,21 @@ class InkPlateShape(private val cut: Float, private val salt: Int = 0) : Shape {
         fun j() = (rng.nextFloat() - 0.5f) * 2f * wob
         // Walk each edge in a few steps so the cut sides wander too, not just
         // the vertices.
+        val steps = 3
+        val walk = FloatArray(corners.size * steps * 2)
+        var k = 0
         corners.forEachIndexed { i, from ->
             val to = corners[(i + 1) % corners.size]
-            val steps = 3
             for (s in 0 until steps) {
                 val tt = s.toFloat() / steps
-                val x = from.x + (to.x - from.x) * tt + j()
-                val y = from.y + (to.y - from.y) * tt + j()
-                if (i == 0 && s == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                walk[k++] = from.x + (to.x - from.x) * tt + j()
+                walk[k++] = from.y + (to.y - from.y) * tt + j()
             }
         }
-        path.close()
-        return Outline.Generic(path)
+        // Smoothed for the same reason as the panels: the plate sits behind the
+        // level badge at 48dp, where a kinked outline is the most visible mark
+        // on the screen.
+        return Outline.Generic(smoothClosedPath(walk))
     }
 
     override fun equals(other: Any?): Boolean =

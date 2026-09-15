@@ -41,6 +41,10 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathMeasure
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -95,27 +99,6 @@ fun SystemWindow(
         Column(
             Modifier
                 .fillMaxWidth()
-                .drawBehind {
-                    val tick = 12.dp.toPx()
-                    val stroke = 3.dp.toPx()
-                    // Accent tints only the brush ticks. Driving the whole
-                    // outline with it turned an accent panel into a thick neon
-                    // frame once the ink border gained its bleed pass.
-                    inkTick(Offset(0f, tick), Offset(0f, 0f), accent, stroke)
-                    inkTick(Offset(0f, 0f), Offset(tick, 0f), accent, stroke)
-                    inkTick(
-                        Offset(size.width, size.height - tick),
-                        Offset(size.width, size.height),
-                        accent,
-                        stroke,
-                    )
-                    inkTick(
-                        Offset(size.width, size.height),
-                        Offset(size.width - tick, size.height),
-                        accent,
-                        stroke,
-                    )
-                }
                 .padding(16.dp),
             content = content,
         )
@@ -123,8 +106,59 @@ fun SystemWindow(
     val surfaceModifier = modifier
         .background(WindowFill, shape)
         .paperGrain(accent.hashCode())
-        // Structure is always ink; the panel's identity comes from its ticks.
+        // Structure is always ink; the panel's identity comes from its accent
+        // arcs — drawn HERE, on the same element and size as the border, so the
+        // two trace the identical outline. On the inner column they measured a
+        // slightly different box and the accent floated off the line.
         .inkBorder(MonarchColors.Rune, shape, 1.dp)
+        .drawBehind {
+            // The accent is a STRETCH OF THE BORDER ITSELF, not a
+            // separate mark laid near the corner: straight ticks at the
+            // bounding box could never hug a hand-drawn corner, and the
+            // old pair stacked two full-width brush ends on the exact
+            // corner point, which read as a bright blob.
+            //
+            // So measure the panel's own outline and re-draw two short
+            // arcs of it in the accent colour — one at the start of the
+            // path (top-left) and one half way round (bottom-right).
+            val outline = when (val o = shape.createOutline(size, layoutDirection, this)) {
+                is Outline.Generic -> o.path
+                is Outline.Rounded -> Path().apply { addRoundRect(o.roundRect) }
+                is Outline.Rectangle -> Path().apply { addRect(o.rect) }
+            }
+            val measure = PathMeasure().apply { setPath(outline, false) }
+            val total = measure.length
+            if (total > 0f) {
+                // Where does this hand-drawn outline actually PASS each corner? The
+                // wander means the answer is not at a fixed fraction of the path,
+                // so sample it and take the nearest point. Straight ticks at the
+                // bounding box cannot hug a wobbled corner, and a fixed fraction
+                // landed the mark in the middle of a flat edge.
+                fun distanceNearest(target: Offset): Float {
+                    var best = 0f
+                    var bestD = Float.MAX_VALUE
+                    val samples = 96
+                    for (s in 0 until samples) {
+                        val d = total * s / samples
+                        val pos = measure.getPosition(d)
+                        val dd = (pos - target).getDistanceSquared()
+                        if (dd < bestD) { bestD = dd; best = d }
+                    }
+                    return best
+                }
+                val run = minOf(22.dp.toPx(), total * 0.06f)
+                // Light hand: the accent marks the panel, it does not highlight it.
+                val line = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                val bleed = Stroke(4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+                listOf(Offset.Zero, Offset(size.width, size.height)).forEach { corner ->
+                    val at = distanceNearest(corner)
+                    val seg = Path()
+                    measure.getSegment(at - run / 2f, at + run / 2f, seg, true)
+                    drawPath(seg, accent.copy(alpha = accent.alpha * 0.22f), style = bleed)
+                    drawPath(seg, accent.copy(alpha = accent.alpha * 0.85f), style = line)
+                }
+            }
+        }
     if (onClick != null) {
         Surface(
             onClick = onClick,
