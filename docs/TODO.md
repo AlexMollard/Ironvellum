@@ -229,6 +229,14 @@ open-work list.
   `bundleRelease` also builds clean at 9.4 MB, which packages by a different
   path from the APK.
 
+  The release credential gate was proven by its NEGATIVE case, reversibly:
+  blanking `supabase.key` fails `validateReleaseBackend` with
+  `Missing local.properties keys: supabase.key`, and restoring the file returns
+  it byte-for-byte (sha256 verified, 273 bytes) after which the release builds
+  again with only the expected unsigned warning. A gate that has never been
+  seen to fail is not a gate — a release shipping blank keys would "work" and
+  be dead at runtime.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
