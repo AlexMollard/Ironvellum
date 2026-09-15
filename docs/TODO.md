@@ -59,6 +59,22 @@ open-work list.
   all seven permissions, the provider `<queries>` block and the
   `VIEW_PERMISSION_USAGE` alias both present, and empty days are never written.
   The daily `PeriodicWorkRequest` is enqueued from `MonarchApp.onCreate`.
+- **Crash-class sweeps, clean.** Every unguarded collection access and every
+  `!!` in production code was traced to its guard: leaderboard index and rank
+  derive from one list, `CREST_FRAMES[index]` is bounded by `items(size)`,
+  chart tails sit behind size checks, and each `!!` is null-checked at the call
+  site. `PresetEditorViewModel.moveEntry` was the only hole and is fixed.
+- **Compose list keys.** Three of four `items()` calls carry keys; the fourth
+  iterates a compile-time constant whose order cannot change.
+- **Feature breadth verified against the product rules.** 43 activities across
+  Cardio/Sport/Climbing/Water/Mobility (22 sports), 95 titles, per-activity
+  title rules, the equipped crest driving the plate, and calorie estimates
+  derived from user data. Novel activity categories are appended by
+  `activityCategoryOrder`, so a new category cannot hide an activity.
+- **Screens visually verified phone-free** (Court, Train, Stats, Codex,
+  Shadow): palette, padding, no overflow, tappable metric tiles, line-chart
+  captions. Two suspected defects turned out to be misreads of the screenshot —
+  settle layout questions with the accessibility dump's bounds, not pixels.
 - **Lint's 10 remaining warnings.** Audited individually, all deliberate: 8 are
   `ModifierParameter` ordering convention, and the 2 asking for a plain
   `Modifier` default are the two composables that must carry their own size
