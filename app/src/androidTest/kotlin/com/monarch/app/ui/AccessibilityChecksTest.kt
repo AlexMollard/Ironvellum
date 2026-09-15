@@ -181,18 +181,18 @@ class AccessibilityChecksTest {
         val tooSmall = mutableListOf<String>()
         val visited = mutableListOf<String>()
 
-        for ((destination, surface) in DEEPER_SURFACES) {
+        for (path in DEEPER_SURFACES) {
             // Some surfaces replace the nav bar entirely, so each iteration
             // walks back to it rather than assuming it is still there.
             returnToNavigation()
-            compose.onNodeWithContentDescription(destination).performClick()
+            compose.onNodeWithContentDescription(path.first()).performClick()
             // A surface is opened by whatever names it: visible text for tabs
             // and buttons, a content description for icon-only controls like
             // the settings gear. Matching text alone silently skipped the
             // settings screen, which made its assertions pass vacuously.
-            if (!openSurface(surface)) continue
+            if (path.drop(1).any { !openSurface(it) }) continue
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-            val where = "$destination/$surface"
+            val where = path.joinToString("/")
             visited += where
             unlabelled += unlabelledControls().map { "$where: $it" }
             tooSmall += controlsBelowTheAccessibleFloor().map { "$where: $it" }
@@ -202,7 +202,8 @@ class AccessibilityChecksTest {
         // wholesale skip would make every assertion below pass vacuously —
         // so the sweep has to prove it actually went somewhere.
         assertEquals(
-            "surfaces the sweep could not reach: ${DEEPER_SURFACES.map { "${it.first}/${it.second}" } - visited.toSet()}",
+            "surfaces the sweep could not reach: " +
+                "${DEEPER_SURFACES.map { it.joinToString("/") } - visited.toSet()}",
             DEEPER_SURFACES.size,
             visited.size,
         )
@@ -226,25 +227,28 @@ class AccessibilityChecksTest {
         val DESTINATIONS = listOf("Train", "Stats", "Codex", "Guild", "Shadow", "Court")
 
         /**
-         * destination to the sub-surface reached from it. Only surfaces that
-         * need no account, so the sweep never depends on a signed-in session.
+         * Click paths: the destination's content description, then each label
+         * to open in turn. Only surfaces that need no account, so the sweep
+         * never depends on a signed-in session.
          */
         val DEEPER_SURFACES = listOf(
-            "Codex" to "SKILL TREE",
-            "Codex" to "JOURNAL",
-            "Stats" to "DETAIL",
-            "Stats" to "TRAINING",
-            "Stats" to "ACTIVITY",
-            "Train" to "EXERCISE EXPLORER",
-            "Train" to "FULL WORKOUT LOG",
-            // The densest surfaces in the app: a live session and the preset
-            // editor are wall-to-wall icon steppers, which is exactly where an
-            // unannounceable control hides.
+            listOf("Codex", "SKILL TREE"),
+            listOf("Codex", "JOURNAL"),
+            listOf("Stats", "DETAIL"),
+            listOf("Stats", "TRAINING"),
+            listOf("Stats", "ACTIVITY"),
+            listOf("Train", "EXERCISE EXPLORER"),
+            listOf("Train", "FULL WORKOUT LOG"),
+            // Two levels down, and the densest screens in the app: the skill
+            // sheet and the preset editor are wall-to-wall glyph steppers,
+            // which is exactly where an unannounceable control hides.
+            listOf("Codex", "SKILL TREE", "Dead Hang"),
+            listOf("Train", "[ EDIT ]"),
             // The settings screen replaces the nav bar, so it goes late.
-            "Court" to "System",
+            listOf("Court", "System"),
             // Truly last: starting a session leaves a live trial whose abandon
             // prompt sits between the sweep and the nav bar.
-            "Train" to "QUICK SESSION",
+            listOf("Train", "QUICK SESSION"),
         )
         const val FRAME_BUDGET_MS = 1_200L
         const val MIN_TARGET_DP = 48f
