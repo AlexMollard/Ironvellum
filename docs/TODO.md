@@ -39,9 +39,14 @@ open-work list.
   against the `create function` signatures and the encoded body, so only the
   transport remains unproven. The SQL halves are proven in
   `supabase/test/assert_all.sql`.
-- The `backend` and `instrumented` CI jobs have never run on GitHub's runners —
-  a CI change is only truly tested by CI. Both were replayed locally command for
-  command.
+- CI runs on every push to `origin` and **had failed on every single one**
+  until `gradlew` was given its executable bit (`git update-index --chmod=+x`):
+  created with `curl` on Windows, committed as mode `100644`, so both the
+  `build` and `instrumented` jobs died instantly with
+  `./gradlew: Permission denied` (exit 126). The previous entry here claimed CI
+  had "never run", which was simply wrong — `gh run list` showed a wall of red
+  going back to the first push. Replaying the jobs locally command for command
+  proved the commands, and proved nothing about the runner.
 - Emulator screenshots are **not** pixel-comparable with the phone: the software
   rasterizer differs, and ink seeds resolve per pixel size. Diff within one
   target, never across.
