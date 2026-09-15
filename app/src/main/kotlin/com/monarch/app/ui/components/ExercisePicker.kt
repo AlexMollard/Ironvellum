@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -165,7 +164,7 @@ fun ExercisePickerPanel(
                         letterSpacing = 2.sp,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFF101512))
+                            .background(Color(0xFF101512), MaterialTheme.shapes.extraSmall)
                             .padding(vertical = 6.dp, horizontal = 4.dp),
                     )
                 }

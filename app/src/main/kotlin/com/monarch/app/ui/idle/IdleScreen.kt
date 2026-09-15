@@ -4,7 +4,6 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.drawscope.Stroke
 import com.monarch.app.domain.Gacha
@@ -876,12 +875,12 @@ private fun CrestSwatch(treatment: CrestFrameTreatment?, locked: Boolean = false
                 } else {
                     Brush.verticalGradient(listOf(t.plateTop, t.plateBottom))
                 },
-                RoundedCornerShape(10.dp),
+                MaterialTheme.shapes.small,
             )
             .border(
                 if (t == null) 1.dp else t.frameWidth,
                 if (t == null) MonarchColors.Rune else t.frameColor,
-                RoundedCornerShape(10.dp),
+                MaterialTheme.shapes.small,
             ),
         contentAlignment = Alignment.Center,
     ) {
@@ -890,7 +889,7 @@ private fun CrestSwatch(treatment: CrestFrameTreatment?, locked: Boolean = false
             Box(
                 Modifier
                     .size(46.dp)
-                    .border(1.5.dp, ring, RoundedCornerShape(13.dp)),
+                    .border(1.5.dp, ring, MaterialTheme.shapes.small),
             )
         }
         Text(

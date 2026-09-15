@@ -33,6 +33,8 @@ import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.components.InkRail
+import com.monarch.app.ui.theme.inkHairline
 import com.monarch.app.ui.theme.MonarchColors
 import java.time.Instant
 import java.time.LocalDate
@@ -264,10 +266,11 @@ fun SkillJournal(
                     Box(Modifier.width(18.dp).height(54.dp), contentAlignment = Alignment.Center) {
                         Box(
                             Modifier
-                                .width(1.5.dp)
+                                .width(3.dp)
                                 .height(if (i == entries.lastIndex) 27.dp else 54.dp)
                                 .align(if (i == entries.lastIndex) Alignment.TopCenter else Alignment.Center)
-                                .background(MonarchColors.Rune),
+                                // Timeline spine: a brushed run, not a ruled one.
+                                .inkHairline(MonarchColors.Rune, seed = i * 9, thickness = 1.5.dp),
                         )
                         Box(
                             Modifier
@@ -427,26 +430,7 @@ private fun LineCard(
             }
         }
         Spacer(Modifier.height(8.dp))
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(6.dp)
-                .background(Color(0xFF1E2A24))
-                .border(1.dp, MonarchColors.Rune),
-        ) {
-            if (done > 0) {
-                Box(
-                    Modifier
-                        .fillMaxWidth(done.toFloat() / total.coerceAtLeast(1))
-                        .height(6.dp)
-                        .background(
-                            Brush.horizontalGradient(
-                                listOf(MonarchColors.SystemGreen, MonarchColors.SovereignGold),
-                            ),
-                        ),
-                )
-            }
-        }
+        InkRail(fraction = done.toFloat() / total.coerceAtLeast(1), seed = 43)
         Spacer(Modifier.height(5.dp))
         Text(
             "$attempts attempts logged",

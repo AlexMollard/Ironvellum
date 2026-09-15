@@ -33,7 +33,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.foundation.border
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField

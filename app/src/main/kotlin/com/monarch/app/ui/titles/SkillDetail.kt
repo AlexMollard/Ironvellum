@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -45,6 +44,7 @@ import com.monarch.app.ui.components.formatDate
 import com.monarch.app.domain.Skills
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.components.InkRail
 import com.monarch.app.ui.theme.MonarchColors
 import kotlin.math.sin
 import kotlin.random.Random
@@ -269,26 +269,7 @@ fun SkillDetailDialog(
 
                     Spacer(Modifier.height(8.dp))
                     // progress against the claim standard
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(6.dp)
-                            .background(Color(0xFF1E2A24))
-                            .border(1.dp, MonarchColors.Rune),
-                    ) {
-                        if (pct > 0f) {
-                            Box(
-                                Modifier
-                                    .fillMaxWidth(pct)
-                                    .height(6.dp)
-                                    .background(
-                                        Brush.horizontalGradient(
-                                            listOf(MonarchColors.SystemGreen, MonarchColors.SovereignGold),
-                                        ),
-                                    ),
-                            )
-                        }
-                    }
+                    InkRail(fraction = pct, seed = 41)
                     Text(
                         "${(pct * 100).toInt()}% of the ${skill.target}${skill.unit} standard",
                         style = MaterialTheme.typography.labelSmall,

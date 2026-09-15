@@ -53,6 +53,9 @@ import com.monarch.app.domain.MeasurementSite
 import com.monarch.app.ui.stats.MeasurementDetailScreen
 import com.monarch.app.ui.stats.StatsScreen
 import com.monarch.app.ui.titles.TitlesScreen
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import com.monarch.app.ui.theme.inkStroke
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.train.ExerciseExplorerScreen
@@ -125,6 +128,20 @@ fun MonarchRoot() {
                         Modifier
                             .fillMaxWidth()
                             .background(MonarchColors.Vault)
+                            // The bar spans the screen, so its fill stays square -
+                            // a wobbling full-bleed edge reads as a rendering fault.
+                            // Its TOP edge is brushed instead, which is the only part
+                            // that meets the page.
+                            .drawBehind {
+                                inkStroke(
+                                    from = Offset(0f, 0f),
+                                    to = Offset(size.width, 0f),
+                                    color = MonarchColors.Bracket,
+                                    widthPx = 2.dp.toPx(),
+                                    seed = 61,
+                                    taperEnds = false,
+                                )
+                            }
                             .navigationBarsPadding()
                             .padding(horizontal = 10.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
