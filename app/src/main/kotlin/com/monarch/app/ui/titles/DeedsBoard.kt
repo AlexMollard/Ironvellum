@@ -45,6 +45,7 @@ import com.monarch.app.domain.TitleRarity
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.components.InkRail
 import com.monarch.app.ui.theme.MonarchColors
 
 /**
@@ -646,27 +647,13 @@ private fun SealCard(def: TitleDef, unlockedAtMs: Long?, worn: Boolean, onClick:
 
 @Composable
 private fun ProgressTrack(fraction: Float, tall: Boolean) {
-    val h = if (tall) 10.dp else 6.dp
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(h)
-            .background(Color(0xFF1E2A24))
-            .border(1.dp, MonarchColors.Rune),
-    ) {
-        if (fraction > 0f) {
-            Box(
-                Modifier
-                    .fillMaxWidth(fraction)
-                    .height(h)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(MonarchColors.SystemGreen, MonarchColors.SovereignGold),
-                        ),
-                    ),
-            )
-        }
-    }
+    // Shared ink rail: this used to be its own track-plus-fill Box pair, one of
+    // four copies of the same widget across the app.
+    InkRail(
+        fraction = fraction,
+        height = if (tall) 10.dp else 6.dp,
+        seed = if (tall) 5 else 9,
+    )
 }
 
 @Composable

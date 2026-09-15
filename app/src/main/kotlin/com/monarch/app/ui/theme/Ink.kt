@@ -9,6 +9,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageShader
@@ -244,6 +245,100 @@ fun Modifier.inkBorder(
     val path = (outline as? Outline.Generic)?.path ?: return@drawBehind
     drawPath(path, color.copy(alpha = color.alpha * 0.35f), style = Stroke(width.toPx() * 2.6f))
     drawPath(path, color, style = Stroke(width.toPx()))
+}
+
+/**
+ * A progress rail drawn as a brush stroke rather than two nested rectangles.
+ *
+ * A thin rail cannot use the edge wobble - at 6dp tall a 2px wander would eat a
+ * third of it - so the "hand" comes from the stroke instead: the width breathes
+ * along the length and both ends taper, the way a loaded brush lands and lifts.
+ *
+ * Drawn in segments with a seeded Random so the breathing is stable per rail.
+ */
+fun DrawScope.inkRail(
+    fraction: Float,
+    track: Color,
+    fill: Brush,
+    seed: Int,
+) {
+    val h = size.height
+    val mid = h / 2f
+    val segments = (size.width / 24f).toInt().coerceIn(6, 40)
+    val rng = Random(seed)
+
+    // Track: faint, full width, breathing slightly so it reads as drawn.
+    for (i in 0 until segments) {
+        val x0 = size.width * i / segments
+        val x1 = size.width * (i + 1) / segments
+        val breathe = 0.78f + rng.nextFloat() * 0.34f
+        drawLine(
+            color = track,
+            start = Offset(x0, mid),
+            end = Offset(x1, mid),
+            strokeWidth = h * breathe,
+            cap = StrokeCap.Round,
+        )
+    }
+    if (fraction <= 0f) return
+
+    // Fill: same breathing, but taper the final tenth so progress ends in a
+    // stroke lifting off rather than a guillotined rectangle.
+    val end = size.width * fraction.coerceIn(0f, 1f)
+    val fillSegments = (end / 20f).toInt().coerceAtLeast(2)
+    val rngFill = Random(seed * 31 + 7)
+    for (i in 0 until fillSegments) {
+        val t0 = i.toFloat() / fillSegments
+        val x0 = end * t0
+        val x1 = end * (i + 1).toFloat() / fillSegments
+        val taper = if (t0 > 0.9f) (1f - (t0 - 0.9f) / 0.1f).coerceAtLeast(0.35f) else 1f
+        val breathe = (0.80f + rngFill.nextFloat() * 0.30f) * taper
+        drawLine(
+            brush = fill,
+            start = Offset(x0, mid),
+            end = Offset(x1, mid),
+            strokeWidth = h * breathe,
+            cap = StrokeCap.Round,
+        )
+    }
+}
+
+/**
+ * A divider drawn as one brush stroke: uneven weight, tapered ends.
+ *
+ * Replaces 1dp filled boxes, which are the most obviously machine-made mark
+ * left in a hand-drawn UI precisely because they are perfectly even.
+ */
+fun Modifier.inkHairline(
+    color: Color,
+    seed: Int = 0,
+    thickness: Dp = 1.5.dp,
+): Modifier = this.drawBehind {
+    // Orientation from the box itself: the same stroke serves a row divider and
+    // a vertical separator, so callers never pick an axis by hand.
+    val vertical = size.height > size.width
+    val length = if (vertical) size.height else size.width
+    val across = (if (vertical) size.width else size.height) / 2f
+    val rng = Random(seed + length.roundToInt())
+    val segments = (length / 30f).toInt().coerceIn(4, 32)
+    val base = thickness.toPx()
+    for (i in 0 until segments) {
+        val t0 = i.toFloat() / segments
+        val a = length * t0
+        val b = length * (i + 1).toFloat() / segments
+        // Ends lift; the middle carries the ink.
+        val ends = minOf(t0, 1f - t0) / 0.5f
+        val weight = (0.45f + rng.nextFloat() * 0.55f) * (0.35f + 0.65f * ends)
+        val drift1 = (rng.nextFloat() - 0.5f) * base * 0.6f
+        val drift2 = (rng.nextFloat() - 0.5f) * base * 0.6f
+        drawLine(
+            color = color.copy(alpha = color.alpha * (0.5f + 0.5f * weight)),
+            start = if (vertical) Offset(across + drift1, a) else Offset(a, across + drift1),
+            end = if (vertical) Offset(across + drift2, b) else Offset(b, across + drift2),
+            strokeWidth = base * weight,
+            cap = StrokeCap.Round,
+        )
+    }
 }
 
 /** One remembered ink shape per surface, so the wobble does not change as state updates. */

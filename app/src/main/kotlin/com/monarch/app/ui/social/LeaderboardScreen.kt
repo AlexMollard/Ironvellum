@@ -58,6 +58,7 @@ import com.monarch.app.ui.monarchAccount
 import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.components.InkRail
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -794,20 +795,13 @@ private fun RankRow(
         Spacer(Modifier.height(8.dp))
         // Intensity bar: this row's metric value relative to the current leader on that metric,
         // so relative standing is visible without reading numbers. Zero leader → zero-width fill.
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(3.dp)
-                .clip(MaterialTheme.shapes.extraSmall)
-                .background(MonarchColors.Abyss),
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(intensity)
-                    .height(3.dp)
-                    .background(Brush.horizontalGradient(listOf(accent, MonarchColors.EmeraldBright))),
-            )
-        }
+        InkRail(
+            fraction = intensity,
+            height = 3.dp,
+            track = MonarchColors.Abyss,
+            fill = Brush.horizontalGradient(listOf(accent, MonarchColors.EmeraldBright)),
+            seed = row.userId.hashCode(),
+        )
     }
 }
 @Composable

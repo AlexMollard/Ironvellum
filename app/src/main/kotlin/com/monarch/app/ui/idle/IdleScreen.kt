@@ -79,6 +79,7 @@ import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.components.InkRail
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.components.RelicSigil
@@ -825,22 +826,14 @@ private fun FactorRow(label: String, value: String, share: Float) {
         LaunchedEffect(share) {
             fill.animateTo(share.coerceIn(0.05f, 1f), tween(600, easing = FastOutSlowInEasing))
         }
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(4.dp)
-                .background(MonarchColors.Rune, RoundedCornerShape(2.dp)),
-        ) {
-            Box(
-                Modifier
-                    .fillMaxWidth(fill.value)
-                    .height(4.dp)
-                    .background(
-                        Brush.horizontalGradient(listOf(MonarchColors.Emerald, MonarchColors.EmeraldBright)),
-                        RoundedCornerShape(2.dp),
-                    ),
-            )
-        }
+        InkRail(
+            fraction = fill.value,
+            height = 4.dp,
+            fill = Brush.horizontalGradient(
+                listOf(MonarchColors.Emerald, MonarchColors.EmeraldBright),
+            ),
+            seed = label.hashCode(),
+        )
     }
 }
 /**

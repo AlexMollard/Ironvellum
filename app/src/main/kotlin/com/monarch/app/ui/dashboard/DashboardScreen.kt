@@ -85,6 +85,8 @@ import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.XpBar
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.components.InkRail
+import com.monarch.app.ui.theme.inkHairline
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.components.formatDate
@@ -382,16 +384,21 @@ fun DashboardScreen(
                             },
                         )
                         Spacer(Modifier.height(5.dp))
+                        // A brushed mark rather than a filled rectangle: this
+                        // is the day the hunter is standing on, so it should
+                        // look struck by hand.
                         Box(
                             Modifier
-                                .width(if (isSelected) 22.dp else 14.dp)
-                                .height(if (isSelected) 3.dp else 2.dp)
-                                .background(
-                                    when {
+                                .width(if (isSelected) 24.dp else 15.dp)
+                                .height(if (isSelected) 5.dp else 4.dp)
+                                .inkHairline(
+                                    color = when {
                                         isToday -> MonarchColors.SovereignGold
                                         preset != null -> MonarchColors.SystemGreen
                                         else -> MonarchColors.Rune
                                     },
+                                    seed = day,
+                                    thickness = if (isSelected) 3.dp else 2.dp,
                                 ),
                         )
                     }
@@ -520,7 +527,7 @@ fun DashboardScreen(
                                 )
                             }
                             if (index != selectedPreset.entries.lastIndex) {
-                                Box(Modifier.fillMaxWidth().height(1.dp).background(MonarchColors.Rune))
+                                Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(MonarchColors.Rune, seed = index))
                             }
                         }
                     }
@@ -723,37 +730,26 @@ private fun GaugeStat(label: String, value: String, accent: Color, fraction: Flo
             )
         }
         Spacer(Modifier.height(3.dp))
-        Box(Modifier.fillMaxWidth().height(2.dp).background(MonarchColors.Rune)) {
-            if (fraction > 0f) {
-                Box(Modifier.fillMaxWidth(fraction).height(2.dp).background(accent))
-            }
-        }
+        InkRail(
+            fraction = fraction,
+            height = 3.dp,
+            fill = Brush.horizontalGradient(listOf(accent, accent)),
+            seed = label.hashCode(),
+        )
     }
 }
 
-/** Flat progress track for the step goal — same gradient language as the XP bar. */
+/** Step-goal track: the same inked rail as every other progress bar. */
 @Composable
 private fun GoalTrack(fraction: Float) {
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(6.dp)
-            .background(Color(0xFF101A14))
-            .border(1.dp, MonarchColors.Rune),
-    ) {
-        if (fraction > 0f) {
-            Box(
-                Modifier
-                    .fillMaxWidth(fraction)
-                    .height(6.dp)
-                    .background(
-                        Brush.horizontalGradient(
-                            listOf(MonarchColors.SystemGreen, MonarchColors.EmeraldBright),
-                        ),
-                    ),
-            )
-        }
-    }
+    InkRail(
+        fraction = fraction,
+        height = 6.dp,
+        fill = Brush.horizontalGradient(
+            listOf(MonarchColors.SystemGreen, MonarchColors.EmeraldBright),
+        ),
+        seed = 17,
+    )
 }
 
 

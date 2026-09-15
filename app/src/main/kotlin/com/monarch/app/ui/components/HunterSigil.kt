@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.sp
 import com.monarch.app.domain.Gacha
 import com.monarch.app.ui.social.crestFrameTreatment
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkHairline
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 
@@ -82,8 +83,9 @@ fun HunterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier) {
         if (frameId != null) {
             Box(
                 Modifier
-                    .size(width = 1.dp, height = 30.dp)
-                    .background(frameColor.copy(alpha = 0.45f)),
+                    .size(width = 3.dp, height = 30.dp)
+                    // Vertical brush stroke; inkHairline reads its own orientation.
+                    .inkHairline(frameColor.copy(alpha = 0.45f), seed = 21, thickness = 1.5.dp),
             )
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {

@@ -45,6 +45,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
+import androidx.compose.ui.unit.Dp
+import com.monarch.app.ui.theme.inkRail
+import com.monarch.app.ui.theme.inkHairline
 import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.inkTick
 import com.monarch.app.ui.theme.paperGrain
@@ -192,6 +195,31 @@ fun MonarchTabPill(
         )
     }
 }
+
+/**
+ * The app's progress rail, drawn as ink.
+ *
+ * There were four near-identical hand-rolled versions of this - Codex deed
+ * progress, the dashboard factor bars, the leaderboard intensity bar and the
+ * idle taper - each a track Box with a fraction-width Box inside. They are one
+ * component now, so a rail cannot look machined on one screen and drawn on
+ * another.
+ */
+@Composable
+fun InkRail(
+    fraction: Float,
+    modifier: Modifier = Modifier,
+    height: Dp = 6.dp,
+    track: Color = MonarchColors.Rune,
+    fill: Brush = Brush.horizontalGradient(
+        listOf(MonarchColors.SystemGreen, MonarchColors.SovereignGold),
+    ),
+    seed: Int = 0,
+) {
+    Canvas(modifier.fillMaxWidth().height(height)) {
+        inkRail(fraction = fraction, track = track, fill = fill, seed = seed)
+    }
+}
 @Composable
 fun SectionHeader(text: String, modifier: Modifier = Modifier) {
     Column(modifier.padding(top = 28.dp, bottom = 10.dp)) {
@@ -211,15 +239,18 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
 }
 
 /**
- * Level energy meter: one continuous cut-corner track, emerald-to-amber fill
- * with a bright leading edge, hairline notches over the fill (not chunky gaps)
- * and the count read out inside the bar so the number always has context.
+ * Level energy meter, drawn as ink.
+ *
+ * Was a HUD read: a cut-corner track with ten hairline notches ruled across it.
+ * Notches are the most machine-made mark in the app - perfectly even, perfectly
+ * vertical - so they are gone, and the fill is the brushed rail every other
+ * progress bar uses. The count still reads out inside the bar.
  */
 @Composable
 fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
     val fraction = if (needed <= 0) 0f else (into.toFloat() / needed).coerceIn(0f, 1f)
     val animated by animateFloatAsState(fraction, tween(900), label = "xpFill")
-    val shape = CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp)
+    val shape = MaterialTheme.shapes.small
 
     Box(
         modifier
@@ -227,39 +258,19 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
             .height(20.dp)
             .clip(shape)
             .background(Brush.verticalGradient(listOf(Color(0xFF121A16), Color(0xFF0B100E))))
-            .border(1.dp, MonarchColors.Rune, shape),
+            .inkBorder(MonarchColors.Rune, shape),
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            val fillW = size.width * animated
-            if (fillW > 0f) {
-                drawRect(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(Color(0xFF1E6B4F), Color(0xFF34D399), MonarchColors.SovereignGold),
-                        startX = 0f,
-                        endX = size.width,
-                    ),
-                    size = androidx.compose.ui.geometry.Size(fillW, size.height),
-                )
-                // leading edge glow so progress reads as live energy
-                drawRect(
-                    color = Color.White,
-                    topLeft = Offset((fillW - 2.5f).coerceAtLeast(0f), 0f),
-                    size = androidx.compose.ui.geometry.Size(2.5f, size.height),
-                    alpha = 0.55f,
-                )
-            }
-            // hairline notches, drawn over everything for a HUD read
-            val notches = 10
-            repeat(notches - 1) { i ->
-                val x = size.width * (i + 1) / notches
-                drawLine(
-                    color = Color(0xFF060908),
-                    start = Offset(x, 0f),
-                    end = Offset(x, size.height),
-                    strokeWidth = 1.2f,
-                    alpha = 0.75f,
-                )
-            }
+            inkRail(
+                fraction = animated,
+                track = Color.Transparent,
+                fill = Brush.horizontalGradient(
+                    colors = listOf(Color(0xFF1E6B4F), Color(0xFF34D399), MonarchColors.SovereignGold),
+                    startX = 0f,
+                    endX = size.width,
+                ),
+                seed = 3,
+            )
         }
         // dark plate keeps the count legible wherever the fill edge lands
         Box(
