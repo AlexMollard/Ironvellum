@@ -37,6 +37,8 @@ import com.monarch.app.ui.theme.inkHairline
 import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.InkPlateShape
 import androidx.compose.ui.platform.LocalDensity
+import com.monarch.app.ui.theme.InkEdgeShape
+import androidx.compose.foundation.shape.CornerSize
 import com.monarch.app.ui.theme.MonarchColors
 import java.time.Instant
 import java.time.LocalDate
@@ -115,6 +117,18 @@ fun SkillJournal(
                             val date = start.plusDays((w * 7 + d).toLong())
                             val count = byDay[date] ?: 0
                             val future = date.isAfter(today)
+                            // 84 cells with unshaped fills and a bare two-arg
+                            // border (RectangleShape) made this the last rigid
+                            // grid in the app. Each cell gets the ink shape and
+                            // its own salt, so the grid reads as marks made one
+                            // at a time rather than a printed table.
+                            val cellShape = InkEdgeShape(
+                                salt = w * 7 + d,
+                                topStart = CornerSize(2.dp),
+                                topEnd = CornerSize(2.dp),
+                                bottomEnd = CornerSize(2.dp),
+                                bottomStart = CornerSize(2.dp),
+                            )
                             Box(
                                 Modifier
                                     .fillMaxWidth()
@@ -127,10 +141,14 @@ fun SkillJournal(
                                             count == 1 -> MonarchColors.SystemGreen.copy(alpha = 0.65f)
                                             else -> Color(0xFF18211D)
                                         },
+                                        cellShape,
                                     )
-                                    .border(
-                                        1.dp,
-                                        if (date == today) MonarchColors.SovereignGold else Color.Transparent,
+                                    .then(
+                                        if (date == today) {
+                                            Modifier.inkBorder(MonarchColors.SovereignGold, cellShape, 1.dp)
+                                        } else {
+                                            Modifier
+                                        },
                                     ),
                             )
                         }
