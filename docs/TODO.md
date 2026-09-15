@@ -170,6 +170,18 @@ open-work list.
   the numbers came from deliberately setting the budget to 1ms and reading the
   assertion, which also proved the check fires.
 
+  The UI side of that scale check found two eager lists over unbounded data.
+  The workout log rendered EVERY completed session from a plain scrolling
+  Column, so a row was composed per workout whether on screen or not — a
+  thousand of them after a few years. It is now a `LazyColumn` with stable keys
+  (month header as its own item, sessions keyed by id). Train's activity log had
+  the same shape and is capped at six rows, since `FULL WORKOUT LOG` beside it
+  leads to the complete month-grouped history. A new instrumented test seeds a
+  completed session and asserts the log renders that session's own label, so the
+  conversion is proven by content rather than by compiling; removing the row
+  emission fails it with `the log did not render the session labelled "Heavy
+  Pull"`.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day

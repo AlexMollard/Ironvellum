@@ -11,6 +11,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -78,12 +80,15 @@ fun WorkoutLogScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
 
-    Column(
+    // LazyColumn, not a scrolling Column: this screen shows EVERY completed
+    // session, so a plain Column composes a row per workout whether it is on
+    // screen or not — a thousand of them after a few years of training.
+    LazyColumn(
         Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
     ) {
+        item {
         Spacer(Modifier.height(20.dp))
         Row(
             Modifier.fillMaxWidth(),
@@ -110,7 +115,10 @@ fun WorkoutLogScreen(
         }
         Spacer(Modifier.height(12.dp))
 
+        }
+
         if (ui.history.isEmpty()) {
+            item {
             SystemWindow(Modifier.fillMaxWidth()) {
                 Column(
                     Modifier.fillMaxWidth().padding(vertical = 40.dp),
@@ -139,9 +147,12 @@ fun WorkoutLogScreen(
                     )
                 }
             }
+            }
         } else {
-            LifetimeLedger(ui.history)
-            Spacer(Modifier.height(4.dp))
+            item {
+                LifetimeLedger(ui.history)
+                Spacer(Modifier.height(4.dp))
+            }
 
             // Month groups, newest first: observeHistory is already newest-first,
             // so grouping preserves order and a long history stays navigable.
@@ -151,8 +162,10 @@ fun WorkoutLogScreen(
                 YearMonth.from(Instant.ofEpochMilli(ms).atZone(zone))
             }
             for ((month, entries) in byMonth) {
-                SectionHeader("${month.year} · ${month.month.name}")
-                entries.forEach { (session, sets) ->
+                item(key = "month-$month") {
+                    SectionHeader("${month.year} · ${month.month.name}")
+                }
+                items(entries, key = { (session, _) -> session.id }) { (session, sets) ->
                     LogRow(
                         session = session,
                         sets = sets,
@@ -162,7 +175,7 @@ fun WorkoutLogScreen(
                 }
             }
         }
-        Spacer(Modifier.height(96.dp))
+        item { Spacer(Modifier.height(96.dp)) }
     }
 }
 

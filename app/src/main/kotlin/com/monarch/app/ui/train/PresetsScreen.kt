@@ -209,7 +209,12 @@ fun PresetsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            ui.history.forEach { (session, sets) ->
+            // Only the latest few: this screen is a plain scrolling Column, so
+            // every row it lists is composed whether or not it is on screen.
+            // After a few years of training that is a thousand rows built to
+            // show the top five, and FULL WORKOUT LOG above already leads to
+            // the complete, month-grouped history.
+            ui.history.take(ACTIVITY_LOG_ROWS).forEach { (session, sets) ->
                 SystemWindow(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
@@ -241,3 +246,6 @@ fun PresetsScreen(
         }
     }
 }
+
+/** Enough to show the week's work; the full log carries the rest. */
+private const val ACTIVITY_LOG_ROWS = 6
