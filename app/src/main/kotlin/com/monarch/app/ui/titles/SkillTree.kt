@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monarch.app.domain.Skills
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkStroke
 import com.monarch.app.ui.theme.MonarchColors
 
 private val RailW = 18.dp
@@ -136,7 +137,7 @@ private fun SkillRow(
         unlocked -> MonarchColors.SystemGreen
         else -> MonarchColors.Rune
     }
-    val shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp)
+    val shape = MaterialTheme.shapes.small
 
     val rowH = 58.dp
     val dotOffset = RailW / 2
@@ -160,11 +161,15 @@ private fun SkillRow(
                 row.openRails.forEach { d ->
                     val x = d * rail + rail / 2f
                     if (x != dotX) {
-                        drawLine(
-                            MonarchColors.Rune,
+                        // Ancestor rail: brushed, and never tapered - it runs
+                        // through the row rather than starting or ending in it.
+                        inkStroke(
                             Offset(x, 0f),
                             Offset(x, size.height),
-                            strokeWidth = stroke,
+                            MonarchColors.Rune,
+                            stroke,
+                            seed = d * 17,
+                            taperEnds = false,
                         )
                     }
                 }
@@ -172,24 +177,26 @@ private fun SkillRow(
                 row.fromDepth?.let { from ->
                     if (from == row.depth) {
                         // same column: a straight trunk segment into the dot
-                        drawLine(color, Offset(dotX, 0f), Offset(dotX, mid), strokeWidth = stroke)
+                        inkStroke(Offset(dotX, 0f), Offset(dotX, mid), color, stroke, seed = row.depth * 7, taperEnds = false)
                     } else {
                         val parentX = from * rail + rail / 2f
                         // parent's column drops in, continuing past this row
                         // when more siblings follow
-                        drawLine(
-                            color,
+                        inkStroke(
                             Offset(parentX, 0f),
                             Offset(parentX, if (row.isLastChild) mid else size.height),
-                            strokeWidth = stroke,
+                            color,
+                            stroke,
+                            seed = from * 11,
+                            taperEnds = false,
                         )
-                        drawLine(color, Offset(parentX, mid), Offset(dotX, mid), strokeWidth = stroke)
+                        inkStroke(Offset(parentX, mid), Offset(dotX, mid), color, stroke, seed = from * 5, taperEnds = false)
                     }
                 }
 
                 // hand the line to the row below
                 if (row.continuesBelow) {
-                    drawLine(color, Offset(dotX, mid), Offset(dotX, size.height), strokeWidth = stroke)
+                    inkStroke(Offset(dotX, mid), Offset(dotX, size.height), color, stroke, seed = row.depth * 3, taperEnds = false)
                 }
             }
             Box(

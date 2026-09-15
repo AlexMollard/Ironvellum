@@ -86,7 +86,7 @@ private fun rarityColor(rarity: TitleRarity): Color = when (rarity) {
 @Composable
 private fun RarityChip(rarity: TitleRarity, modifier: Modifier = Modifier) {
     val accent = rarityColor(rarity)
-    val shape = CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp)
+    val shape = MaterialTheme.shapes.extraSmall
     // Sovereign must be unmistakable at a glance: gold jewel fill plus a
     // heavier border. Epic gets a green jewel fill; Rare and Common stay quiet.
     val bg = when (rarity) {
@@ -448,8 +448,8 @@ private fun DeedSearchField(query: TextFieldValue, onQueryChange: (TextFieldValu
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Color(0xFF141A18), CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp))
-            .border(1.dp, MonarchColors.Rune, CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp))
+            .background(Color(0xFF141A18), MaterialTheme.shapes.extraSmall)
+            .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -484,9 +484,9 @@ private fun DeedFilterChip(label: String, selected: Boolean, onClick: () -> Unit
                 } else {
                     Brush.verticalGradient(listOf(Color(0xFF161C1A), Color(0xFF111614)))
                 },
-                CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp),
+                MaterialTheme.shapes.extraSmall,
             )
-            .border(1.dp, if (selected) MonarchColors.SystemGreen else MonarchColors.Rune, CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp))
+            .border(1.dp, if (selected) MonarchColors.SystemGreen else MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
             .clickable { onClick() }
             .padding(horizontal = 9.dp, vertical = 5.dp),
     ) {
@@ -516,8 +516,8 @@ private fun CategoryHeader(
     Column(
         Modifier
             .fillMaxWidth()
-            .background(Color(0xFF141A18), CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp))
-            .border(1.dp, MonarchColors.Rune, CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp))
+            .background(Color(0xFF141A18), MaterialTheme.shapes.extraSmall)
+            .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.extraSmall)
             .clickable { onClick() }
             .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {

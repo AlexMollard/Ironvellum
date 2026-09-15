@@ -144,8 +144,8 @@ fun PresetsScreen(
                         preset.scheduledDay?.let {
                             Box(
                                 Modifier
-                                    .clip(CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp))
-                                    .border(1.dp, MonarchColors.SovereignGold, CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp))
+                                    .clip(MaterialTheme.shapes.extraSmall)
+                                    .border(1.dp, MonarchColors.SovereignGold, MaterialTheme.shapes.extraSmall)
                                     .padding(horizontal = 8.dp, vertical = 4.dp),
                             ) {
                                 Text(DAY_LABELS[it] ?: "", style = MaterialTheme.typography.labelSmall, color = MonarchColors.SovereignGold)
@@ -188,8 +188,8 @@ fun PresetsScreen(
                             fontFamily = ChakraPetch,
                             color = MonarchColors.InkMuted,
                             modifier = Modifier
-                                .clip(CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp))
-                                .border(1.dp, MonarchColors.InkMuted.copy(alpha = 0.4f), CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp))
+                                .clip(MaterialTheme.shapes.extraSmall)
+                                .border(1.dp, MonarchColors.InkMuted.copy(alpha = 0.4f), MaterialTheme.shapes.extraSmall)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,

@@ -277,7 +277,7 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
             Modifier
                 .align(Alignment.CenterEnd)
                 .padding(end = 4.dp)
-                .background(Color(0xCC070B09), CutCornerShape(topStart = 4.dp))
+                .background(Color(0xCC070B09), MaterialTheme.shapes.extraSmall)
                 .padding(horizontal = 6.dp, vertical = 1.dp),
         ) {
             Text(

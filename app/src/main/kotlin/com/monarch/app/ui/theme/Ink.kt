@@ -344,3 +344,47 @@ fun Modifier.inkHairline(
 /** One remembered ink shape per surface, so the wobble does not change as state updates. */
 @Composable
 fun rememberInkShape(salt: Int = 0): Shape = remember(salt) { InkEdgeShape(salt) }
+
+/**
+ * A straight run drawn as a brush stroke: uneven weight, tapered ends, and a
+ * touch of drift off true.
+ *
+ * For ruled lines inside canvases - chart grids, skill-tree connectors, band
+ * markers - the last perfectly straight marks in the app. Unlike [inkHairline]
+ * this takes explicit endpoints, so it works at any angle.
+ */
+fun DrawScope.inkStroke(
+    from: Offset,
+    to: Offset,
+    color: Color,
+    widthPx: Float,
+    seed: Int = 0,
+    taperEnds: Boolean = true,
+) {
+    val dx = to.x - from.x
+    val dy = to.y - from.y
+    val len = kotlin.math.sqrt(dx * dx + dy * dy)
+    if (len <= 0.5f) return
+    val segments = (len / 26f).toInt().coerceIn(3, 28)
+    // Drift goes perpendicular to the run, so the stroke wanders across its own
+    // direction instead of stretching along it.
+    val nx = -dy / len
+    val ny = dx / len
+    val rng = Random(seed + len.roundToInt())
+    val drift = (widthPx * 0.55f).coerceAtMost(1.6f)
+    for (i in 0 until segments) {
+        val t0 = i.toFloat() / segments
+        val t1 = (i + 1).toFloat() / segments
+        val ends = if (taperEnds) (minOf(t0, 1f - t0) / 0.5f).coerceIn(0f, 1f) else 1f
+        val weight = (0.5f + rng.nextFloat() * 0.5f) * (0.3f + 0.7f * ends)
+        val o1 = (rng.nextFloat() - 0.5f) * 2f * drift
+        val o2 = (rng.nextFloat() - 0.5f) * 2f * drift
+        drawLine(
+            color = color.copy(alpha = color.alpha * (0.55f + 0.45f * weight)),
+            start = Offset(from.x + dx * t0 + nx * o1, from.y + dy * t0 + ny * o1),
+            end = Offset(from.x + dx * t1 + nx * o2, from.y + dy * t1 + ny * o2),
+            strokeWidth = widthPx * (0.55f + 0.45f * weight),
+            cap = StrokeCap.Round,
+        )
+    }
+}

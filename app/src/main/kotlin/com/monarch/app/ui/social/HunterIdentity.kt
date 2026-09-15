@@ -139,7 +139,7 @@ private fun WornTitle(title: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun LevelChip(level: Int) {
-    val shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp)
+    val shape = MaterialTheme.shapes.small
     Box(
         Modifier
             .border(1.dp, MonarchColors.Rune, shape)

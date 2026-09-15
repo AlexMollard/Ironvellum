@@ -276,7 +276,7 @@ fun DashboardScreen(
                         tint = MonarchColors.InkMuted,
                         modifier = Modifier
                             .size(22.dp)
-                            .clip(CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+                            .clip(MaterialTheme.shapes.small)
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,

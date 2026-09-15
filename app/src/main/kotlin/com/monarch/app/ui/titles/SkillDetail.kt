@@ -430,7 +430,7 @@ private fun QuickChip(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val shape = CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp)
+    val shape = MaterialTheme.shapes.extraSmall
     Box(
         modifier
             .background(
@@ -461,8 +461,8 @@ private fun StepGlyph(symbol: String, onClick: () -> Unit) {
     Box(
         Modifier
             .size(44.dp)
-            .background(Color(0xFF16201C), CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
-            .border(1.dp, MonarchColors.Rune, CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+            .background(Color(0xFF16201C), MaterialTheme.shapes.small)
+            .border(1.dp, MonarchColors.Rune, MaterialTheme.shapes.small)
             .clickable { onClick() },
         contentAlignment = Alignment.Center,
     ) {

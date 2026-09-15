@@ -524,12 +524,12 @@ private fun MetricChips(selected: BoardMetric, onPick: (BoardMetric) -> Unit) {
                 fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                 color = if (active) MonarchColors.Abyss else MonarchColors.InkMuted,
                 modifier = Modifier
-                    .clip(CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+                    .clip(MaterialTheme.shapes.small)
                     .background(if (active) MonarchColors.SovereignGold else Color(0xFF141A18))
                     .border(
                         1.dp,
                         if (active) MonarchColors.SovereignGold else MonarchColors.Rune,
-                        CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                        MaterialTheme.shapes.small,
                     )
                     .clickable { onPick(candidate) }
                     .padding(horizontal = 12.dp, vertical = 6.dp),
@@ -850,12 +850,12 @@ private fun BoardSelector(selected: Board, onPick: (Board) -> Unit) {
                 fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                 color = if (active) MonarchColors.Abyss else MonarchColors.InkMuted,
                 modifier = Modifier
-                    .clip(CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp))
+                    .clip(MaterialTheme.shapes.small)
                     .background(if (active) MonarchColors.SovereignGold else Color(0xFF141A18))
                     .border(
                         1.dp,
                         if (active) MonarchColors.SovereignGold else MonarchColors.Rune,
-                        CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                        MaterialTheme.shapes.small,
                     )
                     .clickable { onPick(candidate) }
                     .padding(horizontal = 12.dp, vertical = 6.dp),

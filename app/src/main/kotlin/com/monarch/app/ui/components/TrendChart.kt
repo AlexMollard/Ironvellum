@@ -12,6 +12,7 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.dp
+import com.monarch.app.ui.theme.inkStroke
 import com.monarch.app.ui.theme.MonarchColors
 
 /**
@@ -46,7 +47,7 @@ fun TrendChart(
         // quiet baseline grid
         repeat(4) { i ->
             val y = size.height * i / 3f
-            drawLine(grid, Offset(0f, y), Offset(size.width, y), strokeWidth = 1f, alpha = 0.6f)
+            inkStroke(Offset(0f, y), Offset(size.width, y), grid.copy(alpha = 0.6f), 1.4f, seed = i * 13)
         }
 
         val step = if (values.size == 1) 0f else size.width / (values.size - 1)
@@ -71,7 +72,9 @@ fun TrendChart(
                     if (i == 0) moveTo(xFor(i), yFor(v)) else lineTo(xFor(i), yFor(v))
                 }
             }
-            drawPath(line, color = color, style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round))
+            // The trend itself stays a path - a data series must not lie about
+            // its values - but it is stroked with a brushy weight and round caps.
+            drawPath(line, color = color, style = Stroke(width = 3.2.dp.toPx(), cap = StrokeCap.Round))
         }
 
         goal?.let { g ->
@@ -79,12 +82,13 @@ fun TrendChart(
             var x = 0f
             val dash = 10.dp.toPx()
             while (x < size.width) {
-                drawLine(
-                    gold,
+                inkStroke(
                     Offset(x, y),
                     Offset((x + dash / 2).coerceAtMost(size.width), y),
-                    strokeWidth = 1.5f,
-                    alpha = 0.8f,
+                    gold.copy(alpha = 0.8f),
+                    1.8f,
+                    seed = x.toInt(),
+                    taperEnds = false,
                 )
                 x += dash
             }

@@ -1,7 +1,7 @@
 package com.monarch.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
@@ -119,20 +119,24 @@ private val MonarchTypography: Typography
         )
     }
 
-// Ink edges everywhere except extraSmall.
+// Ink edges everywhere. Nothing in the theme is geometric any more.
 //
-// The original rule was "corners under 8dp stay geometric, because the wander
-// eats a small corner". Bounding the wander by the surface's short side
-// removed that reason, so 6dp pills were inked too rather than being kept as
-// silent exceptions. What survives is a different limit: a facet is ~55px, so
-// a surface much smaller than that can only ever get the 3-facet minimum and
-// renders as a lopsided polygon. extraSmall exists for those clips - icon
-// touch targets and 2-3dp inset chips - not as a style choice.
+// extraSmall kept a 3dp cut corner for a while, on the theory that a wander
+// eats a small corner. Bounding the wander by the surface's short side made
+// that reason obsolete - a badge now drifts ~1px, which reads as drawn rather
+// than broken - and a single geometric shape is a straight line the eye finds
+// immediately amongst inked neighbours.
 //
-// Distinct salts stop a button, a chip and a panel from sharing one traced
-// outline.
+// Distinct salts stop a badge, a button, a chip and a panel from sharing one
+// traced outline.
 private val MonarchShapes = Shapes(
-    extraSmall = CutCornerShape(3.dp),
+    extraSmall = InkEdgeShape(
+        salt = 7,
+        topStart = CornerSize(3.dp),
+        topEnd = CornerSize(3.dp),
+        bottomEnd = CornerSize(3.dp),
+        bottomStart = CornerSize(3.dp),
+    ),
     small = InkEdgeShape(salt = 11),
     medium = InkEdgeShape(salt = 23),
     large = InkEdgeShape(salt = 37),

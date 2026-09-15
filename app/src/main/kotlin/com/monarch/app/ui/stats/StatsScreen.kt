@@ -75,6 +75,7 @@ import com.monarch.app.domain.MeasurementSite
 import com.monarch.app.domain.STEP_GOAL
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
+import com.monarch.app.ui.theme.inkStroke
 import com.monarch.app.ui.theme.MonarchColors
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -620,12 +621,14 @@ private fun BandBar(value: Double, bands: List<Band>, scaleMax: Double) {
             low = band.upTo
         }
         val markerX = (value / scaleMax * size.width).toFloat().coerceIn(0f, size.width)
-        drawLine(
+        // Where the reading falls on the scale: struck by hand, not ruled.
+        inkStroke(
+            from = Offset(markerX, -6f),
+            to = Offset(markerX, size.height + 6f),
             color = Color.White,
-            start = Offset(markerX, -6f),
-            end = Offset(markerX, size.height + 6f),
-            strokeWidth = 3.dp.toPx(),
-            cap = StrokeCap.Round,
+            widthPx = 3.dp.toPx(),
+            seed = markerX.toInt(),
+            taperEnds = false,
         )
     }
 }

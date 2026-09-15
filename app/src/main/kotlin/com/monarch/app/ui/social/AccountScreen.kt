@@ -667,7 +667,7 @@ private fun SignedInPanels(
                 "private" to Icons.Outlined.Lock,
             ).forEach { (value, icon) ->
                 val selected = acct.visibility == value
-                val shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp)
+                val shape = MaterialTheme.shapes.small
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier

@@ -230,8 +230,8 @@ fun SessionScreen(
                 fontFamily = ChakraPetch,
                 color = MonarchColors.DangerRed,
                 modifier = Modifier
-                    .clip(CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp))
-                    .border(1.dp, MonarchColors.DangerRed.copy(alpha = 0.6f), CutCornerShape(topStart = 4.dp, bottomEnd = 4.dp))
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .border(1.dp, MonarchColors.DangerRed.copy(alpha = 0.6f), MaterialTheme.shapes.extraSmall)
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
@@ -951,7 +951,7 @@ private fun ModifierPickerDialog(
                     ) {
                         row.forEach { option ->
                             val on = option in picked
-                            val shape = CutCornerShape(topStart = 5.dp, bottomEnd = 5.dp)
+                            val shape = MaterialTheme.shapes.extraSmall
                             Box(
                                 Modifier
                                     .weight(1f)

@@ -274,7 +274,7 @@ fun SkillJournal(
                                 .size(9.dp)
                                 .background(
                                     if (entry.claimed) MonarchColors.SovereignGold else MonarchColors.SystemGreen,
-                                    CutCornerShape(2.dp),
+                                    MaterialTheme.shapes.extraSmall,
                                 ),
                         )
                     }
@@ -290,12 +290,12 @@ fun SkillJournal(
                                         listOf(Color(0xFF141B18), Color(0xFF0E1311))
                                     },
                                 ),
-                                CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                                MaterialTheme.shapes.small,
                             )
                             .border(
                                 1.dp,
                                 if (entry.claimed) MonarchColors.SovereignGold else MonarchColors.Rune,
-                                CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp),
+                                MaterialTheme.shapes.small,
                             )
                             .padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -346,7 +346,7 @@ private fun practiceStreak(byDay: Map<LocalDate, Int>, today: LocalDate): Int {
 
 @Composable
 private fun StatTile(label: String, value: String, modifier: Modifier = Modifier, gold: Boolean = false) {
-    val shape = CutCornerShape(topStart = 7.dp, bottomEnd = 7.dp)
+    val shape = MaterialTheme.shapes.small
     Column(
         modifier
             .background(

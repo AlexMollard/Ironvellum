@@ -439,7 +439,7 @@ internal fun HunterScreen(
 /** Small ghost back control in the header row — bordered, never a gradient slab. */
 @Composable
 private fun GhostBackButton(onBack: () -> Unit) {
-    val shape = CutCornerShape(topStart = 6.dp, bottomEnd = 6.dp)
+    val shape = MaterialTheme.shapes.small
     Box(
         Modifier
             .clip(shape)
