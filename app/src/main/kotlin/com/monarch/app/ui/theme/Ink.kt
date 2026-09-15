@@ -52,6 +52,14 @@ private const val SEGMENTS_PER_EDGE = 7
  */
 private const val WOBBLE_PER_CORNER = 0.22f
 
+/**
+ * Fraction of the surface's SHORT side the wander may consume.
+ *
+ * A wide button is only ~168px tall at 3x, so an unbounded 6px wander takes a
+ * visible bite out of it and the edge reads as torn rather than drawn.
+ */
+private const val WOBBLE_PER_SHORT_SIDE = 0.025f
+
 /** Hard ceiling in px. Past this an edge stops reading as drawn and starts reading as broken. */
 private const val WOBBLE_MAX_PX = 6f
 
@@ -82,7 +90,12 @@ class InkEdgeShape(
         layoutDirection: LayoutDirection,
     ): Outline {
         val corner = maxOf(topStart, topEnd, bottomEnd, bottomStart)
-        val wobble = (corner * WOBBLE_PER_CORNER).coerceIn(0.5f, WOBBLE_MAX_PX)
+        // Also bound the wander by the surface's own short side: the same 6px
+        // that looks drawn on a tall panel eats a noticeable slice off a 56dp
+        // button's edge, which is what made the wide buttons look torn.
+        val shortSide = minOf(size.width, size.height)
+        val wobble = minOf(corner * WOBBLE_PER_CORNER, shortSide * WOBBLE_PER_SHORT_SIDE)
+            .coerceIn(0.5f, WOBBLE_MAX_PX)
         val pts = inkEdgePoints(size.width, size.height, wobble, salt)
         val path = Path()
         path.moveTo(pts[0], pts[1])
@@ -107,8 +120,20 @@ class InkEdgeShape(
     override fun hashCode(): Int = salt
 }
 
+/** Target length of one hand-drawn facet, in px. Keeps the wander frequency constant. */
+private const val FACET_PX = 55f
+
+/** Facets per edge, clamped: below 3 an edge is a polygon, above 16 it smooths flat. */
+private fun facetsFor(edge: Float): Int =
+    (edge / FACET_PX).roundToInt().coerceIn(3, 16)
+
 /**
  * The hand-drawn rectangle as flat x,y pairs.
+ *
+ * Facet COUNT scales with each edge's own length rather than being fixed. With
+ * a fixed count, a full-width button spread 7 facets over ~1000px and the long
+ * diagonals read as a torn ribbon instead of a drawn line, while a small chip
+ * got the same 7 crammed into 80px. Constant facet length fixes both ends.
  *
  * Kept free of Compose and Android types on purpose: the one contract that
  * really matters here - identical input produces an identical edge - is
@@ -119,7 +144,9 @@ class InkEdgeShape(
  */
 fun inkEdgePoints(width: Float, height: Float, wobble: Float, salt: Int): FloatArray {
     val rng = Random(width.roundToInt() * 31 + height.roundToInt() * 17 + salt)
-    val pts = FloatArray((SEGMENTS_PER_EDGE * 4 + 1) * 2)
+    val across = facetsFor(width)
+    val down = facetsFor(height)
+    val pts = FloatArray(((across + down) * 2 + 1) * 2)
     var n = 0
     fun put(x: Float, y: Float) {
         pts[n++] = x
@@ -128,10 +155,10 @@ fun inkEdgePoints(width: Float, height: Float, wobble: Float, salt: Int): FloatA
     fun jitter() = (rng.nextFloat() - 0.5f) * 2f * wobble
 
     put(jitter(), jitter())
-    for (i in 1..SEGMENTS_PER_EDGE) put(width * (i.toFloat() / SEGMENTS_PER_EDGE), jitter())
-    for (i in 1..SEGMENTS_PER_EDGE) put(width + jitter(), height * (i.toFloat() / SEGMENTS_PER_EDGE))
-    for (i in 1..SEGMENTS_PER_EDGE) put(width * (1f - i.toFloat() / SEGMENTS_PER_EDGE), height + jitter())
-    for (i in 1..SEGMENTS_PER_EDGE) put(jitter(), height * (1f - i.toFloat() / SEGMENTS_PER_EDGE))
+    for (i in 1..across) put(width * (i.toFloat() / across), jitter())
+    for (i in 1..down) put(width + jitter(), height * (i.toFloat() / down))
+    for (i in 1..across) put(width * (1f - i.toFloat() / across), height + jitter())
+    for (i in 1..down) put(jitter(), height * (1f - i.toFloat() / down))
     return pts
 }
 
