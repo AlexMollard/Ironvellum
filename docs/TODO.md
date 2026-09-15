@@ -190,6 +190,16 @@ open-work list.
   to them is composed — the cap is what bounds the work, and the full record
   stays reachable through the charts and detail screens.
 
+  Both halves are proven against real data rather than by reading the code: an
+  instrumented test seeds 60 completed sessions, then asserts the Train log
+  renders a bounded number while the full log can SCROLL to far more. Removing
+  the Train cap fails it with `rendered 60 of 60 sessions`; silently capping the
+  full log at three per month fails it with `reached 9 distinct sessions`. The
+  first draft of that test was wrong in an instructive way — it counted the full
+  log's rows once and found 5, which is correct lazy behaviour rather than a
+  defect, so the assertion had to scroll and accumulate instead.
+
+
 
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
