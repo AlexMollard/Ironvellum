@@ -4,6 +4,8 @@ import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.After
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -53,5 +55,46 @@ class MigrationForwardTest {
             true,
             *MonarchDatabase.MIGRATIONS,
         ).close()
+    }
+
+    /**
+     * A REAL upgrade walk, not a no-op one.
+     *
+     * The test above creates the database at the current version, so as its own
+     * comment admits it validates nothing about the newest migration. Schema 21
+     * is now exported, so this starts there, writes a profile row, migrates to
+     * 22 and checks the row survived with the new column readable.
+     *
+     * This is the guard for a whole bug class: MIGRATION_21_22 was first written
+     * against `profiles` when the table is `profile`. That compiles, passes every
+     * JVM test, and only fails when a real install upgrades.
+     */
+    @Test
+    fun upgradeFrom21PreservesTheProfileAndAddsInkStyle() = runTest {
+        helper.createDatabase(dbName, 21).use { old ->
+            old.execSQL(
+                "INSERT OR REPLACE INTO profile " +
+                    "(id, name, totalXp, currentTitleId, lifetimeStrength, trainingMode, heightCm, sex) " +
+                    "VALUES (1, 'Kaida', 4200, 'shadow_ascendant', 777, 'HYPERTROPHY', 178.0, 'FEMALE')",
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            dbName,
+            22,
+            true,
+            *MonarchDatabase.MIGRATIONS,
+        )
+
+        db.query("SELECT name, totalXp, trainingMode, inkStyle FROM profile WHERE id = 1").use { c ->
+            assertTrue("the profile row must survive the upgrade", c.moveToFirst())
+            assertEquals("Kaida", c.getString(0))
+            assertEquals(4200L, c.getLong(1))
+            assertEquals("HYPERTROPHY", c.getString(2))
+            // Default is on: the ink treatment is the app's look, and the
+            // toggle exists to leave it rather than to opt in.
+            assertEquals(1, c.getInt(3))
+        }
+        db.close()
     }
 }
