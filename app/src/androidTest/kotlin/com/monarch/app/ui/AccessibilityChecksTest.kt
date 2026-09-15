@@ -90,11 +90,19 @@ class AccessibilityChecksTest {
         val density = compose.density.density
         val minPx = WCAG_FLOOR_DP * density
         return compose.onAllNodes(hasClickAction()).fetchSemanticsNodes()
-            .filter { it.boundsInRoot.size.width > 0f }
+            .filter { it.size.width > 0 }
             .mapNotNull { node ->
-                val size = node.boundsInRoot.size
-                if (size.width >= minPx && size.height >= minPx) null
-                else "%.0fx%.0f dp".format(size.width / density, size.height / density)
+                // node.size is the LAID-OUT size; boundsInRoot is clipped to the
+                // visible region, so a control half-scrolled off the screen
+                // measured 23dp and read as a defect. The touch target is the
+                // layout size, not how much of it happens to be on screen.
+                val size = node.size
+                if (size.width >= minPx && size.height >= minPx) return@mapNotNull null
+                val label = node.config.valueOrNull(SemanticsProperties.Text)
+                    ?.joinToString(" ") { it.text }
+                    ?: node.config.valueOrNull(SemanticsProperties.ContentDescription)?.joinToString(" ")
+                    ?: "unnamed"
+                "\"%s\" %.0fx%.0f dp".format(label, size.width / density, size.height / density)
             }
     }
 
@@ -142,6 +150,26 @@ class AccessibilityChecksTest {
     }
 
     /**
+     * Opens a sub-surface by visible text, falling back to a content
+     * description for icon-only entry points. Returns false when this build
+     * shows neither, so a missing feature is skipped rather than failed.
+     */
+    private fun openSurface(label: String): Boolean {
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        val byText = compose.onAllNodesWithText(label, substring = true)
+        if (byText.fetchSemanticsNodes().isNotEmpty()) {
+            byText.onFirst().performClick()
+            return true
+        }
+        val byDescription = compose.onAllNodesWithContentDescription(label, substring = true)
+        if (byDescription.fetchSemanticsNodes().isNotEmpty()) {
+            byDescription.onFirst().performClick()
+            return true
+        }
+        return false
+    }
+
+    /**
      * The six destinations are only the front door. This app is deliberately
      * icon-forward, so the screens BEHIND each tab are where an unlabelled
      * glyph hides — and a control an accessibility service cannot announce is
@@ -151,23 +179,33 @@ class AccessibilityChecksTest {
     fun surfacesBehindEachTabAreAnnounceableToo() {
         val unlabelled = mutableListOf<String>()
         val tooSmall = mutableListOf<String>()
+        val visited = mutableListOf<String>()
 
         for ((destination, surface) in DEEPER_SURFACES) {
             // Some surfaces replace the nav bar entirely, so each iteration
             // walks back to it rather than assuming it is still there.
             returnToNavigation()
             compose.onNodeWithContentDescription(destination).performClick()
-            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-            // Sub-surfaces are reached by their own label; skip any this build
-            // does not show rather than failing on a missing feature.
-            if (compose.onAllNodesWithText(surface, substring = true).fetchSemanticsNodes().isEmpty()) continue
-            compose.onAllNodesWithText(surface, substring = true).onFirst().performClick()
+            // A surface is opened by whatever names it: visible text for tabs
+            // and buttons, a content description for icon-only controls like
+            // the settings gear. Matching text alone silently skipped the
+            // settings screen, which made its assertions pass vacuously.
+            if (!openSurface(surface)) continue
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
             val where = "$destination/$surface"
+            visited += where
             unlabelled += unlabelledControls().map { "$where: $it" }
             tooSmall += controlsBelowTheAccessibleFloor().map { "$where: $it" }
         }
 
+        // Skipping is deliberate for a surface a build does not show, but a
+        // wholesale skip would make every assertion below pass vacuously —
+        // so the sweep has to prove it actually went somewhere.
+        assertEquals(
+            "surfaces the sweep could not reach: ${DEEPER_SURFACES.map { "${it.first}/${it.second}" } - visited.toSet()}",
+            DEEPER_SURFACES.size,
+            visited.size,
+        )
         assertEquals(
             "controls an accessibility service cannot announce, behind a tab",
             emptyList<String>(),
@@ -194,12 +232,19 @@ class AccessibilityChecksTest {
         val DEEPER_SURFACES = listOf(
             "Codex" to "SKILL TREE",
             "Codex" to "JOURNAL",
+            "Stats" to "DETAIL",
             "Stats" to "TRAINING",
             "Stats" to "ACTIVITY",
             "Train" to "EXERCISE EXPLORER",
-            // Last: the settings screen replaces the nav bar, so nothing can
-            // be reached after it without going back.
+            "Train" to "FULL WORKOUT LOG",
+            // The densest surfaces in the app: a live session and the preset
+            // editor are wall-to-wall icon steppers, which is exactly where an
+            // unannounceable control hides.
+            // The settings screen replaces the nav bar, so it goes late.
             "Court" to "System",
+            // Truly last: starting a session leaves a live trial whose abandon
+            // prompt sits between the sweep and the nav bar.
+            "Train" to "QUICK SESSION",
         )
         const val FRAME_BUDGET_MS = 1_200L
         const val MIN_TARGET_DP = 48f
