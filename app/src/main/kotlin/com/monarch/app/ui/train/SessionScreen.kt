@@ -622,6 +622,13 @@ private fun SetRow(
         //    row spacing Material's own 48dp reservation gave this row).
         Box(
             Modifier
+                // 48dp reserved, 42dp effective: the set row's own
+                // padding(vertical = 3.dp) clips it, and Compose delivers touch
+                // only within the parent's bounds, so requiredSize cannot
+                // reclaim it (measured on device: 126px = 42dp either way).
+                // Material's Checkbox was clipped identically here, so this is
+                // the pre-existing row geometry, not a regression - widening it
+                // means changing the row's padding, which moves every set row.
                 .size(48.dp)
                 .toggleable(
                     value = done,
