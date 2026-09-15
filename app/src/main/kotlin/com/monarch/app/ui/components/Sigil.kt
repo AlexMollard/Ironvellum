@@ -18,6 +18,8 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.translate
+import com.monarch.app.ui.theme.inkArc
+import com.monarch.app.ui.theme.inkStroke
 import com.monarch.app.ui.theme.MonarchColors
 import kotlin.math.PI
 import kotlin.math.cos
@@ -90,11 +92,17 @@ fun RelicSigil(
             // Concentric rings: the relic's "setting".
             repeat(spec.rings) { ring ->
                 val r = radius * (0.92f - ring * 0.16f)
-                drawCircle(
-                    color = accent.copy(alpha = 0.22f + 0.12f * ring),
-                    radius = r,
+                // Brushed ring: a stroked circle is compass-struck, the most
+                // machine-made mark left in the crest art.
+                inkArc(
                     center = centre,
-                    style = Stroke(width = radius * 0.05f),
+                    radius = r,
+                    startDeg = 0f,
+                    sweepDeg = 360f,
+                    color = accent.copy(alpha = 0.22f + 0.12f * ring),
+                    seed = ring * 17,
+                    taperEnds = false,
+                    widthPx = radius * 0.05f,
                 )
             }
 
@@ -102,14 +110,18 @@ fun RelicSigil(
             // perfectly symmetrical — asymmetry is what makes each read distinct.
             repeat(spec.spokes) { i ->
                 val angle = (2.0 * PI * i / spec.spokes + spec.skew).toFloat()
-                drawLine(
-                    color = accent.copy(alpha = 0.35f),
-                    start = centre,
-                    end = Offset(
+                // Spokes are the crest's ruled marks; the bevel highlights
+                // below stay plain, being sub-pixel shading rather than lines.
+                inkStroke(
+                    from = centre,
+                    to = Offset(
                         centre.x + cos(angle) * radius * 0.86f,
                         centre.y + sin(angle) * radius * 0.86f,
                     ),
-                    strokeWidth = radius * 0.04f,
+                    color = accent.copy(alpha = 0.35f),
+                    widthPx = radius * 0.04f,
+                    seed = i * 23,
+                    taperEnds = false,
                 )
             }
 
@@ -183,11 +195,13 @@ fun CrestEmblem(
             val a = (2.0 * PI * i / rays).toFloat()
             val inner = unit * 0.30f
             val outer = unit * (if (i % 2 == 0) 0.50f else 0.42f)
-            drawLine(
+            inkStroke(
+                from = Offset(cx + cos(a) * inner, cy + sin(a) * inner),
+                to = Offset(cx + cos(a) * outer, cy + sin(a) * outer),
                 color = secondary.copy(alpha = 0.10f),
-                start = Offset(cx + cos(a) * inner, cy + sin(a) * inner),
-                end = Offset(cx + cos(a) * outer, cy + sin(a) * outer),
-                strokeWidth = unit * 0.012f,
+                widthPx = unit * 0.012f,
+                seed = i * 11,
+                taperEnds = false,
             )
         }
         // 2. Halo behind the mark: depth without brightening the whole plate.
