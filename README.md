@@ -6,7 +6,11 @@ features backed by Supabase.
 
 - Kotlin 2.4 + Jetpack Compose, Room (local), Supabase (optional cloud)
 - Package `com.monarch.app`; see `GOAL.md` for product direction
-- Privacy: [PRIVACY.md](PRIVACY.md) — body measurements never leave the device
+- Privacy: [PRIVACY.md](PRIVACY.md). Sign in and a session sync uploads the
+  training record — completed sessions and their sets, display name, visibility,
+  earned titles, likes and friendships, plus the shadow aggregates. Body
+  measurements and everything read from Health Connect stay on the device, and
+  the app works fully without an account.
 - Shipping: [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md)
 - Play Data Safety answers: [docs/PLAY_DATA_SAFETY.md](docs/PLAY_DATA_SAFETY.md)
 - Outstanding work and open decisions: [docs/TODO.md](docs/TODO.md)
