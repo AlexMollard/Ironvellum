@@ -82,10 +82,12 @@ private const val WOBBLE_PER_SHORT_SIDE = 0.025f
 /**
  * Floor in px, so a small element still shows a hand.
  *
- * ~0.5dp at 3x. Below this the edge measures as straight on device (a badge at
- * 0.7px read 1px peak-to-peak), which defeats the point of inking small chrome.
+ * ~0.9dp at 3x. Raised from 1.4px after a 890x46px section header still read
+ * dead straight at 4x magnification: the short-side cap put it at 1.15px, and
+ * the old floor barely moved it. Short, wide surfaces are the hardest case -
+ * they get the least wander from the cap and show it over the longest edge.
  */
-private const val WOBBLE_MIN_PX = 1.4f
+private const val WOBBLE_MIN_PX = 2.6f
 
 /** Hard ceiling in px. Past this an edge stops reading as drawn and starts reading as broken. */
 private const val WOBBLE_MAX_PX = 6f
@@ -134,7 +136,7 @@ class InkEdgeShape(
         // drawn; clips with no fill show nothing either way.
         val shortSide = minOf(size.width, size.height)
         val wobble = minOf(corner * WOBBLE_PER_CORNER, shortSide * WOBBLE_PER_SHORT_SIDE)
-            .coerceIn(WOBBLE_MIN_PX, WOBBLE_MAX_PX)
+            .coerceIn(WOBBLE_MIN_PX, maxOf(WOBBLE_MIN_PX, WOBBLE_MAX_PX))
         val pts = inkEdgePoints(size.width, size.height, wobble, salt)
         val path = Path()
         path.moveTo(pts[0], pts[1])

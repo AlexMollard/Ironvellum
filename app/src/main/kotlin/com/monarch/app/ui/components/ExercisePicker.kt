@@ -165,7 +165,16 @@ fun ExercisePickerPanel(
                         letterSpacing = 2.sp,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFF101512))
+                            // Inked after all: the full-bleed rule protects
+                            // surfaces whose edges are the SCREEN's edge. This
+                            // strip sits inside the picker panel with both ends
+                            // visible, so a square bar just reads as old chrome.
+                            // The fill sits ~2 luminance units from the panel, so
+                            // its hand-drawn edge was invisible however much the
+                            // shape wandered. The brushed border is what actually
+                            // reads as drawn here.
+                            .background(Color(0xFF101512), MaterialTheme.shapes.extraSmall)
+                            .inkBorder(MonarchColors.Bracket, MaterialTheme.shapes.extraSmall, 1.dp)
                             .padding(vertical = 6.dp, horizontal = 4.dp),
                     )
                 }
