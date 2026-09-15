@@ -618,7 +618,7 @@ class Repository(
     }
 
     suspend fun setSessionPrivateNote(sessionId: Long, privateNote: String) {
-        sessionDao.setPrivateNote(sessionId, privateNote)
+        sessionDao.setPrivateNote(sessionId, privateNote.take(WireLimits.PRIVATE_NOTE_MAX))
     }
 
     private fun SessionEntity.toDomain() = WorkoutSession(
@@ -1075,7 +1075,7 @@ class Repository(
                             strengthScore = session.strengthScore,
                             title = session.title,
                             note = session.note,
-                            privateNote = session.privateNote,
+                            privateNote = session.privateNote.take(WireLimits.PRIVATE_NOTE_MAX),
                         ),
                     )
                     restoredSets += sessionDao.insertSets(

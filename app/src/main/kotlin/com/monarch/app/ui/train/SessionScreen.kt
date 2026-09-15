@@ -68,6 +68,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.monarch.app.data.Repository
+import com.monarch.app.data.cloud.WireLimits
 import com.monarch.app.domain.Exercise
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.SetRecords
@@ -842,6 +843,7 @@ private fun StepIcon(symbol: String, onClick: () -> Unit) {
 private const val TITLE_CAP = 80
 private const val PUBLIC_NOTE_CAP = 500
 
+
 /**
  * Title + notes editor for the session. Lives at the foot of the active trial,
  * just above "Claim Victory", so annotations are written while the session is
@@ -915,7 +917,7 @@ private fun SessionNotesEditor(
         OutlinedTextField(
             shape = MaterialTheme.shapes.small,
             value = privateNote,
-            onValueChange = { privateNote = it },
+            onValueChange = { privateNote = it.take(WireLimits.PRIVATE_NOTE_MAX) },
             minLines = 2,
             label = {
                 FieldLabel(

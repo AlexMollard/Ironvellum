@@ -144,6 +144,22 @@ open-work list.
   shape as the segmented control whose `selected` state I misread earlier —
   **when a dump disagrees with the code, check which node you are reading
   before believing either.**
+- **Every text field is capped; the private note was the one that was not.**
+  An audit of every `onValueChange` found title (80), public note (500),
+  display name (24), modifiers (60) and the measurement/height fields all
+  bounded or filtered — and `privateNote = it`, uncapped, because it is the one
+  field no server `check` constrains (it never leaves the device). Capped at
+  2,000 via `WireLimits.PRIVATE_NOTE_MAX`, applied in the editor and on import,
+  where an archive could carry a pasted blob. My first attempt put the literal
+  in two files — the same duplication I had just removed with `WireLimits` — so
+  it was consolidated before committing.
+
+  Two things deliberately left alone, so the next pass does not re-open them:
+  the set steppers are unbounded upward (2.5 kg a tap, one rep a tap), because a
+  cap low enough to matter would refuse a legitimate heavy lift and reaching an
+  absurd figure takes hundreds of deliberate taps; and the weight field accepts
+  non-digits where the height field filters them, which is harmless because the
+  button gate is what decides (verified on device).
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:

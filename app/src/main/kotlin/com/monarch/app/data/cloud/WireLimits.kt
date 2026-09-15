@@ -1,7 +1,8 @@
 package com.monarch.app.data.cloud
 
 /**
- * Field limits the SERVER enforces, in one place.
+ * Field limits in one place: those the SERVER enforces, plus the one
+ * device-only field that has no server counterpart and so had no bound at all.
  *
  * Every value here has a matching `check (...)` in supabase/migrations. They
  * were previously duplicated as bare literals — `take(80)` in the repository,
@@ -22,4 +23,13 @@ object WireLimits {
 
     /** `sessions.note`: `char_length(note) <= 500`. */
     const val SESSION_NOTE_MAX = 500
+
+    /**
+     * The private note never leaves the device, so no SQL `check` bounds it —
+     * which is why it was the only text field with no cap. It is a training
+     * journal rather than a caption, so the ceiling is generous; it exists so
+     * that a stray paste cannot put an unbounded blob in every export and row.
+     * Not covered by the schema guard: there is no constraint to compare to.
+     */
+    const val PRIVATE_NOTE_MAX = 2_000
 }
