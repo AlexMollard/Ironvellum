@@ -76,6 +76,9 @@ fun SkillDetailDialog(
     var showLoad by remember(skill.name) { mutableStateOf(false) }
 
     AlertDialog(
+        // Material's dialog container is a 28dp rounded rect - the most
+        // obviously stock surface in the app. Give it the ink shape.
+        shape = MaterialTheme.shapes.medium,
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF0D1110),
         title = {

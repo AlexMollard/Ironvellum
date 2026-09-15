@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -64,6 +63,7 @@ import com.monarch.app.domain.Sex
 import com.monarch.app.domain.TrainingMode
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.formatDate
+import com.monarch.app.ui.components.InkSpinner
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.monarchHealthSync
 import com.monarch.app.ui.monarchRepository
@@ -343,6 +343,9 @@ fun SettingsScreen(
 
     if (confirmImport) {
         AlertDialog(
+            // Material's dialog container is a 28dp rounded rect - the most
+            // obviously stock surface in the app. Give it the ink shape.
+            shape = MaterialTheme.shapes.medium,
             onDismissRequest = { confirmImport = false },
             title = { Text("Restore this archive?") },
             text = {
@@ -594,7 +597,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(10.dp))
             if (sync.syncing) {
-                CircularProgressIndicator()
+                InkSpinner()
             } else {
                 MonarchButton(
                     label = "Connect & Sync",
@@ -634,7 +637,7 @@ fun SettingsScreen(
             }
             Spacer(Modifier.height(10.dp))
             if (sync.historySyncing) {
-                CircularProgressIndicator()
+                InkSpinner()
             } else {
                 MonarchButton(
                     label = "Sync Activity History",
@@ -677,7 +680,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(10.dp))
             if (exporting) {
-                CircularProgressIndicator()
+                InkSpinner()
             } else {
                 MonarchButton(
                     label = "Export Archive",
@@ -686,7 +689,7 @@ fun SettingsScreen(
             }
             Spacer(Modifier.height(10.dp))
             if (importUi.importing) {
-                CircularProgressIndicator()
+                InkSpinner()
             } else {
                 MonarchButton(
                     label = "Import Archive",

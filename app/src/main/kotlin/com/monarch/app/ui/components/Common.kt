@@ -1,5 +1,10 @@
 package com.monarch.app.ui.components
 
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import com.monarch.app.ui.theme.inkArc
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
@@ -340,3 +345,37 @@ fun MonarchButton(
 
 fun formatDate(ms: Long, pattern: String = "MMM d · HH:mm"): String =
     Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(pattern))
+
+/**
+ * Busy indicator drawn as a brushed arc instead of Material's perfect ring.
+ *
+ * The stock CircularProgressIndicator is a compass-struck circle with an even
+ * stroke - the last machine-exact mark in the app once every other surface was
+ * inked. The sweep rotates; the stroke itself is a single brushed arc.
+ */
+@Composable
+fun InkSpinner(
+    modifier: Modifier = Modifier,
+    size: Dp = 22.dp,
+    color: Color = MonarchColors.Emerald,
+) {
+    val spin = rememberInfiniteTransition(label = "spin")
+    val angle by spin.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(tween(900, easing = LinearEasing)),
+        label = "spinAngle",
+    )
+    Canvas(modifier.size(size)) {
+        val r = this.size.minDimension / 2f - 2.dp.toPx()
+        inkArc(
+            center = Offset(this.size.width / 2f, this.size.height / 2f),
+            radius = r,
+            startDeg = angle,
+            sweepDeg = 250f,
+            color = color,
+            widthPx = 2.5.dp.toPx(),
+            seed = 67,
+        )
+    }
+}

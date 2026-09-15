@@ -24,7 +24,6 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.VisibilityOff
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -80,6 +79,7 @@ import com.monarch.app.data.cloud.SyncOutcome
 import com.monarch.app.data.cloud.isUnclaimedHandle
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.SectionHeader
+import com.monarch.app.ui.components.InkSpinner
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.monarchAccount
 import com.monarch.app.ui.monarchCloudSync
@@ -407,10 +407,7 @@ private fun NotConfiguredPanel() {
 private fun BusyPanel(label: String) {
     SystemWindow(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            CircularProgressIndicator(
-                color = MonarchColors.Emerald,
-                modifier = Modifier.height(18.dp).fillMaxWidth(0.06f),
-            )
+            InkSpinner()
             Text(
                 label,
                 style = MaterialTheme.typography.bodyMedium,

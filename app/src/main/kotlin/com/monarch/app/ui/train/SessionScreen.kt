@@ -37,7 +37,6 @@ import androidx.compose.foundation.border
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -341,6 +340,9 @@ fun SessionScreen(
 
     if (confirmAbandon) {
         AlertDialog(
+            // Material's dialog container is a 28dp rounded rect - the most
+            // obviously stock surface in the app. Give it the ink shape.
+            shape = MaterialTheme.shapes.medium,
             onDismissRequest = { confirmAbandon = false },
             title = { Text("Abandon this trial?") },
             text = { Text("Unfinished sessions grant no XP and are erased from the record.") },
@@ -376,6 +378,9 @@ fun SessionScreen(
 
     if (showExercisePicker) {
         AlertDialog(
+            // Material's dialog container is a 28dp rounded rect - the most
+            // obviously stock surface in the app. Give it the ink shape.
+            shape = MaterialTheme.shapes.medium,
             onDismissRequest = { showExercisePicker = false },
             containerColor = Color(0xFF0D1110),
             title = {},
@@ -604,7 +609,33 @@ private fun SetRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-        Checkbox(checked = done, onCheckedChange = { onChange(reps, weightKg, it) })
+        // Material's checkbox is a rounded square with a machine-drawn tick,
+        // the last stock control in the app. This is the same target size and
+        // toggle behaviour, drawn as an inked plate with a struck mark.
+        Box(
+            Modifier
+                .size(26.dp)
+                .background(
+                    if (done) MonarchColors.SystemGreen.copy(alpha = 0.18f) else Color.Transparent,
+                    MaterialTheme.shapes.extraSmall,
+                )
+                .inkBorder(
+                    if (done) MonarchColors.SystemGreen else MonarchColors.Bracket,
+                    MaterialTheme.shapes.extraSmall,
+                    1.5.dp,
+                )
+                .clickable { onChange(reps, weightKg, !done) },
+            contentAlignment = Alignment.Center,
+        ) {
+            if (done) {
+                Text(
+                    "\u2713",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.SystemGreen,
+                )
+            }
+        }
         Text(
             label,
             style = MaterialTheme.typography.labelMedium,
@@ -925,6 +956,9 @@ private fun ModifierPickerDialog(
 ) {
     var picked by remember(exerciseName) { mutableStateOf(selected) }
     AlertDialog(
+        // Material's dialog container is a 28dp rounded rect - the most
+        // obviously stock surface in the app. Give it the ink shape.
+        shape = MaterialTheme.shapes.medium,
         onDismissRequest = onDismiss,
         containerColor = Color(0xFF0D1110),
         title = {

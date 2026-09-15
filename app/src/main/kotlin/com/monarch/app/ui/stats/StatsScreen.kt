@@ -549,6 +549,9 @@ private fun StatDrillDialog(
     }
 
     AlertDialog(
+        // Material's dialog container is a 28dp rounded rect - the most
+        // obviously stock surface in the app. Give it the ink shape.
+        shape = MaterialTheme.shapes.medium,
         onDismissRequest = onDismiss,
         title = {
             Column {
