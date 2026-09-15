@@ -376,7 +376,7 @@ fun DashboardScreen(
                             label.take(1),
                             style = MaterialTheme.typography.titleSmall,
                             fontFamily = ChakraPetch,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                             color = when {
                                 isSelected -> MonarchColors.Ink
                                 isToday -> MonarchColors.SovereignGold

@@ -520,7 +520,7 @@ private fun MetricChips(selected: BoardMetric, onPick: (BoardMetric) -> Unit) {
                 softWrap = false,
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
-                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
                 color = if (active) MonarchColors.Abyss else MonarchColors.InkMuted,
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.small)
@@ -842,7 +842,7 @@ private fun BoardSelector(selected: Board, onPick: (Board) -> Unit) {
                 softWrap = false,
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
-                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                fontWeight = if (active) FontWeight.Bold else FontWeight.Medium,
                 color = if (active) MonarchColors.Abyss else MonarchColors.InkMuted,
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.small)

@@ -110,9 +110,13 @@ private val MonarchTypography: Typography
             titleLarge = title(20, FontWeight.Bold),
             titleMedium = title(16, FontWeight.SemiBold),
             titleSmall = title(14, FontWeight.SemiBold),
-            bodyLarge = base.bodyLarge.copy(fontFamily = ChakraPetch),
-            bodyMedium = base.bodyMedium.copy(fontFamily = ChakraPetch),
-            bodySmall = base.bodySmall.copy(fontFamily = ChakraPetch),
+            // Medium, not the inherited Normal: the bundled family ships
+            // Medium/SemiBold/Bold only, so body text was asking for a weight
+            // that does not exist here and fell back to the system typeface -
+            // stock sans paragraphs sitting amongst Chakra Petch everywhere else.
+            bodyLarge = base.bodyLarge.copy(fontFamily = ChakraPetch, fontWeight = FontWeight.Medium),
+            bodyMedium = base.bodyMedium.copy(fontFamily = ChakraPetch, fontWeight = FontWeight.Medium),
+            bodySmall = base.bodySmall.copy(fontFamily = ChakraPetch, fontWeight = FontWeight.Medium),
             labelLarge = label(14, 4.0),
             labelMedium = label(12, 2.0),
             labelSmall = label(10, 2.0),
