@@ -452,8 +452,14 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>) {
 
 @Composable
 private fun SetLog(history: ExerciseHistory) {
-    val byDay = history.entries.groupBy { formatDate(it.atMs, "EEE · MMM d, yyyy") }
-    byDay.forEach { (day, sets) ->
+    // Grouped by day, most recent first, and capped: a movement trained twice
+    // a week for years has hundreds of days of sets, and this list lives in a
+    // plain scrolling Column that composes every row it is given. The summary
+    // and chart above cover the whole record.
+    val byDay = history.entries
+        .sortedByDescending { it.atMs }
+        .groupBy { formatDate(it.atMs, "EEE · MMM d, yyyy") }
+    byDay.entries.take(SET_LOG_DAYS).forEach { (day, sets) ->
         SystemWindow(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
             Text(
                 day,
@@ -511,3 +517,6 @@ private fun SetLog(history: ExerciseHistory) {
         }
     }
 }
+
+/** Recent training days; the summary above spans the whole record. */
+private const val SET_LOG_DAYS = 14

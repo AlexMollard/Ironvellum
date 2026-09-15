@@ -331,7 +331,12 @@ fun StatsScreen(
                         )
                     }
                 }
-                ui.stats.forEach { stat ->
+                // Latest readings only: this section sits in a plain scrolling
+                // Column, so every row listed is composed whether it is on
+                // screen or not, and someone who weighs in daily reaches
+                // thousands. The charts above already carry the whole history,
+                // and the metric detail screens carry it per metric.
+                ui.stats.take(READING_ROWS).forEach { stat ->
                     SystemWindow(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                         Row(
                             Modifier.fillMaxWidth(),
@@ -1230,3 +1235,5 @@ private fun MetricRow(label: String, value: String, best: Boolean) {
     }
 }
 
+/** The charts carry the whole history; this list is the recent detail. */
+private const val READING_ROWS = 12

@@ -182,6 +182,15 @@ open-work list.
   emission fails it with `the log did not render the session labelled "Heavy
   Pull"`.
 
+  Three more lists over data that grows with use were capped the same way, each
+  with the unbounded source named in a comment: the stats readings list (12 of
+  them; the charts above already span the whole history), a movement's set log
+  in the explorer (14 training days, newest first), and the skill practice
+  journal (14 practice days). None of these is a lazy list, so every row handed
+  to them is composed — the cap is what bounds the work, and the full record
+  stays reachable through the charts and detail screens.
+
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day

@@ -259,8 +259,12 @@ fun SkillJournal(
         return
     }
 
+    // Recent practice days only: this journal grows for as long as the hunter
+    // trains, and it renders inside a plain scrolling Column that composes
+    // every row it is handed rather than only the visible ones.
     log.groupBy { Instant.ofEpochMilli(it.practicedAtMs).atZone(zone).toLocalDate() }
         .toSortedMap(compareByDescending { it })
+        .entries.take(PRACTICE_DAYS)
         .forEach { (date, entries) ->
             Text(
                 when (date) {
@@ -480,3 +484,6 @@ private fun MonogramBadge(text: String, size: androidx.compose.ui.unit.Dp) {
         )
     }
 }
+
+/** Recent practice days; the per-skill detail carries the full record. */
+private const val PRACTICE_DAYS = 14
