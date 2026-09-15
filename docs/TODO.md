@@ -89,6 +89,16 @@ open-work list.
   noise and are gone anyway: a redundant `as T` cast, a `!!` on a value the
   compiler already knew was non-null, and a stray `Unit` expression that is now
   an early-return guard.
+- **The migration walk now carries the training, not just the profile.** The
+  existing upgrade test wrote one `profile` row and checked it survived 21 ->
+  23 — which a migration that quietly dropped `sessions`, `set_logs`,
+  `title_unlocks` or `measurements` would also have passed, and losing a
+  hunter's logged training on an app update is the worst bug this project could
+  ship. The new case seeds a real session (including its device-only
+  `privateNote`), two sets, an earned title and a body measurement at the
+  shipped baseline, walks the registered chain, and reads every one back.
+  Mutation-proven: adding `DELETE FROM set_logs` to the 22->23 migration fails
+  with `both logged sets must survive expected:<2> but was:<0>`.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:
