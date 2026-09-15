@@ -9,6 +9,7 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.exceptions.HttpRequestException
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.postgrest.exception.PostgrestRestException
+import io.ktor.client.engine.okhttp.OkHttp
 
 /**
  * Single entry point to the cloud. `configured` is false while the local
@@ -29,6 +30,11 @@ object Cloud {
         ) {
             install(Auth)
             install(Postgrest)
+            // Name the engine instead of letting ktor discover it through
+            // ServiceLoader: R8 renames the META-INF/services entries in a
+            // minified release, and a failed engine lookup would take the whole
+            // cloud down at runtime in a way no debug build can reveal.
+            httpEngine = OkHttp.create()
         }.also { instance = it }
     }
 
