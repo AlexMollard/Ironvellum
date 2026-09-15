@@ -267,6 +267,16 @@ open-work list.
   "none" and looks like a failure, and `am crash` kills the process — the
   journal being readable afterwards is the point, not a side effect.
 
+  The "syncs automatically on a daily schedule" rule was checked at the OS
+  rather than at the call site: `dumpsys jobscheduler` shows a job owned by
+  `com.monarch.app/androidx.work.impl.background.systemjob.SystemJobService`,
+  waiting on `TIMING_DELAY`, with `batteryNotLow=true` and no other constraint —
+  which is exactly what `HealthSyncWorker.schedule()` builds, so the job is ours
+  and came from that request. The one-day interval itself is not printed in that
+  dumpsys output, so it stays sourced from the code
+  (`PeriodicWorkRequestBuilder(Duration.ofDays(1))`) rather than claimed as
+  observed.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
