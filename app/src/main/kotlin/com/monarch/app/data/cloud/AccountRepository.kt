@@ -57,7 +57,7 @@ class AccountRepository {
 
     suspend fun signUp(email: String, password: String, displayName: String): Result<Account> {
         val name = displayName.trim()
-        if (name.length < 2 || name.length > 24) {
+        if (name.length < WireLimits.DISPLAY_NAME_MIN || name.length > WireLimits.DISPLAY_NAME_MAX) {
             return Result.failure(IllegalStateException("Display name must be 2 to 24 characters"))
         }
         val client = requireClient().getOrElse { return failure(it) }
@@ -197,8 +197,8 @@ class AccountRepository {
     private fun sanitizeHandle(raw: String): String {
         val cleaned = raw.filter { it.isLetterOrDigit() || it == ' ' }.trim()
         return when {
-            cleaned.length >= 24 -> cleaned.take(24)
-            cleaned.length >= 2 -> cleaned
+            cleaned.length >= WireLimits.DISPLAY_NAME_MAX -> cleaned.take(WireLimits.DISPLAY_NAME_MAX)
+            cleaned.length >= WireLimits.DISPLAY_NAME_MIN -> cleaned
             else -> "Hunter" + cleaned.ifEmpty { "0" }
         }
     }
@@ -221,7 +221,7 @@ class AccountRepository {
             ?: return Result.failure(IllegalStateException("Sign in before claiming a name"))
         val client = requireClient().getOrElse { return failure(it) }
         val name = sanitizeHandle(raw)
-        if (name.length < 2) {
+        if (name.length < WireLimits.DISPLAY_NAME_MIN) {
             return Result.failure(IllegalStateException("Your name needs at least 2 characters"))
         }
         return runCatching {

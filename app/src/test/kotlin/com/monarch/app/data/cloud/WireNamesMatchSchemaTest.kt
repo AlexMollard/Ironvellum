@@ -201,4 +201,41 @@ class WireNamesMatchSchemaTest {
         assertEquals("12.5", body["p_shadow_rate"].toString())
         assertEquals("""{"name":"Kaisel"}""", rpcArgs(FindHunterArgs("Kaisel")).toString())
     }
+
+    /** `check (char_length(col) <= N)` ceilings declared in the migrations. */
+    private fun lengthCeiling(column: String): Int {
+        val re = Regex("""char_length\((?:trim\()?$column\)?\)\s*<=\s*(\d+)""")
+        val found = migrations.mapNotNull { re.find(it)?.groupValues?.get(1) }.lastOrNull()
+        requireNotNull(found) { "no char_length ceiling for $column in the migrations" }
+        return found.toInt()
+    }
+
+    /** `between LOW and HIGH` bounds declared in the migrations. */
+    private fun betweenBounds(column: String): Pair<Int, Int> {
+        val re = Regex("""char_length\(trim\($column\)\)\s*between\s*(\d+)\s*and\s*(\d+)""")
+        val m = migrations.firstNotNullOfOrNull { re.find(it) }
+        requireNotNull(m) { "no between-bounds for $column in the migrations" }
+        return m.groupValues[1].toInt() to m.groupValues[2].toInt()
+    }
+
+    @Test
+    fun `the client's field limits are the server's field limits`() {
+        // These are duplicated by necessity — one copy in SQL, one in Kotlin —
+        // so the pair gets a guard. A tightened constraint would otherwise
+        // surface as a sync that fails forever on one row, swallowed by the
+        // runCatching around the push.
+        assertEquals(
+            "sessions.title ceiling drifted from WireLimits",
+            lengthCeiling("title"),
+            WireLimits.SESSION_TITLE_MAX,
+        )
+        assertEquals(
+            "sessions.note ceiling drifted from WireLimits",
+            lengthCeiling("note"),
+            WireLimits.SESSION_NOTE_MAX,
+        )
+        val (low, high) = betweenBounds("display_name")
+        assertEquals("profiles.display_name minimum drifted", low, WireLimits.DISPLAY_NAME_MIN)
+        assertEquals("profiles.display_name maximum drifted", high, WireLimits.DISPLAY_NAME_MAX)
+    }
 }

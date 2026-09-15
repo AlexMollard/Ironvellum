@@ -99,6 +99,24 @@ open-work list.
   shipped baseline, walks the registered chain, and reads every one back.
   Mutation-proven: adding `DELETE FROM set_logs` to the 22->23 migration fails
   with `both logged sets must survive expected:<2> but was:<0>`.
+- **Field limits now have one source and a drift guard.** Chasing a suspected
+  mismatch between what the client accepts and what the server's `check`
+  constraints allow found the pair already correct — `take(80)` / `take(500)`
+  against `char_length(title) <= 80` / `note <= 500` — but held as bare
+  literals in two languages, plus `2..24` written out in four places for
+  `display_name`. `WireLimits` now declares them once, the repository and
+  account code read it, and `WireNamesMatchSchemaTest` parses the migrations
+  and fails on drift. Mutation-proven from the server side: tightening `note`
+  to 280 and raising the name minimum to 3 each fail with the exact column
+  named.
+
+  Worth recording what the same hunt disproved, since it looked like a live
+  defect: the Settings "Claim your name" field allows a **one-character** name
+  while the server demands two. That is not a sync bug — the device-local
+  profile name and the cloud handle are **different fields**. Only
+  `AccountRepository`'s handle reaches `profiles.display_name`, and it validates
+  `2..24` at both the screen (`nameValid`) and the call. `CloudSync` pushes
+  `me.displayName` (the account handle), never the local profile name.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:

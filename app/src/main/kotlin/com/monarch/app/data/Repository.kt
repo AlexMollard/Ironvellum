@@ -59,6 +59,7 @@ import com.monarch.app.domain.StatEntry
 import com.monarch.app.domain.StrengthIndex
 import com.monarch.app.domain.TitleDef
 import com.monarch.app.domain.Titles
+import com.monarch.app.data.cloud.WireLimits
 import com.monarch.app.domain.TrainingMode
 import com.monarch.app.domain.UnlockedTitle
 import com.monarch.app.domain.WorkoutPreset
@@ -608,11 +609,11 @@ class Repository(
      * The private note has no server constraint — it never leaves the device.
      */
     suspend fun setSessionTitle(sessionId: Long, title: String) {
-        sessionDao.setTitle(sessionId, title.trim().take(80))
+        sessionDao.setTitle(sessionId, title.trim().take(WireLimits.SESSION_TITLE_MAX))
     }
 
     suspend fun setSessionNote(sessionId: Long, note: String) {
-        sessionDao.setNote(sessionId, note.trim().take(500))
+        sessionDao.setNote(sessionId, note.trim().take(WireLimits.SESSION_NOTE_MAX))
     }
 
     suspend fun setSessionPrivateNote(sessionId: Long, privateNote: String) {
@@ -864,7 +865,7 @@ class Repository(
 
     suspend fun rename(name: String) {
         require(name.isNotBlank()) { "Name cannot be blank" }
-        profileDao.setName(name.trim().take(24))
+        profileDao.setName(name.trim().take(WireLimits.DISPLAY_NAME_MAX))
     }
 
     // ---------------------------------------------------------------- export
