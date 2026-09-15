@@ -702,7 +702,10 @@ class Repository(
                     name = p.name,
                     totalXp = p.totalXp,
                     currentTitleId = p.currentTitleId,
-                    trainingMode = TrainingMode.valueOf(p.trainingMode),
+                    // An unknown stored mode must not kill every screen that
+                    // observes the profile; line 321 already reads it this way.
+                    trainingMode = runCatching { TrainingMode.valueOf(p.trainingMode) }
+                        .getOrDefault(TrainingMode.STRENGTH),
                     inkStyle = p.inkStyle,
                 )
             }
@@ -875,7 +878,10 @@ class Repository(
                 it.name,
                 it.totalXp,
                 it.currentTitleId,
-                TrainingMode.valueOf(it.trainingMode),
+                // Export must not be the one action a bad stored mode can kill:
+                // it is how a hunter rescues their data.
+                runCatching { TrainingMode.valueOf(it.trainingMode) }
+                    .getOrDefault(TrainingMode.STRENGTH),
                 it.inkStyle,
             )
         } ?: PlayerProfile()
