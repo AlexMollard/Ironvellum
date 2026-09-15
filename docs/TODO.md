@@ -46,6 +46,19 @@ open-work list.
 - **Baseline profile / macrobenchmark.** Release cold start measured at a median
   **932 ms** on a software-GPU emulator, which is an upper bound. No evidence of
   a startup problem. Revisit only if a real-device measurement contradicts it.
+- **Previously regressed product rules, re-verified in code.** Each was listed as
+  a past regression and each currently holds: the weight stepper shows `BW`
+  rather than `0kg` stepping back from 2.5 (SessionScreen returns null, SkillDetail
+  renders `BW` at 0.0); sets are removable while at least one remains; modifiers
+  stay editable after an exercise is added; the celebration is a `Dialog`, so it
+  composes in its own window above everything; skill journal rows are clickable;
+  exercises rearrange via the preset editor's bounded up/down controls.
+- **Health Connect, audited against every known trap.** Grouped aggregation uses
+  `LocalDateTime` (Instant ranges throw and zero every day), one request per
+  metric so a single denial degrades only itself, manifest/request parity across
+  all seven permissions, the provider `<queries>` block and the
+  `VIEW_PERMISSION_USAGE` alias both present, and empty days are never written.
+  The daily `PeriodicWorkRequest` is enqueued from `MonarchApp.onCreate`.
 - **Lint's 10 remaining warnings.** Audited individually, all deliberate: 8 are
   `ModifierParameter` ordering convention, and the 2 asking for a plain
   `Modifier` default are the two composables that must carry their own size

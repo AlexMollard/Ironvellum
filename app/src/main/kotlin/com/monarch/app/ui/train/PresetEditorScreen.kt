@@ -143,7 +143,10 @@ class PresetEditorViewModel(
     fun moveEntry(index: Int, delta: Int) {
         val target = index + delta
         val list = _ui.value.entries.toMutableList()
-        if (target !in list.indices) return
+        // Both ends are checked: the index arrives from a rendered row, so a
+        // tap queued before a removal recomposes carries an index the list no
+        // longer has — which crashed on list[index] rather than doing nothing.
+        if (index !in list.indices || target !in list.indices) return
         val moved = list[index]
         list[index] = list[target]
         list[target] = moved
