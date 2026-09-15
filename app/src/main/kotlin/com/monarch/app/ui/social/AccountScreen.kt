@@ -673,7 +673,7 @@ private fun SignedInPanels(
                         value.uppercase(),
                         style = MaterialTheme.typography.labelMedium,
                         fontFamily = ChakraPetch,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
+                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
                         color = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
                         letterSpacing = MonarchTracking.InlineLabel,
                     )

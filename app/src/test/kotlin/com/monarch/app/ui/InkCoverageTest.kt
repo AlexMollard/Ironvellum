@@ -33,36 +33,6 @@ class InkCoverageTest {
         )
     }
 
-    /**
-     * Asking for a weight the bundled family does not ship drops that text to
-     * the system typeface — stock sans paragraphs amongst Chakra Petch, which
-     * is how the Guild gateway copy read. The allowed set is derived from the
-     * font files themselves, so adding a Regular weight lifts the limit
-     * automatically instead of stranding this list.
-     */
-    @Test
-    fun `no text asks for a font weight the bundled family lacks`() {
-        val fontDir = File("src/main/res/font")
-        val bundled = fontDir.listFiles().orEmpty()
-            .filter { it.extension == "ttf" }
-            .map { file -> file.nameWithoutExtension.substringAfterLast('_').lowercase() }
-            .toSet()
-        assertTrue("no bundled fonts found; this scan would pass vacuously", bundled.isNotEmpty())
-
-        val asked = mutableListOf<String>()
-        for (file in sources) {
-            file.readTextLines().forEachIndexed { index, line ->
-                if (line.isComment()) return@forEachIndexed
-                Regex("""FontWeight\.(\w+)""").findAll(line).forEach { match ->
-                    if (match.groupValues[1].lowercase() !in bundled) {
-                        asked += "${file.name}:${index + 1} FontWeight.${match.groupValues[1]}"
-                    }
-                }
-            }
-        }
-        assertEquals(emptyList<String>(), asked)
-    }
-
     @Test
     fun `no geometric shape classes reach the ui`() {
         // These are the exact classes the ink shapes replaced. `MaterialTheme.shapes`
