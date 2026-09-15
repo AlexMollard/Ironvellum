@@ -1,6 +1,7 @@
 # Continuous integration for Monarch.
 #
-# Runs on every push and pull request: debug build, unit tests, release lint.
+# Runs on every push and pull request: debug build, unit tests, release lint,
+# and compilation of the instrumented tests.
 # Reports are uploaded as build artifacts.
 #
 # Secrets: this repo reads backend config from local.properties (gitignored).
@@ -35,6 +36,7 @@ jobs:
         uses: actions/setup-java@v6
         with:
           distribution: temurin
+          # Matches app/build.gradle.kts compileOptions (JavaVersion.VERSION_17).
           java-version: '17'
 
       - name: Set up Gradle
@@ -65,6 +67,17 @@ jobs:
       - name: Release lint
         run: ./gradlew :app:lintRelease
 
+      # assembleDebug does NOT compile src/androidTest, so instrumented tests
+      # (Room migrations etc.) can be committed broken and go unnoticed until
+      # someone attaches a device. This compiles them without needing one.
+      - name: Compile instrumented tests
+        run: ./gradlew :app:assembleDebugAndroidTest
+
+      # A signed release is a local/owner step: the keystore is a credential
+      # and must never enter CI. Release-variant lint coverage is already
+      # provided by the :app:lintRelease step above; the signed APK is built
+      # and verified locally only.
+
       - name: Upload lint reports
         if: always()
         uses: actions/upload-artifact@v6
@@ -73,6 +86,13 @@ jobs:
           path: |
             app/build/reports/lint-results-release.html
             app/build/reports/lint-results-release.xml
+
+      - name: Upload androidTest outputs
+        if: failure()
+        uses: actions/upload-artifact@v6
+        with:
+          name: androidtest-outputs
+          path: app/build/outputs/androidTest-results/
 
       - name: Upload test reports
         if: always()

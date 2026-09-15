@@ -52,19 +52,22 @@ uploaded to the cloud.
 
 ## What leaves the device (signed-in users only)
 
-Sign-in is Google Sign-In via Android Credential Manager
-(`data/cloud/AccountRepository.kt`, androidx.credentials + googleid). If you
-sign in, the app syncs to the project's Supabase backend (PostgreSQL over
-HTTPS/TLS) exactly these things (`data/cloud/CloudSync.kt`):
+Sign-in is either Google Sign-In via Android Credential Manager
+(`data/cloud/AccountRepository.kt`, androidx.credentials + googleid) or email
+plus password (`AccountRepository.signUp`/`signIn`, supabase-kt `Email`
+provider). Either way your email address — and, for email sign-in, your
+password — is sent to Supabase Auth over HTTPS/TLS; the app itself never
+stores the password. If you sign in, the app syncs to the project's Supabase
+backend (PostgreSQL over HTTPS/TLS) exactly these things
+(`data/cloud/CloudSync.kt`):
 
 | Data | Cloud table(s) |
-|---|---|
+| Email address — your sign-in identity, held by Supabase Auth (from email/password sign-up, or your Google account on Google sign-in) | Supabase `auth.users`; the app never reads it back beyond restoring its own session (`AccountRepository.kt`) |
 | Display name, profile visibility setting, level, total XP, streak days, title count, lifetime strength, worn title | `profiles` |
 | Idle-game aggregates (shadow essence, shadow count, shadow rate) — the idle accrual clock itself stays on-device | `profiles` columns (migration `0008`) |
 | Completed sessions: label, public title (≤80 chars), public note (≤500 chars), timestamps, XP, strength score | `sessions` |
 | Set rows: exercise name, set index, reps, weight, modifiers, done | `session_sets` |
 | Unlocked titles with timestamps | `earned_titles` |
-| Level-up events | `level_ups` |
 | Likes you give/receive | `session_likes` |
 | Friend requests / friendships | `friendships` |
 

@@ -21,7 +21,18 @@ Windows: `.\gradlew.bat <task>`.
    monarch.key.alias=monarch
    monarch.key.password=...
    ```
-3. Verify configuration succeeds even without keys:
+4. Add the three backend keys to `local.properties` (gitignored). They become
+   BuildConfig fields `SUPABASE_URL`, `SUPABASE_KEY`, `GOOGLE_WEB_CLIENT_ID`:
+   ```
+   supabase.url=https://<project>.supabase.co
+   supabase.key=<anon key>
+   google.webClientId=<web client id>.apps.googleusercontent.com
+   ```
+   Debug builds work with these blank (cloud degrades gracefully,
+   `Cloud.configured == false`), but a RELEASE build without them ships an app
+   whose social features can never sign in — treat them as mandatory for the
+   release build and confirm the values are non-blank before step 3.
+5. Verify configuration succeeds even without keys:
    `.\gradlew.bat :app:assembleRelease` (with keys: check
    `app/build/outputs/apk/release/` is signed; without: unsigned APK is fine
    for CI).

@@ -66,9 +66,22 @@ Code references:
   never holds the accrual clock".
 
 ### Identifiers — Google account user ID (collected, not shared beyond backend)
-- Sign-in is Google via Credential Manager (`AR`); Supabase auth issues an
-  internal UUID used as the row key in every table. Purpose: account
+- Sign-in is Google via Credential Manager, or email/password via Supabase
+  Auth (`AR`); either way Supabase auth issues an internal UUID used as the
+  row key in every table. Purpose: account
   management. Optional (sign-in only). Not shared with third parties.
+
+### Personal info — email address (collected, not shared)
+- Collected: **Yes** — email/password sign-up sends the email (and password,
+  over TLS, never stored by the app) to Supabase Auth
+  (`AccountRepository.signUp`/`signIn`, `Email` provider); Google sign-in
+  populates the auth user's email too (`AccountRepository.signInWithGoogle`).
+  The app never reads the email back beyond restoring its own session, and no
+  PostgREST table the app touches contains it.
+- Shared: **No** (held by Supabase Auth only). Optional: **Yes** (sign-in
+  only). Purpose: App functionality — account management.
+- Deletion: tied to the auth identity, which in-app deletion deliberately
+  retains (see Q1) — removal requires a server-side service-role action.
 
 ### App interactions — likes, friend requests (collected, shared)
 - `session_likes`, `friendships` (`M1`, `M4`). Optional; purpose: social
@@ -80,12 +93,14 @@ Code references:
 
 ## Deletion
 
-Currently: uninstall removes all local data; **no in-app deletion path exists
-for cloud rows** (verified: no `deleteUser`/`deleteAccount`/bulk cloud delete
-call anywhere under `app/src/main/kotlin` or `supabase/`). Server schema
-supports owner-only deletes via RLS (`profiles_delete`, `sessions_write`,
-etc., `M1`), so deletion is technically possible per-row, but no user-facing
-flow exists.
+- **Local data:** uninstall (or Android "clear storage") removes `monarch.db`
+  and everything else in the app's private storage.
+- **Cloud data:** in-app deletion exists — Guild → ALLIES → ERASE MY CLOUD
+  DATA calls `AccountRepository.deleteCloudData()`, deleting the caller's
+  `profiles` row under the owner-only `profiles_delete` RLS policy; every
+  other table cascades from it (`0001_init.sql`). The auth identity (email) is
+  retained by design; removing it needs service-role credentials, so it is a
+  server-side action by the project owner.
 
 ## OPEN QUESTIONS (owner must decide; do not submit the form until resolved)
 
