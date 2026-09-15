@@ -147,8 +147,23 @@ class SessionViewModel(
         viewModelScope.launch { repo.addExtraSet(sessionId, exerciseId, 10, null, "") }
     }
 
+    private var completing = false
+
     fun complete(onResult: (Repository.CompletionResult) -> Unit) {
-        viewModelScope.launch { onResult(repo.completeSession(sessionId)) }
+        // One completion per session, whatever the button does. The repository
+        // already refuses a second one (a `check` inside the transaction, and
+        // two concurrent callers pay exactly once — DoubleCompletionTest), but
+        // it refuses by THROWING, and this launch has no catch: a second tap
+        // landing before the victory overlay replaces the button would take the
+        // exception straight into viewModelScope. So the second tap is dropped
+        // here, and a genuine failure is surfaced rather than crashing.
+        if (completing) return
+        completing = true
+        viewModelScope.launch {
+            runCatching { repo.completeSession(sessionId) }
+                .onSuccess(onResult)
+                .onFailure { completing = false }
+        }
     }
 
     // Save-on-blur handlers: one write per field edit, never per keystroke.

@@ -160,6 +160,19 @@ open-work list.
   absurd figure takes hundreds of deliberate taps; and the weight field accepts
   non-digits where the height field filters them, which is harmless because the
   button gate is what decides (verified on device).
+- **Double-tapping CLAIM VICTORY cannot mint XP twice, and can no longer
+  throw.** The economy half was already safe and is now pinned: two completions
+  of one session — sequential *and* two concurrent callers in flight before
+  either commits — pay exactly once (`DoubleCompletionTest`, asserting the
+  profile's total XP and the completed count, not just the exception). The
+  hole was how the refusal arrived: `completeSession` enforces the invariant
+  with a `check` inside the transaction, so the losing caller **throws**, and
+  the view model launched it into `viewModelScope` with no catch — a second tap
+  landing before the victory overlay replaced the button took the exception
+  straight into the coroutine scope. The view model now drops a second tap and
+  surfaces a genuine failure instead of crashing. Verified on device: four taps
+  issued with no gap on a live session leave the crash buffer empty and pay
+  `total 25 XP` once.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:
