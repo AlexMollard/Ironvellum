@@ -223,6 +223,7 @@ fun PresetEditorScreen(
         )
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
             value = ui.name,
             onValueChange = viewModel::setName,
             label = { Text("Preset name (e.g. Heavy Pull)") },
@@ -231,6 +232,7 @@ fun PresetEditorScreen(
         )
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
             value = ui.note,
             onValueChange = viewModel::setNote,
             label = { Text("Note / mantra") },
@@ -405,6 +407,7 @@ private fun EntryRow(
         }
         Spacer(Modifier.height(6.dp))
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
             value = entry.modifiers,
             onValueChange = { onEntry(entry.copy(modifiers = it.take(60))) },
             label = { Text("Modifiers (weighted, deficit, elevated…)") },
@@ -422,6 +425,7 @@ private fun NumberField(
     onValueChange: (String) -> Unit,
 ) {
     OutlinedTextField(
+        shape = MaterialTheme.shapes.small,
         value = value,
         onValueChange = { input -> onValueChange(input.filter { it.isDigit() || it == '.' }.take(7)) },
         label = { Text(label) },

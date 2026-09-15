@@ -813,6 +813,7 @@ private fun SessionNotesEditor(
         Spacer(Modifier.height(10.dp))
 
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
             value = title,
             onValueChange = { title = it.take(TITLE_CAP) },
             singleLine = true,
@@ -833,6 +834,7 @@ private fun SessionNotesEditor(
         Spacer(Modifier.height(10.dp))
 
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
             value = publicNote,
             onValueChange = { publicNote = it.take(PUBLIC_NOTE_CAP) },
             minLines = 2,
@@ -853,6 +855,7 @@ private fun SessionNotesEditor(
         Spacer(Modifier.height(10.dp))
 
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
             value = privateNote,
             onValueChange = { privateNote = it },
             minLines = 2,

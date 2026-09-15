@@ -477,6 +477,7 @@ private fun AuthPanels(
             Spacer(Modifier.height(14.dp))
         }
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
             value = email,
             onValueChange = { email = it.trim() },
             label = { Text("Hunter email") },
@@ -486,6 +487,7 @@ private fun AuthPanels(
         )
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
             value = password,
             onValueChange = { password = it },
             label = { Text("Sigil phrase (min 6)") },
@@ -497,6 +499,7 @@ private fun AuthPanels(
         if (mode == AuthMode.SIGN_UP) {
             Spacer(Modifier.height(10.dp))
             OutlinedTextField(
+                shape = MaterialTheme.shapes.small,
                 value = displayName,
                 onValueChange = { displayName = it.take(24) },
                 label = { Text("Hunter name (2–24)") },
@@ -897,6 +900,7 @@ private fun ClaimNamePanel(
         )
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
             value = name,
             onValueChange = { name = it.take(24) },
             label = { Text("Hunter name (2–24)") },
@@ -1023,6 +1027,7 @@ private fun FriendsPanel(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             OutlinedTextField(
+                shape = MaterialTheme.shapes.small,
                 value = friendName,
                 onValueChange = { friendName = it.take(24) },
                 label = { Text("Ally's hunter name") },

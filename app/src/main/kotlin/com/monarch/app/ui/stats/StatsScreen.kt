@@ -818,6 +818,7 @@ private fun AddStatDialog(
                     color = MonarchColors.Emerald,
                 )
                 OutlinedTextField(
+                    shape = MaterialTheme.shapes.small,
                     value = weight.value,
                     onValueChange = { weight.value = it },
                     label = { Text("Weight (kg)") },
@@ -825,6 +826,7 @@ private fun AddStatDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
+                    shape = MaterialTheme.shapes.small,
                     value = bodyFat.value,
                     onValueChange = { bodyFat.value = it },
                     label = { Text("Body fat % — optional") },
@@ -858,6 +860,7 @@ private fun AddStatDialog(
                     )
                     listOf("NECK (cm)" to neck, "WAIST (cm)" to waist).forEach { (label, field) ->
                         OutlinedTextField(
+                            shape = MaterialTheme.shapes.small,
                             value = field.value,
                             onValueChange = { field.value = it },
                             label = { Text(label) },
@@ -867,6 +870,7 @@ private fun AddStatDialog(
                     }
                     if (sex == Sex.FEMALE) {
                         OutlinedTextField(
+                            shape = MaterialTheme.shapes.small,
                             value = hips.value,
                             onValueChange = { hips.value = it },
                             label = { Text("HIPS (cm)") },

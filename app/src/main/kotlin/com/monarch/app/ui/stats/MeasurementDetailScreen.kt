@@ -211,6 +211,7 @@ fun MeasurementDetailScreen(
             Spacer(Modifier.height(12.dp))
             val parsedNow = parseCm(readingInput)
             OutlinedTextField(
+                shape = MaterialTheme.shapes.small,
                 value = readingInput,
                 onValueChange = { readingInput = sanitizeCm(it) },
                 label = { Text("Circumference (cm)") },

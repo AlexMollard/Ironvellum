@@ -382,6 +382,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
+                    shape = MaterialTheme.shapes.small,
                     value = name,
                     onValueChange = { name = it.take(24) },
                     label = { Text("Claim your name") },
@@ -418,6 +419,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(10.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
+                    shape = MaterialTheme.shapes.small,
                     value = heightInput,
                     onValueChange = { heightInput = it.filter { c -> c.isDigit() || c == '.' }.take(6) },
                     label = { Text(if (bodyProfile.first == null) "Height (cm) — required for BMI" else "Height (cm)") },

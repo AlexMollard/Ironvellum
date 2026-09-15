@@ -254,8 +254,15 @@ fun Modifier.inkBorder(
     shape: Shape,
     width: Dp = 1.5.dp,
 ): Modifier = this.drawBehind {
-    val outline = shape.createOutline(size, layoutDirection, this)
-    val path = (outline as? Outline.Generic)?.path ?: return@drawBehind
+    // Every outline kind is handled on purpose. An earlier version bailed out
+    // on anything that was not Outline.Generic, which meant a border on a
+    // CircleShape or RoundedCornerShape silently drew NOTHING - a vanished
+    // border with a green build and no warning.
+    val path = when (val outline = shape.createOutline(size, layoutDirection, this)) {
+        is Outline.Generic -> outline.path
+        is Outline.Rounded -> Path().apply { addRoundRect(outline.roundRect) }
+        is Outline.Rectangle -> Path().apply { addRect(outline.rect) }
+    }
     drawPath(path, color.copy(alpha = color.alpha * 0.35f), style = Stroke(width.toPx() * 2.6f))
     drawPath(path, color, style = Stroke(width.toPx()))
 }
