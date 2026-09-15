@@ -258,6 +258,15 @@ open-work list.
   rather than columns; the check that works is listing what the client actually
   writes and asking which category declares it.
 
+  The crash journal — which stands in for a crash-reporting SDK — was verified
+  with a real crash for the first time: `am crash` routes through the app's
+  `UncaughtExceptionHandler`, a record lands in `files/crash/` (893 bytes with
+  app version, API level, device, thread and the full stack), and after
+  relaunching, Settings reads `1 crash record · latest 2026-09-15T15:22:49Z`.
+  Two traps: the section sits below the fold, so a dump without scrolling says
+  "none" and looks like a failure, and `am crash` kills the process — the
+  journal being readable afterwards is the point, not a side effect.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
