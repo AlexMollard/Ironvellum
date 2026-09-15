@@ -73,7 +73,7 @@ abstract class MonarchDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 22
+        const val VERSION = 23
         // Height and sex move onto the profile (set once in Settings) so the
         // stat log no longer asks for height on every reading. heightCm is
         // backfilled from the newest stat row that actually carries one; with
@@ -243,6 +243,17 @@ abstract class MonarchDatabase : RoomDatabase() {
                 )
             }
         }
+        /**
+         * CLEAN is now the default appearance. Overwriting the stored value is
+         * acceptable: the toggle is unreleased, so no user has expressed a
+         * preference yet. The table is `profile` (singular).
+         */
+        private val MIGRATION_22_23 = object : Migration(22, 23) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("UPDATE profile SET inkStyle = 0")
+            }
+        }
+
 
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
@@ -256,6 +267,7 @@ abstract class MonarchDatabase : RoomDatabase() {
             MIGRATION_19_20,
             MIGRATION_20_21,
             MIGRATION_21_22,
+            MIGRATION_22_23,
         )
 
         fun create(context: Context): MonarchDatabase =

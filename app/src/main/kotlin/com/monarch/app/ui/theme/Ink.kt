@@ -55,7 +55,7 @@ import kotlin.random.Random
  * The flag is mirrored from the stored profile at startup; see MonarchTheme.
  */
 object InkStyle {
-    var enabled by mutableStateOf(true)
+    var enabled by mutableStateOf(false)
 }
 
 /** Segments per edge. Too few reads as a polygon; too many smooths back into a straight line. */

@@ -116,8 +116,8 @@ data class ProfileEntity(
     val heightCm: Double? = null,
     /** Sex enum name; feeds the Navy body-fat estimator. */
     val sex: String = "MALE",
-    /** Hand-drawn ink chrome. On by default; off restores the plain geometry. */
-    val inkStyle: Boolean = true,
+    /** CLEAN is the default look; ink is the opt-in hand-drawn treatment. */
+    val inkStyle: Boolean = false,
 )
 
 @Entity(tableName = "skill_practices")

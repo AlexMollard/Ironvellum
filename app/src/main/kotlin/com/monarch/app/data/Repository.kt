@@ -714,7 +714,7 @@ class Repository(
     suspend fun setTrainingMode(mode: TrainingMode) = profileDao.setTrainingMode(mode.name)
 
     /** Hand-drawn chrome on or off; mirrored into InkStyle so draw code can read it. */
-    fun observeInkStyle(): Flow<Boolean> = profileDao.observe().map { it?.inkStyle ?: true }
+    fun observeInkStyle(): Flow<Boolean> = profileDao.observe().map { it?.inkStyle ?: false }
 
     suspend fun setInkStyle(on: Boolean) = profileDao.setInkStyle(on)
 
