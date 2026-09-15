@@ -8,9 +8,11 @@ import com.monarch.app.ui.train.PresetEditorViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withContext
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -37,13 +39,13 @@ class PresetEditorReorderTest {
         vm = withContext(Dispatchers.Main) { PresetEditorViewModel(repo, presetId = null) }
         // The editor needs its catalogue loaded before addEntry() has anything
         // to add; it loads asynchronously.
-        // runBlocking, not runTest: under runTest `delay` is virtual and this
-        // loop spins instantly, so the wait is only a wait in real time.
-        var waited = 0
-        while (vm.ui.value.exercises.isEmpty() && waited < 100) {
-            kotlinx.coroutines.delay(50); waited++
-        }
-        assertEquals("the editor must load its catalogue", true, vm.ui.value.exercises.isNotEmpty())
+        // Await the state itself rather than sleeping: the catalogue loads in
+        // the ViewModel's init, so a fixed delay is a race either way. Under
+        // runTest this would also be virtual time and never wait at all.
+        val loaded = withTimeout(10_000) { vm.ui.first { it.exercises.isNotEmpty() } }
+        // Also keeps setUp returning Unit: an expression-bodied @Before that
+        // yields a value fails JUnit's validation before any test runs.
+        assertTrue("the editor must load its catalogue", loaded.exercises.isNotEmpty())
     }
 
     @After
