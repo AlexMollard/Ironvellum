@@ -208,6 +208,14 @@ open-work list.
 
 
 
+  The minified release build was re-smoked after all of this, since R8 problems
+  only appear there: `assembleRelease` is clean at 7.2 MB, debug-signed with
+  `apksigner` (verify returns 0, `CN=Android Debug`), installed, and all six
+  destinations render with an empty crash buffer. Still unexercised in release:
+  the Supabase DTO serializers, which only run once signed in — that is the
+  shape R8 breaks most often, so it stays on the owner's list rather than being
+  claimed here.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day
