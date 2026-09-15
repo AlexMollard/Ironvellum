@@ -292,6 +292,20 @@ open-work list.
   the timing test fails above 150ms. The rest of the violations are framework
   work at startup (`ActivityThread`, preference and profile loading), not ours.
 
+  Then StrictMode earned its place by finding a live one: opening Settings read
+  the crash journal **during composition**, so every visit listed a directory on
+  the main thread (`SettingsScreen.kt:317-318` → `CrashJournal.crashCount()` and
+  `latestTimestamp()`), and the Clear button did the same on the tap's own
+  frame. Both now run on `Dispatchers.IO`. Navigating all six destinations plus
+  Settings afterwards reports **zero violations in our code**.
+
+  That zero is only worth something because the same run proves the detector was
+  live: launching with the log cleared reports 10 violations first. An earlier
+  version of this check reported "no violations" while the app was not even
+  installed — the instrumented gate uninstalls it — so the control comes first
+  now. And the async read was proven to actually read: with a real crash
+  recorded, Settings shows `1 crash record · latest …`, not the default zero.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day

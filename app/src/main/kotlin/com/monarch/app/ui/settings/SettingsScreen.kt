@@ -24,6 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -314,8 +315,19 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     var name by remember(profile?.name) { mutableStateOf(profile?.name ?: "") }
     var confirmImport by remember { mutableStateOf(false) }
-    var crashCount by remember { mutableIntStateOf(CrashJournal.crashCount()) }
-    var latestCrash by remember { mutableStateOf(CrashJournal.latestTimestamp()?.substringAfter("—")?.trim().orEmpty()) }
+    // Read off the main thread: these list a directory, and doing that during
+    // composition is main-thread disk I/O on every visit to this screen —
+    // which is what StrictMode reported. The counts arrive a frame later.
+    var crashCount by remember { mutableIntStateOf(0) }
+    var latestCrash by remember { mutableStateOf("") }
+    LaunchedEffect(Unit) {
+        withContext(Dispatchers.IO) {
+            CrashJournal.crashCount() to CrashJournal.latestTimestamp()
+        }.let { (count, latest) ->
+            crashCount = count
+            latestCrash = latest?.substringAfter("—")?.trim().orEmpty()
+        }
+    }
     val bodyProfile by viewModel.bodyProfile.collectAsStateWithLifecycle()
     var heightInput by remember(bodyProfile.first) { mutableStateOf(bodyProfile.first?.toString() ?: "") }
     val heightValid = heightInput.toDoubleOrNull()?.let { it > 0.0 } == true
@@ -682,9 +694,18 @@ fun SettingsScreen(
                 MonarchButton(
                     label = "Clear Crash Log",
                     onClick = {
-                        CrashJournal.clear()
-                        crashCount = CrashJournal.crashCount()
-                        latestCrash = CrashJournal.latestTimestamp()?.substringAfter("—")?.trim() ?: ""
+                        // Deleting and re-counting are both disk work: do them
+                        // in the background like the initial read, or the tap
+                        // blocks the frame it was made on.
+                        scope.launch {
+                            withContext(Dispatchers.IO) {
+                                CrashJournal.clear()
+                                CrashJournal.crashCount() to CrashJournal.latestTimestamp()
+                            }.let { (count, latest) ->
+                                crashCount = count
+                                latestCrash = latest?.substringAfter("—")?.trim().orEmpty()
+                            }
+                        }
                     },
                 )
             }
