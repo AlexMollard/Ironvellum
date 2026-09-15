@@ -52,4 +52,37 @@ class SkillsTest {
         assertEquals(120, Skills.forName("Dead Hang")!!.xp)
         assertEquals(600, Skills.forName("Full Planche")!!.xp)
     }
+
+    /**
+     * Names are the identity here: `requires` points at a name, and `forName`
+     * resolves by it. Two skills sharing one name makes the tree's shape depend
+     * on list order, and one of them unreachable.
+     */
+    @Test
+    fun `skill names are unique`() {
+        val duplicates = Skills.ALL.groupingBy { it.name }.eachCount().filter { it.value > 1 }
+        assertEquals(emptyMap<String, Int>(), duplicates)
+    }
+
+    /**
+     * A prerequisite loop locks every skill in it forever: each waits on the
+     * other, `unlocked()` is false for both, and no amount of training opens
+     * them. It cannot be noticed by playing — only by walking the tree.
+     */
+    @Test
+    fun `no skill waits on itself, directly or through its line`() {
+        val parentOf = Skills.ALL.associate { it.name to it.requires }
+        Skills.ALL.forEach { skill ->
+            val seen = linkedSetOf(skill.name)
+            var cursor = skill.requires
+            while (cursor != null) {
+                assertTrue(
+                    "prerequisite loop: ${seen.joinToString(" -> ")} -> $cursor",
+                    cursor !in seen,
+                )
+                seen += cursor
+                cursor = parentOf[cursor]
+            }
+        }
+    }
 }
