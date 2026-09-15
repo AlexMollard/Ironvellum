@@ -64,6 +64,29 @@ open-work list.
 - **Baseline profile / macrobenchmark.** Release cold start measured at a median
   **932 ms** on a software-GPU emulator, which is an upper bound. No evidence of
   a startup problem. Revisit only if a real-device measurement contradicts it.
+- **Stated product rules audited against the code, with citations.** The idle
+  cap was the only violation found (see the decisions table). Each of these was
+  checked rather than recalled:
+  - *Titles: at least 25 earnable.* 96 `TitleDef(` entries in `TitleEngine.kt`.
+  - *Every achievement type reaches the celebration screen, not just skill
+    unlocks.* Six banners across four screens: `TITLE EARNED` and `LEVEL UP`
+    and `CLASS UNLOCKED` (`SessionScreen`), `TECHNIQUE MASTERED` and
+    `A SHADOW STIRS` (`TitlesScreen`), `SHADOW DRAWN` (`IdleScreen`), plus the
+    dashboard paying out titles reconciled at startup where no session existed
+    to celebrate in.
+  - *Line charts, never bar charts.* No bar-chart composable exists; every
+    series goes through `TrendChart`.
+  - *Measurements carry no targets* (the owner's reversal). The
+    `measurement_goals` table is dropped in a migration and no target field
+    survives.
+  - *The equipped crest drives the plate's border colour.*
+    `HunterSigil(frameId = equippedFrame)` derives `frameColor` from the
+    crest's treatment and draws both the plate and its hairline with it.
+  - *Home shows the step count and the step target.* `StepGauge(steps, goal)`
+    sweeps the goal with the count in the middle.
+  - *Journal fractions must be explainable.* The card already reads
+    `"4/11 mastered"` in place, and tapping it opens the skill tree filtered to
+    that line — the fraction is legible without the tap and provable with it.
 - **Previously regressed product rules, re-verified in code.** Each was listed as
   a past regression and each currently holds: the weight stepper shows `BW`
   rather than `0kg` stepping back from 2.5 (SessionScreen returns null, SkillDetail
