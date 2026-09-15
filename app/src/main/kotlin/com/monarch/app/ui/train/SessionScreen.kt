@@ -10,6 +10,8 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -610,30 +612,46 @@ private fun SetRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
         // Material's checkbox is a rounded square with a machine-drawn tick,
-        // the last stock control in the app. This is the same target size and
-        // toggle behaviour, drawn as an inked plate with a struck mark.
+        // the last stock control in the app. Swapping it for a drawn plate is a
+        // styling change; the SEMANTICS are not optional, so they are restored
+        // explicitly here:
+        //  - toggleable(role = Role.Checkbox) carries checked state and the role
+        //    announcement that a bare clickable drops entirely,
+        //  - the outer 48dp box keeps Material's minimum touch target, which a
+        //    26dp visual would otherwise shrink (and which also restores the
+        //    row spacing Material's own 48dp reservation gave this row).
         Box(
             Modifier
-                .size(26.dp)
-                .background(
-                    if (done) MonarchColors.SystemGreen.copy(alpha = 0.18f) else Color.Transparent,
-                    MaterialTheme.shapes.extraSmall,
-                )
-                .inkBorder(
-                    if (done) MonarchColors.SystemGreen else MonarchColors.Bracket,
-                    MaterialTheme.shapes.extraSmall,
-                    1.5.dp,
-                )
-                .clickable { onChange(reps, weightKg, !done) },
+                .size(48.dp)
+                .toggleable(
+                    value = done,
+                    role = Role.Checkbox,
+                    onValueChange = { onChange(reps, weightKg, it) },
+                ),
             contentAlignment = Alignment.Center,
         ) {
-            if (done) {
-                Text(
-                    "\u2713",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontFamily = ChakraPetch,
-                    color = MonarchColors.SystemGreen,
-                )
+            Box(
+                Modifier
+                    .size(26.dp)
+                    .background(
+                        if (done) MonarchColors.SystemGreen.copy(alpha = 0.18f) else Color.Transparent,
+                        MaterialTheme.shapes.extraSmall,
+                    )
+                    .inkBorder(
+                        if (done) MonarchColors.SystemGreen else MonarchColors.Bracket,
+                        MaterialTheme.shapes.extraSmall,
+                        1.5.dp,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (done) {
+                    Text(
+                        "\u2713",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.SystemGreen,
+                    )
+                }
             }
         }
         Text(

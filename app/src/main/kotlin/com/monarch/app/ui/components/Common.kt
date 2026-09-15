@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.background
@@ -366,7 +367,9 @@ fun InkSpinner(
         animationSpec = infiniteRepeatable(tween(900, easing = LinearEasing)),
         label = "spinAngle",
     )
-    Canvas(modifier.size(size)) {
+    // progressSemantics() is what Material's indeterminate indicator carries;
+    // a bare Canvas announces nothing to a screen reader.
+    Canvas(modifier.size(size).progressSemantics()) {
         val r = this.size.minDimension / 2f - 2.dp.toPx()
         inkArc(
             center = Offset(this.size.width / 2f, this.size.height / 2f),
