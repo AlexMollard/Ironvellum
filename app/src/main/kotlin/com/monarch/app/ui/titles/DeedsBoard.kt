@@ -593,7 +593,7 @@ private fun DeedRow(def: TitleDef, progress: Titles.Progress, unlockedAtMs: Long
                         color = MonarchColors.Ink,
                     )
                     Text(
-                        if (claimed) "claimed ${formatDate(unlockedAtMs!!, "d MMM yyyy")}" else def.description,
+                        if (claimed) "claimed ${formatDate(unlockedAtMs, "d MMM yyyy")}" else def.description,
                         style = MaterialTheme.typography.labelSmall,
                         color = if (claimed) MonarchColors.SovereignGold else MonarchColors.InkMuted,
                         maxLines = 1,

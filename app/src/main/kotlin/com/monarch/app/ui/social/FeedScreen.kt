@@ -17,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Favorite
@@ -26,7 +27,6 @@ import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Repeat
 import androidx.compose.material.icons.outlined.Schedule
-import androidx.compose.material.icons.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -963,7 +963,7 @@ private fun MovementLine(entry: FeedEntry) {
                     .padding(horizontal = 8.dp, vertical = 4.dp),
             ) {
                 Icon(
-                    Icons.Outlined.TrendingUp,
+                    Icons.AutoMirrored.Outlined.TrendingUp,
                     contentDescription = null,
                     tint = MonarchColors.SovereignGold,
                     modifier = Modifier.size(12.dp),

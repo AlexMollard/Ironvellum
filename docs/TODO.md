@@ -80,6 +80,15 @@ open-work list.
   nothing until the positive case is located.** Search for the setter the UI
   actually calls and for enum-derived labels, never for the enum's literal
   values.
+- **Compiler warnings are at zero, and one of the four was an RTL bug.** The
+  feed's trend glyph used `Icons.Outlined.TrendingUp`, which does not mirror —
+  in the RTL layout just verified it would have pointed down-left while the
+  numbers rose. Now `Icons.AutoMirrored.Outlined.TrendingUp`. Honest limit: the
+  card it sits on needs a signed-in feed, so the mirroring rests on the
+  framework's guarantee rather than on a screenshot. The other three were
+  noise and are gone anyway: a redundant `as T` cast, a `!!` on a value the
+  compiler already knew was non-null, and a stray `Unit` expression that is now
+  an early-return guard.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:

@@ -425,9 +425,8 @@ class CloudSync(
         }.onSuccess {
             cache.invalidate(CloudReadCache.KEY_FRIENDS)
         }.recoverCatching { error ->
-            if (error is PostgrestRestException && error.code == "23505") {
-                Unit // Already requested or already friends — nothing to do.
-            } else {
+            // Already requested or already friends: nothing to do.
+            if (error !is PostgrestRestException || error.code != "23505") {
                 throw IllegalStateException(Cloud.explain(error))
             }
         }
@@ -766,8 +765,7 @@ private class CloudReadCache {
                 }
             }
             mine.complete(value)
-            @Suppress("UNCHECKED_CAST")
-            value as T
+            value
         } catch (error: Throwable) {
             mine.completeExceptionally(error)
             lock.withLock { if (slots[key] === mine) slots.remove(key) }
