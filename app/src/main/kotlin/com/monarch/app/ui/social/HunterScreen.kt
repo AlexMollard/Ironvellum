@@ -1,7 +1,6 @@
 package com.monarch.app.ui.social
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -51,6 +50,7 @@ import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchTracking
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -443,7 +443,7 @@ private fun GhostBackButton(onBack: () -> Unit) {
         Modifier
             .clip(shape)
             .background(Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)), shape)
-            .border(1.dp, MonarchColors.Rune, shape)
+            .inkBorder(MonarchColors.Rune, shape, 1.dp)
             .clickable(onClick = onBack)
             .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {
@@ -485,7 +485,7 @@ private fun AllyChip(
         Modifier
             .then(if (tappable) Modifier.clickable(onClick = onClick) else Modifier)
             .background(Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)), shape)
-            .border(1.dp, accent, shape)
+            .inkBorder(accent, shape, 1.dp)
             .padding(horizontal = 14.dp, vertical = 7.dp),
     ) {
         Text(

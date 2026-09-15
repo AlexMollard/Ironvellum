@@ -230,6 +230,8 @@ fun PresetsScreen(
         }
         ExtendedFloatingActionButton(
             onClick = onNew,
+            // The M3 FAB's container shape comes from its own defaults, not the theme.
+            shape = MaterialTheme.shapes.small,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(20.dp),

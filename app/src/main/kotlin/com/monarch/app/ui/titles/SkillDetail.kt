@@ -8,7 +8,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -46,6 +45,7 @@ import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.components.InkRail
 import com.monarch.app.ui.theme.inkBorder
+import com.monarch.app.ui.theme.inkHairline
 import com.monarch.app.ui.theme.MonarchColors
 import kotlin.math.sin
 import kotlin.random.Random
@@ -242,7 +242,7 @@ fun SkillDetailDialog(
                         Modifier
                             .fillMaxWidth()
                             .background(Color(0xFF101614), readoutShape)
-                            .border(1.dp, MonarchColors.Rune, readoutShape)
+                            .inkBorder(MonarchColors.Rune, readoutShape, 1.dp)
                             .padding(vertical = 10.dp, horizontal = 8.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
@@ -349,7 +349,8 @@ fun SkillDetailDialog(
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(14.dp))
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(MonarchColors.Rune))
+                    // Brushed divider, not a ruled 1dp rectangle.
+                    Box(Modifier.fillMaxWidth().height(1.dp).inkHairline(MonarchColors.Rune, seed = 7, thickness = 1.dp))
                     Spacer(Modifier.height(14.dp))
                     MonarchButton(
                         "Claim mastery",
@@ -426,7 +427,7 @@ private fun QuickChip(
                 },
                 shape,
             )
-            .border(1.dp, if (selected) MonarchColors.SystemGreen else MonarchColors.Rune, shape)
+            .inkBorder(if (selected) MonarchColors.SystemGreen else MonarchColors.Rune, shape, 1.dp)
             .clickable { onClick() }
             .padding(vertical = 8.dp),
         contentAlignment = Alignment.Center,

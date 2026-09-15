@@ -1,7 +1,6 @@
 package com.monarch.app.ui.titles
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -97,7 +96,7 @@ private fun RarityChip(rarity: TitleRarity, modifier: Modifier = Modifier) {
     Box(
         modifier
             .background(bg, shape)
-            .border(if (rarity == TitleRarity.Sovereign) 2.dp else 1.dp, accent, shape)
+            .inkBorder(accent, shape, if (rarity == TitleRarity.Sovereign) 2.dp else 1.dp)
             .padding(horizontal = 6.dp, vertical = 2.dp),
     ) {
         Text(
@@ -607,7 +606,7 @@ private fun SealCard(def: TitleDef, unlockedAtMs: Long?, worn: Boolean, onClick:
                 ),
                 shape,
             )
-            .border(rimWidth, rim, shape)
+            .inkBorder(rim, shape, rimWidth)
             .clickable { onClick() }
             .padding(10.dp),
     ) {

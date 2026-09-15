@@ -2,7 +2,6 @@ package com.monarch.app.ui.social
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,7 +13,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CutCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -145,7 +143,7 @@ private fun LevelChip(level: Int) {
     val shape = MaterialTheme.shapes.small
     Box(
         Modifier
-            .border(1.dp, MonarchColors.Rune, shape)
+            .inkBorder(MonarchColors.Rune, shape, 1.dp)
             .background(Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)), shape)
             .padding(horizontal = 8.dp, vertical = 3.dp),
     ) {
@@ -307,7 +305,7 @@ internal fun HunterAvatar(
             .padding(ringPad)
             .clip(shape)
             .background(Brush.linearGradient(listOf(plateTop, plateBottom), start = Offset.Zero, end = Offset.Infinite), shape)
-            .border(frameWidth, frame, shape),
+            .inkBorder(frame, shape, frameWidth),
         contentAlignment = Alignment.Center,
     ) {
         // Seeded geometric backdrop: a rotated triangle plus a rotated square

@@ -1,7 +1,6 @@
 package com.monarch.app.ui.social
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -625,7 +624,7 @@ private fun PodiumSlot(
                     Brush.verticalGradient(listOf(MonarchColors.Vault, MonarchColors.Abyss))
                 },
             )
-            .border(1.dp, if (row != null) accent else MonarchColors.Rune, shape)
+            .inkBorder(if (row != null) accent else MonarchColors.Rune, shape, 1.dp)
             .padding(horizontal = 6.dp, vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

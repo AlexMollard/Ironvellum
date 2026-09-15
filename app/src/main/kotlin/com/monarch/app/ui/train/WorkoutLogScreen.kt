@@ -44,6 +44,7 @@ import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchTracking
 import java.time.Instant
 import java.time.YearMonth
@@ -312,6 +313,7 @@ private fun ScorePill(value: String, label: String, accent: androidx.compose.ui.
         Modifier
             .clip(MaterialTheme.shapes.extraSmall)
             .background(MonarchColors.VaultHigh)
+            .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .padding(horizontal = 8.dp, vertical = 4.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {

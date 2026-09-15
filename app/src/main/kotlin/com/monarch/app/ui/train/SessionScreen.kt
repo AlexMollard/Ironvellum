@@ -35,7 +35,6 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Tune
-import androidx.compose.foundation.border
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -85,6 +84,7 @@ import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.theme.inkBorder
+import com.monarch.app.ui.theme.inkDot
 import com.monarch.app.ui.theme.MonarchColors
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -489,11 +489,12 @@ private fun VictoryOverlay(
                     val cycle = (rise + seed) % 1f
                     val y = cycle * size.height
                     val alpha = (1f - cycle) * 0.8f
-                    drawCircle(
-                        color = if (i % 3 == 0) MonarchColors.SovereignGold else MonarchColors.SystemGreen,
-                        radius = (2.5f + (i % 3)) * 2f,
+                    // Brushed dots; colour alpha carries the rise-fade.
+                    inkDot(
                         center = androidx.compose.ui.geometry.Offset(x, y),
-                        alpha = alpha,
+                        radius = (2.5f + (i % 3)) * 2f,
+                        color = (if (i % 3 == 0) MonarchColors.SovereignGold else MonarchColors.SystemGreen).copy(alpha = alpha),
+                        seed = i,
                     )
                 }
             }
@@ -802,6 +803,7 @@ private fun Stepper(
         modifier
             .clip(MaterialTheme.shapes.extraSmall)
             .background(MonarchColors.Abyss)
+            .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .padding(horizontal = 2.dp, vertical = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -1025,7 +1027,7 @@ private fun ModifierPickerDialog(
                                         },
                                         shape,
                                     )
-                                    .border(1.dp, if (on) MonarchColors.SystemGreen else MonarchColors.Rune, shape)
+                                    .inkBorder(if (on) MonarchColors.SystemGreen else MonarchColors.Rune, shape, 1.dp)
                                     .clickable {
                                         picked = if (on) picked - option else picked + option
                                     }
