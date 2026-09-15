@@ -61,7 +61,6 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.compose.foundation.Image
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import com.monarch.app.R
 import com.monarch.app.data.Repository
@@ -452,11 +451,6 @@ fun DashboardScreen(
                     fontFamily = ChakraPetch,
                     color = if (isTodaySelected) MonarchColors.SovereignGold else MonarchColors.InkMuted,
                     letterSpacing = MonarchTracking.SectionHeader,
-                    // Unweighted, these two collided into each other at a large
-                    // font scale instead of yielding. The day keeps what it
-                    // needs; the tally gives way, since it repeats what the
-                    // manifest below already shows.
-                    maxLines = 1,
                 )
                 if (selectedPreset != null) {
                     Text(
@@ -465,14 +459,27 @@ fun DashboardScreen(
                         fontFamily = ChakraPetch,
                         color = MonarchColors.InkMuted,
                         letterSpacing = MonarchTracking.InlineLabel,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 8.dp).weight(1f, fill = false),
-                        textAlign = TextAlign.End,
                     )
                 }
             }
             if (selectedPreset != null) {
+                Text(
+                    selectedPreset.name.uppercase(),
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    color = MonarchColors.EmeraldBright,
+                    letterSpacing = 1.sp,
+                )
+                if (selectedPreset.note.isNotBlank()) {
+                    Text(
+                        selectedPreset.note,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MonarchColors.InkMuted,
+                        maxLines = 1,
+                    )
+                }
+                Spacer(Modifier.height(10.dp))
                 if (questDoneToday) {
                     // The done state replaces the manifest entirely: the
                     // SpaceEvenly rows Column is weighted, so rendering both
@@ -481,22 +488,6 @@ fun DashboardScreen(
                         Modifier.weight(1f),
                         verticalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        Text(
-                            selectedPreset.name.uppercase(),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = MonarchColors.EmeraldBright,
-                            letterSpacing = 1.sp,
-                        )
-                        if (selectedPreset.note.isNotBlank()) {
-                            Text(
-                                selectedPreset.note,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MonarchColors.InkMuted,
-                                maxLines = 1,
-                            )
-                        }
                         Text(
                             "QUEST COMPLETE",
                             style = MaterialTheme.typography.headlineSmall,
@@ -534,22 +525,6 @@ fun DashboardScreen(
                             .verticalScroll(rememberScrollState()),
                         verticalArrangement = Arrangement.SpaceEvenly,
                     ) {
-                        Text(
-                            selectedPreset.name.uppercase(),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = MonarchColors.EmeraldBright,
-                            letterSpacing = 1.sp,
-                        )
-                        if (selectedPreset.note.isNotBlank()) {
-                            Text(
-                                selectedPreset.note,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MonarchColors.InkMuted,
-                                maxLines = 1,
-                            )
-                        }
                         selectedPreset.entries.forEachIndexed { index, entry ->
                             Row(
                                 Modifier.fillMaxWidth().padding(vertical = 3.dp),

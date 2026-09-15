@@ -91,13 +91,30 @@ open-work list.
   they wrap, and the label is supplementary — the icon carries the meaning, and
   the `contentDescription` a screen reader announces is unaffected by scaling.
 
-  All six destinations and five deeper surfaces were then swept at 2.0x and
-  measured for two failures the eye misses: any text node crossing the screen
-  edge, and any label squished into a narrow multi-line column (the
-  one-letter-per-line shape). Zero of each. Still no automated guard — the
-  instrumented suite runs at the device's own font scale, so a regression needs
-  the same `settings put system font_scale` sweep, and the check is the dump
-  measurement rather than a screenshot.
+  A 2.0x sweep then found the worst defect of the set: on the Court screen the
+  **primary action disappeared**. The quest card's header was unweighted and the
+  button declared last, so Compose measured the header first, it consumed the
+  card, and `ACCEPT QUEST` was measured at zero height. The title and note now
+  sit inside the one flexible child, making the button the only unweighted one
+  and therefore measured first — it renders at both scales (611x89px at 2.0x,
+  319x47px at 1.0x) and the movement rows degrade away instead. The quest
+  header row also collided with the set tally; the tally now yields (21px gap
+  at 2.0x, 357px at 1.0x).
+
+  **The geometric sweep that reported "zero issues" was worthless and is not
+  the evidence here.** Its squish predicate (`w < 90 && h > 2w`) was tested
+  against a deliberately reverted nav bar — a build whose labels demonstrably
+  wrapped mid-word — and it found nothing, because the wrapped labels measured
+  154x162px, far wider than the 90px threshold. A detector that cannot fire on
+  a known defect proves nothing. The bad state separates cleanly on the aspect
+  ratio of a single-word label instead: 1.05 broken versus 0.29-0.40 fixed.
+  What actually found the real defect was checking sentinel strings —
+  `ACCEPT QUEST` was simply absent from the dump.
+
+  Still no automated guard: the instrumented suite runs at the device's own
+  font scale, so a regression needs a manual `settings put system font_scale`
+  sweep, and the check must be sentinel strings plus measured geometry rather
+  than a screenshot or an unvalidated heuristic.
 - **Lint's 10 remaining warnings.** Audited individually, all deliberate: 8 are
   `ModifierParameter` ordering convention, and the 2 asking for a plain
   `Modifier` default are the two composables that must carry their own size
