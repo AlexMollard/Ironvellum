@@ -334,10 +334,12 @@ fun StatsScreen(
                         Image(
                             painter = painterResource(R.drawable.art_empty_stats),
                             contentDescription = null,
+                            // Explicit size for the same reason as the rest-day
+                            // art: a cropped vector's intrinsic size otherwise
+                            // wins and the mark renders postage-stamp small.
                             modifier = Modifier
-                                .fillMaxWidth()
-                                .heightIn(max = 150.dp)
-                                .alpha(0.55f),
+                                .size(180.dp)
+                                .alpha(0.6f),
                         )
                         Spacer(Modifier.height(10.dp))
                         Text(
