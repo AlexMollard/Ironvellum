@@ -711,9 +711,6 @@ class Repository(
             }
         }
 
-    fun observeTrainingMode(): Flow<TrainingMode> =
-        observeProfile().map { it?.trainingMode ?: TrainingMode.STRENGTH }
-
     suspend fun setTrainingMode(mode: TrainingMode) = profileDao.setTrainingMode(mode.name)
 
     /** Hand-drawn chrome on or off; mirrored into InkStyle so draw code can read it. */

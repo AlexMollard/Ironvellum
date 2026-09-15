@@ -129,12 +129,6 @@ interface SessionDao {
     )
     suspend fun completedSetCount(): Int
 
-    @Query(
-        "SELECT COALESCE(SUM(s.reps), 0) FROM set_logs s JOIN sessions x ON s.sessionId = x.id " +
-            "WHERE s.done = 1 AND x.completedAtMs IS NOT NULL",
-    )
-    suspend fun completedRepSum(): Int
-
     /** Import is a full restore: sessions go, their set_logs follow by cascade. */
     @Query("DELETE FROM sessions")
     suspend fun clearAll()

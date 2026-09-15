@@ -1,7 +1,6 @@
 package com.monarch.app.data
 
 import com.monarch.app.data.db.ExerciseEntity
-import com.monarch.app.data.db.PresetEntity
 import com.monarch.app.domain.MuscleGroup
 import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.domain.Skills
@@ -215,6 +214,4 @@ object Seed {
         ),
     )
 
-    fun presetEntities(): List<PresetEntity> =
-        presets.map { PresetEntity(name = it.name, note = it.note, scheduledDay = it.scheduledDay) }
 }

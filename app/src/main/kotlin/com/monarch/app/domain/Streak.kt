@@ -1,6 +1,5 @@
 package com.monarch.app.domain
 
-import java.time.DayOfWeek
 import java.time.LocalDate
 
 /**
@@ -39,7 +38,4 @@ object Streak {
         }
         return streak
     }
-
-    fun scheduledFor(dayOfWeek: DayOfWeek, presets: List<WorkoutPreset>): WorkoutPreset? =
-        presets.firstOrNull { it.scheduledDay == dayOfWeek.value }
 }
