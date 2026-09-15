@@ -248,6 +248,16 @@ open-work list.
   seen to fail is not a gate — a release shipping blank keys would "work" and
   be dead at runtime.
 
+  The Play data-safety sheet was audited against the code that uploads, and one
+  real omission turned up: `push_aggregates` sends level, total XP, earned title
+  count, lifetime strength and the **training streak**, but the sheet declared
+  only the shadow figures under aggregates. Now declared, with the call named.
+  `PRIVACY.md` already mentioned the streak, so the gap was in the form answers
+  alone. Note the method — matching DTO field names against the document finds
+  28 "missing" fields and means nothing, because the form asks for categories
+  rather than columns; the check that works is listing what the client actually
+  writes and asking which category declares it.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day

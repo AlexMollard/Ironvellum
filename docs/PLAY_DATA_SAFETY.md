@@ -62,6 +62,13 @@ Code references:
 ### Fitness info — idle-game aggregates (collected, shared)
 - Shadow essence / shadow count / shadow rate are pushed as profile columns.
   Optional (sign-in only), shared per visibility.
+- Also pushed as profile columns by the same call: **level, total XP, earned
+  title count, lifetime strength and the training streak in days** — derived
+  numbers rather than new measurements, but they do leave the device and they
+  are what the leaderboard ranks on, so they are declared here rather than
+  treated as internal. Code: `CS` `pushDerivedAggregates()` →
+  `push_aggregates(p_level, p_total_xp, p_titles_count, p_strength,
+  p_streak_days)`; `M11` grants that RPC and revokes direct column writes.
 - Code: `CS` `ShadowPushDto`; `M8` `profiles` columns; `M8` header: "the cloud
   never holds the accrual clock".
 
