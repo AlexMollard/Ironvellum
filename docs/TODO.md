@@ -115,6 +115,26 @@ open-work list.
   font scale, so a regression needs a manual `settings put system font_scale`
   sweep, and the check must be sentinel strings plus measured geometry rather
   than a screenshot or an unvalidated heuristic.
+
+  Mutation-proven rather than assumed: rebuilt at `HEAD~2` (the pre-fix
+  layout), `ACCEPT QUEST` is **absent** from the 2.0x dump; with the fix it sits
+  at y=1712..1801, clear of the nav bar at y=2189, and 1.0x is unchanged at
+  y=1547..1594.
+
+  Upstream growth, measured at 1.0x vs 2.0x (top edge of each section): the
+  identity name does not move, the XP line drops +191px, the step ring +294px,
+  the quest title +385px. Nothing is pushed under the nav bar — the card
+  absorbs it — but the movement manifest is what pays: **4 rows render at 1.0x,
+  0 at 2.0x.**
+
+  **Owner decision, not taken here:** at 2.0x the quest card can show the day,
+  the program name and the button, but not the movement list. Three options,
+  none silently chosen: (a) keep today's behaviour, the list degrades away and
+  the card stays one screen; (b) let the dashboard scroll above 1.5x, which
+  breaks the single-screen rule deliberately rather than accidentally; (c) drop
+  the step ring or stat panel at large scales to buy the list ~294px. Today's
+  behaviour is (a) because losing the list is recoverable — the same movements
+  are one tap away in Train — while losing the button is not.
 - **Lint's 10 remaining warnings.** Audited individually, all deliberate: 8 are
   `ModifierParameter` ordering convention, and the 2 asking for a plain
   `Modifier` default are the two composables that must carry their own size
