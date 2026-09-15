@@ -64,6 +64,22 @@ open-work list.
 - **Baseline profile / macrobenchmark.** Release cold start measured at a median
   **932 ms** on a software-GPU emulator, which is an upper bound. No evidence of
   a startup problem. Revisit only if a real-device measurement contradicts it.
+- **The training-mode rule holds, and my audit of it was wrong first.** I
+  searched the UI tree for `setTrainingMode` and `HYPERTROPHY`, found neither,
+  and concluded the two schools were unreachable — every hunter locked to
+  `STRENGTH`. Both strings were the wrong probe: the control calls
+  `viewModel.setMode(...)` and builds its labels from `TrainingMode.entries`,
+  so it matched no literal I looked for. It has existed all along in Settings.
+  I got as far as **building and installing a duplicate selector** before the
+  accessibility dump showed `STRENGTH`/`HYPERTROPHY` twice on one screen; both
+  that and an unmotivated `mergeDescendants` change to `InkSegmented` were
+  reverted, tree clean. Verified the real control instead, on device: tapping
+  HYPERTROPHY flips the caption to "Double progression: reps climb, then load",
+  it survives a force-stop (so it is read from Room, not memory), and restoring
+  STRENGTH survives one too. **Method fix: a negative grep is evidence of
+  nothing until the positive case is located.** Search for the setter the UI
+  actually calls and for enum-derived labels, never for the enum's literal
+  values.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:
