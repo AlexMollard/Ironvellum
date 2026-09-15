@@ -348,6 +348,32 @@ open-work list.
   Mutation-proven both ways: dropping the grace day fails one, widening the
   window to eight days fails another.
 
+  The calorie estimator had a live defect that 16 existing tests did not reach:
+  `stepsKcal` reported `"height"` as a missing input on the branch where height
+  was **present and used**, so the detail sheet told a hunter to "Log height for
+  a sharper estimate" about a height they had already logged. What is actually
+  absent there is Health Connect's measured distance, which nobody can log by
+  hand; the basis string now discloses "stride from height" instead. No existing
+  test asserted the `missing` list at all — which is precisely why a
+  user-visible wrong sentence survived a suite that covered the arithmetic well.
+  Seven cases added for what the original 16 skipped: speed banding needing both
+  distance and duration, exact band thresholds, the unknown-name fallback chain,
+  a REPS set costing nothing on its own, elapsed time not being charged twice
+  once timed sets have consumed part of it, the stride disclosure, and coarse
+  confidence propagating to a day total. All four behavioural mutations caught
+  by name.
+
+  **Two process failures worth more than the fix.** First, I wrote the new tests
+  with `write` over a path that already held `EnergyTest.kt` and destroyed all
+  16 — caught only because the suite total came to 210 when 205 + 21 should be
+  226, and the file showed as *modified* rather than added. The original was
+  recovered from `HEAD` and merged; nothing was lost, but nothing would have
+  noticed either. Read before writing a test file. Second, I reported the
+  estimator as having "no tests at all", which was simply false. Two earlier
+  mutation attempts were also **no-ops by construction** (one added a comment,
+  one an unused val) and "passed" while proving nothing; a mutation that does
+  not change behaviour is not evidence.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day

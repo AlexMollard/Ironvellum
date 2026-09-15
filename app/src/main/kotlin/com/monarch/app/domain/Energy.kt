@@ -239,9 +239,15 @@ object Energy {
             return EnergyEstimate(0, EnergyConfidence.ESTIMATED, "no steps recorded")
         }
         if (bodyKg == null || bodyKg <= 0.0) return null
-        val missing = mutableListOf<String>()
+        // Measured distance wins; otherwise the walk is reconstructed from stride.
+        // Nothing is reported as "missing" here: the old code named `height` even
+        // when height was present and used, so the UI told the hunter to log
+        // something they had already logged. What is actually absent in that
+        // branch is Health Connect's measured distance, which nobody can log by
+        // hand — so the basis string says the distance was derived instead.
+        var strideDerived = false
         val distanceKm = distanceKm ?: run {
-            missing += "height"
+            strideDerived = true
             val height = heightCm ?: return null
             steps * (0.415 * height / 100.0) / 1000.0
         }
@@ -250,8 +256,8 @@ object Energy {
         return EnergyEstimate(
             kcal = metKcal(3.5, bodyKg, minutes),
             confidence = EnergyConfidence.ESTIMATED,
-            basis = "MET 3.5 x $bodyKg kg x ${"%.0f".format(minutes)} min (${"%.2f".format(distanceKm)} km walked)",
-            missing = missing,
+            basis = "MET 3.5 x $bodyKg kg x ${"%.0f".format(minutes)} min (${"%.2f".format(distanceKm)} km walked" +
+                if (strideDerived) ", stride from height)" else ", measured)",
         )
     }
 

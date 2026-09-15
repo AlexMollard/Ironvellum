@@ -147,4 +147,123 @@ class EnergyTest {
     fun `dayKcal null when nothing is known`() {
         assertNull(Energy.dayKcal(null, null, emptyList()))
     }
+
+    // ---- added later: cases the original 16 did not reach ----
+
+    private fun ex(id: Long, name: String, category: String, metric: ExerciseMetric) =
+        Exercise(
+            id = id,
+            name = name,
+            muscleGroup = MuscleGroup.CARDIO,
+            isWeighted = false,
+            category = category,
+            metric = metric,
+        )
+
+    private fun set(
+        exerciseId: Long,
+        name: String,
+        durationSec: Int? = null,
+        distanceM: Double? = null,
+        reps: Int = 0,
+    ) = SessionSet(
+        id = 0,
+        exerciseId = exerciseId,
+        exerciseName = name,
+        setIndex = 0,
+        reps = reps,
+        weightKg = null,
+        done = true,
+        durationSec = durationSec,
+        distanceM = distanceM,
+    )
+
+    @Test
+    fun `speed banding needs both distance and duration`() {
+        // With only one of them the flat name MET must be used, never a band
+        // derived from a division by zero or a missing operand.
+        assertEquals(
+            8.3,
+            Energy.metFor("Run", "Cardio", ExerciseMetric.DISTANCE_TIME, null, 1800),
+            1e-9,
+        )
+        assertEquals(
+            8.3,
+            Energy.metFor("Run", "Cardio", ExerciseMetric.DISTANCE_TIME, 4000.0, null),
+            1e-9,
+        )
+        assertEquals(
+            8.3,
+            Energy.metFor("Run", "Cardio", ExerciseMetric.DISTANCE_TIME, 4000.0, 0),
+            1e-9,
+        )
+    }
+
+    @Test
+    fun `a fast run is not costed as a jog`() {
+        fun run(distanceM: Double) = Energy.metFor(
+            "Run", "Cardio", ExerciseMetric.DISTANCE_TIME, distanceM, 1800,
+        )
+        assertEquals(6.0, run(2_000.0), 1e-9)   // 4 km/h  -> slow
+        assertEquals(8.3, run(4_000.0), 1e-9)   // 8 km/h  -> moderate
+        assertEquals(11.8, run(6_000.0), 1e-9)  // 12 km/h -> vigorous
+    }
+
+    @Test
+    fun `an unknown name falls back to its category, then to moderate work`() {
+        assertEquals(7.5, Energy.metFor("Unlisted Thing", "Climbing", ExerciseMetric.DURATION, null, null), 1e-9)
+        assertEquals(3.5, Energy.metFor("Unlisted Thing", "Nonsense", ExerciseMetric.DURATION, null, null), 1e-9)
+    }
+
+    @Test
+    fun `a lifting set is not costed on its own`() {
+        // REPS sets have no duration of their own; they are covered by the
+        // session-level set-count model instead.
+        assertNull(
+            Energy.setKcal(
+                ExerciseMetric.REPS, "Pull-up", "Strength", 600, null, 8, 20.0, bodyKg = 80.0,
+            ),
+        )
+    }
+
+    @Test
+    fun `elapsed time already spent on timed sets is not spent twice on lifting`() {
+        val exercises = mapOf(
+            1L to ex(1, "Pull-up", "Strength", ExerciseMetric.REPS),
+            2L to ex(2, "Skipping", "Cardio", ExerciseMetric.DURATION),
+        )
+        val sets = listOf(set(1, "Pull-up", reps = 8), set(2, "Skipping", durationSec = 600))
+        val est = Energy.sessionKcal(sets, exercises, 70.0, sessionMinutes = 30)!!
+        // Skipping 10 min at MET 11 = 134; the remaining 20 min of lifting at
+        // MET 6 = 6 * 3.5 * 70 / 200 * 20 = 147. Charging the full 30 min to
+        // lifting as well would give 220 on top.
+        assertEquals(134 + 147, est.kcal)
+        assertEquals(EnergyConfidence.COARSE, est.confidence)
+    }
+
+    @Test
+    fun `without measured distance the stride comes from height`() {
+        // 10000 steps * (0.415 * 180 / 100) = 7470 m; at 5 km/h = 89.64 min;
+        // 3.5 * 3.5 * 70 / 200 * 89.64 = 384.3
+        val est = Energy.stepsKcal(steps = 10_000, distanceKm = null, bodyKg = 70.0, heightCm = 180.0)!!
+        assertEquals(384, est.kcal)
+        assertTrue("basis must disclose the derivation", est.basis.contains("stride from height"))
+        assertTrue(
+            "height was present and used, so nothing must be reported as missing",
+            est.missing.isEmpty(),
+        )
+    }
+
+    @Test
+    fun `without a measured value the day is the sum of its estimates`() {
+        val steps = EnergyEstimate(100, EnergyConfidence.ESTIMATED, "steps")
+        val coarse = EnergyEstimate(200, EnergyConfidence.COARSE, "lift")
+        val day = Energy.dayKcal(null, steps, listOf(coarse))!!
+        assertEquals(300, day.kcal)
+        assertEquals(
+            "one coarse part makes the whole day coarse",
+            EnergyConfidence.COARSE,
+            day.confidence,
+        )
+    }
 }
