@@ -28,8 +28,7 @@ open-work list.
 | XP ceiling value | `100000000` (level 1414) | Tunable one-liner in `0011`. Tighter (`10^7` ≈ level 450) is still decades of real training |
 | Touch targets in the 24–48dp band | WCAG AA (24dp) enforced everywhere and Material 48dp on the nav. Dense chips and list rows sit between | A layout/design call: forcing 48dp relayouts the information design |
 | Court at 2.0x font: manifest or single screen | The quest card fits the day, the program name and the button, but not the movement rows (4 at 1.0x, 0 at 2.0x). (a) keep today's degradation; (b) let the dashboard scroll above 1.5x; (c) drop the step ring at large scales to buy ~294px | **(a)**, currently shipped: a lost list is one tap away in Train, a lost button is not. Full measurements under the font-scale entry below |
-| Portrait lock | Landscape gave the quest panel ~400dp of height and it collapsed to nothing — no card, no button, unreachable by scrolling since Court does not scroll by design. Shipped: `screenOrientation="portrait"`. (a) keep the lock; (b) build a landscape layout for Court (two columns); (c) make Court scroll in landscape only | **(a)**, shipped. Every screen is a tall column and the product rule is one screen; a landscape variant is a design project, not a fix. Android 16 ignores the lock on large screens, where the height makes it moot |
-| Court at the largest display size AND 2.0x text | Only ~320dp wide by ~347 "text lines" of room. The step gauge now gives way there so the quest button stays reachable (measured y=1329..1557 with the gauge dropped, absent with it shown). (a) keep dropping the gauge; (b) also drop the week rail to keep it; (c) accept a scrolling dashboard at that setting only | **(a)**, shipped. The step count is on Stats; the button has no second home. Scrolling was tried and is a dead end — a weighted panel inside a scrolling column gets an infinite height and collapses |
+| Court on a short window (landscape, or the largest display size with 2.0x text) | The quest panel is weighted, and a weighted child measured after the unweighted content above it gets nothing — the button went with it. Below 520 "text lines" of height the panel wraps its content and the page scrolls; the step gauge also yields below 400. Measured: stock portrait 891, landscape 411, largest display at 2.0x 347. (a) keep this; (b) design a landscape Court; (c) lock to portrait | **(a)**, shipped. The CTA is reachable with zero swipes in all four combinations of orientation and scale. (c) was tried and reverted: lint flags `LockedOrientationActivity` and `DiscouragedApi`, and Android 16 ignores the lock on large screens anyway |
 
 ## Verification gaps (honest, not deferred work)
 
@@ -119,11 +118,13 @@ open-work list.
   button absent, the titles counter wrapped to 179x228px — because that
   configuration leaves only ~347 "text lines" of height. The step gauge now
   yields there, which restores the button (y=1329..1557). Two wrong turns are
-  recorded so nobody repeats them: scrolling the dashboard collapses the
-  weighted quest panel (a weight inside `verticalScroll` gets an infinite
-  height), and `screenHeightDp >= 560` never fires because the largest display
+  recorded: `screenHeightDp >= 560` never fires because the largest display
   size still reports 693dp — height alone is the wrong measure, height divided
-  by font scale is the right one (891 stock, 347 at the extreme).
+  by font scale is the right one (891 stock, 411 landscape, 347 at the
+  extreme). And scrolling the dashboard *alone* collapses the weighted quest
+  panel, because a weight inside `verticalScroll` gets an infinite height —
+  which is why the panel must drop its weight AND the page scroll together.
+  Either change on its own loses the button; both together carry it.
 
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed

@@ -33,18 +33,9 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.Monarch">
-        <!--
-          Portrait: the Court is deliberately a single non-scrolling screen, and
-          a phone in landscape has roughly 400dp of height. Measured there, the
-          quest panel collapsed to nothing — no card, no ACCEPT QUEST, and four
-          swipes could not reach it, because the screen does not scroll by
-          design. Every screen in the app is a tall column. Android 16 ignores
-          this on large screens, where the extra height makes it moot anyway.
-        -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
-            android:screenOrientation="portrait"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

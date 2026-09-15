@@ -210,9 +210,20 @@ fun DashboardScreen(
     // One screen, no scrolling, and not a stack of identical slabs: an
     // identity strip, a gauge cluster (radial steps beside stacked counters),
     // a hairline week rail, then the quest panel owning the remaining height.
+    // containerSize, not screenHeightDp: it reports the WINDOW, so this
+    // still holds in split screen where the app owns half the display.
+    val density = LocalDensity.current
+    val windowHeightDp = with(density) { LocalWindowInfo.current.containerSize.height.toDp().value }
+    val linesOfRoom = windowHeightDp / density.fontScale
+    val roomForGauges = linesOfRoom >= 400f
+    // Below this the column cannot hold the dashboard at all: landscape
+    // measures ~411, a small display at 2x text ~347, stock portrait 891.
+    val shortWindow = linesOfRoom < 520f
+
     Column(
         Modifier
             .fillMaxSize()
+            .then(if (shortWindow) Modifier.verticalScroll(rememberScrollState()) else Modifier)
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(18.dp))
@@ -340,12 +351,6 @@ fun DashboardScreen(
         // the height by the font scale. Stock reads 891, largest display with
         // 2x text reads 347 — the only configuration measured to lose the
         // button, and the only one that drops the gauges.
-        // containerSize, not screenHeightDp: it reports the WINDOW, so this
-        // still holds in split screen where the app owns half the display.
-        val density = LocalDensity.current
-        val windowHeightDp = with(density) { LocalWindowInfo.current.containerSize.height.toDp().value }
-        val linesOfRoom = windowHeightDp / density.fontScale
-        val roomForGauges = linesOfRoom >= 400f
 
         if (roomForGauges) {
             Spacer(Modifier.height(16.dp))
@@ -457,10 +462,14 @@ fun DashboardScreen(
             it.presetId == selectedPreset.id && (it.completedAtMs ?: 0L) >= todayStart
         }
 
-        // The quest panel takes every remaining pixel: the exercise list grows
-        // into the slack instead of leaving dead space above the nav bar.
+        // The quest panel takes every remaining pixel so the exercise list grows
+        // into the slack instead of leaving dead space above the nav bar — but
+        // only when there IS slack. On a short window (landscape, or a small
+        // display at 2x text) a weighted panel is measured after the unweighted
+        // content above it, gets nothing, and takes the button down with it.
+        // There it wraps its content and the page scrolls instead.
         SystemWindow(
-            Modifier.fillMaxWidth().weight(1f),
+            if (shortWindow) Modifier.fillMaxWidth() else Modifier.fillMaxWidth().weight(1f),
             accent = when {
                 questDoneToday -> MonarchColors.SovereignGold
                 isTodaySelected -> MonarchColors.SystemGreen
