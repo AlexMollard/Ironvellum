@@ -229,6 +229,17 @@ open-work list.
   `bundleRelease` also builds clean at 9.4 MB, which packages by a different
   path from the APK.
 
+  Resource shrinking was checked the same way, and two obvious methods are
+  both worthless here: the APK's resource FILES are renamed (`res/tn.png`), so
+  name matching finds nothing, and AGP re-encodes images in release, so byte
+  matching against the sources finds nothing either. `aapt2 dump resources`
+  reads the actual table: every art resource is present by name, and following
+  each entry to its renamed file shows real bytes rather than the stub the
+  shrinker leaves behind — `art_empty_quests` 188 KB, `art_empty_stats` 131 KB,
+  `art_empty_skills` 105 KB, the vector line and rank icons ~1 KB each. There
+  are no dynamic (`getIdentifier`) lookups in the app, which is what would make
+  the shrinker strip art it cannot see referenced.
+
   The release credential gate was proven by its NEGATIVE case, reversibly:
   blanking `supabase.key` fails `validateReleaseBackend` with
   `Missing local.properties keys: supabase.key`, and restoring the file returns
