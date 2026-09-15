@@ -1,4 +1,6 @@
 -- Three additions the Guild screens need:
+-- Immutable: already applied to the live project. Never edit; land changes
+-- in a later migration instead.
 --   1. The worn title travels with a hunter, so the feed and board can show
 --      "Kaida · Shadow Marcher" instead of a bare name.
 --   2. Likes on a session, with the owner able to see WHO liked it.

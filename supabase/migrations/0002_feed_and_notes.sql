@@ -1,4 +1,6 @@
 -- Public feed: a scrollable board of everyone's workouts, with a user-authored
+-- Immutable: already applied to the live project. Never edit; land changes
+-- in a later migration instead.
 -- title and a public note per session.
 --
 -- Private notes are deliberately absent from this schema. They live only in the

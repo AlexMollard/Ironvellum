@@ -1,4 +1,6 @@
 -- Two additions:
+-- Immutable: already applied to the live project. Never edit; land changes
+-- in a later migration instead.
 --
 -- 1. The feed shows more than workouts: title unlocks and level-ups too.
 --    Level-ups need their own table because the app only ever stores CURRENT

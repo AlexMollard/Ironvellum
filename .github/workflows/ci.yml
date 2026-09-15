@@ -209,6 +209,21 @@ jobs:
             psql -v ON_ERROR_STOP=1 -q -f "$f"
           done
 
+      # Every migration must SAY which it is. The re-apply below keys off that
+      # word, so a file declaring neither would silently opt out of the
+      # idempotency check — the coverage would then depend on prose nobody
+      # maintains, which is exactly what drifts.
+      - name: Every migration declares idempotent or immutable
+        run: |
+          missing=0
+          for f in supabase/migrations/*.sql; do
+            if ! grep -qiE "idempotent|immutable" "$f"; then
+              echo "::error file=$f::migration declares neither idempotent nor immutable"
+              missing=1
+            fi
+          done
+          exit $missing
+
       # Re-applying must be a no-op for every migration that CLAIMS to be
       # idempotent — that claim is load-bearing, because it is how these files
       # reach the live project. 0001-0004 deliberately do not claim it: they are

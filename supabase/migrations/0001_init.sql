@@ -1,4 +1,6 @@
 -- Monarch v1.5 backend: friend leaderboards and shared session history.
+-- Immutable: already applied to the live project. Never edit; land changes
+-- in a later migration instead.
 --
 -- Privacy model, deliberately narrow:
 --   * Body measurements (weight, height, body fat, BMI/FFMI) NEVER leave the

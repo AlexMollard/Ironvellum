@@ -1,4 +1,5 @@
 -- 0008_shadow_board.sql
+-- Idempotent: every statement guards itself, so this may be re-applied.
 --
 -- STAGED, NOT APPLIED. Run only on an explicit go-ahead: this is the first
 -- migration in the set that ALTERs a live table rather than replacing a view.
