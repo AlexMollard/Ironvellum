@@ -50,7 +50,15 @@ class SeedOnFreshInstallTest {
         }
 
         val presets = db.presetDao().observePresets().first()
-        assertEquals(Seed.presets.map { it.name }, presets.map { it.preset.name })
+        // observePresets() is "ORDER BY name", so the list is alphabetical, not
+        // in seed-declaration order. Assert the SET is complete, then pin the
+        // ordering contract the DAO actually promises.
+        assertEquals(Seed.presets.map { it.name }.toSet(), presets.map { it.preset.name }.toSet())
+        assertEquals(
+            "presets are served in name order",
+            presets.map { it.preset.name }.sorted(),
+            presets.map { it.preset.name },
+        )
         for (spec in Seed.presets) {
             val withEntries = db.presetDao().presetWithEntries(
                 presets.single { it.preset.name == spec.name }.preset.id,

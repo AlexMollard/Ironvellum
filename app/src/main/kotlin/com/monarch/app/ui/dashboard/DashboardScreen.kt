@@ -552,8 +552,8 @@ fun DashboardScreen(
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 160.dp)
-                        .alpha(0.55f),
+                        .heightIn(max = 240.dp)
+                        .alpha(0.6f),
                 )
                 Spacer(Modifier.weight(1f))
             }
