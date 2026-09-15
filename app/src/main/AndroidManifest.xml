@@ -52,6 +52,22 @@
           ("Incorrect health permission state") even when the permissions are
           granted, which surfaced as Health Connect looking broken.
         -->
+        <!--
+          The export is the data-rescue path, and at five years of training it
+          is ~0.9 MB of JSON. Passing that as an intent extra throws
+          TransactionTooLargeException (binder caps a transaction near 1 MB), so
+          the share sheet gets a content:// URI for a staged file instead.
+        -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.exports"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
+
         <activity-alias
             android:name="ViewPermissionUsageActivity"
             android:exported="true"

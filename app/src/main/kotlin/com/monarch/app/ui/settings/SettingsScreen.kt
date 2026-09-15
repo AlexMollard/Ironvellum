@@ -72,6 +72,8 @@ import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.theme.MonarchColors
+import androidx.core.content.FileProvider
+import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -631,7 +633,11 @@ fun SettingsScreen(
             } else {
                 MonarchButton(
                     label = "Export Archive",
-                    onClick = { viewModel.exportJson { json -> shareText(context, "Export Monarch data", "monarch_export.json", json) } },
+                    onClick = {
+                        viewModel.exportJson { json ->
+                            scope.launch { shareExport(context, "Export Monarch data", "monarch_export.json", json) }
+                        }
+                    },
                 )
             }
             Spacer(Modifier.height(10.dp))
@@ -682,11 +688,14 @@ fun SettingsScreen(
                 MonarchButton(
                     label = "Share Crash Log",
                     onClick = {
-                        scope.launch(Dispatchers.IO) {
-                            val text = CrashJournal.recent().joinToString("\n\n")
-                            withContext(Dispatchers.Main) {
-                                shareText(context, "Share Monarch crash log", "monarch_crash_log.txt", text)
+                        scope.launch {
+                            val text = withContext(Dispatchers.IO) {
+                                CrashJournal.recent().joinToString("\n\n")
                             }
+                            // Same file route as the export: twenty stack traces
+                            // is not 0.9 MB, but there is no reason for two
+                            // sharing paths with different failure modes.
+                            shareExport(context, "Share Monarch crash log", "monarch_crash_log.txt", text)
                         }
                     },
                 )
@@ -721,11 +730,29 @@ fun SettingsScreen(
     }
 }
 
-private fun shareText(context: Context, title: String, fileName: String, text: String) {
+/**
+ * Shares the export as a FILE, not as an intent extra.
+ *
+ * Measured: five years of training exports ~0.9 MB of JSON, and binder caps a
+ * transaction near 1 MB — `EXTRA_TEXT` would throw TransactionTooLargeException
+ * on the one action whose whole purpose is getting a hunter's data out. Staged
+ * in the cache directory the FileProvider exposes, so the receiving app reads it
+ * through a content:// URI instead.
+ */
+private suspend fun shareExport(context: Context, title: String, fileName: String, text: String) {
+    val uri = withContext(Dispatchers.IO) {
+        val dir = File(context.cacheDir, "exports").apply { mkdirs() }
+        // One name, overwritten: the cache is not an archive, and a stale
+        // export left behind is a copy of everything the hunter has done.
+        val file = File(dir, fileName)
+        file.writeText(text)
+        FileProvider.getUriForFile(context, "${context.packageName}.exports", file)
+    }
     val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "text/plain"
+        type = "application/json"
         putExtra(Intent.EXTRA_TITLE, fileName)
-        putExtra(Intent.EXTRA_TEXT, text)
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
     context.startActivity(Intent.createChooser(intent, title))
 }

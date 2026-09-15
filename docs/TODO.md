@@ -306,6 +306,19 @@ open-work list.
   now. And the async read was proven to actually read: with a real crash
   recorded, Settings shows `1 crash record · latest …`, not the default zero.
 
+  Hunting main-thread I/O turned up a worse defect in the opposite direction:
+  `shareText` had **no** disk I/O because it put the whole export in
+  `Intent.EXTRA_TEXT` — and the export measures **0.87 MB at 1,000 sessions**,
+  against a binder transaction limit near 1 MB. The data-rescue action would
+  have thrown `TransactionTooLargeException` precisely for the hunters with the
+  most to lose, and works today only because a young database is small. The
+  share sheet now stages the JSON in `cacheDir/exports` and passes a
+  `content://` URI through a `FileProvider` whose path config exposes that one
+  directory (the database, its snapshots and the crash journal stay
+  unreachable). The crash-log share uses the same route rather than keeping a
+  second path with its own failure mode. Driven on device: the chooser opens and
+  `cache/exports/monarch_export.json` is written, crash buffer empty.
+
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
   the morning the date rolled to a rest day. It now walks the week rail to a day

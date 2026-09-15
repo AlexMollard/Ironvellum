@@ -102,7 +102,19 @@ class FiveYearsOfTrainingTest {
 
         time("journal") { repo.observeHistory().first().size }
         time("titles ledger") { repo.currentLedger().workouts }
-        time("export") { repo.exportJson().length }
+        var exportChars = 0
+        time("export") { repo.exportJson().also { exportChars = it.length }.length }
+        // Binder caps a transaction near 1 MB, and the share sheet used to carry
+        // this whole string as an intent extra.
+        // Measured: 0.87 MB at this size. Binder caps a transaction near 1 MB,
+        // which is why the share sheet stages a file and passes a content:// URI
+        // instead of EXTRA_TEXT. This records the size so the next person can
+        // see how close the old approach was to the ceiling.
+        assertTrue(
+            "the export is %.2f MB at %d sessions — larger than expected, check how it is shared"
+                .format(exportChars / 1048576.0, SESSIONS),
+            exportChars in 1 until 4_000_000,
+        )
         time("completed count") { db.sessionDao().completedCount() }
 
         val slow = timings.filterValues { it > BUDGET_MS }
