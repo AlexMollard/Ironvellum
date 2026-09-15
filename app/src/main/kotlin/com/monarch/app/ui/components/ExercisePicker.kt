@@ -164,7 +164,7 @@ fun ExercisePickerPanel(
                         letterSpacing = 2.sp,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .background(Color(0xFF101512), MaterialTheme.shapes.extraSmall)
+                            .background(Color(0xFF101512))
                             .padding(vertical = 6.dp, horizontal = 4.dp),
                     )
                 }

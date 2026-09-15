@@ -79,6 +79,7 @@ import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.components.InkRail
+import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.components.RelicSigil
@@ -640,6 +641,9 @@ private fun ArmyStat(label: String, value: String, modifier: Modifier = Modifier
                 Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)),
                 MaterialTheme.shapes.small,
             )
+            // Clipped to an ink shape but never inked: without the bleed-plus-firm
+            // border pass this tile read flat beside every other inked surface.
+            .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.small)
             .padding(12.dp),
     ) {
         Text(
