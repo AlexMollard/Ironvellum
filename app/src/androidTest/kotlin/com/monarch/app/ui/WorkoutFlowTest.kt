@@ -98,6 +98,25 @@ class WorkoutFlowTest {
      * walk reports the screen behind them and the test cannot see the thing it
      * is waiting for. A matcher query spans every root.
      */
+    /**
+     * Court opens on today, and today may be a rest day. The week rail carries
+     * one letter per weekday, so walk it until the card offers a quest; four of
+     * the seven have a seeded program.
+     */
+    private fun selectATrainingDay() {
+        if (allText().none { it == "REST DAY" }) return
+        val rail = listOf("M", "T", "W", "T", "F", "S", "S")
+        for (index in rail.indices) {
+            val letters = compose.onAllNodesWithText(rail[index]).fetchSemanticsNodes()
+            if (index >= letters.size) continue
+            compose.onAllNodesWithText(rail[index])[index.coerceAtMost(letters.size - 1)]
+                .performSemanticsAction(SemanticsActions.OnClick)
+            settle()
+            if (allText().none { it == "REST DAY" }) return
+        }
+        error("no weekday offered a program; on screen: ${allText()}")
+    }
+
     private fun allText(): List<String> =
         compose.onAllNodes(
             SemanticsMatcher("has text") { it.config.contains(SemanticsProperties.Text) },
@@ -122,6 +141,12 @@ class WorkoutFlowTest {
         // The quest CTA depends on state: "Accept Quest" on a fresh day,
         // "Resume" once a session exists, "Start Anyway" on a non-scheduled day.
         // MonarchButton uppercases every label.
+        //
+        // The seeded programs cover four weekdays, so on the others Court shows
+        // REST DAY with no quest at all — this test failed the morning the date
+        // rolled into one of them. Pick a day that HAS a program rather than
+        // trusting the calendar.
+        selectATrainingDay()
         // The quest card arrives after seeding, so poll for the CTA rather
         // than sampling the tree once on the first frame.
         val cta = awaitAnyText { label ->

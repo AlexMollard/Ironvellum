@@ -50,6 +50,8 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -324,10 +326,30 @@ fun DashboardScreen(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        // A hunter on the largest display size AND 2x text has roughly 320dp
+        // by 390dp of usable space. Everything above the quest panel is
+        // unweighted, so it wins the measure pass and the panel's own button
+        // ends up measured at zero height — the primary action, gone. The step
+        // gauge is the largest thing that is purely informative (the same count
+        // is on Stats), so it is what gives way. Scrolling the page instead is
+        // not an option here: the panel below is weighted, and a weight inside
+        // a scrolling column gets an infinite height and collapses.
+        // Height in dp alone is the wrong measure: the largest display size
+        // still reports 693dp tall, it is the 2x TEXT inside it that overflows.
+        // What matters is how many lines of text the screen can hold, so divide
+        // the height by the font scale. Stock reads 891, largest display with
+        // 2x text reads 347 — the only configuration measured to lose the
+        // button, and the only one that drops the gauges.
+        val linesOfRoom = LocalConfiguration.current.screenHeightDp.toFloat() / LocalDensity.current.fontScale
+        val roomForGauges = linesOfRoom >= 400f
+
+        if (roomForGauges) {
+            Spacer(Modifier.height(16.dp))
+        }
 
         // Gauge cluster: one radial dial carries the day's steps, the column
         // beside it carries the counters — different shapes, one panel.
+        if (roomForGauges) {
         AnimatedVisibility(shown, enter = fadeIn(tween(300, delayMillis = 90))) {
             SystemWindow(Modifier.fillMaxWidth()) {
                 Row(
@@ -362,6 +384,7 @@ fun DashboardScreen(
                     }
                 }
             }
+        }
         }
 
         Spacer(Modifier.height(12.dp))
