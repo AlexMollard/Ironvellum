@@ -70,8 +70,8 @@ Run all three; all must pass before anything is uploaded:
    non-geofenced HTTPS URL (no PDF); put the URL in Play Console App content
    AND link it inside the app (Settings). Identical URL in all three places.
 2. **Data safety form**: fill from `docs/PLAY_DATA_SAFETY.md`. Resolve its
-   OPEN QUESTIONS first — especially Q1 (no user-facing cloud deletion path
-   exists yet; the honest "no" answer risks review rejection).
+   remaining OPEN QUESTIONS first. Deletion (Q1) is answered: the app deletes
+   cloud data from Guild → ALLIES, so the form's deletion question is "yes".
 3. **Health apps declaration**: required (App content → Health apps) because
    the app reads health data; a fitness/tracking app falls under the Health
    Content and Services policy.

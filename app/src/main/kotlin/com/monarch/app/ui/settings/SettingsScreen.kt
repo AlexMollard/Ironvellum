@@ -80,6 +80,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
 import androidx.compose.ui.text.intl.Locale as ComposeLocale
+import androidx.compose.runtime.mutableIntStateOf
 
 private val HEALTH_PERMISSIONS = setOf(
     HealthPermission.getReadPermission(WeightRecord::class),
@@ -307,7 +308,7 @@ fun SettingsScreen(
     val scope = rememberCoroutineScope()
     var name by remember(profile?.name) { mutableStateOf(profile?.name ?: "") }
     var confirmImport by remember { mutableStateOf(false) }
-    var crashCount by remember { mutableStateOf(CrashJournal.crashCount()) }
+    var crashCount by remember { mutableIntStateOf(CrashJournal.crashCount()) }
     var latestCrash by remember { mutableStateOf(CrashJournal.latestTimestamp()?.substringAfter("—")?.trim().orEmpty()) }
     val bodyProfile by viewModel.bodyProfile.collectAsStateWithLifecycle()
     var heightInput by remember(bodyProfile.first) { mutableStateOf(bodyProfile.first?.toString() ?: "") }

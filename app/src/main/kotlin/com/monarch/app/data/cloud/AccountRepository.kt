@@ -244,6 +244,36 @@ class AccountRepository {
     }
 
 
+    /**
+     * Deletes every trace of this hunter from the cloud, then signs out.
+     *
+     * One delete is enough: every social table references `profiles (id) on
+     * delete cascade`, and the RLS policy `profiles_delete` already allows the
+     * owner — and only the owner — to remove their own row. The capability
+     * existed server-side from the first migration and was simply never
+     * reachable from the app, which left the user no way to withdraw their
+     * data.
+     *
+     * The auth identity itself is deliberately left intact: this removes the
+     * training data, and the hunter can sign in again to start clean. Deleting
+     * the `auth.users` row needs service-role credentials that must never ship
+     * in an APK.
+     */
+    suspend fun deleteCloudData(): Result<Unit> {
+        val client = requireClient().getOrElse { return failure(it) }
+        val userId = _account.value?.userId
+            ?: return Result.failure(IllegalStateException("Sign in before deleting cloud data"))
+        return runCatching {
+            client.postgrest.from("profiles").delete {
+                filter { eq("id", userId) }
+            }
+            client.auth.signOut()
+            _account.value = null
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
     suspend fun signOut(): Result<Unit> {
         val client = requireClient().getOrElse { return failure(it) }
         return runCatching {

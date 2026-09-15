@@ -20,8 +20,10 @@ Code references:
   (`CS`; Supabase project URL is HTTPS). Health Connect reads are on-device
   IPC, no network involved.
 - **Do you provide a way for users to request that their data is deleted?**
-  **NO — see OPEN QUESTION Q1.** Answer honestly; fix Q1 before shipping if
-  possible.
+  **Yes — in-app deletion.** Guild → ALLIES → ERASE MY CLOUD DATA deletes the
+  caller's `profiles` row under the owner-only `profiles_delete` RLS policy;
+  every other table cascades from it (`AccountRepository.deleteCloudData()`).
+  The auth identity is retained by design — note this on the form if asked.
 
 ## Per data type
 
@@ -87,12 +89,12 @@ flow exists.
 
 ## OPEN QUESTIONS (owner must decide; do not submit the form until resolved)
 
-- **Q1 — Deletion mechanism:** Play requires either an in-app/path-to-request
-  deletion mechanism or the Data Safety answer "no deletion available", which
-  risks rejection for an app with social accounts. Recommended before ship: an
-  in-app "delete cloud data" action (Supabase `auth.deleteUser` / cascading
-  deletes) or a documented support email. Until then the honest form answer is
-  "no", which may block review.
+- **Q1 — Deletion mechanism: RESOLVED.** In-app cloud deletion now exists
+  (`AccountRepository.deleteCloudData()`, surfaced in Guild → ALLIES). The
+  server-side capability was present from migration 0001 via the
+  `profiles_delete` policy plus `on delete cascade`; only the UI was missing.
+  Remaining owner decision: whether to also offer removal of the auth identity,
+  which requires service-role credentials and therefore a server-side action.
 - **Q2 — Privacy policy URL:** must be a public, non-geofenced, non-editable
   URL identical in Play Console, in-app, and on the web. Owner must host
   `PRIVACY.md` somewhere permanent. Open.

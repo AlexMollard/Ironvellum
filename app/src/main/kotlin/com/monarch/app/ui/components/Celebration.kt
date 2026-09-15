@@ -41,6 +41,7 @@ import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import kotlin.math.sin
 import kotlin.random.Random
+import androidx.compose.runtime.mutableIntStateOf
 
 /** Anything worth a full-screen moment: skills, titles, levels, class ranks. */
 data class Achievement(
@@ -67,7 +68,7 @@ data class Achievement(
 @Composable
 fun AchievementOverlay(items: List<Achievement>, onDone: () -> Unit) {
     if (items.isEmpty()) return
-    var page by remember(items) { mutableStateOf(0) }
+    var page by remember(items) { mutableIntStateOf(0) }
     val item = items[page.coerceIn(0, items.lastIndex)]
 
     Dialog(
@@ -85,7 +86,7 @@ fun AchievementOverlay(items: List<Achievement>, onDone: () -> Unit) {
         val sparks = remember(item.name) {
             List(36) { Triple(Random.nextFloat(), Random.nextFloat(), Random.nextFloat()) }
         }
-        var xpShown by remember(item.name) { mutableStateOf(0) }
+        var xpShown by remember(item.name) { mutableIntStateOf(0) }
         LaunchedEffect(item.name) {
             val target = item.xp ?: 0
             if (target > 0) {

@@ -90,13 +90,15 @@ your raw Health Connect records.
 - **Local data** persists until you uninstall the app or clear its storage from
   Android system settings. Uninstalling removes `monarch.db` and everything in
   the app's private storage.
-- **Cloud data:** signing out (`AccountRepository.signOut()`) ends your session
-  but does NOT delete server rows. **The app currently provides no in-app
-  account- or cloud-data-deletion path.** Cloud rows exist only while the
-  Supabase project exists; server-side deletion (auth user + cascading
-  `on delete cascade` on every table) requires the project owner to act
-  directly on the database. See `docs/PLAY_DATA_SAFETY.md` — this is flagged as
-  an open item there.
+- **Cloud data:** Guild → ALLIES → **ERASE MY CLOUD DATA** deletes your hunter
+  row, which cascades to every synced session, set, earned title, level-up,
+  like and ally link (`on delete cascade` on all of them), and signs you out.
+  The delete is performed by you, under the `profiles_delete` row-level
+  security policy, which permits the owner and nobody else.
+- Your sign-in identity itself is left intact so you can start again from
+  scratch; removing the account record needs service-role credentials that are
+  deliberately never shipped in the app. Ask the project owner if you want the
+  identity removed as well.
 - Exported JSON archives are under your control; delete the file and it is
   gone.
 

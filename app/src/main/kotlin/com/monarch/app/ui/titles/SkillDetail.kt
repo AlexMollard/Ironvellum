@@ -48,6 +48,8 @@ import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import kotlin.math.sin
 import kotlin.random.Random
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableDoubleStateOf
 
 /**
  * Tapping a node opens this, never an instant claim: the standard to clear,
@@ -66,9 +68,9 @@ fun SkillDetailDialog(
 ) {
     var confirmUnclaim by remember { mutableStateOf(false) }
     val best = entries.filterNot { it.claimed }.maxOfOrNull { it.value } ?: 0
-    var attempt by remember(skill.name) { mutableStateOf(if (best > 0) best else skill.target) }
+    var attempt by remember(skill.name) { mutableIntStateOf(if (best > 0) best else skill.target) }
     var load by remember(skill.name) {
-        mutableStateOf(entries.firstOrNull { it.weightKg != null }?.weightKg ?: 0.0)
+        mutableDoubleStateOf(entries.firstOrNull { it.weightKg != null }?.weightKg ?: 0.0)
     }
     var showLoad by remember(skill.name) { mutableStateOf(false) }
 

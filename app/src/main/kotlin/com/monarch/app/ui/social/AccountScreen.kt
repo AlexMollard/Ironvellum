@@ -91,6 +91,7 @@ import com.monarch.app.domain.Titles
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import androidx.compose.material3.TextButton
 
 /** One honest snapshot of the account gate: which panel to show and why. */
 data class AccountUi(
@@ -183,6 +184,21 @@ class AccountViewModel(
                 // Local UI state is wiped only after the server actually
                 // severed the session — clearing on failure left the user
                 // signed in behind a friends-less, signed-out-looking UI.
+                .onSuccess {
+                    _ui.value = _ui.value.copy(lastSync = null, friends = emptyList())
+                }
+            setBusy(false)
+        }
+    }
+
+    fun deleteCloudData() {
+        viewModelScope.launch {
+            setBusy(true)
+            _ui.value = _ui.value.copy(error = null)
+            accountRepo.deleteCloudData()
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+                // Same rule as signOut: clear local social state only once the
+                // server confirmed the rows are gone.
                 .onSuccess {
                     _ui.value = _ui.value.copy(lastSync = null, friends = emptyList())
                 }
@@ -300,6 +316,7 @@ fun AccountScreen(
                     ui = ui,
                     onOpenHunter = onOpenHunter,
                     onSignOut = viewModel::signOut,
+                    onDeleteCloudData = viewModel::deleteCloudData,
                     onVisibility = viewModel::setVisibility,
                     onSync = viewModel::syncNow,
                     onAccept = viewModel::acceptFriend,
@@ -599,6 +616,7 @@ private fun SignedInPanels(
     ui: AccountUi,
     onOpenHunter: (userId: String, displayName: String) -> Unit,
     onSignOut: () -> Unit,
+    onDeleteCloudData: () -> Unit,
     onVisibility: (String) -> Unit,
     onSync: () -> Unit,
     onAccept: (String) -> Unit,
@@ -749,6 +767,62 @@ private fun SignedInPanels(
         gold = true,
         modifier = Modifier.fillMaxWidth(),
     )
+
+    // Withdrawing the data has to be reachable from inside the app: a store
+    // listing that reads health data must offer deletion, and until now the
+    // only way out was to ask someone with database access.
+    Spacer(Modifier.height(20.dp))
+    var confirmDelete by remember { mutableStateOf(false) }
+    Text(
+        "ERASE FROM THE CLOUD",
+        style = MaterialTheme.typography.labelMedium,
+        fontFamily = ChakraPetch,
+        letterSpacing = MonarchTracking.InlineLabel,
+        color = MonarchColors.DangerRed,
+    )
+    Spacer(Modifier.height(6.dp))
+    Text(
+        if (confirmDelete) {
+            "This removes your hunter, every synced session, title and ally " +
+                "from the cloud for good, and signs you out. Training logged " +
+                "on this phone stays on this phone."
+        } else {
+            "Deletes everything you have synced. Your on-device training is untouched."
+        },
+        style = MaterialTheme.typography.bodySmall,
+        color = MonarchColors.InkMuted,
+    )
+    Spacer(Modifier.height(8.dp))
+    if (confirmDelete) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            MonarchButton(
+                label = "Erase it all",
+                onClick = {
+                    confirmDelete = false
+                    onDeleteCloudData()
+                },
+                enabled = !ui.busy,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = { confirmDelete = false }, enabled = !ui.busy) {
+                Text(
+                    "KEEP IT",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.InkMuted,
+                )
+            }
+        }
+    } else {
+        TextButton(onClick = { confirmDelete = true }, enabled = !ui.busy) {
+            Text(
+                "ERASE MY CLOUD DATA",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.DangerRed,
+            )
+        }
+    }
     ui.error?.let {
         Spacer(Modifier.height(8.dp))
         Text(
