@@ -25,6 +25,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -192,6 +196,14 @@ fun MonarchRoot() {
                                     // came to 31dp, and this is the one control
                                     // present on every screen.
                                     .heightIn(min = 48.dp)
+                                    // Selection is drawn with a gradient and an
+                                    // ink border, which says nothing to a screen
+                                    // reader: without this it announces "Court"
+                                    // whether you are on that screen or not.
+                                    .semantics {
+                                        role = Role.Tab
+                                        this.selected = selected
+                                    }
                                     .padding(vertical = 8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {

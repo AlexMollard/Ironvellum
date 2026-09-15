@@ -233,6 +233,30 @@ class AccessibilityChecksTest {
         )
     }
 
+    /**
+     * Where am I? The nav draws the current tab with a gradient and an ink
+     * border, which a screen reader cannot see. Exactly one destination must
+     * report itself as selected, and it has to be the one just opened —
+     * otherwise the only chrome on every screen gives no sense of place.
+     */
+    @Test
+    fun theNavBarSaysWhichDestinationYouAreOn() {
+        for (destination in DESTINATIONS) {
+            compose.onNodeWithContentDescription(destination).performClick()
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+
+            val selected = DESTINATIONS.filter { candidate ->
+                compose.onNodeWithContentDescription(candidate).fetchSemanticsNode()
+                    .config.valueOrNull(SemanticsProperties.Selected) == true
+            }
+            assertEquals(
+                "after opening $destination the nav should report exactly it as selected",
+                listOf(destination),
+                selected,
+            )
+        }
+    }
+
     @Suppress("UNCHECKED_CAST")
     private fun <T> SemanticsConfiguration.valueOrNull(key: SemanticsPropertyKey<T>): T? =
         firstOrNull { it.key == key }?.value as? T
