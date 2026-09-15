@@ -27,7 +27,7 @@ object DbSnapshot {
      * Failures are swallowed on purpose: a backup that crashes the app on launch
      * is worse than a missing backup.
      */
-    fun capture(context: Context, dbName: String = "monarch.db", today: Long = System.currentTimeMillis()): File? =
+    fun capture(context: Context, dbName: String = MonarchDatabase.NAME, today: Long = System.currentTimeMillis()): File? =
         runCatching {
             val live = context.getDatabasePath(dbName)
             if (!live.exists() || live.length() == 0L) return null
@@ -65,7 +65,7 @@ object DbSnapshot {
         name.removeSuffix(".bak").substringAfterLast('.').toLongOrNull()
 
     /** Newest snapshot on disk, for diagnostics and manual recovery. */
-    fun latest(context: Context, dbName: String = "monarch.db"): File? {
+    fun latest(context: Context, dbName: String = MonarchDatabase.NAME): File? {
         val dir = File(context.filesDir, DIR)
         return dir.listFiles()
             ?.filter { it.name.startsWith("$dbName.") }

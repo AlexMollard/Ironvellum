@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -186,6 +187,11 @@ fun MonarchRoot() {
                                             restoreState = !isHome
                                         }
                                     }
+                                    // 48dp is the documented minimum touch
+                                    // target; the icon and label together only
+                                    // came to 31dp, and this is the one control
+                                    // present on every screen.
+                                    .heightIn(min = 48.dp)
                                     .padding(vertical = 8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {

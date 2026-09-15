@@ -33,6 +33,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -460,7 +462,13 @@ private fun DeedSearchField(query: TextFieldValue, onQueryChange: (TextFieldValu
                 singleLine = true,
                 textStyle = MaterialTheme.typography.bodyMedium.copy(color = MonarchColors.Ink),
                 cursorBrush = Brush.horizontalGradient(listOf(MonarchColors.SystemGreen, MonarchColors.SystemGreen)),
-                modifier = Modifier.fillMaxWidth(),
+                // The placeholder is a sibling Text, so the field itself
+                // announced nothing: a screen reader landed on an unlabelled
+                // input. The icon stays decorative (null) — the parent label
+                // is what should be read, not both.
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { contentDescription = "Search deeds" },
             )
             if (query.text.isEmpty()) {
                 Text(
