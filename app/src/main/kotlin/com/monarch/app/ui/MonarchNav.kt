@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -217,6 +218,18 @@ fun MonarchRoot() {
                                     style = MaterialTheme.typography.labelMedium,
                                     fontFamily = ChakraPetch,
                                     color = if (selected) MonarchColors.EmeraldBright else MonarchColors.InkMuted,
+                                    // Six slots share one screen width, so a
+                                    // large system font scale wrapped these
+                                    // mid-word ("Code" / "x") and then clipped
+                                    // the last one. The label holds its design
+                                    // size: the icon above it carries the
+                                    // meaning, and it is also the content
+                                    // description a screen reader announces,
+                                    // which scaling never affects.
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    fontSize = MaterialTheme.typography.labelMedium.fontSize /
+                                        LocalDensity.current.fontScale,
                                 )
                             }
                         }

@@ -255,7 +255,11 @@ fun DashboardScreen(
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
                             color = MonarchColors.SystemGreen,
-                            maxLines = 1,
+                            // One line CLIPPED mid-word at a large font scale:
+                            // "E-Rank · the" instead of "the Awakened". The
+                            // class is earned, so it wraps rather than vanishes.
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
                         )
                         Text(
                             worn?.uppercase() ?: if (ui.unlockedCount > 0) "TAP TO WEAR A TITLE"
@@ -265,6 +269,9 @@ fun DashboardScreen(
                             color = if (worn != null) MonarchColors.SovereignGold else MonarchColors.InkMuted,
                             letterSpacing = MonarchTracking.InlineLabel,
                             maxLines = 1,
+                            // Ellipsis, not a hard cut: a truncated title should
+                            // look truncated rather than misspelt.
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                     // The System gear: settings left the bottom nav, so

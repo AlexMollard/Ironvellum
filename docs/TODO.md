@@ -75,6 +75,14 @@ open-work list.
   Shadow): palette, padding, no overflow, tappable metric tiles, line-chart
   captions. Two suspected defects turned out to be misreads of the screenshot —
   settle layout questions with the accessibility dump's bounds, not pixels.
+- **Large system font scale, verified on device at 1.5x.** Three defects found
+  and fixed: the six nav labels wrapped mid-word then clipped, the rank and
+  class line was cut mid-phrase ("E-Rank · the"), and the worn title cut
+  without an ellipsis. Nav labels now hold their design size — the icon and the
+  content description carry the meaning, neither of which scaling affects.
+  Measured from the accessibility dump rather than by eye: at 1.5x the last
+  label ends at 1053px of 1080. The quest card degrades gracefully, showing
+  fewer movements rather than clipping a row.
 - **Lint's 10 remaining warnings.** Audited individually, all deliberate: 8 are
   `ModifierParameter` ordering convention, and the 2 asking for a plain
   `Modifier` default are the two composables that must carry their own size
