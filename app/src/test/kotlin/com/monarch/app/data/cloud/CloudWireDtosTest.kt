@@ -9,43 +9,19 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.jsonObject
 
 /**
- * The wire contract between these DTOs and supabase/migrations/0001_init.sql
- * is carried entirely by @SerialName. Rename a Kotlin property without
- * updating it and kotlinx silently decodes the server value into the default:
- * e.g. total_xp reading back as null/0 makes CloudSync's monotonic merge push
- * local values OVER the cloud row instead of maxing — permanent data loss on
- * a fresh install. These decodes pin the snake_case column names for the
- * fields whose loss destroys or resurrects user data.
+ * The wire contract between these DTOs and the Supabase schema is carried
+ * entirely by @SerialName. Rename a Kotlin property without updating it and
+ * kotlinx silently decodes the server value into the default — a null id or a
+ * 0kg weight rather than a loud error.
+ *
+ * The aggregate read-back DTOs that used to be pinned here are gone: since
+ * 0011 the ranked numbers are derived inside push_aggregates(), and that
+ * contract is proven in supabase/test/aggregates_probe.sql against a real
+ * database rather than guessed at from a JSON literal.
  */
 class CloudWireDtosTest {
 
     private val json = Json
-
-    @Test
-    fun `profile aggregates decode the snake_case server row the monotonic merge reads`() {
-        val remote = json.decodeFromString<ProfileAggregatesDto>(
-            """{"level": 7, "total_xp": 4200, "titles_count": 3, "lifetime_strength": 987654}""",
-        )
-        assertEquals(7, remote.level)
-        assertEquals(4200L, remote.totalXp)
-        assertEquals(3, remote.titlesCount)
-        assertEquals(987654L, remote.lifetimeStrength)
-    }
-
-    @Test
-    fun `a null profile aggregate column decodes as absent, not zero`() {
-        // Failure mode: NULL on the server means "unknown" and CloudSync then
-        // keeps its local value (?: local). A decode that produced 0 instead
-        // would push LV 1 / 0 XP over a healthy cloud row — exactly the
-        // destruction the max-merge exists to prevent.
-        val remote = json.decodeFromString<ProfileAggregatesDto>(
-            """{"level": null, "total_xp": null, "titles_count": null, "lifetime_strength": null}""",
-        )
-        assertNull(remote.level)
-        assertNull(remote.totalXp)
-        assertNull(remote.titlesCount)
-        assertNull(remote.lifetimeStrength)
-    }
 
     @Test
     fun `a session row decodes its generated id, local_id and nullable completed_at`() {
@@ -75,18 +51,5 @@ class CloudWireDtosTest {
         assertEquals(false, dto.done)
         assertEquals("Pull-up", dto.exerciseName)
         assertEquals(2, dto.setIndex)
-    }
-
-    @Test
-    fun `the shadow push encodes exactly the three migration-0008 columns`() {
-        // Shadow figures go in a separate update so a pre-migration database
-        // rejects only this statement; an extra or misnamed key here would
-        // either break that isolation or silently fall back to a column
-        // default on the server.
-        val encoded = json.encodeToJsonElement(
-            ShadowPushDto(shadowEssence = 10L, shadowCount = 2, shadowRate = 1.5),
-        ).jsonObject
-        assertEquals(setOf("shadow_essence", "shadow_count", "shadow_rate"), encoded.keys)
-        assertEquals("10", encoded["shadow_essence"].toString())
     }
 }

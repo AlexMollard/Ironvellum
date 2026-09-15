@@ -57,79 +57,56 @@ class CloudSync(
             val lifetimeStrength = history.sumOf { (session, _) -> session.strengthScore.toLong() }
 
             val problems = mutableListOf<String>()
-            // Cumulative aggregates (level, xp, titles, lifetime strength)
-            // merge MONOTONICALLY: read our own cloud row first and send
-            // max(local, remote). A fresh install or a local database reset
-            // would otherwise overwrite LV 2 / 120 XP with LV 1 / 0 XP and
-            // permanently destroy the only server-side copy. streak_days is
-            // NOT merged — a streak legitimately resets to 0 after missed
-            // days, so maxing it would keep a dead streak alive forever; it
-            // pushes its live local value.
-            val remote = runCatching {
-                client.postgrest.from("profiles").select(Columns.list(
-                    "level", "total_xp", "titles_count", "lifetime_strength",
-                )) {
-                    filter { eq("id", me.userId) }
-                }.decodeList<ProfileAggregatesDto>().firstOrNull()
-            }.getOrElse { error ->
-                // A failed read must never degrade into a blind overwrite.
-                // Skip the aggregate write entirely, leave the cloud row
-                // untouched, and report it so the UI can call the sync
-                // partial. Sessions/titles below still sync.
-                problems += "Profile aggregates were not synced: ${Cloud.explain(error)}"
-                null
+            // Identity columns only. The aggregates are no longer ours to
+            // state: `authenticated` holds UPDATE/INSERT on
+            // (display_name, visibility, current_title_id) and nothing else,
+            // so naming level or total_xp here would be refused outright.
+            client.postgrest.from("profiles").upsert(
+                ProfileIdentityDto(
+                    id = me.userId,
+                    displayName = me.displayName,
+                    visibility = me.visibility,
+                    currentTitleId = profile.currentTitleId,
+                ),
+            ) {
+                onConflict = "id"
             }
-            if (remote != null) {
-                client.postgrest.from("profiles").upsert(
-                    mergeAggregates(
-                        local = ProfileDto(
-                            id = me.userId,
-                            displayName = me.displayName,
-                            visibility = me.visibility,
-                            level = level,
-                            totalXp = profile.totalXp,
-                            streakDays = streakDays,
-                            titlesCount = titles.size,
-                            lifetimeStrength = lifetimeStrength,
-                            currentTitleId = profile.currentTitleId,
-                        ),
-                        remote = remote,
-                    ),
-                ) {
-                    onConflict = "id"
+
+            // The ranked numbers are DERIVED server-side from the rows pushed
+            // below — set rows for XP, earned titles for the count, sessions
+            // for strength — because anything the client states, a crafted
+            // request can state too. The monotonic max() that used to live in
+            // mergeAggregates now lives inside the function, where it cannot
+            // be bypassed: a fresh install still cannot walk a real hunter's
+            // totals backwards.
+            //
+            // Streak and the shadow figures are passed in because the server
+            // has nothing to derive them from: a streak needs the local
+            // training calendar, and idle state never leaves the device by
+            // design. The function bounds both rather than trusting them.
+            //
+            // This runs LAST, after sessions/sets/titles, or it would derive
+            // from rows that have not arrived yet.
+            val idle = repo.idleSnapshotOnce()
+            suspend fun pushDerivedAggregates() {
+                runCatching {
+                    client.postgrest.rpc(
+                        "push_aggregates",
+                        buildJsonObject {
+                            put("p_streak_days", streakDays)
+                            put("p_shadow_essence", idle?.state?.essence ?: 0L)
+                            put("p_shadow_count", idle?.state?.shadows ?: 0)
+                            put("p_shadow_rate", idle?.rate?.perHour ?: 0.0)
+                        },
+                    )
+                }.onFailure { error ->
+                    // A pre-0011 database has no such function. Report it and
+                    // leave the cloud row untouched rather than failing the
+                    // whole sync: the training rows above are already safe.
+                    problems += "Profile totals were not synced: ${Cloud.explain(error)}"
                 }
             }
 
-            // Shadow figures go in a SEPARATE update so a database without
-            // migration 0008 rejects only this, leaving the training sync
-            // intact. Idle state itself never leaves the device — only the
-            // shareable aggregate, so the cloud never holds the accrual clock.
-            // essence and count are cumulative and merge monotonically like
-            // the training totals; shadow_rate is NOT — it is a current-state
-            // reading that legitimately falls (e.g. after collecting shadows)
-            // and always pushes its live value. Both the read and the write
-            // live inside this runCatching, so a pre-migration database (no
-            // shadow columns) skips the whole block without touching the
-            // training sync above.
-            val idle = repo.idleSnapshotOnce()
-            if (idle != null) {
-                runCatching {
-                    val remoteShadow = client.postgrest.from("profiles").select(
-                        Columns.list("shadow_essence", "shadow_count"),
-                    ) {
-                        filter { eq("id", me.userId) }
-                    }.decodeList<ShadowAggregatesDto>().firstOrNull()
-                    client.postgrest.from("profiles").update(
-                        ShadowPushDto(
-                            shadowEssence = maxOf(idle.state.essence, remoteShadow?.essence ?: 0L),
-                            shadowCount = maxOf(idle.state.shadows, remoteShadow?.count ?: 0),
-                            shadowRate = idle.rate.perHour,
-                        ),
-                    ) {
-                        filter { eq("id", me.userId) }
-                    }
-                }
-            }
 
             // Sessions first so their cloud ids exist before the sets land.
             val pushedNow = mutableListOf<Pair<WorkoutSession, List<SessionSet>>>()
@@ -231,6 +208,10 @@ class CloudSync(
                     onConflict = "user_id,title_id"
                 }
             }
+
+            // Now that every session, set and title has landed, the server has
+            // what it needs to derive the ranked numbers.
+            pushDerivedAggregates()
 
             SyncOutcome(
                 sessions = sessionDtos.size,
@@ -700,33 +681,6 @@ class CloudSync(
         },
     )
 }
-
-/**
- * The monotonic aggregate merge, extracted so it can be tested: this is the one
- * rule in the app whose failure destroys data that exists nowhere else.
- *
- * A fresh install or a local database reset starts at LV 1 / 0 XP. Pushing that
- * blindly would overwrite the only server-side copy of a real profile, so every
- * cumulative field takes `max(local, remote)`.
- *
- * `streakDays` is deliberately NOT merged: a streak legitimately falls to 0
- * after missed days, and maxing it would keep a dead streak alive forever.
- * `displayName`, `visibility` and `currentTitleId` are live choices, not
- * cumulative counters, so the local value always wins.
- *
- * A null remote column means "unknown", not zero, and must leave the local
- * value untouched.
- */
-internal fun mergeAggregates(local: ProfileDto, remote: ProfileAggregatesDto): ProfileDto =
-    local.copy(
-        level = maxOf(local.level, remote.level ?: local.level),
-        totalXp = maxOf(local.totalXp, remote.totalXp ?: local.totalXp),
-        titlesCount = maxOf(local.titlesCount, remote.titlesCount ?: local.titlesCount),
-        lifetimeStrength = maxOf(
-            local.lifetimeStrength,
-            remote.lifetimeStrength ?: local.lifetimeStrength,
-        ),
-    )
 
 /**
  * In-memory TTL cache with single-flight for the social reads. Deliberately
