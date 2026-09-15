@@ -125,6 +125,43 @@ class FiveYearsOfTrainingTest {
         )
     }
 
+    /**
+     * The archive is the disaster-recovery path: the only route a hunter has
+     * back to their training after a lost phone. Export was measured at this
+     * size; importing one never was, and import is the harder direction — it
+     * parses ~0.9 MB of JSON and rewrites every table inside one transaction.
+     */
+    @Test
+    fun aFiveYearArchiveCanBeImportedBack() = runBlocking {
+        val json = repo.exportJson()
+        val sessionsBefore = db.sessionDao().completedCount()
+        val setsBefore = db.sessionDao().completedSetCount()
+        assertTrue("the fixture must be large", sessionsBefore == SESSIONS && setsBefore > SESSIONS)
+
+        val started = System.nanoTime()
+        val result = repo.importArchive(json)
+        val tookMs = (System.nanoTime() - started) / 1_000_000
+
+        assertTrue("importing a five-year archive failed: ${result.exceptionOrNull()}", result.isSuccess)
+        // Restored, not merely accepted: a silent partial restore would leave a
+        // hunter believing their history came back.
+        assertEquals(
+            "the imported archive did not restore every session",
+            sessionsBefore,
+            db.sessionDao().completedCount(),
+        )
+        assertEquals(
+            "the imported archive did not restore every set",
+            setsBefore,
+            db.sessionDao().completedSetCount(),
+        )
+        assertTrue(
+            "importing a %.2f MB archive took ${tookMs}ms at $SESSIONS sessions"
+                .format(json.length / 1048576.0),
+            tookMs < IMPORT_BUDGET_MS,
+        )
+    }
+
     @Test
     fun theDailySnapshotDoesNotFreezeLaunchAtFiveYears() = runBlocking {
         // DbSnapshot.capture() runs on the MAIN thread in Application.onCreate,
@@ -173,5 +210,16 @@ class FiveYearsOfTrainingTest {
          * race Room's first open, so the defence is that it stays fast.
          */
         const val SNAPSHOT_BUDGET_MS = 150L
+
+        /**
+         * Measured: a 0.87 MB archive of 1,000 sessions imports in **2,835 ms**
+         * on this emulator — parse plus a full rewrite of every user table in
+         * one transaction. Three seconds is fine for a one-off restore and the
+         * screen shows a spinner throughout, so the budget guards the shape
+         * that would not be fine: a per-row transaction or an N+1 lookup per
+         * set, which turns three seconds into minutes. 8s is ~3x the
+         * measurement; 10x would be half a minute and would never fail.
+         */
+        const val IMPORT_BUDGET_MS = 8_000L
     }
 }

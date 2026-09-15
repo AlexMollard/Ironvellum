@@ -39,14 +39,21 @@ open-work list.
   against the `create function` signatures and the encoded body, so only the
   transport remains unproven. The SQL halves are proven in
   `supabase/test/assert_all.sql`.
-- CI runs on every push to `origin` and **had failed on every single one**
-  until `gradlew` was given its executable bit (`git update-index --chmod=+x`):
-  created with `curl` on Windows, committed as mode `100644`, so both the
-  `build` and `instrumented` jobs died instantly with
-  `./gradlew: Permission denied` (exit 126). The previous entry here claimed CI
-  had "never run", which was simply wrong — `gh run list` showed a wall of red
-  going back to the first push. Replaying the jobs locally command for command
-  proved the commands, and proved nothing about the runner.
+- CI now passes on GitHub's runners — `build`, `instrumented` and `backend` all
+  green (run 35018823178), the first green run this repository has ever had.
+  Three defects stood between: (1) `gradlew` was committed as mode `100644`
+  from a Windows `curl`, so every run since the first push died in 13 seconds
+  with `./gradlew: Permission denied`; (2) the instrumented job was then killed
+  mid-Gradle with no error line and no annotation — an OOM kill, and the
+  `free -h` added to diagnose it measured **7.8 GiB total, 164 MiB free, 4.5
+  GiB already used before Gradle starts**, not the 16 GiB assumed, so the
+  emulator is now 2 GB with Gradle at `-Xmx2g` and the Kotlin daemon at
+  `-Xmx1g`; (3) my own fix passed a backslash-continued command to `sh -c`,
+  which Gradle read as `Task '\' not found`. The entry that used to sit here
+  claimed CI "had never run" — it had run on every push and failed on every
+  push. Replaying the jobs locally proved the commands and nothing about the
+  runner. The `free`/`df` prints stay in the job so the next failure arrives
+  with evidence.
 - Emulator screenshots are **not** pixel-comparable with the phone: the software
   rasterizer differs, and ink seeds resolve per pixel size. Diff within one
   target, never across.
@@ -441,6 +448,20 @@ open-work list.
   it first looked: a definer-wrapped board, and a narrowed `can_view()` that
   makes both boards read empty for everyone while every refusal check still
   passes.
+
+  Export was measured at five years; **import never was**, and import is the
+  harder direction and the one that matters — it is the only route back to a
+  hunter's training after a lost phone. Measured: a 0.87 MB archive of 1,000
+  sessions imports in **2,835 ms**, parse plus a full rewrite of every user
+  table inside one transaction. Three seconds is fine for a one-off restore
+  and the screen already shows a spinner throughout (checked, not assumed —
+  `InkSpinner` on both the export and import branches), so the budget of 8s
+  guards the shape that would not be fine: a per-row transaction or a lookup
+  per set, which turns three seconds into minutes. The test asserts the data
+  came **back**, not merely that the call succeeded: mutation-proven by
+  dropping every second session on import, which fails with
+  `expected:<1000> but was:<500>` — a silent half-restore is exactly the
+  failure a hunter would not notice until it was too late.
 
   Separately, the calendar broke a test rather than the app: `WorkoutFlowTest`
   assumed today has a seeded program, and the four-weekday seed meant it failed
