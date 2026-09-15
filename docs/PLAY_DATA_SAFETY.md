@@ -111,10 +111,17 @@ Code references:
 
 ## OPEN QUESTIONS (owner must decide; do not submit the form until resolved)
 
-- **Q1 — Deletion mechanism: RESOLVED.** In-app cloud deletion now exists
+- **Q1 — Deletion mechanism: RESOLVED, and now asserted.** In-app cloud deletion exists
   (`AccountRepository.deleteCloudData()`, surfaced in Guild → ALLIES). The
   server-side capability was present from migration 0001 via the
   `profiles_delete` policy plus `on delete cascade`; only the UI was missing.
+  The promise is executed rather than assumed: `supabase/test/assert_all.sql`
+  deletes a hunter's profile as that hunter and asserts no rows survive in
+  `sessions`, `session_sets`, `earned_titles`, `friendships`, `session_likes` or
+  `level_ups`. Proven both ways against a real Postgres — a broken cascade fails
+  on the foreign key, and a MISSING one (the silent case, which orphans rows
+  while the app reports success) fails with
+  `erasing a profile left rows behind in another table`.
   Remaining owner decision: whether to also offer removal of the auth identity,
   which requires service-role credentials and therefore a server-side action.
 - **Q2 — Privacy policy URL:** must be a public, non-geofenced, non-editable

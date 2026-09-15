@@ -227,6 +227,27 @@ begin
         'the SQL level curve disagrees with Xp.progress()'
     );
 
+    -- The data-safety sheet promises in-app erasure: deleting the caller's
+    -- profiles row must take every other row with it. A table added later
+    -- without `on delete cascade` would leave a hunter's training behind
+    -- while the app reported success.
+    set local role authenticated;
+    perform set_config('request.jwt.claims', json_build_object('sub', ayla)::text, true);
+    delete from profiles where id = ayla;
+    reset role;
+    perform assert_true(
+        (select count(*) from sessions where user_id = ayla) = 0
+            and (select count(*) from session_sets s
+                 where exists (select 1 from sessions x
+                               where x.id = s.session_id and x.user_id = ayla)) = 0
+            and (select count(*) from earned_titles where user_id = ayla) = 0
+            and (select count(*) from friendships
+                 where requester_id = ayla or addressee_id = ayla) = 0
+            and (select count(*) from session_likes where user_id = ayla) = 0
+            and (select count(*) from level_ups where user_id = ayla) = 0,
+        'erasing a profile left rows behind in another table'
+    );
+
     raise notice 'ALL BACKEND ASSERTIONS PASSED';
 end $$;
 
