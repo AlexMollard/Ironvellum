@@ -12,14 +12,25 @@
 --   friends -> must appear only once a friendship is accepted
 --   private -> must never appear anywhere but its own account
 
--- Refuses to run anywhere but a development database. This file writes
+-- Refuses to run unless the operator explicitly opts in. This file writes
 -- directly into auth.users and bypasses RLS as the migration owner, so
 -- applying it to production would mint five live identities and a
 -- private-visibility ghost profile. Nothing mechanical kept it out before.
+--
+-- The check is an explicit flag, NOT the database name: a hosted Supabase
+-- project's database is itself called "postgres", so any name-based allow-list
+-- waves this file straight through on production.
+--
+--   psql "$DEV_URL" -v ON_ERROR_STOP=1 \
+--     -c "set monarch.dev_seed = 'yes'" -f supabase/seed/dev_hunters.sql
+--
+-- Run it in ONE psql session with the setting, or set it for the role in dev.
 do $$
 begin
-    if current_database() not in ('postgres', 'monarch_dev', 'postgres_dev') then
-        raise exception 'dev_hunters.sql must never run outside a dev database (got %)', current_database();
+    if coalesce(current_setting('monarch.dev_seed', true), '') <> 'yes' then
+        raise exception
+            'dev_hunters.sql refuses to run: set monarch.dev_seed = ''yes'' first (database %)',
+            current_database();
     end if;
 end $$;
 
