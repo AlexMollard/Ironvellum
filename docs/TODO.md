@@ -46,5 +46,13 @@ open-work list.
 - **Baseline profile / macrobenchmark.** Release cold start measured at a median
   **932 ms** on a software-GPU emulator, which is an upper bound. No evidence of
   a startup problem. Revisit only if a real-device measurement contradicts it.
+- **Lint's 10 remaining warnings.** Audited individually, all deliberate: 8 are
+  `ModifierParameter` ordering convention, and the 2 asking for a plain
+  `Modifier` default are the two composables that must carry their own size
+  (`DeedsBoard` is the scroll container that must never be handed infinite
+  height; `TrendChart` carries the chart height). Changing either moves layout
+  at every call site to satisfy a convention.
+- **R8 keep rules.** Reviewed: scoped to `com.monarch.app.**`, no blanket
+  `-keep class ** { *; }`, and each rule documents the consumer rule it mirrors.
 - **String extraction for localisation.** Hundreds of strings, high breakage, no
   second locale asked for.
