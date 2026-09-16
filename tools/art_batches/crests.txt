@@ -1,0 +1,25 @@
+# Crest emblem batch — one line per catalogue id in Gacha.CREST_FRAMES.
+#
+# Run with:
+#   python tools/art_batches/run.py tools/art_batches/crests.txt
+#
+# STATUS: iron, bronze, silver and gold generated; the remaining six hit
+# QUOTA_EXHAUSTED from cloudcode-pa. The catalogue is deliberately NOT half
+# wired — four drawn crests beside six procedural ones looks worse than either
+# set alone, so the art lands only when all ten exist.
+#
+# Style is fixed at --style ink --alpha --size 384. The suffix matters: these
+# render at 34dp in the player sigil, so the silhouette has to survive being
+# tiny. Fine detail turns to mush at that size.
+#
+# SUFFIX: heraldic emblem, bold thick strokes, massive simple silhouette, no fine detail, no frame, no border, centred, readable at thumbnail size
+iron|a plain riveted iron shield, blunt and heavy
+bronze|a laurel wreath closed around a single bar
+silver|a crescent moon above two crossed spears
+gold|a sunburst crown, broad rays
+jade|a coiled serpent around one leaf
+crimson|a clenched gauntlet held upward
+obsidian|a shattered eight-pointed shard star
+aurora|a rippling banner arc above one star
+void|an eclipse ring with inward rays
+monarch|a tall crown flanked by two folded wings

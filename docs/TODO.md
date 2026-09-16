@@ -189,6 +189,27 @@ open-work list.
   Method note: the report said "all screens" and the fix is one file. Measuring
   every probe at four scales is what separated the one frozen surface from the
   ones that were fine, and the same numbers proved the fix.
+- **Art: four new empty states drawn, and the generator's paper film fixed at
+  source.** `tools/art.py --alpha` keys by density, which maps blank paper to a
+  LOW alpha rather than zero: measured 78-91% of every canvas at alpha 3-24,
+  invisible in isolation and plainly a lighter box on a near-black panel. That
+  is how the first three pieces shipped, and the owner spotted it on a real
+  screen before any check did. The generator now cuts the film with a soft knee
+  above the histogram gap, and `backdrop_audit` reports it — clear corners and
+  low opaque coverage both passed the old check. Shadow, allies, board and
+  chronicle art wired (the last replacing a `◇` glyph). Each was cropped 7%
+  first: the model draws its own faint sketch frame in the margin, which is the
+  same box by another route.
+
+- **Crest art is 4/10 and deliberately unwired.** `iron`, `bronze`, `silver`
+  and `gold` are drawn; the remaining six hit `QUOTA_EXHAUSTED` from
+  cloudcode-pa. Four drawn crests beside six procedural ones would look worse
+  than either set, so nothing lands in `res/` until all ten exist. The batch is
+  resumable: `python tools/art_batches/run.py tools/art_batches/crests.txt`
+  skips what is already drawn and stops with a named reason, so a later run
+  finishes the set rather than redrawing it. Prompts are in the batch file
+  beside the status, including the suffix that matters — these render at 34dp
+  in the player sigil, where fine detail turns to mush.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:
