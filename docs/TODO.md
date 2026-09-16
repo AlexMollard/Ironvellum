@@ -173,6 +173,22 @@ open-work list.
   surfaces a genuine failure instead of crashing. Verified on device: four taps
   issued with no gap on a live session leave the crash buffer empty and pay
   `total 25 XP` once.
+- **Nav labels froze instead of capping, and the owner caught it.** Reported as
+  "text scaling broken on all screens"; measured on the S25 Ultra it was one
+  surface, and it was real. Body text scales correctly (`STREAK` 122px at 1.0x
+  -> 184px at 1.5x -> 245px at 2.0x), but the six bottom-nav labels were set to
+  `fontSize / fontScale`, which renders them at ONE physical size at every
+  setting — identical 102px at 0.9x, 1.0x, 1.5x and 2.0x. The cap was meant to
+  stop six labels wrapping mid-word past ~1.15x; freezing them also ignored a
+  hunter who asked for **smaller** text. Now `min(fontScale, 1.15)/fontScale`,
+  measured on device: 0.85x -> 86px, 0.9x -> 92px, 1.0x -> 102px, then 118px at
+  1.3x, 1.5x and 2.0x with all six labels still present. Pinned by
+  `NavLabelScaleTest` and mutation-proven — restoring the old divide fails two
+  of the four cases.
+
+  Method note: the report said "all screens" and the fix is one file. Measuring
+  every probe at four scales is what separated the one frozen surface from the
+  ones that were fine, and the same numbers proved the fix.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:
