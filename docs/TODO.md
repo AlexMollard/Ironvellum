@@ -210,6 +210,23 @@ open-work list.
   finishes the set rather than redrawing it. Prompts are in the batch file
   beside the status, including the suffix that matters — these render at 34dp
   in the player sigil, where fine detail turns to mush.
+- **Large-type Court, judged by eye rather than by "no clipping".** A geometric
+  sweep said all six screens were clean at 2.0x, and the owner looking at the
+  phone said it looked bad anyway — both were right. Three fixes came out of
+  the screenshot: the XP rail was a fixed `height(20.dp)` with the count INSIDE
+  it, so the label overflowed its own bar; the step dial holds
+  "0 / 10,000 STEPS" inside a 104dp ring, where large type spills across the
+  stroke, so the ring now grows to 1.35x and then yields to the same counter
+  row as its neighbours (the one shape that cannot overflow); and the worn-title
+  line read "NO TITLE EARN…", hiding the word that says what the state is, so
+  it takes a second line above 1.3x. Verified at 1.0x and 2.0x: no ellipsised
+  node anywhere, and the step goal keeps its separators (`0 / 10,000`).
+
+  Standing limit: the owner's phone disconnected mid-session
+  (`device not found`, only the emulator attached), so these three are verified
+  on the emulator. An empty `settings get system font_scale` during that window
+  was a failed call against a gone device, not a device at default — worth
+  knowing before reading anything into an empty adb result.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:
