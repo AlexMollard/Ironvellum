@@ -227,6 +227,20 @@ open-work list.
   on the emulator. An empty `settings get system font_scale` during that window
   was a failed call against a gone device, not a device at default — worth
   knowing before reading anything into an empty adb result.
+- **Two more large-type defects, both found by LOOKING rather than measuring.**
+  The geometric sweep passed Train and Stats at 2.0x; the screenshots did not.
+  On Stats the shared `InkSegmented` gives every option an equal-width slot, so
+  three labels became **"BODY | TRAININACTIVIT"** — sliced mid-word with no
+  ellipsis. Above 1.3x the segments now STACK, keeping each label whole inside
+  the one bordered group; at 1.0x they stay side by side (verified: all three
+  share y=294). On Train the trailing spacer that clears the floating
+  "+ New Preset" button was a fixed 128dp while the button is TEXT and grows
+  with the font, so the last preset sat under it at 2.0x; the clearance now
+  scales with the setting.
+
+  Worth keeping: "no node is off-screen or squished" passed both of these.
+  A geometric check catches geometry, not sliced words or a button parked on
+  top of content — for those the screenshot is the instrument.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:

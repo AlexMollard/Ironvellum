@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -231,7 +232,10 @@ fun PresetsScreen(
                     }
                 }
             }
-            Spacer(Modifier.height(128.dp))
+            // Clears the floating button, which is TEXT and so grows with the
+            // system font: a fixed 128dp left the last preset under the button
+            // at 2.0x, where the FAB is nearly twice as tall.
+            Spacer(Modifier.height(128.dp * LocalDensity.current.fontScale.coerceIn(1f, 2f)))
         }
         ExtendedFloatingActionButton(
             onClick = onNew,

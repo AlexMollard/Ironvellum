@@ -46,6 +46,7 @@ import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -462,18 +463,36 @@ fun <T> InkSegmented(
     modifier: Modifier = Modifier,
 ) {
     val shape = MaterialTheme.shapes.extraSmall
-    Row(
-        modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(MonarchColors.Abyss)
-            .inkBorder(MonarchColors.Rune, shape, 1.dp),
-    ) {
+    // Equal-width segments cannot hold their labels at a large system font:
+    // three of them turned "BODY | TRAINING | ACTIVITY" into
+    // "BODY | TRAININACTIVIT" — sliced mid-word with no ellipsis. Above the
+    // threshold the segments STACK, which keeps every label whole and keeps the
+    // group one bordered object.
+    val stacked = LocalDensity.current.fontScale > 1.3f
+    val group: @Composable (@Composable (Modifier) -> Unit) -> Unit = { segment ->
+        if (stacked) {
+            Column(
+                modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .background(MonarchColors.Abyss)
+                    .inkBorder(MonarchColors.Rune, shape, 1.dp),
+            ) { segment(Modifier.fillMaxWidth()) }
+        } else {
+            Row(
+                modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .background(MonarchColors.Abyss)
+                    .inkBorder(MonarchColors.Rune, shape, 1.dp),
+            ) { segment(Modifier.weight(1f)) }
+        }
+    }
+    group { slot ->
         options.forEach { (value, label) ->
             val isOn = value == selected
             Box(
-                Modifier
-                    .weight(1f)
+                slot
                     .clip(shape)
                     .background(if (isOn) MonarchColors.Vault else Color.Transparent)
                     .then(
