@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -47,6 +49,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.alpha
+import com.monarch.app.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
@@ -936,6 +941,15 @@ private fun FriendsPanel(
         val accepted = ui.friends.filter { it.accepted }
 
         if (incoming.isEmpty() && accepted.isEmpty() && !ui.friendsLoading) {
+            Image(
+                painter = painterResource(R.drawable.art_empty_allies),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(140.dp)
+                    .alpha(0.55f),
+            )
+            Spacer(Modifier.height(10.dp))
             Text(
                 "No allies yet. Solo is how every hunter starts — invite one by name below.",
                 style = MaterialTheme.typography.bodySmall,

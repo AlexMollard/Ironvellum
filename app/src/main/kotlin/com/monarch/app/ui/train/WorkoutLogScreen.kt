@@ -3,6 +3,11 @@ package com.monarch.app.ui.train
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.layout.size
+import com.monarch.app.R
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -124,10 +129,10 @@ fun WorkoutLogScreen(
                     Modifier.fillMaxWidth().padding(vertical = 40.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        "\u25C7",
-                        fontSize = 34.sp,
-                        color = MonarchColors.InkMuted,
+                    Image(
+                        painter = painterResource(R.drawable.art_empty_chronicle),
+                        contentDescription = null,
+                        modifier = Modifier.size(150.dp).alpha(0.55f),
                     )
                     Spacer(Modifier.height(12.dp))
                     Text(

@@ -17,6 +17,7 @@ import com.monarch.app.ui.social.crestFrameTreatment
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -46,6 +47,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.painterResource
+import com.monarch.app.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -928,6 +931,15 @@ private fun RelicVault(relics: List<RelicHolding>) {
                 )
             }
             if (relics.isEmpty()) {
+                Image(
+                    painter = painterResource(R.drawable.art_empty_shadows),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .size(132.dp)
+                        .alpha(0.55f),
+                )
+                Spacer(Modifier.height(10.dp))
                 Text(
                     "Nothing drawn yet.",
                     style = MaterialTheme.typography.bodySmall,

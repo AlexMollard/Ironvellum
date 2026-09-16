@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -316,12 +317,16 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
     Box(
         modifier
             .fillMaxWidth()
-            .height(20.dp)
+            // heightIn, not height: the count lives INSIDE the rail, and at a
+            // 2x system font that label is taller than 20dp — it overflowed the
+            // bar and spilled past its right edge. The rail now grows with its
+            // own text and reads as a thicker stroke instead of a broken one.
+            .heightIn(min = 20.dp)
             .clip(shape)
             .background(Brush.verticalGradient(listOf(Color(0xFF121A16), Color(0xFF0B100E))))
             .inkBorder(MonarchColors.Rune, shape),
     ) {
-        Canvas(Modifier.fillMaxSize()) {
+        Canvas(Modifier.matchParentSize()) {
             inkRail(
                 fraction = animated,
                 track = Color.Transparent,
@@ -339,7 +344,7 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
                 .align(Alignment.CenterEnd)
                 .padding(end = 4.dp)
                 .background(Color(0xCC070B09), MaterialTheme.shapes.extraSmall)
-                .padding(horizontal = 6.dp, vertical = 1.dp),
+                .padding(horizontal = 6.dp, vertical = 2.dp),
         ) {
             Text(
                 "$into / $needed XP",

@@ -187,6 +187,13 @@ def postprocess(
         # Density-based, not region-based: see ink_to_alpha for why keying the
         # ground by flood fill was not good enough.
         im = ink_to_alpha(im)
+        # Cut the paper FILM. Density keying maps every paper pixel to a low
+        # alpha rather than to zero, so ~80-90% of the canvas came out at
+        # alpha 3-24: invisible in isolation and plainly visible on device as a
+        # lighter box behind the drawing, which is how the first three pieces
+        # shipped. Measured histograms show a clean gap between that film and
+        # the real strokes, so cut below the gap and ramp through it.
+        im = cut_paper_film(im)
     elif on_dark:
         im = invert_for_dark(im) if ink_is_dark(im) else im
     if colors:
@@ -259,6 +266,30 @@ def ink_to_alpha(im, tint: tuple[int, int, int] = INK_TINT):
     out.putalpha(alpha)
     return out
 
+
+
+def cut_paper_film(im, low: int = 20, high: int = 40):
+    """Zero the low-alpha wash that density keying leaves behind.
+
+    `ink_to_alpha` turns darkness into opacity, which is right for the strokes
+    and wrong for the paper: blank paper is not perfectly white, so it lands at
+    alpha 3-24 instead of 0. Over the app's near-black panel that reads as a
+    lighter rectangle exactly the size of the image.
+
+    A soft knee rather than a hard threshold, so the drawing's own feathered
+    edges do not gain a visible cut line.
+    """
+    lut = []
+    for v in range(256):
+        if v <= low:
+            lut.append(0)
+        elif v >= high:
+            lut.append(v)
+        else:
+            lut.append(int(round(high * (v - low) / (high - low))))
+    alpha = im.getchannel("A").point(lut)
+    im.putalpha(alpha)
+    return im
 
 
 def lift_shadows(im, floor: int = 70):
@@ -391,14 +422,21 @@ def backdrop_audit(png: bytes) -> str:
         px[x, y][3] for y in range(0, h, 3) for x in range(0, w, 3)
     ]
     coverage = sum(1 for a in sampled if a > 180) / len(sampled)
+    # The film is what the corner and coverage checks both miss: density keying
+    # maps blank paper to a LOW alpha rather than zero, so an image can have
+    # clear corners, little "opaque" area, and still carry a lighter box across
+    # its whole canvas on a near-black panel. Three pieces shipped that way.
+    film = sum(1 for a in sampled if 3 <= a <= 24) / len(sampled)
     problems = []
     if opaque_corners:
         problems.append(f"{len(opaque_corners)}/4 corners opaque")
     if coverage > 0.55:
         problems.append(f"{100 * coverage:.0f}% of the image is opaque (paper slab)")
+    if film > 0.05:
+        problems.append(f"{100 * film:.0f}% of px at alpha 3-24 (paper film)")
     if problems:
         return "; ".join(problems) + " -> NOT KEYED"
-    return f"transparent ({100 * coverage:.0f}% ink coverage) -> OK"
+    return f"transparent ({100 * coverage:.0f}% ink, {100 * film:.0f}% film) -> OK"
 
 
 def main() -> None:

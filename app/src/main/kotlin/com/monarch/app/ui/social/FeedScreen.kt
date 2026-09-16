@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -49,6 +50,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.draw.alpha
+import com.monarch.app.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -418,6 +422,15 @@ private fun EmptyFeed(onRefresh: () -> Unit) {
             letterSpacing = MonarchTracking.InlineLabel,
         )
         Spacer(Modifier.height(8.dp))
+        Image(
+            painter = painterResource(R.drawable.art_empty_board),
+            contentDescription = null,
+            modifier = Modifier
+                .align(Alignment.CenterHorizontally)
+                .size(150.dp)
+                .alpha(0.55f),
+        )
+        Spacer(Modifier.height(10.dp))
         Text(
             "No hunts are public yet. Make yours visible from the account screen's visibility setting, then be the first name on the board.",
             style = MaterialTheme.typography.bodySmall,
