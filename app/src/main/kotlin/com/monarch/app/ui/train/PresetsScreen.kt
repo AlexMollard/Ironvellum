@@ -232,10 +232,9 @@ fun PresetsScreen(
                     }
                 }
             }
-            // Clears the floating button, which is TEXT and so grows with the
-            // system font: a fixed 128dp left the last preset under the button
-            // at 2.0x, where the FAB is nearly twice as tall.
-            Spacer(Modifier.height(128.dp * LocalDensity.current.fontScale.coerceIn(1f, 2f)))
+            // Clears the floating button. One text scale app-wide, so one
+            // clearance is enough.
+            Spacer(Modifier.height(128.dp))
         }
         ExtendedFloatingActionButton(
             onClick = onNew,

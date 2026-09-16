@@ -91,6 +91,7 @@ import com.monarch.app.ui.components.InkRail
 import com.monarch.app.ui.theme.inkHairline
 import com.monarch.app.ui.theme.inkArc
 import com.monarch.app.ui.theme.inkBorder
+import com.monarch.app.ui.theme.FIXED_FONT_SCALE
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.components.formatDate
@@ -214,7 +215,9 @@ fun DashboardScreen(
     // still holds in split screen where the app owns half the display.
     val density = LocalDensity.current
     val windowHeightDp = with(density) { LocalWindowInfo.current.containerSize.height.toDp().value }
-    val linesOfRoom = windowHeightDp / density.fontScale
+    // The scale is pinned app-wide, so this is just the window's height in
+    // design-size text lines.
+    val linesOfRoom = windowHeightDp / FIXED_FONT_SCALE
     val roomForGauges = linesOfRoom >= 400f
     // Below this the column cannot hold the dashboard at all: landscape
     // measures ~411, a small display at 2x text ~347, stock portrait 891.
@@ -282,11 +285,7 @@ fun DashboardScreen(
                             fontFamily = ChakraPetch,
                             color = if (worn != null) MonarchColors.SovereignGold else MonarchColors.InkMuted,
                             letterSpacing = MonarchTracking.InlineLabel,
-                            // Two lines at a large system font: at 2.0x this is
-                            // the line that read "NO TITLE EARN…", hiding the
-                            // one word that says what the state IS. A worn
-                            // title still gets one line at normal sizes.
-                            maxLines = if (density.fontScale > 1.3f) 2 else 1,
+                            maxLines = 1,
                             // Ellipsis, not a hard cut: a truncated title should
                             // look truncated rather than misspelt.
                             overflow = TextOverflow.Ellipsis,
@@ -370,33 +369,12 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    // The dial holds "0 / 10,000 STEPS" INSIDE a 104dp ring, so
-                    // at a large system font the text outgrows its own circle
-                    // and spills across the stroke — seen on the owner's phone
-                    // at 2.0x. The ring grows with the type up to a point, then
-                    // the dial gives way to the same counter row as its
-                    // neighbours, which is the one shape that cannot overflow.
-                    val gaugeScale = density.fontScale.coerceIn(1f, 1.35f)
-                    if (density.fontScale <= 1.35f) {
-                        StepGauge(
-                            steps = ui.stepsToday,
-                            goal = STEP_GOAL,
-                            modifier = Modifier.size(104.dp * gaugeScale),
-                        )
-                    }
+                    StepGauge(
+                        steps = ui.stepsToday,
+                        goal = STEP_GOAL,
+                        modifier = Modifier.size(104.dp),
+                    )
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        if (density.fontScale > 1.35f) {
-                            GaugeStat(
-                                label = "STEPS",
-                                value = "%,d / %,d".format(ui.stepsToday, STEP_GOAL),
-                                accent = if (ui.stepsToday >= STEP_GOAL) {
-                                    MonarchColors.SovereignGold
-                                } else {
-                                    MonarchColors.EmeraldBright
-                                },
-                                fraction = (ui.stepsToday.toFloat() / STEP_GOAL).coerceIn(0f, 1f),
-                            )
-                        }
                         GaugeStat(
                             label = "STREAK",
                             value = if (ui.streak > 0) "${ui.streak}d" else "—",

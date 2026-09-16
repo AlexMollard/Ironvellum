@@ -25,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -218,30 +217,13 @@ fun MonarchRoot() {
                                     style = MaterialTheme.typography.labelMedium,
                                     fontFamily = ChakraPetch,
                                     color = if (selected) MonarchColors.EmeraldBright else MonarchColors.InkMuted,
-                                    // Six slots share one screen width, so a
-                                    // large system font scale wrapped these
-                                    // mid-word ("Code" / "x") and then clipped
-                                    // the last one. The label holds its design
-                                    // size: the icon above it carries the
-                                    // meaning, and it is also the content
-                                    // description a screen reader announces,
-                                    // which scaling never affects.
+                                    // Six slots share one screen width, so the
+                                    // label must never wrap. It cannot grow
+                                    // either: the app pins the text scale
+                                    // (MonarchTheme), so this row has one size
+                                    // to fit rather than a range.
                                     maxLines = 1,
                                     softWrap = false,
-                                    // CAP the growth, do not freeze the size.
-                                    // Dividing by fontScale rendered these at
-                                    // one physical size at every setting, so a
-                                    // hunter who asked for SMALLER text still
-                                    // got the 1.0x label — measured identical at
-                                    // 0.9x, 1.0x, 1.5x and 2.0x on device.
-                                    // Scaling by min(fontScale, CAP)/fontScale
-                                    // follows the setting down and stops
-                                    // climbing past the cap, where six labels
-                                    // stop fitting one screen width.
-                                    fontSize = MaterialTheme.typography.labelMedium.fontSize *
-                                        navLabelScale(LocalDensity.current.fontScale),
-                                    letterSpacing = MaterialTheme.typography.labelMedium.letterSpacing *
-                                        navLabelScale(LocalDensity.current.fontScale),
                                 )
                             }
                         }
@@ -375,18 +357,3 @@ fun MonarchRoot() {
         }
     }
 }
-
-/**
- * How much of the system font scale the bottom-nav labels may take.
- *
- * Six labels share one screen width: past ~1.15x they wrap mid-word ("Code" /
- * "x") and the last one clips. So the growth is capped — but the shrink is not,
- * because a hunter who sets a smaller system font meant it.
- *
- * Returned as a MULTIPLIER on the declared sp size, which already scales by
- * fontScale itself, so the product lands at min(fontScale, CAP) of design size.
- */
-private const val NAV_LABEL_SCALE_CAP = 1.15f
-
-internal fun navLabelScale(fontScale: Float): Float =
-    if (fontScale <= 0f) 1f else minOf(fontScale, NAV_LABEL_SCALE_CAP) / fontScale

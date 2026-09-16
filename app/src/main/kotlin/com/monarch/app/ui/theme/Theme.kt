@@ -7,6 +7,9 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
@@ -146,10 +149,31 @@ private val MonarchShapes = Shapes(
 /** Monarch is always dark — the System never sleeps. Dynamic color is deliberately unused. */
 @Composable
 fun MonarchTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = MonarchColorScheme,
-        typography = MonarchTypography,
-        shapes = MonarchShapes,
-        content = content,
+    // ONE text scale, by owner decision.
+    //
+    // Every size in this app is declared in sp, so the system font setting was
+    // multiplying all of it and each screen needed its own defence: a cap on
+    // the nav labels, a rail that grew with its own label, a step dial that
+    // gave way to a counter row, tab segments that stacked, a floating button
+    // whose clearance scaled. The app now pins the scale instead, so the
+    // layouts have exactly one size to be correct at.
+    //
+    // The cost is real and deliberate: a hunter who enlarges system text does
+    // not get larger text here. Display size (density) still applies, and the
+    // app's own sizes are unaffected — this overrides the scale only.
+    val fixed = Density(
+        density = LocalDensity.current.density,
+        fontScale = FIXED_FONT_SCALE,
     )
+    CompositionLocalProvider(LocalDensity provides fixed) {
+        MaterialTheme(
+            colorScheme = MonarchColorScheme,
+            typography = MonarchTypography,
+            shapes = MonarchShapes,
+            content = content,
+        )
+    }
 }
+
+/** The single scale every Monarch layout is designed and verified at. */
+const val FIXED_FONT_SCALE = 1f
