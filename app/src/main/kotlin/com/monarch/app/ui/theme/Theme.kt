@@ -177,3 +177,28 @@ fun MonarchTheme(content: @Composable () -> Unit) {
 
 /** The single scale every Monarch layout is designed and verified at. */
 const val FIXED_FONT_SCALE = 1f
+
+/**
+ * Re-applies the pinned text scale inside a dialog.
+ *
+ * A Compose `Dialog` hosts its content in its OWN window and composition, and
+ * that composition re-provides the platform `LocalDensity` — so the override
+ * `MonarchTheme` installs for the activity does not reach it. Measured on the
+ * emulator before this existed: with the app pinned, the weigh-in dialog's
+ * "LOG BODY READING" still grew from 409px to 756px between system 1.0x and
+ * 2.0x while every screen behind it stayed put.
+ *
+ * Wrap the content of every dialog in this.
+ */
+@Composable
+fun FixedTextScale(content: @Composable () -> Unit) {
+    val current = LocalDensity.current
+    if (current.fontScale == FIXED_FONT_SCALE) {
+        content()
+        return
+    }
+    CompositionLocalProvider(
+        LocalDensity provides Density(current.density, FIXED_FONT_SCALE),
+        content = content,
+    )
+}

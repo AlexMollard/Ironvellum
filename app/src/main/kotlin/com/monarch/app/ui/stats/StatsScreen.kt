@@ -80,6 +80,7 @@ import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.inkStroke
+import com.monarch.app.ui.theme.FixedTextScale
 import com.monarch.app.ui.theme.MonarchColors
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -812,6 +813,7 @@ private fun AddStatDialog(
     ) else null
 
     Dialog(onDismissRequest = onDismiss) {
+        FixedTextScale {
         SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.Emerald) {
             Column(
                 Modifier.fillMaxWidth(),
@@ -924,6 +926,7 @@ private fun AddStatDialog(
                     )
                 }
             }
+        }
         }
     }
 }

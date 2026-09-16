@@ -275,6 +275,21 @@ open-work list.
   and the store itself is wrapped too. Claim idempotence is pinned alongside
   completion: a second claim of one skill pays nothing more, asserted on total
   XP rather than on the exception.
+- **The single-scale pin leaked at dialogs, and the leak was invisible.** A
+  Compose `Dialog` hosts its content in its own window and composition, and
+  that composition re-provides the platform `LocalDensity` — so the override
+  `MonarchTheme` installs never reached it. Measured with the app already
+  pinned: the weigh-in dialog's "LOG BODY READING" grew **409px -> 756px**
+  between system 1.0x and 2.0x while every screen behind it held still. All
+  four real `Dialog(` call sites now wrap their content in `FixedTextScale`,
+  and the dialog set measures identical at both scales. `InkCoverageTest` gains
+  a scan for it — mutation-proven by unwrapping one dialog, which fails the new
+  case by name.
+
+  This is the kind of gap the earlier "0 differing nodes" result could not see:
+  that sweep walked the activity's own screens, and the dialog was a different
+  window. Pinning a composition local covers the tree it is provided to, and
+  nothing else.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:
