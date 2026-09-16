@@ -101,6 +101,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import com.monarch.app.ui.launchGuarded
 import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.LocalDate
@@ -182,7 +183,7 @@ class DashboardViewModel(private val repo: Repository) : ViewModel() {
     }
 
     fun beginPreset(presetId: Long, onStarted: (Long) -> Unit) {
-        viewModelScope.launch { onStarted(repo.startSessionFromPreset(presetId)) }
+        viewModelScope.launchGuarded("begin preset") { onStarted(repo.startSessionFromPreset(presetId)) }
     }
 }
 

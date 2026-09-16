@@ -102,6 +102,26 @@ class DoubleCompletionTest {
         assertEquals(1, db.sessionDao().completedCount())
     }
 
+    @Test
+    fun theSecondClaimOfOneSkillPaysNothingMore() = runBlocking {
+        // Same shape as a session: the repository refuses a repeat by throwing,
+        // and the claim screen used to launch that with no catch. The XP is
+        // what matters — a second claim must not pay again.
+        val skill = com.monarch.app.domain.Skills.ALL.first()
+        repo.logSkillPractice(skill.name, 1, null)
+        val first = repo.claimSkill(skill.name)
+        assertTrue("the first claim must pay XP", first.xpAwarded > 0)
+        val xpAfterFirst = db.profileDao().get()!!.totalXp
+
+        val second = runCatching { repo.claimSkill(skill.name) }
+        assertTrue("a second claim of one skill must not succeed", second.isFailure)
+        assertEquals(
+            "total XP must reflect exactly one claim",
+            xpAfterFirst,
+            db.profileDao().get()!!.totalXp,
+        )
+    }
+
     private companion object {
         const val TEST_DB = "double_completion_test.db"
     }

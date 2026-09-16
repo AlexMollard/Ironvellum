@@ -51,6 +51,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import com.monarch.app.ui.launchGuarded
 import kotlinx.coroutines.launch
 
 data class TrainUi(
@@ -68,7 +69,7 @@ class PresetsViewModel(private val repo: Repository) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrainUi())
 
     fun begin(presetId: Long, onStarted: (Long) -> Unit) {
-        viewModelScope.launch { onStarted(repo.startSessionFromPreset(presetId)) }
+        viewModelScope.launchGuarded("begin preset") { onStarted(repo.startSessionFromPreset(presetId)) }
     }
 
     fun beginQuick(onStarted: (Long) -> Unit) {

@@ -85,6 +85,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import com.monarch.app.ui.theme.MonarchTracking
 import kotlinx.coroutines.flow.stateIn
+import com.monarch.app.ui.launchGuarded
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
@@ -158,7 +159,7 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
     }
 
     fun addStat(weightKg: Double, bodyFatPct: Double?) {
-        viewModelScope.launch { repo.addStat(weightKg, bodyFatPct) }
+        viewModelScope.launchGuarded("log reading") { repo.addStat(weightKg, bodyFatPct) }
     }
 
     /** Profile sex; feeds the body-fat estimator's formula choice. */

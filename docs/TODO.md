@@ -257,6 +257,24 @@ open-work list.
   crest and the app icon should not double as one.
   `tools/art_batches/icon.txt` holds three candidate motifs and the reason each
   word of the prompt is there; it needs quota, nothing else.
+- **Every throwing repository call is now caught at the view model.** The
+  session-completion fix was one instance of a class: the data layer enforces
+  its invariants by throwing (`completeSession`, `claimSkill`, `unclaimSkill`,
+  `equipTitle`, `logSkillPractice`, `startSessionFromPreset`, `addStat`,
+  `setHeight`, `rename`), which is right for the data layer and wrong for a
+  `viewModelScope.launch` with no catch — a second tap landing before the UI
+  moved on took the exception into the scope and the app with it. A sweep found
+  **ten such sites**; all now go through `launchGuarded`, which logs and does
+  nothing, because the user's action in every one of these cases is "that
+  already happened". Re-swept to zero.
+
+  **One of those was a regression I had just introduced.** The body-figure
+  bounds made `addStat` throw, and the Health Connect import calls it directly
+  with another app's data — so a bad provider reading would have crashed the
+  import. That path now refuses the reading with a message naming the value,
+  and the store itself is wrapped too. Claim idempotence is pinned alongside
+  completion: a second claim of one skill pays nothing more, asserted on total
+  XP rather than on the exception.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:

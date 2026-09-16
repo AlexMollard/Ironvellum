@@ -82,6 +82,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import com.monarch.app.ui.launchGuarded
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.Locale
@@ -142,7 +143,7 @@ class SettingsViewModel(
 
     fun setHeight(raw: String) {
         val cm = raw.trim().toDoubleOrNull()
-        if (BodyLimits.validHeight(cm)) viewModelScope.launch { repo.setHeight(cm!!) }
+        if (BodyLimits.validHeight(cm)) viewModelScope.launchGuarded("set height") { repo.setHeight(cm!!) }
     }
 
     fun setSex(sex: Sex) {
@@ -184,7 +185,7 @@ class SettingsViewModel(
     fun rename(name: String) {
         val trimmed = name.trim()
         if (trimmed.isEmpty()) return
-        viewModelScope.launch { repo.rename(trimmed) }
+        viewModelScope.launchGuarded("rename") { repo.rename(trimmed) }
     }
 
     fun setMode(mode: TrainingMode) {
@@ -244,10 +245,34 @@ class SettingsViewModel(
                 return@launch
             }
             val message: String
+            if (snapshot.weightKg != null && !BodyLimits.validWeight(snapshot.weightKg)) {
+                // Health Connect is another app's data, so it is a trust
+                // boundary like the keyboard: addStat REFUSES an implausible
+                // figure, and refusing by throwing here would crash the import
+                // rather than report it.
+                _sync.value = _sync.value.copy(
+                    syncing = false,
+                    available = true,
+                    message = "Health Connect returned an implausible weight " +
+                        "(${snapshot.weightKg} kg); not imported.",
+                )
+                return@launch
+            }
             if (snapshot.weightKg != null) {
                 // Height is stamped from the profile inside addStat; no height
                 // on record yet means the row lands heightless (BMI stays "—").
-                repo.addStat(snapshot.weightKg, snapshot.bodyFatPct)
+                // Bounds were checked above, so a throw here means something
+                // else went wrong; the import reports it rather than dying.
+                val stored = runCatching { repo.addStat(snapshot.weightKg, snapshot.bodyFatPct) }
+                if (stored.isFailure) {
+                    _sync.value = _sync.value.copy(
+                        syncing = false,
+                        available = true,
+                        message = "Could not store the imported reading: " +
+                            stored.exceptionOrNull()?.message.orEmpty(),
+                    )
+                    return@launch
+                }
                 message = if (bodyProfile.value.first == null) {
                     "Imported into your stat history. Set your height below to unlock BMI."
                 } else {

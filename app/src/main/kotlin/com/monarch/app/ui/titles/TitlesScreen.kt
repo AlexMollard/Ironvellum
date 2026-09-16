@@ -52,6 +52,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import com.monarch.app.ui.launchGuarded
 import kotlinx.coroutines.launch
 import androidx.annotation.DrawableRes
 import com.monarch.app.R
@@ -120,15 +121,15 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TitlesUi())
 
     fun equip(titleId: String) {
-        viewModelScope.launch { repo.equipTitle(titleId) }
+        viewModelScope.launchGuarded("equip title") { repo.equipTitle(titleId) }
     }
 
     fun practice(skillName: String, value: Int, weightKg: Double?) {
-        viewModelScope.launch { repo.logSkillPractice(skillName, value, weightKg) }
+        viewModelScope.launchGuarded("log practice") { repo.logSkillPractice(skillName, value, weightKg) }
     }
 
     fun claim(skillName: String) {
-        viewModelScope.launch {
+        viewModelScope.launchGuarded("claim skill") {
             val result = repo.claimSkill(skillName)
             // The roll is banked HERE, at the one place a level-up is produced.
             // Granting it from a LaunchedEffect keyed on the result double-paid
@@ -140,7 +141,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }
 
     fun unclaim(skillName: String) {
-        viewModelScope.launch { repo.unclaimSkill(skillName) }
+        viewModelScope.launchGuarded("unclaim skill") { repo.unclaimSkill(skillName) }
     }
     fun dismissClaim() {
         _claim.value = null
