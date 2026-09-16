@@ -77,7 +77,6 @@ import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.inkBorder
-import com.monarch.app.ui.theme.FixedTextScale
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import java.time.Instant
@@ -775,7 +774,6 @@ private fun FeedCard(
             showLikers = false
             onLikersClosed(entry.sessionId)
         }) {
-            FixedTextScale {
             SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.SovereignGold) {
                 Text(
                     "CHEERS FROM THE GUILD",
@@ -846,7 +844,6 @@ private fun FeedCard(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-        }
     }
         }
 }

@@ -37,7 +37,6 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.inkBorder
-import com.monarch.app.ui.theme.FixedTextScale
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.inkDot
 import kotlin.math.sin
@@ -76,7 +75,6 @@ fun AchievementOverlay(items: List<Achievement>, onDone: () -> Unit) {
         onDismissRequest = onDone,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        FixedTextScale {
         val shimmer = rememberInfiniteTransition(label = "burst")
         val wave by shimmer.animateFloat(
             initialValue = 0f,
@@ -221,7 +219,6 @@ fun AchievementOverlay(items: List<Achievement>, onDone: () -> Unit) {
                     gold = true,
                 )
             }
-        }
         }
     }
 }

@@ -86,7 +86,6 @@ import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchTracking
 import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.inkDot
-import com.monarch.app.ui.theme.FixedTextScale
 import com.monarch.app.ui.theme.MonarchColors
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -493,7 +492,6 @@ private fun VictoryOverlay(
         onDismissRequest = onContinue,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        FixedTextScale {
         Box(
             Modifier
                 .fillMaxSize()
@@ -574,7 +572,6 @@ private fun VictoryOverlay(
                     )
                 }
             }
-        }
         }
     }
 }

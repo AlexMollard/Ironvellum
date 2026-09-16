@@ -149,56 +149,16 @@ private val MonarchShapes = Shapes(
 /** Monarch is always dark — the System never sleeps. Dynamic color is deliberately unused. */
 @Composable
 fun MonarchTheme(content: @Composable () -> Unit) {
-    // ONE text scale, by owner decision.
-    //
-    // Every size in this app is declared in sp, so the system font setting was
-    // multiplying all of it and each screen needed its own defence: a cap on
-    // the nav labels, a rail that grew with its own label, a step dial that
-    // gave way to a counter row, tab segments that stacked, a floating button
-    // whose clearance scaled. The app now pins the scale instead, so the
-    // layouts have exactly one size to be correct at.
-    //
-    // The cost is real and deliberate: a hunter who enlarges system text does
-    // not get larger text here. Display size (density) still applies, and the
-    // app's own sizes are unaffected — this overrides the scale only.
-    val fixed = Density(
-        density = LocalDensity.current.density,
-        fontScale = FIXED_FONT_SCALE,
+    // The text scale is pinned in MainActivity.attachBaseContext, which every
+    // window of the app inherits — including dialogs, which compose in their
+    // own window and so ignored a CompositionLocal installed here.
+    MaterialTheme(
+        colorScheme = MonarchColorScheme,
+        typography = MonarchTypography,
+        shapes = MonarchShapes,
+        content = content,
     )
-    CompositionLocalProvider(LocalDensity provides fixed) {
-        MaterialTheme(
-            colorScheme = MonarchColorScheme,
-            typography = MonarchTypography,
-            shapes = MonarchShapes,
-            content = content,
-        )
-    }
 }
 
 /** The single scale every Monarch layout is designed and verified at. */
 const val FIXED_FONT_SCALE = 1f
-
-/**
- * Re-applies the pinned text scale inside a dialog.
- *
- * A Compose `Dialog` hosts its content in its OWN window and composition, and
- * that composition re-provides the platform `LocalDensity` — so the override
- * `MonarchTheme` installs for the activity does not reach it. Measured on the
- * emulator before this existed: with the app pinned, the weigh-in dialog's
- * "LOG BODY READING" still grew from 409px to 756px between system 1.0x and
- * 2.0x while every screen behind it stayed put.
- *
- * Wrap the content of every dialog in this.
- */
-@Composable
-fun FixedTextScale(content: @Composable () -> Unit) {
-    val current = LocalDensity.current
-    if (current.fontScale == FIXED_FONT_SCALE) {
-        content()
-        return
-    }
-    CompositionLocalProvider(
-        LocalDensity provides Density(current.density, FIXED_FONT_SCALE),
-        content = content,
-    )
-}

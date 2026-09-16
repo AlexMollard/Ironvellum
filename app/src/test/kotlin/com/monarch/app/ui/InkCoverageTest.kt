@@ -33,33 +33,6 @@ class InkCoverageTest {
         )
     }
 
-    /**
-     * Every dialog must re-pin the text scale.
-     *
-     * A Compose `Dialog` hosts its content in its own window and composition,
-     * which re-provides the platform `LocalDensity` — so the fixed scale that
-     * `MonarchTheme` installs for the activity does NOT reach it. Measured:
-     * with the app pinned, the weigh-in dialog still grew from 409px to 756px
-     * between system 1.0x and 2.0x. Same justification as the scans above: the
-     * violation is textual and otherwise only visible by changing a system
-     * setting and looking.
-     */
-    @Test
-    fun `every dialog re-pins the text scale`() {
-        val offenders = sources.filter { file ->
-            val text = file.readText()
-            val opens = Regex("""\n\s*Dialog\(""").findAll(text).count()
-            opens > 0 && !text.contains("FixedTextScale")
-        }
-        assertEquals(
-            "these files open a Dialog without FixedTextScale, so its content " +
-                "follows the system font while every screen behind it does not: " +
-                offenders.map { it.name },
-            emptyList<String>(),
-            offenders.map { it.name },
-        )
-    }
-
     @Test
     fun `no geometric shape classes reach the ui`() {
         // These are the exact classes the ink shapes replaced. `MaterialTheme.shapes`
