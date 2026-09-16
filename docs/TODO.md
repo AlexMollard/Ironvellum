@@ -242,6 +242,21 @@ open-work list.
   Worth keeping: "no node is off-screen or squished" passed both of these.
   A geometric check catches geometry, not sliced words or a button parked on
   top of content — for those the screenshot is the instrument.
+- **App icon: pipeline built and proven, art blocked on quota.**
+  `tools/icon_install.py` turns one keyed PNG into all 20 files the manifest
+  references — foreground, monochrome and the legacy bitmaps across five
+  density buckets — and encodes the two rules that are easy to get wrong by
+  hand: the adaptive mask keeps only the centre 72dp of 108dp, so art is scaled
+  into that 66% rather than drawn edge to edge; and the monochrome layer is
+  written as flat white on the source's alpha, because Android tints that layer
+  and colour in it means nothing. It refuses an unkeyed source (an all-opaque
+  PNG — the old wash-laden shape) and a fully transparent one; both refusals
+  fire. Proven end to end with a stand-in emblem: built, installed, and the
+  icon photographed **on the launcher**, inside its mask, not judged from the
+  PNG. The res files were then reverted, because the stand-in was a catalogue
+  crest and the app icon should not double as one.
+  `tools/art_batches/icon.txt` holds three candidate motifs and the reason each
+  word of the prompt is there; it needs quota, nothing else.
 - **Stated product rules audited against the code, with citations.** The idle
   cap was the only violation found (see the decisions table). Each of these was
   checked rather than recalled:
