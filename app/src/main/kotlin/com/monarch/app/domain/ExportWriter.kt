@@ -107,6 +107,11 @@ object ExportWriter {
                 append(",\"setIndex\":").append(set.setIndex)
                 append(",\"reps\":").append(set.reps)
                 append(",\"weightKg\":").appendNullable(set.weightKg) { append(it) }
+                // Timed/distance/graded sets: dropping these erased every
+                // non-lifting measurement on a restore.
+                append(",\"durationSec\":").appendNullable(set.durationSec) { append(it) }
+                append(",\"distanceM\":").appendNullable(set.distanceM) { append(it) }
+                append(",\"grade\":").appendNullable(set.grade) { appendEscaped(it) }
                 append(",\"modifiers\":").appendEscaped(set.modifiers)
                 append(",\"done\":").append(set.done)
                 append("}")

@@ -53,6 +53,8 @@ import kotlin.math.sin
 import kotlin.random.Random
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 
 /**
  * Tapping a node opens this, never an instant claim: the standard to clear,
@@ -102,7 +104,15 @@ fun SkillDetailDialog(
             }
         },
         text = {
-            Column(Modifier.fillMaxWidth()) {
+            // The dialog's text slot is height-capped, and this column is long:
+            // standard, why, prerequisite, tally, load stepper, log, claim. Once
+            // it overflowed, the LAST children measured at zero height — the
+            // "Claim mastery" button rendered 272x0 dp and could not be pressed.
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .verticalScroll(rememberScrollState()),
+            ) {
                 DetailBlock("CLAIM STANDARD", skill.standard, MonarchColors.SovereignGold)
                 DetailBlock("WHY IT MATTERS", skill.why, MonarchColors.InkMuted)
                 if (skill.requires != null) {

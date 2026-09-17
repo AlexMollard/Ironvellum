@@ -254,6 +254,7 @@ fun MonarchRoot() {
                     DashboardScreen(
                         onStartSession = { id -> navController.navigate(Routes.session(id)) },
                         onOpenPresets = { navController.navigate(Routes.PRESETS) { launchSingleTop = true } },
+                        onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                         onOpenCodex = {
                             // Same semantics as tapping the Codex tab: keep home
                             // on the stack so system-back returns to Court.

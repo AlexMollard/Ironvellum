@@ -42,6 +42,7 @@ import com.monarch.app.domain.WorkoutSession
 import com.monarch.app.ui.components.Achievement
 import com.monarch.app.ui.components.AchievementOverlay
 import com.monarch.app.ui.components.SectionHeader
+import com.monarch.app.domain.WorkoutPreset
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.components.MonarchTabPill
 import com.monarch.app.ui.theme.ChakraPetch
@@ -83,6 +84,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
         repo.observeHistory(),
         repo.observeHealthDays(),
         repo.observeExercises(),
+        repo.observePresets(),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         val unlocked = values[0] as List<UnlockedTitle>
@@ -95,6 +97,8 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
         val healthDays = values[4] as List<HealthDay>
         @Suppress("UNCHECKED_CAST")
         val exercises = values[5] as List<Exercise>
+        @Suppress("UNCHECKED_CAST")
+        val presets = values[6] as List<WorkoutPreset>
 
         val claimed = practices.filter { it.claimed }
 
@@ -116,6 +120,10 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
                 // metric/category live on the Exercise, so activity deeds read
                 // zero without the catalogue
                 exercises = exercises.associateBy { it.id },
+                // The streak rule needs the schedule: without it a rest day
+                // would read as a missed day and the streak deeds would sit at
+                // a number the Court disagrees with.
+                scheduledWeekdays = presets.mapNotNull { it.scheduledDay }.toSet(),
             ),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TitlesUi())

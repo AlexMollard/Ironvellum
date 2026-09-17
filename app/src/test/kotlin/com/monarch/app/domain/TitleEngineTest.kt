@@ -6,9 +6,60 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+import java.time.LocalDate
+
 class TitleEngineTest {
 
     private val ledger = Titles.Ledger(totalXp = 0, workouts = 0, sets = 0, reps = 0)
+
+    @Test
+    fun `a rest day does not break the streak but a skipped training day does`() {
+        val today = LocalDate.of(2026, 9, 18) // a Friday
+        // Scheduled Mon/Wed/Fri. The days in between are rest, and rest must
+        // neither grow nor break the run — the streak counted calendar days
+        // before, so anyone training three times a week read 1.
+        val monWedFri = setOf(1, 3, 5)
+        val trained = setOf(
+            LocalDate.of(2026, 9, 9), LocalDate.of(2026, 9, 11),
+            LocalDate.of(2026, 9, 14), LocalDate.of(2026, 9, 16), LocalDate.of(2026, 9, 18),
+        )
+        assertEquals(5, Titles.trainingStreakDays(trained, monWedFri, today))
+
+        // Skipping a SCHEDULED day breaks it: Wednesday the 16th was missed.
+        assertEquals(
+            1,
+            Titles.trainingStreakDays(trained - LocalDate.of(2026, 9, 16), monWedFri, today),
+        )
+
+        // Today is forgiving: a scheduled day not yet trained still shows the
+        // run, so opening the app in the morning never reads 0.
+        assertEquals(
+            4,
+            Titles.trainingStreakDays(trained - today, monWedFri, today),
+        )
+    }
+
+    @Test
+    fun `the deeds ledger carries the streak it is judged on`() {
+        // trainingStreakDays was never assigned by ledgerOf, so it defaulted
+        // to 0 and every TrainingStreak deed was unreachable.
+        val zone = java.time.ZoneId.systemDefault()
+        val today = LocalDate.now()
+        val history = (0L..6L).map { back ->
+            val at = today.minusDays(back).atStartOfDay(zone).toInstant().toEpochMilli()
+            WorkoutSession(id = back + 1, label = "Pull", startedAtMs = at, completedAtMs = at) to
+                emptyList<SessionSet>()
+        }
+        val built = Titles.ledgerOf(
+            totalXp = 0,
+            history = history,
+            healthDays = emptyList(),
+            practices = emptyList(),
+            exercises = emptyMap(),
+        )
+        assertEquals(7, built.trainingStreakDays)
+        assertTrue(Titles.satisfied(TitleRule.TrainingStreak(7), built))
+    }
 
     @Test
     fun `first workout rule needs one workout`() {

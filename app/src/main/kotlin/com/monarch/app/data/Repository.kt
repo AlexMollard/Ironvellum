@@ -308,7 +308,27 @@ class Repository(
 
     // ---------------------------------------------------------------- sessions
 
+    /**
+     * One live session at a time. Starting a second one left the first stranded
+     * forever: it never completes, so it pays no XP, and the dashboard's resume
+     * row only ever surfaces the most recent — the older trial became
+     * invisible work. A live session with nothing ticked off is an accidental
+     * start and is discarded; one with logged sets is real training, so it is
+     * returned instead of being replaced, and the caller lands back in it.
+     *
+     * Returns the id of a live session that must be used instead of a new one,
+     * or null when the field is clear.
+     */
+    private suspend fun claimLiveSession(): Long? {
+        val live = sessionDao.liveSession() ?: return null
+        val hasLoggedWork = sessionDao.setsFor(live.id).any { it.done }
+        if (hasLoggedWork) return live.id
+        sessionDao.deleteAbandoned(live.id)
+        return null
+    }
+
     suspend fun startSessionFromPreset(presetId: Long): Long = db.withTransaction {
+        claimLiveSession()?.let { return@withTransaction it }
         val pw = presetDao.presetWithEntries(presetId) ?: error("Preset $presetId not found")
         val sessionId = sessionDao.insertSession(
             SessionEntity(
@@ -327,16 +347,20 @@ class Repository(
 
         val sets = pw.entries.sortedBy { it.position }.flatMapIndexed { entryPos, entry ->
             val exercise = exerciseById[entry.exerciseId]
-            val recent = sessionDao.recentDoneSets(entry.exerciseId)
-            val latestSessionId = recent.firstOrNull()?.sessionId
-            val lastAttempts = recent.takeWhile { it.sessionId == latestSessionId }
-                .sortedBy { it.setIndex }
-                .map { Progression.Attempt(it.weightKg, it.reps) }
-            val recommendation = Progression.fromSets(
+            // Every logged session for this movement, newest first — not just
+            // the last one. `fromSets` wrapped a single session, so the stall
+            // counter was always 0 and the deload at STALLS_BEFORE_DELOAD could
+            // never fire: a hunter grinding the same failed load got told to
+            // repeat it forever.
+            val history = sessionDao.recentDoneSets(entry.exerciseId)
+                .groupBy { it.sessionId }
+                .values
+                .map { rows -> rows.sortedBy { it.setIndex }.map { Progression.Attempt(it.weightKg, it.reps) } }
+            val recommendation = Progression.fromSessions(
                 mode = mode,
                 targetReps = entry.targetReps,
                 minSets = entry.targetSets,
-                sets = lastAttempts,
+                sessions = history,
                 muscleGroup = exercise?.muscleGroup ?: "",
                 exerciseName = exercise?.name ?: "",
             )
@@ -357,7 +381,8 @@ class Repository(
         sessionId
     }
 
-    suspend fun startFreeformSession(label: String): Long =
+    suspend fun startFreeformSession(label: String): Long = db.withTransaction {
+        claimLiveSession()?.let { return@withTransaction it }
         sessionDao.insertSession(
             SessionEntity(
                 presetId = null,
@@ -367,6 +392,7 @@ class Repository(
                 xpAwarded = 0,
             ),
         )
+    }
 
     fun observeSession(sessionId: Long): Flow<WorkoutSession?> =
         sessionDao.observeSession(sessionId).map { it?.toDomain() }
@@ -415,16 +441,34 @@ class Repository(
             ),
         )
     }
-    suspend fun addExtraSet(sessionId: Long, exerciseId: Long, reps: Int, weightKg: Double?, modifiers: String): Long {
-        val index = sessionDao.setsFor(sessionId).count { it.exerciseId == exerciseId }
-        val existing = sessionDao.setsFor(sessionId).firstOrNull { it.exerciseId == exerciseId }
-        return sessionDao.insertSets(
+
+    /**
+     * Also the "add a movement mid-session" path. The read of the existing rows
+     * and the insert share one transaction: computing setIndex from a separate
+     * read let two quick taps mint the same index and break the "Set N" labels.
+     * A movement the session did not start with lands after every other one —
+     * a fixed 99 collided, so two added movements shared a position and merged
+     * into one block.
+     */
+    suspend fun addExtraSet(
+        sessionId: Long,
+        exerciseId: Long,
+        reps: Int,
+        weightKg: Double?,
+        modifiers: String,
+    ): Long = db.withTransaction {
+        val rows = sessionDao.setsFor(sessionId)
+        val mine = rows.filter { it.exerciseId == exerciseId }
+        val existing = mine.firstOrNull()
+        val position = existing?.exercisePosition
+            ?: ((rows.maxOfOrNull { it.exercisePosition } ?: -1) + 1)
+        sessionDao.insertSets(
             listOf(
                 SetLogEntity(
                     sessionId = sessionId,
                     exerciseId = exerciseId,
-                    exercisePosition = existing?.exercisePosition ?: 99,
-                    setIndex = index,
+                    exercisePosition = position,
+                    setIndex = mine.size,
                     reps = reps,
                     weightKg = weightKg,
                     modifiers = existing?.modifiers ?: modifiers,
@@ -432,6 +476,32 @@ class Repository(
                 ),
             ),
         ).first()
+    }
+
+    /**
+     * Moves one movement's whole block up or down the session order. The swap
+     * goes through a sentinel position because `exercisePosition` is shared by
+     * every set of a movement: writing A->B before B->A would briefly give two
+     * movements the same position and fuse their blocks. Completed sessions are
+     * immutable, like every other set edit.
+     */
+    suspend fun moveSessionExercise(sessionId: Long, exercisePosition: Int, up: Boolean) = db.withTransaction {
+        val session = sessionDao.byId(sessionId)
+        if (session != null && session.completedAtMs == null) {
+            val positions = sessionDao.setsFor(sessionId)
+                .map { it.exercisePosition }
+                .distinct()
+                .sorted()
+            val index = positions.indexOf(exercisePosition)
+            val swapIndex = if (up) index - 1 else index + 1
+            if (index >= 0 && swapIndex in positions.indices) {
+                val other = positions[swapIndex]
+                val sentinel = (positions.max() + 1)
+                sessionDao.moveExercisePosition(sessionId, exercisePosition, sentinel)
+                sessionDao.moveExercisePosition(sessionId, other, exercisePosition)
+                sessionDao.moveExercisePosition(sessionId, sentinel, other)
+            }
+        }
     }
 
     /**
@@ -533,6 +603,7 @@ class Repository(
             healthDays = observeHealthDays().first(),
             practices = observeSkillPractices().first(),
             exercises = exerciseCatalogue(),
+            scheduledWeekdays = scheduledWeekdays(),
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         val now = finishedAt
@@ -696,8 +767,13 @@ class Repository(
     suspend fun pushWatermark(): Map<Long, Int> =
         syncStateDao.all().associate { it.sessionId to it.fingerprint }
 
-    /** Called only after a push succeeds; prunes sessions deleted since. */
-    suspend fun recordPushWatermark(fingerprints: Map<Long, Int>) {
+    /**
+     * Called only after a push succeeds; prunes sessions deleted since. Both
+     * writes share a transaction: a crash between them left watermarks for
+     * sessions that no longer exist, and the next push read them as already
+     * uploaded.
+     */
+    suspend fun recordPushWatermark(fingerprints: Map<Long, Int>) = db.withTransaction {
         syncStateDao.upsertAll(fingerprints.map { SyncStateEntity(it.key, it.value) })
         syncStateDao.pruneExcept(fingerprints.keys.toList())
     }
@@ -763,9 +839,13 @@ class Repository(
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         if (newly.isEmpty()) return emptyList()
         val now = System.currentTimeMillis()
-        titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
-        if (profileDao.get()?.currentTitleId == null) {
-            profileDao.setCurrentTitle(newly.first().id)
+        // Insert and equip together: a crash between them left the titles held
+        // but nothing worn, and the unlock never came round again.
+        db.withTransaction {
+            titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
+            if (profileDao.get()?.currentTitleId == null) {
+                profileDao.setCurrentTitle(newly.first().id)
+            }
         }
         // Every earned title gets its moment: reconciliation runs before any UI
         // exists, so the awards wait here until a screen can show them.
@@ -789,6 +869,14 @@ class Repository(
      */
     suspend fun completedActivitySets() = sessionDao.completedActivitySets()
 
+    /**
+     * ISO weekdays (1 = Monday) that carry a scheduled preset. The streak rule
+     * needs them: an unscheduled day is rest, a scheduled day that was skipped
+     * breaks the streak.
+     */
+    suspend fun scheduledWeekdays(): Set<Int> =
+        presetDao.observePresets().first().mapNotNull { it.preset.scheduledDay }.toSet()
+
     /** Ledger over everything logged: sessions, health days and skill practice. */
     suspend fun currentLedger(): Titles.Ledger = Titles.ledgerOf(
         totalXp = profileDao.get()?.totalXp ?: 0L,
@@ -796,6 +884,7 @@ class Repository(
         healthDays = observeHealthDays().first(),
         practices = observeSkillPractices().first(),
         exercises = exerciseCatalogue(),
+        scheduledWeekdays = scheduledWeekdays(),
     )
 
     // ---------------------------------------------------------------- skills
@@ -849,6 +938,7 @@ class Repository(
             healthDays = observeHealthDays().first(),
             practices = observeSkillPractices().first(),
             exercises = exerciseCatalogue(),
+            scheduledWeekdays = scheduledWeekdays(),
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
@@ -866,12 +956,20 @@ class Repository(
         )
     }
 
-    /** Undo an accidental claim: removes mastery and takes the XP back. */
+    /**
+     * Undo an accidental claim: removes mastery and takes the XP back. The
+     * subtraction is clamped at the stored total — `addXp(-xp)` on a profile
+     * that had spent nothing could drive totalXp negative, which Xp.progress
+     * only hides on screen while the row stayed wrong. Rolls and titles the
+     * claim already granted are deliberately kept: a title once earned is not
+     * taken back.
+     */
     suspend fun unclaimSkill(skillName: String) = db.withTransaction {
         val def = Skills.forName(skillName) ?: error("Unknown skill $skillName")
         if (skillPracticeDao.claim(skillName) == null) return@withTransaction
         skillPracticeDao.deleteClaims(skillName)
-        profileDao.addXp(-def.xp.toLong())
+        val total = profileDao.get()?.totalXp ?: 0L
+        profileDao.addXp(-minOf(def.xp.toLong(), total))
     }
 
     suspend fun rename(name: String) {
@@ -1110,7 +1208,16 @@ class Repository(
                 // the whole import. Kept out of the count so the summary does
                 // not claim rows it discarded.
                 val usableStats = archive.stats.filter {
-                    BodyLimits.validWeight(it.weightKg) && BodyLimits.validBodyFat(it.bodyFatPct)
+                    val ok = BodyLimits.validWeight(it.weightKg) && BodyLimits.validBodyFat(it.bodyFatPct)
+                    // Say so. Dropping a weigh-in silently meant a restore could
+                    // lose readings and still report a clean import.
+                    if (!ok) {
+                        problems.add(
+                            "reading from ${Instant.ofEpochMilli(it.takenAtMs).atZone(ZoneId.systemDefault()).toLocalDate()} dropped: " +
+                                "${it.weightKg} kg / ${it.bodyFatPct ?: "-"}% outside plausible range",
+                        )
+                    }
+                    ok
                 }
                 usableStats.forEach { s ->
                     statDao.insert(
@@ -1179,7 +1286,10 @@ class Repository(
     fun observeIdleInputs(): Flow<IdleInputs> = combine(
         sessionDao.observeCompletedWithSets(),
         skillPracticeDao.observeAll(),
-    ) { completed, practices -> idleInputs(completed, practices) }
+        presetDao.observePresets(),
+    ) { completed, practices, presets ->
+        idleInputs(completed, practices, presets.mapNotNull { it.preset.scheduledDay }.toSet())
+    }
 
     fun observeIdleRate(): Flow<IdleRate> = combine(
         observeIdle(),
@@ -1208,8 +1318,21 @@ class Repository(
      */
     suspend fun collectIdle(nowMs: Long): Long = db.withTransaction {
         val current = idleDao.get() ?: IdleStateEntity()
+        // No baseline yet. The seeded row carries lastCollectedAtMs = 0, which
+        // Idle.accruedExact deliberately reads as "nothing earned" (the epoch
+        // would otherwise pay a 56-year absence). Nothing else ever wrote the
+        // timestamp, so `gained > 0` never held and a brand new hunter accrued
+        // zero essence forever. Start the clock instead of banking nothing.
+        if (current.lastCollectedAtMs <= 0L) {
+            idleDao.upsert(current.copy(lastCollectedAtMs = nowMs))
+            return@withTransaction 0L
+        }
         val state = current.toIdleState()
-        val inputs = idleInputs(sessionDao.observeCompletedWithSets().first(), skillPracticeDao.observeAll().first())
+        val inputs = idleInputs(
+            sessionDao.observeCompletedWithSets().first(),
+            skillPracticeDao.observeAll().first(),
+            scheduledWeekdays(),
+        )
         val rate = Idle.rate(state, inputs.sessionsLast7d, inputs.volumeLast7d, inputs.skillsUnlocked, inputs.streakDays)
         val gained = Idle.accrued(state, rate, nowMs)
         if (gained > 0) {
@@ -1284,7 +1407,9 @@ class Repository(
         val current = gachaDao.get() ?: GachaStateEntity()
         if (current.rolls <= 0) return@withTransaction null
         gachaDao.upsert(current.copy(rolls = current.rolls - 1))
-        val result = Gacha.roll(seed)
+        // Owned frames are excluded from the draw: a duplicate was silently
+        // deduped on insert, so the roll was spent and nothing was granted.
+        val result = Gacha.roll(seed, gachaDao.ownedFrameIds().toSet())
         when (val reward = result.reward) {
             is Reward.Shadows -> grantIdle(reward.count, 1.0)
             is Reward.Relic -> {
@@ -1309,6 +1434,7 @@ class Repository(
     private fun idleInputs(
         completed: List<SessionWithSets>,
         practices: List<SkillPracticeEntity>,
+        scheduledWeekdays: Set<Int>,
     ): IdleInputs {
         val weekAgoMs = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L
         val recent = completed.filter { (it.session.completedAtMs ?: 0L) >= weekAgoMs }
@@ -1324,7 +1450,7 @@ class Repository(
             sessionsLast7d = recent.size,
             volumeLast7d = volume,
             skillsUnlocked = practices.filter { it.claimed }.map { it.skillName }.distinct().size,
-            streakDays = Titles.trainingStreakDays(completedDates),
+            streakDays = Titles.trainingStreakDays(completedDates, scheduledWeekdays),
         )
     }
 

@@ -143,4 +143,35 @@ class ExportWriterTest {
 
         assertEquals(entries, restored.measurements)
     }
+
+    @Test
+    fun `timed distance and grade set fields survive a real write then read`() {
+        // Regression guard: the writer once omitted durationSec/distanceM/grade,
+        // so a restore wiped the measurement of every non-lifting set.
+        val sets = listOf(
+            SessionSet(
+                id = 9, exerciseId = 3, exerciseName = "Board Problem", setIndex = 0, reps = 1,
+                weightKg = null, modifiers = "", done = true,
+                durationSec = 95, distanceM = 1250.5, grade = "V7",
+            ),
+        )
+        val json = ExportWriter.write(
+            profile = PlayerProfile(),
+            trainingMode = TrainingMode.STRENGTH,
+            presets = emptyList(),
+            sessions = listOf(
+                WorkoutSession(id = 3, label = "S", startedAtMs = 1) to sets,
+            ),
+            stats = emptyList(),
+            titles = emptyList(),
+            skills = emptyList(),
+            healthDays = emptyList(),
+            exportedAtMs = 1,
+        )
+        val restored = ExportReader.read(json).getOrThrow().sessions.single().second.single()
+
+        assertEquals(95, restored.durationSec)
+        assertEquals(1250.5, restored.distanceM!!, 0.0)
+        assertEquals("V7", restored.grade)
+    }
 }

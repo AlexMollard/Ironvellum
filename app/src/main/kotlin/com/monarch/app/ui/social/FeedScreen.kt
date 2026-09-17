@@ -151,6 +151,9 @@ class FeedViewModel(
                 when {
                     account != null && !wasSignedIn -> load()
                     account == null -> _ui.value = _ui.value.copy(entries = emptyList())
+                    // Restored offline: the identity came back but the profiles
+                    // row never did — retry it on this social read.
+                    !account.profileLoaded -> viewModelScope.launch { accountRepo.refreshProfile() }
                 }
             }
         }
@@ -341,18 +344,26 @@ fun FeedScreen(
             ui.loading && ui.entries.isEmpty() -> LoadingPanel()
             ui.entries.isEmpty() && err != null -> ErrorPanel(err, onRetry = { viewModel.load(force = true) })
             ui.entries.isEmpty() -> EmptyFeed(onRefresh = { viewModel.load(force = true) })
-            else -> Feed(
-                ui,
-                onRetryLikers = viewModel::retryLikers,
-                onLikersClosed = viewModel::dismissLikersError,
-                onRefresh = { viewModel.load(force = true) },
-                onLoadMore = viewModel::loadMore,
-                onOpenHunter = onOpenHunter,
-                onToggleLike = viewModel::toggleLike,
-                onShowLikers = viewModel::loadLikers,
-                onAddAlly = viewModel::addAlly,
-                equippedFrame = equippedFrame,
-            )
+            else -> {
+                // A failed refresh must not hide behind yesterday's rows: the
+                // banner rides above the list, rows stay in place.
+                if (ui.error != null) {
+                    InlineErrorBanner("The newest fetch failed — these hunts are the last synced board: ${ui.error}")
+                    Spacer(Modifier.height(10.dp))
+                }
+                Feed(
+                    ui,
+                    onRetryLikers = viewModel::retryLikers,
+                    onLikersClosed = viewModel::dismissLikersError,
+                    onRefresh = { viewModel.load(force = true) },
+                    onLoadMore = viewModel::loadMore,
+                    onOpenHunter = onOpenHunter,
+                    onToggleLike = viewModel::toggleLike,
+                    onShowLikers = viewModel::loadLikers,
+                    onAddAlly = viewModel::addAlly,
+                    equippedFrame = equippedFrame,
+                )
+            }
         }
         Spacer(Modifier.height(28.dp))
     }
@@ -441,6 +452,26 @@ private fun EmptyFeed(onRefresh: () -> Unit) {
     }
 }
 
+/** Compact failure note over stale rows — never a dialog, never displacing the list. */
+@Composable
+private fun InlineErrorBanner(message: String) {
+    val shape = MaterialTheme.shapes.small
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .background(Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)), shape)
+            .inkBorder(MonarchColors.DangerRed, shape, 1.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Text(
+            message,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.DangerRed,
+        )
+    }
+}
+
 @Composable
 private fun ErrorPanel(reason: String, onRetry: () -> Unit) {
     SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.DangerRed) {
@@ -482,11 +513,10 @@ private fun Feed(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            if (ui.error != null) "Older hunts still shown — the newest fetch failed: ${ui.error}"
-            else "Every hunter's public hunts, newest first",
+            "Every hunter's public hunts, newest first",
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
-            color = if (ui.error != null) MonarchColors.DangerRed else MonarchColors.InkMuted,
+            color = MonarchColors.InkMuted,
             modifier = Modifier.weight(1f),
         )
     }

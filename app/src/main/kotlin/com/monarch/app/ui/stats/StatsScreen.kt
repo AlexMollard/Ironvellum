@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -190,7 +191,8 @@ fun StatsScreen(
         viewModel(factory = viewModelFactory { initializer { StatsViewModel(monarchRepository()) } }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    var showAdd by remember { mutableStateOf(false) }
+    // Saveable: a rotation mid-add used to slam the dialog shut and drop the weigh-in.
+    var showAdd by rememberSaveable { mutableStateOf(false) }
     var drill by remember { mutableStateOf<String?>(null) }
     var month by remember { mutableStateOf(YearMonth.now()) }
     var tab by remember { mutableStateOf(StatsTab.BODY) }
@@ -791,8 +793,10 @@ private fun AddStatDialog(
     onDismiss: () -> Unit,
     onConfirm: (Double, Double?) -> Unit,
 ) {
-    val weight = remember { mutableStateOf(initialWeight) }
-    val bodyFat = remember { mutableStateOf("") }
+    // Saveable so a half-entered weigh-in survives rotation/process death; the
+    // prefills are initial values only — restored user input wins over them.
+    val weight = rememberSaveable { mutableStateOf(initialWeight) }
+    val bodyFat = rememberSaveable { mutableStateOf("") }
     val bfValue = bodyFat.value.toDoubleOrNull()
     // Bounded, not merely positive: a typo'd body fat of 500 used to reach
     // Katch-McArdle and show a negative resting burn as fact.
@@ -800,10 +804,10 @@ private fun AddStatDialog(
     val validBodyFat = bodyFat.value.isBlank() && bfValue == null || BodyLimits.validBodyFat(bfValue)
 
     // Estimator state: prefill the tapes from the hunter's latest measurements.
-    var showEstimator by remember { mutableStateOf(false) }
-    val neck = remember { mutableStateOf(measurements[MeasurementSite.NECK]?.toString() ?: "") }
-    val waist = remember { mutableStateOf(measurements[MeasurementSite.WAIST]?.toString() ?: "") }
-    val hips = remember { mutableStateOf(measurements[MeasurementSite.HIPS]?.toString() ?: "") }
+    var showEstimator by rememberSaveable { mutableStateOf(false) }
+    val neck = rememberSaveable { mutableStateOf(measurements[MeasurementSite.NECK]?.toString() ?: "") }
+    val waist = rememberSaveable { mutableStateOf(measurements[MeasurementSite.WAIST]?.toString() ?: "") }
+    val hips = rememberSaveable { mutableStateOf(measurements[MeasurementSite.HIPS]?.toString() ?: "") }
     val estimate = if (showEstimator) BodyStats.estimateBodyFatNavy(
         sex, heightCm ?: 0.0,
         neck.value.toDoubleOrNull() ?: 0.0,

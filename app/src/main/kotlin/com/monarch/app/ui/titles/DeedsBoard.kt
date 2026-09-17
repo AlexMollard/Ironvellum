@@ -27,6 +27,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -132,7 +133,11 @@ fun DeedsBoard(
     val locked = Titles.ALL.filter { it.id !in unlocked }
     val equipped = equippedId?.let { Titles.byId(it) }
 
-    var query by remember { mutableStateOf(TextFieldValue("")) }
+    // TextFieldValue is NOT Bundle-storable: a bare rememberSaveable threw the
+    // moment the board composed, taking every screen behind it with it.
+    var query by rememberSaveable(stateSaver = TextFieldValue.Saver) {
+        mutableStateOf(TextFieldValue(""))
+    }
     var filter by remember { mutableStateOf(DeedFilter.IN_PROGRESS) }
     // Rarity narrows independently of the status filter; null = every tier.
     var rarityFilter by remember { mutableStateOf<TitleRarity?>(null) }

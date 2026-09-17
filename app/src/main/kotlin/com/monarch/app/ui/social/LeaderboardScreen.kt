@@ -195,6 +195,11 @@ class LeaderboardViewModel(
                     myUserId = acct?.userId,
                 )
                 if (acct != null && _ui.value.rows.isEmpty()) load()
+                // Restored offline: identity without the profiles row — retry
+                // it on this social read.
+                if (acct?.profileLoaded == false) {
+                    viewModelScope.launch { accountRepo.refreshProfile() }
+                }
             }
         }
     }
@@ -389,6 +394,26 @@ private fun EmptyBoard(onRefresh: () -> Unit) {
     }
 }
 
+/** Compact failure note over stale rows — never a dialog, never displacing the list. */
+@Composable
+private fun InlineErrorBanner(message: String) {
+    val shape = MaterialTheme.shapes.small
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .background(Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)), shape)
+            .inkBorder(MonarchColors.DangerRed, shape, 1.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Text(
+            message,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.DangerRed,
+        )
+    }
+}
+
 /** Load failed with nothing on the board: name the failure and offer one clean retry. */
 @Composable
 private fun ErrorPanel(onRefresh: () -> Unit) {
@@ -436,14 +461,19 @@ private fun Board(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            if (ui.error != null) "The board flickered: ${ui.error}" else "Standings by ${metric.label.lowercase()}",
+            "Standings by ${metric.label.lowercase()}",
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
-            color = if (ui.error != null) MonarchColors.DangerRed else MonarchColors.InkMuted,
+            color = MonarchColors.InkMuted,
             modifier = Modifier.weight(1f),
         )
-        // Retry link only survives in the error state; pull-to-refresh covers the healthy path.
+        // Retry link only survives in the error state; the banner below carries
+        // the message so stale rows are never silently served.
         if (ui.error != null) RefreshLink(onClick = onRefresh, label = "Retry")
+    }
+    if (ui.error != null) {
+        InlineErrorBanner("The board flickered — these standings are the last synced ones: ${ui.error}")
+        Spacer(Modifier.height(10.dp))
     }
     Spacer(Modifier.height(10.dp))
 
@@ -892,6 +922,11 @@ private fun ShadowBoard(
                         color = MonarchColors.InkMuted,
                         modifier = Modifier.padding(bottom = 10.dp),
                     )
+                    // Stale rows must still tell the truth about the last fetch.
+                    if (ui.error != null) {
+                        InlineErrorBanner("The shadow ranks may be stale: ${ui.error}")
+                        Spacer(Modifier.height(10.dp))
+                    }
                     ui.rows.forEachIndexed { index, row ->
                         ShadowRankRow(
                             rank = index + 1,

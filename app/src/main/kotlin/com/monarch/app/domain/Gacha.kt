@@ -75,7 +75,7 @@ object Gacha {
     )
 
     /** Deterministic for a given seed — same seed, same result, always. */
-    fun roll(seed: Long): RollResult {
+    fun roll(seed: Long, ownedFrames: Set<String> = emptySet()): RollResult {
         val rng = Random(seed)
         val rarityRoll = rng.nextDouble()
         // Walk the cumulative rarity shares; the last row absorbs any residue
@@ -92,12 +92,21 @@ object Gacha {
                 Reward.Shadows(lerp(odds.shadowsLow, odds.shadowsHigh, valueRoll))
             typeRoll < odds.shadowChance + odds.relicChance ->
                 relic(odds, valueRoll)
-            else -> frame(rng.nextInt(CREST_FRAMES.size))
+            else -> {
+                // Owned frames are excluded, or the roll is consumed for
+                // nothing when the repository dedupes the duplicate.
+                val candidates = CREST_FRAMES.filter { it.id !in ownedFrames }
+                if (candidates.isEmpty()) {
+                    // All frames owned: fall back to the next-best payout —
+                    // the top of this rarity's shadow band.
+                    Reward.Shadows(odds.shadowsHigh)
+                } else {
+                    candidates[rng.nextInt(candidates.size)]
+                }
+            }
         }
         return RollResult(reward, odds.rarity)
     }
-
-    private fun frame(index: Int) = CREST_FRAMES[index]
 
     /**
      * Relic names are composed, not fixed: multipliers are continuous, so every
@@ -156,5 +165,6 @@ object Gacha {
     }
 
     /** Inclusive integer lerp driven by a pre-drawn uniform in [0, 1). */
-    private fun lerp(low: Int, high: Int, t: Double) = low + ((high - low) * t).toInt()
+    private fun lerp(low: Int, high: Int, t: Double) =
+        (low + ((high - low + 1) * t).toInt()).coerceAtMost(high)
 }

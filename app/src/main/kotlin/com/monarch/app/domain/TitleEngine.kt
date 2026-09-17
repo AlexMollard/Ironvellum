@@ -474,6 +474,10 @@ object Titles {
         // without erroring, which is the exact silent-failure class that made
         // step and skill deeds unreachable before this was centralised.
         exercises: Map<Long, Exercise>,
+        // ISO weekdays a preset is scheduled for. Empty means "no schedule
+        // known", which trainingStreakDays reads as the strict consecutive
+        // rule — never as "no streak".
+        scheduledWeekdays: Set<Int> = emptySet(),
     ): Ledger {
         val doneSets = history.flatMap { (_, sets) -> sets.filter { it.done } }
         val metricOf: (SessionSet) -> ExerciseMetric =
@@ -532,30 +536,48 @@ object Titles {
                 sets.any { it.done && exercises[it.exerciseId]?.category == "Sport" }
             },
             bestWeekWorkouts = bestWeekWorkouts(workoutDates),
+            // This was never assigned, so it defaulted to 0 and every
+            // TrainingStreak deed (7/14/30/100 days) was unreachable.
+            trainingStreakDays = trainingStreakDays(workoutDates, scheduledWeekdays),
         )
     }
 
+    /** How far back a streak walk looks — the same two years [Streak.current] allows. */
+    const val STREAK_WINDOW_DAYS = 730
+
     /**
-     * Consecutive days with a completed workout, counting back from [today].
+     * Consecutive training days, under ONE rule: [Streak.current]. The Court
+     * already walked the schedule-aware rule while this function walked a
+     * date-only one, so the same hunter could read a 12-day streak on the home
+     * screen and a 3-day streak on the leaderboard and in the idle rate.
      *
-     * A day of rest does not break the streak the moment midnight passes: if
-     * today has no workout yet, counting starts at yesterday, so a hunter who
-     * trains every day but opens the app before training still sees the streak
-     * they earned. Two consecutive empty days do break it.
+     * [scheduledWeekdays] are the ISO weekdays (1 = Monday) a preset is
+     * scheduled for. A day that is scheduled and not trained breaks the
+     * streak; an unscheduled day is rest and neither grows nor breaks it.
+     * With NO schedule at all every day counts as a training day, which is the
+     * strict consecutive rule — otherwise nothing could ever break a streak
+     * and the number would just be a lifetime count of training days.
      *
-     * [today] is a parameter so the boundaries above are testable; production
-     * callers take the default and stay device-local, matching the zone the
-     * dates themselves were bucketed in.
+     * [today] is a parameter so the boundaries are testable; production callers
+     * take the default and stay device-local, matching the zone the dates
+     * themselves were bucketed in.
      */
-    fun trainingStreakDays(dates: Set<LocalDate>, today: LocalDate = LocalDate.now()): Int {
+    fun trainingStreakDays(
+        dates: Set<LocalDate>,
+        scheduledWeekdays: Set<Int> = emptySet(),
+        today: LocalDate = LocalDate.now(),
+    ): Int {
         if (dates.isEmpty()) return 0
-        var day = if (today in dates) today else today.minusDays(1)
-        var streak = 0
-        while (day in dates) {
-            streak++
-            day = day.minusDays(1)
+        val records = (0 until STREAK_WINDOW_DAYS).map { offset ->
+            val date = today.minusDays(offset.toLong())
+            val scheduled = scheduledWeekdays.isEmpty() || date.dayOfWeek.value in scheduledWeekdays
+            Streak.DayRecord(
+                date = date,
+                scheduledDay = if (scheduled) date.dayOfWeek.value else null,
+                completed = date in dates,
+            )
         }
-        return streak
+        return Streak.current(records, today)
     }
 
     /** Most workouts inside any rolling 7-day window. */

@@ -64,8 +64,13 @@ internal data class HunterUi(
     val sessions: List<FriendSession> = emptyList(),
     val error: String? = null,
     val myUserId: String? = null,
-    val allyState: AllyState = AllyState.None,
+    /** Null while the ally relationship is UNKNOWN — an offline fetch must
+     *  never read as "not allies" or the ADD ALLY button would offer a
+     *  duplicate request to someone who already is one. */
+    val allyState: AllyState? = null,
     val allyBusy: Boolean = false,
+    /** The ally-status read itself failed; shown as a banner, button stays hidden. */
+    val allyError: String? = null,
     /** Worn title resolved locally from the leaderboard cache; null when bare or unknown. */
     val wornTitle: String? = null,
     /** The raw title id behind [wornTitle]; feeds the avatar crest's rarity palette. */
@@ -121,7 +126,14 @@ internal class HunterViewModel(
                 row.incoming -> AllyState.Incoming
                 else -> AllyState.Pending
             }
-            _ui.value = _ui.value.copy(allyState = state, allyBusy = false)
+            _ui.value = _ui.value.copy(allyState = state, allyBusy = false, allyError = null)
+        }.onFailure { error ->
+            // Leave allyState unknown: guessing None would offer ADD ALLY to an
+            // existing ally, so the button stays hidden until the read answers.
+            _ui.value = _ui.value.copy(
+                allyError = error.message ?: error::class.simpleName ?: "Unknown error",
+                allyBusy = false,
+            )
         }
         cloud.leaderboard().onSuccess { rows ->
             // The hunter's worn title comes from their leaderboard row; the id is
@@ -211,6 +223,9 @@ internal fun HunterScreen(
         if (ui.myUserId != null && !isMe) {
             Spacer(Modifier.height(6.dp))
             when (ui.allyState) {
+                // Unknown until the friends read answers — no chip, never a
+                // premature ADD ALLY offer.
+                null -> {}
                 AllyState.None -> AllyChip(
                     label = if (ui.allyBusy) "SENDING…" else "ADD ALLY",
                     tappable = !ui.allyBusy,
@@ -229,6 +244,11 @@ internal fun HunterScreen(
                     gold = true,
                     onClick = {},
                 )
+            }
+            // The ally read itself failed: say so instead of silently guessing.
+            if (ui.allyError != null && ui.allyState == null) {
+                Spacer(Modifier.height(6.dp))
+                InlineErrorBanner("Ally status unknown — the System did not answer: ${ui.allyError}")
             }
         }
         Spacer(Modifier.height(14.dp))
@@ -432,6 +452,26 @@ internal fun HunterScreen(
         }
 
         Spacer(Modifier.height(20.dp))
+    }
+}
+
+/** Compact failure note — never a dialog, never displacing the record. */
+@Composable
+private fun InlineErrorBanner(message: String) {
+    val shape = MaterialTheme.shapes.small
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .background(Brush.verticalGradient(listOf(MonarchColors.VaultHigh, MonarchColors.Vault)), shape)
+            .inkBorder(MonarchColors.DangerRed, shape, 1.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+    ) {
+        Text(
+            message,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.DangerRed,
+        )
     }
 }
 

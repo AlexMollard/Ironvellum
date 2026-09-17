@@ -21,7 +21,7 @@ class TrainingCalendarTest {
         val today = LocalDate.parse("2026-03-10")
         assertEquals(
             3,
-            Titles.trainingStreakDays(days("2026-03-08", "2026-03-09", "2026-03-10"), today),
+            Titles.trainingStreakDays(days("2026-03-08", "2026-03-09", "2026-03-10"), today = today),
         )
     }
 
@@ -31,7 +31,7 @@ class TrainingCalendarTest {
         val today = LocalDate.parse("2026-03-10")
         assertEquals(
             2,
-            Titles.trainingStreakDays(days("2026-03-08", "2026-03-09"), today),
+            Titles.trainingStreakDays(days("2026-03-08", "2026-03-09"), today = today),
         )
     }
 
@@ -40,7 +40,7 @@ class TrainingCalendarTest {
         val today = LocalDate.parse("2026-03-10")
         assertEquals(
             0,
-            Titles.trainingStreakDays(days("2026-03-06", "2026-03-07", "2026-03-08"), today),
+            Titles.trainingStreakDays(days("2026-03-06", "2026-03-07", "2026-03-08"), today = today),
         )
     }
 
@@ -48,7 +48,7 @@ class TrainingCalendarTest {
     fun `streak stops at the first gap rather than counting every date`() {
         val today = LocalDate.parse("2026-03-10")
         val dates = days("2026-01-01", "2026-01-02", "2026-03-09", "2026-03-10")
-        assertEquals(2, Titles.trainingStreakDays(dates, today))
+        assertEquals(2, Titles.trainingStreakDays(dates, today = today))
     }
 
     @Test
@@ -56,7 +56,7 @@ class TrainingCalendarTest {
         val today = LocalDate.parse("2026-03-01")
         assertEquals(
             3,
-            Titles.trainingStreakDays(days("2026-02-27", "2026-02-28", "2026-03-01"), today),
+            Titles.trainingStreakDays(days("2026-02-27", "2026-02-28", "2026-03-01"), today = today),
         )
     }
 
@@ -66,7 +66,7 @@ class TrainingCalendarTest {
         val today = LocalDate.parse("2028-03-01")
         assertEquals(
             3,
-            Titles.trainingStreakDays(days("2028-02-28", "2028-02-29", "2028-03-01"), today),
+            Titles.trainingStreakDays(days("2028-02-28", "2028-02-29", "2028-03-01"), today = today),
         )
     }
 
@@ -75,13 +75,13 @@ class TrainingCalendarTest {
         val today = LocalDate.parse("2027-01-01")
         assertEquals(
             3,
-            Titles.trainingStreakDays(days("2026-12-30", "2026-12-31", "2027-01-01"), today),
+            Titles.trainingStreakDays(days("2026-12-30", "2026-12-31", "2027-01-01"), today = today),
         )
     }
 
     @Test
     fun `no training at all is not a streak`() {
-        assertEquals(0, Titles.trainingStreakDays(emptySet(), LocalDate.parse("2026-03-10")))
+        assertEquals(0, Titles.trainingStreakDays(emptySet(), today = LocalDate.parse("2026-03-10")))
     }
 
     @Test
@@ -90,7 +90,7 @@ class TrainingCalendarTest {
         // not be counted, and must not be treated as the start of the walk.
         val today = LocalDate.parse("2026-03-10")
         val dates = days("2026-03-10", "2026-03-11", "2026-03-12")
-        assertEquals(1, Titles.trainingStreakDays(dates, today))
+        assertEquals(1, Titles.trainingStreakDays(dates, today = today))
     }
 
     @Test

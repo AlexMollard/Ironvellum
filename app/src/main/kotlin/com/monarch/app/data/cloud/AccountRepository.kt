@@ -18,6 +18,9 @@ data class Account(
     val displayName: String,
     /** "public" | "friends" | "private" — mirrors the profile_visibility enum. */
     val visibility: String,
+    /** False when the profiles row has not been read yet (offline restore) —
+     *  the name/visibility here are placeholders, not server truth. */
+    val profileLoaded: Boolean = true,
 )
 
 /**
@@ -48,7 +51,20 @@ class AccountRepository {
             // Statement, not an expression: a trailing `?.let` inferred the
             // lambda as Unit? and the function no longer returned Result<Unit>.
             if (user != null) {
-                loadAccount(user.id, user.email ?: "")?.let { _account.value = it }
+                val email = user.email ?: ""
+                // A failed profiles round trip must not erase a valid session:
+                // offline restores used to read as signed OUT on every social
+                // tab. Keep the identity with a blank name and retry the row
+                // on the next social read (see [refreshProfile]).
+                val profile = loadAccount(user.id, email)
+                _account.value = profile ?: Account(
+                    userId = user.id,
+                    email = email,
+                    displayName = "",
+                    // The sign-up default; replaced once the row is readable.
+                    visibility = "friends",
+                    profileLoaded = false,
+                )
             }
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
@@ -274,14 +290,29 @@ class AccountRepository {
         }
     }
 
-    suspend fun signOut(): Result<Unit> {
+    /** One retry of the profiles row for a session that restored offline. */
+    suspend fun refreshProfile(): Result<Unit> {
+        val current = _account.value ?: return Result.success(Unit)
+        if (current.profileLoaded) return Result.success(Unit)
         val client = requireClient().getOrElse { return failure(it) }
         return runCatching {
-            client.auth.signOut()
-            _account.value = null
+            val profile = loadAccount(current.userId, current.email)
+                ?: throw IllegalStateException("Your hunter profile could not be loaded")
+            _account.value = profile
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
+    }
+
+    suspend fun signOut(): Result<Unit> {
+        // Local state clears first: client.auth.signOut() is a network
+        // revocation, and treating it as a precondition stranded the hunter
+        // signed in with no connectivity and no way out.
+        _account.value = null
+        requireClient().onSuccess { client ->
+            runCatching { client.auth.signOut() }
+        }
+        return Result.success(Unit)
     }
 
     suspend fun setVisibility(visibility: String): Result<Unit> {

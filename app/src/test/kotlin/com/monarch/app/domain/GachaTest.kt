@@ -1,6 +1,7 @@
 package com.monarch.app.domain
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.fail
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -67,5 +68,44 @@ class GachaTest {
         val frames = sample().mapNotNull { it.reward as? Reward.CrestFrame }
         assertTrue(frames.isNotEmpty())
         frames.forEach { assertTrue(Gacha.CREST_FRAMES.contains(it)) }
+    }
+
+    @Test
+    fun `top of a payout band is actually reachable`() {
+        // The lerp used (high - low) * t with t < 1, so the advertised maximum
+        // could never be paid. Sweep every Common seed and find the ceiling.
+        val maxCommon = (0L until 50_000L)
+            .asSequence()
+            .map { Gacha.roll(it) }
+            .filter { it.rarity == RewardRarity.Common }
+            .map { (it.reward as Reward.Shadows).count }
+            .max()
+        assertEquals(40, maxCommon)
+    }
+
+    @Test
+    fun `roll never returns an owned frame and pays out when all are owned`() {
+        // Hunter owns everything except two frames: only those two may drop.
+        val owned = Gacha.CREST_FRAMES.dropLast(2).map { it.id }.toSet()
+        val remaining = Gacha.CREST_FRAMES.takeLast(2).map { it.id }.toSet()
+        val seenFrames = (0L until 20_000L)
+            .asSequence()
+            .map { Gacha.roll(it, owned) }
+            .mapNotNull { it.reward as? Reward.CrestFrame }
+            .toSet()
+        assertTrue("expected some frame drops", seenFrames.isNotEmpty())
+        assertTrue(seenFrames.all { it.id in remaining })
+
+        // All frames owned: the roll must still grant something of value —
+        // never a frame, never a no-op.
+        val allOwned = Gacha.CREST_FRAMES.map { it.id }.toSet()
+        val results = (0L until 5_000L).map { Gacha.roll(it, allOwned) }
+        results.forEach { r ->
+            when (val reward = r.reward) {
+                is Reward.CrestFrame -> fail("an owned frame was drawn: ${reward.id}")
+                is Reward.Shadows -> assertTrue(reward.count > 0)
+                is Reward.Relic -> assertTrue(reward.multiplier > 1.0)
+            }
+        }
     }
 }

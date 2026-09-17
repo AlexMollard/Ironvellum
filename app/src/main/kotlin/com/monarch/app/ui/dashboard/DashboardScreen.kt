@@ -153,20 +153,20 @@ class DashboardViewModel(private val repo: Repository) : ViewModel() {
                     .atZone(ZoneId.systemDefault()).toLocalDate()
             }
             .toSet()
-        val records = (0L..730L).map { offset ->
-            val date = today.minusDays(offset)
-            Streak.DayRecord(
-                date = date,
-                scheduledDay = presets.firstOrNull { it.scheduledDay == date.dayOfWeek.value }?.scheduledDay,
-                completed = date in doneDates,
-            )
-        }
+        // One streak rule for the whole app: the Court used to build its own
+        // day records while the deeds, the idle rate and the leaderboard used
+        // Titles.trainingStreakDays, so the same hunter could read two
+        // different streaks.
         DashboardUi(
             profile = profile,
             recent = recent,
             unlockedCount = titles.size,
             presets = presets,
-            streak = Streak.current(records, today),
+            streak = Titles.trainingStreakDays(
+                doneDates,
+                presets.mapNotNull { it.scheduledDay }.toSet(),
+                today,
+            ),
             stepsToday = healthDays.firstOrNull { it.date == today }?.steps ?: 0,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
@@ -195,6 +195,7 @@ fun DashboardScreen(
     onOpenPresets: () -> Unit,
     onOpenCodex: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenWorkout: (Long) -> Unit,
     viewModel: DashboardViewModel =
         viewModel(factory = viewModelFactory { initializer { DashboardViewModel(monarchRepository()) } }),
 ) {
@@ -665,8 +666,12 @@ fun DashboardScreen(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        enabled = last.completedAtMs == null,
-                    ) { onStartSession(last.id) }
+                    ) {
+                        // A finished session still renders this row, so leaving
+                        // it enabled=false made the dashboard's normal state a
+                        // dead control: completed sessions go to their detail.
+                        if (last.completedAtMs == null) onStartSession(last.id) else onOpenWorkout(last.id)
+                    }
                     .padding(top = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,

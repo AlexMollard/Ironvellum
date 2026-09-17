@@ -110,6 +110,11 @@ object ExportReader {
             setIndex = set.int("setIndex") ?: fail("set missing setIndex"),
             reps = set.int("reps") ?: fail("set missing reps"),
             weightKg = set.dbl("weightKg"),
+            // Absent in pre-v4 archives, so default to null — an older backup
+            // must still restore.
+            durationSec = set.int("durationSec"),
+            distanceM = set.dbl("distanceM"),
+            grade = set.str("grade"),
             modifiers = set.str("modifiers") ?: "",
             done = set.bool("done") ?: false,
         )

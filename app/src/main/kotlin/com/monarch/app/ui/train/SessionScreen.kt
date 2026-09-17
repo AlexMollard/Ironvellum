@@ -1,5 +1,6 @@
 package com.monarch.app.ui.train
 
+import android.content.Context
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -32,6 +33,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.ui.draw.alpha
+import androidx.compose.material.icons.outlined.KeyboardArrowDown
+import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Tune
@@ -65,9 +68,12 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.monarch.app.data.Repository
+import com.monarch.app.data.cloud.CloudSyncWorker
 import com.monarch.app.data.cloud.WireLimits
 import com.monarch.app.domain.Exercise
 import com.monarch.app.domain.SessionSet
@@ -81,6 +87,7 @@ import com.monarch.app.ui.components.ExercisePickerPanel
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
+import com.monarch.app.ui.launchGuarded
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchTracking
@@ -101,6 +108,7 @@ data class SessionUi(
 
 class SessionViewModel(
     private val repo: Repository,
+    private val appContext: Context,
     private val sessionId: Long,
 ) : ViewModel() {
 
@@ -147,6 +155,10 @@ class SessionViewModel(
         viewModelScope.launch { repo.addExtraSet(sessionId, exerciseId, 10, null, "") }
     }
 
+    fun moveExercise(exercisePosition: Int, up: Boolean) {
+        viewModelScope.launchGuarded("move exercise") { repo.moveSessionExercise(sessionId, exercisePosition, up) }
+    }
+
     private var completing = false
 
     fun complete(onResult: (Repository.CompletionResult) -> Unit) {
@@ -161,7 +173,12 @@ class SessionViewModel(
         completing = true
         viewModelScope.launch {
             runCatching { repo.completeSession(sessionId) }
-                .onSuccess(onResult)
+                .onSuccess {
+                    // Completion is the moment a daily user's work becomes
+                    // feed/leaderboard-visible; don't wait for a manual push.
+                    CloudSyncWorker.pushNow(appContext)
+                    onResult(it)
+                }
                 .onFailure { completing = false }
         }
     }
@@ -187,12 +204,28 @@ class SessionViewModel(
     }
 }
 
+/**
+ * The factory needs a Context for the post-completion cloud push, and
+ * `LocalContext` can only be read from a composable — not from inside the
+ * `initializer` lambda, which runs later. Read it here and hand the
+ * application context (never an Activity) to the view model.
+ */
+@Composable
+private fun rememberSessionViewModel(sessionId: Long): SessionViewModel {
+    // `monarchRepository()` is a CreationExtras extension, so it must stay
+    // inside the initializer; only the Context has to be read out here.
+    val appContext = LocalContext.current.applicationContext
+    return viewModel(
+        key = "session-$sessionId",
+        factory = viewModelFactory { initializer { SessionViewModel(monarchRepository(), appContext, sessionId) } },
+    )
+}
+
 @Composable
 fun SessionScreen(
     sessionId: Long,
     onExit: () -> Unit,
-    viewModel: SessionViewModel =
-        viewModel(factory = viewModelFactory { initializer { SessionViewModel(monarchRepository(), sessionId) } }),
+    viewModel: SessionViewModel = rememberSessionViewModel(sessionId),
 ) {
     val records by viewModel.records.collectAsStateWithLifecycle()
     val ui by viewModel.ui.collectAsStateWithLifecycle()
@@ -265,7 +298,13 @@ fun SessionScreen(
             color = MonarchColors.SystemGreen,
         )
 
-        ui.sets.groupBy { it.exerciseId }.forEach { (exerciseId, sets) ->
+        // Render blocks in the preset's saved exercise order: sort explicitly
+        // by exercisePosition instead of trusting the query's emission order.
+        val exerciseBlocks = ui.sets.groupBy { it.exerciseId }
+            .map { (id, sets) -> sets.minOf { it.exercisePosition } to (id to sets) }
+            .sortedBy { it.first }
+        exerciseBlocks.forEachIndexed { blockIdx, (_, block) ->
+            val (exerciseId, sets) = block
             val first = sets.first()
             val doneSets = sets.filter { it.done }
             val groupStrength = bodyweight?.let { bw ->
@@ -305,6 +344,20 @@ fun SessionScreen(
                                 color = MonarchColors.SovereignGold,
                             )
                         }
+                    }
+                    // Reorder controls: the ends are disabled, not inert, so the
+                    // hunter can see the boundary of the ordering.
+                    IconButton(
+                        onClick = { viewModel.moveExercise(first.exercisePosition, up = true) },
+                        enabled = blockIdx > 0,
+                    ) {
+                        Icon(Icons.Outlined.KeyboardArrowUp, contentDescription = "Move exercise up", tint = MonarchColors.InkMuted)
+                    }
+                    IconButton(
+                        onClick = { viewModel.moveExercise(first.exercisePosition, up = false) },
+                        enabled = blockIdx < exerciseBlocks.lastIndex,
+                    ) {
+                        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Move exercise down", tint = MonarchColors.InkMuted)
                     }
                     IconButton(onClick = { editModifiersFor = exerciseId }) {
                         Icon(Icons.Outlined.Tune, contentDescription = "Edit modifiers", tint = MonarchColors.InkMuted)
@@ -872,10 +925,12 @@ private fun SessionNotesEditor(
     viewModel: SessionViewModel,
 ) {
     // Seeded once per session; repo writes happen on blur, so we don't echo
-    // the flow back into the fields (that would fight the cursor).
-    var title by remember(session.id) { mutableStateOf(session.title) }
-    var publicNote by remember(session.id) { mutableStateOf(session.note) }
-    var privateNote by remember(session.id) { mutableStateOf(session.privateNote) }
+    // the flow back into the fields (that would fight the cursor). Saveable so
+    // a process kill (or rotation) mid-typing doesn't silently drop the note —
+    // on restore the saved text wins over the freshly-loaded session values.
+    var title by rememberSaveable(session.id) { mutableStateOf(session.title) }
+    var publicNote by rememberSaveable(session.id) { mutableStateOf(session.note) }
+    var privateNote by rememberSaveable(session.id) { mutableStateOf(session.privateNote) }
 
     SystemWindow(accent = MonarchColors.SovereignGold) {
         Text(

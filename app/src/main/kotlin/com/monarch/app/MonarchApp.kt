@@ -10,6 +10,7 @@ import com.monarch.app.data.MonarchDatabase
 import com.monarch.app.data.Repository
 import com.monarch.app.ui.theme.InkStyle
 import com.monarch.app.data.HealthSyncWorker
+import com.monarch.app.data.cloud.CloudSyncWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -80,5 +81,6 @@ class MonarchApp : Application() {
             runCatching { accountRepository.restore() }
         }
         HealthSyncWorker.schedule(this)
+        CloudSyncWorker.schedule(this)
     }
 }

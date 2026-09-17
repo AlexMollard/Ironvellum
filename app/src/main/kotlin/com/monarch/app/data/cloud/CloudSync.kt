@@ -53,7 +53,13 @@ class CloudSync(
                 watermark[session.id] != pushFingerprint(session, sets)
             }
             val level = Xp.progress(profile.totalXp).level
-            val streakDays = Titles.trainingStreakDays(completedDates(completed.map { it.first }))
+            // Same rule as the Court and the deeds: rest days are rest, so the
+            // leaderboard cannot publish a different streak from the one the
+            // hunter can see at home.
+            val streakDays = Titles.trainingStreakDays(
+                completedDates(completed.map { it.first }),
+                repo.scheduledWeekdays(),
+            )
             val lifetimeStrength = history.sumOf { (session, _) -> session.strengthScore.toLong() }
 
             val problems = mutableListOf<String>()

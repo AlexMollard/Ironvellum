@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -341,7 +342,9 @@ fun SettingsScreen(
     val healthDays by viewModel.healthDays.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var name by remember(profile?.name) { mutableStateOf(profile?.name ?: "") }
+    // Saveable with the profile name as the initial value only: on restore the
+    // loaded profile must not overwrite a typed-but-unsaved edit.
+    var name by rememberSaveable(profile?.name) { mutableStateOf(profile?.name ?: "") }
     var confirmImport by remember { mutableStateOf(false) }
     // Read off the main thread: these list a directory, and doing that during
     // composition is main-thread disk I/O on every visit to this screen —

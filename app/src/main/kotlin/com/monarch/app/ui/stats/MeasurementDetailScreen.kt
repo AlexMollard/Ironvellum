@@ -24,7 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -86,6 +86,9 @@ class MeasurementDetailViewModel(
 private val CM_MIN = 10.0
 private val CM_MAX = 250.0
 
+/** Recent readings shown; the chart and full record live across the account's life. */
+private const val READING_ROWS = 20
+
 /** Strip anything that is not a digit or a single decimal point. */
 private fun sanitizeCm(raw: String): String = buildString {
     var dotSeen = false
@@ -118,7 +121,8 @@ fun MeasurementDetailScreen(
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    var readingInput by remember(site) { mutableStateOf("") }
+    // Saveable: rotation mid-entry used to clear the half-typed reading.
+    var readingInput by rememberSaveable(site) { mutableStateOf("") }
 
     Column(
         Modifier
@@ -263,7 +267,9 @@ fun MeasurementDetailScreen(
                 )
             }
         } else {
-            ui.entries.sortedByDescending { it.takenAtMs }.forEach { entry ->
+            // Bounded render inside verticalScroll: this composes every row for
+            // the life of the account unless capped.
+            ui.entries.sortedByDescending { it.takenAtMs }.take(READING_ROWS).forEach { entry ->
                 SystemWindow(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                     Row(
                         Modifier.fillMaxWidth(),

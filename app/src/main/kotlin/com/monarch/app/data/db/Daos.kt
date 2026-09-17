@@ -95,11 +95,25 @@ interface SessionDao {
     @Query("UPDATE set_logs SET modifiers = :modifiers WHERE sessionId = :sessionId AND exerciseId = :exerciseId")
     suspend fun setModifiers(sessionId: Long, exerciseId: Long, modifiers: String)
 
-    @Query("SELECT * FROM set_logs WHERE sessionId = :sessionId ORDER BY exerciseId, setIndex")
+    @Query("SELECT * FROM set_logs WHERE sessionId = :sessionId ORDER BY exercisePosition, setIndex")
     suspend fun setsFor(sessionId: Long): List<SetLogEntity>
 
-    @Query("SELECT * FROM set_logs WHERE sessionId = :sessionId ORDER BY exerciseId, setIndex")
+    @Query("SELECT * FROM set_logs WHERE sessionId = :sessionId ORDER BY exercisePosition, setIndex")
     fun observeSets(sessionId: Long): Flow<List<SetLogEntity>>
+
+    /**
+     * Reorder support. The swap runs via a sentinel position because
+     * `exercisePosition` is not unique per row — every set of one movement
+     * shares it — so a straight A->B, B->A pair would collide mid-swap and
+     * merge two movements into one block.
+     */
+    @Query("UPDATE set_logs SET exercisePosition = :to WHERE sessionId = :sessionId AND exercisePosition = :from")
+    suspend fun moveExercisePosition(sessionId: Long, from: Int, to: Int)
+
+    /** The live session, if one was started and never completed or abandoned. */
+    @Query("SELECT * FROM sessions WHERE completedAtMs IS NULL ORDER BY startedAtMs DESC LIMIT 1")
+    suspend fun liveSession(): SessionEntity?
+
     @Query("SELECT * FROM sessions WHERE id = :id")
     fun observeSession(id: Long): Flow<SessionEntity?>
 
