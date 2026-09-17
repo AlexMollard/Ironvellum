@@ -1,12 +1,18 @@
 # Crest emblem batch — one line per catalogue id in Gacha.CREST_FRAMES.
 #
-# Run with:
-#   python tools/art_batches/run.py tools/art_batches/crests.txt
+# Run with (second argument is the output dir the runner also reads to decide
+# what is already drawn — keep it on the tracked folder so a .tmp clean cannot
+# throw away a quota's worth of generations):
 #
-# STATUS: iron, bronze, silver and gold generated; the remaining six hit
-# QUOTA_EXHAUSTED from cloudcode-pa. The catalogue is deliberately NOT half
-# wired — four drawn crests beside six procedural ones looks worse than either
-# set alone, so the art lands only when all ten exist.
+#   python tools/art_batches/run.py tools/art_batches/crests.txt tools/art_batches/drawn
+#
+# STATUS: 9 of 10 drawn and committed under tools/art_batches/drawn/. Only
+# `void` is missing — the quota ran out mid-set. Re-running the command above
+# after a reset skips the nine and draws `void` alone.
+#
+# The catalogue is deliberately NOT half wired — nine drawn crests beside one
+# procedural one looks worse than either set alone, so the art lands in
+# app/src/main/res/ only when all ten exist.
 #
 # Style is fixed at --style ink --alpha --size 384. The suffix matters: these
 # render at 34dp in the player sigil, so the silhouette has to survive being
