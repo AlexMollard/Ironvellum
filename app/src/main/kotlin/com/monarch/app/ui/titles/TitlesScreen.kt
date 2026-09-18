@@ -238,7 +238,8 @@ fun TitlesScreen(
 
 
         if (tab == TitlesTab.TREE) {
-            SectionHeader("Skill Tree")
+            // No "Skill Tree" heading: the selected pill above already says it.
+            // The tally is the line worth keeping here.
             Text(
                 "${mastered.count { it in Skills.BY_NAME }} of ${Skills.ALL.size} techniques mastered",
                 style = MaterialTheme.typography.labelMedium,

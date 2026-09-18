@@ -360,7 +360,13 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
 }
 
 
-/** Primary action: emerald-teal gradient button with press feedback. */
+/**
+ * Primary action: emerald-teal gradient button with press feedback.
+ *
+ * `quiet` is the same shape without the fill, for the SECOND action in a card.
+ * Four bright emerald slabs stacked down the System screen all shouted equally
+ * and nothing read as the main thing to do.
+ */
 @Composable
 fun MonarchButton(
     label: String,
@@ -368,6 +374,7 @@ fun MonarchButton(
     modifier: Modifier = Modifier,
     gold: Boolean = false,
     enabled: Boolean = true,
+    quiet: Boolean = false,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -385,10 +392,21 @@ fun MonarchButton(
             .scale(scale)
             .clip(shape)
             .background(
-                if (enabled) Brush.linearGradient(colors)
-                else Brush.linearGradient(listOf(Color(0xFF1E3026), Color(0xFF16211B))),
+                when {
+                    !enabled -> Brush.linearGradient(listOf(Color(0xFF1E3026), Color(0xFF16211B)))
+                    quiet -> Brush.linearGradient(listOf(Color(0xFF141C18), Color(0xFF101714)))
+                    else -> Brush.linearGradient(colors)
+                },
             )
-            .inkBorder(if (enabled) Color(0x5934D399) else MonarchColors.Rune, shape, 1.dp)
+            .inkBorder(
+                when {
+                    !enabled -> MonarchColors.Rune
+                    quiet -> MonarchColors.Rune
+                    else -> Color(0x5934D399)
+                },
+                shape,
+                1.dp,
+            )
             .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -398,7 +416,11 @@ fun MonarchButton(
             fontWeight = FontWeight.Bold,
             // The fills are bright emerald/gold: ink-dark type is the only
             // readable choice. Inheriting the theme colour rendered grey-on-gold.
-            color = if (enabled) MonarchColors.Abyss else MonarchColors.InkMuted,
+            color = when {
+                !enabled -> MonarchColors.InkMuted
+                quiet -> MonarchColors.SystemGreen
+                else -> MonarchColors.Abyss
+            },
             style = MaterialTheme.typography.labelLarge,
             letterSpacing = MonarchTracking.InlineLabel,
             modifier = Modifier.padding(vertical = 12.dp, horizontal = 18.dp),

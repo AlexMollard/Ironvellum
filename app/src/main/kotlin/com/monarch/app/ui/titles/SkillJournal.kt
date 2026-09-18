@@ -449,13 +449,17 @@ private fun LineCard(
         }
         Spacer(Modifier.height(8.dp))
         InkRail(fraction = done.toFloat() / total.coerceAtLeast(1), seed = 43)
-        Spacer(Modifier.height(5.dp))
-        Text(
-            "$attempts attempts logged",
-            style = MaterialTheme.typography.labelSmall,
-            fontSize = 9.sp,
-            color = MonarchColors.SystemGreen,
-        )
+        // Eight tiles all reading "0 attempts logged" said one thing eight
+        // times, under a rail already sitting at zero.
+        if (attempts > 0) {
+            Spacer(Modifier.height(5.dp))
+            Text(
+                "$attempts attempts logged",
+                style = MaterialTheme.typography.labelSmall,
+                fontSize = 9.sp,
+                color = MonarchColors.SystemGreen,
+            )
+        }
     }
 }
 

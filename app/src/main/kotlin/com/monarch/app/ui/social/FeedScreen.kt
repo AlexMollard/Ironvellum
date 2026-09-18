@@ -323,18 +323,17 @@ fun FeedScreen(
             color = MonarchColors.InkMuted,
             letterSpacing = MonarchTracking.ScreenTitle,
         )
-        val subtitle = when {
-            !ui.configured -> "No gate connection"
-            !ui.signedIn -> "A sigil is required"
-            ui.entries.isEmpty() -> "The world holds its breath"
-            else -> "${ui.entries.size} hunts witnessed"
+        // A subtitle only when it counts something. Every other case had a
+        // panel below saying the same thing in a whole sentence, so the line
+        // above it was decoration.
+        if (ui.configured && ui.signedIn && ui.entries.isNotEmpty()) {
+            Text(
+                "${ui.entries.size} hunts witnessed",
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.SystemGreen,
+            )
         }
-        Text(
-            subtitle,
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = MonarchColors.SystemGreen,
-        )
         Spacer(Modifier.height(12.dp))
 
         val err = ui.error
@@ -402,7 +401,7 @@ private fun NotSignedIn() {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "The public feed streams every hunter's shared hunts, and it only opens for awakened accounts. Open the ALLIES tab above and sign in to join the watch.",
+            "Sign in on the ALLIES tab to join the watch.",
             style = MaterialTheme.typography.bodySmall,
             color = MonarchColors.InkMuted,
         )

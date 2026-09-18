@@ -319,15 +319,19 @@ fun SessionScreen(
                 ) {
                     Column(Modifier.weight(1f)) {
                         Text(first.exerciseName, style = MaterialTheme.typography.titleMedium)
-                        Text(
-                            if (first.modifiers.isBlank()) "tap to set modifiers"
-                            else first.modifiers.split(",").joinToString(" · ") { it.trim() },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (first.modifiers.isBlank()) MonarchColors.InkMuted else MonarchColors.SystemGreen,
-                            modifier = Modifier
-                                .clickable { editModifiersFor = exerciseId }
-                                .padding(vertical = 2.dp),
-                        )
+                        // Only real modifiers get a line. "tap to set modifiers"
+                        // printed under every movement that had none, beside the
+                        // slider glyph in this same header that does exactly that.
+                        if (first.modifiers.isNotBlank()) {
+                            Text(
+                                first.modifiers.split(",").joinToString(" · ") { it.trim() },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MonarchColors.SystemGreen,
+                                modifier = Modifier
+                                    .clickable { editModifiersFor = exerciseId }
+                                    .padding(vertical = 2.dp),
+                            )
+                        }
                     }
                     if (groupStrength != null && groupStrength > 0) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -366,7 +370,7 @@ fun SessionScreen(
                         Icon(Icons.Filled.Add, contentDescription = "Add set", tint = MonarchColors.SystemGreen)
                     }
                 }
-                sets.sortedBy { it.setIndex }.forEach { set ->
+                sets.sortedBy { it.setIndex }.forEachIndexed { position, set ->
                     SetRow(
                         label = "${set.setIndex + 1}",
                         exerciseName = set.exerciseName,
@@ -376,6 +380,10 @@ fun SessionScreen(
                         reps = set.reps,
                         weightKg = set.weightKg,
                         done = set.done,
+                        // LOAD and REPS head the columns once. Repeating them on
+                        // every row printed the same two words 36 times in an
+                        // 18-set session, on top of identical steppers.
+                        showColumnLabels = position == 0,
                         // the final set stays: drop the exercise instead of emptying it
                         onRemove = if (sets.size > 1) ({ viewModel.removeSet(set.id) }) else null,
                         onChange = { r, w, d -> viewModel.updateSet(set.id, r, w, d) },
@@ -663,6 +671,7 @@ private fun SetRow(
     reps: Int,
     weightKg: Double?,
     done: Boolean,
+    showColumnLabels: Boolean = true,
     onRemove: (() -> Unit)? = null,
     onChange: (Int, Double?, Boolean) -> Unit,
 ) {
@@ -739,15 +748,17 @@ private fun SetRow(
             modifier = Modifier.padding(end = 2.dp),
         )
         Column(Modifier.weight(1f)) {
-            Text(
-                "LOAD",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                fontSize = 8.sp,
-                letterSpacing = 1.sp,
-                color = MonarchColors.InkMuted,
-            )
-            Spacer(Modifier.height(2.dp))
+            if (showColumnLabels) {
+                Text(
+                    "LOAD",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    fontSize = 8.sp,
+                    letterSpacing = 1.sp,
+                    color = MonarchColors.InkMuted,
+                )
+                Spacer(Modifier.height(2.dp))
+            }
             Stepper(
                 value = formatKg(weightKg),
                 onMinus = { onChange(reps, stepDownKg(weightKg), done) },
@@ -757,15 +768,17 @@ private fun SetRow(
             )
         }
         Column(Modifier.weight(1f)) {
-            Text(
-                "REPS",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                fontSize = 8.sp,
-                letterSpacing = 1.sp,
-                color = MonarchColors.InkMuted,
-            )
-            Spacer(Modifier.height(2.dp))
+            if (showColumnLabels) {
+                Text(
+                    "REPS",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    fontSize = 8.sp,
+                    letterSpacing = 1.sp,
+                    color = MonarchColors.InkMuted,
+                )
+                Spacer(Modifier.height(2.dp))
+            }
             Stepper(
                 value = reps.toString(),
                 onMinus = { onChange((reps - 1).coerceAtLeast(0), weightKg, done) },

@@ -231,7 +231,7 @@ fun PresetEditorScreen(
             shape = MaterialTheme.shapes.small,
             value = ui.name,
             onValueChange = viewModel::setName,
-            label = { Text("Preset name (e.g. Heavy Pull)") },
+            label = { Text("Preset name") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -426,7 +426,11 @@ private fun EntryRow(
             shape = MaterialTheme.shapes.small,
             value = entry.modifiers,
             onValueChange = { onEntry(entry.copy(modifiers = it.take(60))) },
-            label = { Text("Modifiers (weighted, deficit, elevated…)") },
+            // The examples used to ride in the label, so a six-movement preset
+            // printed "(weighted, deficit, elevated…)" six times. They belong
+            // in the field that is still empty.
+            label = { Text("Modifiers") },
+            placeholder = { Text("weighted, deficit, elevated…") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )

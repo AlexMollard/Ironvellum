@@ -401,37 +401,40 @@ fun StatsScreen(
                     .padding(horizontal = 16.dp),
             ) {
                 Spacer(Modifier.height(16.dp))
-                SystemWindow(Modifier.fillMaxWidth()) {
-                    MetricLabel("CUMULATIVE XP")
-                    val cumulative = remember(ui.sessions) { runningXp(ui.sessions) }
-                    val totalXp = remember(ui.sessions) { ui.sessions.sumOf { it.xpAwarded } }
-                    if (cumulative.size >= 2) {
-                        TrendChart(cumulative, MonarchColors.SystemGreen)
-                        ChartCaption(
-                            "$totalXp XP across ${ui.sessions.size} campaigns",
-                        )
-                    } else {
-                        ChartCaption("Complete workouts to draw the line.")
+                // Nothing logged yet: one line, not three cards each explaining
+                // in its own words that it has no data. The third card here was
+                // an UNLABELLED chart of per-campaign XP - the same numbers the
+                // cumulative line already draws - captioned "0 campaigns".
+                if (ui.sessions.isEmpty()) {
+                    SystemWindow(Modifier.fillMaxWidth()) {
+                        MetricLabel("TRAINING")
+                        ChartCaption("Conquer a campaign to draw these lines.")
                     }
-                }
-                Spacer(Modifier.height(10.dp))
-                SystemWindow(Modifier.fillMaxWidth()) {
-                    MetricLabel("STRENGTH PER CAMPAIGN")
-                    val scores = ui.sessions.map { it.strengthScore.toDouble() }
-                    if (scores.any { it > 0.0 }) {
-                        TrendChart(scores)
-                        ChartCaption(
-                            "Best ${scores.max().toInt()} · ${scores.size} campaigns · body-scaled (heavier hunters must move more)",
-                        )
-                    } else {
-                        ChartCaption("Body-scaled score — log bodyweight, then conquer campaigns.")
+                } else {
+                    SystemWindow(Modifier.fillMaxWidth()) {
+                        MetricLabel("CUMULATIVE XP")
+                        val cumulative = remember(ui.sessions) { runningXp(ui.sessions) }
+                        val totalXp = remember(ui.sessions) { ui.sessions.sumOf { it.xpAwarded } }
+                        if (cumulative.size >= 2) {
+                            TrendChart(cumulative, MonarchColors.SystemGreen)
+                            ChartCaption("$totalXp XP across ${ui.sessions.size} campaigns")
+                        } else {
+                            ChartCaption("One more campaign draws the line.")
+                        }
                     }
-                }
-                Spacer(Modifier.height(10.dp))
-                SystemWindow(Modifier.fillMaxWidth()) {
-                    val xpSeries = ui.sessions.map { it.xpAwarded.toDouble() }
-                    TrendChart(xpSeries, MonarchColors.SystemGreen)
-                    ChartCaption("${xpSeries.size} campaigns · bar height = XP of that campaign")
+                    Spacer(Modifier.height(10.dp))
+                    SystemWindow(Modifier.fillMaxWidth()) {
+                        MetricLabel("STRENGTH PER CAMPAIGN")
+                        val scores = ui.sessions.map { it.strengthScore.toDouble() }
+                        if (scores.any { it > 0.0 }) {
+                            TrendChart(scores)
+                            ChartCaption(
+                                "Best ${scores.max().toInt()} · ${scores.size} campaigns · body-scaled (heavier hunters must move more)",
+                            )
+                        } else {
+                            ChartCaption("Log bodyweight to score these campaigns.")
+                        }
+                    }
                 }
                 Spacer(Modifier.height(16.dp))
 

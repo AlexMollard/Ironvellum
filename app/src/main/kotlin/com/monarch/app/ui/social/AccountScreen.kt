@@ -506,7 +506,7 @@ private fun AuthPanels(
                 password.isNotEmpty() && !passwordValid -> "The sigil phrase needs at least 6 characters."
                 mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid ->
                     "Hunter names run 2–24 characters."
-                else -> "Your training stays yours. Body measurements never leave this device — only sessions, XP and titles sync."
+                else -> "Measurements stay on this device; sessions, XP and titles sync."
             },
             style = MaterialTheme.typography.labelSmall,
             color = MonarchColors.InkMuted,

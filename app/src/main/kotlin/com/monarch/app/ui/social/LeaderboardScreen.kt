@@ -246,12 +246,16 @@ fun LeaderboardScreen(
             color = MonarchColors.InkMuted,
             letterSpacing = MonarchTracking.ScreenTitle,
         )
-        Text(
-            if (ui.rows.isEmpty()) "The board awaits" else "${ui.rows.size} hunters ranked",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = MonarchColors.SystemGreen,
-        )
+        // Only a count when there is something counted: "The board awaits" was
+        // a second empty-state line above a panel that explains the emptiness.
+        if (ui.rows.isNotEmpty()) {
+            Text(
+                "${ui.rows.size} hunters ranked",
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.SystemGreen,
+            )
+        }
         Spacer(Modifier.height(12.dp))
 
         when {
@@ -352,7 +356,9 @@ private fun NotSignedIn() {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Only hunters with a cloud sigil are ranked. Open the ALLIES tab above and sign in or awaken an account to claim your rank.",
+            // Was three lines saying who is ranked, where to go, and what to do
+            // there. One instruction is the whole message.
+            "Sign in on the ALLIES tab to claim your rank.",
             style = MaterialTheme.typography.bodySmall,
             color = MonarchColors.InkMuted,
         )

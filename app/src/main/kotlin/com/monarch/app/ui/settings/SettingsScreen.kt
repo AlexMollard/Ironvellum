@@ -425,13 +425,8 @@ fun SettingsScreen(
         Spacer(Modifier.height(10.dp))
 
         SystemWindow(Modifier.fillMaxWidth()) {
-            Text(
-                profile?.name ?: "Hunter",
-                style = MaterialTheme.typography.headlineMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-            )
-            Spacer(Modifier.height(10.dp))
+            // The name was printed as a headline directly above a field
+            // pre-filled with the same name. The field is the one you can act on.
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
@@ -474,7 +469,7 @@ fun SettingsScreen(
                     shape = MaterialTheme.shapes.small,
                     value = heightInput,
                     onValueChange = { heightInput = it.filter { c -> c.isDigit() || c == '.' }.take(6) },
-                    label = { Text(if (bodyProfile.first == null) "Height (cm) — required for BMI" else "Height (cm)") },
+                    label = { Text("Height (cm)") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     modifier = Modifier.weight(1f),
@@ -620,6 +615,7 @@ fun SettingsScreen(
                 MonarchButton(
                     label = "Sync Activity History",
                     onClick = { viewModel.syncActivityHistory() },
+                    quiet = true,
                 )
             }
             sync.historyWritten?.let { written ->
@@ -676,6 +672,7 @@ fun SettingsScreen(
                 MonarchButton(
                     label = "Import Archive",
                     onClick = { confirmImport = true },
+                    quiet = true,
                     enabled = !exporting,
                 )
             }
@@ -745,12 +742,13 @@ fun SettingsScreen(
                             }
                         }
                     },
+                    quiet = true,
                 )
             }
         }
         Spacer(Modifier.height(14.dp))
         Text(
-            "Monarch v1.0  ·  all data on this device only",
+            "Monarch v1.0  ·  measurements stay on this device",
             style = MaterialTheme.typography.labelSmall,
             color = MonarchColors.InkMuted,
             modifier = Modifier.padding(horizontal = 4.dp),
