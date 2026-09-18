@@ -339,23 +339,23 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
                 seed = 3,
             )
         }
-        // dark plate keeps the count legible wherever the fill edge lands
-        Box(
-            Modifier
+        // No plate behind the count. A translucent black box over a
+        // hand-drawn rail read as a hard-edged rectangle sitting ON the art —
+        // the one geometric shape on the card. Legibility instead comes from
+        // the ink flipping when the fill reaches the label: dark text on the
+        // bright fill, light text on the dark track.
+        val onFill = animated > 0.82f
+        Text(
+            "$into / $needed XP",
+            modifier = Modifier
                 .align(Alignment.CenterEnd)
-                .padding(end = 4.dp)
-                .background(Color(0xCC070B09), MaterialTheme.shapes.extraSmall)
-                .padding(horizontal = 6.dp, vertical = 2.dp),
-        ) {
-            Text(
-                "$into / $needed XP",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = MonarchColors.Ink,
-                letterSpacing = MonarchTracking.InlineLabel,
-            )
-        }
+                .padding(horizontal = 10.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = if (onFill) MonarchColors.Abyss else MonarchColors.Ink,
+            letterSpacing = MonarchTracking.InlineLabel,
+        )
     }
 }
 

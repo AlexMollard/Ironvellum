@@ -273,6 +273,11 @@ fun DashboardScreen(
                             "${Rank.forLevel(progress.level)} · ${ArmyClass.forLevel(progress.level).title}",
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
+                            // No tracking: labelMedium's 2sp over "E-Rank · the
+                            // Awakened" is 40dp of pure letter spacing, which
+                            // wrapped the line in two at 360dp and crowded the
+                            // worn title underneath it.
+                            letterSpacing = 0.sp,
                             color = MonarchColors.SystemGreen,
                             // One line CLIPPED mid-word at a large font scale:
                             // "E-Rank · the" instead of "the Awakened". The
@@ -617,6 +622,10 @@ fun DashboardScreen(
                             }
                         }
                     }
+                    // A clipped last row sitting flush against the button read
+                    // as the button covering the row. The gap makes the clip
+                    // look like scrolling, which is what it is.
+                    Spacer(Modifier.height(10.dp))
                     MonarchButton(
                         label = if (isTodaySelected) "Accept Quest" else "Start Anyway",
                         onClick = { viewModel.beginPreset(selectedPreset.id, onStartSession) },

@@ -30,6 +30,8 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.remember
@@ -148,8 +150,11 @@ fun MonarchRoot() {
                                 )
                             }
                             .navigationBarsPadding()
-                            .padding(horizontal = 10.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            // Six labels share the width. At 360dp - the most
+                            // common modern phone - the old 10dp/8dp gaps left
+                            // "Shadow" one glyph short and it rendered clipped.
+                            .padding(horizontal = 6.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
                         destinations.forEach { destination ->
                             val selected = currentRoute == destination.route
@@ -222,6 +227,12 @@ fun MonarchRoot() {
                                     // either: the app pins the text scale
                                     // (MonarchTheme), so this row has one size
                                     // to fit rather than a range.
+                                    //
+                                    // No tracking here. labelMedium carries
+                                    // 2sp, which on a six-glyph label is 12dp
+                                    // of pure letter spacing - the reason
+                                    // "Shadow" lost its w at 360dp.
+                                    letterSpacing = 0.sp,
                                     maxLines = 1,
                                     softWrap = false,
                                 )
