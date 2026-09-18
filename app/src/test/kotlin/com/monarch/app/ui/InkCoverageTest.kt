@@ -155,10 +155,10 @@ class InkCoverageTest {
             // Ambient washes behind the essence counter: low-alpha gradient fills,
             // not geometry. Brushed, they read as dirt on the screen.
             "ShadowBackdrop.kt" to sortedMapOf("drawCircle" to 2),
-            // Crest art: gradient body fills plus sub-pixel bevel highlights
-            // (alpha under 0.3, width under 0.02 of the unit). They are shading;
-            // the rings, spokes and dots around them are all ink.
-            "Sigil.kt" to sortedMapOf("drawCircle" to 5, "drawLine" to 4),
+            // Sigil.kt used to be listed here for the procedural crest's
+            // gradient fills and bevel highlights. The crests are drawn art
+            // now, that composable is deleted, and the file has no ruled call
+            // left - so it is absent rather than exempt.
             // The trend series itself. Its weight and alpha already breathe per
             // segment; the coordinates must stay exact or the chart misreports
             // the user's own measurements.

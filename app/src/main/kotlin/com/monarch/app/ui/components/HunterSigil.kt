@@ -17,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.monarch.app.domain.Gacha
 import com.monarch.app.ui.social.crestFrameTreatment
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.inkBorder
@@ -73,15 +72,8 @@ fun HunterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         if (frameId != null) {
-            val slot = Gacha.CREST_FRAMES.indexOfFirst { it.id == frameId }.coerceAtLeast(0)
             Box(contentAlignment = Alignment.Center) {
-                CrestEmblem(
-                    seed = frameId,
-                    variant = slot,
-                    primary = accent,
-                    secondary = frameColor,
-                    modifier = Modifier.size(34.dp),
-                )
+                CrestMark(frameId, Modifier.size(34.dp))
             }
         }
         if (frameId != null) {

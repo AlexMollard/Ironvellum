@@ -1,12 +1,15 @@
 # App icon candidates. Generate all three, look at them ON A LAUNCHER, pick one.
 #
-#   python tools/art_batches/run.py tools/art_batches/icon.txt .tmp/icon
-#   python tools/icon_install.py .tmp/icon/icon_<pick>.png
+#   python tools/art_batches/run.py tools/art_batches/icon.txt tools/art_batches/drawn
+#   python tools/icon_install.py tools/art_batches/drawn/icon_<pick>.png
 #   # then build, install, and look at the launcher — not at the PNG
 #
-# STATUS: not generated. QUOTA_EXHAUSTED at the time of writing; the installer
-# and its refusals are already proven end-to-end with a stand-in emblem, so
-# these three are the only missing piece.
+# STATUS: complete. All three drawn and kept under tools/art_batches/drawn/ so a
+# later run skips them instead of spending quota again. `crown_rays` is the one
+# installed: verified on the emulator's launcher, where the rays survive the
+# circle mask at 48dp and the crown still reads. `crown` came back with grey
+# internal shading (photographic rather than inked) and `gate` reads as a torii
+# with a letter in it. Swapping the pick is one icon_install.py call.
 #
 # Why the wording below is what it is:
 #   * The adaptive mask keeps only the centre 72dp of 108dp, and the installer

@@ -6,13 +6,10 @@
 #
 #   python tools/art_batches/run.py tools/art_batches/crests.txt tools/art_batches/drawn
 #
-# STATUS: 9 of 10 drawn and committed under tools/art_batches/drawn/. Only
-# `void` is missing — the quota ran out mid-set. Re-running the command above
-# after a reset skips the nine and draws `void` alone.
-#
-# The catalogue is deliberately NOT half wired — nine drawn crests beside one
-# procedural one looks worse than either set alone, so the art lands in
-# app/src/main/res/ only when all ten exist.
+# STATUS: complete. All ten drawn under tools/art_batches/drawn/ and shipped as
+# app/src/main/res/drawable-nodpi/art_crest_<id>.png at 256px. The procedural
+# CrestEmblem they replaced is deleted; CrestArtCoverageTest fails if a frame is
+# added to Gacha.CREST_FRAMES without a mark, or if two frames share one.
 #
 # Style is fixed at --style ink --alpha --size 384. The suffix matters: these
 # render at 34dp in the player sigil, so the silhouette has to survive being

@@ -196,7 +196,6 @@ fun MonarchTabPill(
     label: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
-    art: Int? = null,
     onClick: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.small
@@ -228,14 +227,8 @@ fun MonarchTabPill(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        if (art != null) {
-            Icon(
-                painter = painterResource(art),
-                contentDescription = null,
-                tint = if (selected) MonarchColors.Abyss else MonarchColors.InkMuted,
-                modifier = Modifier.size(16.dp),
-            )
-        }
+        // No art slot: the only caller that passed one was the skill tree, and
+        // its marks were cut. A pill is its label.
         Text(
             label,
             style = MaterialTheme.typography.labelMedium,

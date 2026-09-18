@@ -55,9 +55,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import com.monarch.app.ui.launchGuarded
 import kotlinx.coroutines.launch
-import androidx.annotation.DrawableRes
-import com.monarch.app.R
-import androidx.compose.foundation.layout.size
 
 data class TitlesUi(
     val unlocked: Map<String, Long> = emptyMap(),
@@ -251,7 +248,7 @@ fun TitlesScreen(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Skills.LINES.forEach { line ->
-                    MonarchTabPill(line.uppercase(), line == treeLine, art = lineArt(line)) { treeLine = line }
+                    MonarchTabPill(line.uppercase(), line == treeLine) { treeLine = line }
                 }
             }
             Spacer(Modifier.height(14.dp))
@@ -328,21 +325,9 @@ fun TitlesScreen(
 
 private enum class TitlesTab { DEEDS, TREE, JOURNAL }
 
-@Composable
-/**
- * Line art for a skill line, where the set provides one. Six of the ten lines
- * have a drawn mark; the rest show their name alone rather than a stand-in.
- */
-@DrawableRes
-private fun lineArt(line: String): Int? = when (line.lowercase()) {
-    "pull" -> R.drawable.ic_line_pull
-    "push" -> R.drawable.ic_line_push
-    "legs" -> R.drawable.ic_line_legs
-    "handstand" -> R.drawable.ic_line_handstand
-    "lever" -> R.drawable.ic_line_lever
-    "planche" -> R.drawable.ic_line_planche
-    else -> null
-}
+// No line art on the tree's pills. Six of the ten lines had a mark and four did
+// not, and the marks themselves read as bad clip-art at pill size - the owner's
+// call was that no icon beats these icons. The name carries the line.
 
 
 

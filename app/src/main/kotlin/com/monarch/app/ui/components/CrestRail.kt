@@ -178,15 +178,9 @@ private fun CrestPlate(
                         .size(plateSize - 10.dp)
                         .inkBorder(frameColor.copy(alpha = 0.35f), shape, 1.dp),
                 )
-                // Procedural heraldic emblem in the frame's own colours: a
-                // letter read as a placeholder and made all ten plates alike.
-                CrestEmblem(
-                    seed = frameId,
-                    variant = slot,
-                    primary = initialColor,
-                    secondary = frameColor,
-                    modifier = Modifier.size(plateSize * 0.72f),
-                )
+                // The drawn mark for this frame. Untinted brushed ink; the
+                // plate beneath it carries the frame's own palette.
+                CrestMark(frameId, Modifier.size(plateSize * 0.72f))
             }
         }
         Spacer(Modifier.height(8.dp))
