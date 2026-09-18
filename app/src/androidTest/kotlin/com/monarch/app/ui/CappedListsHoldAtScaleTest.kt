@@ -127,7 +127,7 @@ class CappedListsHoldAtScaleTest {
             onTrain in 1..CAP_CEILING,
         )
 
-        compose.onAllNodesWithText("FULL WORKOUT LOG", substring = true).onFirst().performClick()
+        compose.onAllNodesWithText("FULL LOG", substring = true).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         // A lazy list composes only the viewport, so counting once would say

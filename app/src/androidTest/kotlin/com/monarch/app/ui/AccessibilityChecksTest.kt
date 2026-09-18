@@ -349,8 +349,8 @@ class AccessibilityChecksTest {
             listOf("Stats", "DETAIL"),
             listOf("Stats", "TRAINING"),
             listOf("Stats", "ACTIVITY"),
-            listOf("Train", "EXERCISE EXPLORER"),
-            listOf("Train", "FULL WORKOUT LOG"),
+            listOf("Train", "EXPLORER"),
+            listOf("Train", "FULL LOG"),
             // Two levels down, and the densest screens in the app: the skill
             // sheet and the preset editor are wall-to-wall glyph steppers,
             // which is exactly where an unannounceable control hides.

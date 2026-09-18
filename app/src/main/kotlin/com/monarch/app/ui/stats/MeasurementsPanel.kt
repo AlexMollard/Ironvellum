@@ -63,7 +63,20 @@ fun MeasurementsPanel(
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val latest = Measurements.latest(ui.entries)
 
+    val anyReadings = ui.entries.isNotEmpty()
+
     Column(Modifier.fillMaxWidth()) {
+        // Was: every unmeasured tile repeated "No readings yet — take the first
+        // measurement." eight times. The instruction lives once here, only while
+        // the grid is entirely empty; empty tiles show a muted dash.
+        if (!anyReadings) {
+            Text(
+                "Tap a site to take its first measurement.",
+                style = MaterialTheme.typography.labelSmall,
+                color = MonarchColors.InkMuted,
+                modifier = Modifier.padding(bottom = 6.dp),
+            )
+        }
         MeasurementSite.entries.chunked(2).forEach { rowSites ->
             Row(
                 Modifier.fillMaxWidth(),
@@ -112,10 +125,13 @@ private fun SiteTile(
         )
         Spacer(Modifier.height(4.dp))
         if (latest == null) {
-            // Never show 0.0 for a site nobody has measured yet.
+            // Was: a full sentence per empty tile (eight copies of one hint).
+            // The instruction now lives once above the grid; a muted dash marks
+            // the unmeasured value.
             Text(
-                "No readings yet — take the first measurement.",
-                style = MaterialTheme.typography.bodySmall,
+                "—",
+                style = MaterialTheme.typography.titleLarge,
+                fontFamily = ChakraPetch,
                 color = MonarchColors.InkMuted,
             )
         } else {

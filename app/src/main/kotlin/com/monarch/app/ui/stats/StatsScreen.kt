@@ -303,11 +303,21 @@ fun StatsScreen(
                         ui.stats.sortedBy { it.takenAtMs }
                             .mapNotNull { BodyStats.bmi(it.weightKg, it.heightCm) }
                     }
+                    // Was: a second "readings unlock the trend" hint below —
+                    // WEIGHT card above already says it; the big "—" value from
+                    // MetricValueBig stands in until a trend exists.
                     if (bmis.size >= 2) {
                         TrendChart(bmis, MonarchColors.SystemGreen, fromZero = false)
                         ChartCaption("Latest ${bmis.last()} — ${BodyStats.bmiCategory(bmis.last())}")
                     } else {
-                        ChartCaption("Two readings unlock the line.")
+                        // Muted dash placeholder, same treatment as the empty
+                        // measurement tiles.
+                        Text(
+                            "—",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontFamily = ChakraPetch,
+                            color = MonarchColors.InkMuted,
+                        )
                     }
                 }
                 Spacer(Modifier.height(14.dp))

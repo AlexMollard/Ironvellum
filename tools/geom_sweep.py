@@ -136,9 +136,15 @@ def inspect(root, screen: str, density: int) -> list[str]:
                 )
 
     # Squished text: a label given less width than a single glyph needs.
+    #
+    # Nodes inside a scroller are exempt: uiautomator clips their bounds to the
+    # viewport, so a chip half-scrolled off a horizontal rail reports 6px wide
+    # while rendering whole. Judging those needs pixels, not bounds.
     for n in root.iter():
         t = n.get("text")
         if not t or len(t.strip()) < 2:
+            continue
+        if scrollable_ancestor(n, parents):
             continue
         x1, y1, x2, y2 = bounds(n)
         if 0 < (x2 - x1) < 12 or 0 < (y2 - y1) < 6:

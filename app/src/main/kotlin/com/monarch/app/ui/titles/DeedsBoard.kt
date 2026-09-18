@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -143,6 +145,12 @@ fun DeedsBoard(
     var rarityFilter by remember { mutableStateOf<TitleRarity?>(null) }
     // Toggling reorders each section's rows by rarity instead of proximity.
     var byRarity by remember { mutableStateOf(false) }
+    // Search was an always-visible third layer of chrome above the content;
+    // it now hides behind a toggle at the end of the filter rail.
+    var searchOpen by rememberSaveable { mutableStateOf(false) }
+    val searching = query.text.isNotBlank()
+    // A non-blank query must never filter invisibly.
+    val showSearch = searchOpen || searching
 
     // progress per deed computed once; every chip count, sort and row reuses it
     val progressOf = remember(ledger) {
@@ -157,7 +165,6 @@ fun DeedsBoard(
     val expandedCategories = remember {
         mutableStateOf(setOfNotNull(nearestCategory))
     }
-    val searching = query.text.isNotBlank()
     // Claimed showcase starts collapsed: on a phone the five sealed cards
     // alone push the category sections off-screen. Wearing stays one tap away.
     var claimedOpen by remember { mutableStateOf(false) }
@@ -171,46 +178,76 @@ fun DeedsBoard(
 
     LazyColumn(
         modifier,
+        // The chip rail used to sit flush against the tab row above it. Padding
+        // is a requirement here, not a nicety.
+        contentPadding = PaddingValues(top = 10.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         // Controls sit ABOVE the hero on purpose: a filter you cannot see
         // without scrolling is a filter nobody uses. They are plain items in
         // this LazyColumn — exactly one scroll container on the screen.
-        item(key = "search") {
-            DeedSearchField(query, onQueryChange = { query = it })
+        if (showSearch) {
+            item(key = "search") {
+                DeedSearchField(query, onQueryChange = { query = it })
+            }
         }
         item(key = "rail") {
-            // Rail scrolls horizontally; a fixed Row squeezed the last chips
-            // into one letter per line off the screen edge.
+            // The toggle sits OUTSIDE the horizontal scroll: inside it, the
+            // magnifier was parked past the last chip, off the screen edge,
+            // where nobody would find it.
             Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                DeedFilter.entries.forEach { f ->
-                    val count = Titles.ALL.count { f.matches(it, unlocked, progressOf.getValue(it.id)) }
+                // Rail scrolls horizontally; a fixed Row squeezed the last chips
+                // into one letter per line off the screen edge.
+                Row(
+                    Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    DeedFilter.entries.forEach { f ->
+                        val count = Titles.ALL.count { f.matches(it, unlocked, progressOf.getValue(it.id)) }
+                        DeedFilterChip(
+                            label = "${f.label} $count",
+                            selected = filter == f,
+                            onClick = { filter = f },
+                        )
+                    }
+                    // Rarity rail: tapping the selected tier again clears it.
+                    // Same horizontalScroll idiom — no chip may wrap.
+                    Spacer(Modifier.width(6.dp))
+                    TitleRarity.entries.forEach { r ->
+                        val count = Titles.ALL.count { it.rarity == r }
+                        DeedFilterChip(
+                            label = "${r.name.uppercase()} $count",
+                            selected = rarityFilter == r,
+                            onClick = { rarityFilter = if (rarityFilter == r) null else r },
+                        )
+                    }
                     DeedFilterChip(
-                        label = "${f.label} $count",
-                        selected = filter == f,
-                        onClick = { filter = f },
+                        label = if (byRarity) "ORDER · RARITY" else "ORDER · PROXIMITY",
+                        selected = byRarity,
+                        onClick = { byRarity = !byRarity },
                     )
                 }
-                // Rarity rail: tapping the selected tier again clears it.
-                // Same horizontalScroll idiom — no chip may wrap.
-                Spacer(Modifier.width(6.dp))
-                TitleRarity.entries.forEach { r ->
-                    val count = Titles.ALL.count { it.rarity == r }
-                    DeedFilterChip(
-                        label = "${r.name.uppercase()} $count",
-                        selected = rarityFilter == r,
-                        onClick = { rarityFilter = if (rarityFilter == r) null else r },
+                // Search toggle: the full-width field was a third chrome layer
+                // before any deed card; the query itself lives in DeedSearchField.
+                Box(
+                    Modifier
+                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        .clickable(
+                            role = Role.Button,
+                            onClickLabel = if (showSearch) "Hide deed search" else "Show deed search",
+                        ) { searchOpen = !searchOpen },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Filled.Search,
+                        contentDescription = if (showSearch) "Hide deed search" else "Show deed search",
+                        tint = if (showSearch) MonarchColors.SystemGreen else MonarchColors.InkMuted,
                     )
                 }
-                DeedFilterChip(
-                    label = if (byRarity) "ORDER · RARITY" else "ORDER · PROXIMITY",
-                    selected = byRarity,
-                    onClick = { byRarity = !byRarity },
-                )
-        }
+            }
         }
 
         // --- merged hero: what you wear + what to chase next, one panel -----

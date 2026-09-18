@@ -8,6 +8,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,8 +21,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.outlined.FitnessCenter
+import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -47,6 +51,7 @@ import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
+import com.monarch.app.ui.theme.MonarchTracking
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -120,17 +125,27 @@ fun PresetsScreen(
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
-            MonarchButton(
-                label = "Exercise Explorer",
-                onClick = onOpenExercises,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(12.dp))
-            MonarchButton(
-                label = "Full Workout Log",
-                onClick = onOpenLog,
-                modifier = Modifier.fillMaxWidth(),
-            )
+            // The two navigation destinations sat here as full-width primary
+            // buttons, fighting the one real action (Quick Session); they are
+            // now quiet links below it.
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                QuietNavLink(
+                    label = "EXPLORER",
+                    icon = Icons.Outlined.FitnessCenter,
+                    onClick = onOpenExercises,
+                    modifier = Modifier.weight(1f),
+                )
+                QuietNavLink(
+                    label = "FULL LOG",
+                    icon = Icons.Outlined.History,
+                    onClick = onOpenLog,
+                    modifier = Modifier.weight(1f),
+                )
+            }
             SectionHeader("Presets")
             if (ui.presets.isEmpty()) {
                 Text(
@@ -158,7 +173,7 @@ fun PresetsScreen(
                         Text(preset.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Spacer(Modifier.height(8.dp))
-                    preset.entries.forEach { entry ->
+                    preset.entries.take(PRESET_CARD_MOVEMENTS).forEach { entry ->
                         Row(
                             Modifier.fillMaxWidth().padding(vertical = 3.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -182,6 +197,16 @@ fun PresetsScreen(
                             )
                         }
                     }
+                    if (preset.entries.size > PRESET_CARD_MOVEMENTS) {
+                        Text(
+                            "+${preset.entries.size - PRESET_CARD_MOVEMENTS} MORE",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            color = MonarchColors.InkMuted,
+                            letterSpacing = MonarchTracking.InlineLabel,
+                            modifier = Modifier.padding(top = 3.dp),
+                        )
+                    }
                     Spacer(Modifier.height(10.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text(
@@ -203,6 +228,41 @@ fun PresetsScreen(
                 }
             }
 
+            // "New Preset" used to float over the list, and it parked itself on
+            // top of a card's BEGIN button. A tile at the end of the presets
+            // covers nothing and needs no clearance spacer underneath.
+            SystemWindow(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp)
+                    .heightIn(min = 48.dp)
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null,
+                        onClickLabel = "New preset",
+                    ) { onNew() },
+            ) {
+                Row(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Icon(
+                        Icons.Filled.Add,
+                        contentDescription = null,
+                        tint = MonarchColors.SystemGreen,
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "NEW PRESET",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.SystemGreen,
+                        letterSpacing = MonarchTracking.InlineLabel,
+                    )
+                }
+            }
+
             SectionHeader("Activity Log")
             if (ui.history.isEmpty()) {
                 Text(
@@ -214,7 +274,7 @@ fun PresetsScreen(
             // Only the latest few: this screen is a plain scrolling Column, so
             // every row it lists is composed whether or not it is on screen.
             // After a few years of training that is a thousand rows built to
-            // show the top five, and FULL WORKOUT LOG above already leads to
+            // show the top five, and FULL LOG above already leads to
             // the complete, month-grouped history.
             ui.history.take(ACTIVITY_LOG_ROWS).forEach { (session, sets) ->
                 SystemWindow(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
@@ -233,23 +293,48 @@ fun PresetsScreen(
                     }
                 }
             }
-            // Clears the floating button. One text scale app-wide, so one
-            // clearance is enough.
-            Spacer(Modifier.height(128.dp))
-        }
-        ExtendedFloatingActionButton(
-            onClick = onNew,
-            // The M3 FAB's container shape comes from its own defaults, not the theme.
-            shape = MaterialTheme.shapes.small,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(20.dp),
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = null)
-            Text("  New Preset")
+            Spacer(Modifier.height(20.dp))
         }
     }
 }
 
 /** Enough to show the week's work; the full log carries the rest. */
 private const val ACTIVITY_LOG_ROWS = 6
+
+/**
+ * Per-card movement cap. Presets can hold many exercises and rendering every
+ * one turned each card into a wall of identical rows; three movements is
+ * enough to recognise the preset. The full manifest still lives in the preset
+ * editor and on the Court quest card.
+ */
+private const val PRESET_CARD_MOVEMENTS = 3
+
+/** Quiet text+icon navigation link in the Court inline-label idiom; 48dp+ tap target. */
+@Composable
+private fun QuietNavLink(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    Row(
+        modifier
+            .heightIn(min = 48.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+            ) { onClick() },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MonarchColors.InkMuted,
+            modifier = Modifier.size(14.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+            letterSpacing = MonarchTracking.InlineLabel,
+        )
+    }
+}

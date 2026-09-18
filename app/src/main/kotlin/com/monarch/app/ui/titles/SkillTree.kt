@@ -248,7 +248,10 @@ private fun SkillRow(
                     when {
                         mastered -> "MASTERED"
                         unlocked -> row.skill.standard
-                        else -> "LOCKED · needs ${row.skill.requires}"
+                        // "LOCKED" said nothing the muted ink and the
+                        // prerequisite did not already say, on every locked row
+                        // of an 84-skill tree.
+                        else -> "needs ${row.skill.requires}"
                     },
                     style = MaterialTheme.typography.labelSmall,
                     fontSize = 9.sp,

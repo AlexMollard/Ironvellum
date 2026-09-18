@@ -75,7 +75,7 @@ class WorkoutLogRendersHistoryTest {
     fun theLogListsACompletedSessionUnderItsMonth() {
         compose.onAllNodesWithContentDescription("Train").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-        compose.onAllNodesWithText("FULL WORKOUT LOG", substring = true).onFirst().performClick()
+        compose.onAllNodesWithText("FULL LOG", substring = true).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         val onScreen = compose.onAllNodesWithText("", substring = true).fetchSemanticsNodes().size

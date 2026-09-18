@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
@@ -665,8 +666,8 @@ private fun ArmyStat(label: String, value: String, modifier: Modifier = Modifier
 }
 
 /**
- * WHY the rate is what it is. Training drives everything here: the inputs are
- * shown raw so a decaying rate is legible, not mysterious.
+ * WHY the rate is what it is. The prose and the two factor multipliers stay
+ * visible; the raw inputs they are computed from sit one tap away.
  */
 @Composable
 private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
@@ -690,10 +691,6 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
                     overflow = TextOverflow.Ellipsis,
                 )
             }
-            RateRow("SESSIONS · 7 DAYS", "${inputs.sessionsLast7d}")
-            RateRow("VOLUME · 7 DAYS", "${"%,.0f".format(inputs.volumeLast7d)} KG")
-            RateRow("SKILLS UNLOCKED", "${inputs.skillsUnlocked}")
-            RateRow("STREAK", "${inputs.streakDays} D")
             // Each factor's bar is its SHARE of the two combined, so the
             // relative weight of training vs. permanent skill reads at a glance.
             FactorRow(
@@ -707,6 +704,34 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
                 value = "×${"%.2f".format(rate.skillFactor)}",
                 share = ((rate.skillFactor - 1.0) / (Idle.MAX_SKILL_FACTOR - 1.0)).toFloat(),
             )
+            // The four raw inputs (sessions, volume, skills, streak) used to
+            // sit as a six-row dump — a diagnostics panel, not a game screen.
+            // They now live one tap behind this disclosure.
+            var inputsOpen by rememberSaveable { mutableStateOf(false) }
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .clickable { inputsOpen = !inputsOpen }
+                    .padding(vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    if (inputsOpen) "▾ WHAT FEEDS IT" else "▸ WHAT FEEDS IT",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    color = MonarchColors.InkMuted,
+                    maxLines = 1,
+                    softWrap = false,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            if (inputsOpen) {
+                RateRow("SESSIONS · 7 DAYS", "${inputs.sessionsLast7d}")
+                RateRow("VOLUME · 7 DAYS", "${"%,.0f".format(inputs.volumeLast7d)} KG")
+                RateRow("SKILLS UNLOCKED", "${inputs.skillsUnlocked}")
+                RateRow("STREAK", "${inputs.streakDays} D")
+            }
         }
     }
 }
