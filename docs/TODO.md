@@ -202,15 +202,20 @@ open-work list.
   first: the model draws its own faint sketch frame in the margin, which is the
   same box by another route.
 
-- **Crest art is 4/10 and deliberately unwired.** `iron`, `bronze`, `silver`
-  and `gold` are drawn; the remaining six hit `QUOTA_EXHAUSTED` from
-  cloudcode-pa. Four drawn crests beside six procedural ones would look worse
-  than either set, so nothing lands in `res/` until all ten exist. The batch is
-  resumable: `python tools/art_batches/run.py tools/art_batches/crests.txt`
-  skips what is already drawn and stops with a named reason, so a later run
-  finishes the set rather than redrawing it. Prompts are in the batch file
-  beside the status, including the suffix that matters — these render at 34dp
-  in the player sigil, where fine detail turns to mush.
+- **Crest art: all ten drawn, wired, and the generator deleted.** The set was
+  stuck at 9/10 (`void` hit `QUOTA_EXHAUSTED` mid-batch); the batch is
+  resumable, so a later run drew that one alone rather than redrawing nine.
+  All ten now ship as `res/drawable-nodpi/art_crest_<id>.png` at 256px and
+  render on the crest plate and in the player sigil, untinted — a single-colour
+  tint flattens the brush into a silhouette, and the plate under them already
+  carries the frame's palette. The procedural `CrestEmblem` that composed a
+  crown/chevron/orbit/rune from the frame's id is deleted (~400 lines), and with
+  it the `Sigil.kt` row in `InkCoverageTest`'s ruled-drawing allow-list: the
+  file has no ruled call left, so it is absent rather than exempt.
+  `CrestArtCoverageTest` now fails if a frame is added to `Gacha.CREST_FRAMES`
+  with no mark, or if two frames point at one drawable — the two ways a
+  hand-maintained pair of lists drifts. Verified on device by seeding all ten
+  frames into the emulator database, then clearing them.
 - **Large-type Court, judged by eye rather than by "no clipping".** A geometric
   sweep said all six screens were clean at 2.0x, and the owner looking at the
   phone said it looked bad anyway — both were right. Three fixes came out of
@@ -242,7 +247,7 @@ open-work list.
   Worth keeping: "no node is off-screen or squished" passed both of these.
   A geometric check catches geometry, not sliced words or a button parked on
   top of content — for those the screenshot is the instrument.
-- **App icon: pipeline built and proven, art blocked on quota.**
+- **App icon: drawn, installed, and checked on a launcher.**
   `tools/icon_install.py` turns one keyed PNG into all 20 files the manifest
   references — foreground, monochrome and the legacy bitmaps across five
   density buckets — and encodes the two rules that are easy to get wrong by
@@ -250,13 +255,14 @@ open-work list.
   into that 66% rather than drawn edge to edge; and the monochrome layer is
   written as flat white on the source's alpha, because Android tints that layer
   and colour in it means nothing. It refuses an unkeyed source (an all-opaque
-  PNG — the old wash-laden shape) and a fully transparent one; both refusals
-  fire. Proven end to end with a stand-in emblem: built, installed, and the
-  icon photographed **on the launcher**, inside its mask, not judged from the
-  PNG. The res files were then reverted, because the stand-in was a catalogue
-  crest and the app icon should not double as one.
-  `tools/art_batches/icon.txt` holds three candidate motifs and the reason each
-  word of the prompt is there; it needs quota, nothing else.
+  PNG) and a fully transparent one; both refusals fire.
+
+  All three candidates from `tools/art_batches/icon.txt` are drawn and kept
+  under `tools/art_batches/drawn/`, so changing the pick costs one
+  `icon_install.py` call and no quota. `crown_rays` is installed — a crown
+  under a burst of straight rays — judged **on the launcher inside its mask**,
+  where the rays survive at 48dp. `crown` came back with photographic grey
+  shading rather than ink, and `gate` reads as a torii with a letter in it.
 - **Every throwing repository call is now caught at the view model.** The
   session-completion fix was one instance of a class: the data layer enforces
   its invariants by throwing (`completeSession`, `claimSkill`, `unclaimSkill`,
