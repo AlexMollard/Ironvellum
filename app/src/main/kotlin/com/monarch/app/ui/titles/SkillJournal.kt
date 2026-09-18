@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,6 +40,7 @@ import androidx.compose.ui.platform.LocalDensity
 import com.monarch.app.ui.theme.InkEdgeShape
 import androidx.compose.foundation.shape.CornerSize
 import com.monarch.app.ui.theme.MonarchColors
+import com.monarch.app.ui.theme.MonarchTracking
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -103,6 +105,18 @@ fun SkillJournal(
         Column(Modifier.fillMaxWidth()) {
             val start = today.minusWeeks((WEEKS - 1).toLong())
                 .with(java.time.DayOfWeek.MONDAY)
+            // ONE shape for all 84 cells, not one per cell. InkEdgeShape keeps a
+            // minimum wobble so small fills still read as drawn, which on a 12px
+            // cell is a tenth of its height - with a different salt per cell the
+            // grid came out as 84 different silhouettes and read as torn rather
+            // than inked.
+            val cellShape = InkEdgeShape(
+                salt = 7,
+                topStart = CornerSize(2.dp),
+                topEnd = CornerSize(2.dp),
+                bottomEnd = CornerSize(2.dp),
+                bottomStart = CornerSize(2.dp),
+            )
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(3.dp),
@@ -115,51 +129,62 @@ fun SkillJournal(
                         repeat(7) { d ->
                             val date = start.plusDays((w * 7 + d).toLong())
                             val count = byDay[date] ?: 0
-                            val future = date.isAfter(today)
-                            // 84 cells with unshaped fills and a bare two-arg
-                            // border (RectangleShape) made this the last rigid
-                            // grid in the app. Each cell gets the ink shape and
-                            // its own salt, so the grid reads as marks made one
-                            // at a time rather than a printed table.
-                            val cellShape = InkEdgeShape(
-                                salt = w * 7 + d,
-                                topStart = CornerSize(2.dp),
-                                topEnd = CornerSize(2.dp),
-                                bottomEnd = CornerSize(2.dp),
-                                bottomStart = CornerSize(2.dp),
-                            )
-                            Box(
-                                Modifier
-                                    .fillMaxWidth()
-                                    .height(12.dp)
-                                    .background(
-                                        when {
-                                            future -> Color(0xFF0D110F)
-                                            count >= 3 -> MonarchColors.SovereignGold
-                                            count == 2 -> MonarchColors.Emerald
-                                            count == 1 -> MonarchColors.SystemGreen.copy(alpha = 0.65f)
-                                            else -> Color(0xFF18211D)
-                                        },
-                                        cellShape,
-                                    )
-                                    .then(
-                                        if (date == today) {
-                                            Modifier.inkBorder(MonarchColors.SovereignGold, cellShape, 1.dp)
-                                        } else {
-                                            Modifier
-                                        },
-                                    ),
-                            )
+                            // Days that have not happened draw nothing. Filling
+                            // them near-black made the corner of the grid look
+                            // like missing cells instead of an unfinished week.
+                            if (date.isAfter(today)) {
+                                Spacer(Modifier.fillMaxWidth().aspectRatio(1f))
+                            } else {
+                                Box(
+                                    Modifier
+                                        .fillMaxWidth()
+                                        // Square, derived from the column width.
+                                        // A fixed 12dp height against a ~25dp
+                                        // column drew wide bricks; a day is a
+                                        // day, so the cell is a square.
+                                        .aspectRatio(1f)
+                                        .background(
+                                            when {
+                                                count >= 3 -> MonarchColors.SovereignGold
+                                                count == 2 -> MonarchColors.Emerald
+                                                count == 1 -> MonarchColors.SystemGreen.copy(alpha = 0.65f)
+                                                else -> Color(0xFF18211D)
+                                            },
+                                            cellShape,
+                                        )
+                                        .then(
+                                            if (date == today) {
+                                                Modifier.inkBorder(MonarchColors.SovereignGold, cellShape, 1.dp)
+                                            } else {
+                                                Modifier
+                                            },
+                                        ),
+                                )
+                            }
                         }
                     }
                 }
             }
             Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                HeatKey(Color(0xFF18211D), "none")
-                HeatKey(MonarchColors.SystemGreen.copy(alpha = 0.65f), "1")
-                HeatKey(MonarchColors.Emerald, "2")
-                HeatKey(MonarchColors.SovereignGold, "3+")
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                // The grid had no time axis at all: twelve anonymous columns.
+                Text(
+                    "${formatDate(start.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli(), "d MMM")} — today",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.InkMuted,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                )
+                // No "none" key: an unlit cell needs no legend entry.
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    HeatKey(MonarchColors.SystemGreen.copy(alpha = 0.65f), "1")
+                    HeatKey(MonarchColors.Emerald, "2")
+                    HeatKey(MonarchColors.SovereignGold, "3+")
+                }
             }
         }
     }
@@ -399,7 +424,9 @@ private fun StatTile(label: String, value: String, modifier: Modifier = Modifier
 @Composable
 private fun HeatKey(color: Color, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(9.dp).background(color))
+        // A bare Box is a hard rectangle: the key has to be cut like the cells
+        // it stands for, or it reads as a different widget.
+        Box(Modifier.size(9.dp).background(color, MaterialTheme.shapes.extraSmall))
         Spacer(Modifier.width(4.dp))
         Text(label, style = MaterialTheme.typography.labelSmall, fontSize = 9.sp, color = MonarchColors.InkMuted)
     }
