@@ -324,6 +324,10 @@ interface IdleDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(state: IdleStateEntity)
+
+    // Archive restore replaces the idle state wholesale.
+    @Query("DELETE FROM idle_state")
+    suspend fun clearAll()
 }
 
 @Dao
@@ -352,6 +356,16 @@ interface GachaDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertFrame(frame: OwnedCrestFrameEntity)
 
+    // Full rows for the archive: the id-only projection loses ownedAtMs.
+    @Query("SELECT * FROM owned_crest_frames")
+    suspend fun ownedFrames(): List<OwnedCrestFrameEntity>
+
+    @Query("DELETE FROM owned_crest_frames")
+    suspend fun clearFrames()
+
+    @Query("DELETE FROM gacha_state")
+    suspend fun clearRolls()
+
     // Relics, strongest first: the rate uses the best one, the vault shows all.
     @Query("SELECT * FROM owned_relics ORDER BY multiplier DESC, drawnAtMs DESC")
     fun observeRelics(): Flow<List<OwnedRelicEntity>>
@@ -361,4 +375,8 @@ interface GachaDao {
 
     @Insert
     suspend fun insertRelic(relic: OwnedRelicEntity)
+
+    // Archive restore replaces the relic vault wholesale.
+    @Query("DELETE FROM owned_relics")
+    suspend fun clearRelics()
 }

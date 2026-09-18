@@ -1,6 +1,7 @@
 package com.monarch.app.data.cloud
 
 import android.content.Context
+import android.util.Log
 import androidx.work.Constraints
 import androidx.work.CoroutineWorker
 import androidx.work.ExistingPeriodicWorkPolicy
@@ -27,16 +28,30 @@ class CloudSyncWorker(context: Context, params: WorkerParameters) :
         // A signed-out hunter has nothing to push: enqueueing work that can
         // only fail would burn a network slot every day for a refusal.
         if (app.accountRepository.account.value == null) return Result.success()
-        return runCatching { app.cloudSync.push() }
+        // push() already returns a Result, so runCatching wraps a Result in a
+        // Result: flatten it before either branch can read the outcome.
+        return runCatching { app.cloudSync.push().getOrThrow() }
             .fold(
-                onSuccess = { Result.success() },
+                onSuccess = { outcome ->
+                    // A non-fatal problem (e.g. push_aggregates refused) still
+                    // lands as success(); without this line nothing in logcat
+                    // explains a stale leaderboard/totals row.
+                    if (outcome.problems.isNotEmpty()) {
+                        Log.w(TAG, "Cloud push finished with problems: ${outcome.problems.joinToString("; ")}")
+                    }
+                    Result.success()
+                },
                 // transient network errors are worth one retry, then let the
                 // next day's run pick it up rather than hammering the gate
-                onFailure = { if (runAttemptCount < 2) Result.retry() else Result.success() },
+                onFailure = { error ->
+                    Log.w(TAG, "Cloud push failed on attempt $runAttemptCount: ${error.message}", error)
+                    if (runAttemptCount < 2) Result.retry() else Result.success()
+                },
             )
     }
 
     companion object {
+        private const val TAG = "CloudSyncWorker"
         private const val PERIODIC_NAME = "monarch-cloud-daily"
         private const val PUSH_NOW_NAME = "monarch-cloud-push-now"
 

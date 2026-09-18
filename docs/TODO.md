@@ -31,6 +31,7 @@ open-work list.
 | Court on a short window (landscape, or the largest display size with 2.0x text) | The quest panel is weighted, and a weighted child measured after the unweighted content above it gets nothing — the button went with it. Below 520 "text lines" of height the panel wraps its content and the page scrolls; the step gauge also yields below 400. Measured: stock portrait 891, landscape 411, largest display at 2.0x 347. (a) keep this; (b) design a landscape Court; (c) lock to portrait | **(a)**, shipped. The CTA is reachable with zero swipes in all four combinations of orientation and scale. (c) was tried and reverted: lint flags `LockedOrientationActivity` and `DiscouragedApi`, and Android 16 ignores the lock on large screens anyway |
 | Idle accrual is unbounded, and the rule says it caps | The product rule is "accumulation caps at 24 hours, the rate decays every few hours away". `Idle` implements the decay (full rate to 24h, linear taper to 10% by 72h) but **no cap**: the floor pays forever. Measured effective hours paid — 1 day 24.0, 2 days 42.6, 3 days 50.4, 1 week 60.0, 1 month 115.2, **1 year 919.2 (38x a capped day)**. Idle essence is the column the shadow board ranks on, so absence climbs the leaderboard. (a) hard cap total accrual at 24 effective hours — satisfies the rule literally, but makes the taper dead code; (b) decay *within* the first 24 hours and stop there — satisfies both clauses, and is the only reading where the word "decays" earns its place; (c) keep the floor but cap the total at a chosen multiple of a day (e.g. 3x), which bounds it without ending the "shadows never stop" flavour; (d) keep today's unbounded behaviour | **(b) or (c) — your call, because it reshapes the economy.** I have not changed it: picking the curve is a product decision, and (d) is indefensible only in the sense that a fitness app should not pay 38x for a year of not training. Whichever you pick, the code comment claiming decay "punishes stopping" needs to go — today it rewards it |
 | Text scale | **Owner decision, taken: one fixed scale.** `MonarchTheme` provides a `Density` with `fontScale = FIXED_FONT_SCALE` (1f), so the system font setting no longer reaches any Monarch layout. Measured on the emulator at 0.85x, 1.0x and 2.0x: 21 shared text nodes, **0 differing sizes**, and the Stats tabs stay one row at every setting. | **Shipped.** The cost is deliberate and worth naming: a hunter who enlarges system text gets no larger text here, which is an accessibility regression against Android's own guidance. Display size (density) still applies. In exchange every layout has exactly one size to be correct at, and the five per-screen defences this replaced (nav label cap, XP rail growth, step dial fallback, stacked tab segments, scaled button clearance) are gone rather than untested branches. Revisit if the app ever needs a store accessibility review |
+| Off-device backup vs. on-device privacy | Nothing leaves the phone automatically. `backup_rules.xml` / `data_extraction_rules.xml` exclude `monarch.db`, its WAL and `files/db-snapshots` from Android cloud backup **and** device-to-device transfer, so a new phone starts empty; the Supabase sync is push-only (`CloudSync.push`, no decode-to-Room path anywhere in `data/cloud/`), so even a signed-in hunter cannot pull his history back. The only complete restore is a manual `EXPORT ARCHIVE` the owner remembered to tap. (a) keep as-is; (b) write a dated archive automatically to shared `Documents/Monarch/`, which survives uninstall and is visible in Files, still uploading nothing; (c) add a cloud restore path, which needs server tables for measurements and so reverses "body measurements never leave this device" | **(b)**, then stop. It removes the "did I remember to export" failure without moving one byte off the device or touching the privacy rule. (c) is the only thing that survives a lost phone with no user action, and it costs the privacy rule — the owner's call, not mine |
 
 ## Verification gaps (honest, not deferred work)
 
@@ -216,6 +217,47 @@ open-work list.
   with no mark, or if two frames point at one drawable — the two ways a
   hand-maintained pair of lists drifts. Verified on device by seeding all ten
   frames into the emulator database, then clearing them.
+- **The archive is now the whole save, because it is the only restore there is.**
+  Audit question was "what actually loses the owner's data", and the answer was
+  not the database: there is no `fallbackToDestructiveMigration` anywhere (it was
+  removed after an upgrade wiped everything, `MonarchDatabase.kt:149-153`), Room
+  throws on an unknown schema, `MigrationForwardTest` seeds real rows at v21 and
+  asserts their values survive to v23, and `DbSnapshot` keeps 7 daily byte copies
+  taken before Room opens. The hole was the archive itself. `EXPORT ARCHIVE` is
+  the app's only complete restore path — the Supabase sync is push-only, with no
+  decode-to-Room anywhere in `data/cloud/` — and it silently carried none of:
+  `idle_state`, `gacha_state` (including the equipped crest), `owned_crest_frames`,
+  `owned_relics`, and the profile's `heightCm`/`sex`/`inkStyle`. Height and sex
+  feed every BMI/FFMI/calorie number, so a restore quietly degraded the headline
+  metrics; a user-created movement came back as a guessed `PULL`/weighted/`REPS`.
+  Format 5 carries all of it, and the semantics are the part worth remembering:
+  a v5 archive REPLACES those tables inside the existing import transaction,
+  while a v4 archive leaves the local rows untouched, because an absent key means
+  "no information", never "empty set". Both directions are mutation-proven —
+  forcing the replace unconditional fails `aV4ArchiveLeavesTheLocalIdleRowsUntouched`,
+  and skipping the idle restore fails the v5 test. A measurement whose site this
+  build no longer parses is now reported in `ExportResult.problems` instead of
+  being dropped by `mapNotNull` with no word.
+- **The writer is hand-rolled and its reader is tolerant, so the archive is now
+  parsed strictly.** While integrating the above I found the shape emitting
+  `"exportedAtMs":0,,"profile"` — a doubled comma from two edits meeting. The
+  existing round-trip tests did catch it, but only because Monarch's own reader
+  happened to be strict at that byte; a file the owner keeps for years has to be
+  readable by something other than this app. `ExportRoundTripTest` now runs the
+  exported JSON through `org.json.JSONObject`, and re-introducing the comma fails
+  it.
+- **Two cloud-push defects that made the server copy quietly wrong.** A session
+  containing a set with a blank exercise name was added to the watermark bucket
+  BEFORE the per-set check, so that set never uploaded and, with the fingerprint
+  now matching, was never retried — a permanent hole in the cloud copy.
+  `partitionPushable` is now the single source of truth for the skip decision and
+  a session only enters `pushedNow` when nothing was skipped; a retry is
+  idempotent (sessions conflict on `user_id,local_id`, sets on
+  `session_id,exercise_name,set_index`), so re-pushing rewrites rather than
+  duplicates. Separately `CloudSyncWorker` discarded both the exception and
+  `outcome.problems` and returned success, which is how a `push_aggregates`
+  refusal could leave the leaderboard totals stale for days with nothing in
+  logcat; both now log the cause.
 - **Large-type Court, judged by eye rather than by "no clipping".** A geometric
   sweep said all six screens were clean at 2.0x, and the owner looking at the
   phone said it looked bad anyway — both were right. Three fixes came out of

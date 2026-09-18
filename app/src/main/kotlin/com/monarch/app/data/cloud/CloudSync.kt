@@ -24,6 +24,15 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 /**
+ * Single source of truth for which sets are cloud-eligible. A set with a blank
+ * exercise name cannot satisfy the session_sets conflict key, so pushing it
+ * would be refused; both the set loop and the watermark decision route through
+ * here so a skipped set can never be silently marked as pushed.
+ */
+internal fun partitionPushable(sets: List<SessionSet>): Pair<List<SessionSet>, List<SessionSet>> =
+    sets.partition { it.exerciseName.isNotBlank() }
+
+/**
  * Everything that leaves the device through PostgREST: aggregates, completed
  * measurements (StatEntry) and HealthDay rows — the cloud schema has no table
  * for them on purpose.
@@ -162,12 +171,20 @@ class CloudSync(
                         problems += "Session \"${session.label}\" could not be matched on the cloud"
                         return@forEach
                     }
-                    pushedNow += session to sets
-                    sets.forEach { set ->
-                        if (set.exerciseName.isBlank()) {
+                    // A skipped set must hold the watermark back: retrying a
+                    // session is idempotent (sessions conflict on
+                    // user_id,local_id; sets on session_id,exercise_name,
+                    // set_index), but never re-pushing it loses reps/weight
+                    // forever.
+                    val (pushable, skipped) = partitionPushable(sets)
+                    if (skipped.isNotEmpty()) {
+                        skipped.forEach {
                             problems += "A set in \"${session.label}\" has no exercise name and was skipped"
-                            return@forEach
                         }
+                    } else {
+                        pushedNow += session to sets
+                    }
+                    pushable.forEach { set ->
                         setCount++
                         add(
                             SessionSetDto(

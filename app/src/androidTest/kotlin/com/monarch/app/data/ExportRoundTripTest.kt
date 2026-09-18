@@ -3,10 +3,22 @@ package com.monarch.app.data
 import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.monarch.app.data.db.ExerciseEntity
+import com.monarch.app.data.db.IdleStateEntity
+import com.monarch.app.data.db.MeasurementEntity
+import com.monarch.app.data.db.OwnedCrestFrameEntity
+import com.monarch.app.data.db.OwnedRelicEntity
+import com.monarch.app.data.db.PresetEntryEntity
+import com.monarch.app.data.db.PresetEntity
+import com.monarch.app.domain.ExportWriter
+import com.monarch.app.domain.Sex
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
+import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -179,8 +191,150 @@ class ExportRoundTripTest {
         )
     }
 
+    @Test
+    fun aV5ArchiveRestoresIdleGachaCosmeticsProfileAndMovementMetadata() = runTest {
+        // A user-created movement with real attributes: this is the row the
+        // importer used to rebuild as a guessed PULL/weighted default.
+        val custom = "Nordic Curl Progression"
+        assertEquals(null, db.exerciseDao().byName(custom))
+        val customId = db.exerciseDao().insertAll(
+            listOf(
+                ExerciseEntity(name = custom, muscleGroup = "LEGS", isWeighted = false, metric = "DURATION", category = ""),
+            ),
+        ).single()
+        val presetId = db.presetDao().insertPreset(PresetEntity(name = "Hinges", note = "", scheduledDay = null))
+        db.presetDao().insertEntries(
+            listOf(
+                PresetEntryEntity(presetId = presetId, exerciseId = customId, targetSets = 3, targetReps = 30, targetWeightKg = null, modifiers = "", position = 0),
+            ),
+        )
+        val sessionId = repo.startSessionFromPreset(presetId)
+        repo.updateSet(db.sessionDao().setsFor(sessionId).first().id, reps = 1, weightKg = null, done = true)
+        repo.completeSession(sessionId)
+
+        // Idle/gacha/profile state is written last so completing the session
+        // (which banks rolls and shadows itself) cannot perturb the values the
+        // assertions below pin.
+        repo.setHeight(181.5)
+        repo.setSex(Sex.FEMALE)
+        repo.setInkStyle(true)
+        db.idleDao().upsert(
+            IdleStateEntity(essence = 777, shadows = 4, relicMultiplier = 1.31, lastCollectedAtMs = 123),
+        )
+        repo.grantRoll(3)
+        db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "ember", ownedAtMs = 10))
+        db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "verdant", ownedAtMs = 20))
+        assertTrue(repo.equipFrame("ember"))
+        db.gachaDao().insertRelic(OwnedRelicEntity(name = "Old King's Whetstone", multiplier = 1.31, drawnAtMs = 30))
+
+        val export = repo.exportArchive()
+        assertTrue("export reported problems: ${export.problems}", export.problems.isEmpty())
+
+        // The writer is hand-rolled and its own reader is tolerant, so a
+        // malformed archive can round-trip inside this app and still be
+        // unreadable by anything else the owner points at the file. A strict
+        // parser is the only thing that catches a stray comma.
+        val parsed = JSONObject(export.json)
+        assertEquals(ExportWriter.FORMAT_VERSION, parsed.getInt("formatVersion"))
+        assertTrue("the v5 sections must be present", parsed.has("idle") && parsed.has("gacha") && parsed.has("exercises"))
+
+        // Target: a genuinely empty install.
+        context.deleteDatabase(DEST_DB)
+        val freshDb = MonarchDatabase.create(context, DEST_DB)
+        val freshRepo = Repository(freshDb)
+        try {
+            freshRepo.ensureSeeded()
+            assertTrue("the fresh install must start without the custom movement", freshDb.exerciseDao().byName(custom) == null)
+            assertTrue("the fresh install must start without idle state", freshDb.idleDao().get() == null)
+
+            val result = freshRepo.importArchive(export.json)
+            assertTrue("import failed: ${result.exceptionOrNull()?.message}", result.isSuccess)
+
+            val profile = freshDb.profileDao().get()!!
+            assertEquals(181.5, profile.heightCm!!, 0.001)
+            assertEquals("FEMALE", profile.sex)
+            assertTrue(profile.inkStyle)
+
+            // Named: an unrestored bank otherwise reads as a bare NPE.
+            val idle = freshDb.idleDao().get()
+            assertNotNull("the archive must restore the idle bank", idle)
+            idle!!
+            assertEquals(777L, idle.essence)
+            assertEquals(4, idle.shadows)
+            assertEquals(1.31, idle.relicMultiplier, 0.0001)
+            assertEquals(123L, idle.lastCollectedAtMs)
+            assertEquals(3, freshDb.gachaDao().get()!!.rolls)
+            assertEquals("ember", freshDb.gachaDao().get()!!.equippedFrame)
+            assertEquals(setOf("ember", "verdant"), freshDb.gachaDao().ownedFrameIds().toSet())
+            val relic = freshDb.gachaDao().observeRelics().first().single()
+            assertEquals("Old King's Whetstone", relic.name)
+            assertEquals(1.31, relic.multiplier, 0.0001)
+
+            val restored = freshDb.exerciseDao().byName(custom)!!
+            assertEquals("LEGS", restored.muscleGroup)
+            assertFalse(restored.isWeighted)
+            assertEquals("DURATION", restored.metric)
+        } finally {
+            freshDb.close()
+            context.deleteDatabase(DEST_DB)
+        }
+    }
+
+    @Test
+    fun aV4ArchiveLeavesTheLocalIdleRowsUntouched() = runTest {
+        // The v4 archive carries none of the idle/gacha/cosmetic keys, so
+        // absence must read as "no information" — never as an empty set that
+        // wipes banked essence, rolls and relics on a legitimate old backup.
+        db.idleDao().upsert(
+            IdleStateEntity(essence = 5_000, shadows = 2, relicMultiplier = 1.1, lastCollectedAtMs = 999),
+        )
+        repo.grantRoll(2)
+        db.gachaDao().insertRelic(OwnedRelicEntity(name = "Local Relic", multiplier = 1.2, drawnAtMs = 5))
+        db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "local", ownedAtMs = 6))
+
+        val v4 = """
+            {"formatVersion":4,"exportedAtMs":42,
+             "profile":{"name":"Old Hunter","totalXp":55,"currentTitleId":null},
+             "trainingMode":"STRENGTH",
+             "presets":[],"sessions":[],"stats":[],"titles":[],"skills":[],"healthDays":[],
+             "measurements":[]}
+        """.trimIndent()
+
+        val result = repo.importArchive(v4)
+        assertTrue("import failed: ${result.exceptionOrNull()?.message}", result.isSuccess)
+
+        // Named, because a wiped row otherwise fails as a bare NPE that reads
+        // like a broken test rather than a destroyed idle bank.
+        val idle = db.idleDao().get()
+        assertNotNull("a v4 import must not delete the idle row", idle)
+        idle!!
+        assertEquals(5_000L, idle.essence)
+        assertEquals(2, idle.shadows)
+        assertEquals(1.1, idle.relicMultiplier, 0.0001)
+        assertEquals(999L, idle.lastCollectedAtMs)
+        assertEquals(2, db.gachaDao().get()!!.rolls)
+        assertEquals(listOf("Local Relic"), db.gachaDao().observeRelics().first().map { it.name })
+        assertEquals(listOf("local"), db.gachaDao().ownedFrameIds())
+    }
+
+    @Test
+    fun anUnparseableMeasurementSiteIsReportedNotSilentlyDropped() = runTest {
+        // A site this build no longer parses must show up in the export's
+        // problem list — a restore that loses rows without a word is the exact
+        // failure mode this archive exists to prevent.
+        db.measurementDao().insert(MeasurementEntity(site = "OBSOLETE_SITE", valueCm = 33.0, takenAtMs = 7))
+
+        val export = repo.exportArchive()
+
+        assertTrue(export.problems.any { it.contains("OBSOLETE_SITE") })
+        assertFalse("the unparseable row must not travel as data", export.json.contains("OBSOLETE_SITE"))
+    }
+
     private companion object {
         /** Never the app's live database. */
         const val TEST_DB = "monarch-export-roundtrip-test.db"
+
+        /** Second install inside the same test process. */
+        const val DEST_DB = "monarch-export-roundtrip-dest.db"
     }
 }

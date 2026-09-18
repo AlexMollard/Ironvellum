@@ -3,6 +3,7 @@ package com.monarch.app.domain
 import java.time.LocalDate
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -13,6 +14,7 @@ class ExportReaderTest {
             name = "Mo\"narch \\ The Türkçe Æon",
             totalXp = 123_456_789_012,
             currentTitleId = "awakened",
+            inkStyle = true,
         ),
         trainingMode = TrainingMode.HYPERTROPHY,
         presets = listOf(
@@ -52,6 +54,19 @@ class ExportReaderTest {
             MeasurementEntry(site = MeasurementSite.WAIST, valueCm = 82.5, takenAtMs = 100),
             MeasurementEntry(site = MeasurementSite.UPPER_ARM, valueCm = 36.0, takenAtMs = 200),
         ),
+        exercises = listOf(
+            ExportWriter.ExerciseMeta(name = "One-Arm Push-up", muscleGroup = "PUSH", isWeighted = false, metric = "REPS", category = ""),
+            ExportWriter.ExerciseMeta(name = "Front Lever Hold", muscleGroup = "CORE", isWeighted = false, metric = "DURATION", category = ""),
+        ),
+        heightCm = 178.5,
+        sex = "MALE",
+        idle = ExportWriter.IdleSnapshot(essence = 12_345L, shadows = 7, relicMultiplier = 1.24, lastCollectedAtMs = 5_000),
+        gacha = ExportWriter.GachaSnapshot(rolls = 3, equippedFrame = "ember"),
+        crestFrames = listOf(
+            ExportWriter.CrestFrameSnapshot(frameId = "ember", ownedAtMs = 100),
+            ExportWriter.CrestFrameSnapshot(frameId = "verdant", ownedAtMs = 200),
+        ),
+        relics = listOf(ExportWriter.RelicSnapshot(name = "Old King's Whetstone", multiplier = 1.31, drawnAtMs = 300)),
         exportedAtMs = 999,
     )
 
@@ -59,12 +74,15 @@ class ExportReaderTest {
     fun `round trip preserves every field of every section`() {
         val archive = ExportReader.read(fullArchiveJson()).getOrThrow()
 
-        assertEquals(4, archive.formatVersion)
+        assertEquals(ExportWriter.FORMAT_VERSION, archive.formatVersion)
         assertEquals(999, archive.exportedAtMs)
         assertEquals("Mo\"narch \\ The Türkçe Æon", archive.profile.name)
         assertEquals(123_456_789_012L, archive.profile.totalXp)
         assertEquals("awakened", archive.profile.currentTitleId)
         assertEquals(TrainingMode.HYPERTROPHY, archive.trainingMode)
+        assertEquals(178.5, archive.heightCm!!, 0.0)
+        assertEquals("MALE", archive.sex)
+        assertEquals(true, archive.inkStyle)
 
         val preset = archive.presets.single()
         assertEquals(7L, preset.id)
@@ -127,6 +145,54 @@ class ExportReaderTest {
             ),
             archive.measurements,
         )
+
+        assertEquals(
+            listOf(
+                ExportWriter.ExerciseMeta(name = "One-Arm Push-up", muscleGroup = "PUSH", isWeighted = false, metric = "REPS", category = ""),
+                ExportWriter.ExerciseMeta(name = "Front Lever Hold", muscleGroup = "CORE", isWeighted = false, metric = "DURATION", category = ""),
+            ),
+            archive.exercises,
+        )
+        assertEquals(ExportWriter.IdleSnapshot(12_345L, 7, 1.24, 5_000), archive.idle)
+        assertEquals(ExportWriter.GachaSnapshot(3, "ember"), archive.gacha)
+        assertEquals(
+            listOf(
+                ExportWriter.CrestFrameSnapshot("ember", 100),
+                ExportWriter.CrestFrameSnapshot("verdant", 200),
+            ),
+            archive.crestFrames,
+        )
+        assertEquals(
+            listOf(ExportWriter.RelicSnapshot("Old King's Whetstone", 1.31, 300)),
+            archive.relics,
+        )
+    }
+
+    @Test
+    fun `v4 archive without v5 sections restores with absent-marker defaults`() {
+        // A v4 archive carries no idle/gacha/cosmetic state and no profile
+        // device fields. Every v5 field must read as ABSENT (null/empty), not
+        // as a zeroed value — the importer treats absence as "leave the local
+        // rows alone", so a zeroed default here would wipe them.
+        val v4 = """
+            {"formatVersion":4,"exportedAtMs":42,
+             "profile":{"name":"Old Hunter","totalXp":55,"currentTitleId":null},
+             "trainingMode":"STRENGTH",
+             "presets":[],"sessions":[],"stats":[],"titles":[],"skills":[],"healthDays":[],
+             "measurements":[]}
+        """.trimIndent()
+
+        val archive = ExportReader.read(v4).getOrThrow()
+
+        assertEquals(4, archive.formatVersion)
+        assertNull(archive.heightCm)
+        assertNull(archive.sex)
+        assertNull(archive.inkStyle)
+        assertNull(archive.idle)
+        assertNull(archive.gacha)
+        assertTrue(archive.exercises.isEmpty())
+        assertTrue(archive.crestFrames.isEmpty())
+        assertTrue(archive.relics.isEmpty())
     }
 
     @Test

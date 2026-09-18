@@ -979,8 +979,14 @@ class Repository(
 
     // ---------------------------------------------------------------- export
 
-    suspend fun exportJson(): String {
-        val profile = profileDao.get()?.let {
+    /** The archive plus everything the export itself had to leave behind. */
+    data class ExportResult(val json: String, val problems: List<String>)
+
+    suspend fun exportJson(): String = exportArchive().json
+
+    suspend fun exportArchive(): ExportResult {
+        val profileEntity = profileDao.get()
+        val profile = profileEntity?.let {
             PlayerProfile(
                 it.name,
                 it.totalXp,
@@ -992,7 +998,8 @@ class Repository(
                 it.inkStyle,
             )
         } ?: PlayerProfile()
-        val names = exerciseDao.observeAll().first().associate { it.id to it.name }
+        val exerciseRows = exerciseDao.observeAll().first()
+        val names = exerciseRows.associate { it.id to it.name }
         val presets = presetDao.observePresets().first().map { pw ->
             WorkoutPreset(
                 id = pw.preset.id,
@@ -1045,11 +1052,43 @@ class Repository(
             )
         }
         val titles = titleDao.observeAll().first().map { UnlockedTitle(it.titleId, it.unlockedAtMs) }
+        val exportProblems = mutableListOf<String>()
         val measurements = measurementDao.observeAll().first().mapNotNull { e ->
-            val site = MeasurementSite.entries.firstOrNull { it.name == e.site } ?: return@mapNotNull null
+            val site = MeasurementSite.entries.firstOrNull { it.name == e.site }
+            if (site == null) {
+                // The import side reports every guess it makes; the export must
+                // be equally honest about rows it cannot carry.
+                exportProblems.add(
+                    "measurement with unknown site \"${e.site}\" (${e.valueCm} cm) left out of the archive",
+                )
+                return@mapNotNull null
+            }
             MeasurementEntry(id = e.id, site = site, valueCm = e.valueCm, takenAtMs = e.takenAtMs)
         }
-        return ExportWriter.write(
+        // Real catalogue attributes: on restore a user-created movement comes
+        // back as built, not as a guessed PULL/weighted default.
+        val exercises = exerciseRows.map {
+            ExportWriter.ExerciseMeta(
+                name = it.name,
+                muscleGroup = it.muscleGroup,
+                isWeighted = it.isWeighted,
+                metric = it.metric,
+                category = it.category,
+            )
+        }
+        val idleRow = idleDao.get()
+        val idle = idleRow?.let {
+            ExportWriter.IdleSnapshot(it.essence, it.shadows, it.relicMultiplier, it.lastCollectedAtMs)
+        }
+        val gachaRow = gachaDao.get()
+        val gacha = gachaRow?.let { ExportWriter.GachaSnapshot(it.rolls, it.equippedFrame) }
+        val crestFrames = gachaDao.ownedFrames().map {
+            ExportWriter.CrestFrameSnapshot(it.frameId, it.ownedAtMs)
+        }
+        val relics = gachaDao.observeRelics().first().map {
+            ExportWriter.RelicSnapshot(it.name, it.multiplier, it.drawnAtMs)
+        }
+        val json = ExportWriter.write(
             profile = profile,
             trainingMode = profile.trainingMode,
             presets = presets,
@@ -1059,8 +1098,16 @@ class Repository(
             skills = skills,
             healthDays = healthDays,
             measurements = measurements,
+            exercises = exercises,
+            heightCm = profileEntity?.heightCm,
+            sex = profileEntity?.sex,
+            idle = idle,
+            gacha = gacha,
+            crestFrames = crestFrames,
+            relics = relics,
             exportedAtMs = System.currentTimeMillis(),
         )
+        return ExportResult(json, exportProblems)
     }
 
     data class ImportResult(
@@ -1094,8 +1141,10 @@ class Repository(
                 healthDayDao.clearAll()
                 measurementDao.clearAll()
 
-                // The archive carries no height or sex (device-only profile
-                // fields), so the local values survive a restore.
+                // v5 archives carry height/sex/inkStyle; a v4 archive carries
+                // none, so absence falls back to the LOCAL value instead of
+                // resetting it — height and sex feed every BMI/FFMI/calorie
+                // estimate.
                 val local = profileDao.get()
                 profileDao.upsert(
                     ProfileEntity(
@@ -1103,16 +1152,19 @@ class Repository(
                         totalXp = archive.profile.totalXp,
                         currentTitleId = archive.profile.currentTitleId,
                         trainingMode = archive.trainingMode.name,
-                        heightCm = local?.heightCm,
-                        sex = local?.sex ?: "MALE",
+                        heightCm = archive.heightCm ?: local?.heightCm,
+                        sex = archive.sex ?: local?.sex ?: "MALE",
+                        inkStyle = archive.inkStyle ?: local?.inkStyle ?: false,
                     ),
                 )
 
                 // Resolve exercises by name: reuse the seeded catalogue entry on a
-                // case-insensitive hit, otherwise create the movement. The archive
-                // carries no muscle group or weighted flag, so new rows get
+                // case-insensitive hit, otherwise create the movement. A v5
+                // archive carries the real muscle group/weighted/metric/category;
+                // a v4 archive carries none, so new rows get the historical
                 // defaults and every guess is reported, never silent.
                 val exerciseIdByName = mutableMapOf<String, Long>()
+                val metaByName = archive.exercises.associateBy { it.name.lowercase() }
                 val problems = mutableListOf<String>()
                 suspend fun resolveExercise(rawName: String): Long? {
                     val name = rawName.trim()
@@ -1123,15 +1175,30 @@ class Repository(
                         exerciseIdByName[name.lowercase()] = existing.id
                         return existing.id
                     }
+                    val meta = metaByName[name.lowercase()]
                     val guessedMuscleGroup = MuscleGroup.PULL.name
+                    val muscleGroup = meta?.muscleGroup ?: guessedMuscleGroup
+                    val metric = meta?.metric ?: ExerciseMetric.REPS.name
                     val newId = exerciseDao.insertAll(
-                        listOf(ExerciseEntity(name = name, muscleGroup = guessedMuscleGroup, isWeighted = true)),
+                        listOf(
+                            ExerciseEntity(
+                                name = name,
+                                muscleGroup = runCatching { MuscleGroup.valueOf(muscleGroup) }
+                                    .getOrDefault(MuscleGroup.PULL).name,
+                                isWeighted = meta?.isWeighted ?: true,
+                                metric = runCatching { ExerciseMetric.valueOf(metric) }
+                                    .getOrDefault(ExerciseMetric.REPS).name,
+                                category = meta?.category ?: "",
+                            ),
+                        ),
                     ).first()
                     exerciseIdByName[name.lowercase()] = newId
-                    problems.add(
-                        "exercise \"$name\" not in catalogue — created with guessed " +
-                            "muscleGroup=$guessedMuscleGroup and isWeighted=true",
-                    )
+                    if (meta == null) {
+                        problems.add(
+                            "exercise \"$name\" not in catalogue — created with guessed " +
+                                "muscleGroup=$guessedMuscleGroup and isWeighted=true",
+                        )
+                    }
                     return newId
                 }
 
@@ -1262,6 +1329,37 @@ class Repository(
                             )
                         },
                     )
+                }
+
+                // Idle/gacha/cosmetic state: a v5 archive REPLACES all four
+                // tables (delete-then-insert inside this transaction, so a
+                // mid-way failure cannot half-restore). A v4 archive carries
+                // none of these keys — absence means "no information", never
+                // "empty set", so the local rows survive untouched.
+                if (archive.idle != null || archive.gacha != null) {
+                    idleDao.clearAll()
+                    gachaDao.clearRolls()
+                    gachaDao.clearFrames()
+                    gachaDao.clearRelics()
+                    archive.idle?.let {
+                        idleDao.upsert(
+                            IdleStateEntity(
+                                essence = it.essence,
+                                shadows = it.shadows,
+                                relicMultiplier = it.relicMultiplier,
+                                lastCollectedAtMs = it.lastCollectedAtMs,
+                            ),
+                        )
+                    }
+                    archive.gacha?.let {
+                        gachaDao.upsert(GachaStateEntity(rolls = it.rolls, equippedFrame = it.equippedFrame))
+                    }
+                    archive.crestFrames.forEach {
+                        gachaDao.insertFrame(OwnedCrestFrameEntity(frameId = it.frameId, ownedAtMs = it.ownedAtMs))
+                    }
+                    archive.relics.forEach {
+                        gachaDao.insertRelic(OwnedRelicEntity(name = it.name, multiplier = it.multiplier, drawnAtMs = it.drawnAtMs))
+                    }
                 }
 
                 ImportResult(

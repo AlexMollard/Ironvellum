@@ -6,7 +6,41 @@ package com.monarch.app.domain
  */
 object ExportWriter {
 
-    const val FORMAT_VERSION = 4
+    // 5: adds idle/gacha/cosmetic state, profile height/sex/inkStyle and real
+    // per-exercise metadata. ExportReader still accepts 4 and below.
+    const val FORMAT_VERSION = 5
+
+    /** Real catalogue attributes for one movement, matched by name on import. */
+    data class ExerciseMeta(
+        val name: String,
+        val muscleGroup: String,
+        val isWeighted: Boolean,
+        val metric: String,
+        val category: String,
+    )
+
+    data class IdleSnapshot(
+        val essence: Long,
+        val shadows: Int,
+        val relicMultiplier: Double,
+        val lastCollectedAtMs: Long,
+    )
+
+    data class GachaSnapshot(
+        val rolls: Int,
+        val equippedFrame: String?,
+    )
+
+    data class CrestFrameSnapshot(
+        val frameId: String,
+        val ownedAtMs: Long,
+    )
+
+    data class RelicSnapshot(
+        val name: String,
+        val multiplier: Double,
+        val drawnAtMs: Long,
+    )
 
     fun write(
         profile: PlayerProfile,
@@ -18,13 +52,22 @@ object ExportWriter {
         skills: List<SkillPractice>,
         healthDays: List<HealthDay>,
         measurements: List<MeasurementEntry> = emptyList(),
+        // v5 sections; null/empty keeps the keys out so the writer stays the
+        // single source of truth for what each formatVersion contains.
+        exercises: List<ExerciseMeta> = emptyList(),
+        heightCm: Double? = null,
+        sex: String? = null,
+        idle: IdleSnapshot? = null,
+        gacha: GachaSnapshot? = null,
+        crestFrames: List<CrestFrameSnapshot> = emptyList(),
+        relics: List<RelicSnapshot> = emptyList(),
         exportedAtMs: Long,
     ): String = buildString {
         append("{")
         append("\"formatVersion\":$FORMAT_VERSION,")
         append("\"exportedAtMs\":$exportedAtMs,")
         append("\"profile\":")
-        appendProfile(profile)
+        appendProfile(profile, heightCm, sex)
         append(",\"trainingMode\":")
         appendEscaped(trainingMode.name)
         append(",\"presets\":")
@@ -41,17 +84,91 @@ object ExportWriter {
         appendHealthDays(healthDays)
         append(",\"measurements\":")
         appendMeasurements(measurements)
+        append(",\"exercises\":")
+        appendExercises(exercises)
+        if (idle != null) {
+            append(",\"idle\":")
+            appendIdle(idle)
+        }
+        if (gacha != null) {
+            append(",\"gacha\":")
+            appendGacha(gacha)
+            append(",\"crestFrames\":")
+            appendCrestFrames(crestFrames)
+            append(",\"relics\":")
+            appendRelics(relics)
+        }
         append("}")
     }
 
-    private fun StringBuilder.appendProfile(profile: PlayerProfile) {
+    private fun StringBuilder.appendProfile(profile: PlayerProfile, heightCm: Double?, sex: String?) {
         append("{\"name\":")
         appendEscaped(profile.name)
         append(",\"totalXp\":")
         append(profile.totalXp)
         append(",\"currentTitleId\":")
         appendNullable(profile.currentTitleId) { appendEscaped(it) }
+        // Height and sex feed every BMI/FFMI/calorie estimate — dropping them
+        // silently degraded the owner's headline metrics on restore.
+        append(",\"heightCm\":")
+        appendNullable(heightCm) { append(it) }
+        append(",\"sex\":")
+        appendNullable(sex) { appendEscaped(it) }
+        append(",\"inkStyle\":")
+        append(profile.inkStyle)
         append("}")
+    }
+
+    private fun StringBuilder.appendExercises(exercises: List<ExerciseMeta>) {
+        append("[")
+        exercises.forEachIndexed { i, e ->
+            if (i > 0) append(",")
+            append("{\"name\":").appendEscaped(e.name)
+            append(",\"muscleGroup\":").appendEscaped(e.muscleGroup)
+            append(",\"isWeighted\":").append(e.isWeighted)
+            append(",\"metric\":").appendEscaped(e.metric)
+            append(",\"category\":").appendEscaped(e.category)
+            append("}")
+        }
+        append("]")
+    }
+
+    private fun StringBuilder.appendIdle(idle: IdleSnapshot) {
+        append("{\"essence\":").append(idle.essence)
+        append(",\"shadows\":").append(idle.shadows)
+        append(",\"relicMultiplier\":").append(idle.relicMultiplier)
+        append(",\"lastCollectedAtMs\":").append(idle.lastCollectedAtMs)
+        append("}")
+    }
+
+    private fun StringBuilder.appendGacha(gacha: GachaSnapshot) {
+        append("{\"rolls\":").append(gacha.rolls)
+        append(",\"equippedFrame\":")
+        appendNullable(gacha.equippedFrame) { appendEscaped(it) }
+        append("}")
+    }
+
+    private fun StringBuilder.appendCrestFrames(frames: List<CrestFrameSnapshot>) {
+        append("[")
+        frames.forEachIndexed { i, f ->
+            if (i > 0) append(",")
+            append("{\"frameId\":").appendEscaped(f.frameId)
+            append(",\"ownedAtMs\":").append(f.ownedAtMs)
+            append("}")
+        }
+        append("]")
+    }
+
+    private fun StringBuilder.appendRelics(relics: List<RelicSnapshot>) {
+        append("[")
+        relics.forEachIndexed { i, r ->
+            if (i > 0) append(",")
+            append("{\"name\":").appendEscaped(r.name)
+            append(",\"multiplier\":").append(r.multiplier)
+            append(",\"drawnAtMs\":").append(r.drawnAtMs)
+            append("}")
+        }
+        append("]")
     }
 
     private fun StringBuilder.appendPresets(presets: List<WorkoutPreset>) {

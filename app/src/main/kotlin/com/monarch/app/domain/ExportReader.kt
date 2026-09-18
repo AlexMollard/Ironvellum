@@ -24,15 +24,31 @@ object ExportReader {
         // Absent in v1-v3 archives, so this defaults to empty — an older
         // backup must still restore.
         val measurements: List<MeasurementEntry> = emptyList(),
+        // --- v5 sections; every one is optional so a v4 archive still restores.
+        // Device profile fields the archive never carried before: null means
+        // "absent", and the importer falls back to the local value.
+        val heightCm: Double? = null,
+        val sex: String? = null,
+        val inkStyle: Boolean? = null,
+        /** Real catalogue attributes, matched by name on import. */
+        val exercises: List<ExportWriter.ExerciseMeta> = emptyList(),
+        val idle: ExportWriter.IdleSnapshot? = null,
+        val gacha: ExportWriter.GachaSnapshot? = null,
+        val crestFrames: List<ExportWriter.CrestFrameSnapshot> = emptyList(),
+        val relics: List<ExportWriter.RelicSnapshot> = emptyList(),
     )
 
     fun read(json: String): Result<Archive> = runCatching {
         val p = Parser(json)
         val root = p.parseDocument()
+        val profileObj = root.obj("profile") ?: fail("missing profile")
         Archive(
             formatVersion = root.int("formatVersion") ?: fail("missing formatVersion"),
             exportedAtMs = root.long("exportedAtMs") ?: fail("missing exportedAtMs"),
-            profile = readProfile(root.obj("profile") ?: fail("missing profile")),
+            profile = readProfile(profileObj),
+            heightCm = profileObj.dbl("heightCm"),
+            sex = profileObj.str("sex"),
+            inkStyle = profileObj.bool("inkStyle"),
             trainingMode = root.str("trainingMode")?.let { mode ->
                 runCatching { TrainingMode.valueOf(mode) }.getOrElse { fail("unknown trainingMode \"$mode\"") }
             } ?: TrainingMode.STRENGTH,
@@ -43,6 +59,11 @@ object ExportReader {
             skills = (root.arr("skills") ?: emptyList()).map { readSkill(it as Obj) },
             healthDays = (root.arr("healthDays") ?: emptyList()).map { readHealthDay(it as Obj) },
             measurements = (root.arr("measurements") ?: emptyList()).map { readMeasurement(it as Obj) },
+            exercises = (root.arr("exercises") ?: emptyList()).map { readExerciseMeta(it as Obj) },
+            idle = root.obj("idle")?.let { readIdle(it) },
+            gacha = root.obj("gacha")?.let { readGacha(it) },
+            crestFrames = (root.arr("crestFrames") ?: emptyList()).map { readCrestFrame(it as Obj) },
+            relics = (root.arr("relics") ?: emptyList()).map { readRelic(it as Obj) },
             // Legacy v4 archives may still carry a "measurementGoals" section;
             // the parser absorbs it and we deliberately ignore it — an old
             // backup must restore, not fail.
@@ -154,6 +175,39 @@ object ExportReader {
             ?: fail("measurement missing site"),
         valueCm = o.dbl("valueCm") ?: fail("measurement missing valueCm"),
         takenAtMs = o.long("takenAtMs") ?: fail("measurement missing takenAtMs"),
+    )
+
+    private fun readExerciseMeta(o: Obj) = ExportWriter.ExerciseMeta(
+        name = o.str("name") ?: fail("exercise missing name"),
+        muscleGroup = o.str("muscleGroup") ?: "PULL",
+        isWeighted = o.bool("isWeighted") ?: true,
+        metric = o.str("metric") ?: "REPS",
+        category = o.str("category") ?: "",
+    )
+
+    // Tolerant defaults: a hand-edited archive missing one idle field must
+    // restore the rest rather than fail outright.
+    private fun readIdle(o: Obj) = ExportWriter.IdleSnapshot(
+        essence = o.long("essence") ?: 0,
+        shadows = o.int("shadows") ?: 0,
+        relicMultiplier = o.dbl("relicMultiplier") ?: 1.0,
+        lastCollectedAtMs = o.long("lastCollectedAtMs") ?: 0,
+    )
+
+    private fun readGacha(o: Obj) = ExportWriter.GachaSnapshot(
+        rolls = o.int("rolls") ?: 0,
+        equippedFrame = o.str("equippedFrame"),
+    )
+
+    private fun readCrestFrame(o: Obj) = ExportWriter.CrestFrameSnapshot(
+        frameId = o.str("frameId") ?: fail("crestFrame missing frameId"),
+        ownedAtMs = o.long("ownedAtMs") ?: 0,
+    )
+
+    private fun readRelic(o: Obj) = ExportWriter.RelicSnapshot(
+        name = o.str("name") ?: fail("relic missing name"),
+        multiplier = o.dbl("multiplier") ?: 1.0,
+        drawnAtMs = o.long("drawnAtMs") ?: 0,
     )
 
     // --- JSON value model ---------------------------------------------------

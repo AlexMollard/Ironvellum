@@ -37,7 +37,7 @@ class ExportWriterTest {
             exportedAtMs = 999,
         )
 
-        assertTrue(json.startsWith("{\"formatVersion\":4,"))
+        assertTrue(json.startsWith("{\"formatVersion\":${ExportWriter.FORMAT_VERSION},"))
         assertTrue(json.contains("\"modifiers\":\"\""))
         assertTrue(json.contains("\"name\":\"Pog Champ\""))
         assertTrue(json.contains("\"totalXp\":1234"))
@@ -69,7 +69,67 @@ class ExportWriterTest {
             healthDays = emptyList(),
             exportedAtMs = 0,
         )
-        assertTrue(json.contains("\"profile\":{\"name\":\"x\",\"totalXp\":0,\"currentTitleId\":null},\"trainingMode\":\"STRENGTH\""))
+        assertTrue(
+            json.contains(
+                "\"profile\":{\"name\":\"x\",\"totalXp\":0,\"currentTitleId\":null," +
+                    "\"heightCm\":null,\"sex\":null,\"inkStyle\":false},\"trainingMode\":\"STRENGTH\"",
+            ),
+        )
+    }
+
+    @Test
+    fun `v5 sections render with keys omitted when not supplied`() {
+        val json = ExportWriter.write(
+            profile = PlayerProfile(name = "x", totalXp = 0),
+            trainingMode = TrainingMode.STRENGTH,
+            presets = emptyList(),
+            sessions = emptyList(),
+            stats = emptyList(),
+            titles = emptyList(),
+            skills = emptyList(),
+            healthDays = emptyList(),
+            exportedAtMs = 0,
+        )
+        // A caller that does not supply the v5 sections (older signature shape)
+        // must not emit half-present keys.
+        assertFalse(json.contains("\"idle\""))
+        assertFalse(json.contains("\"gacha\""))
+        assertFalse(json.contains("\"crestFrames\""))
+        assertFalse(json.contains("\"relics\""))
+        assertTrue(json.contains("\"exercises\":[]"))
+    }
+
+    @Test
+    fun `v5 sections render completely when supplied`() {
+        val json = ExportWriter.write(
+            profile = PlayerProfile(name = "x", totalXp = 5, inkStyle = true),
+            trainingMode = TrainingMode.STRENGTH,
+            presets = emptyList(),
+            sessions = emptyList(),
+            stats = emptyList(),
+            titles = emptyList(),
+            skills = emptyList(),
+            healthDays = emptyList(),
+            exercises = listOf(
+                ExportWriter.ExerciseMeta(name = "Planche Press", muscleGroup = "PUSH", isWeighted = false, metric = "ATTEMPTS_GRADE", category = ""),
+            ),
+            heightCm = 181.0,
+            sex = "MALE",
+            idle = ExportWriter.IdleSnapshot(essence = 42, shadows = 2, relicMultiplier = 1.1, lastCollectedAtMs = 7),
+            gacha = ExportWriter.GachaSnapshot(rolls = 1, equippedFrame = null),
+            crestFrames = listOf(ExportWriter.CrestFrameSnapshot("ember", 10)),
+            relics = listOf(ExportWriter.RelicSnapshot("Whetstone", 1.31, 20)),
+            exportedAtMs = 0,
+        )
+
+        assertTrue(json.contains("\"heightCm\":181.0"))
+        assertTrue(json.contains("\"sex\":\"MALE\""))
+        assertTrue(json.contains("\"inkStyle\":true"))
+        assertTrue(json.contains("\"exercises\":[{\"name\":\"Planche Press\",\"muscleGroup\":\"PUSH\",\"isWeighted\":false,\"metric\":\"ATTEMPTS_GRADE\",\"category\":\"\"}]"))
+        assertTrue(json.contains("\"idle\":{\"essence\":42,\"shadows\":2,\"relicMultiplier\":1.1,\"lastCollectedAtMs\":7}"))
+        assertTrue(json.contains("\"gacha\":{\"rolls\":1,\"equippedFrame\":null}"))
+        assertTrue(json.contains("\"crestFrames\":[{\"frameId\":\"ember\",\"ownedAtMs\":10}]"))
+        assertTrue(json.contains("\"relics\":[{\"name\":\"Whetstone\",\"multiplier\":1.31,\"drawnAtMs\":20}]"))
     }
 
     @Test
@@ -107,13 +167,24 @@ class ExportWriterTest {
 
     @Test
     fun `empty collections render as empty arrays`() {
-        val json = ExportWriter.write(PlayerProfile("x", 0), TrainingMode.STRENGTH, emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), 0)
+        val json = ExportWriter.write(
+            profile = PlayerProfile("x", 0),
+            trainingMode = TrainingMode.STRENGTH,
+            presets = emptyList(),
+            sessions = emptyList(),
+            stats = emptyList(),
+            titles = emptyList(),
+            skills = emptyList(),
+            healthDays = emptyList(),
+            exportedAtMs = 0,
+        )
         assertEquals(
-            "{\"formatVersion\":4,\"exportedAtMs\":0," +
-                "\"profile\":{\"name\":\"x\",\"totalXp\":0,\"currentTitleId\":null}," +
+            "{\"formatVersion\":${ExportWriter.FORMAT_VERSION},\"exportedAtMs\":0," +
+                "\"profile\":{\"name\":\"x\",\"totalXp\":0,\"currentTitleId\":null," +
+                "\"heightCm\":null,\"sex\":null,\"inkStyle\":false}," +
                 "\"trainingMode\":\"STRENGTH\"," +
                 "\"presets\":[],\"sessions\":[],\"stats\":[],\"titles\":[],\"skills\":[],\"healthDays\":[]," +
-                "\"measurements\":[]}",
+                "\"measurements\":[],\"exercises\":[]}",
             json,
         )
     }
