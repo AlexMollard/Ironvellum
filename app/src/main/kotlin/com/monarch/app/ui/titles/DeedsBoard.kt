@@ -15,13 +15,15 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.PaddingValues
+
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -145,12 +147,12 @@ fun DeedsBoard(
     var rarityFilter by remember { mutableStateOf<TitleRarity?>(null) }
     // Toggling reorders each section's rows by rarity instead of proximity.
     var byRarity by remember { mutableStateOf(false) }
-    // Search was an always-visible third layer of chrome above the content;
-    // it now hides behind a toggle at the end of the filter rail.
-    var searchOpen by rememberSaveable { mutableStateOf(false) }
+    // Search, rarity and sort order were eleven chips and a field standing
+    // between the tabs and the first deed. They live behind one toggle now; a
+    // narrowed board must still say so, so an active refinement keeps it open.
+    var refineOpen by rememberSaveable { mutableStateOf(false) }
     val searching = query.text.isNotBlank()
-    // A non-blank query must never filter invisibly.
-    val showSearch = searchOpen || searching
+    val showRefine = refineOpen || searching || rarityFilter != null || byRarity
 
     // progress per deed computed once; every chip count, sort and row reuses it
     val progressOf = remember(ledger) {
@@ -183,18 +185,10 @@ fun DeedsBoard(
         contentPadding = PaddingValues(top = 10.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        // Controls sit ABOVE the hero on purpose: a filter you cannot see
-        // without scrolling is a filter nobody uses. They are plain items in
-        // this LazyColumn — exactly one scroll container on the screen.
-        if (showSearch) {
-            item(key = "search") {
-                DeedSearchField(query, onQueryChange = { query = it })
-            }
-        }
+        // One short rail of status filters, then the board. Rarity, sort order
+        // and search are refinements: five more chips plus a text field ahead of
+        // the content was a screen of controls before a screen of deeds.
         item(key = "rail") {
-            // The toggle sits OUTSIDE the horizontal scroll: inside it, the
-            // magnifier was parked past the last chip, off the screen edge,
-            // where nobody would find it.
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -206,46 +200,59 @@ fun DeedsBoard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     DeedFilter.entries.forEach { f ->
-                        val count = Titles.ALL.count { f.matches(it, unlocked, progressOf.getValue(it.id)) }
+                        // No count in the label: every section header below
+                        // carries its own tally, and the counts made five chips
+                        // long enough to need scrolling to reach the last one.
                         DeedFilterChip(
-                            label = "${f.label} $count",
+                            label = f.label,
                             selected = filter == f,
                             onClick = { filter = f },
                         )
                     }
-                    // Rarity rail: tapping the selected tier again clears it.
-                    // Same horizontalScroll idiom — no chip may wrap.
-                    Spacer(Modifier.width(6.dp))
-                    TitleRarity.entries.forEach { r ->
-                        val count = Titles.ALL.count { it.rarity == r }
-                        DeedFilterChip(
-                            label = "${r.name.uppercase()} $count",
-                            selected = rarityFilter == r,
-                            onClick = { rarityFilter = if (rarityFilter == r) null else r },
-                        )
-                    }
-                    DeedFilterChip(
-                        label = if (byRarity) "ORDER · RARITY" else "ORDER · PROXIMITY",
-                        selected = byRarity,
-                        onClick = { byRarity = !byRarity },
-                    )
                 }
-                // Search toggle: the full-width field was a third chrome layer
-                // before any deed card; the query itself lives in DeedSearchField.
+                // The toggle sits OUTSIDE the horizontal scroll: inside it, the
+                // glyph was parked past the last chip, off the screen edge,
+                // where nobody would find it.
                 Box(
                     Modifier
                         .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
                         .clickable(
                             role = Role.Button,
-                            onClickLabel = if (showSearch) "Hide deed search" else "Show deed search",
-                        ) { searchOpen = !searchOpen },
+                            onClickLabel = if (showRefine) "Hide deed refinements" else "Refine deeds",
+                        ) { refineOpen = !refineOpen },
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        Icons.Filled.Search,
-                        contentDescription = if (showSearch) "Hide deed search" else "Show deed search",
-                        tint = if (showSearch) MonarchColors.SystemGreen else MonarchColors.InkMuted,
+                        Icons.Filled.Tune,
+                        contentDescription = if (showRefine) "Hide deed refinements" else "Refine deeds",
+                        tint = if (showRefine) MonarchColors.SystemGreen else MonarchColors.InkMuted,
                     )
+                }
+            }
+        }
+        if (showRefine) {
+            item(key = "refine") {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    DeedSearchField(query, onQueryChange = { query = it })
+                    Row(
+                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        // Rarity narrows independently of status; tapping the
+                        // selected tier again clears it.
+                        TitleRarity.entries.forEach { r ->
+                            DeedFilterChip(
+                                label = r.name.uppercase(),
+                                selected = rarityFilter == r,
+                                onClick = { rarityFilter = if (rarityFilter == r) null else r },
+                            )
+                        }
+                        DeedFilterChip(
+                            label = if (byRarity) "ORDER · RARITY" else "ORDER · PROXIMITY",
+                            selected = byRarity,
+                            onClick = { byRarity = !byRarity },
+                        )
+                    }
                 }
             }
         }
@@ -280,73 +287,22 @@ fun DeedsBoard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MonarchColors.InkMuted,
                     )
-                    Spacer(Modifier.height(6.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                        CodexStat("HELD", "${earned.size}/${Titles.ALL.size}")
-                        CodexStat("CAMPAIGNS", ledger.workouts.toString())
-                        CodexStat("SETS", ledger.sets.toString())
-                        CodexStat("REPS", ledger.reps.toString())
-                    }
+                    // No HELD/CAMPAIGNS/SETS/REPS row here: HELD repeated the
+                    // "0 deeds" count in the Codex header two lines above, and
+                    // the other three are lifetime ledger totals that belong on
+                    // Stats, not in front of the deed you are chasing.
                     if (next != null) {
                         Spacer(Modifier.height(10.dp))
-                        // Slim divider between the worn half and the chase half.
-                        ProgressTrack(0.02f, tall = false)
-                        Spacer(Modifier.height(8.dp))
                         ClosestDeedCard(next.first, next.second)
                     }
                 }
             }
         }
 
-        // --- high seats: locked Epic + Sovereign deeds, nearest first -------
-        // The chase is only legible if the rarest locked deeds are visible
-        // without digging through collapsed sections.
-        val highSeats = locked
-            .filter { it.rarity.ordinal >= TitleRarity.Epic.ordinal }
-            .map { it to progressOf.getValue(it.id) }
-            .sortedByDescending { it.second.fraction }
-            .take(3)
-        if (highSeats.isNotEmpty() && !searching) {
-            item(key = "high-seats") {
-                SystemWindow(Modifier.fillMaxWidth()) {
-                    Column(Modifier.fillMaxWidth()) {
-                        Text(
-                            "UNCLAIMED HIGH SEATS",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = ChakraPetch,
-                            color = MonarchColors.InkMuted,
-                            letterSpacing = 2.sp,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        highSeats.forEach { (def, progress) ->
-                            Row(
-                                Modifier.fillMaxWidth().padding(bottom = 6.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                RarityChip(def.rarity)
-                                Text(
-                                    def.name.uppercase(),
-                                    style = MaterialTheme.typography.labelLarge,
-                                    fontFamily = ChakraPetch,
-                                    color = rarityColor(def.rarity),
-                                    maxLines = 1,
-                                    softWrap = false,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                Text(
-                                    "${(progress.fraction * 100).toInt()}%",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontFamily = ChakraPetch,
-                                    color = MonarchColors.SystemGreen,
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
+        // No "UNCLAIMED HIGH SEATS" panel: it was a second listing of three
+        // deeds that are in the list below, so the rarest ones appeared twice
+        // and pushed the list itself off the screen. The rarity filter on the
+        // rail finds them.
 
         // --- claimed showcase, collapsed by default --------------------------
         if (earned.isNotEmpty()) {
@@ -355,7 +311,6 @@ fun DeedsBoard(
                     category = "CLAIMED ${earned.size}",
                     claimed = earned.size,
                     total = earned.size,
-                    fraction = 1f,
                     open = claimedOpen,
                     onClick = { claimedOpen = !claimedOpen },
                 )
@@ -427,7 +382,6 @@ fun DeedsBoard(
                     category = category,
                     claimed = defs.count { it.id in unlocked },
                     total = defs.size,
-                    fraction = defs.map { progressOf.getValue(it.id).fraction }.average().toFloat(),
                     open = open,
                     onClick = {
                         expandedCategories.value =
@@ -470,13 +424,6 @@ private fun ClosestDeedCard(def: TitleDef, progress: Titles.Progress) {
                 modifier = Modifier.weight(1f, fill = false),
             )
             RarityChip(def.rarity)
-            Spacer(Modifier.width(8.dp))
-            Text(
-                "${(progress.fraction * 100).toInt()}%",
-                style = MaterialTheme.typography.titleSmall,
-                fontFamily = ChakraPetch,
-                color = MonarchColors.SystemGreen,
-            )
         }
         Spacer(Modifier.height(6.dp))
         ProgressTrack(progress.fraction, tall = false)
@@ -574,42 +521,38 @@ private fun CategoryHeader(
     category: String,
     claimed: Int,
     total: Int,
-    fraction: Float,
     open: Boolean,
     onClick: () -> Unit,
 ) {
-    Column(
+    // One line, no rail. Every deed inside already draws its own, and a rail on
+    // the header made a collapsed section look like a third card type between
+    // the hero and the rows.
+    Row(
         Modifier
             .fillMaxWidth()
             .background(Color(0xFF141A18), MaterialTheme.shapes.extraSmall)
             .inkBorder(MonarchColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .clickable { onClick() }
             .padding(horizontal = 10.dp, vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                if (open) "▾ $category" else "▸ $category",
-                style = MaterialTheme.typography.titleSmall,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = MonarchColors.SovereignGold,
-                maxLines = 1,
-                softWrap = false,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Text(
-                "$claimed/$total",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = MonarchColors.InkMuted,
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        ProgressTrack(fraction, tall = false)
+        Text(
+            if (open) "▾ $category" else "▸ $category",
+            style = MaterialTheme.typography.titleSmall,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = MonarchColors.SovereignGold,
+            maxLines = 1,
+            softWrap = false,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            "$claimed/$total",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.InkMuted,
+        )
     }
 }
 
@@ -719,25 +662,4 @@ private fun ProgressTrack(fraction: Float, tall: Boolean) {
         height = if (tall) 10.dp else 6.dp,
         seed = if (tall) 5 else 9,
     )
-}
-
-@Composable
-private fun CodexStat(label: String, value: String) {
-    Column {
-        Text(
-            value,
-            style = MaterialTheme.typography.titleSmall,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = MonarchColors.Ink,
-        )
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            fontSize = 9.sp,
-            color = MonarchColors.InkMuted,
-            letterSpacing = 1.sp,
-        )
-    }
 }
