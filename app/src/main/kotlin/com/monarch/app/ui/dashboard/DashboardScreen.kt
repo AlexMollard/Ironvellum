@@ -107,6 +107,8 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
 
 data class DashboardUi(
     val profile: PlayerProfile? = null,
@@ -189,6 +191,15 @@ class DashboardViewModel(private val repo: Repository) : ViewModel() {
 
 private val DAY_LABELS = linkedMapOf(1 to "MON", 2 to "TUE", 3 to "WED", 4 to "THU", 5 to "FRI", 6 to "SAT", 7 to "SUN")
 
+/**
+ * Pitch of one manifest row, measured on device: 12sp of label between 3dp of
+ * padding, plus the 2dp hairline under it. Fixed, because the app pins a single
+ * text scale - which is what makes "how many rows fit" arithmetic instead of a
+ * measure pass. Measured at 23.4dp on device and rounded up: over-counting rows clips the
+ * last one, under-counting only wastes a slot.
+ */
+private val QUEST_ROW_HEIGHT = 24.dp
+
 @Composable
 fun DashboardScreen(
     onStartSession: (Long) -> Unit,
@@ -221,9 +232,20 @@ fun DashboardScreen(
     // design-size text lines.
     val linesOfRoom = windowHeightDp / FIXED_FONT_SCALE
     val roomForGauges = linesOfRoom >= 400f
+    // A 320dp-class phone reports ~693, a 360dp one ~780, the owner's ~891.
+    // Below this the page is still whole but has no dp to spare, so the
+    // informative half of it gets thinner rather than the quest card starving.
+    val tightHome = linesOfRoom < 740f
     // Below this the column cannot hold the dashboard at all: landscape
-    // measures ~411, a small display at 2x text ~347, stock portrait 891.
-    val shortWindow = linesOfRoom < 520f
+    // measures ~411, a small display at 2x text ~347, a 320dp phone 693,
+    // stock portrait 891.
+    //
+    // 520 was too low. Measured at 533 the page still refused to scroll, the
+    // quest card's unweighted text ate its slot, and the Accept button was
+    // measured down to a 14dp bar with no label on it - the exact failure the
+    // weighted manifest exists to prevent, one threshold below where it was
+    // being watched for.
+    val shortWindow = linesOfRoom < 620f
 
     Column(
         Modifier
@@ -270,7 +292,11 @@ fun DashboardScreen(
                         )
                         val worn = profile?.currentTitleId?.let { Titles.byId(it)?.name }
                         Text(
-                            "${Rank.forLevel(progress.level)} · ${ArmyClass.forLevel(progress.level).title}",
+                            // "the " costs four characters and says nothing:
+                            // without it "E-Rank · Awakened" holds one line on a
+                            // 320dp screen, where it used to wrap under itself.
+                            "${Rank.forLevel(progress.level)} · " +
+                                ArmyClass.forLevel(progress.level).title.removePrefix("the "),
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
                             // No tracking: labelMedium's 2sp over "E-Rank · the
@@ -285,18 +311,25 @@ fun DashboardScreen(
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Text(
-                            worn?.uppercase() ?: if (ui.unlockedCount > 0) "TAP TO WEAR A TITLE"
-                            else "NO TITLE EARNED YET",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            color = if (worn != null) MonarchColors.SovereignGold else MonarchColors.InkMuted,
-                            letterSpacing = MonarchTracking.InlineLabel,
-                            maxLines = 1,
-                            // Ellipsis, not a hard cut: a truncated title should
-                            // look truncated rather than misspelt.
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        // A third line only when it says something: with no
+                        // title worn AND none earned, "NO TITLE EARNED YET" was
+                        // a line telling the hunter about a thing they cannot
+                        // do yet - and the line the rank had to wrap around.
+                        val titleLine = worn?.uppercase()
+                            ?: "TAP TO WEAR A TITLE".takeIf { ui.unlockedCount > 0 }
+                        if (titleLine != null) {
+                            Text(
+                                titleLine,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = ChakraPetch,
+                                color = if (worn != null) MonarchColors.SovereignGold else MonarchColors.InkMuted,
+                                letterSpacing = MonarchTracking.InlineLabel,
+                                maxLines = 1,
+                                // Ellipsis, not a hard cut: a truncated title should
+                                // look truncated rather than misspelt.
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     }
                     // The System gear: settings left the bottom nav, so
                     // this fixed-size tap target rides at the end of the
@@ -327,23 +360,9 @@ fun DashboardScreen(
                 }
                 Spacer(Modifier.height(10.dp))
                 XpBar(progress.intoLevel, progress.needed)
-                Spacer(Modifier.height(4.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(
-                        "LV ${progress.level} → ${progress.level + 1}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = MonarchColors.InkMuted,
-                        letterSpacing = MonarchTracking.InlineLabel,
-                    )
-                    Text(
-                        "${progress.needed - progress.intoLevel} XP TO GO",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = MonarchColors.InkMuted,
-                        letterSpacing = MonarchTracking.InlineLabel,
-                    )
-                }
+                // No caption under the rail. It read "25 / 200 XP", then "LV 2
+                // → 3", then "175 XP TO GO" - one fact three ways, when the
+                // sigil beside it already stamps the level.
             }
         }
 
@@ -363,14 +382,38 @@ fun DashboardScreen(
         // button, and the only one that drops the gauges.
 
         if (roomForGauges) {
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(if (tightHome) 10.dp else 16.dp))
         }
 
         // Gauge cluster: one radial dial carries the day's steps, the column
         // beside it carries the counters — different shapes, one panel.
+        //
+        // The dial is 104dp of pure readout. On a 320dp-class screen that is
+        // the difference between the quest card listing movements and listing
+        // none, so there it becomes a rail like its neighbours: same two
+        // numbers, a third of the height. The count and the goal stay on the
+        // screen either way.
         if (roomForGauges) {
         AnimatedVisibility(shown, enter = fadeIn(tween(300, delayMillis = 90))) {
             SystemWindow(Modifier.fillMaxWidth()) {
+                if (tightHome) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        GaugeStat(
+                            label = "STEPS",
+                            // Grouped, like the dial it replaces: "10000" read as a raw field.
+                            value = "${"%,d".format(ui.stepsToday)} / ${"%,d".format(STEP_GOAL)}",
+                            accent = if (ui.stepsToday >= STEP_GOAL) MonarchColors.SovereignGold
+                            else MonarchColors.EmeraldBright,
+                            fraction = (ui.stepsToday.toFloat() / STEP_GOAL).coerceIn(0f, 1f),
+                        )
+                        GaugeStat(
+                            label = "STREAK",
+                            value = if (ui.streak > 0) "${ui.streak}d" else "—",
+                            accent = if (ui.streak > 0) MonarchColors.SovereignGold else MonarchColors.InkMuted,
+                            fraction = (ui.streak / 7f).coerceIn(0f, 1f),
+                        )
+                    }
+                } else {
                 Row(
                     Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
@@ -394,13 +437,12 @@ fun DashboardScreen(
                             accent = MonarchColors.EmeraldBright,
                             fraction = (ui.unlockedCount.toFloat() / Titles.ALL.size).coerceIn(0f, 1f),
                         )
-                        GaugeStat(
-                            label = "PROGRAMS",
-                            value = "${ui.presets.size}",
-                            accent = MonarchColors.SystemGreen,
-                            fraction = (ui.presets.size / 7f).coerceIn(0f, 1f),
-                        )
+                        // PROGRAMS counted the user's own preset list - a number
+                        // they set, not one they earn, and the Train tab is a list
+                        // of exactly those. Two rails beside the dial, both of
+                        // things that move.
                     }
+                }
                 }
             }
         }
@@ -472,12 +514,14 @@ fun DashboardScreen(
             it.presetId == selectedPreset.id && (it.completedAtMs ?: 0L) >= todayStart
         }
 
-        // The quest panel takes every remaining pixel so the exercise list grows
-        // into the slack instead of leaving dead space above the nav bar — but
-        // only when there IS slack. On a short window (landscape, or a small
-        // display at 2x text) a weighted panel is measured after the unweighted
-        // content above it, gets nothing, and takes the button down with it.
-        // There it wraps its content and the page scrolls instead.
+        // The quest panel takes every remaining pixel - which is what keeps its
+        // button measured and on screen - and the manifest inside spreads into
+        // them, so the slack becomes row spacing instead of a void.
+        //
+        // On a short window (landscape, or a small display at 2x text) a
+        // weighted panel is measured after the unweighted content above it,
+        // gets nothing, and takes the button down with it. There it wraps its
+        // content and the page scrolls instead.
         SystemWindow(
             if (shortWindow) Modifier.fillMaxWidth() else Modifier.fillMaxWidth().weight(1f),
             accent = when {
@@ -568,57 +612,97 @@ fun DashboardScreen(
                         )
                     }
                 } else {
+                    Text(
+                        selectedPreset.name.uppercase(),
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = MonarchColors.EmeraldBright,
+                        letterSpacing = 1.sp,
+                    )
+                    if (selectedPreset.note.isNotBlank()) {
+                        Text(
+                            selectedPreset.note,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MonarchColors.InkMuted,
+                            maxLines = 1,
+                            // Without this the note was sliced mid-word with
+                            // no mark that anything followed.
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
                     // The manifest is the ONLY flexible child, so the button
                     // below is measured first and always lands on screen. With
                     // the header unweighted and the button last, a large system
                     // font scale let the header eat the card and the button was
                     // measured at zero height: the app's primary action simply
-                    // vanished at 2.0x. Rows scroll inside whatever is left.
-                    Column(
-                        Modifier
-                            .weight(1f, fill = false)
-                            .verticalScroll(rememberScrollState()),
-                        verticalArrangement = Arrangement.SpaceEvenly,
-                    ) {
-                        Text(
-                            selectedPreset.name.uppercase(),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = MonarchColors.EmeraldBright,
-                            letterSpacing = 1.sp,
-                        )
-                        if (selectedPreset.note.isNotBlank()) {
-                            Text(
-                                selectedPreset.note,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MonarchColors.InkMuted,
-                                maxLines = 1,
-                            )
-                        }
-                        selectedPreset.entries.forEachIndexed { index, entry ->
-                            Row(
-                                Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            ) {
-                                Box(Modifier.size(4.dp).background(MonarchColors.SystemGreen))
-                                Text(
-                                    entry.exerciseName,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = MonarchColors.Ink,
-                                    modifier = Modifier.weight(1f),
-                                    maxLines = 1,
-                                )
-                                Text(
-                                    "${entry.targetSets}\u00D7${entry.targetReps}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontFamily = ChakraPetch,
-                                    color = MonarchColors.SystemGreen,
-                                )
+                    // vanished at 2.0x.
+                    //
+                    // Whole rows only. A scroll here clipped the last movement
+                    // through its middle - on a 320dp screen the card had room
+                    // for one and a half rows, and half a row reads as a
+                    // rendering fault rather than as "there is more". Text does
+                    // not scale (the app pins one font size), so a row is a
+                    // constant height and how many fit is arithmetic.
+                    // The card owns the page's slack (that is what keeps its
+                    // button measured), so the manifest spends it: rows spread
+                    // over the slot rather than stacking at the top and leaving
+                    // a void above the button.
+                    //
+                    // No weight once the page scrolls, though: a weighted child
+                    // in an unbounded column is measured with no space at all,
+                    // and the manifest rendered as nothing. Unweighted it sees
+                    // an infinite slot, lists every movement, and the page
+                    // scrolls - which is the deal at that size.
+                    BoxWithConstraints(if (shortWindow) Modifier else Modifier.weight(1f)) {
+                        val fits = (maxHeight / QUEST_ROW_HEIGHT).toInt()
+                        val all = selectedPreset.entries
+                        // The space is the cap. A fixed limit of three left a
+                        // band of dead card below the button on a roomy screen
+                        // and showed nothing at all on a cramped one.
+                        //
+                        // When rows are dropped the "+N MORE" line takes the
+                        // last slot, so it is never the thing that clips. Below
+                        // two slots there is no room for both: one real movement
+                        // beats a line saying how many there are, since the
+                        // header already reads "5 MOVES · 18 SETS".
+                        val moves = all.take(if (fits < all.size) (fits - 1).coerceAtLeast(1) else fits)
+                        Column(verticalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxHeight()) {
+                            moves.forEachIndexed { index, entry ->
+                                Row(
+                                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                ) {
+                                    Box(Modifier.size(4.dp).background(MonarchColors.SystemGreen))
+                                    Text(
+                                        entry.exerciseName,
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MonarchColors.Ink,
+                                        modifier = Modifier.weight(1f),
+                                        maxLines = 1,
+                                    )
+                                    Text(
+                                        "${entry.targetSets}\u00D7${entry.targetReps}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontFamily = ChakraPetch,
+                                        color = MonarchColors.SystemGreen,
+                                    )
+                                }
+                                if (index != moves.lastIndex) {
+                                    Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(MonarchColors.Rune, seed = index))
+                                }
                             }
-                            if (index != selectedPreset.entries.lastIndex) {
-                                Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(MonarchColors.Rune, seed = index))
+                            val hidden = all.size - moves.size
+                            if (hidden > 0 && fits >= 2) {
+                                Text(
+                                    "+$hidden MORE",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontFamily = ChakraPetch,
+                                    letterSpacing = MonarchTracking.InlineLabel,
+                                    color = MonarchColors.InkMuted,
+                                    modifier = Modifier.padding(top = 4.dp),
+                                )
                             }
                         }
                     }
