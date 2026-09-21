@@ -72,6 +72,7 @@ import java.time.Instant
 import java.time.ZoneId
 import com.monarch.app.ui.theme.MonarchTracking
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 // Warm charcoal rather than the old blue-grey: ink sits on paper, and the
 // paper is what the fill represents.
@@ -423,6 +424,31 @@ fun MonarchButton(
 
 fun formatDate(ms: Long, pattern: String = "MMM d · HH:mm"): String =
     Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern(pattern))
+
+/**
+ * One decimal place - the precision every instrument feeding this app actually
+ * has. Bathroom scales, tape measures and body-fat calipers resolve to 0.1;
+ * nothing downstream knows more than that.
+ *
+ * Rendering the raw Double instead printed `79.0999984741211 kg` on the owner's
+ * phone: Health Connect had handed over a widened Float. This is the display
+ * guard and the one that always applies — [com.monarch.app.data.HealthSync]
+ * additionally rounds at the write boundary, but only for rows read from that
+ * point on. Rows already on disk keep their float and are corrected here.
+ *
+ * [Locale.US] on purpose, not the reader's locale: this same text prefills the
+ * log-weight field, which is parsed back with `toDoubleOrNull()`. That parser
+ * only accepts `.`, so a locale rendering `79,1` would blank the field every
+ * time a European hunter opened the dialog.
+ */
+fun formatBodyValue(value: Double): String = String.format(Locale.US, "%.1f", value)
+
+/**
+ * Explicit both forms rather than appending "s": every count label in this app
+ * is upper-case HUD text, so a derived plural would read "WORKOUTs". The owner's
+ * own log header read "1 WORKOUTS".
+ */
+fun plural(count: Int, one: String, many: String): String = if (count == 1) one else many
 
 /**
  * Busy indicator drawn as a brushed arc instead of Material's perfect ring.

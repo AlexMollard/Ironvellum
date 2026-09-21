@@ -38,7 +38,7 @@ class ExerciseHistoryCalculatorTest {
 
         assertTrue(history.isEmpty)
         assertEquals(0, history.sessions)
-        assertEquals(0.0, history.totalVolumeKg, 1e-9)
+        assertNull("nothing lifted is unknown volume, not a confident 0 kg", history.totalVolumeKg)
         assertNull("never trained is not 'last trained today'", history.daysSinceLast)
         assertNull(history.heaviestWeightKg)
     }
@@ -55,7 +55,7 @@ class ExerciseHistoryCalculatorTest {
 
         assertEquals(1, history.completedSets)
         assertEquals(10, history.totalReps)
-        assertEquals(200.0, history.totalVolumeKg, 1e-9)
+        assertEquals(200.0, history.totalVolumeKg!!, 1e-9)
         assertEquals(20.0, history.heaviestWeightKg!!, 1e-9)
         // The skipped set is still visible in the log itself.
         assertEquals(2, history.entries.size)
@@ -68,20 +68,25 @@ class ExerciseHistoryCalculatorTest {
         val history = ExerciseHistoryCalculator.build(pullUp, rows, bodyweightKg = 80.0)
 
         // 10 reps of 80 kg is 800 kg moved, not 0.
-        assertEquals(800.0, history.totalVolumeKg, 1e-9)
-        assertEquals(80.0, history.bestSetLoadKg, 1e-9)
-        // Added weight stays null: the set was unweighted, and the screen says so.
+        assertEquals(800.0, history.totalVolumeKg!!, 1e-9)
+        // bestSetLoadKg is ADDED weight, not the resolved load: null says
+        // "bodyweight" so the explorer prints BW instead of printing the
+        // hunter's own mass as though he had hung it from a belt.
+        assertNull(history.bestSetLoadKg)
         assertNull(history.heaviestWeightKg)
     }
 
     @Test
-    fun `unknown bodyweight scores bodyweight sets at zero instead of crashing`() {
+    fun `unknown bodyweight reports unknown volume rather than zero`() {
         val rows = listOf(row(sessionId = 1, atMs = DAY, reps = 10, weightKg = null))
 
         val history = ExerciseHistoryCalculator.build(pullUp, rows, bodyweightKg = null)
 
-        assertEquals(0.0, history.totalVolumeKg, 1e-9)
+        // The set happened and the reps are real; only the load is unknown.
+        // Reporting 0 kg claimed the hunter moved nothing.
+        assertNull("no weigh-in means the load is unknown, not zero", history.totalVolumeKg)
         assertEquals(1, history.completedSets)
+        assertEquals(10, history.totalReps)
     }
 
     @Test
@@ -102,7 +107,7 @@ class ExerciseHistoryCalculatorTest {
         // light high-rep set takes it. Conflating the two would make the
         // screen report the same set twice under different headings.
         assertEquals(30, history.bestSetReps)
-        assertEquals(10.0, history.bestSetLoadKg, 1e-9)
+        assertEquals(10.0, history.bestSetLoadKg!!, 1e-9)
     }
 
     @Test

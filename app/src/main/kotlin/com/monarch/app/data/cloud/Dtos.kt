@@ -84,6 +84,15 @@ data class SessionSetDto(
     @SerialName("weight_kg") val weightKg: Double?,
     @SerialName("modifiers") val modifiers: String,
     @SerialName("done") val done: Boolean,
+    /**
+     * Columns `session_sets` has carried since migration 0003 and the client
+     * never sent. Without `duration_sec` a static hold pushes as `reps = 0`
+     * with its seconds nowhere, and an activity pushes with no distance or
+     * time at all. All three are nullable server-side.
+     */
+    @SerialName("duration_sec") val durationSec: Int? = null,
+    @SerialName("distance_m") val distanceM: Double? = null,
+    @SerialName("grade") val grade: String? = null,
 )
 
 @Serializable

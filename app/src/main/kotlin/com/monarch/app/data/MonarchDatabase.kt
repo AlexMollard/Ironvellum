@@ -73,7 +73,7 @@ abstract class MonarchDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 23
+        const val VERSION = 24
         // Height and sex move onto the profile (set once in Settings) so the
         // stat log no longer asks for height on every reading. heightCm is
         // backfilled from the newest stat row that actually carries one; with
@@ -254,6 +254,72 @@ abstract class MonarchDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Every catalogue movement that was a hold at schema 24, lowercased.
+         * Frozen on purpose — see [MIGRATION_23_24].
+         */
+        private val HOLD_EXERCISE_NAMES: List<String> = listOf(
+            "active bar hang", "weighted plank", "plank",
+            "dead hang", "one-arm hang", "wall handstand", "crow pose",
+            "freestanding handstand", "one-arm handstand",
+            "front row hold", "tuck front lever", "advanced tuck front lever",
+            "one-leg front lever", "straddle front lever", "front lever",
+            "one-arm front lever",
+            "tuck back lever", "advanced tuck back lever", "straddle back lever",
+            "back lever",
+            "frog stand", "tuck planche", "advanced tuck planche",
+            "one-leg planche", "straddle planche", "full planche",
+            "ring support hold", "iron cross", "human flag",
+            "hollow hold", "l-sit", "v-sit", "manna",
+            "deep squat hold", "pancake", "bridge", "front split", "german hang",
+        )
+
+        /**
+         * Static holds become [ExerciseMetric.HOLD], and their logged figure
+         * moves from `reps` to `durationSec` where it belongs.
+         *
+         * Before this, a hold was catalogued as REPS and its seconds were
+         * typed into the reps box, so a 45-second hollow hold read as
+         * forty-five repetitions to XP, the strength score, personal records,
+         * rep-count titles, progressive overload and volume alike.
+         *
+         * The hold names are listed literally rather than derived from
+         * [Seed]: a migration must keep doing in five years exactly what it
+         * did today, and deriving the list would let a future catalogue edit
+         * silently rewrite a different set of historical rows.
+         *
+         * Only rows that still look unmigrated are touched — `reps > 0` with
+         * no `durationSec` — so re-running is a no-op and a set that somehow
+         * already carries seconds is left alone.
+         */
+        private val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                val names = HOLD_EXERCISE_NAMES.joinToString(",") { "'${it.replace("'", "''")}'" }
+                db.execSQL(
+                    "UPDATE exercises SET metric = 'HOLD' " +
+                        "WHERE metric = 'REPS' AND LOWER(name) IN ($names)",
+                )
+                db.execSQL(
+                    "UPDATE set_logs SET durationSec = reps, reps = 0 " +
+                        "WHERE durationSec IS NULL AND reps > 0 AND exerciseId IN " +
+                        "(SELECT id FROM exercises WHERE metric = 'HOLD')",
+                )
+                // The modifier was how a hold used to announce itself. Now the
+                // metric says it, and leaving the chip on every set of every
+                // hold is noise the hunter cannot remove.
+                db.execSQL(
+                    "UPDATE set_logs SET modifiers = '' " +
+                        "WHERE LOWER(modifiers) = 'hold seconds' AND exerciseId IN " +
+                        "(SELECT id FROM exercises WHERE metric = 'HOLD')",
+                )
+                db.execSQL(
+                    "UPDATE preset_entries SET modifiers = '' " +
+                        "WHERE LOWER(modifiers) = 'hold seconds' AND exerciseId IN " +
+                        "(SELECT id FROM exercises WHERE metric = 'HOLD')",
+                )
+            }
+        }
+
 
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
@@ -268,6 +334,7 @@ abstract class MonarchDatabase : RoomDatabase() {
             MIGRATION_20_21,
             MIGRATION_21_22,
             MIGRATION_22_23,
+            MIGRATION_23_24,
         )
 
         const val NAME = "monarch.db"

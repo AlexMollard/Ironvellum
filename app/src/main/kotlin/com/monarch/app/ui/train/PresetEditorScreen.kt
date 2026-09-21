@@ -402,6 +402,13 @@ private fun EntryRow(
                     NumberField("Kg (opt.)", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
                 }
             }
+            ExerciseMetric.HOLD -> {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Seconds", entry.reps, Modifier.weight(1f)) { onEntry(entry.copy(reps = it)) }
+                    NumberField("Kg (opt.)", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
+                }
+            }
             ExerciseMetric.DURATION -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }

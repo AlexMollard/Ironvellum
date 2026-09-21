@@ -35,6 +35,7 @@ import com.monarch.app.domain.Exercise
 import com.monarch.app.domain.ExerciseHistory
 import com.monarch.app.domain.ExerciseHistoryCalculator
 import com.monarch.app.domain.ExerciseMetric
+import com.monarch.app.domain.isStrength
 import com.monarch.app.domain.ExportReader
 import com.monarch.app.domain.ExportWriter
 import com.monarch.app.domain.Gacha
@@ -347,32 +348,46 @@ class Repository(
 
         val sets = pw.entries.sortedBy { it.position }.flatMapIndexed { entryPos, entry ->
             val exercise = exerciseById[entry.exerciseId]
+            val isHold = runCatching { ExerciseMetric.valueOf(exercise?.metric ?: "REPS") }
+                .getOrDefault(ExerciseMetric.REPS) == ExerciseMetric.HOLD
             // Every logged session for this movement, newest first — not just
             // the last one. `fromSets` wrapped a single session, so the stall
             // counter was always 0 and the deload at STALLS_BEFORE_DELOAD could
             // never fire: a hunter grinding the same failed load got told to
             // repeat it forever.
-            val history = sessionDao.recentDoneSets(entry.exerciseId)
-                .groupBy { it.sessionId }
-                .values
-                .map { rows -> rows.sortedBy { it.setIndex }.map { Progression.Attempt(it.weightKg, it.reps) } }
-            val recommendation = Progression.fromSessions(
-                mode = mode,
-                targetReps = entry.targetReps,
-                minSets = entry.targetSets,
-                sessions = history,
-                muscleGroup = exercise?.muscleGroup ?: "",
-                exerciseName = exercise?.name ?: "",
-            )
+            //
+            // A static hold is not progressed here: its overload is seconds,
+            // and Progression's double-progression adds LOAD once the rep band
+            // is cleared. Feeding it seconds would prescribe a weight vest for
+            // a longer plank. Holds take the preset's own target until hold
+            // progression is designed.
+            val recommendation = if (isHold) {
+                null
+            } else {
+                val history = sessionDao.recentDoneSets(entry.exerciseId)
+                    .groupBy { it.sessionId }
+                    .values
+                    .map { rows -> rows.sortedBy { it.setIndex }.map { Progression.Attempt(it.weightKg, it.reps) } }
+                Progression.fromSessions(
+                    mode = mode,
+                    targetReps = entry.targetReps,
+                    minSets = entry.targetSets,
+                    sessions = history,
+                    muscleGroup = exercise?.muscleGroup ?: "",
+                    exerciseName = exercise?.name ?: "",
+                )
+            }
             (0 until entry.targetSets).map { index ->
                 SetLogEntity(
                     sessionId = sessionId,
                     exerciseId = entry.exerciseId,
                     exercisePosition = entryPos,
                     setIndex = index,
-                    reps = recommendation.reps,
+                    // A hold's prescription is seconds; its reps stay 0.
+                    reps = if (isHold) 0 else (recommendation?.reps ?: entry.targetReps),
+                    durationSec = if (isHold) entry.targetReps else null,
                     modifiers = entry.modifiers,
-                    weightKg = recommendation.weightKg ?: entry.targetWeightKg,
+                    weightKg = recommendation?.weightKg ?: entry.targetWeightKg,
                     done = false,
                 )
             }
@@ -420,24 +435,29 @@ class Repository(
         }.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
     }
 
-    suspend fun updateSet(
-        setId: Long,
-        reps: Int,
-        weightKg: Double?,
-        done: Boolean,
-        durationSec: Int? = null,
-        distanceM: Double? = null,
-        grade: String? = null,
-    ) {
+    /**
+     * Edits the counted fields of a set and NOTHING else.
+     *
+     * This used to take `durationSec`, `distanceM` and `grade` as parameters
+     * defaulting to null, and its only caller passed four arguments — so
+     * every tick of a checkbox wrote nulls over a set's seconds, distance and
+     * climbing grade. Holds keep their figure in `durationSec`, so the bug
+     * would have erased a hold the moment it was ticked.
+     */
+    suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) {
+        val current = sessionDao.setById(setId) ?: return
+        sessionDao.updateSet(current.copy(reps = reps, weightKg = weightKg, done = done))
+    }
+
+    /** Edits a static hold: its figure is seconds, and reps stays 0. */
+    suspend fun updateHoldSet(setId: Long, seconds: Int, weightKg: Double?, done: Boolean) {
         val current = sessionDao.setById(setId) ?: return
         sessionDao.updateSet(
             current.copy(
-                reps = reps,
+                reps = 0,
+                durationSec = seconds.coerceAtLeast(0),
                 weightKg = weightKg,
                 done = done,
-                durationSec = durationSec,
-                distanceM = distanceM,
-                grade = grade,
             ),
         )
     }
@@ -456,6 +476,8 @@ class Repository(
         reps: Int,
         weightKg: Double?,
         modifiers: String,
+        /** Seconds, when the movement is a static hold. */
+        durationSec: Int? = null,
     ): Long = db.withTransaction {
         val rows = sessionDao.setsFor(sessionId)
         val mine = rows.filter { it.exerciseId == exerciseId }
@@ -470,6 +492,7 @@ class Repository(
                     exercisePosition = position,
                     setIndex = mine.size,
                     reps = reps,
+                    durationSec = durationSec,
                     weightKg = weightKg,
                     modifiers = existing?.modifiers ?: modifiers,
                     done = false,
@@ -547,6 +570,7 @@ class Repository(
         val classAfter: String,
         val newTitles: List<TitleDef>,
         val totalXp: Long,
+        val strengthScore: Int,
         val questBonus: Boolean,
         val durationMinutes: Long,
     )
@@ -556,21 +580,45 @@ class Repository(
         check(session.completedAtMs == null) { "Session already completed" }
         val doneSets = sessionDao.setsFor(sessionId).filter { it.done }
         val latestBodyweight = statDao.observeAll().first().firstOrNull()?.weightKg
-        // Split by metric: lifting XP keeps its existing curve; activities earn
-        // XP from ActivityScore and contribute NOTHING to the strength score.
-        val metrics = exerciseDao.observeAll().first().associate { it.id to it.metric }
-        val liftingSets = doneSets.filter { (metrics[it.exerciseId] ?: "REPS") == "REPS" }
-        val activitySets = doneSets.filter { (metrics[it.exerciseId] ?: "REPS") != "REPS" }
-        val liftingXp = Xp.award(liftingSets.size, liftingSets.sumOf { it.reps })
-        val activityXp = activitySets.sumOf { s ->
-            val metric = runCatching { ExerciseMetric.valueOf(metrics[s.exerciseId] ?: "REPS") }
+        // Split by metric. Strength work (reps AND static holds) earns
+        // difficulty-weighted XP and feeds the strength score; activities earn
+        // XP from ActivityScore and contribute NOTHING to strength.
+        val catalogue = exerciseDao.observeAll().first()
+        val metrics = catalogue.associate { row ->
+            row.id to runCatching { ExerciseMetric.valueOf(row.metric) }
                 .getOrDefault(ExerciseMetric.REPS)
-            val per = ActivityScore.xp(metric, s.durationSec, s.distanceM, s.weightKg, latestBodyweight ?: 0.0)
-            if (metric == ExerciseMetric.ATTEMPTS_GRADE) per * s.reps else per
+        }
+        val names = catalogue.associate { it.id to it.name }
+        fun metricOf(exerciseId: Long) = metrics[exerciseId] ?: ExerciseMetric.REPS
+        /** Seconds when the set is a hold, null when it is counted in reps. */
+        fun holdSecondsOf(set: SetLogEntity): Int? =
+            if (metricOf(set.exerciseId) == ExerciseMetric.HOLD) set.durationSec else null
+
+        val liftingSets = doneSets.filter { metricOf(it.exerciseId).isStrength }
+        val activitySets = doneSets.filterNot { metricOf(it.exerciseId).isStrength }
+        val liftingXp = Xp.award(
+            liftingSets.map { set ->
+                Xp.SetEffort(
+                    exerciseName = names[set.exerciseId] ?: "",
+                    reps = set.reps,
+                    holdSeconds = holdSecondsOf(set),
+                    weightKg = set.weightKg,
+                    modifiers = set.modifiers,
+                    metric = metricOf(set.exerciseId),
+                )
+            },
+            latestBodyweight,
+        )
+        val activityXp = activitySets.sumOf { set ->
+            val metric = metricOf(set.exerciseId)
+            val per = ActivityScore.xp(metric, set.durationSec, set.distanceM, set.weightKg, latestBodyweight ?: 0.0)
+            if (metric == ExerciseMetric.ATTEMPTS_GRADE) per * set.reps else per
         }
         val xp = liftingXp + activityXp
         val sessionStrength = StrengthIndex.sessionScore(
-            liftingSets.map { it.reps to it.weightKg },
+            liftingSets.map { set ->
+                StrengthIndex.Effort(set.reps, holdSecondsOf(set), set.weightKg)
+            },
             latestBodyweight,
         ) ?: 0
 
@@ -626,6 +674,7 @@ class Repository(
             classAfter = ArmyClass.forLevel(Xp.levelFor(newTotal)).title,
             newTitles = newly,
             totalXp = newTotal,
+            strengthScore = sessionStrength,
             questBonus = questBonus,
             durationMinutes = durationMinutes,
         )

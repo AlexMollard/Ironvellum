@@ -7,7 +7,6 @@ import androidx.compose.ui.draw.clip
 import com.monarch.app.ui.theme.ChakraPetch
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,6 +44,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.Repository
 import com.monarch.app.domain.Exercise
 import com.monarch.app.domain.ExerciseHistory
+import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.domain.SetRecords
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.Skills
@@ -54,6 +54,7 @@ import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.TrendChart
 import com.monarch.app.ui.components.formatDate
+import com.monarch.app.ui.components.plural
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.inkBorder
@@ -95,7 +96,7 @@ class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
         val records = if (sel == null) {
             emptyMap()
         } else {
-            SetRecords.records(allHistory, SetRecords.bodyweightLookup(stats))
+            SetRecords.records(allHistory, SetRecords.bodyweightLookup(stats)) { sel.metric }
                 .filterKeys { (name, _) -> name.equals(sel.name, ignoreCase = true) }
                 .mapKeys { (_, record) -> record.setIndex }
         }
@@ -224,7 +225,7 @@ fun ExerciseExplorerScreen(
                 Spacer(Modifier.height(14.dp))
                 RepsChart(history)
                 Spacer(Modifier.height(14.dp))
-                SetRecordPanel(ui.setRecords)
+                SetRecordPanel(ui.setRecords, history.exercise.metric == ExerciseMetric.HOLD)
                 SectionHeader("Set Log")
                 SetLog(history)
             }
@@ -259,19 +260,48 @@ private fun StatCard(label: String, value: String, hint: String = "") {
 
 @Composable
 private fun StatGrid(history: ExerciseHistory) {
+    val hold = history.exercise.metric == ExerciseMetric.HOLD
+    // With zero completed sets every "best/heaviest" figure is a placeholder,
+    // not a record — "BW" and "0 × 0.0 kg" read as claims. Same guard as
+    // BEST STRENGTH SCORE below.
+    val noSets = history.completedSets == 0
     val rows = listOf(
         listOf(
             "SESSIONS" to history.sessions.toString(),
             "COMPLETED SETS" to history.completedSets.toString(),
         ),
-        listOf(
-            "TOTAL REPS" to history.totalReps.toString(),
-            "TOTAL VOLUME" to "${formatKg(history.totalVolumeKg)} kg",
-        ),
-        listOf(
-            "HEAVIEST SET" to (history.heaviestWeightKg?.let { "${formatKg(it)} kg × ${history.heaviestReps}" } ?: "BW"),
-            "BEST SET (REPS × LOAD)" to "${history.bestSetReps} × ${formatKg(history.bestSetLoadKg)} kg",
-        ),
+        // A hold has no rep count and no rep-volume; reporting either invents
+        // a figure. Its own totals are seconds.
+        if (hold) {
+            listOf(
+                "TOTAL TIME HELD" to "${history.totalReps}s",
+                "LONGEST HOLD" to "${history.bestSetReps}s",
+            )
+        } else {
+            listOf(
+                "TOTAL REPS" to history.totalReps.toString(),
+                "TOTAL VOLUME" to (history.totalVolumeKg?.let { "${formatKg(it)} kg" } ?: "—"),
+            )
+        },
+        if (hold) {
+            listOf(
+                "ADDED LOAD" to (if (noSets) "—" else history.heaviestWeightKg?.let { "${formatKg(it)} kg" } ?: "BW"),
+                "BEST HOLD (TIME × LOAD)" to (
+                    if (noSets) "—" else
+                        // Null added weight is a bodyweight hold, not the hunter's
+                        // bodyweight printed as if it were added load.
+                        "${history.bestSetReps}s × " + (history.bestSetLoadKg?.let { "${formatKg(it)} kg" } ?: "BW")
+                    ),
+            )
+        } else {
+            listOf(
+                "HEAVIEST SET" to (if (noSets) "—" else history.heaviestWeightKg?.let { "${formatKg(it)} kg × ${history.heaviestReps}" } ?: "BW"),
+                "BEST SET (REPS × LOAD)" to (
+                    if (noSets) "—" else
+                        "${history.bestSetReps} × " + (history.bestSetLoadKg?.let { "${formatKg(it)} kg" } ?: "BW")
+                    ),
+            )
+        },
         listOf(
             "BEST STRENGTH SCORE" to (if (history.bestScore > 0.0) formatKg(history.bestScore) else "—"),
             "DAYS SINCE LAST" to (history.daysSinceLast?.toString() ?: "—"),
@@ -334,20 +364,26 @@ private fun ScoreChart(history: ExerciseHistory) {
             )
         }
         Text(
-            "best set score per session · ${history.series.size} sessions",
+            "best set score per session · ${history.series.size} ${plural(history.series.size, "session", "sessions")}",
             style = MaterialTheme.typography.labelSmall,
             color = MonarchColors.InkMuted,
         )
     }
 }
 
-/** Total completed reps per session, hand-drawn bars. */
+/**
+ * Total completed work per session, hand-drawn bars. For a hold the series
+ * carries SECONDS in its reps-named field, so the labels must follow the
+ * metric — "TOTAL REPS" over a stack of hold seconds is the same lie the
+ * per-set record row used to tell.
+ */
 @Composable
 private fun RepsChart(history: ExerciseHistory) {
+    val isHold = history.exercise.metric == ExerciseMetric.HOLD
     val values = history.series.map { it.totalReps.toDouble() }
     SystemWindow(Modifier.fillMaxWidth()) {
         Text(
-            "TOTAL REPS PER SESSION",
+            if (isHold) "TOTAL TIME HELD PER SESSION" else "TOTAL REPS PER SESSION",
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = MonarchColors.SystemGreen,
@@ -368,7 +404,7 @@ private fun RepsChart(history: ExerciseHistory) {
             )
         }
         Text(
-            "completed reps per session · oldest to newest",
+            if (isHold) "seconds held per session · oldest to newest" else "completed reps per session · oldest to newest",
             style = MaterialTheme.typography.labelSmall,
             color = MonarchColors.InkMuted,
         )
@@ -377,7 +413,7 @@ private fun RepsChart(history: ExerciseHistory) {
 
 /** One line per set position: the standing PR for THAT slot of the movement. */
 @Composable
-private fun SetRecordPanel(records: Map<Int, SetRecords.Record>) {
+private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean) {
     SystemWindow(Modifier.fillMaxWidth()) {
         Text(
             "PER-SET RECORDS",
@@ -413,7 +449,11 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>) {
                     // only elastic one, so it takes the slack instead of the
                     // score/date column being squeezed off the row.
                     Text(
-                        "${record.reps}×" + (record.weightKg?.let { "${formatKg(it)} kg" } ?: "BW"),
+                        // A hold's figure is seconds — "30×" read as thirty reps.
+                        // The load still belongs here: a weighted plank PR is
+                        // "45s · 20 kg", not a bare "45s".
+                        (if (isHold) "${record.reps}s · " else "${record.reps}×") +
+                            (record.weightKg?.let { "${formatKg(it)} kg" } ?: "BW"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MonarchColors.Ink,
                         maxLines = 1,
@@ -423,21 +463,16 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>) {
                             .padding(horizontal = 10.dp),
                     )
                     Column(horizontalAlignment = Alignment.End) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Filled.Bolt,
-                                contentDescription = null,
-                                tint = MonarchColors.SovereignGold,
-                                modifier = Modifier.height(12.dp),
-                            )
-                            Spacer(Modifier.width(2.dp))
-                            Text(
-                                "${record.score.toInt()}",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontFamily = ChakraPetch,
-                                color = MonarchColors.SovereignGold,
-                            )
-                        }
+                        // "STR", not a gold bolt: the bolt is the app's PR
+                        // glyph and read as XP here; this is neither.
+                        Text(
+                            "${record.score.toInt()} STR",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = ChakraPetch,
+                            color = MonarchColors.SovereignGold,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                         Text(
                             formatDate(record.achievedAtMs),
                             style = MaterialTheme.typography.labelSmall,
@@ -452,6 +487,7 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>) {
 
 @Composable
 private fun SetLog(history: ExerciseHistory) {
+    val hold = history.exercise.metric == ExerciseMetric.HOLD
     // Grouped by day, most recent first, and capped: a movement trained twice
     // a week for years has hundreds of days of sets, and this list lives in a
     // plain scrolling Column that composes every row it is given. The summary
@@ -485,7 +521,8 @@ private fun SetLog(history: ExerciseHistory) {
                     // value absorbs the slack so a long modifier list cannot
                     // shove it out of the window.
                     Text(
-                        "${set.reps} reps · " + (set.weightKg?.let { "${formatKg(it)} kg" } ?: "BW"),
+                        (if (hold) "${set.reps}s · " else "${set.reps} reps · ") +
+                            (set.weightKg?.let { "${formatKg(it)} kg" } ?: "BW"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MonarchColors.Ink,
                         maxLines = 1,

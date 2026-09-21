@@ -304,6 +304,7 @@ private fun PickerRow(exercise: Exercise, onPick: (Exercise) -> Unit) {
         Text(
             when (exercise.metric) {
                 ExerciseMetric.REPS -> "× reps"
+                ExerciseMetric.HOLD -> "◷ hold"
                 ExerciseMetric.DURATION -> "◷ time"
                 ExerciseMetric.DISTANCE_TIME -> "→ distance"
                 ExerciseMetric.ATTEMPTS_GRADE -> "◇ attempts"

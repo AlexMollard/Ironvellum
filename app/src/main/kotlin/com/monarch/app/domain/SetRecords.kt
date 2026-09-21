@@ -32,11 +32,15 @@ object SetRecords {
      * Keyed by normalised exercise name (lowercased, trimmed) to set index,
      * so casing differences between installs or imports cannot split a
      * record. Completed sets only: an unticked prescription is not a performance.
+     *
+     * @param metricOf the movement's metric, so a static hold is scored on its
+     *   seconds. Without it a hold records `reps = 0` and can never set a PR.
      */
     fun records(
         history: List<Pair<WorkoutSession, List<SessionSet>>>,
         bodyweightAt: (atMs: Long) -> Double,
         excludeSessionId: Long? = null,
+        metricOf: (SessionSet) -> ExerciseMetric? = { null },
     ): Map<Pair<String, Int>, Record> {
         val best = mutableMapOf<Pair<String, Int>, Record>()
         // Sessions in chronological order so an equal score keeps the EARLIER
@@ -49,7 +53,14 @@ object SetRecords {
                     // Score with the bodyweight IN FORCE at the session, so a
                     // later weigh-in never re-scores (shrinks/inflates) an
                     // already-earned record.
-                    val score = StrengthIndex.repScore(set.reps, set.weightKg, bodyweightAt(session.startedAtMs))
+                    val bodyweight = bodyweightAt(session.startedAtMs)
+                    val hold = MovementDifficulty.isHoldSet(metricOf(set), set.exerciseName, set.modifiers)
+                    val figure = if (hold) (set.durationSec ?: set.reps) else set.reps
+                    val score = if (hold) {
+                        StrengthIndex.holdScore(figure, set.weightKg, bodyweight)
+                    } else {
+                        StrengthIndex.repScore(figure, set.weightKg, bodyweight)
+                    }
                     val key = set.exerciseName.lowercase().trim() to set.setIndex
                     val existing = best[key]
                     if (existing == null || score > existing.score) {
@@ -57,7 +68,7 @@ object SetRecords {
                             exerciseName = set.exerciseName,
                             setIndex = set.setIndex,
                             score = score,
-                            reps = set.reps,
+                            reps = figure,
                             weightKg = set.weightKg,
                             achievedAtMs = session.startedAtMs,
                             sessionId = session.id,
@@ -90,8 +101,14 @@ object SetRecords {
         reps: Int,
         weightKg: Double?,
         bodyweightKg: Double,
+        /** True when [reps] is really seconds held. */
+        isHold: Boolean = false,
     ): Delta {
-        val score = StrengthIndex.repScore(reps, weightKg, bodyweightKg)
+        val score = if (isHold) {
+            StrengthIndex.holdScore(reps, weightKg, bodyweightKg)
+        } else {
+            StrengthIndex.repScore(reps, weightKg, bodyweightKg)
+        }
         val record = records[exerciseName.lowercase().trim() to setIndex]
             ?: return Delta(record = null, score = score, deltaScore = 0.0, deltaFraction = 0.0, isRecord = true)
         val deltaScore = score - record.score

@@ -19,7 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
-import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
@@ -82,6 +82,7 @@ import com.monarch.app.ui.theme.MonarchTracking
 import java.time.Instant
 import java.time.ZoneId
 import java.time.temporal.ChronoUnit
+import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -935,8 +936,17 @@ private fun StatStrip(entry: FeedEntry) {
         // "MOVE/S" and truncated XP to "+6…" on a 1080px screen; movement count
         // and duration ride the movement line instead.
         Stat(Icons.Outlined.FitnessCenter, "${entry.setsDone}", "SETS", modifier = Modifier.weight(1f))
-        Stat(Icons.Outlined.Repeat, "${entry.repsDone}", "REPS", modifier = Modifier.weight(1f))
-        Stat(Icons.Outlined.Bolt, "+${entry.xpAwarded}", "XP", tint = MonarchColors.Emerald, modifier = Modifier.weight(1f))
+        // repsDone == 0 with sets on the board means unreported (hold-only
+        // session — FeedEntry carries no held-seconds field yet). "0" claims
+        // nothing was done; "—" reads as not reported. Follow-up: add
+        // held_seconds aggregate to public_feed view + FeedEntryDto.
+        Stat(
+            Icons.Outlined.Repeat,
+            if (entry.repsDone == 0 && entry.setsDone > 0) "—" else "${entry.repsDone}",
+            "REPS",
+            modifier = Modifier.weight(1f),
+        )
+        Stat(Icons.Outlined.AutoAwesome, "+${entry.xpAwarded}", "XP", tint = MonarchColors.Emerald, modifier = Modifier.weight(1f))
         Stat(Icons.Outlined.WorkspacePremium, "${entry.strengthScore}", "STR", tint = MonarchColors.SovereignGold, modifier = Modifier.weight(1f))
     }
 }
@@ -1043,7 +1053,7 @@ private fun MovementLine(entry: FeedEntry) {
 /** 48m under the hour, "1h 12m" past it, whole hours drop the zero minutes. */
 /** Metres read as km past 1000 — "10.0 KM" beats "10000 M" on a card. */
 private fun formatDistance(metres: Double): String =
-    if (metres >= 1000) "%.1f KM".format(metres / 1000) else "${metres.toInt()} M"
+    if (metres >= 1000) String.format(Locale.ENGLISH, "%.1f KM", metres / 1000) else "${metres.toInt()} M"
 
 private fun formatDuration(sec: Int): String {
     val h = sec / 3600

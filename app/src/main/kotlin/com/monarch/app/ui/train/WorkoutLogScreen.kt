@@ -42,8 +42,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.Repository
+import com.monarch.app.domain.Exercise
+import com.monarch.app.domain.MovementDifficulty
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.WorkoutSession
+import com.monarch.app.ui.components.plural
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.TrendChart
@@ -59,15 +62,20 @@ import java.time.ZoneId
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 
 data class WorkoutLogUi(
     val history: List<Pair<WorkoutSession, List<SessionSet>>> = emptyList(),
+    /** Catalogue by id, so a hold's seconds are never totalled as reps. */
+    val exercises: Map<Long, Exercise> = emptyMap(),
 )
 
 class WorkoutLogViewModel(repo: Repository) : ViewModel() {
-    val ui: StateFlow<WorkoutLogUi> = repo.observeHistory()
-        .map { WorkoutLogUi(it) }
+    val ui: StateFlow<WorkoutLogUi> = combine(
+        repo.observeHistory(),
+        repo.observeExercises(),
+    ) { history, exercises -> WorkoutLogUi(history, exercises.associateBy { it.id }) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutLogUi())
 }
 
@@ -155,7 +163,7 @@ fun WorkoutLogScreen(
             }
         } else {
             item {
-                LifetimeLedger(ui.history)
+                LifetimeLedger(ui.history, ui.exercises)
                 Spacer(Modifier.height(4.dp))
             }
 
@@ -174,6 +182,7 @@ fun WorkoutLogScreen(
                     LogRow(
                         session = session,
                         sets = sets,
+                        exercises = ui.exercises,
                         onClick = { onOpenWorkout(session.id) },
                     )
                     Spacer(Modifier.height(10.dp))
@@ -185,10 +194,16 @@ fun WorkoutLogScreen(
 }
 
 @Composable
-private fun LifetimeLedger(history: List<Pair<WorkoutSession, List<SessionSet>>>) {
+private fun LifetimeLedger(
+    history: List<Pair<WorkoutSession, List<SessionSet>>>,
+    exercises: Map<Long, Exercise>,
+) {
     val sessions = history.map { it.first }
     val allSets = history.flatMap { it.second }
-    val totalReps = allSets.sumOf { it.reps }
+    // Seconds held are not repetitions. Summing them here is what made the
+    // lifetime ledger read 140 reps for 65 reps and 75 seconds of hollow hold.
+    val totalReps = allSets.filterNot { isHoldSet(it, exercises) }.sumOf { it.reps }
+    val totalHeld = allSets.filter { isHoldSet(it, exercises) }.sumOf { it.durationSec ?: it.reps }
     val totalXp = sessions.sumOf { it.xpAwarded }
 
     SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.SovereignGold) {
@@ -201,9 +216,11 @@ private fun LifetimeLedger(history: List<Pair<WorkoutSession, List<SessionSet>>>
         )
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            LedgerStat("${sessions.size}", "WORKOUTS")
-            LedgerStat("${allSets.size}", "SETS")
-            LedgerStat("%,d".format(totalReps), "REPS")
+            // Counts get explicit plural forms — appending "s" rendered "1 WORKOUTs".
+            LedgerStat("${sessions.size}", plural(sessions.size, "WORKOUT", "WORKOUTS"))
+            LedgerStat("${allSets.size}", plural(allSets.size, "SET", "SETS"))
+            LedgerStat("%,d".format(totalReps), plural(totalReps, "REP", "REPS"))
+            if (totalHeld > 0) LedgerStat("%,d".format(totalHeld), "SEC HELD")
             LedgerStat("%,d".format(totalXp), "XP")
         }
         Spacer(Modifier.height(14.dp))
@@ -255,9 +272,15 @@ private fun LedgerStat(value: String, label: String) {
 }
 
 @Composable
-private fun LogRow(session: WorkoutSession, sets: List<SessionSet>, onClick: () -> Unit) {
+private fun LogRow(
+    session: WorkoutSession,
+    sets: List<SessionSet>,
+    exercises: Map<Long, Exercise>,
+    onClick: () -> Unit,
+) {
     val doneSets = sets.filter { it.done }
-    val totalReps = doneSets.sumOf { it.reps }
+    val totalReps = doneSets.filterNot { isHoldSet(it, exercises) }.sumOf { it.reps }
+    val totalHeld = doneSets.filter { isHoldSet(it, exercises) }.sumOf { it.durationSec ?: it.reps }
     SystemWindow(Modifier.fillMaxWidth(), onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -309,7 +332,8 @@ private fun LogRow(session: WorkoutSession, sets: List<SessionSet>, onClick: () 
             buildString {
                 append(sets.map { it.exerciseId }.distinct().size).append(" exercises")
                 append("  ·  ").append(doneSets.size).append("/").append(sets.size).append(" sets")
-                append("  ·  ").append("%,d".format(totalReps)).append(" reps")
+                if (totalReps > 0) append("  ·  ").append("%,d".format(totalReps)).append(" reps")
+                if (totalHeld > 0) append("  ·  ").append("%,d".format(totalHeld)).append("s held")
             },
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
@@ -356,3 +380,6 @@ private fun ScorePill(value: String, label: String, accent: androidx.compose.ui.
     }
 }
 
+/** A hold's figure is seconds; the catalogue metric decides, name is the fallback. */
+private fun isHoldSet(set: SessionSet, exercises: Map<Long, Exercise>): Boolean =
+    MovementDifficulty.isHoldSet(exercises[set.exerciseId]?.metric, set.exerciseName, set.modifiers)

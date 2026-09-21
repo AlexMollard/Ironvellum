@@ -167,4 +167,83 @@ class MigrationForwardTest {
         }
         db.close()
     }
+
+    /**
+     * Static holds become HOLD at schema 24, and their figure moves from
+     * `reps` to `durationSec`.
+     *
+     * Modelled on the owner's real `Push` session: a hollow hold logged as
+     * 45 and 30 "reps" — seconds typed into the reps box — alongside real
+     * repetitions of a counted movement. Both must come out with the right
+     * figure in the right column, and the counted movement must be untouched.
+     */
+    @Test
+    fun upgradeTo24MovesHoldSecondsOutOfTheRepsColumn() = runTest {
+        helper.createDatabase(dbName, 23).use { old ->
+            old.execSQL(
+                "INSERT INTO exercises (id, name, muscleGroup, isWeighted, metric, category) " +
+                    "VALUES (91, 'Hollow Hold', 'CORE', 0, 'REPS', '')",
+            )
+            old.execSQL(
+                "INSERT INTO exercises (id, name, muscleGroup, isWeighted, metric, category) " +
+                    "VALUES (14, 'Handstand Push-up', 'PUSH', 0, 'REPS', '')",
+            )
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, " +
+                    "xpAwarded, strengthScore, title, note, privateNote) " +
+                    "VALUES (2, NULL, 'Push', 1789782608320, 1789785525853, 330, 610, '', '', '')",
+            )
+            // Seconds in the reps column — the shape every install has today.
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade) " +
+                    "VALUES (29, 2, 91, 3, 0, 45, NULL, 'hold seconds', 1, NULL, NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade) " +
+                    "VALUES (30, 2, 91, 3, 1, 30, NULL, '', 1, NULL, NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade) " +
+                    "VALUES (19, 2, 14, 0, 0, 6, NULL, '', 1, NULL, NULL, NULL)",
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            dbName,
+            MonarchDatabase.VERSION,
+            true,
+            *MonarchDatabase.MIGRATIONS,
+        )
+
+        db.query("SELECT metric FROM exercises WHERE id = 91").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("the hold must be re-metricked", "HOLD", c.getString(0))
+        }
+        db.query("SELECT metric FROM exercises WHERE id = 14").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("a counted movement must be left alone", "REPS", c.getString(0))
+        }
+        db.query("SELECT reps, durationSec, modifiers FROM set_logs WHERE id = 29").use { c ->
+            assertTrue("the hold set must survive", c.moveToFirst())
+            assertEquals("its seconds must leave the reps column", 0, c.getInt(0))
+            assertEquals("its seconds must land in durationSec", 45, c.getInt(1))
+            assertEquals("the legacy modifier is now redundant", "", c.getString(2))
+        }
+        db.query("SELECT reps, durationSec FROM set_logs WHERE id = 30").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(0, c.getInt(0))
+            assertEquals(30, c.getInt(1))
+        }
+        // The counted set is the control: a migration that rewrote every row
+        // would pass every assertion above and still destroy the session.
+        db.query("SELECT reps, durationSec FROM set_logs WHERE id = 19").use { c ->
+            assertTrue("the counted set must survive", c.moveToFirst())
+            assertEquals("its reps must not move", 6, c.getInt(0))
+            assertTrue("it must gain no duration", c.isNull(1))
+        }
+        db.close()
+    }
 }

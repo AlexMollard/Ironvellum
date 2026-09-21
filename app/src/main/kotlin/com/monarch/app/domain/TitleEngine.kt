@@ -483,8 +483,10 @@ object Titles {
         val metricOf: (SessionSet) -> ExerciseMetric =
             { exercises[it.exerciseId]?.metric ?: ExerciseMetric.REPS }
         val categoryOf: (SessionSet) -> String? = { exercises[it.exerciseId]?.category }
-        // An "activity" is anything not measured in reps; reps stay lifting.
-        val activitySets = doneSets.filter { metricOf(it) != ExerciseMetric.REPS }
+        // An "activity" is cardio/sport/climbing. Reps AND static holds are
+        // strength work: bucketing a hold here would count its seconds as
+        // "active minutes" and drop it out of the lifting ledger entirely.
+        val activitySets = doneSets.filterNot { metricOf(it).isStrength }
         val zone = ZoneId.systemDefault()
         val workoutDates = history
             .map {

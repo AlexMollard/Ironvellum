@@ -27,7 +27,9 @@ object ActivityScore {
         addedKg: Double?,
         bodyweightKg: Double,
     ): Int = when (metric) {
-        ExerciseMetric.REPS -> 0
+        // Both are strength work, scored by Xp.award against the movement's
+        // difficulty. Paying here as well would count the same set twice.
+        ExerciseMetric.REPS, ExerciseMetric.HOLD -> 0
         ExerciseMetric.DURATION -> {
             val minutes = (durationSec ?: 0) / 60.0
             // Vest/rope weight counts as effort; cap so 200 kg doesn't dominate.

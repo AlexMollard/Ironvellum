@@ -15,7 +15,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.outlined.IosShare
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -41,10 +43,13 @@ import com.monarch.app.data.Repository
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.Exercise
 import com.monarch.app.domain.Energy
+import com.monarch.app.domain.MovementDifficulty
 import com.monarch.app.domain.EnergyConfidence
 import com.monarch.app.domain.EnergyEstimate
 import com.monarch.app.domain.WorkoutSession
+import com.monarch.app.domain.WorkoutShare
 import com.monarch.app.ui.components.SectionHeader
+import com.monarch.app.ui.components.ShareCardDialog
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
@@ -65,6 +70,8 @@ data class WorkoutDetailUi(
     val loaded: Boolean = false,
     /** Estimated burn for the session; null when nothing can be computed. */
     val energy: EnergyEstimate? = null,
+    /** Catalogue by id, for unit-correct rendering and the share card. */
+    val exercises: Map<Long, Exercise> = emptyMap(),
 )
 
 class WorkoutDetailViewModel(repo: Repository, private val sessionId: Long) : ViewModel() {
@@ -82,11 +89,13 @@ class WorkoutDetailViewModel(repo: Repository, private val sessionId: Long) : Vi
         // clock when the session was completed.
         val minutes = session?.completedAtMs
             ?.let { ((it - session.startedAtMs) / 60_000L).toInt().coerceAtLeast(0) }
+        val byId = exercises.associateBy { it.id }
         WorkoutDetailUi(
             session = session,
             sets = sets,
             loaded = true,
-            energy = session?.let { Energy.sessionKcal(sets, exercises.associateBy { it.id }, bodyKg, minutes) },
+            energy = session?.let { Energy.sessionKcal(sets, byId, bodyKg, minutes) },
+            exercises = byId,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutDetailUi())
 }
@@ -106,6 +115,7 @@ fun WorkoutDetailScreen(
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    var shareText by remember { mutableStateOf<String?>(null) }
 
     Column(
         Modifier
@@ -124,7 +134,23 @@ fun WorkoutDetailScreen(
                 style = MaterialTheme.typography.labelLarge,
                 color = MonarchColors.SystemGreen,
                 letterSpacing = MonarchTracking.ScreenTitle,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                // Weighted so the two actions beside it keep their width on a
+                // narrow phone instead of being pushed off the row.
+                modifier = Modifier.weight(1f),
             )
+            ui.session?.let { session ->
+                IconButton(onClick = {
+                    shareText = WorkoutShare.format(session, ui.sets, ui.exercises)
+                }) {
+                    Icon(
+                        Icons.Outlined.IosShare,
+                        contentDescription = "Share this workout",
+                        tint = MonarchColors.Emerald,
+                    )
+                }
+            }
             Text(
                 "BACK",
                 style = MaterialTheme.typography.labelMedium,
@@ -207,10 +233,14 @@ fun WorkoutDetailScreen(
                         )
                     }
                 }
-                WorkoutSets(sets = ui.sets)
+                WorkoutSets(sets = ui.sets, exercises = ui.exercises)
             }
         }
         Spacer(Modifier.height(96.dp))
+    }
+
+    shareText?.let { text ->
+        ShareCardDialog(text = text, onDismiss = { shareText = null })
     }
 }
 
@@ -303,7 +333,7 @@ private fun energyBasisCopy(energy: EnergyEstimate): String = when (energy.confi
 }
 
 @Composable
-private fun WorkoutSets(sets: List<SessionSet>) {
+private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) {
     SectionHeader("THE WORK")
     // Per-exercise groups in position order, sets in set order within each.
     val groups = sets
@@ -312,11 +342,14 @@ private fun WorkoutSets(sets: List<SessionSet>) {
         .map { (_, groupSets) -> groupSets.sortedBy { it.setIndex } }
     groups.forEach { groupSets ->
         val name = groupSets.firstOrNull()?.exerciseName.orEmpty()
-        val totalReps = groupSets.filter { it.done }.sumOf { it.reps }
-        val volumeKg = groupSets
-            .filter { it.done }
-            .sumOf { set -> (set.weightKg ?: 0.0) * set.reps }
-
+        val hold = groupSets.firstOrNull()?.let { set ->
+            MovementDifficulty.isHoldSet(exercises[set.exerciseId]?.metric, set.exerciseName, set.modifiers)
+        } == true
+        val doneInGroup = groupSets.filter { it.done }
+        // Seconds are seconds. Summing them as reps is what printed
+        // "140 reps" for a session that held two thirds of that figure.
+        val totalReps = if (hold) doneInGroup.sumOf { it.durationSec ?: it.reps } else doneInGroup.sumOf { it.reps }
+        val volumeKg = if (hold) 0.0 else doneInGroup.sumOf { set -> (set.weightKg ?: 0.0) * set.reps }
         SystemWindow(Modifier.fillMaxWidth()) {
             Row(
                 Modifier.fillMaxWidth(),
@@ -333,7 +366,7 @@ private fun WorkoutSets(sets: List<SessionSet>) {
                 )
                 Text(
                     buildString {
-                        append("${totalReps} reps")
+                        append(if (hold) "${totalReps}s held" else "$totalReps reps")
                         if (volumeKg > 0.0) append(" · ${"%.0f".format(volumeKg)} kg vol")
                     },
                     style = MaterialTheme.typography.labelSmall,
@@ -351,7 +384,7 @@ private fun WorkoutSets(sets: List<SessionSet>) {
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                groupSets.forEach { set -> SetChip(set) }
+                groupSets.forEach { set -> SetChip(set, hold) }
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -359,7 +392,7 @@ private fun WorkoutSets(sets: List<SessionSet>) {
 }
 
 @Composable
-private fun SetChip(set: SessionSet) {
+private fun SetChip(set: SessionSet, hold: Boolean) {
     val weight = if (set.weightKg == null || set.weightKg == 0.0) "BW" else "${"%.1f".format(set.weightKg)} kg"
     Column(
         Modifier
@@ -369,7 +402,11 @@ private fun SetChip(set: SessionSet) {
             .padding(horizontal = 10.dp, vertical = 7.dp),
     ) {
         Text(
-            "${set.reps} × $weight",
+            if (hold) {
+                "${set.durationSec ?: set.reps}s" + if (set.weightKg != null && set.weightKg > 0.0) " × $weight" else ""
+            } else {
+                "${set.reps} × $weight"
+            },
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,

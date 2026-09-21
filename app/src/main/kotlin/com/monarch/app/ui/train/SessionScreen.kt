@@ -76,13 +76,16 @@ import com.monarch.app.data.Repository
 import com.monarch.app.data.cloud.CloudSyncWorker
 import com.monarch.app.data.cloud.WireLimits
 import com.monarch.app.domain.Exercise
+import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.SetRecords
 import com.monarch.app.domain.StrengthIndex
 import com.monarch.app.domain.WorkoutSession
+import com.monarch.app.domain.WorkoutShare
 import com.monarch.app.domain.Xp
 import com.monarch.app.ui.components.Achievement
 import com.monarch.app.ui.components.AchievementOverlay
+import com.monarch.app.ui.components.ShareCardDialog
 import com.monarch.app.ui.components.ExercisePickerPanel
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.SystemWindow
@@ -116,8 +119,12 @@ class SessionViewModel(
     val records: StateFlow<Map<Pair<String, Int>, SetRecords.Record>> = combine(
         repo.observeHistory(),
         repo.observeStats().map { SetRecords.bodyweightLookup(it) },
-    ) { history, bodyweightAt ->
-        SetRecords.records(history, bodyweightAt, excludeSessionId = sessionId)
+        repo.observeExercises(),
+    ) { history, bodyweightAt, catalogue ->
+        // Without the metric a hold scores on its (now zero) reps and can
+        // never hold a record.
+        val metrics = catalogue.associate { it.id to it.metric }
+        SetRecords.records(history, bodyweightAt, excludeSessionId = sessionId) { metrics[it.exerciseId] }
     }
     .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
@@ -139,8 +146,15 @@ class SessionViewModel(
         viewModelScope.launch { repo.updateSet(setId, reps, weightKg, done) }
     }
 
-    fun addSet(exerciseId: Long, reps: Int, weightKg: Double?, modifiers: String) {
-        viewModelScope.launch { repo.addExtraSet(sessionId, exerciseId, reps, weightKg, modifiers) }
+    /** A hold's figure is seconds; writing it as reps is the bug this replaces. */
+    fun updateHoldSet(setId: Long, seconds: Int, weightKg: Double?, done: Boolean) {
+        viewModelScope.launch { repo.updateHoldSet(setId, seconds, weightKg, done) }
+    }
+
+    fun addSet(exerciseId: Long, reps: Int, weightKg: Double?, modifiers: String, durationSec: Int? = null) {
+        viewModelScope.launch {
+            repo.addExtraSet(sessionId, exerciseId, reps, weightKg, modifiers, durationSec)
+        }
     }
 
     fun removeSet(setId: Long) {
@@ -151,8 +165,19 @@ class SessionViewModel(
         viewModelScope.launch { repo.setExerciseModifiers(sessionId, exerciseId, modifiers) }
     }
 
-    fun addExercise(exerciseId: Long, name: String) {
-        viewModelScope.launch { repo.addExtraSet(sessionId, exerciseId, 10, null, "") }
+    /**
+     * A movement added mid-session starts at a sane default: ten reps, or a
+     * [DEFAULT_HOLD_SECONDS] hold. Adding a hold with "10 reps" is how the
+     * seconds-as-reps confusion started.
+     */
+    fun addExercise(exerciseId: Long, isHold: Boolean) {
+        viewModelScope.launch {
+            if (isHold) {
+                repo.addExtraSet(sessionId, exerciseId, 0, null, "", DEFAULT_HOLD_SECONDS)
+            } else {
+                repo.addExtraSet(sessionId, exerciseId, 10, null, "")
+            }
+        }
     }
 
     fun moveExercise(exercisePosition: Int, up: Boolean) {
@@ -307,8 +332,15 @@ fun SessionScreen(
             val (exerciseId, sets) = block
             val first = sets.first()
             val doneSets = sets.filter { it.done }
+            val isHoldBlock = exercises.firstOrNull { it.id == exerciseId }?.metric == ExerciseMetric.HOLD
             val groupStrength = bodyweight?.let { bw ->
-                doneSets.sumOf { StrengthIndex.repScore(it.reps, it.weightKg, bw) }.toInt()
+                doneSets.sumOf { set ->
+                    if (isHoldBlock) {
+                        StrengthIndex.holdScore(set.durationSec ?: 0, set.weightKg, bw)
+                    } else {
+                        StrengthIndex.repScore(set.reps, set.weightKg, bw)
+                    }
+                }.toInt()
             }
             Spacer(Modifier.height(14.dp))
             SystemWindow(Modifier.fillMaxWidth()) {
@@ -334,20 +366,17 @@ fun SessionScreen(
                         }
                     }
                     if (groupStrength != null && groupStrength > 0) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Filled.Bolt,
-                                contentDescription = null,
-                                tint = MonarchColors.SovereignGold,
-                                modifier = Modifier.height(16.dp),
-                            )
-                            Text(
-                                "$groupStrength",
-                                style = MaterialTheme.typography.labelLarge,
-                                fontFamily = ChakraPetch,
-                                color = MonarchColors.SovereignGold,
-                            )
-                        }
+                        // Labelled, not a gold bolt beside a bare number: the
+                        // bolt read as XP, which this is not — it is the
+                        // body-scaled strength score for the movement.
+                        Text(
+                            "$groupStrength STR",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontFamily = ChakraPetch,
+                            color = MonarchColors.SovereignGold,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
                     }
                     // Reorder controls: the ends are disabled, not inert, so the
                     // hunter can see the boundary of the ordering.
@@ -366,7 +395,10 @@ fun SessionScreen(
                     IconButton(onClick = { editModifiersFor = exerciseId }) {
                         Icon(Icons.Outlined.Tune, contentDescription = "Edit modifiers", tint = MonarchColors.InkMuted)
                     }
-                    IconButton(onClick = { viewModel.addSet(exerciseId, first.reps, first.weightKg, first.modifiers) }) {
+                    IconButton(onClick = {
+                        val holdSeconds = if (isHoldBlock) (first.durationSec ?: DEFAULT_HOLD_SECONDS) else null
+                        viewModel.addSet(exerciseId, first.reps, first.weightKg, first.modifiers, holdSeconds)
+                    }) {
                         Icon(Icons.Filled.Add, contentDescription = "Add set", tint = MonarchColors.SystemGreen)
                     }
                 }
@@ -377,16 +409,24 @@ fun SessionScreen(
                         setIndex = set.setIndex,
                         records = records,
                         bodyweight = bodyweight,
-                        reps = set.reps,
+                        // A hold's figure is its seconds, not its (zero) reps.
+                        reps = if (isHoldBlock) (set.durationSec ?: 0) else set.reps,
                         weightKg = set.weightKg,
                         done = set.done,
+                        isHold = isHoldBlock,
                         // LOAD and REPS head the columns once. Repeating them on
                         // every row printed the same two words 36 times in an
                         // 18-set session, on top of identical steppers.
                         showColumnLabels = position == 0,
                         // the final set stays: drop the exercise instead of emptying it
                         onRemove = if (sets.size > 1) ({ viewModel.removeSet(set.id) }) else null,
-                        onChange = { r, w, d -> viewModel.updateSet(set.id, r, w, d) },
+                        onChange = { value, w, d ->
+                            if (isHoldBlock) {
+                                viewModel.updateHoldSet(set.id, value, w, d)
+                            } else {
+                                viewModel.updateSet(set.id, value, w, d)
+                            }
+                        },
                     )
                 }
 
@@ -467,7 +507,7 @@ fun SessionScreen(
                 ExercisePickerPanel(
                     exercises = exercises,
                     onPick = { exercise ->
-                        viewModel.addExercise(exercise.id, exercise.name)
+                        viewModel.addExercise(exercise.id, exercise.metric == ExerciseMetric.HOLD)
                         showExercisePicker = false
                     },
                     onDismiss = { showExercisePicker = false },
@@ -479,9 +519,24 @@ fun SessionScreen(
 
     var awards by remember { mutableStateOf<List<Achievement>>(emptyList()) }
 
+    var shareText by remember { mutableStateOf<String?>(null) }
+
     completion?.let { result ->
         VictoryOverlay(
             result = result,
+            onShare = {
+                shareText = WorkoutShare.format(
+                    // The session row in the flow may not have refreshed yet;
+                    // the completion result carries the authoritative figures.
+                    session.copy(
+                        completedAtMs = session.completedAtMs ?: System.currentTimeMillis(),
+                        xpAwarded = result.xpAwarded,
+                        strengthScore = result.strengthScore,
+                    ),
+                    ui.sets,
+                    exercises.associateBy { it.id },
+                )
+            },
             onContinue = {
                 awards = buildList {
                     if (result.levelAfter > result.levelBefore) {
@@ -524,11 +579,16 @@ fun SessionScreen(
     if (awards.isNotEmpty()) {
         AchievementOverlay(items = awards, onDone = { awards = emptyList(); onExit() })
     }
+
+    shareText?.let { text ->
+        ShareCardDialog(text = text, onDismiss = { shareText = null })
+    }
 }
 
 @Composable
 private fun VictoryOverlay(
     result: Repository.CompletionResult,
+    onShare: () -> Unit,
     onContinue: () -> Unit,
 ) {
     val scale = remember { Animatable(0.6f) }
@@ -626,11 +686,19 @@ private fun VictoryOverlay(
                         Spacer(Modifier.height(4.dp))
                     }
                     Spacer(Modifier.height(14.dp))
-                    MonarchButton(
-                        label = "Continue",
-                        onClick = onContinue,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        MonarchButton(
+                            label = "Share",
+                            quiet = true,
+                            onClick = onShare,
+                            modifier = Modifier.weight(1f),
+                        )
+                        MonarchButton(
+                            label = "Continue",
+                            onClick = onContinue,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
                 }
             }
         }
@@ -671,6 +739,8 @@ private fun SetRow(
     reps: Int,
     weightKg: Double?,
     done: Boolean,
+    /** True when [reps] is seconds held: the column counts time, not repetitions. */
+    isHold: Boolean = false,
     showColumnLabels: Boolean = true,
     onRemove: (() -> Unit)? = null,
     onChange: (Int, Double?, Boolean) -> Unit,
@@ -770,7 +840,7 @@ private fun SetRow(
         Column(Modifier.weight(1f)) {
             if (showColumnLabels) {
                 Text(
-                    "REPS",
+                    if (isHold) "SECONDS" else "REPS",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     fontSize = 8.sp,
@@ -779,10 +849,13 @@ private fun SetRow(
                 )
                 Spacer(Modifier.height(2.dp))
             }
+            // A hold steps in 5s: tapping + fifty-nine times to reach a
+            // minute is not an input method.
+            val step = if (isHold) HOLD_STEP_SECONDS else 1
             Stepper(
-                value = reps.toString(),
-                onMinus = { onChange((reps - 1).coerceAtLeast(0), weightKg, done) },
-                onPlus = { onChange(reps + 1, weightKg, done) },
+                value = if (isHold) "${reps}s" else reps.toString(),
+                onMinus = { onChange((reps - step).coerceAtLeast(0), weightKg, done) },
+                onPlus = { onChange(reps + step, weightKg, done) },
                 dimmed = done,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -802,7 +875,7 @@ private fun SetRow(
         // Fixed-height delta line under the steppers: always allocated, so
         // live digit changes never reflow the row mid-set.
         val delta = bodyweight?.let { bw ->
-            SetRecords.delta(records, exerciseName, setIndex, reps, weightKg, bw)
+            SetRecords.delta(records, exerciseName, setIndex, reps, weightKg, bw, isHold = isHold)
         }
         SetDeltaBadge(delta, displaySetNo = setIndex + 1)
     }
@@ -1054,6 +1127,12 @@ private fun fieldColors(accent: Color) = OutlinedTextFieldDefaults.colors(
 )
 
 /** Canonical modifier vocabulary — free text drifted ("defecit" vs "deficit"). */
+/** A hold steps in fives; a minute is twelve taps, not sixty. */
+private const val HOLD_STEP_SECONDS = 5
+
+/** Starting seconds for a hold added mid-session. */
+private const val DEFAULT_HOLD_SECONDS = 30
+
 private val MODIFIER_OPTIONS = listOf(
     "weighted", "assisted", "deficit", "elevated", "incline", "decline",
     "tempo", "paused", "banded", "one-arm", "archer", "hold seconds",

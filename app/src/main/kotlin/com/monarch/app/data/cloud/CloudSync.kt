@@ -195,6 +195,9 @@ class CloudSync(
                                 weightKg = set.weightKg,
                                 modifiers = set.modifiers,
                                 done = set.done,
+                                durationSec = set.durationSec,
+                                distanceM = set.distanceM,
+                                grade = set.grade,
                             ),
                         )
                     }
@@ -701,7 +704,12 @@ class CloudSync(
         session.xpAwarded,
         session.strengthScore,
         sets.map { set ->
-            listOf(set.exerciseName, set.setIndex, set.reps, set.weightKg, set.modifiers, set.done)
+            // Every field the push uploads must be here, or an edit that only
+            // changes a hold's seconds matches the watermark and never syncs.
+            listOf(
+                set.exerciseName, set.setIndex, set.reps, set.weightKg, set.modifiers, set.done,
+                set.durationSec, set.distanceM, set.grade,
+            )
         },
     )
 }

@@ -42,6 +42,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.Repository
+import com.monarch.app.domain.MovementDifficulty
 import com.monarch.app.domain.WorkoutPreset
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.MonarchButton
@@ -130,7 +131,7 @@ fun PresetsScreen(
             // now quiet links below it.
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 QuietNavLink(
@@ -190,7 +191,9 @@ fun PresetsScreen(
                                 }
                             }
                             Text(
-                                "${entry.targetSets}×${entry.targetReps}" + (entry.targetWeightKg?.let { "  @${formatKg(it)}" } ?: ""),
+                                "${entry.targetSets}×${entry.targetReps}" +
+                                    (if (MovementDifficulty.isHoldByName(entry.exerciseName)) "s" else "") +
+                                    (entry.targetWeightKg?.let { "  @${formatKg(it)}" } ?: ""),
                                 style = MaterialTheme.typography.labelLarge,
                                 fontFamily = ChakraPetch,
                                 color = MonarchColors.InkMuted,
@@ -284,7 +287,9 @@ fun PresetsScreen(
                             Text(
                                 formatDate(session.startedAtMs) + " · " +
                                     sets.count { it.done } + "/" + sets.size + " sets · " +
-                                    sets.filter { it.done }.sumOf { it.reps } + " reps",
+                                    sets.filter { it.done }.sumOf { it.reps } + " reps" +
+                                    sets.filter { it.done }.sumOf { it.durationSec ?: 0 }
+                                        .let { held -> if (held > 0) " · ${held}s held" else "" },
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -309,31 +314,40 @@ private const val ACTIVITY_LOG_ROWS = 6
  */
 private const val PRESET_CARD_MOVEMENTS = 3
 
-/** Quiet text+icon navigation link in the Court inline-label idiom; 48dp+ tap target. */
+/**
+ * Bounded text+icon navigation chip; 48dp+ tap target.
+ *
+ * These were styled as bare InkMuted captions with `indication = null`, which
+ * stripped all three affordance signals at once — contrast, boundary and press
+ * feedback — and the owner reported he could not find them. InkMuted is this
+ * app's NON-interactive colour (chart captions, metric hints); every tappable
+ * text elsewhere — DETAIL ›, BACK, the calendar arrows — is SystemGreen. They
+ * stay quieter than Quick Session by being outlined rather than filled.
+ */
 @Composable
 private fun QuietNavLink(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
     Row(
         modifier
             .heightIn(min = 48.dp)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-            ) { onClick() },
+            .clip(MaterialTheme.shapes.extraSmall)
+            .inkBorder(MonarchColors.SystemGreen.copy(alpha = 0.55f), MaterialTheme.shapes.extraSmall)
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         Icon(
             icon,
             contentDescription = null,
-            tint = MonarchColors.InkMuted,
-            modifier = Modifier.size(14.dp),
+            tint = MonarchColors.SystemGreen,
+            modifier = Modifier.size(16.dp),
         )
         Spacer(Modifier.width(8.dp))
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
-            color = MonarchColors.InkMuted,
+            color = MonarchColors.SystemGreen,
             letterSpacing = MonarchTracking.InlineLabel,
         )
     }

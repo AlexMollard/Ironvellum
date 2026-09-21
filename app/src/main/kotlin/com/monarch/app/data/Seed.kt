@@ -3,6 +3,7 @@ package com.monarch.app.data
 import com.monarch.app.data.db.ExerciseEntity
 import com.monarch.app.domain.MuscleGroup
 import com.monarch.app.domain.ExerciseMetric
+import com.monarch.app.domain.MovementDifficulty
 import com.monarch.app.domain.Skills
 
 /** Static catalog and preset seeds; runs once on an empty database. */
@@ -134,17 +135,32 @@ object Seed {
     val exercises: List<ExerciseEntity>
         get() = allExercises
 
-    private val allExercises: List<ExerciseEntity> = baseExercises +
-        Skills.ALL
-            .filterNot { skill -> baseExercises.any { it.name == skill.name } }
-            .map { skill ->
-                ExerciseEntity(
-                    name = skill.name,
-                    muscleGroup = skillGroup(skill).name,
-                    isWeighted = skill.name.contains("Weighted"),
-                )
-            } +
-        activities
+    /**
+     * Static holds carry [ExerciseMetric.HOLD] so their figure is seconds in
+     * `durationSec`, never repetitions. The skill tree's claim standard is the
+     * source of truth for tree movements; [MovementDifficulty] adds the
+     * catalogue-only ones. Stamped here rather than written out per row so a
+     * new hold cannot be added without its metric.
+     */
+    private fun withMetric(entity: ExerciseEntity): ExerciseEntity =
+        if (entity.metric == ExerciseMetric.REPS.name && MovementDifficulty.isHoldByName(entity.name)) {
+            entity.copy(metric = ExerciseMetric.HOLD.name)
+        } else {
+            entity
+        }
+
+    private val allExercises: List<ExerciseEntity> = (
+        baseExercises +
+            Skills.ALL
+                .filterNot { skill -> baseExercises.any { it.name == skill.name } }
+                .map { skill ->
+                    ExerciseEntity(
+                        name = skill.name,
+                        muscleGroup = skillGroup(skill).name,
+                        isWeighted = skill.name.contains("Weighted"),
+                    )
+                }
+        ).map(::withMetric) + activities
 
     data class SeedEntry(
         val exercise: String,
@@ -171,7 +187,7 @@ object Seed {
                 SeedEntry("Pull-up", 5, 5, 10.0, "weighted"),
                 SeedEntry("Chin-up", 4, 5, 10.0, "weighted"),
                 SeedEntry("Door Sheet Row", 4, 10),
-                SeedEntry("Active Bar Hang", 3, 30, null, "hold seconds"),
+                SeedEntry("Active Bar Hang", 3, 30),
                 SeedEntry("Ab Wheel Rollout", 3, 10),
                 SeedEntry("Wrist Curl", 3, 15, 10.0, "weighted"),
             ),
@@ -196,7 +212,7 @@ object Seed {
                 SeedEntry("Pull-up", 5, 10),
                 SeedEntry("Chin-up", 4, 10),
                 SeedEntry("Door Sheet Row", 4, 15),
-                SeedEntry("Active Bar Hang", 3, 20, null, "hold seconds"),
+                SeedEntry("Active Bar Hang", 3, 20),
                 SeedEntry("Inverted Row", 3, 15),
             ),
         ),

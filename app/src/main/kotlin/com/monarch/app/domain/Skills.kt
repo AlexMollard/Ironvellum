@@ -23,13 +23,23 @@ object Skills {
         /** Skills are milestones, not sets: reward scales hard with tier. */
         val xp: Int get() = tier * 120
 
-        /** Holds are timed, everything else is counted — inferred once, here. */
+        /**
+         * Holds are timed, everything else is counted — inferred once, here.
+         *
+         * A standard is timed when it opens with Hold/Hang, or when its FIRST
+         * figure carries a seconds suffix. Matching any "\ds" anywhere read
+         * "5 single-arm negatives per side, each 5s to full hang" as a hold,
+         * which asked for seconds in the journal and — once XP started reading
+         * this — would have divided a rep count by the hold conversion.
+         */
         val metric: Metric
             get() = when {
                 standard.contains("metre", ignoreCase = true) -> Metric.METRES
-                Regex("\\d+\\s*s\\b").containsMatchIn(standard) ||
-                    standard.startsWith("Hold", ignoreCase = true) ||
+                standard.startsWith("Hold", ignoreCase = true) ||
                     standard.startsWith("Hang", ignoreCase = true) -> Metric.SECONDS
+                Regex("\\d+").find(standard)?.range?.first
+                    ?.let { it == Regex("\\d+\\s*s\\b").find(standard)?.range?.first } == true ->
+                    Metric.SECONDS
                 else -> Metric.REPS
             }
 

@@ -150,7 +150,8 @@ interface SessionDao {
     /** Every logged set for one movement, joined with its session timestamp, newest first. */
     @Query(
         "SELECT s.sessionId AS sessionId, x.startedAtMs AS atMs, s.setIndex AS setIndex, " +
-            "s.reps AS reps, s.weightKg AS weightKg, s.modifiers AS modifiers, s.done AS done " +
+            "s.reps AS reps, s.weightKg AS weightKg, s.modifiers AS modifiers, s.done AS done, " +
+            "s.durationSec AS durationSec " +
             "FROM set_logs s JOIN sessions x ON s.sessionId = x.id " +
             "WHERE s.exerciseId = :exerciseId ORDER BY x.startedAtMs DESC, s.setIndex ASC",
     )
@@ -163,7 +164,7 @@ interface SessionDao {
             "s.durationSec AS durationSec, s.distanceM AS distanceM, s.grade AS grade " +
             "FROM set_logs s JOIN exercises e ON s.exerciseId = e.id " +
             "JOIN sessions x ON s.sessionId = x.id " +
-            "WHERE s.done = 1 AND x.completedAtMs IS NOT NULL AND e.metric != 'REPS' " +
+            "WHERE s.done = 1 AND x.completedAtMs IS NOT NULL AND e.metric NOT IN ('REPS', 'HOLD') " +
             "ORDER BY x.startedAtMs DESC",
     )
     suspend fun completedActivitySets(): List<ActivitySetRow>
