@@ -234,6 +234,11 @@ class WireNamesMatchSchemaTest {
             lengthCeiling("note"),
             WireLimits.SESSION_NOTE_MAX,
         )
+        assertEquals(
+            "session_sets.grade ceiling drifted from WireLimits",
+            lengthCeiling("grade"),
+            WireLimits.GRADE_MAX,
+        )
         val (low, high) = betweenBounds("display_name")
         assertEquals("profiles.display_name minimum drifted", low, WireLimits.DISPLAY_NAME_MIN)
         assertEquals("profiles.display_name maximum drifted", high, WireLimits.DISPLAY_NAME_MAX)

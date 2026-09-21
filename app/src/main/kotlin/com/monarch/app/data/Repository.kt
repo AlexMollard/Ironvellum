@@ -482,6 +482,36 @@ class Repository(
     }
 
     /**
+     * Edits an activity set: attempts, duration, distance and climbing grade.
+     *
+     * Separate from [updateSet] for the reason its comment gives — that one
+     * must never touch these columns. Here the caller is metric-aware and
+     * hands back the whole shape, including the fields its own metric does
+     * not use, so nothing is silently nulled by an edit to a neighbour.
+     */
+    suspend fun updateActivitySet(
+        setId: Long,
+        reps: Int,
+        durationSec: Int?,
+        distanceM: Double?,
+        grade: String?,
+        weightKg: Double?,
+        done: Boolean,
+    ) {
+        val current = sessionDao.setById(setId) ?: return
+        sessionDao.updateSet(
+            current.copy(
+                reps = reps.coerceAtLeast(0),
+                durationSec = durationSec?.coerceAtLeast(0),
+                distanceM = distanceM?.coerceAtLeast(0.0),
+                grade = grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
+                weightKg = weightKg,
+                done = done,
+            ),
+        )
+    }
+
+    /**
      * Also the "add a movement mid-session" path. The read of the existing rows
      * and the insert share one transaction: computing setIndex from a separate
      * read let two quick taps mint the same index and break the "Set N" labels.

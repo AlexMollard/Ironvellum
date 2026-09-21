@@ -90,6 +90,7 @@ import com.monarch.app.ui.components.ShareCardDialog
 import com.monarch.app.ui.components.ExercisePickerPanel
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.SystemWindow
+import com.monarch.app.ui.components.formatBodyValue
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.launchGuarded
 import com.monarch.app.ui.monarchRepository
@@ -150,6 +151,24 @@ class SessionViewModel(
     /** A hold's figure is seconds; writing it as reps is the bug this replaces. */
     fun updateHoldSet(setId: Long, seconds: Int, weightKg: Double?, done: Boolean) {
         viewModelScope.launch { repo.updateHoldSet(setId, seconds, weightKg, done) }
+    }
+
+    /**
+     * One route for every activity edit. The caller hands back the set's whole
+     * shape — including the fields its metric does not edit — because the
+     * repository writes all columns together and a null here would erase a
+     * duration, distance or grade a neighbouring stepper did not touch.
+     */
+    fun updateActivitySet(
+        setId: Long,
+        reps: Int,
+        durationSec: Int?,
+        distanceM: Double?,
+        grade: String?,
+        weightKg: Double?,
+        done: Boolean,
+    ) {
+        viewModelScope.launch { repo.updateActivitySet(setId, reps, durationSec, distanceM, grade, weightKg, done) }
     }
 
     fun addSet(exerciseId: Long, reps: Int, weightKg: Double?, modifiers: String, durationSec: Int? = null) {
@@ -401,8 +420,16 @@ fun SessionScreen(
                         Icon(Icons.Outlined.Tune, contentDescription = "Edit modifiers", tint = MonarchColors.InkMuted)
                     }
                     IconButton(onClick = {
-                        val holdSeconds = if (isHoldBlock) (first.durationSec ?: DEFAULT_HOLD_SECONDS) else null
-                        viewModel.addSet(exerciseId, first.reps, first.weightKg, first.modifiers, holdSeconds)
+                        // A duplicate carries the block's own figure: a hold's
+                        // seconds, an activity's duration — a copy of a Yoga set
+                        // starting at "10 reps" repeats the seconds-as-reps bug.
+                        val copySeconds =
+                            when {
+                                isHoldBlock -> first.durationSec ?: DEFAULT_HOLD_SECONDS
+                                blockMetric == ExerciseMetric.DURATION || blockMetric == ExerciseMetric.DISTANCE_TIME -> first.durationSec
+                                else -> null
+                            }
+                        viewModel.addSet(exerciseId, first.reps, first.weightKg, first.modifiers, copySeconds)
                     }) {
                         Icon(Icons.Filled.Add, contentDescription = "Add set", tint = MonarchColors.SystemGreen)
                     }
@@ -419,6 +446,13 @@ fun SessionScreen(
                         weightKg = set.weightKg,
                         done = set.done,
                         isHold = isHoldBlock,
+                        metric = blockMetric,
+                        // Weighted Skipping keeps its LOAD column on DURATION;
+                        // Running and Bouldering never show one.
+                        isWeighted = exercises.firstOrNull { it.id == exerciseId }?.isWeighted ?: false,
+                        durationSec = set.durationSec,
+                        distanceM = set.distanceM,
+                        grade = set.grade.orEmpty(),
                         scoresStrength = blockMetric.isStrength,
                         // LOAD and REPS head the columns once. Repeating them on
                         // every row printed the same two words 36 times in an
@@ -432,6 +466,12 @@ fun SessionScreen(
                             } else {
                                 viewModel.updateSet(set.id, value, w, d)
                             }
+                        },
+                        // The activity route writes every column; each caller
+                        // passes the set's CURRENT values for fields its metric
+                        // does not own, so no edit erases a neighbour's figure.
+                        onActivityChange = { reps, durationSec, distanceM, grade, w, d ->
+                            viewModel.updateActivitySet(set.id, reps, durationSec, distanceM, grade, w, d)
                         },
                     )
                 }
@@ -747,6 +787,13 @@ private fun SetRow(
     done: Boolean,
     /** True when [reps] is seconds held: the column counts time, not repetitions. */
     isHold: Boolean = false,
+    /** Which columns this row renders; REPS is the lifting default. */
+    metric: ExerciseMetric = ExerciseMetric.REPS,
+    /** Weighted DURATION work (Weighted Skipping) keeps its LOAD column. */
+    isWeighted: Boolean = false,
+    durationSec: Int? = null,
+    distanceM: Double? = null,
+    grade: String = "",
     /**
      * False for activity work. Records exclude it, so without this the badge
      * read "NEW PR" on every climbing set forever: no stored record means
@@ -756,6 +803,13 @@ private fun SetRow(
     showColumnLabels: Boolean = true,
     onRemove: (() -> Unit)? = null,
     onChange: (Int, Double?, Boolean) -> Unit,
+    /**
+     * The activity route: writes the whole set shape. Every caller passes the
+     * set's CURRENT values for the fields its metric does not edit — a null
+     * for an unowned field is what used to erase a duration on a checkbox tick.
+     */
+    onActivityChange: (reps: Int, durationSec: Int?, distanceM: Double?, grade: String?, weightKg: Double?, done: Boolean) -> Unit =
+        { _, _, _, _, _, _ -> },
 ) {
     // The controls are one row; the PR delta is a line UNDER them. It used to be
     // a sibling inside the row calling fillMaxWidth(), which ate the whole width
@@ -794,7 +848,17 @@ private fun SetRow(
                 .toggleable(
                     value = done,
                     role = Role.Checkbox,
-                    onValueChange = { onChange(reps, weightKg, it) },
+                    // The tick passes the set's CURRENT duration, distance,
+                    // grade and load straight back through: this line is the
+                    // whole fix for the historical bug where ticking done
+                    // rewrote the row and wiped an activity's seconds.
+                    onValueChange = {
+                        if (metric.isStrength) {
+                            onChange(reps, weightKg, it)
+                        } else {
+                            onActivityChange(reps, durationSec, distanceM, grade, weightKg, it)
+                        }
+                    },
                 ),
             contentAlignment = Alignment.Center,
         ) {
@@ -829,48 +893,131 @@ private fun SetRow(
             color = MonarchColors.SystemGreen,
             modifier = Modifier.padding(end = 2.dp),
         )
-        Column(Modifier.weight(1f)) {
-            if (showColumnLabels) {
-                Text(
-                    "LOAD",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    fontSize = 8.sp,
-                    letterSpacing = 1.sp,
-                    color = MonarchColors.InkMuted,
+        if (metric.isStrength) {
+            Column(Modifier.weight(1f)) {
+                if (showColumnLabels) ColumnLabel("LOAD")
+                Stepper(
+                    value = formatKg(weightKg),
+                    onMinus = { onChange(reps, stepDownKg(weightKg), done) },
+                    onPlus = { onChange(reps, stepUpKg(weightKg), done) },
+                    dimmed = done,
+                    modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(2.dp))
             }
-            Stepper(
-                value = formatKg(weightKg),
-                onMinus = { onChange(reps, stepDownKg(weightKg), done) },
-                onPlus = { onChange(reps, stepUpKg(weightKg), done) },
-                dimmed = done,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        Column(Modifier.weight(1f)) {
-            if (showColumnLabels) {
-                Text(
-                    if (isHold) "SECONDS" else "REPS",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    fontSize = 8.sp,
-                    letterSpacing = 1.sp,
-                    color = MonarchColors.InkMuted,
+            Column(Modifier.weight(1f)) {
+                if (showColumnLabels) ColumnLabel(if (isHold) "SECONDS" else "REPS")
+                // A hold steps in 5s: tapping + fifty-nine times to reach a
+                // minute is not an input method.
+                val step = if (isHold) HOLD_STEP_SECONDS else 1
+                Stepper(
+                    value = if (isHold) "${reps}s" else reps.toString(),
+                    onMinus = { onChange((reps - step).coerceAtLeast(0), weightKg, done) },
+                    onPlus = { onChange(reps + step, weightKg, done) },
+                    dimmed = done,
+                    modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(2.dp))
             }
-            // A hold steps in 5s: tapping + fifty-nine times to reach a
-            // minute is not an input method.
-            val step = if (isHold) HOLD_STEP_SECONDS else 1
-            Stepper(
-                value = if (isHold) "${reps}s" else reps.toString(),
-                onMinus = { onChange((reps - step).coerceAtLeast(0), weightKg, done) },
-                onPlus = { onChange(reps + step, weightKg, done) },
-                dimmed = done,
-                modifier = Modifier.fillMaxWidth(),
-            )
+        } else when (metric) {
+            ExerciseMetric.DURATION -> {
+                // ActivityScore pays a load bonus here, so Weighted Skipping
+                // keeps its LOAD column; plain Yoga does not.
+                if (isWeighted) {
+                    Column(Modifier.weight(1f)) {
+                        if (showColumnLabels) ColumnLabel("LOAD")
+                        Stepper(
+                            value = formatKg(weightKg),
+                            onMinus = { onActivityChange(reps, durationSec, distanceM, grade, stepDownKg(weightKg), done) },
+                            onPlus = { onActivityChange(reps, durationSec, distanceM, grade, stepUpKg(weightKg), done) },
+                            dimmed = done,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                }
+                Column(Modifier.weight(1f)) {
+                    if (showColumnLabels) ColumnLabel("MINUTES")
+                    val minutes = (durationSec ?: 0) / 60
+                    Stepper(
+                        value = minutes.toString(),
+                        onMinus = {
+                            onActivityChange(reps, (minutes - DURATION_STEP_MINUTES).coerceAtLeast(0) * 60, distanceM, grade, weightKg, done)
+                        },
+                        onPlus = {
+                            onActivityChange(reps, (minutes + DURATION_STEP_MINUTES) * 60, distanceM, grade, weightKg, done)
+                        },
+                        dimmed = done,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            ExerciseMetric.DISTANCE_TIME -> {
+                // ActivityScore ignores weight for this metric, so there is no
+                // LOAD column to sit there dead.
+                Column(Modifier.weight(1f)) {
+                    if (showColumnLabels) ColumnLabel("KM")
+                    val km = (distanceM ?: 0.0) / 1000.0
+                    Stepper(
+                        value = formatBodyValue(km),
+                        onMinus = {
+                            onActivityChange(reps, durationSec, ((km - DISTANCE_STEP_KM).coerceAtLeast(0.0)) * 1000.0, grade, weightKg, done)
+                        },
+                        onPlus = {
+                            onActivityChange(reps, durationSec, (km + DISTANCE_STEP_KM) * 1000.0, grade, weightKg, done)
+                        },
+                        dimmed = done,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                Column(Modifier.weight(1f)) {
+                    if (showColumnLabels) ColumnLabel("MINUTES")
+                    val minutes = (durationSec ?: 0) / 60
+                    Stepper(
+                        value = minutes.toString(),
+                        onMinus = {
+                            onActivityChange(reps, (minutes - DURATION_STEP_MINUTES).coerceAtLeast(0) * 60, distanceM, grade, weightKg, done)
+                        },
+                        onPlus = {
+                            onActivityChange(reps, (minutes + DURATION_STEP_MINUTES) * 60, distanceM, grade, weightKg, done)
+                        },
+                        dimmed = done,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            ExerciseMetric.ATTEMPTS_GRADE -> {
+                // The attempt count rides the reps column (as ActivityScore
+                // reads it), but calling that column REPS invited typing a
+                // lift's numbers into a bouldering problem.
+                Column(Modifier.weight(1f)) {
+                    if (showColumnLabels) ColumnLabel("ATTEMPTS")
+                    Stepper(
+                        value = reps.toString(),
+                        onMinus = { onActivityChange((reps - 1).coerceAtLeast(0), durationSec, distanceM, grade, weightKg, done) },
+                        onPlus = { onActivityChange(reps + 1, durationSec, distanceM, grade, weightKg, done) },
+                        dimmed = done,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                Column(Modifier.weight(1f)) {
+                    if (showColumnLabels) ColumnLabel("GRADE")
+                    // Capped at the server's ceiling here so a long entry
+                    // cannot be typed at all, not truncated after the fact.
+                    OutlinedTextField(
+                        shape = MaterialTheme.shapes.small,
+                        value = grade,
+                        onValueChange = { onActivityChange(reps, durationSec, distanceM, it.take(WireLimits.GRADE_MAX), weightKg, done) },
+                        singleLine = true,
+                        placeholder = { Text("V5", style = MaterialTheme.typography.labelSmall, color = MonarchColors.InkMuted) },
+                        textStyle = MaterialTheme.typography.labelLarge.copy(
+                            fontFamily = ChakraPetch,
+                            fontWeight = FontWeight.Bold,
+                            color = MonarchColors.Ink,
+                        ),
+                        colors = fieldColors(accent = MonarchColors.SystemGreen),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            }
+            ExerciseMetric.REPS, ExerciseMetric.HOLD -> {}
         }
             onRemove?.let { remove ->
                 Text(
@@ -891,6 +1038,20 @@ private fun SetRow(
         }
         SetDeltaBadge(delta, displaySetNo = setIndex + 1)
     }
+}
+
+/** Shared 8sp column heading for the activity stepper columns. */
+@Composable
+private fun ColumnLabel(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = ChakraPetch,
+        fontSize = 8.sp,
+        letterSpacing = 1.sp,
+        color = MonarchColors.InkMuted,
+    )
+    Spacer(Modifier.height(2.dp))
 }
 
 /** Glanceable per-set-position PR readout. Copy is deliberately telegraphic. */
@@ -1141,6 +1302,14 @@ private fun fieldColors(accent: Color) = OutlinedTextFieldDefaults.colors(
 /** Canonical modifier vocabulary — free text drifted ("defecit" vs "deficit"). */
 /** A hold steps in fives; a minute is twelve taps, not sixty. */
 private const val HOLD_STEP_SECONDS = 5
+
+/** Duration work steps in 5-minute bites — tapping to a Boxing round one
+ *  minute at a time is the same trap the hold step fixed. */
+private const val DURATION_STEP_MINUTES = 5
+
+/** Distance steps in half-kilometres: coarse enough to be usable, fine
+ *  enough to record a real run. */
+private const val DISTANCE_STEP_KM = 0.5
 
 /** Starting seconds for a hold added mid-session. */
 private const val DEFAULT_HOLD_SECONDS = 30

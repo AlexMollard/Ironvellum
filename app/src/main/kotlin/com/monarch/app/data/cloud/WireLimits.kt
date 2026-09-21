@@ -25,6 +25,14 @@ object WireLimits {
     const val SESSION_NOTE_MAX = 500
 
     /**
+     * `session_sets.grade`: `grade is null or char_length(grade) <= 12`.
+     * Free text on purpose — V4, 6C+ and 5.11a disagree — so the only bound
+     * is length, and the client must respect it or a single long grade makes
+     * that hunter's push fail forever inside `runCatching`.
+     */
+    const val GRADE_MAX = 12
+
+    /**
      * The private note never leaves the device, so no SQL `check` bounds it —
      * which is why it was the only text field with no cap. It is a training
      * journal rather than a caption, so the ceiling is generous; it exists so
