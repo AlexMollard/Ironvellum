@@ -54,6 +54,7 @@ import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
 import kotlinx.coroutines.flow.SharingStarted
+import com.monarch.app.ui.components.NavChip
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -134,13 +135,13 @@ fun PresetsScreen(
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                QuietNavLink(
+                NavChip(
                     label = "EXPLORER",
                     icon = Icons.Outlined.FitnessCenter,
                     onClick = onOpenExercises,
                     modifier = Modifier.weight(1f),
                 )
-                QuietNavLink(
+                NavChip(
                     label = "FULL LOG",
                     icon = Icons.Outlined.History,
                     onClick = onOpenLog,
@@ -266,7 +267,10 @@ fun PresetsScreen(
                 }
             }
 
-            SectionHeader("Activity Log")
+            // Was "Activity Log", which collided head-on with the Stats
+            // screen's ACTIVITY tab (steps and sleep) - the owner kept going
+            // there hunting for his workouts.
+            SectionHeader("Recent Workouts")
             if (ui.history.isEmpty()) {
                 Text(
                     "No completed campaigns yet.",
@@ -314,41 +318,3 @@ private const val ACTIVITY_LOG_ROWS = 6
  */
 private const val PRESET_CARD_MOVEMENTS = 3
 
-/**
- * Bounded text+icon navigation chip; 48dp+ tap target.
- *
- * These were styled as bare InkMuted captions with `indication = null`, which
- * stripped all three affordance signals at once — contrast, boundary and press
- * feedback — and the owner reported he could not find them. InkMuted is this
- * app's NON-interactive colour (chart captions, metric hints); every tappable
- * text elsewhere — DETAIL ›, BACK, the calendar arrows — is SystemGreen. They
- * stay quieter than Quick Session by being outlined rather than filled.
- */
-@Composable
-private fun QuietNavLink(label: String, icon: androidx.compose.ui.graphics.vector.ImageVector, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    Row(
-        modifier
-            .heightIn(min = 48.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
-            .inkBorder(MonarchColors.SystemGreen.copy(alpha = 0.55f), MaterialTheme.shapes.extraSmall)
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
-    ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = MonarchColors.SystemGreen,
-            modifier = Modifier.size(16.dp),
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = MonarchColors.SystemGreen,
-            letterSpacing = MonarchTracking.InlineLabel,
-        )
-    }
-}

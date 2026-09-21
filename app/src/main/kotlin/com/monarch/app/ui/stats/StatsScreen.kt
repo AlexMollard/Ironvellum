@@ -52,6 +52,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewModelScope
 import com.monarch.app.ui.components.SectionHeader
+import com.monarch.app.ui.components.NavChip
+import androidx.compose.material.icons.outlined.History
 import com.monarch.app.ui.components.InkSegmented
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.TrendChart
@@ -182,13 +184,19 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
     }
 }
 
-private enum class StatsTab(val label: String) { BODY("BODY"), TRAINING("TRAINING"), ACTIVITY("ACTIVITY") }
+/**
+ * DAILY, not ACTIVITY: the Train screen's workout history was called the
+ * "Activity Log", so one word named both a step count and a training record
+ * and the owner kept opening this tab looking for his workouts.
+ */
+private enum class StatsTab(val label: String) { BODY("BODY"), TRAINING("TRAINING"), DAILY("DAILY") }
 
 @Composable
 fun StatsScreen(
     // No default: a defaulted no-op lets a forgotten nav wiring compile clean,
     // which is how five screens ended up unreachable earlier.
     onOpenMeasurement: (MeasurementSite) -> Unit,
+    onOpenLog: () -> Unit,
     viewModel: StatsViewModel =
         viewModel(factory = viewModelFactory { initializer { StatsViewModel(monarchRepository()) } }),
 ) {
@@ -406,6 +414,16 @@ fun StatsScreen(
                     .padding(horizontal = 16.dp),
             ) {
                 Spacer(Modifier.height(16.dp))
+                // The owner's instinct is that his workout history lives under
+                // Stats. It lives under Train, so put the door here too rather
+                // than expect him to re-learn the map.
+                NavChip(
+                    label = "FULL WORKOUT LOG",
+                    icon = Icons.Outlined.History,
+                    onClick = onOpenLog,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(4.dp))
                 // Nothing logged yet: one line, not three cards each explaining
                 // in its own words that it has no data. The third card here was
                 // an UNLABELLED chart of per-campaign XP - the same numbers the
@@ -993,7 +1011,7 @@ private fun ActivityTab(
         Spacer(Modifier.height(16.dp))
         if (days.isEmpty()) {
             SystemWindow(Modifier.fillMaxWidth()) {
-                MetricLabel("ACTIVITY")
+                MetricLabel("DAILY")
                 Spacer(Modifier.height(6.dp))
                 Text(
                     "No activity synced yet — connect Health Connect in System.",

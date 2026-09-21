@@ -348,7 +348,7 @@ class AccessibilityChecksTest {
             listOf("Codex", "JOURNAL"),
             listOf("Stats", "DETAIL"),
             listOf("Stats", "TRAINING"),
-            listOf("Stats", "ACTIVITY"),
+            listOf("Stats", "DAILY"),
             listOf("Train", "EXPLORER"),
             listOf("Train", "FULL LOG"),
             // Two levels down, and the densest screens in the app: the skill
@@ -369,7 +369,7 @@ class AccessibilityChecksTest {
         /** destination to the tab labels of one row inside it. */
         val TAB_ROWS = listOf(
             "Codex" to listOf("DEEDS", "SKILL TREE", "JOURNAL"),
-            "Stats" to listOf("BODY", "TRAINING", "ACTIVITY"),
+            "Stats" to listOf("BODY", "TRAINING", "DAILY"),
         )
         const val FRAME_BUDGET_MS = 1_200L
         const val MIN_TARGET_DP = 48f

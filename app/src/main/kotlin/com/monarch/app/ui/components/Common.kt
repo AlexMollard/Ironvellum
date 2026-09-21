@@ -27,6 +27,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.MaterialTheme
@@ -449,6 +451,53 @@ fun formatBodyValue(value: Double): String = String.format(Locale.US, "%.1f", va
  * own log header read "1 WORKOUTS".
  */
 fun plural(count: Int, one: String, many: String): String = if (count == 1) one else many
+
+/**
+ * Bounded text+icon navigation chip; 48dp+ tap target.
+ *
+ * Shared because the Train screen and the Stats TRAINING tab both route to the
+ * workout log, and the owner kept looking for it on the wrong screen.
+ *
+ * These started as bare InkMuted captions with `indication = null`, which
+ * stripped all three affordance signals at once - contrast, boundary and press
+ * feedback - and the owner reported he could not find them. InkMuted is this
+ * app's NON-interactive colour (chart captions, metric hints); every tappable
+ * text elsewhere - DETAIL, BACK, the calendar arrows - is SystemGreen. The chip
+ * stays quieter than a MonarchButton by being outlined rather than filled.
+ */
+@Composable
+fun NavChip(
+    label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier
+            .heightIn(min = 48.dp)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .inkBorder(MonarchColors.SystemGreen.copy(alpha = 0.55f), MaterialTheme.shapes.extraSmall)
+            .clickable { onClick() }
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MonarchColors.SystemGreen,
+            modifier = Modifier.size(16.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.SystemGreen,
+            letterSpacing = MonarchTracking.InlineLabel,
+        )
+    }
+}
 
 /**
  * Busy indicator drawn as a brushed arc instead of Material's perfect ring.

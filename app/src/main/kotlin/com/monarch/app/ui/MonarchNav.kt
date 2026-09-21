@@ -312,6 +312,7 @@ fun MonarchRoot() {
                 composable(Routes.STATS) {
                     StatsScreen(
                         onOpenMeasurement = { site -> navController.navigate(Routes.measurement(site)) },
+                        onOpenLog = { navController.navigate(Routes.WORKOUT_LOG) },
                     )
                 }
                 composable(Routes.TITLES) { TitlesScreen() }
