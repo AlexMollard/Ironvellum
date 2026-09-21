@@ -120,6 +120,13 @@ interface SessionDao {
     @Query("DELETE FROM sessions WHERE id = :id AND completedAtMs IS NULL")
     suspend fun deleteAbandoned(id: Long)
 
+    /** A completed workout, removed from the chronicle by its owner. */
+    @Query("DELETE FROM sessions WHERE id = :id AND completedAtMs IS NOT NULL")
+    suspend fun deleteCompleted(id: Long)
+    /** set_logs has no FK cascade - the delete removes them explicitly. */
+    @Query("DELETE FROM set_logs WHERE sessionId = :id")
+    suspend fun deleteSetsFor(id: Long)
+
     @Query(
         "SELECT s.* FROM set_logs s JOIN sessions x ON s.sessionId = x.id " +
             "WHERE s.exerciseId = :exerciseId AND s.done = 1 AND x.completedAtMs IS NOT NULL " +
@@ -329,6 +336,10 @@ interface SyncStateDao {
     /** Drops watermarks for sessions that no longer exist locally. */
     @Query("DELETE FROM sync_state WHERE sessionId NOT IN (:keep)")
     suspend fun pruneExcept(keep: List<Long>)
+
+    /** The deleted session's watermark goes with it, so nothing references a ghost. */
+    @Query("DELETE FROM sync_state WHERE sessionId = :sessionId")
+    suspend fun deleteFor(sessionId: Long)
 
     /**
      * Forgets every watermark, so the next push re-uploads the whole history.

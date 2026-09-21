@@ -28,6 +28,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -38,6 +41,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -71,12 +75,17 @@ data class WorkoutLogUi(
     val exercises: Map<Long, Exercise> = emptyMap(),
 )
 
-class WorkoutLogViewModel(repo: Repository) : ViewModel() {
+class WorkoutLogViewModel(private val repo: Repository) : ViewModel() {
     val ui: StateFlow<WorkoutLogUi> = combine(
         repo.observeHistory(),
         repo.observeExercises(),
     ) { history, exercises -> WorkoutLogUi(history, exercises.associateBy { it.id }) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutLogUi())
+
+    /** The list flow above re-emits from the database, so the row simply leaves. */
+    fun delete(sessionId: Long) {
+        viewModelScope.launch { repo.deleteWorkout(sessionId) }
+    }
 }
 
 /**
@@ -184,6 +193,7 @@ fun WorkoutLogScreen(
                         sets = sets,
                         exercises = ui.exercises,
                         onClick = { onOpenWorkout(session.id) },
+                        onDelete = { viewModel.delete(session.id) },
                     )
                     Spacer(Modifier.height(10.dp))
                 }
@@ -277,10 +287,15 @@ private fun LogRow(
     sets: List<SessionSet>,
     exercises: Map<Long, Exercise>,
     onClick: () -> Unit,
+    onDelete: () -> Unit,
 ) {
     val doneSets = sets.filter { it.done }
     val totalReps = doneSets.filterNot { isHoldSet(it, exercises) }.sumOf { it.reps }
     val totalHeld = doneSets.filter { isHoldSet(it, exercises) }.sumOf { it.durationSec ?: it.reps }
+    // Inline confirm, same treatment as ERASE MY CLOUD DATA: the destructive
+    // step says what it does and asks once more before it does it. Row-local,
+    // so arming one entry never arms another.
+    var armed by remember { mutableStateOf(false) }
     SystemWindow(Modifier.fillMaxWidth(), onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f)) {
@@ -341,6 +356,63 @@ private fun LogRow(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
+        Spacer(Modifier.height(8.dp))
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (armed) {
+                // The inline confirm names the cost, because the deletion is
+                // not just visual: XP and strength leave the ledger with it.
+                Text(
+                    "XP AND STRENGTH WILL BE RETURNED",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.InkMuted,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    "KEEP",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.InkMuted,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .clickable { armed = false }
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+                Text(
+                    "DELETE",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.DangerRed,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .clickable {
+                            armed = false
+                            onDelete()
+                        }
+                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                )
+            } else {
+                Text(
+                    "DELETE",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = MonarchColors.InkMuted,
+                    letterSpacing = MonarchTracking.InlineLabel,
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .clickable { armed = true }
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                )
+            }
+        }
     }
 }
 

@@ -106,6 +106,56 @@ class SkillPrerequisiteGateTest {
         )
     }
 
+    /**
+     * The suspected farm: unclaim pays the XP back, so claim -> unclaim ->
+     * claim must land exactly where one claim did. If unclaim ever fails to
+     * subtract (a clamp, a missed row), every cycle mints tier x 120 for free.
+     */
+    @Test
+    fun unclaimingPaysTheXpBackSoReclaimingCannotMintItTwice() = runBlocking {
+        repo.claimSkill(root.name)
+        val xpAfterOneClaim = db.profileDao().get()!!.totalXp
+        assertTrue("fixture must have paid XP", xpAfterOneClaim > 0)
+
+        repo.unclaimSkill(root.name)
+        assertEquals(
+            "unclaim must take the XP back out",
+            0L,
+            db.profileDao().get()!!.totalXp,
+        )
+
+        repo.claimSkill(root.name)
+        assertEquals(
+            "re-claiming after unclaim must not double-pay",
+            xpAfterOneClaim,
+            db.profileDao().get()!!.totalXp,
+        )
+    }
+
+    /**
+     * The invariant the XP rules lean on: a claim may not stand while the
+     * skill it requires has stood down. Dropping Dead Hang under a claimed
+     * Scapular Pull would leave mastery recorded above a missing floor.
+     */
+    @Test
+    fun unclaimingASkillItsDependentsStandOnIsRefused() = runBlocking {
+        repo.claimSkill(root.name)
+        repo.claimSkill(locked.name)
+
+        val refused = runCatching { repo.unclaimSkill(root.name) }
+        assertTrue("the floor skill must refuse to leave while supported", refused.isFailure)
+        assertEquals(
+            "the refusal must not have taken the XP out",
+            root.xp + locked.xp.toLong(),
+            db.profileDao().get()!!.totalXp,
+        )
+        // Standing the dependent down first opens the floor again.
+        repo.unclaimSkill(locked.name)
+        repo.unclaimSkill(root.name)
+        assertEquals(0L, db.profileDao().get()!!.totalXp)
+    }
+
+
     private companion object {
         const val TEST_DB = "skill_prerequisite_gate_test.db"
     }

@@ -1192,9 +1192,46 @@ class Repository(
     suspend fun unclaimSkill(skillName: String) = db.withTransaction {
         val def = Skills.forName(skillName) ?: error("Unknown skill $skillName")
         if (skillPracticeDao.claim(skillName) == null) return@withTransaction
+        // A claimed skill that others REQUIRE cannot stand down while they
+        // stand on it: dropping Dead Hang would leave Scapular Pull claimed
+        // with its own floor gone, and the tree's invariant quietly broken.
+        val dependents = skillPracticeDao.observeAll().first()
+            .filter { it.claimed && Skills.forName(it.skillName)?.requires == skillName }
+            .map { it.skillName }
+        check(dependents.isEmpty()) {
+            "$skillName is still required by ${dependents.joinToString()} - unclaim those first"
+        }
         skillPracticeDao.deleteClaims(skillName)
         val total = profileDao.get()?.totalXp ?: 0L
         profileDao.addXp(-minOf(def.xp.toLong(), total))
+    }
+
+    /**
+     * Removes a completed workout from the chronicle and UNDOES what completing
+     * it paid: its XP comes back off the ledger and its strength score off the
+     * lifetime sum, so a deleted session stops counting in every direction at
+     * once. Titles already earned stay earned - the codex records that a
+     * threshold was reached, and unpicking that would cascade through every
+     * other ledger reader.
+     *
+     * The set rows go explicitly (no FK cascade) and the push watermark goes
+     * with them; the cloud row is push-only publication and is left alone -
+     * the device stays authoritative, per the data-authority rule.
+     */
+    suspend fun deleteWorkout(sessionId: Long) = db.withTransaction {
+        val session = sessionDao.byId(sessionId) ?: return@withTransaction
+        check(session.completedAtMs != null) {
+            "Session $sessionId is still live - abandon it instead"
+        }
+        // Clamped both ways so a ledger since spent down cannot go negative -
+        // the same rule unclaimSkill uses.
+        val total = profileDao.get()?.totalXp ?: 0L
+        profileDao.addXp(-minOf(session.xpAwarded.toLong(), total))
+        val lifetime = profileDao.get()?.lifetimeStrength ?: 0L
+        profileDao.setLifetimeStrength(maxOf(0L, lifetime - session.strengthScore))
+        sessionDao.deleteSetsFor(sessionId)
+        syncStateDao.deleteFor(sessionId)
+        sessionDao.deleteCompleted(sessionId)
     }
 
     suspend fun rename(name: String) {
