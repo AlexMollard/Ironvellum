@@ -74,7 +74,7 @@ class HealthSync(private val context: Context) {
                 ascendingOrder = false,
                 pageSize = 1,
             ),
-        ).records.firstOrNull()?.weight?.inKilograms
+        ).records.firstOrNull()?.weight?.inKilograms?.let(::toInstrumentPrecision)
 
         val bodyFat = client.readRecords(
             ReadRecordsRequest(
@@ -83,7 +83,7 @@ class HealthSync(private val context: Context) {
                 ascendingOrder = false,
                 pageSize = 1,
             ),
-        ).records.firstOrNull()?.percentage?.value
+        ).records.firstOrNull()?.percentage?.value?.let(::toInstrumentPrecision)
 
         val startOfDay = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant()
         val steps = client.aggregate(
@@ -239,7 +239,7 @@ class HealthSync(private val context: Context) {
                 ),
             ).records
                 .groupBy { it.time.atZone(zone).toLocalDate() }
-                .mapValues { (_, samples) -> samples.last().percentage.value }
+                .mapValues { (_, samples) -> toInstrumentPrecision(samples.last().percentage.value) }
         }.onFailure { note("body fat", it) }.getOrDefault(emptyMap())
 
         // One reading per day (the last of that day) so repeat weigh-ins do not
@@ -251,7 +251,7 @@ class HealthSync(private val context: Context) {
                 BodyReading(
                     date = date,
                     takenAtMs = latest.time.toEpochMilli(),
-                    weightKg = latest.weight.inKilograms,
+                    weightKg = toInstrumentPrecision(latest.weight.inKilograms),
                     bodyFatPct = bodyFatByDate[date],
                 )
             }
@@ -288,4 +288,16 @@ class HealthSync(private val context: Context) {
         }
         return HistoryRead(result, bodyReadings, coverage, problems, stepSources, newestStepAtMs)
     }
+
+    /**
+     * Health Connect hands back a Double widened from whatever the source app
+     * stored. Samsung Health's 79.1 kg arrived as 79.0999984741211 and was
+     * written to the stat history verbatim, so the figure was wrong on disk,
+     * in the export archive and in the cloud push - not merely on screen.
+     *
+     * Scales and body-fat readings resolve to 0.1; rounding here keeps the
+     * stored number to the precision the instrument actually had.
+     */
+    private fun toInstrumentPrecision(value: Double): Double =
+        Math.round(value * 10.0) / 10.0
 }

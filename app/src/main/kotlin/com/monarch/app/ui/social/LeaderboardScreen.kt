@@ -57,6 +57,7 @@ import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.components.InkRail
+import com.monarch.app.ui.components.plural
 import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
 import com.monarch.app.ui.theme.MonarchTracking
@@ -122,7 +123,7 @@ private enum class BoardMetric(val label: String) {
     fun format(row: LeaderboardRow): String = when (this) {
         Xp -> "${row.totalXp} XP"
         Level -> "LV ${row.level}"
-        Streak -> "${row.streakDays} DAY"
+        Streak -> plural(row.streakDays, "DAY", "DAYS")
         Titles -> "${row.titlesCount} TITLES"
         Strength -> "STR ${row.lifetimeStrength}"
         Last7 -> "${row.sessionsLast7d} IN 7D"
@@ -250,7 +251,7 @@ fun LeaderboardScreen(
         // a second empty-state line above a panel that explains the emptiness.
         if (ui.rows.isNotEmpty()) {
             Text(
-                "${ui.rows.size} hunters ranked",
+                plural(ui.rows.size, "hunter ranked", "hunters ranked"),
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 color = MonarchColors.SystemGreen,

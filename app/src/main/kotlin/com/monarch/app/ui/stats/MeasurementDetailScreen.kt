@@ -48,6 +48,7 @@ import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.TrendChart
 import com.monarch.app.ui.components.formatDate
+import com.monarch.app.ui.components.plural
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
@@ -299,6 +300,18 @@ fun MeasurementDetailScreen(
                         }
                     }
                 }
+            }
+            // The list is capped for render cost, not secrecy: without this line
+            // a mistyped reading older than the cap was unreachable — it could
+            // never be found, and so never deleted.
+            if (ui.entries.size > READING_ROWS) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Newest $READING_ROWS of ${ui.entries.size} ${plural(ui.entries.size, "reading", "readings")} shown — the chart above carries the full history.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MonarchColors.InkMuted,
+                    modifier = Modifier.padding(horizontal = 4.dp),
+                )
             }
         }
         Spacer(Modifier.height(96.dp))

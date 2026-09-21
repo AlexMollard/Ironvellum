@@ -63,6 +63,8 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.text.style.TextOverflow
 import com.monarch.app.ui.components.formatDate
+import com.monarch.app.ui.components.formatBodyValue
+import com.monarch.app.ui.components.plural
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.data.Repository
 import com.monarch.app.domain.BodyLimits
@@ -258,7 +260,10 @@ fun StatsScreen(
                         val ffmi = latest?.let { s -> s.bodyFatPct?.let { BodyStats.ffmi(s.weightKg, s.heightCm, it) } }
                         MetricValue(
                             ffmi?.toString() ?: "—",
-                            ffmi?.let { BodyStats.ffmiCategory(it) } ?: "log body fat %",
+                            // ffmi is also null when height is unset — a hunter
+                            // who already logs body fat must not be told to log it.
+                            ffmi?.let { BodyStats.ffmiCategory(it) }
+                                ?: if ((latest?.heightCm ?: 0.0) <= 0.0) "Set your height once in SETTINGS" else "log body fat %",
                         )
                         Spacer(Modifier.height(6.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -284,13 +289,13 @@ fun StatsScreen(
                     val weights = remember(ui.stats) {
                         ui.stats.sortedBy { it.takenAtMs }.map { it.weightKg }
                     }
-                    MetricValueBig(latest?.weightKg?.toString() ?: "—", "kg")
+                    MetricValueBig(latest?.weightKg?.let { formatBodyValue(it) } ?: "—", "kg")
                     if (weights.size >= 2) {
                         Spacer(Modifier.height(8.dp))
                         TrendChart(weights, MonarchColors.SovereignGold, fromZero = false)
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            ChartCaption("min ${weights.min()} kg")
-                            ChartCaption("max ${weights.max()} kg")
+                            ChartCaption("min ${formatBodyValue(weights.min())} kg")
+                            ChartCaption("max ${formatBodyValue(weights.max())} kg")
                         }
                     } else {
                         ChartCaption("Two readings unlock the trend line.")
@@ -375,10 +380,10 @@ fun StatsScreen(
                                 val bmi = BodyStats.bmi(stat.weightKg, stat.heightCm)
                                 Text(
                                     buildString {
-                                        append("${stat.weightKg} kg")
+                                        append("${formatBodyValue(stat.weightKg)} kg")
                                         // 0.0 is the heightless sentinel, never a real height.
-                                        if (stat.heightCm > 0.0) append(" · ${stat.heightCm} cm")
-                                        stat.bodyFatPct?.let { append(" · $it% bf") }
+                                        if (stat.heightCm > 0.0) append(" · ${formatBodyValue(stat.heightCm)} cm")
+                                        stat.bodyFatPct?.let { append(" · ${formatBodyValue(it)}% bf") }
                                         bmi?.let { append(" · BMI $it") }
                                     },
                                     style = MaterialTheme.typography.labelSmall,
@@ -417,7 +422,7 @@ fun StatsScreen(
                         val totalXp = remember(ui.sessions) { ui.sessions.sumOf { it.xpAwarded } }
                         if (cumulative.size >= 2) {
                             TrendChart(cumulative, MonarchColors.SystemGreen)
-                            ChartCaption("$totalXp XP across ${ui.sessions.size} campaigns")
+                            ChartCaption("$totalXp XP across ${plural(ui.sessions.size, "campaign", "campaigns")}")
                         } else {
                             ChartCaption("One more campaign draws the line.")
                         }
@@ -425,11 +430,20 @@ fun StatsScreen(
                     Spacer(Modifier.height(10.dp))
                     SystemWindow(Modifier.fillMaxWidth()) {
                         MetricLabel("STRENGTH PER CAMPAIGN")
-                        val scores = ui.sessions.map { it.strengthScore.toDouble() }
-                        if (scores.any { it > 0.0 }) {
+                        // 0 means "not scored" (no bodyweight existed yet), not a
+                        // collapse in strength — plotting it dropped the line to
+                        // the floor. And TrendChart draws no line below 2 points.
+                        val scores = ui.sessions.map { it.strengthScore.toDouble() }.filter { it > 0.0 }
+                        if (scores.size >= 2) {
                             TrendChart(scores)
                             ChartCaption(
-                                "Best ${scores.max().toInt()} · ${scores.size} campaigns · body-scaled (heavier hunters must move more)",
+                                "Best ${scores.max().toInt()} · ${plural(scores.size, "campaign", "campaigns")} · body-scaled (heavier hunters must move more)",
+                            )
+                        } else if (scores.size == 1) {
+                            // Scored, just not plottable yet. The old copy said
+                            // "log bodyweight" at a hunter who plainly had.
+                            ChartCaption(
+                                "Best ${scores.first().toInt()} · one more scored campaign draws the line.",
                             )
                         } else {
                             ChartCaption("Log bodyweight to score these campaigns.")
@@ -468,15 +482,21 @@ fun StatsScreen(
                             style = MaterialTheme.typography.titleSmall,
                             color = MonarchColors.Ink,
                         )
+                        // Unbounded, the arrow paged into empty future months
+                        // forever; the calendar stops at the current month.
+                        val canAdvance = month < YearMonth.now()
                         Text(
                             "→",
                             style = MaterialTheme.typography.titleMedium,
-                            color = MonarchColors.SystemGreen,
-                            modifier = Modifier
-                                .clip(MaterialTheme.shapes.extraSmall)
-                                .clickable { month = month.plusMonths(1) }
-                                .semantics { contentDescription = "Next month" }
-                                .padding(horizontal = 10.dp, vertical = 2.dp),
+                            color = if (canAdvance) MonarchColors.SystemGreen else MonarchColors.InkMuted,
+                            modifier = (if (canAdvance) {
+                                Modifier
+                                    .clip(MaterialTheme.shapes.extraSmall)
+                                    .clickable { month = month.plusMonths(1) }
+                                    .semantics { contentDescription = "Next month" }
+                            } else {
+                                Modifier.semantics { contentDescription = "Next month — already at the current month" }
+                            }).padding(horizontal = 10.dp, vertical = 2.dp),
                         )
                     }
                 }
@@ -497,7 +517,7 @@ fun StatsScreen(
 
     if (showAdd) {
         AddStatDialog(
-            initialWeight = latest?.weightKg?.toString() ?: "",
+            initialWeight = latest?.weightKg?.let { formatBodyValue(it) } ?: "",
             heightCm = ui.profileHeight,
             sex = viewModel.sex.collectAsStateWithLifecycle().value,
             measurements = viewModel.latestMeasurements.collectAsStateWithLifecycle().value,
@@ -995,7 +1015,10 @@ private fun ActivityTab(
                 byDate = days.associateBy { it.date },
                 sorted = sorted,
                 last7 = last7,
-                avg7 = if (last7.isEmpty()) 0 else last7.sumOf { it.steps } / last7.size,
+                // Divided by 7, not last7.size: gap days have no HealthDay row,
+                // so averaging over days-with-data inflated the mean every time
+                // a sync day was missed — and the tile says "7-DAY AVERAGE".
+                avg7 = if (last7.isEmpty()) 0 else last7.sumOf { it.steps } / 7,
                 bestDay = days.maxBy { it.steps },
                 lifetime = days.sumOf { it.steps },
             )
@@ -1009,7 +1032,13 @@ private fun ActivityTab(
 
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ActivityTile("TODAY'S STEPS", fmtInt(byDate[today]?.steps ?: 0), today.toString(), Modifier.weight(1f))
-            ActivityTile("7-DAY AVERAGE", fmtInt(avg7), "steps per day", Modifier.weight(1f))
+            // The owner must see why the number is low — a missed sync shrinks it.
+            ActivityTile(
+                "7-DAY AVERAGE",
+                fmtInt(avg7),
+                if (last7.size >= 7) "steps per day" else "steps per day · ${last7.size} of 7 tracked",
+                Modifier.weight(1f),
+            )
         }
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -1020,25 +1049,32 @@ private fun ActivityTab(
         Spacer(Modifier.height(14.dp))
         SystemWindow(Modifier.fillMaxWidth()) {
             MetricLabel("STEPS — LAST 14 DAYS")
-            val window = sorted.takeLast(14)
+            val window = lastDays(sorted, today, 14)
             TrendChart(window.map { it.steps.toDouble() }, goal = STEP_GOAL.toDouble())
             val hits = window.count { it.steps >= STEP_GOAL }
-            ChartCaption("${window.size} days · $hits of ${window.size} hit the ${fmtInt(STEP_GOAL)} goal")
+            // window.size is TRACKED days inside the period, not 14 — gap days
+            // have no HealthDay row, so the period and the coverage are stated
+            // separately ("3 of 14 days tracked · 2 hit the 10,000 goal").
+            ChartCaption("${window.size} of 14 days tracked · $hits hit the ${fmtInt(STEP_GOAL)} goal")
         }
 
         Spacer(Modifier.height(10.dp))
         SystemWindow(Modifier.fillMaxWidth()) {
             MetricLabel("DISTANCE (KM) — LAST 30 DAYS")
-            val km = sorted.takeLast(30).map { it.distanceKm }
+            val window30 = lastDays(sorted, today, 30)
+            val km = window30.map { it.distanceKm }
             if (km.count { it > 0.0 } >= 2) {
                 TrendChart(km, MonarchColors.SystemGreen)
-                ChartCaption("best ${"%.1f".format(km.max())} km · total ${"%.0f".format(km.sum())} km")
+                ChartCaption(
+                    "best ${"%.1f".format(km.max())} km · total ${"%.0f".format(km.sum())} km · " +
+                        "${window30.size} of 30 days tracked",
+                )
             } else {
                 ChartCaption("Distance appears once Health Connect reports it.")
             }
         }
 
-        EnergySection(sorted.takeLast(14), latest, sessions, sessionSets, exercises)
+        EnergySection(lastDays(sorted, today, 14), latest, sessions, sessionSets, exercises)
         Spacer(Modifier.height(14.dp))
         SectionHeader("Active calories — last 7 days")
         val kcal7 = last7
@@ -1063,7 +1099,9 @@ private fun ActivityTab(
 
         Spacer(Modifier.height(10.dp))
         SectionHeader("Sleep — last 7 nights")
-        val sleep7 = sorted.filter { it.sleepMinutes > 0 }.takeLast(7)
+        // Calendar-day bound first: takeLast(7) over days-with-sleep silently
+        // stretched "7 nights" across weeks of gaps.
+        val sleep7 = sorted.filter { it.date > today.minusDays(7) && it.sleepMinutes > 0 }
         if (sleep7.isEmpty()) {
             Text(
                 "No sleep recorded yet.",
@@ -1079,6 +1117,14 @@ private fun ActivityTab(
         Spacer(Modifier.height(24.dp))
     }
 }
+
+/**
+ * Calendar-day window, not entry-count: days with no Health Connect signal have
+ * no row at all, so takeLast(N) over the sorted list silently stretched every
+ * "last N days" window across weeks of gaps.
+ */
+private fun lastDays(sorted: List<HealthDay>, today: LocalDate, n: Long): List<HealthDay> =
+    sorted.filter { it.date > today.minusDays(n) }
 
 /** Sessions completed on [date], with their logged sets. */
 private fun sessionsOn(
@@ -1154,22 +1200,36 @@ private fun EnergySection(
 
         Spacer(Modifier.height(10.dp))
         MetricLabel("DAILY BURN — LAST 14 DAYS")
-        TrendChart(burns.map { it?.kcal?.toDouble() ?: 0.0 })
-        Spacer(Modifier.height(6.dp))
-        EnergyLegend()
-        val measuredCount = window.count { it.activeKcal > 0 }
-        ChartCaption(
-            if (measuredCount == 0) {
-                "All 14 days are MET estimates — Health Connect has not reported active calories."
-            } else {
-                "$measuredCount of ${window.size} days are Health Connect measurements (solid line, green). " +
-                    "Estimates are never added on top of a measured day."
-            }
-        )
+        // A null estimate is "not estimable" (usually just a missing
+        // bodyweight), not 0 kcal — plotting zeros drew confident zero-burn
+        // days. TrendChart cannot draw gaps, so only estimable days are
+        // plotted and the caption states the real coverage.
+        val charted = window.zip(burns).mapNotNull { (day, burn) -> burn?.let { day.date to it.kcal } }
+        if (charted.size >= 2) {
+            TrendChart(charted.map { it.second.toDouble() })
+            Spacer(Modifier.height(6.dp))
+            EnergyLegend()
+            val measuredCount = window.count { it.activeKcal > 0 }
+            val measuredLine =
+                if (measuredCount == 0) {
+                    "all MET estimates — Health Connect has not reported active calories."
+                } else {
+                    "$measuredCount of ${window.size} days are Health Connect measurements. " +
+                        "Estimates are never added on top of a measured day."
+                }
+            ChartCaption("${charted.size} of ${window.size} days estimable · $measuredLine")
+        } else {
+            ChartCaption("Burn is estimable on ${charted.size} of ${window.size} days — log bodyweight or connect Health Connect to estimate more.")
+        }
 
         val missingPrompts = buildList {
-            if (latest?.weightKg == null) add("Log your bodyweight to estimate activity burn.")
-            if (latest?.heightCm == null) add("Log your height to estimate steps when distance is missing.")
+            // heightCm is a non-null Double using 0.0 as the "never set"
+            // sentinel, so `heightCm == null` was dead code: the prompt stayed
+            // hidden for exactly the hunter who needed it.
+            if (latest == null) add("Log your bodyweight to estimate activity burn.")
+            if (latest == null || latest.heightCm <= 0.0) {
+                add("Log your height to estimate steps when distance is missing.")
+            }
         }
         missingPrompts.forEach { prompt ->
             Spacer(Modifier.height(6.dp))

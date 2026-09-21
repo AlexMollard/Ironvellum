@@ -38,7 +38,9 @@ fun TrendChart(
 ) {
     if (values.isEmpty()) return
     val top = (listOfNotNull(values.max(), goal).max()).takeIf { it > 0.0 } ?: 1.0
-    val floor = if (fromZero) 0.0 else listOfNotNull(values.min(), goal).min()
+    // The floor belongs to the data alone — a goal line raised the floor too,
+    // shifting the whole series inside the frame when the goal was toggled on.
+    val floor = if (fromZero) 0.0 else values.min()
     val span = (top - floor).takeIf { it > 0.0 } ?: 1.0
     val grid = MonarchColors.Rune
     val gold = MonarchColors.SovereignGold
@@ -115,7 +117,9 @@ fun TrendChart(
         }
 
         // record and latest markers — the only gold fills
-        val bestIndex = values.indexOf(values.max())
+        // Last occurrence — a tied record flags the most recent achievement,
+        // not the first time the hunter hit it back in mid-history.
+        val bestIndex = values.lastIndexOf(values.max())
         values.forEachIndexed { i, v ->
             val isEdge = i == values.lastIndex || i == bestIndex
             inkDot(

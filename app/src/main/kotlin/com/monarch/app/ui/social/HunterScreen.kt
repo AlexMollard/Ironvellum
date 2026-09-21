@@ -45,6 +45,7 @@ import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.TrendChart
 import com.monarch.app.ui.components.formatDate
+import java.util.Locale
 import com.monarch.app.ui.monarchAccount
 import com.monarch.app.ui.monarchCloudSync
 import com.monarch.app.ui.monarchRepository
@@ -307,7 +308,7 @@ internal fun HunterScreen(
                     ) {
                         Stat("SHARED", ui.sessions.size.toString(), MonarchColors.SystemGreen)
                         Stat("XP SHARED", "+$xpShared", MonarchColors.EmeraldBright)
-                        Stat("BEST STR", bestStr.toString(), MonarchColors.SovereignGold)
+                        Stat("BEST STR SHARED", bestStr.toString(), MonarchColors.SovereignGold)
                     }
                 }
 
@@ -333,7 +334,7 @@ internal fun HunterScreen(
                             daysSince?.let { "${it}D AGO" } ?: "UNRECORDED",
                             MonarchColors.SystemGreen,
                         )
-                        Stat("CADENCE", "${"%.1f".format(perWeek)}/WK", MonarchColors.EmeraldBright)
+                        Stat("CADENCE SHARED", String.format(Locale.ENGLISH, "%.1f", perWeek) + "/WK", MonarchColors.EmeraldBright)
                         Stat("SETS MOVED", ui.sessions.sumOf { it.sets }.toString(), MonarchColors.SovereignGold)
                     }
                 }
