@@ -827,6 +827,17 @@ class Repository(
         syncStateDao.pruneExcept(fingerprints.keys.toList())
     }
 
+    /**
+     * Forgets what the cloud is believed to hold, so the next push re-uploads
+     * every completed session.
+     *
+     * Without this the app cannot recover from the cloud losing data: erasing
+     * cloud data left these fingerprints behind, every one still matched, and
+     * so a hunter who erased and signed back in never re-uploaded a single
+     * session - their cloud stayed empty for good.
+     */
+    suspend fun clearPushWatermark() = syncStateDao.clearAll()
+
     // ---------------------------------------------------------------- profile & titles
 
     fun observeProfile(): Flow<PlayerProfile?> =

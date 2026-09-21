@@ -45,6 +45,15 @@ class CloudSync(
     private val cache = CloudReadCache()
     // Push watermark lives in Room (`sync_state`), read per push below.
 
+    /**
+     * Forgets the push watermark so the next [push] re-uploads everything.
+     *
+     * Call after anything that empties the cloud. The watermark is a claim
+     * about the SERVER's contents held on the DEVICE, so a server-side wipe
+     * silently invalidates it and the client would otherwise skip every row.
+     */
+    suspend fun forgetPushedState() = repo.clearPushWatermark()
+
     suspend fun push(): Result<SyncOutcome> {
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
@@ -560,6 +569,7 @@ class CloudSync(
                     strengthScore = dto.strengthScore,
                     setsDone = dto.setsDone,
                     repsDone = dto.repsDone.toInt(),
+                    heldSeconds = dto.heldSeconds.toInt(),
                     currentTitleId = dto.currentTitleId,
                     likeCount = dto.likeCount,
                     likedByMe = dto.likedByMe,

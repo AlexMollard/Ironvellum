@@ -311,6 +311,11 @@ interface SyncStateDao {
     @Query("DELETE FROM sync_state WHERE sessionId NOT IN (:keep)")
     suspend fun pruneExcept(keep: List<Long>)
 
+    /**
+     * Forgets every watermark, so the next push re-uploads the whole history.
+     * The only recovery from the cloud losing rows: a fingerprint match means
+     * "already up there", and after a server-side wipe that claim is false.
+     */
     @Query("DELETE FROM sync_state")
     suspend fun clearAll()
 }

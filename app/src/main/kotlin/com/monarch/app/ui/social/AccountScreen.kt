@@ -82,6 +82,8 @@ import com.monarch.app.data.cloud.FriendRow
 import com.monarch.app.data.cloud.SyncOutcome
 import com.monarch.app.data.cloud.isUnclaimedHandle
 import com.monarch.app.ui.components.MonarchButton
+import com.monarch.app.ui.components.NavChip
+import androidx.compose.material.icons.outlined.CloudUpload
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.InkSpinner
 import com.monarch.app.ui.components.SystemWindow
@@ -203,8 +205,12 @@ class AccountViewModel(
             accountRepo.deleteCloudData()
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
                 // Same rule as signOut: clear local social state only once the
-                // server confirmed the rows are gone.
+                // server confirmed the rows are gone. The watermark must go
+                // too - it claims the cloud already holds these sessions, and
+                // leaving it behind meant signing back in never re-uploaded
+                // anything.
                 .onSuccess {
+                    cloudSync.forgetPushedState()
                     _ui.value = _ui.value.copy(lastSync = null, friends = emptyList())
                 }
             setBusy(false)
@@ -238,6 +244,24 @@ class AccountViewModel(
         viewModelScope.launch {
             setBusy(true)
             _ui.value = _ui.value.copy(error = null)
+            cloudSync.push()
+                .onSuccess { _ui.value = _ui.value.copy(lastSync = it) }
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+            setBusy(false)
+        }
+    }
+
+    /**
+     * Re-uploads every completed session, ignoring what the device believes
+     * the cloud already holds. The ordinary sync skips anything whose
+     * fingerprint matches, which is right until the server loses rows - then
+     * the match is a lie and only this can repair it.
+     */
+    fun reuploadEverything() {
+        viewModelScope.launch {
+            setBusy(true)
+            _ui.value = _ui.value.copy(error = null)
+            cloudSync.forgetPushedState()
             cloudSync.push()
                 .onSuccess { _ui.value = _ui.value.copy(lastSync = it) }
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
@@ -324,6 +348,7 @@ fun AccountScreen(
                     onDeleteCloudData = viewModel::deleteCloudData,
                     onVisibility = viewModel::setVisibility,
                     onSync = viewModel::syncNow,
+                    onReupload = viewModel::reuploadEverything,
                     onAccept = viewModel::acceptFriend,
                     onRequest = viewModel::requestFriend,
                     onClaim = viewModel::claimName,
@@ -602,6 +627,7 @@ private fun SignedInPanels(
     onDeleteCloudData: () -> Unit,
     onVisibility: (String) -> Unit,
     onSync: () -> Unit,
+    onReupload: () -> Unit,
     onAccept: (String) -> Unit,
     onRequest: (String) -> Unit,
     onClaim: (String) -> Unit,
@@ -697,6 +723,16 @@ private fun SignedInPanels(
         )
         Spacer(Modifier.height(14.dp))
         MonarchButton(label = "Sync Now", onClick = onSync, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
+        Spacer(Modifier.height(8.dp))
+        // Sync Now skips a session whose fingerprint matches the watermark.
+        // After the cloud loses rows that match is false, and this is the only
+        // way back.
+        NavChip(
+            label = "RE-UPLOAD EVERYTHING",
+            icon = Icons.Outlined.CloudUpload,
+            onClick = onReupload,
+            modifier = Modifier.fillMaxWidth(),
+        )
         ui.lastSync?.let { outcome ->
             Spacer(Modifier.height(8.dp))
             Text(

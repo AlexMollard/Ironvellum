@@ -936,14 +936,18 @@ private fun StatStrip(entry: FeedEntry) {
         // "MOVE/S" and truncated XP to "+6…" on a 1080px screen; movement count
         // and duration ride the movement line instead.
         Stat(Icons.Outlined.FitnessCenter, "${entry.setsDone}", "SETS", modifier = Modifier.weight(1f))
-        // repsDone == 0 with sets on the board means unreported (hold-only
-        // session — FeedEntry carries no held-seconds field yet). "0" claims
-        // nothing was done; "—" reads as not reported. Follow-up: add
-        // held_seconds aggregate to public_feed view + FeedEntryDto.
+        // A hold-only session has reps 0 and its work in held_seconds. Showing
+        // "0 REPS" claimed the hunter did nothing; the chip follows whichever
+        // figure the session actually has.
+        val timed = entry.repsDone == 0 && entry.heldSeconds > 0
         Stat(
             Icons.Outlined.Repeat,
-            if (entry.repsDone == 0 && entry.setsDone > 0) "—" else "${entry.repsDone}",
-            "REPS",
+            when {
+                timed -> "${entry.heldSeconds}s"
+                entry.repsDone == 0 && entry.setsDone > 0 -> "—"
+                else -> "${entry.repsDone}"
+            },
+            if (timed) "HELD" else "REPS",
             modifier = Modifier.weight(1f),
         )
         Stat(Icons.Outlined.AutoAwesome, "+${entry.xpAwarded}", "XP", tint = MonarchColors.Emerald, modifier = Modifier.weight(1f))

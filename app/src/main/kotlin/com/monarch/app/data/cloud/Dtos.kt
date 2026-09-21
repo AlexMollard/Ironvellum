@@ -174,6 +174,8 @@ data class FeedEntry(
     val strengthScore: Int,
     val setsDone: Int,
     val repsDone: Int,
+    /** Seconds held across the session's static holds; 0 when it had none. */
+    val heldSeconds: Int,
     val currentTitleId: String?,
     val likeCount: Int,
     val likedByMe: Boolean,
@@ -208,6 +210,9 @@ data class FeedEntryDto(
     @SerialName("strength_score") val strengthScore: Int,
     @SerialName("sets_done") val setsDone: Int,
     @SerialName("reps_done") val repsDone: Long,
+    // Defaulted: an un-migrated public_feed (before 0012) has no such column,
+    // and one missing field must not fail the whole page's decode.
+    @SerialName("held_seconds") val heldSeconds: Long = 0,
     // The worn title id (null when bare).
     @SerialName("current_title_id") val currentTitleId: String? = null,
     // Server-computed like aggregates: one request per page, not per card.
@@ -216,10 +221,10 @@ data class FeedEntryDto(
     // Session depth: what was trained. Nullable where the view can yield null.
     @SerialName("top_movements") val topMovements: String? = null,
     @SerialName("best_set") val bestSet: String? = null,
-    @SerialName("movement_count") val movementCount: Int = 0,
     @SerialName("duration_sec") val durationSec: Int? = null,
     @SerialName("distance_m") val distanceM: Double? = null,
     @SerialName("hardest_grade") val hardestGrade: String? = null,
+    @SerialName("movement_count") val movementCount: Int = 0,
 )
 
 @Serializable
