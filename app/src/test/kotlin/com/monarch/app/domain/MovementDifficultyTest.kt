@@ -82,6 +82,28 @@ class MovementDifficultyTest {
         assertTrue(MovementDifficulty.tier("Handstand Push-up") > MovementDifficulty.tier("Push-up"))
         assertTrue(MovementDifficulty.tier("One-Arm Pull-up") > MovementDifficulty.tier("Pull-up"))
         assertTrue(MovementDifficulty.intensity("Full Planche") > MovementDifficulty.intensity("Frog Stand"))
+        // A dip moves close to full bodyweight; it must never price below a
+        // diamond push-up again. Equal is the floor, so assert not-below.
+        assertFalse(
+            MovementDifficulty.tier("Parallel Bar Dip") < MovementDifficulty.tier("Diamond Push-up"),
+        )
+        // Three separate tables price the dip: the tree row, the catalogue
+        // "dip" row and the "weighted dip" load override. Drift between them
+        // is the risk, so pin them together.
+        assertEquals(
+            MovementDifficulty.tier("Parallel Bar Dip"),
+            MovementDifficulty.tier("dip"),
+        )
+        // The load override must track its unloaded parent, or a weighted dip
+        // pays for the belt twice.
+        assertEquals(
+            MovementDifficulty.tier("Parallel Bar Dip"),
+            MovementDifficulty.tier("Weighted Dip"),
+        )
+        // One leg is half the base; it must out-earn the two-leg version.
+        assertTrue(
+            MovementDifficulty.tier("single-leg glute bridge") > MovementDifficulty.tier("glute bridge"),
+        )
     }
 
     @Test

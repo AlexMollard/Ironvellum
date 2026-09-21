@@ -162,7 +162,7 @@ object Skills {
             why = "First straight-down press that wakes the triceps and elbows up.",
         ),
         SkillDef(
-            "Parallel Bar Dip", 2, "Push", requires = "Bench Dip",
+            "Parallel Bar Dip", 3, "Push", requires = "Bench Dip",
             standard = "10 clean reps, shoulders below elbows at the bottom",
             why = "Full-bodyweight pressing volume that builds the dip chain.",
         ),

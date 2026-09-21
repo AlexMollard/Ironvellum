@@ -31,7 +31,7 @@ object MovementDifficulty {
 
     /**
      * Catalogue movements with no skill-tree entry. Tiers are set against the
-     * nearest tree neighbour: a dip is a Parallel Bar Dip (II), an inverted row
+     * nearest tree neighbour: a dip is a Parallel Bar Dip (III), an inverted row
      * is an Australian Pull-up (II), a chin-up is a Pull-up (III). The tier
      * states UNLOADED difficulty only: every externally-loaded lift already
      * priced here (back squat, overhead press) stays at its unloaded tier
@@ -53,7 +53,7 @@ object MovementDifficulty {
         "lat pulldown" to 2,
         "face pull" to 1,
         // Push
-        "dip" to 2,
+        "dip" to 3,
         "pike push-up" to 2,
         "overhead press" to 2,
         "bench press" to 2,
@@ -61,7 +61,7 @@ object MovementDifficulty {
         // Legs
         "back squat" to 2,
         "bulgarian split squat" to 2,
-        "single-leg glute bridge" to 1,
+        "single-leg glute bridge" to 2,
         "single-leg calf raise" to 1,
         "knee-to-wall dorsiflexion" to 1,
         "glute bridge" to 1,
@@ -87,7 +87,7 @@ object MovementDifficulty {
      */
     private val loadPricedTiers: Map<String, Int> = mapOf(
         "weighted pull-up" to 3, // Pull-up
-        "weighted dip" to 2, // Parallel Bar Dip
+        "weighted dip" to 3, // Parallel Bar Dip
     )
 
     /**
