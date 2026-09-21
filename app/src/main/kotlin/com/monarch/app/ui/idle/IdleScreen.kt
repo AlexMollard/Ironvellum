@@ -805,6 +805,8 @@ private fun formatAway(ms: Long): String {
     return when {
         days >= 1 -> if (days == 1L) "1 DAY" else "$days DAYS"
         hours >= 1 -> "$hours H ${minutes % 60} M"
+        // Banking twice in a row read as "BANKED OVER 0 M".
+        minutes < 1 -> "MOMENTS"
         else -> "$minutes M"
     }
 }

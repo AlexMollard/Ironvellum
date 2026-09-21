@@ -856,9 +856,9 @@ private fun AddStatDialog(
 
     // Estimator state: prefill the tapes from the hunter's latest measurements.
     var showEstimator by rememberSaveable { mutableStateOf(false) }
-    val neck = rememberSaveable { mutableStateOf(measurements[MeasurementSite.NECK]?.toString() ?: "") }
-    val waist = rememberSaveable { mutableStateOf(measurements[MeasurementSite.WAIST]?.toString() ?: "") }
-    val hips = rememberSaveable { mutableStateOf(measurements[MeasurementSite.HIPS]?.toString() ?: "") }
+    val neck = rememberSaveable { mutableStateOf(measurements[MeasurementSite.NECK]?.let { formatBodyValue(it) } ?: "") }
+    val waist = rememberSaveable { mutableStateOf(measurements[MeasurementSite.WAIST]?.let { formatBodyValue(it) } ?: "") }
+    val hips = rememberSaveable { mutableStateOf(measurements[MeasurementSite.HIPS]?.let { formatBodyValue(it) } ?: "") }
     val estimate = if (showEstimator) BodyStats.estimateBodyFatNavy(
         sex, heightCm ?: 0.0,
         neck.value.toDoubleOrNull() ?: 0.0,
@@ -879,12 +879,22 @@ private fun AddStatDialog(
                     letterSpacing = MonarchTracking.InlineLabel,
                     color = MonarchColors.Emerald,
                 )
+                // A rejected figure used to do nothing at all: LOG IT greyed
+                // out with no reason given, so a mistyped weight read as a
+                // broken button. Say which bound was missed, and only once
+                // something has actually been typed.
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
                     value = weight.value,
                     onValueChange = { weight.value = it },
                     label = { Text("Weight (kg)") },
                     singleLine = true,
+                    isError = weight.value.isNotBlank() && !validWeight,
+                    supportingText = if (weight.value.isNotBlank() && !validWeight) {
+                        { Text("Enter a weight between ${BodyLimits.WEIGHT_KG.start.toInt()} and ${BodyLimits.WEIGHT_KG.endInclusive.toInt()} kg.") }
+                    } else {
+                        null
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 OutlinedTextField(
@@ -893,6 +903,12 @@ private fun AddStatDialog(
                     onValueChange = { bodyFat.value = it },
                     label = { Text("Body fat % — optional") },
                     singleLine = true,
+                    isError = bodyFat.value.isNotBlank() && !validBodyFat,
+                    supportingText = if (bodyFat.value.isNotBlank() && !validBodyFat) {
+                        { Text("Enter a body fat between ${BodyLimits.BODY_FAT_PCT.start.toInt()} and ${BodyLimits.BODY_FAT_PCT.endInclusive.toInt()}%, or leave it blank.") }
+                    } else {
+                        null
+                    },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (heightCm == null || heightCm <= 0.0) {
