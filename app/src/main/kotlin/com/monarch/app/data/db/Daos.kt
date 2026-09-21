@@ -134,6 +134,25 @@ interface SessionDao {
     @Query("SELECT * FROM sessions WHERE completedAtMs IS NOT NULL ORDER BY startedAtMs DESC")
     fun observeCompletedWithSets(): Flow<List<SessionWithSets>>
 
+    /**
+     * Completed sessions banked with no strength score that nevertheless hold
+     * strength work. A session of nothing but climbing or cardio scores zero
+     * honestly and must NOT be counted here, or the repair would reload the
+     * whole history on every launch forever looking for work it cannot do.
+     */
+    @Query(
+        """
+        SELECT COUNT(*) FROM sessions s
+        WHERE s.completedAtMs IS NOT NULL AND s.strengthScore = 0
+          AND EXISTS (
+            SELECT 1 FROM set_logs l
+            JOIN exercises e ON e.id = l.exerciseId
+            WHERE l.sessionId = s.id AND l.done = 1 AND e.metric IN ('REPS', 'HOLD')
+          )
+        """,
+    )
+    suspend fun unscoredStrengthSessionCount(): Int
+
     @Query("SELECT COUNT(*) FROM sessions WHERE completedAtMs IS NOT NULL")
     suspend fun completedCount(): Int
 

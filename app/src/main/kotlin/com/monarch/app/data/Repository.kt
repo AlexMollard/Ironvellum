@@ -54,6 +54,7 @@ import com.monarch.app.domain.Progression
 import com.monarch.app.domain.Reward
 import com.monarch.app.domain.RollResult
 import com.monarch.app.domain.SessionSet
+import com.monarch.app.domain.SetRecords
 import com.monarch.app.domain.SkillClaimResult
 import com.monarch.app.domain.SkillPractice
 import com.monarch.app.domain.Skills
@@ -129,6 +130,11 @@ class Repository(
                 )
             }
         }
+        // Sessions logged before the first weigh-in banked no strength at
+        // all. Waiting for the next weigh-in to notice would leave a hunter
+        // who already measured himself staring at zeros forever; the count
+        // query above the repair makes this free when there is nothing owed.
+        rescoreUnweighedSessions()
     }
 
     // ---------------------------------------------------------------- health history
@@ -797,6 +803,63 @@ class Repository(
                 bodyFatPct = bodyFatPct,
             ),
         )
+        // A weigh-in is new information about work already done: sessions
+        // completed before any measurement could not be scored at all.
+        rescoreUnweighedSessions()
+    }
+
+    /**
+     * Repairs completed sessions that banked no strength score because no
+     * bodyweight was on record when they finished. The index is body-scaled,
+     * so with nothing to scale by [StrengthIndex.sessionScore] returns null
+     * and the session stored a zero — permanently, since nothing ever looked
+     * again. The work was real; the measurement was merely late.
+     *
+     * Scored against the bodyweight in force at the session, falling back to
+     * the EARLIEST reading on record — the rule [SetRecords.bodyweightLookup]
+     * already applies to a set logged before any weigh-in, reused here so the
+     * two cannot disagree about the same session.
+     *
+     * XP is deliberately NOT revisited: it was awarded under an assumed
+     * bodyweight and banked XP is never restated. Only the strength score,
+     * which was never computed at all, is filled in.
+     */
+    private suspend fun rescoreUnweighedSessions() {
+        if (sessionDao.unscoredStrengthSessionCount() == 0) return
+        val stats = statDao.observeAll().first()
+        if (stats.isEmpty()) return
+        db.withTransaction {
+            val bodyweightAt = SetRecords.bodyweightLookup(
+                stats.map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) },
+            )
+            val metrics = exerciseDao.observeAll().first().associate { row ->
+                row.id to runCatching { ExerciseMetric.valueOf(row.metric) }
+                    .getOrDefault(ExerciseMetric.REPS)
+            }
+            sessionDao.observeCompletedWithSets().first().forEach { row ->
+                if (row.session.strengthScore != 0) return@forEach
+                val efforts = row.sets
+                    .filter { it.done && (metrics[it.exerciseId] ?: ExerciseMetric.REPS).isStrength }
+                    .map { set ->
+                        StrengthIndex.Effort(
+                            reps = set.reps,
+                            holdSeconds = set.durationSec
+                                .takeIf { metrics[set.exerciseId] == ExerciseMetric.HOLD },
+                            addedKg = set.weightKg,
+                        )
+                    }
+                if (efforts.isEmpty()) return@forEach
+                val score = StrengthIndex.sessionScore(efforts, bodyweightAt(row.session.startedAtMs)) ?: 0
+                if (score != 0) sessionDao.updateSession(row.session.copy(strengthScore = score))
+            }
+            // Recomputed from the sessions rather than nudged by a delta: the
+            // sum IS the lifetime figure, and it is what the cloud push
+            // recomputes too, so a drifted running total is corrected here.
+            profileDao.setLifetimeStrength(
+                sessionDao.observeCompletedWithSets().first()
+                    .sumOf { it.session.strengthScore.toLong() },
+            )
+        }
     }
 
     suspend fun deleteStat(id: Long) = statDao.delete(id)
