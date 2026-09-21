@@ -240,10 +240,14 @@ object ExerciseHistoryCalculator {
                 weightKg = r.weightKg,
                 modifiers = r.modifiers,
                 done = r.done,
-                score = if (isHold) {
-                    StrengthIndex.holdScore(figure, r.weightKg, bodyweightKg ?: 0.0)
-                } else {
-                    StrengthIndex.repScore(figure, r.weightKg, bodyweightKg ?: 0.0)
+                // Same suppression as hold tonnage below: an activity metric's
+                // figure is an attempt count or a distance, and repScore would
+                // invent a bodyweight-rep number from it. 0.0 is the value the
+                // calculator already uses for "no honest strength score".
+                score = when {
+                    isHold -> StrengthIndex.holdScore(figure, r.weightKg, bodyweightKg ?: 0.0)
+                    exercise.metric.isStrength -> StrengthIndex.repScore(figure, r.weightKg, bodyweightKg ?: 0.0)
+                    else -> 0.0
                 },
             )
         }

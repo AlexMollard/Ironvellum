@@ -77,6 +77,7 @@ import com.monarch.app.data.cloud.CloudSyncWorker
 import com.monarch.app.data.cloud.WireLimits
 import com.monarch.app.domain.Exercise
 import com.monarch.app.domain.ExerciseMetric
+import com.monarch.app.domain.isStrength
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.SetRecords
 import com.monarch.app.domain.StrengthIndex
@@ -332,8 +333,12 @@ fun SessionScreen(
             val (exerciseId, sets) = block
             val first = sets.first()
             val doneSets = sets.filter { it.done }
-            val isHoldBlock = exercises.firstOrNull { it.id == exerciseId }?.metric == ExerciseMetric.HOLD
-            val groupStrength = bodyweight?.let { bw ->
+            val blockMetric = exercises.firstOrNull { it.id == exerciseId }?.metric ?: ExerciseMetric.REPS
+            val isHoldBlock = blockMetric == ExerciseMetric.HOLD
+            // Bouldering's figure is an attempt count and a run's is a
+            // distance; summing either through repScore invented a strength
+            // number for work that is not lifting at all.
+            val groupStrength = bodyweight?.takeIf { blockMetric.isStrength }?.let { bw ->
                 doneSets.sumOf { set ->
                     if (isHoldBlock) {
                         StrengthIndex.holdScore(set.durationSec ?: 0, set.weightKg, bw)
@@ -414,6 +419,7 @@ fun SessionScreen(
                         weightKg = set.weightKg,
                         done = set.done,
                         isHold = isHoldBlock,
+                        scoresStrength = blockMetric.isStrength,
                         // LOAD and REPS head the columns once. Repeating them on
                         // every row printed the same two words 36 times in an
                         // 18-set session, on top of identical steppers.
@@ -741,6 +747,12 @@ private fun SetRow(
     done: Boolean,
     /** True when [reps] is seconds held: the column counts time, not repetitions. */
     isHold: Boolean = false,
+    /**
+     * False for activity work. Records exclude it, so without this the badge
+     * read "NEW PR" on every climbing set forever: no stored record means
+     * [SetRecords.delta] reports the first one.
+     */
+    scoresStrength: Boolean = true,
     showColumnLabels: Boolean = true,
     onRemove: (() -> Unit)? = null,
     onChange: (Int, Double?, Boolean) -> Unit,
@@ -874,7 +886,7 @@ private fun SetRow(
         }
         // Fixed-height delta line under the steppers: always allocated, so
         // live digit changes never reflow the row mid-set.
-        val delta = bodyweight?.let { bw ->
+        val delta = bodyweight?.takeIf { scoresStrength }?.let { bw ->
             SetRecords.delta(records, exerciseName, setIndex, reps, weightKg, bw, isHold = isHold)
         }
         SetDeltaBadge(delta, displaySetNo = setIndex + 1)

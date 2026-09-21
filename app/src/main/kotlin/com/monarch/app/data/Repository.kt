@@ -348,8 +348,8 @@ class Repository(
 
         val sets = pw.entries.sortedBy { it.position }.flatMapIndexed { entryPos, entry ->
             val exercise = exerciseById[entry.exerciseId]
-            val isHold = runCatching { ExerciseMetric.valueOf(exercise?.metric ?: "REPS") }
-                .getOrDefault(ExerciseMetric.REPS) == ExerciseMetric.HOLD
+            val metric = runCatching { ExerciseMetric.valueOf(exercise?.metric ?: "REPS") }
+                .getOrDefault(ExerciseMetric.REPS)
             // Every logged session for this movement, newest first — not just
             // the last one. `fromSets` wrapped a single session, so the stall
             // counter was always 0 and the deload at STALLS_BEFORE_DELOAD could
@@ -361,7 +361,20 @@ class Repository(
             // is cleared. Feeding it seconds would prescribe a weight vest for
             // a longer plank. Holds take the preset's own target until hold
             // progression is designed.
-            val recommendation = if (isHold) {
+            //
+            // The gate is "is strength work", not "is a hold". Left hold-only,
+            // a run (DISTANCE_TIME) was handed a rep band and a load step and
+            // told to hit N reps and add 2.5 kg. An activity movement — Yoga's
+            // DURATION, Bouldering's ATTEMPTS_GRADE, that run — skips the
+            // recommendation and carries the preset's own target through
+            // unchanged; nothing better exists to prescribe it.
+            val isStrength = metric.isStrength
+            // Seconds-in-durationSec stays HOLD-only: only a hold's preset
+            // target is a duration. An activity entry keeps its own target
+            // reps as the logged figure — the honest passthrough, since its
+            // preset has no duration field to carry instead.
+            val isHold = metric == ExerciseMetric.HOLD
+            val recommendation = if (!isStrength) {
                 null
             } else {
                 val history = sessionDao.recentDoneSets(entry.exerciseId)

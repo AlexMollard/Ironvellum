@@ -233,4 +233,29 @@ class SetRecordsTest {
         val delta = SetRecords.delta(records, "pull-up", setIndex = 1, reps = 5, weightKg = null, bodyweightKg = 70.0)
         assertEquals(StrengthIndex.repScore(5, null, 70.0), delta.score, 1e-9)
     }
+
+    /**
+     * A climbing set carries its ATTEMPT COUNT in the reps column, so scoring
+     * it through the strength path minted a bodyweight-rep record: seven
+     * attempts read as seven pull-ups. Lifting in the same history must still
+     * record normally, or the guard has simply turned records off.
+     */
+    @Test
+    fun `an activity set sets no strength record while lifting in the same history still does`() {
+        val history = listOf(
+            session(1, 1_000) to listOf(
+                set(name = "Bouldering", setIndex = 0, reps = 7),
+                set(name = "Pull-up", setIndex = 0, reps = 5),
+            ),
+        )
+        val records = SetRecords.records(history, bwAt) { s ->
+            if (s.exerciseName == "Bouldering") ExerciseMetric.ATTEMPTS_GRADE else ExerciseMetric.REPS
+        }
+        assertNull("attempts are not a strength record", records["bouldering" to 0])
+        assertEquals(
+            StrengthIndex.repScore(5, null, bw),
+            records.getValue("pull-up" to 0).score,
+            1e-9,
+        )
+    }
 }

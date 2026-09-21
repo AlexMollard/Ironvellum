@@ -50,6 +50,13 @@ object SetRecords {
             .forEach { (session, sets) ->
                 if (excludeSessionId != null && session.id == excludeSessionId) return@forEach
                 sets.filter { it.done }.forEach { set ->
+                    // An activity metric (Bouldering's ATTEMPTS_GRADE, a run's
+                    // DISTANCE_TIME) is not strength work at any set position:
+                    // its figure is an attempt count or a distance, and scoring
+                    // it through the strength path fabricates bodyweight-rep
+                    // records. A null metric keeps the legacy path unchanged.
+                    val metric = metricOf(set)
+                    if (metric != null && !metric.isStrength) return@forEach
                     // Score with the bodyweight IN FORCE at the session, so a
                     // later weigh-in never re-scores (shrinks/inflates) an
                     // already-earned record.
