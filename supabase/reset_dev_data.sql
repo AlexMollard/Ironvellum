@@ -9,19 +9,32 @@
 -- copy that can be rebuilt by pushing from the device.
 --
 -- ---------------------------------------------------------------------------
--- RUN ORDER - all three steps, or the cloud ends up empty and stays empty:
+-- RUN ORDER:
 --
 --   1. Run this script in the Supabase SQL editor.
---   2. On the device: Guild -> Account -> RE-UPLOAD EVERYTHING.
---   3. Confirm the feed shows the real session.
+--   2. Read the verification SELECT at the bottom. Every count MUST be 0.
+--      If any is not, the run did not take - do not skip this check.
+--   3. On the device: sign up again, then Guild -> Account ->
+--      RE-UPLOAD EVERYTHING.
 --
--- Step 2 is NOT optional. The push watermark lives in the DEVICE's Room
+-- Step 3 is NOT optional. The push watermark lives in the DEVICE's Room
 -- database (`sync_state`) and records a fingerprint per uploaded session. An
 -- ordinary "Sync Now" skips any session whose fingerprint still matches, and a
 -- server-side wipe does not change any fingerprint - so every session would be
 -- skipped forever. RE-UPLOAD EVERYTHING forgets the watermark first.
+--
+-- NOTE: pushing to the cloud is NOT a backup. There is no path that reads
+-- cloud rows back into the device database, so the feed is a publication, not
+-- a restore. The only complete restore today is EXPORT ARCHIVE.
 -- ---------------------------------------------------------------------------
 
+-- The two halves are SEPARATE transactions on purpose. They were one, and if
+-- the `auth.users` delete failed - it needs elevated privilege and can trip on
+-- other `auth` tables referencing it - the whole block rolled back and the
+-- training data survived while the run still looked like it had happened.
+-- Independent transactions mean a failure in step 2 leaves step 1 committed.
+
+-- ---- 1. training data (this is the part that matters) --------------------
 begin;
 
 -- Order is irrelevant under `cascade`, but they are listed leaf-first anyway so
@@ -37,25 +50,21 @@ truncate table
     profiles
 restart identity cascade;
 
+commit;
+
+-- ---- 2. the accounts themselves -------------------------------------------
 -- The fake hunters are auth users, not just profile rows: truncating `profiles`
 -- alone leaves them able to sign in and re-create a profile.
 --
--- Replace the address below with the owner's own sign-in email. Keeping that
--- one auth row preserves the account, the claimed display name and the need to
--- sign in again; the profile row it points at is rebuilt by the re-upload in
--- step 2.
-delete from auth.users
-where email is distinct from 'REPLACE_WITH_YOUR_EMAIL';
+-- This removes EVERY account, the owner's included. Expect to sign up again.
+-- If it errors on privilege, step 1 above has still committed.
+begin;
 
--- To remove EVERY account including the owner's, comment out the statement
--- above and uncomment this one. Expect to sign up again and re-claim the
--- display name.
--- delete from auth.users;
+delete from auth.users;
 
 commit;
 
--- Verification: every count must be 0, and auth.users must hold only the
--- account that was deliberately kept.
+-- ---- 3. verification - every count MUST be 0 ------------------------------
 select 'profiles'      as table_name, count(*) from profiles
 union all select 'sessions',      count(*) from sessions
 union all select 'session_sets',  count(*) from session_sets
