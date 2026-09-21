@@ -330,6 +330,69 @@ class ExportRoundTripTest {
         assertFalse("the unparseable row must not travel as data", export.json.contains("OBSOLETE_SITE"))
     }
 
+    /**
+     * The CLOUD archive, not the local one. `BACK UP NOW` uploads
+     * `exportArchive(includePrivateNotes = false)`, so that exact shape is
+     * what a hunter restores from onto a new phone — and nothing else tests
+     * it. The private note is dropped on purpose (the app promises it never
+     * leaves the device), and dropping a key is precisely the kind of change
+     * that can take the rest of the session with it.
+     */
+    @Test
+    fun theCloudArchiveRestoresTrainingWithoutCarryingThePrivateNote() = runTest {
+        val preset = db.presetDao().observePresets().first().first().preset
+        val sessionId = repo.startSessionFromPreset(preset.id)
+        val sets = db.sessionDao().setsFor(sessionId)
+        repo.updateSet(sets.first().id, reps = 9, weightKg = 22.5, done = true)
+        // A static hold: its figure lives in durationSec, and a backup that
+        // restored it as reps would resurrect the bug schema 24 fixed.
+        repo.updateHoldSet(sets[1].id, seconds = 45, weightKg = null, done = true)
+        repo.setSessionNote(sessionId, "public: felt strong")
+        repo.setSessionPrivateNote(sessionId, "SECRET-SORE-ELBOW")
+        repo.completeSession(sessionId)
+        repo.addStat(weightKg = 79.1, bodyFatPct = 13.5)
+
+        val completedBefore = db.sessionDao().completedCount()
+        val setsBefore = db.sessionDao().setsFor(sessionId).size
+        val statsBefore = db.statDao().observeAll().first().size
+        val xpBefore = repo.observeProfile().first()!!.totalXp
+        assertTrue("the fixture must have training to lose", completedBefore > 0 && setsBefore > 0)
+
+        val cloud = repo.exportArchive(includePrivateNotes = false)
+        assertFalse(
+            "the uploaded archive must carry no trace of the private note",
+            cloud.json.contains("SECRET-SORE-ELBOW") || cloud.json.contains("privateNote"),
+        )
+        assertTrue("the public note is not private and must travel", cloud.json.contains("public: felt strong"))
+
+        db.presetDao().clearAll()
+        db.sessionDao().clearAll()
+        db.statDao().clearAll()
+        assertEquals("the wipe must actually clear the record", 0, db.sessionDao().completedCount())
+
+        val result = repo.importArchive(cloud.json)
+        assertTrue("restore failed: ${result.exceptionOrNull()?.message}", result.isSuccess)
+
+        assertEquals("completed sessions", completedBefore, db.sessionDao().completedCount())
+        assertEquals("body stats", statsBefore, db.statDao().observeAll().first().size)
+        assertEquals("total XP", xpBefore, repo.observeProfile().first()!!.totalXp)
+
+        val restoredSession = db.sessionDao().observeCompletedWithSets().first().single()
+        assertEquals("restored set rows", setsBefore, restoredSession.sets.size)
+        assertEquals("the public note must survive the round trip", "public: felt strong", restoredSession.session.note)
+        // Empty, not the original: the cloud copy never held it.
+        assertEquals("a restored cloud archive must not resurrect the note", "", restoredSession.session.privateNote)
+
+        // The preset prescribes its own unlogged hold sets, so identify the
+        // one this test actually logged.
+        val hold = restoredSession.sets.single { it.done && it.durationSec != null }
+        assertEquals("a hold must come back as seconds", 45, hold.durationSec)
+        assertEquals("a hold must not come back as repetitions", 0, hold.reps)
+        val lifted = restoredSession.sets.single { it.done && it.durationSec == null }
+        assertEquals(9, lifted.reps)
+        assertEquals(22.5, lifted.weightKg!!, 0.001)
+    }
+
     private companion object {
         /** Never the app's live database. */
         const val TEST_DB = "monarch-export-roundtrip-test.db"
