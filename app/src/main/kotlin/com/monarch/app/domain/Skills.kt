@@ -31,6 +31,11 @@ object Skills {
          * "5 single-arm negatives per side, each 5s to full hang" as a hold,
          * which asked for seconds in the journal and — once XP started reading
          * this — would have divided a rep count by the hold conversion.
+         *
+         * A minute-denominated standard ("Hold 3 minutes", "10-minute
+         * routine") is also timed, and converted to SECONDS here rather than
+         * at each call site because every consumer of a SECONDS target treats
+         * the number as seconds — the target must already be in seconds.
          */
         val metric: Metric
             get() = when {
@@ -40,14 +45,24 @@ object Skills {
                 Regex("\\d+").find(standard)?.range?.first
                     ?.let { it == Regex("\\d+\\s*s\\b").find(standard)?.range?.first } == true ->
                     Metric.SECONDS
+                minutesFigure != null -> Metric.SECONDS
                 else -> Metric.REPS
             }
+
+        /** First figure only when it carries a minutes suffix ("3 minutes", "10-minute"); null otherwise. */
+        private val minutesFigure: MatchResult?
+            get() = Regex("\\d+\\s*-?\\s*(minutes?|min)\\b", RegexOption.IGNORE_CASE)
+                .find(standard)
+                ?.takeIf { Regex("\\d+").find(standard)?.range?.first == it.range.first }
 
         /** The number in the standard: the value a practice attempt chases. */
         val target: Int
             get() = Regex("\\d+").findAll(standard)
                 .map { it.value.toInt() }
-                .let { nums -> if (metric == Metric.REPS) nums.maxOrNull() else nums.firstOrNull() }
+                .let { nums ->
+                    if (metric == Metric.REPS) nums.maxOrNull()
+                    else nums.firstOrNull()?.let { if (minutesFigure != null) it * 60 else it }
+                }
                 ?: 0
 
         val unit: String

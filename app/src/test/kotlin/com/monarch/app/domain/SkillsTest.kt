@@ -85,4 +85,61 @@ class SkillsTest {
             }
         }
     }
+
+    /**
+     * The tree is walked by `name.trim().lowercase()`, so two rows differing
+     * only by case are the same identity: one of them silently shadows the
+     * other and it can never be claimed.
+     */
+    @Test
+    fun `skill names are unique case-insensitively`() {
+        val duplicates = Skills.ALL
+            .groupingBy { it.name.trim().lowercase() }
+            .eachCount()
+            .filter { it.value > 1 }
+            .keys
+        assertEquals("skills that shadow an earlier row by case", emptySet<String>(), duplicates)
+    }
+
+    /**
+     * A tier is a difficulty BAND, not a single rung: a band legitimately
+     * holds an ordered chain, so Muscle-up (III) requiring Pull-up (III) is
+     * the tree working as designed, and the acyclicity test above already
+     * stops such a chain closing on itself. What must never happen is a
+     * prerequisite ABOVE its unlock — that asks you to master the harder
+     * movement first, and progress would run backwards along the line.
+     */
+    @Test
+    fun `a prerequisite is never a harder tier than what it unlocks`() {
+        val bad = Skills.ALL.mapNotNull { skill ->
+            val prereq = skill.requires ?: return@mapNotNull null
+            // A prerequisite can be another skill or a catalogue movement;
+            // both carry a tier through the difficulty tables.
+            val prereqTier = Skills.forName(prereq)?.tier ?: MovementDifficulty.tier(prereq)
+            (prereqTier > skill.tier).takeIf { it }?.let {
+                "${skill.name} (tier ${skill.tier}) requires $prereq (tier $prereqTier)"
+            }
+        }
+        assertEquals("prerequisites harder than their unlock", emptyList<String>(), bad)
+    }
+
+    /**
+     * A standard denominated in minutes is chased in seconds — every consumer
+     * of a SECONDS target treats the number as seconds, so the conversion has
+     * to happen at the inference, not at each call site. `metre` is one regex
+     * slip away from `minute`, so the distance skill is asserted alongside.
+     */
+    @Test
+    fun `a minute-denominated standard resolves to seconds`() {
+        val squatHold = Skills.forName("Deep Squat Hold")!!
+        assertEquals(Skills.Metric.SECONDS, squatHold.metric)
+        assertEquals("Deep Squat Hold target in seconds", 180, squatHold.target)
+
+        val wristPrep = Skills.forName("Wrist Prep")!!
+        assertEquals(Skills.Metric.SECONDS, wristPrep.metric)
+        assertEquals("Wrist Prep target in seconds", 600, wristPrep.target)
+
+        val walk = Skills.forName("Handstand Walk")!!
+        assertEquals(Skills.Metric.METRES, walk.metric)
+    }
 }
