@@ -60,13 +60,18 @@ object Cloud {
             "42501" -> "The cloud refused this — you are not allowed to change that record"
             "23514" -> "The cloud rejected this value as out of range"
             // Written for the shadow board's migration 0008, but these codes
-            // mean "that table or column is not there" for ANY feature — it
-            // named the wrong one the moment cloud_archives (0013) was absent
-            // and a failed BACKUP blamed the leaderboard. PostgREST answers a
-            // missing table with PGRST205 and a missing column with PGRST204
-            // from its schema cache — the raw Postgres codes only surface when
-            // the statement actually reaches the database.
-            "42703", "42P01", "PGRST204", "PGRST205" ->
+            // mean "that table, column or function is not there" for ANY
+            // feature — it named the wrong one the moment cloud_archives
+            // (0013) was absent and a failed BACKUP blamed the leaderboard.
+            // PostgREST answers a missing table with PGRST205, a missing
+            // column with PGRST204 and a missing FUNCTION with PGRST202, all
+            // from its schema cache — the raw Postgres codes only surface
+            // when the statement actually reaches the database.
+            //
+            // PGRST202 was absent, so an unapplied 0011 made push_aggregates
+            // report "try again" and the hunter retried forever while their
+            // level sat frozen on the board.
+            "42703", "42P01", "PGRST202", "PGRST204", "PGRST205" ->
                 "This part of the cloud is not set up yet — its database migration has not been applied"
             else -> "The cloud refused this request — try again"
         }
