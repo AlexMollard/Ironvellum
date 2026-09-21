@@ -56,10 +56,25 @@ class MovementDifficultyTest {
     @Test
     fun `every seeded lifting movement is classified, not defaulted by accident`() {
         val unclassified = Seed.exercises
-            .filter { it.metric == ExerciseMetric.REPS.name }
+            // HOLD as well as REPS: a static hold is strength work, and one
+            // left unclassified is the same silent economy bug.
+            .filter { runCatching { ExerciseMetric.valueOf(it.metric) }.getOrNull()?.isStrength == true }
             .map { it.name }
             .filterNot { MovementDifficulty.isClassified(it) }
         assertEquals(emptyList<String>(), unclassified)
+    }
+
+    /**
+     * The reverse direction. `plank` was priced at tier 1 and marked a hold
+     * while the catalogue seeded only "Weighted Plank", so the classification
+     * sat there unreachable — the forward test above passes happily on a key
+     * that names nothing at all.
+     */
+    @Test
+    fun `every classification key names a movement the catalogue actually ships`() {
+        val seeded = Seed.exercises.map { it.name.trim().lowercase() }.toSet()
+        val orphaned = MovementDifficulty.catalogueOnlyKeys.filterNot { it in seeded }.sorted()
+        assertEquals(emptyList<String>(), orphaned)
     }
 
     @Test

@@ -32,7 +32,13 @@ object MovementDifficulty {
     /**
      * Catalogue movements with no skill-tree entry. Tiers are set against the
      * nearest tree neighbour: a dip is a Parallel Bar Dip (II), an inverted row
-     * is an Australian Pull-up (II), a chin-up is a Pull-up (III).
+     * is an Australian Pull-up (II), a chin-up is a Pull-up (III). The tier
+     * states UNLOADED difficulty only: every externally-loaded lift already
+     * priced here (back squat, overhead press) stays at its unloaded tier
+     * because XP multiplies by the kilos on the bar, so pricing the load into
+     * the tier as well would pay for the same plate twice — the trap
+     * [loadPricedTiers] documents. Isolation work is tier 1 (bicep curl,
+     * wrist curl).
      */
     private val catalogueTiers: Map<String, Int> = mapOf(
         // Pull
@@ -42,10 +48,16 @@ object MovementDifficulty {
         "active bar hang" to 1,
         "wrist curl" to 1,
         "bicep curl" to 1,
+        "barbell row" to 2,
+        "dumbbell row" to 2,
+        "lat pulldown" to 2,
+        "face pull" to 1,
         // Push
         "dip" to 2,
         "pike push-up" to 2,
         "overhead press" to 2,
+        "bench press" to 2,
+        "incline bench press" to 2,
         // Legs
         "back squat" to 2,
         "bulgarian split squat" to 2,
@@ -53,10 +65,15 @@ object MovementDifficulty {
         "single-leg calf raise" to 1,
         "knee-to-wall dorsiflexion" to 1,
         "glute bridge" to 1,
+        "deadlift" to 2,
+        "romanian deadlift" to 2,
+        "front squat" to 2,
+        "hip thrust" to 2,
         // Core
         "ab wheel rollout" to 3,
         "weighted plank" to 2,
         "plank" to 1,
+        "side plank" to 1,
     )
 
     /**
@@ -95,6 +112,7 @@ object MovementDifficulty {
         "active bar hang",
         "weighted plank",
         "plank",
+        "side plank",
     )
 
     /**
@@ -118,6 +136,19 @@ object MovementDifficulty {
         val k = key(exerciseName)
         return loadPricedTiers[k] ?: skillsByKey[k]?.tier ?: catalogueTiers[k] ?: DEFAULT_TIER
     }
+
+    /**
+     * Every catalogue-only key this object prices, lowercased. Skill-tree
+     * names are excluded: Seed derives those rows from [Skills] itself, so
+     * they cannot drift apart.
+     *
+     * Exposed for the test that walks these keys BACK to the catalogue. The
+     * forward direction (every seeded movement is classified) missed the case
+     * that actually shipped: `plank` was priced and marked a hold while no
+     * Plank row existed, so the classification sat there dead.
+     */
+    val catalogueOnlyKeys: Set<String>
+        get() = catalogueTiers.keys + catalogueHolds + loadPricedTiers.keys
 
     /**
      * Whether this movement has a stated difficulty rather than falling back

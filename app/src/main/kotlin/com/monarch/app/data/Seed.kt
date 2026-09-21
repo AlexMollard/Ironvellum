@@ -19,6 +19,10 @@ object Seed {
         ExerciseEntity(name = "Active Bar Hang", muscleGroup = MuscleGroup.PULL.name, isWeighted = false),
         ExerciseEntity(name = "Wrist Curl", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
         ExerciseEntity(name = "Bicep Curl", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Barbell Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Dumbbell Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Lat Pulldown", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Face Pull", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
         // Push
         ExerciseEntity(name = "Dip", muscleGroup = MuscleGroup.PUSH.name, isWeighted = false),
         ExerciseEntity(name = "Push-up", muscleGroup = MuscleGroup.PUSH.name, isWeighted = false),
@@ -27,6 +31,8 @@ object Seed {
         ExerciseEntity(name = "Pike Push-up", muscleGroup = MuscleGroup.PUSH.name, isWeighted = false),
         ExerciseEntity(name = "Handstand Push-up", muscleGroup = MuscleGroup.PUSH.name, isWeighted = false),
         ExerciseEntity(name = "Overhead Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Bench Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Incline Bench Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
         // Legs
         ExerciseEntity(name = "Pistol Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
         ExerciseEntity(name = "Back Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
@@ -36,6 +42,10 @@ object Seed {
         ExerciseEntity(name = "Nordic Curl", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
         ExerciseEntity(name = "Knee-to-Wall Dorsiflexion", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
         ExerciseEntity(name = "Glute Bridge", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
+        ExerciseEntity(name = "Deadlift", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Romanian Deadlift", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Front Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Hip Thrust", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         // Core
         ExerciseEntity(name = "Hanging Leg Raise", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
         ExerciseEntity(name = "Hanging Knee Raise", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
@@ -43,6 +53,8 @@ object Seed {
         ExerciseEntity(name = "L-sit", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
         ExerciseEntity(name = "Dragon Flag", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
         ExerciseEntity(name = "Weighted Plank", muscleGroup = MuscleGroup.CORE.name, isWeighted = true),
+        ExerciseEntity(name = "Plank", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
+        ExerciseEntity(name = "Side Plank", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
     )
 
     /**

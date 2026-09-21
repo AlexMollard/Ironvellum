@@ -1,5 +1,6 @@
 package com.monarch.app.data
 
+import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.domain.MuscleGroup
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -61,6 +62,16 @@ class SeedCatalogueTest {
         // then fails valueOf() at read time — the launch-crash shape already
         // seen once on a stored enum.
         assertEquals("movements with an unknown muscle group", emptyList<String>(), bad)
+    }
+
+    @Test
+    fun `every catalogue movement declares a real metric`() {
+        val valid = ExerciseMetric.entries.map { it.name }.toSet()
+        val bad = Seed.exercises.filter { it.metric !in valid }.map { "${it.name}: ${it.metric}" }
+        // Same stored-as-a-String launch-crash shape as muscleGroup: a typo
+        // survives compilation and fails valueOf() the first time the row is
+        // read back.
+        assertEquals("movements with an unknown metric", emptyList<String>(), bad)
     }
 
     @Test
