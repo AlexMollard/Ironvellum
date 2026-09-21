@@ -638,6 +638,7 @@ class Repository(
                 .getOrDefault(ExerciseMetric.REPS)
         }
         val names = catalogue.associate { it.id to it.name }
+        val categories = catalogue.associate { it.id to it.category }
         fun metricOf(exerciseId: Long) = metrics[exerciseId] ?: ExerciseMetric.REPS
         /** Seconds when the set is a hold, null when it is counted in reps. */
         fun holdSecondsOf(set: SetLogEntity): Int? =
@@ -660,13 +661,21 @@ class Repository(
         )
         val activityXp = activitySets.sumOf { set ->
             val metric = metricOf(set.exerciseId)
-            val per = ActivityScore.xp(metric, set.durationSec, set.distanceM, set.weightKg, latestBodyweight ?: 0.0)
+            val per = ActivityScore.xp(
+                exerciseName = names[set.exerciseId] ?: "",
+                category = categories[set.exerciseId] ?: "",
+                metric = metric,
+                durationSec = set.durationSec,
+                distanceM = set.distanceM,
+                addedKg = set.weightKg,
+                bodyweightKg = latestBodyweight ?: 0.0,
+            )
             if (metric == ExerciseMetric.ATTEMPTS_GRADE) per * set.reps else per
         }
         val xp = liftingXp + activityXp
         val sessionStrength = StrengthIndex.sessionScore(
             liftingSets.map { set ->
-                StrengthIndex.Effort(set.reps, holdSecondsOf(set), set.weightKg)
+                StrengthIndex.Effort(names[set.exerciseId] ?: "", set.reps, holdSecondsOf(set), set.weightKg)
             },
             latestBodyweight,
         ) ?: 0

@@ -10,17 +10,33 @@ import kotlin.math.roundToInt
 object ActivityScore {
 
     /**
-     * XP for one completed activity set.
+     * Calibration: a hard 45-minute activity lands just under the ~326 XP an
+     * ordinary lifting session pays (45 min running = 280, 45 min football = 236).
+     */
+    private const val XP_PER_MET_MINUTE = 0.75
+
+    /**
+     * XP for one completed activity set, proportional to real work via
+     * MET-minutes: xp = met x minutes x 0.75 x loadBonus. [Energy.metFor] is the
+     * ONLY intensity model — it already speed-bands run/cycle/swim, so a run and
+     * a boxing round are both intensity x time and share one expression.
      * - REPS: 0 — lifting XP already exists (Xp.award); double-counting would inflate levels.
-     * - DURATION: 1 XP per minute, plus a modest load bonus (+1% per kg of added
-     *   load, capped at +50%) so weighted skipping beats unweighted at equal time.
-     * - DISTANCE_TIME: 50 XP per km base, plus a pace bonus scaling linearly from
-     *   +50 XP/km at 4:00/km down to 0 at 12:00/km — a faster 5 km scores better.
-     * - ATTEMPTS_GRADE: 15 XP per completed attempt. The grade text is NEVER
-     *   parsed here — grading systems (V-scale, Font, French) disagree; grade
-     *   comparison for titles lives in TitleEngine.
+     * - DURATION / DISTANCE_TIME: MET-minutes. A DISTANCE_TIME set with a
+     *   distance but NO duration pays 0, deliberately: MET-minutes needs
+     *   minutes, and fabricating a pace from distance alone would guess. This
+     *   mirrors [Energy.activitySet], which returns null rather than guess; the
+     *   session screen collects KM and MINUTES side by side, so a hunter sees
+     *   the missing field — it is never a silent zero.
+     * - ATTEMPTS_GRADE: flat 15 XP per completed attempt, intentionally NOT
+     *   MET-scaled. With the MET curves brought down, 10 attempts = 150 XP now
+     *   sits sensibly beside a 30-minute run at 187; rescaling it again would
+     *   re-inflate climbing relative to everything else. The grade text is
+     *   NEVER parsed here — grading systems (V-scale, Font, French) disagree;
+     *   grade comparison for titles lives in TitleEngine.
      */
     fun xp(
+        exerciseName: String,
+        category: String,
         metric: ExerciseMetric,
         durationSec: Int?,
         distanceM: Double?,
@@ -30,31 +46,19 @@ object ActivityScore {
         // Both are strength work, scored by Xp.award against the movement's
         // difficulty. Paying here as well would count the same set twice.
         ExerciseMetric.REPS, ExerciseMetric.HOLD -> 0
-        ExerciseMetric.DURATION -> {
+        ExerciseMetric.DURATION, ExerciseMetric.DISTANCE_TIME -> {
             val minutes = (durationSec ?: 0) / 60.0
-            // Vest/rope weight counts as effort; cap so 200 kg doesn't dominate.
-            val loadBonus = 1.0 + ((addedKg ?: 0.0).coerceAtLeast(0.0).coerceAtMost(50.0) / 100.0)
-            (minutes * loadBonus).roundToInt()
-        }
-        ExerciseMetric.DISTANCE_TIME -> {
-            val km = (distanceM ?: 0.0) / 1000.0
-            if (km <= 0.0) {
+            if (minutes <= 0.0) {
+                // Deliberate: distance without time cannot earn MET-minutes.
                 0
             } else {
-                val pace = paceSecPerKm(distanceM, durationSec)
-                // 240 s/km (4:00) or faster earns the full +50; 720 s/km (12:00) earns none.
-                val paceBonus = pace?.let { ((720.0 - it).coerceIn(0.0, 480.0) / 480.0 * 50.0) } ?: 0.0
-                (km * (50.0 + paceBonus)).roundToInt()
+                // Vest/rope weight counts as effort; cap so 200 kg doesn't dominate.
+                val loadBonus = 1.0 + ((addedKg ?: 0.0).coerceAtLeast(0.0).coerceAtMost(50.0) / 100.0)
+                (Energy.metFor(exerciseName, category, metric, distanceM, durationSec) *
+                    minutes * XP_PER_MET_MINUTE * loadBonus).roundToInt()
             }
         }
         // reps carries the completed-attempt count for climbing entries.
         ExerciseMetric.ATTEMPTS_GRADE -> 15 // per-attempt flat rate applied by caller x attempts
-    }
-
-    /** Pace in seconds per km, or null when distance or duration is missing/zero. */
-    fun paceSecPerKm(distanceM: Double?, durationSec: Int?): Double? {
-        if (distanceM == null || distanceM <= 0.0) return null
-        if (durationSec == null || durationSec <= 0) return null
-        return durationSec / (distanceM / 1000.0)
     }
 }
