@@ -3,6 +3,7 @@ package com.monarch.app.domain
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.math.roundToLong
 
 sealed interface TitleRule {
     data object FirstWorkout : TitleRule
@@ -394,11 +395,16 @@ object Titles {
         TitleDef("world_walker", "World Walker", "Cover 2,000 km through logged activities.", TitleRule.ActivityDistanceKm(2_000.0), TitleRarity.Epic),
         TitleDef("beyond_the_map", "Beyond the Map", "Cover 10,000 km through logged activities.", TitleRule.ActivityDistanceKm(10_000.0), TitleRarity.Sovereign),
         // Distinct activities tried
+        // The ceiling here is the catalogue's activity count (Seed.activities,
+        // 43 today). Titles lives in domain and Seed in data, and data already
+        // imports domain — reading the count from Seed would close a dependency
+        // cycle — so the number is stated here and pinned against Seed by
+        // TitleReachabilityTest; growing the catalogue must update both.
         TitleDef("three_paths", "Three Paths", "Try 3 different activities.", TitleRule.DistinctActivities(3), TitleRarity.Common),
         TitleDef("ten_paths", "Ten Paths", "Try 10 different activities.", TitleRule.DistinctActivities(10), TitleRarity.Rare),
         TitleDef("twenty_five_paths", "Twenty-Five Paths", "Try 25 different activities.", TitleRule.DistinctActivities(25), TitleRarity.Rare),
-        TitleDef("fifty_paths", "Fifty Paths", "Try 50 different activities.", TitleRule.DistinctActivities(50), TitleRarity.Epic),
-        TitleDef("walker_of_all_roads", "Walker of All Roads", "Try 75 different activities. Nothing is foreign to you.", TitleRule.DistinctActivities(75), TitleRarity.Sovereign),
+        TitleDef("thirty_five_paths", "Thirty-Five Paths", "Try 35 different activities.", TitleRule.DistinctActivities(35), TitleRarity.Epic),
+        TitleDef("walker_of_all_roads", "Walker of All Roads", "Try all 43 activities the catalogue offers. Nothing is foreign to you.", TitleRule.DistinctActivities(43), TitleRarity.Sovereign),
         // Single long runs
         TitleDef("five_k_razor", "Five-K Razor", "Log a 5 km run in a single session.", TitleRule.LongestRun(5.0), TitleRarity.Common),
         TitleDef("ten_k_hunter", "Ten-K Hunter", "Log a 10 km run in a single session.", TitleRule.LongestRun(10.0), TitleRarity.Common),
@@ -661,6 +667,9 @@ object Titles {
         is TitleRule.DistinctActivities ->
             Progress(ledger.distinctActivities.toLong(), rule.count.toLong(), "activities tried")
         is TitleRule.LongestRun ->
+            // Floored, deliberately. Rounding read "5 of 5 km" for a 4.9 km
+            // run on a title that is NOT earned — a progress line claiming
+            // completion is a worse lie than one a kilometre short.
             Progress(ledger.bestRunKm.toLong(), rule.km.toLong(), "km in one run")
         is TitleRule.LongestSwim ->
             Progress(ledger.bestSwimKm.toLong(), rule.km.toLong(), "km in one swim")

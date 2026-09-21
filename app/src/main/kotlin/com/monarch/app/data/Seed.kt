@@ -60,16 +60,33 @@ object Seed {
     /**
      * Every skill-tree movement is also a loggable exercise, derived from the
      * single source of truth so the catalog and the tree can never diverge.
+     * Two lines are mixed-purpose, so the line alone misfiles some movements:
+     * "Ring Dip" logged as pulling volume while the identical bar Dip logs as
+     * pushing. The line rule still decides every single-purpose line; only the
+     * known mixed cases are overridden by name.
      */
-    private fun skillGroup(def: Skills.SkillDef): MuscleGroup = when {
-        def.line == "Pull" || def.line == "Lever" ||
-            def.line == "Rings" || def.line == "Movement" -> MuscleGroup.PULL
-        def.line == "Push" || def.line == "Handstand" || def.line == "Planche" -> MuscleGroup.PUSH
-        def.line == "Legs" -> MuscleGroup.LEGS
-        def.line == "Core" || def.line == "Mobility" -> MuscleGroup.CORE
-        def.name.contains("Squat") || def.name.contains("Curl") -> MuscleGroup.LEGS
-        else -> MuscleGroup.CORE
-    }
+    private val skillGroupOverrides: Map<String, MuscleGroup> = mapOf(
+        // Rings mixes straight-arm holds/presses with rows; these push, Ring Row
+        // and Ring Muscle-up genuinely pull and stay on the line rule.
+        "Ring Support Hold" to MuscleGroup.PUSH,
+        "Ring Dip" to MuscleGroup.PUSH,
+        "Iron Cross" to MuscleGroup.PUSH,
+        // Movement mixes hand-balance/core tricks with muscle-up pulls.
+        "Kip-up" to MuscleGroup.CORE,
+        "Handstand-to-Bridge" to MuscleGroup.CORE,
+        "Human Flag" to MuscleGroup.CORE,
+    )
+
+    private fun skillGroup(def: Skills.SkillDef): MuscleGroup =
+        skillGroupOverrides[def.name] ?: when {
+            def.line == "Pull" || def.line == "Lever" ||
+                def.line == "Rings" || def.line == "Movement" -> MuscleGroup.PULL
+            def.line == "Push" || def.line == "Handstand" || def.line == "Planche" -> MuscleGroup.PUSH
+            def.line == "Legs" -> MuscleGroup.LEGS
+            def.line == "Core" || def.line == "Mobility" -> MuscleGroup.CORE
+            def.name.contains("Squat") || def.name.contains("Curl") -> MuscleGroup.LEGS
+            else -> MuscleGroup.CORE
+        }
 
 
     /**

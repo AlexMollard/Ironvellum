@@ -1090,6 +1090,17 @@ class Repository(
     suspend fun claimSkill(skillName: String): SkillClaimResult = db.withTransaction {
         val def = Skills.forName(skillName) ?: error("Unknown skill $skillName")
         check(skillPracticeDao.claim(skillName) == null) { "$skillName already mastered" }
+        // The prerequisite gate lives here, not just in the UI: this call mints
+        // tier x 120 XP — 600 at the top of the tree — and an import restore or
+        // any future non-UI caller must not walk through a gate the interface
+        // merely holds shut.
+        val mastered = skillPracticeDao.observeAll().first()
+            .filter { it.claimed }
+            .map { it.skillName }
+            .toSet()
+        check(Skills.unlocked(def, mastered)) {
+            "${def.requires} not mastered — $skillName stays locked until it is"
+        }
         val now = System.currentTimeMillis()
         skillPracticeDao.insert(
             SkillPracticeEntity(skillName = skillName, practicedAtMs = now, claimed = true),

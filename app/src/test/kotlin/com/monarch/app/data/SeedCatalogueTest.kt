@@ -96,4 +96,47 @@ class SeedCatalogueTest {
         // board depend on list order rather than intent.
         assertEquals("weekdays carrying more than one program", emptyMap<Int, Int>(), clashes)
     }
+
+    @Test
+    fun `mixed-line movements are grouped by what they train, not by line`() {
+        // The Rings and Movement lines mix pushing holds and core tricks with
+        // pulls; the per-movement override files each by what it actually trains.
+        val expected = mapOf(
+            "Ring Support Hold" to MuscleGroup.PUSH,
+            "Ring Dip" to MuscleGroup.PUSH,
+            "Iron Cross" to MuscleGroup.PUSH,
+            "Kip-up" to MuscleGroup.CORE,
+            "Handstand-to-Bridge" to MuscleGroup.CORE,
+            "Human Flag" to MuscleGroup.CORE,
+            // Line-mates that genuinely pull stay on the line rule.
+            "Ring Row" to MuscleGroup.PULL,
+            "Ring Muscle-up" to MuscleGroup.PULL,
+        )
+        val wrong = expected.mapNotNull { (name, group) ->
+            val entity = catalogue[name]
+                ?: return@mapNotNull "skill movement \"$name\" missing from the catalogue"
+            val actual = MuscleGroup.valueOf(entity.muscleGroup)
+            if (actual == group) null else "$name: expected $group, found $actual"
+        }
+        assertEquals(emptyList<String>(), wrong)
+    }
+
+    @Test
+    fun `no obvious press is filed under PULL and vice versa`() {
+        // A future mixed-line movement must not silently inherit its line's
+        // group again: when a name cue and the line disagree, the cue wins.
+        val pressCue = listOf("Push-up", "Dip", "Press", "Support Hold", "Cross", "Planche")
+        val pullCue = listOf("Pull-up", "Row", "Hang", "Curl", "Lever")
+        val sanctioned = setOf("Muscle-up", "Strict Muscle-up", "Inverted Muscle-up")
+        val wrong = Seed.exercises.mapNotNull { e ->
+            val group = MuscleGroup.valueOf(e.muscleGroup)
+            when {
+                e.name in sanctioned -> null
+                pressCue.any { it in e.name } && group == MuscleGroup.PULL -> "${e.name} presses but is PULL"
+                pullCue.any { it in e.name } && group == MuscleGroup.PUSH -> "${e.name} pulls but is PUSH"
+                else -> null
+            }
+        }
+        assertEquals(emptyList<String>(), wrong)
+    }
 }
