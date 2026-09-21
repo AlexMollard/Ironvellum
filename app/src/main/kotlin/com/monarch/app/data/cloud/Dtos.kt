@@ -297,6 +297,20 @@ data class SyncOutcome(
     val problems: List<String>,
 )
 
+/**
+ * One row of `cloud_archives` — the hunter's whole save as JSON text, one row
+ * per user, always the latest (upserted on user_id). The archive never carries
+ * the private note; see CloudSync.restoreArchive.
+ */
+@Serializable
+data class ArchiveDto(
+    @SerialName("user_id") val userId: String,
+    @SerialName("archive") val archive: String,
+    @SerialName("size_bytes") val sizeBytes: Int,
+    // Decode-only: the server default fills it; the client never sends it.
+    @SerialName("updated_at") val updatedAt: String? = null,
+)
+
 /*
  * RPC argument shapes. These exist so the parameter names are declared in ONE
  * place and can be checked against the function signatures in

@@ -267,6 +267,90 @@ class CloudSync(
     }
 
     /**
+     * One row of `cloud_archives` per hunter, holding the whole save as JSON.
+     * A backup is [Repository.exportArchive]'s JSON uploaded whole; a restore
+     * is that JSON handed to [Repository.importArchive] — the two primitives
+     * EXPORT ARCHIVE already uses, so the cloud copy and the local export can
+     * never disagree about what a save is.
+     */
+    data class BackupInfo(val atMs: Long, val bytes: Int)
+
+    suspend fun backupArchive(): Result<BackupInfo> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            // The private note is device-only by the app's own promise; the
+            // cloud archive must omit it, which is the entire reason for the
+            // flag rather than reusing the EXPORT ARCHIVE path verbatim.
+            val archive = repo.exportArchive(includePrivateNotes = false)
+            val bytes = archive.json.toByteArray()
+            // Refuse here, where the message can name the fix: the server
+            // check would answer the same payload with an opaque 23514.
+            if (bytes.size > WireLimits.ARCHIVE_MAX_BYTES) {
+                throw IllegalStateException(
+                    "Backup is too large for the cloud (${bytes.size} of ${WireLimits.ARCHIVE_MAX_BYTES} bytes) — export an archive file instead",
+                )
+            }
+            client.postgrest.from("cloud_archives").upsert(
+                ArchiveDto(
+                    userId = me.userId,
+                    archive = archive.json,
+                    sizeBytes = bytes.size,
+                ),
+            ) {
+                onConflict = "user_id"
+            }
+            BackupInfo(atMs = System.currentTimeMillis(), bytes = bytes.size)
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    suspend fun latestBackup(): Result<BackupInfo?> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            // Two columns only. Selecting * here would download the whole
+            // archive text just to render a timestamp on the account screen.
+            client.postgrest.from("cloud_archives").select(
+                Columns.raw("size_bytes, updated_at"),
+            ) {
+                filter { eq("user_id", me.userId) }
+                order("updated_at", Order.DESCENDING)
+                limit(1)
+            }.decodeList<ArchiveDto>().firstOrNull()?.let {
+                BackupInfo(
+                    atMs = it.updatedAt?.let { at -> Instant.parse(at).toEpochMilli() }
+                        ?: System.currentTimeMillis(),
+                    bytes = it.sizeBytes,
+                )
+            }
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    suspend fun restoreArchive(): Result<Repository.ImportResult> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            val row = client.postgrest.from("cloud_archives").select {
+                filter { eq("user_id", me.userId) }
+            }.decodeList<ArchiveDto>().firstOrNull()
+                ?: throw IllegalStateException("No cloud backup yet — back up on the old device first")
+            // Private notes come back empty BY DESIGN: the archive was built
+            // with includePrivateNotes = false because the note is promised
+            // to never leave the device (SessionScreen, WireLimits). Restore
+            // is for a NEW device; the old one still holds its own notes.
+            repo.importArchive(row.archive).getOrElse { error ->
+                throw IllegalStateException(error.message ?: "The backup could not be restored")
+            }
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /**
      * TTL 60s: the leaderboard changes only when someone pushes a session or
      * levels up — never per second. Re-entering the board screen twice in a
      * minute is the common case, so one request serves it.

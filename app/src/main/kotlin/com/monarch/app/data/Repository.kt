@@ -1044,7 +1044,11 @@ class Repository(
 
     suspend fun exportJson(): String = exportArchive().json
 
-    suspend fun exportArchive(): ExportResult {
+    // includePrivateNotes = false is the CLOUD copy (see ExportWriter.write):
+    // the app promises in user-visible UI (SessionScreen.kt:1081) that the
+    // private note never leaves this device, so a cloud backup must omit it.
+    // Default true keeps exportJson()/EXPORT ARCHIVE byte-identical.
+    suspend fun exportArchive(includePrivateNotes: Boolean = true): ExportResult {
         val profileEntity = profileDao.get()
         val profile = profileEntity?.let {
             PlayerProfile(
@@ -1166,6 +1170,7 @@ class Repository(
             crestFrames = crestFrames,
             relics = relics,
             exportedAtMs = System.currentTimeMillis(),
+            includePrivateNotes = includePrivateNotes,
         )
         return ExportResult(json, exportProblems)
     }

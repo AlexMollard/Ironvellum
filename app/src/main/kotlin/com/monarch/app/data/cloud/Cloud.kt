@@ -59,15 +59,15 @@ object Cloud {
             "23505" -> "That name is already taken by another hunter"
             "42501" -> "The cloud refused this — you are not allowed to change that record"
             "23514" -> "The cloud rejected this value as out of range"
-            // The shadow board's columns and view arrive with migration 0008.
-            // Until it is applied these are the codes the cloud returns, and
-            // "the cloud refused this request" would send someone hunting a bug
-            // that is really just an unapplied migration. PostgREST answers a
+            // Written for the shadow board's migration 0008, but these codes
+            // mean "that table or column is not there" for ANY feature — it
+            // named the wrong one the moment cloud_archives (0013) was absent
+            // and a failed BACKUP blamed the leaderboard. PostgREST answers a
             // missing table with PGRST205 and a missing column with PGRST204
             // from its schema cache — the raw Postgres codes only surface when
             // the statement actually reaches the database.
             "42703", "42P01", "PGRST204", "PGRST205" ->
-                "The shadow board is not live yet — the cloud has not been migrated"
+                "This part of the cloud is not set up yet — its database migration has not been applied"
             else -> "The cloud refused this request — try again"
         }
         is HttpRequestException -> "Could not reach the cloud — check your connection"

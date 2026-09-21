@@ -84,6 +84,9 @@ import com.monarch.app.data.cloud.isUnclaimedHandle
 import com.monarch.app.ui.components.MonarchButton
 import com.monarch.app.ui.components.NavChip
 import androidx.compose.material.icons.outlined.CloudUpload
+import androidx.compose.material.icons.outlined.CloudDownload
+import java.text.DateFormat
+import java.util.Date
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.InkSpinner
 import com.monarch.app.ui.components.SystemWindow
@@ -115,6 +118,16 @@ data class AccountUi(
     val claimBusy: Boolean = false,
     /** Skip lives only in the ViewModel: no persisted nag-flag, one skip per session. */
     val claimSkipped: Boolean = false,
+    /** Null means the cloud holds no archive yet — shown honestly, not as a fake "backed up". */
+    val lastBackup: CloudSync.BackupInfo? = null,
+    /** Populated only by an actual restore, so the hunter sees what came back. */
+    val lastRestore: Repository.ImportResult? = null,
+    /**
+     * Backup/restore failures render INSIDE the backup block. The shared
+     * [error] slot sits below the allies list, several screens down: a failed
+     * BACK UP NOW looked like a button that did nothing at all.
+     */
+    val backupError: String? = null,
 )
 
 class AccountViewModel(
@@ -138,7 +151,12 @@ class AccountViewModel(
         viewModelScope.launch {
             accountRepo.account.collect { acct ->
                 _ui.value = _ui.value.copy(account = acct)
-                if (acct != null) refreshFriends()
+                if (acct != null) {
+                    refreshFriends()
+                    // The panel must show backup freshness the moment it
+                    // appears, not only after a first manual backup.
+                    refreshBackup()
+                }
             }
         }
     }
@@ -269,6 +287,46 @@ class AccountViewModel(
         }
     }
 
+    /**
+     * Uploads the whole archive to the hunter's own cloud row. The archive
+     * omits private notes — the device promise holds even in a full backup.
+     */
+    fun backUpNow() {
+        viewModelScope.launch {
+            setBusy(true)
+            _ui.value = _ui.value.copy(backupError = null)
+            cloudSync.backupArchive()
+                .onSuccess { _ui.value = _ui.value.copy(lastBackup = it, backupError = null) }
+                .onFailure { _ui.value = _ui.value.copy(backupError = it.reason()) }
+            setBusy(false)
+        }
+    }
+
+    /**
+     * Destructive: replaces local training data with the cloud archive. The
+     * confirmation lives in the panel; by the time this runs the hunter has
+     * already named the consequence.
+     */
+    fun restoreFromCloud() {
+        viewModelScope.launch {
+            setBusy(true)
+            _ui.value = _ui.value.copy(backupError = null)
+            cloudSync.restoreArchive()
+                .onSuccess { _ui.value = _ui.value.copy(lastRestore = it, backupError = null) }
+                .onFailure { _ui.value = _ui.value.copy(backupError = it.reason()) }
+            setBusy(false)
+        }
+    }
+
+    /** Null result is real information: no archive exists yet in the cloud. */
+    private fun refreshBackup() {
+        viewModelScope.launch {
+            cloudSync.latestBackup()
+                .onSuccess { _ui.value = _ui.value.copy(lastBackup = it) }
+                .onFailure { _ui.value = _ui.value.copy(backupError = it.reason()) }
+        }
+    }
+
     fun refreshFriends() {
         viewModelScope.launch {
             _ui.value = _ui.value.copy(friendsLoading = true)
@@ -349,6 +407,8 @@ fun AccountScreen(
                     onVisibility = viewModel::setVisibility,
                     onSync = viewModel::syncNow,
                     onReupload = viewModel::reuploadEverything,
+                    onBackup = viewModel::backUpNow,
+                    onRestore = viewModel::restoreFromCloud,
                     onAccept = viewModel::acceptFriend,
                     onRequest = viewModel::requestFriend,
                     onClaim = viewModel::claimName,
@@ -628,6 +688,8 @@ private fun SignedInPanels(
     onVisibility: (String) -> Unit,
     onSync: () -> Unit,
     onReupload: () -> Unit,
+    onBackup: () -> Unit,
+    onRestore: () -> Unit,
     onAccept: (String) -> Unit,
     onRequest: (String) -> Unit,
     onClaim: (String) -> Unit,
@@ -752,7 +814,96 @@ private fun SignedInPanels(
                 )
             }
         }
-        // Privacy facts stay load-bearing; scanning beats a paragraph.
+        Spacer(Modifier.height(14.dp))
+        Text(
+            "BACKUP",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = MonarchColors.SystemGreen,
+            letterSpacing = MonarchTracking.InlineLabel,
+        )
+        Spacer(Modifier.height(6.dp))
+        // Freshness must be visible without tapping anything: a hunter has to
+        // be able to tell at a glance whether they are actually protected.
+        Text(
+            ui.lastBackup?.let {
+                "Last backup: " + DateFormat.getDateTimeInstance().format(Date(it.atMs)) +
+                    " · " + formatBytes(it.bytes)
+            } ?: "No cloud backup yet — tap BACK UP NOW to protect your training.",
+            style = MaterialTheme.typography.labelSmall,
+            color = if (ui.lastBackup != null) MonarchColors.Emerald else MonarchColors.SovereignGold,
+        )
+        Spacer(Modifier.height(8.dp))
+        MonarchButton(label = "Back Up Now", onClick = onBackup, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
+        // Next to the button that failed. The shared error slot lives below
+        // the allies list, several screens down, so a refused backup read as
+        // a button that simply did nothing.
+        ui.backupError?.let {
+            Spacer(Modifier.height(6.dp))
+            Text(
+                it,
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = MonarchColors.DangerRed,
+            )
+        }
+        Spacer(Modifier.height(6.dp))
+        // The archive is the one cloud copy that must honour the device
+        // promise from SessionScreen: the private note never leaves the phone.
+        PrivacyRow(Icons.Outlined.Lock, MonarchColors.SovereignGold, "Cloud backups never include your private notes — those stay on this device.")
+        Spacer(Modifier.height(8.dp))
+        // Same inline-confirm treatment as ERASE MY CLOUD DATA below: the
+        // destructive step names exactly what it replaces before it runs.
+        var confirmRestore by remember { mutableStateOf(false) }
+        if (confirmRestore) {
+            Text(
+                "This replaces EVERYTHING logged on this phone — sessions, " +
+                    "titles, skills, stats and measurements — with the cloud " +
+                    "archive. Anything not in that archive is lost for good.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MonarchColors.DangerRed,
+            )
+            Spacer(Modifier.height(8.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                MonarchButton(
+                    label = "Replace my data",
+                    onClick = {
+                        confirmRestore = false
+                        onRestore()
+                    },
+                    enabled = !ui.busy,
+                    modifier = Modifier.weight(1f),
+                )
+                TextButton(onClick = { confirmRestore = false }, enabled = !ui.busy) {
+                    Text(
+                        "KEEP MINE",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = ChakraPetch,
+                        color = MonarchColors.InkMuted,
+                    )
+                }
+            }
+        } else {
+            NavChip(
+                label = "RESTORE FROM CLOUD",
+                icon = Icons.Outlined.CloudDownload,
+                onClick = { confirmRestore = true },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        ui.lastRestore?.let { outcome ->
+            Spacer(Modifier.height(8.dp))
+            Text(
+                buildString {
+                    append("Restored ${outcome.sessions} sessions · ${outcome.sets} sets · ${outcome.titles} titles")
+                    if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
+                },
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = if (outcome.problems.isEmpty()) MonarchColors.Emerald else MonarchColors.SovereignGold,
+            )
+        }
+        Spacer(Modifier.height(14.dp))
         PrivacyRow(Icons.Outlined.Lock, MonarchColors.SovereignGold, "Body measurements — weight, height, body fat, BMI, FFMI — never leave this device.")
         Spacer(Modifier.height(6.dp))
         PrivacyRow(Icons.Outlined.Public, MonarchColors.Emerald, "Visibility decides who may read your sessions.")
@@ -852,6 +1003,10 @@ private fun SignedInPanels(
         )
     }
 }
+
+/** Bytes to a short human label for the backup-freshness line. */
+private fun formatBytes(bytes: Int): String =
+    if (bytes < 1024) "$bytes B" else "%.1f KB".format(bytes / 1024f)
 
 /** One icon-led privacy fact, house-styled for scanning. */
 @Composable

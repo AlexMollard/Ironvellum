@@ -62,6 +62,14 @@ object ExportWriter {
         crestFrames: List<CrestFrameSnapshot> = emptyList(),
         relics: List<RelicSnapshot> = emptyList(),
         exportedAtMs: Long,
+        // false = cloud copy. The app promises in user-visible UI
+        // (SessionScreen.kt:1081) that the private note never leaves this
+        // device; a backup that quietly broke that promise would be worse
+        // than no backup. The key is omitted entirely — not written empty —
+        // so the archive carries no trace of the field. ExportReader
+        // tolerates its absence (defaults to ""). Default true keeps every
+        // existing caller byte-identical: the LOCAL archive keeps the note.
+        includePrivateNotes: Boolean = true,
     ): String = buildString {
         append("{")
         append("\"formatVersion\":$FORMAT_VERSION,")
@@ -73,7 +81,7 @@ object ExportWriter {
         append(",\"presets\":")
         appendPresets(presets)
         append(",\"sessions\":")
-        appendSessions(sessions)
+        appendSessions(sessions, includePrivateNotes)
         append(",\"stats\":")
         appendStats(stats)
         append(",\"titles\":")
@@ -197,7 +205,10 @@ object ExportWriter {
         append("]")
     }
 
-    private fun StringBuilder.appendSessions(sessions: List<Pair<WorkoutSession, List<SessionSet>>>) {
+    private fun StringBuilder.appendSessions(
+        sessions: List<Pair<WorkoutSession, List<SessionSet>>>,
+        includePrivateNotes: Boolean,
+    ) {
         append("[")
         sessions.forEachIndexed { si, (session, sets) ->
             if (si > 0) append(",")
@@ -213,7 +224,9 @@ object ExportWriter {
             // The private note belongs in the user's own archive — it is kept
             // out of the CLOUD, not out of their backup. Dropping it here meant
             // a restore silently destroyed it.
-            append(",\"privateNote\":").appendEscaped(session.privateNote)
+            if (includePrivateNotes) {
+                append(",\"privateNote\":").appendEscaped(session.privateNote)
+            }
             append(",\"sets\":[")
             sets.forEachIndexed { ti, set ->
                 if (ti > 0) append(",")

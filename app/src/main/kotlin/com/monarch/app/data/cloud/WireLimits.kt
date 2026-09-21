@@ -32,4 +32,12 @@ object WireLimits {
      * Not covered by the schema guard: there is no constraint to compare to.
      */
     const val PRIVATE_NOTE_MAX = 2_000
+
+    /**
+     * `cloud_archives.size_bytes`: `size_bytes <= 8388608` (8 MiB). The server
+     * check would reject an over-ceiling archive with an opaque 23514, so the
+     * client refuses the same number BEFORE uploading and can say what to do
+     * about it. Guarded by WireNamesMatchSchemaTest like the field limits.
+     */
+    const val ARCHIVE_MAX_BYTES = 8_388_608
 }
