@@ -1,6 +1,7 @@
 package com.monarch.app.domain
 
 import kotlin.math.pow
+import kotlin.math.sqrt
 
 /**
  * How hard one rep of a movement is, and whether it is counted or timed.
@@ -14,9 +15,9 @@ import kotlin.math.pow
  * inventing a name.
  *
  * This resolves the shortcut StrengthIndex flagged ("revisit per-movement
- * coefficients") for the XP path only. StrengthIndex itself is unchanged —
- * its score feeds the leaderboard and lifetime totals, and re-weighting those
- * would silently restate history.
+ * coefficients"). Both scoring currencies now read the tier from here — XP at
+ * full [intensity], strength at the damped [strengthWeight] — so the two can
+ * never price the same movement differently again.
  */
 object MovementDifficulty {
 
@@ -96,6 +97,42 @@ object MovementDifficulty {
      * cannot be priced differently by the two systems.
      */
     const val SECONDS_PER_REP_EQUIVALENT = 5.0
+
+    /** Reps in one set that pay full rate. */
+    const val FULL_VALUE_REPS = 10
+
+    /** What a unit of volume past [FULL_VALUE_REPS] pays. */
+    const val TAPERED_RATE = 1.0 / 3.0
+
+    /**
+     * Volume with diminishing returns: the first [FULL_VALUE_REPS] units count
+     * in full, the rest at [TAPERED_RATE].
+     *
+     * This lives here and not on a scoring object because BOTH currencies that
+     * price a set must taper identically. XP always did; the strength index
+     * did not, which is the bug this move fixes — a 100-rep bodyweight set
+     * banked ten times the strength of a 10-rep set and the summed leaderboard
+     * rewarded volume-farming over hard work.
+     */
+    fun taperedVolume(rawUnits: Double): Double {
+        if (rawUnits <= FULL_VALUE_REPS) return rawUnits.coerceAtLeast(0.0)
+        return FULL_VALUE_REPS + (rawUnits - FULL_VALUE_REPS) * TAPERED_RATE
+    }
+
+    /**
+     * The weight [StrengthIndex] gives a movement, damped to the square root
+     * of its XP intensity: tier I x1, II x1.41, III x2, IV x2.83, V x4.
+     *
+     * The damping is deliberate. The strength index is a body-scaled LOAD
+     * figure — the bodyweight^0.67 term is its spine, and full 2^(tier-1)
+     * weighting would let the name swamp the load. But with NO weighting at
+     * all, a tier-I bodyweight squat and a tier-V one-arm pull-up scored
+     * identically for the same reps at the same bodyweight, and cheap
+     * volume farmed a summed lifetime leaderboard. sqrt breaks that 42.5-for-
+     * everything tie while keeping the load scaling dominant: the hardest
+     * movement caps at four times the easiest.
+     */
+    fun strengthWeight(exerciseName: String): Double = sqrt(intensity(exerciseName))
 
     /** Rep-equivalents for a hold of [seconds]. */
     fun holdRepEquivalents(seconds: Int): Double =

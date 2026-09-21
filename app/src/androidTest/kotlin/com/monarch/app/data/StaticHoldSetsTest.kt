@@ -140,19 +140,21 @@ class StaticHoldSetsTest {
             "60s hold paid ${holdResult.xpAwarded} XP; 5 HSPU paid ${repResult.xpAwarded}",
             holdResult.xpAwarded < repResult.xpAwarded,
         )
-        // StrengthIndex deliberately carries NO per-movement difficulty, so
-        // the claim here is only about the unit: a minute is twelve
-        // rep-equivalents, not sixty repetitions.
-        val asTwelveReps = StrengthIndex.repScore(12, null, 80.0).roundToInt()
-        val asSixtyReps = StrengthIndex.repScore(60, null, 80.0).roundToInt()
+        // Weighting is per-movement but the same on both sides of each
+        // comparison here (same movement name): the claim is about the unit,
+        // a minute is twelve rep-equivalents, not sixty repetitions.
+        val asTwelveReps = StrengthIndex.repScore("Hollow Hold", 12, null, 80.0).roundToInt()
+        val asSixtyReps = StrengthIndex.repScore("Hollow Hold", 60, null, 80.0).roundToInt()
         assertEquals(
             "a minute must score as twelve rep-equivalents",
             asTwelveReps,
             holdResult.strengthScore,
         )
+        // The taper narrows the old 1/5 gap (the first 10 units pay full), so
+        // the bound moves to 1/2 — still nowhere near sixty reps.
         assertTrue(
             "and nowhere near the $asSixtyReps the reps column used to give it",
-            holdResult.strengthScore < asSixtyReps / 4,
+            holdResult.strengthScore < asSixtyReps / 2,
         )
         assertTrue("a hold must still be worth something", holdResult.xpAwarded > 0)
     }

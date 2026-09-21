@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.monarch.app.data.db.SessionEntity
+import com.monarch.app.domain.StrengthIndex
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -19,10 +20,12 @@ import org.junit.runner.RunWith
  * permanently — the strength was lifted and the ledger never saw it.
  *
  * `rescoreUnweighedSessions` now fills those in (and only those) from the
- * `addStat` / `ensureSeeded` paths. These tests pin the four behaviours that
- * make the repair honest: unweighed lifting gets scored late, activity work
+ * `addStat` / `ensureSeeded` paths. These tests pin the behaviours that make
+ * the repair honest: unweighed lifting gets scored late, activity work
  * stays at zero, banked XP is never restated, and already-scored sessions are
- * never touched again.
+ * never touched again — plus the formula-change restatement, which rewrites
+ * EVERY completed session exactly once under the profile.scoringVersion
+ * marker, then never again.
  */
 @RunWith(AndroidJUnit4::class)
 class UnweighedSessionRescoreTest {
@@ -175,6 +178,78 @@ class UnweighedSessionRescoreTest {
             db.sessionDao().byId(id)!!.strengthScore,
         )
         assertEquals(lifetimeBefore, db.profileDao().get()!!.lifetimeStrength)
+    }
+
+    /**
+     * The formula changed: EVERY completed session must be restated from its
+     * stored sets, not just the zero-score ones, and the lifetime sum must
+     * follow. Emulates the shipped state — scored under the old formula, the
+     * marker never stamped — by resetting the profile marker and planting an
+     * old-formula score the current formula would never pay.
+     */
+    @Test
+    fun aFormulaChangeRestatesEveryScoredSessionAndStampsTheVersion() = runBlocking {
+        repo.addStat(weightKg = 82.5, bodyFatPct = 14.0)
+        val id = seedSessionWithOneDoneSet()
+        repo.completeSession(id)
+        val exercise = db.exerciseDao().observeAll().first().first { it.metric == "REPS" }
+        val fresh = StrengthIndex.sessionScore(
+            listOf(StrengthIndex.Effort(exercise.name, 8, null, 60.0)),
+            82.5,
+        )!!
+        assertTrue("the fixture must score under the current formula", fresh > 0)
+
+        // Shipped state: scores banked under the old formula, marker unstamped.
+        db.profileDao().upsert(db.profileDao().get()!!.copy(scoringVersion = 0))
+        db.sessionDao().updateSession(db.sessionDao().byId(id)!!.copy(strengthScore = 999_999))
+        db.profileDao().setLifetimeStrength(999_999L)
+
+        repo.ensureSeeded()
+
+        assertEquals(
+            "the old-formula score must be replaced by a freshly computed one",
+            fresh,
+            db.sessionDao().byId(id)!!.strengthScore,
+        )
+        assertEquals(
+            "the lifetime figure must be the fresh sum, not the stale total",
+            lifetimeStrengthSum(),
+            db.profileDao().get()!!.lifetimeStrength,
+        )
+        assertEquals(
+            "the marker must be stamped after the restatement",
+            StrengthIndex.SCORING_VERSION,
+            db.profileDao().get()!!.scoringVersion,
+        )
+    }
+
+    /**
+     * The marker is the whole point: with versions already matched, the
+     * rescore-all must NOT run — a planted wrong score stays untouched,
+     * proving no per-launch restatement is hiding behind ensureSeeded.
+     */
+    @Test
+    fun theRescoreAllDoesNotRunAgainOnceVersionsMatch() = runBlocking {
+        repo.addStat(weightKg = 82.5, bodyFatPct = 14.0)
+        val id = seedSessionWithOneDoneSet()
+        repo.completeSession(id)
+        assertEquals(
+            "setUp's ensureSeeded must already have stamped the marker",
+            StrengthIndex.SCORING_VERSION,
+            db.profileDao().get()!!.scoringVersion,
+        )
+        db.sessionDao().updateSession(db.sessionDao().byId(id)!!.copy(strengthScore = 555))
+        db.profileDao().setLifetimeStrength(555L)
+
+        repo.ensureSeeded()
+
+        assertEquals(
+            "a stamped marker means the stored scores are current; nothing may rewrite them",
+            555,
+            db.sessionDao().byId(id)!!.strengthScore,
+        )
+        assertEquals(555L, db.profileDao().get()!!.lifetimeStrength)
+        assertEquals(StrengthIndex.SCORING_VERSION, db.profileDao().get()!!.scoringVersion)
     }
 
     private companion object {

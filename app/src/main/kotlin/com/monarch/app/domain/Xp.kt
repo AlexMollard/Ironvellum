@@ -43,10 +43,10 @@ object Xp {
     const val QUEST_BONUS = 25
 
     /** Reps in one set that pay full rate. */
-    const val FULL_VALUE_REPS = 10
+    const val FULL_VALUE_REPS = MovementDifficulty.FULL_VALUE_REPS
 
     /** What a rep past [FULL_VALUE_REPS] pays. */
-    const val TAPERED_RATE = 1.0 / 3.0
+    const val TAPERED_RATE = MovementDifficulty.TAPERED_RATE
 
     /**
      * Seconds of a hold worth one rep-equivalent — the shared conversion, so
@@ -74,13 +74,10 @@ object Xp {
     )
 
     /**
-     * Volume with diminishing returns: the first [FULL_VALUE_REPS] count in
-     * full, the rest at [TAPERED_RATE].
+     * Alias for [MovementDifficulty.taperedVolume], where the taper now lives:
+     * both scoring currencies must taper identically, so both read one body.
      */
-    fun taperedVolume(rawUnits: Double): Double {
-        if (rawUnits <= FULL_VALUE_REPS) return rawUnits.coerceAtLeast(0.0)
-        return FULL_VALUE_REPS + (rawUnits - FULL_VALUE_REPS) * TAPERED_RATE
-    }
+    fun taperedVolume(rawUnits: Double): Double = MovementDifficulty.taperedVolume(rawUnits)
 
     /** Added kilos as a multiple of the lifter's own mass, capped. */
     fun loadMultiplier(addedKg: Double?, bodyweightKg: Double?): Double {

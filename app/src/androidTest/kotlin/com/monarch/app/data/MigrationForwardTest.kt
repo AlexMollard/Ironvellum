@@ -246,4 +246,43 @@ class MigrationForwardTest {
         }
         db.close()
     }
+
+    /**
+     * Schema 24 -> 25 adds the scoringVersion marker to the profile.
+     *
+     * The migration must add the column ONLY: it writes 0 (never restated)
+     * and leaves the restating itself to ensureSeeded, which is Kotlin work.
+     * A migration that tried to compute scores in SQL — or that reset the
+     * profile row to make room — would fail here.
+     */
+    @Test
+    fun upgradeTo25AddsTheScoringVersionMarkerAtZero() = runTest {
+        helper.createDatabase(dbName, 24).use { old ->
+            old.execSQL(
+                "INSERT OR REPLACE INTO profile " +
+                    "(id, name, totalXp, currentTitleId, lifetimeStrength, trainingMode, heightCm, sex, inkStyle) " +
+                    "VALUES (1, 'Kaida', 4200, 'shadow_ascendant', 777, 'HYPERTROPHY', 178.0, 'FEMALE', 0)",
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            dbName,
+            MonarchDatabase.VERSION,
+            true,
+            *MonarchDatabase.MIGRATIONS,
+        )
+
+        db.query(
+            "SELECT name, totalXp, lifetimeStrength, scoringVersion FROM profile WHERE id = 1",
+        ).use { c ->
+            assertTrue("the profile row must survive the upgrade", c.moveToFirst())
+            assertEquals("Kaida", c.getString(0))
+            assertEquals(4200L, c.getLong(1))
+            assertEquals(777L, c.getLong(2))
+            // 0 = the stored scores have never been restated under the
+            // current formula; ensureSeeded consumes exactly this marker.
+            assertEquals(0, c.getInt(3))
+        }
+        db.close()
+    }
 }

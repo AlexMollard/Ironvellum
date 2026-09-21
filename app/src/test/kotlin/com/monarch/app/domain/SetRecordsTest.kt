@@ -171,7 +171,7 @@ class SetRecordsTest {
     fun recordKeepsItsEarnedScoreAfterLaterWeightLoss() {
         // Set earned at 80 kg; the user then drops to 70 kg. The record's score
         // must stay the 80 kg score — otherwise it becomes trivially beatable.
-        val earned = StrengthIndex.repScore(10, null, 80.0)
+        val earned = StrengthIndex.repScore("pull-up", 10, null, 80.0)
         val stats = listOf(stat(500, 80.0), stat(5_000, 70.0))
         val history = listOf(
             session(1, 1_000) to listOf(set(setIndex = 1, reps = 10)),
@@ -193,7 +193,7 @@ class SetRecordsTest {
         assertEquals(75.0, lookup(500), 1e-9)
         val history = listOf(session(1, 500) to listOf(set(setIndex = 1, reps = 10)))
         val records = SetRecords.records(history, SetRecords.bodyweightLookup(stats))
-        assertEquals(StrengthIndex.repScore(10, null, 75.0), records["pull-up" to 1]!!.score, 1e-9)
+        assertEquals(StrengthIndex.repScore("pull-up", 10, null, 75.0), records["pull-up" to 1]!!.score, 1e-9)
     }
 
     @Test
@@ -202,7 +202,7 @@ class SetRecordsTest {
         assertEquals(80.0, lookup(1_000), 1e-9)
         val history = listOf(session(1, 1_000) to listOf(set(setIndex = 1, reps = 10)))
         val records = SetRecords.records(history, lookup)
-        assertEquals(StrengthIndex.repScore(10, null, 80.0), records["pull-up" to 1]!!.score, 1e-9)
+        assertEquals(StrengthIndex.repScore("pull-up", 10, null, 80.0), records["pull-up" to 1]!!.score, 1e-9)
         // Default fallback 0.0 must not throw either (score is 0, delta pins fraction).
         val zero = SetRecords.records(history, SetRecords.bodyweightLookup(emptyList()))
         val delta = SetRecords.delta(zero, "pull-up", setIndex = 1, reps = 10, weightKg = null, bodyweightKg = bw)
@@ -231,7 +231,7 @@ class SetRecordsTest {
         )
         val records = SetRecords.records(history, SetRecords.bodyweightLookup(stats))
         val delta = SetRecords.delta(records, "pull-up", setIndex = 1, reps = 5, weightKg = null, bodyweightKg = 70.0)
-        assertEquals(StrengthIndex.repScore(5, null, 70.0), delta.score, 1e-9)
+        assertEquals(StrengthIndex.repScore("pull-up", 5, null, 70.0), delta.score, 1e-9)
     }
 
     /**
@@ -253,7 +253,7 @@ class SetRecordsTest {
         }
         assertNull("attempts are not a strength record", records["bouldering" to 0])
         assertEquals(
-            StrengthIndex.repScore(5, null, bw),
+            StrengthIndex.repScore("pull-up", 5, null, bw),
             records.getValue("pull-up" to 0).score,
             1e-9,
         )

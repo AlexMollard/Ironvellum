@@ -118,6 +118,14 @@ data class ProfileEntity(
     val sex: String = "MALE",
     /** CLEAN is the default look; ink is the opt-in hand-drawn treatment. */
     val inkStyle: Boolean = false,
+    /**
+     * Which strength-scoring formula last touched the stored sessions, as
+     * [com.monarch.app.domain.StrengthIndex.SCORING_VERSION]. A marker only:
+     * recomputing a score from stored sets is Kotlin work the SQL layer cannot
+     * express, so the migration writes 0 here and `ensureSeeded` performs the
+     * one-time restatement. 0 = pre-marker row (or fresh install).
+     */
+    val scoringVersion: Int = 0,
 )
 
 @Entity(tableName = "skill_practices")

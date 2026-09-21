@@ -245,8 +245,8 @@ object ExerciseHistoryCalculator {
                 // invent a bodyweight-rep number from it. 0.0 is the value the
                 // calculator already uses for "no honest strength score".
                 score = when {
-                    isHold -> StrengthIndex.holdScore(figure, r.weightKg, bodyweightKg ?: 0.0)
-                    exercise.metric.isStrength -> StrengthIndex.repScore(figure, r.weightKg, bodyweightKg ?: 0.0)
+                    isHold -> StrengthIndex.holdScore(exercise.name, figure, r.weightKg, bodyweightKg ?: 0.0)
+                    exercise.metric.isStrength -> StrengthIndex.repScore(exercise.name, figure, r.weightKg, bodyweightKg ?: 0.0)
                     else -> 0.0
                 },
             )

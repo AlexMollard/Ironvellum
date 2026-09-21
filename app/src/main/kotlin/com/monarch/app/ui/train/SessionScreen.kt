@@ -360,9 +360,9 @@ fun SessionScreen(
             val groupStrength = bodyweight?.takeIf { blockMetric.isStrength }?.let { bw ->
                 doneSets.sumOf { set ->
                     if (isHoldBlock) {
-                        StrengthIndex.holdScore(set.durationSec ?: 0, set.weightKg, bw)
+                        StrengthIndex.holdScore(first.exerciseName, set.durationSec ?: 0, set.weightKg, bw)
                     } else {
-                        StrengthIndex.repScore(set.reps, set.weightKg, bw)
+                        StrengthIndex.repScore(first.exerciseName, set.reps, set.weightKg, bw)
                     }
                 }.toInt()
             }

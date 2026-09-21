@@ -64,9 +64,9 @@ object SetRecords {
                     val hold = MovementDifficulty.isHoldSet(metricOf(set), set.exerciseName, set.modifiers)
                     val figure = if (hold) (set.durationSec ?: set.reps) else set.reps
                     val score = if (hold) {
-                        StrengthIndex.holdScore(figure, set.weightKg, bodyweight)
+                        StrengthIndex.holdScore(set.exerciseName, figure, set.weightKg, bodyweight)
                     } else {
-                        StrengthIndex.repScore(figure, set.weightKg, bodyweight)
+                        StrengthIndex.repScore(set.exerciseName, figure, set.weightKg, bodyweight)
                     }
                     val key = set.exerciseName.lowercase().trim() to set.setIndex
                     val existing = best[key]
@@ -112,9 +112,9 @@ object SetRecords {
         isHold: Boolean = false,
     ): Delta {
         val score = if (isHold) {
-            StrengthIndex.holdScore(reps, weightKg, bodyweightKg)
+            StrengthIndex.holdScore(exerciseName, reps, weightKg, bodyweightKg)
         } else {
-            StrengthIndex.repScore(reps, weightKg, bodyweightKg)
+            StrengthIndex.repScore(exerciseName, reps, weightKg, bodyweightKg)
         }
         val record = records[exerciseName.lowercase().trim() to setIndex]
             ?: return Delta(record = null, score = score, deltaScore = 0.0, deltaFraction = 0.0, isRecord = true)

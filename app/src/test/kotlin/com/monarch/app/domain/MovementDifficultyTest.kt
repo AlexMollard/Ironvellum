@@ -170,4 +170,45 @@ class MovementDifficultyTest {
         val piled = MovementDifficulty.modifierFactor("one-arm, archer, deficit, tempo, paused, decline")
         assertTrue("stacking must not run away: $piled", piled <= MovementDifficulty.MAX_MODIFIER_FACTOR)
     }
+
+    /**
+     * The strength weight is sqrt of the XP intensity: bodyweight scaling must
+     * stay the dominant term of the strength index, so the hardest movement
+     * caps at 4x the easiest even though XP pays 16x.
+     */
+    @Test
+    fun `strength weight damps the tier curve to its square root`() {
+        assertEquals(1.0, MovementDifficulty.strengthWeight("Bodyweight Squat"), 0.0001)
+        assertEquals(
+            kotlin.math.sqrt(MovementDifficulty.intensity("One-Arm Pull-up")),
+            MovementDifficulty.strengthWeight("One-Arm Pull-up"),
+            0.0001,
+        )
+        assertEquals(4.0, MovementDifficulty.strengthWeight("One-Arm Pull-up"), 0.0001)
+        // An unclassified name falls back to DEFAULT_TIER, same as XP does.
+        assertEquals(
+            MovementDifficulty.strengthWeight("Bodyweight Squat") *
+                kotlin.math.sqrt(MovementDifficulty.TIER_BASE),
+            MovementDifficulty.strengthWeight("Some Custom Move"),
+            0.0001,
+        )
+    }
+
+    /**
+     * Both currencies read ONE taper. If XP's alias ever diverges from the
+     * shared body, the strength index and XP would price the same 100-rep
+     * set with different diminishing returns — the exact disagreement this
+     * move exists to make impossible.
+     */
+    @Test
+    fun `xp's taper alias reads the shared body`() {
+        listOf(0.0, 5.0, 10.0, 25.0, 100.0).forEach { units ->
+            assertEquals(
+                MovementDifficulty.taperedVolume(units),
+                Xp.taperedVolume(units),
+                0.0,
+            )
+        }
+        assertEquals(10.0 + 90.0 * MovementDifficulty.TAPERED_RATE, Xp.taperedVolume(100.0), 0.0001)
+    }
 }

@@ -73,7 +73,19 @@ abstract class MonarchDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 24
+        const val VERSION = 25
+
+        // The strength formula changed (taper + difficulty weighting). A schema
+        // bump alone restates nothing: stored sessions keep the numbers the
+        // old formula paid. The migration only marks the rows; the actual
+        // recomputation from stored sets is Kotlin work (StrengthIndex), so it
+        // happens once in ensureSeeded, guarded by profile.scoringVersion.
+        private val MIGRATION_24_25 = object : Migration(24, 25) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE profile ADD COLUMN scoringVersion INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
         // Height and sex move onto the profile (set once in Settings) so the
         // stat log no longer asks for height on every reading. heightCm is
         // backfilled from the newest stat row that actually carries one; with
@@ -335,6 +347,7 @@ abstract class MonarchDatabase : RoomDatabase() {
             MIGRATION_21_22,
             MIGRATION_22_23,
             MIGRATION_23_24,
+            MIGRATION_24_25,
         )
 
         const val NAME = "monarch.db"

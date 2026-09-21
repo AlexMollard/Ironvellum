@@ -135,6 +135,26 @@ class Repository(
         // who already measured himself staring at zeros forever; the count
         // query above the repair makes this free when there is nothing owed.
         rescoreUnweighedSessions()
+        // A scoring-formula change makes every STORED score stale — session
+        // rows and the leaderboard's lifetime sum keep the old numbers until
+        // something recomputes them — so it must run EXACTLY ONCE per formula
+        // change, not on every launch. The migration only adds the
+        // scoringVersion column at 0; this check consumes the marker: below
+        // the current StrengthIndex.SCORING_VERSION means "stored scores have
+        // never been restated under this formula". Restating is Kotlin work
+        // (StrengthIndex over stored sets), which the SQL migration cannot
+        // express — hence code, not SQL.
+        profileDao.get()?.let { profile ->
+            if (profile.scoringVersion < StrengthIndex.SCORING_VERSION) {
+                rescoreStrengthScores(onlyUnscored = false)
+                // Re-read before stamping: the rescore just rewrote
+                // lifetimeStrength, and stamping the pre-rescore row would
+                // silently write the stale total back over the fresh sum.
+                profileDao.get()?.let { fresh ->
+                    profileDao.upsert(fresh.copy(scoringVersion = StrengthIndex.SCORING_VERSION))
+                }
+            }
+        }
     }
 
     // ---------------------------------------------------------------- health history
@@ -865,9 +885,27 @@ class Repository(
      */
     private suspend fun rescoreUnweighedSessions() {
         if (sessionDao.unscoredStrengthSessionCount() == 0) return
-        val stats = statDao.observeAll().first()
-        if (stats.isEmpty()) return
+        rescoreStrengthScores(onlyUnscored = true)
+    }
+
+    /**
+     * Recomputes completed sessions' strength scores from their stored sets
+     * under the CURRENT formula and re-sums the lifetime figure.
+     *
+     * [onlyUnscored] keeps the weigh-in trigger cheap: it repairs only the
+     * sessions that banked no score (guarded upstream by the precise count
+     * query). The formula-change path ([ensureSeeded] against
+     * [StrengthIndex.SCORING_VERSION]) passes false — every stored score was
+     * computed under the old formula and is stale by definition.
+     *
+     * Recomputed from the sessions rather than nudged by a delta: the sum IS
+     * the lifetime figure, and it is what the cloud push recomputes too, so a
+     * drifted running total is corrected here. XP is never touched: it was
+     * awarded under an assumed bodyweight and banked XP is never restated.
+     */
+    private suspend fun rescoreStrengthScores(onlyUnscored: Boolean) {
         db.withTransaction {
+            val stats = statDao.observeAll().first()
             val bodyweightAt = SetRecords.bodyweightLookup(
                 stats.map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) },
             )
@@ -875,12 +913,14 @@ class Repository(
                 row.id to runCatching { ExerciseMetric.valueOf(row.metric) }
                     .getOrDefault(ExerciseMetric.REPS)
             }
+            val names = exerciseDao.observeAll().first().associate { it.id to it.name }
             sessionDao.observeCompletedWithSets().first().forEach { row ->
-                if (row.session.strengthScore != 0) return@forEach
+                if (onlyUnscored && row.session.strengthScore != 0) return@forEach
                 val efforts = row.sets
                     .filter { it.done && (metrics[it.exerciseId] ?: ExerciseMetric.REPS).isStrength }
                     .map { set ->
                         StrengthIndex.Effort(
+                            exerciseName = names[set.exerciseId] ?: "",
                             reps = set.reps,
                             holdSeconds = set.durationSec
                                 .takeIf { metrics[set.exerciseId] == ExerciseMetric.HOLD },
@@ -889,11 +929,10 @@ class Repository(
                     }
                 if (efforts.isEmpty()) return@forEach
                 val score = StrengthIndex.sessionScore(efforts, bodyweightAt(row.session.startedAtMs)) ?: 0
-                if (score != 0) sessionDao.updateSession(row.session.copy(strengthScore = score))
+                if (score != 0 && score != row.session.strengthScore) {
+                    sessionDao.updateSession(row.session.copy(strengthScore = score))
+                }
             }
-            // Recomputed from the sessions rather than nudged by a delta: the
-            // sum IS the lifetime figure, and it is what the cloud push
-            // recomputes too, so a drifted running total is corrected here.
             profileDao.setLifetimeStrength(
                 sessionDao.observeCompletedWithSets().first()
                     .sumOf { it.session.strengthScore.toLong() },
