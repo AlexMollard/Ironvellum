@@ -24,7 +24,7 @@ a 106-technique calisthenics tree, and a first-run flow that builds you a week.
 
 | Your day | The week it built you | The trial |
 |:---:|:---:|:---:|
-| <img src="docs/images/dashboard.png" width="230" alt="Dashboard showing rank, streak, titles and today's quest" /> | <img src="docs/images/train.png" width="230" alt="Training grounds listing the generated presets" /> | <img src="docs/images/session.png" width="230" alt="A session in progress with per-set load and rep steppers" /> |
+| <img src="docs/images/dashboard.png" width="230" alt="Today screen showing strength rank, streak, titles and today's quest" /> | <img src="docs/images/train.png" width="230" alt="Training grounds listing the generated presets" /> | <img src="docs/images/session.png" width="230" alt="A session in progress with per-set load and rep steppers" /> |
 
 | Skill tree | Deeds | Share card |
 |:---:|:---:|:---:|
