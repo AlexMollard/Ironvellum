@@ -58,6 +58,15 @@ open-work list.
   push. Replaying the jobs locally proved the commands and nothing about the
   runner. The `free`/`df` prints stay in the job so the next failure arrives
   with evidence.
+- CI is now **manual only** (`workflow_dispatch`), so the entry above describes
+  history rather than current behaviour. The repository is private, so every
+  runner minute is billed: 186 automatic runs in the 8 days to 2026-09-22, ~18
+  billed minutes each (instrumented 10, build 7, backend 1). `tools/gate.py`
+  does all three jobs on this machine in ~75 s, and the emulator it needs is
+  already running. Measured for comparison before deciding — this repository
+  was the only one of 16 private repos with any runs in that window, and its
+  artifacts total 0.06 GB, so neither storage nor another project explains a
+  larger bill.
 - Emulator screenshots are **not** pixel-comparable with the phone: the software
   rasterizer differs, and ink seeds resolve per pixel size. Diff within one
   target, never across.

@@ -1,8 +1,18 @@
-# Continuous integration for Ironvellum.
+# Continuous integration for Ironvellum — MANUAL ONLY.
 #
-# Runs on every push and pull request: debug build, unit tests, release lint,
-# and compilation of the instrumented tests.
-# Reports are uploaded as build artifacts.
+# This repository is private, so every runner minute is billed. Measured over
+# the 8 days to 2026-09-22: 186 automatic runs, ~18 billed minutes each
+# (instrumented 10, build 7, backend 1), around $27 of Linux minutes for work
+# that a local gate already does on hardware the owner already owns.
+#
+# So there is NO push or pull_request trigger. The gate runs locally:
+#
+#     python3 tools/gate.py            # build, unit, lint, instrumented
+#     python3 tools/gate.py --backend  # plus the Supabase assertions
+#
+# Run this workflow by hand from the Actions tab when a clean-machine check is
+# genuinely wanted — a fresh checkout catches things a warm local tree hides,
+# such as a file that was never committed.
 #
 # Secrets: this repo reads backend config from local.properties (gitignored).
 # On CI we generate that file from repository secrets when they exist, and
@@ -14,8 +24,7 @@
 name: CI
 
 on:
-  push:
-  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: ci-${{ github.ref }}

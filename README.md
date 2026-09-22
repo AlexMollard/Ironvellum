@@ -9,8 +9,8 @@
 Log a session, get a number that means something. Body-scaled strength scoring,
 a 106-technique calisthenics tree, and a first-run flow that builds you a week.
 
-[![CI](https://github.com/AlexMollard/Ironvellum/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexMollard/Ironvellum/actions/workflows/ci.yml)
-[![APK](https://github.com/AlexMollard/Ironvellum/actions/workflows/apk.yml/badge.svg)](https://github.com/AlexMollard/Ironvellum/actions/workflows/apk.yml)
+![Gate](https://img.shields.io/badge/gate-337%20unit%20%2B%2074%20instrumented-2E7D32)
+![Tested locally](https://img.shields.io/badge/tested-locally%2C%20not%20CI-555555)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
 ![minSdk](https://img.shields.io/badge/minSdk-29-3DDC84?logo=android&logoColor=white)

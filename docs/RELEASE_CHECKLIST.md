@@ -68,8 +68,17 @@ out with its matching app build.
    order (supabase CLI or the SQL editor). Everything from `0005` onward is
    idempotent and may be re-run; `0001`–`0004` are immutable.
 2. Re-run the assertion suite against a throwaway database first if the schema
-   changed at all — CI does this on every push, but it is the one check that
-   proves the guarantees still hold:
+   changed at all — nothing on a server does this any more (CI is manual-only
+   because the repo is private and every runner minute is billed), and it is
+   the one check that proves the guarantees still hold:
+
+   ```bash
+   python3 tools/gate.py --backend
+   ```
+
+   That stands up `postgres:16` in Docker, applies the stub and every
+   migration, re-applies the ones that declare themselves idempotent, and runs
+   `assert_all.sql`. By hand, if you want the steps separately:
 
    ```bash
    docker run -d --rm --name pg -e POSTGRES_PASSWORD=probe -p 5432:5432 postgres:16
