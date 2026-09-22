@@ -237,6 +237,10 @@ data class GachaStateEntity(
     // Carried on the entity (nullable) so every copy()/upsert of the single
     // row preserves it instead of wiping the equipped choice.
     val equippedFrame: String? = null,
+    // Figure-only draws since the last relic or frame. Persisted because pity
+    // has to survive the app being closed between rank-ups: held in memory it
+    // would reset on every launch and never actually fire.
+    val figureStreak: Int = 0,
 )
 
 /** One owned crest frame per row; id is the stable catalogue id from Gacha. */

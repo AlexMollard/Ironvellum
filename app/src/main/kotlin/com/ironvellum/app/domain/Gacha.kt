@@ -67,15 +67,43 @@ object Gacha {
         val frameChance: Double get() = (1.0 - figureChance - relicChance).coerceAtLeast(0.0)
     }
 
+    /**
+     * Every rarity can now pay every reward type. Common is 60% of all draws
+     * and used to sit at figureChance 1.00, so the majority of draws were
+     * STRUCTURALLY incapable of paying a relic or a frame: a lifter ten
+     * rank-ups in had a 1-in-7 chance of never having seen either, which is
+     * exactly what happened. Overall the table moves figures 81.9% -> 66.4%
+     * and frames 5.0% -> 10.0%.
+     */
     val DROP_TABLE = listOf(
-        Odds(RewardRarity.Common, 0.60, 1.00, 20, 40, 0.00, 0.0, 0.0),
-        Odds(RewardRarity.Rare, 0.30, 0.60, 60, 120, 0.30, 1.15, 1.35),
-        Odds(RewardRarity.Epic, 0.09, 0.40, 200, 400, 0.40, 1.35, 1.75),
-        Odds(RewardRarity.Masterwork, 0.01, 0.30, 800, 1500, 0.50, 1.75, 2.50),
+        Odds(RewardRarity.Common, 0.60, 0.80, 20, 40, 0.15, 1.05, 1.15),
+        Odds(RewardRarity.Rare, 0.30, 0.50, 60, 120, 0.35, 1.15, 1.35),
+        Odds(RewardRarity.Epic, 0.09, 0.35, 200, 400, 0.40, 1.35, 1.75),
+        Odds(RewardRarity.Masterwork, 0.01, 0.25, 800, 1500, 0.50, 1.75, 2.50),
     )
 
-    /** Deterministic for a given seed — same seed, same result, always. */
-    fun roll(seed: Long, ownedFrames: Set<String> = emptySet()): RollResult {
+    /**
+     * Figure draws in a row before the next one is FORCED to pay a relic or a
+     * frame. Odds alone can still hand out a long grey streak - the run that
+     * prompted this was ten - and a streak of the least interesting reward is
+     * what makes a reward system feel broken rather than unlucky.
+     */
+    const val PITY_AFTER = 3
+
+    /**
+     * Deterministic for a given seed — same seed, same result, always.
+     *
+     * [figureStreak] is how many figure-only draws came immediately before
+     * this one. At [PITY_AFTER] the figure branch is closed off and the draw
+     * pays a relic or a frame, split by this rarity's own odds between the
+     * two, so pity never changes WHICH of the two is likelier — only that one
+     * of them lands.
+     */
+    fun roll(
+        seed: Long,
+        ownedFrames: Set<String> = emptySet(),
+        figureStreak: Int = 0,
+    ): RollResult {
         val rng = Random(seed)
         val rarityRoll = rng.nextDouble()
         // Walk the cumulative rarity shares; the last row absorbs any residue
@@ -87,23 +115,32 @@ object Gacha {
         } ?: DROP_TABLE.last()
         val typeRoll = rng.nextDouble()
         val valueRoll = rng.nextDouble()
+        val forced = figureStreak >= PITY_AFTER
+        fun frameOrFigures(): Reward {
+            // Owned frames are excluded, or the roll is consumed for
+            // nothing when the repository dedupes the duplicate.
+            val candidates = CREST_FRAMES.filter { it.id !in ownedFrames }
+            return if (candidates.isEmpty()) {
+                // All frames owned: fall back to the next-best payout —
+                // the top of this rarity's figure band.
+                Reward.Figures(odds.figuresHigh)
+            } else {
+                candidates[rng.nextInt(candidates.size)]
+            }
+        }
         val reward = when {
+            forced -> {
+                // Rescale the rarity's relic/frame split to fill the whole
+                // roll. A row with no frame share still pays its relic.
+                val nonFigure = odds.relicChance + odds.frameChance
+                val relicShare = if (nonFigure <= 0.0) 1.0 else odds.relicChance / nonFigure
+                if (typeRoll < relicShare) relic(odds, valueRoll) else frameOrFigures()
+            }
             typeRoll < odds.figureChance ->
                 Reward.Figures(lerp(odds.figuresLow, odds.figuresHigh, valueRoll))
             typeRoll < odds.figureChance + odds.relicChance ->
                 relic(odds, valueRoll)
-            else -> {
-                // Owned frames are excluded, or the roll is consumed for
-                // nothing when the repository dedupes the duplicate.
-                val candidates = CREST_FRAMES.filter { it.id !in ownedFrames }
-                if (candidates.isEmpty()) {
-                    // All frames owned: fall back to the next-best payout —
-                    // the top of this rarity's figure band.
-                    Reward.Figures(odds.figuresHigh)
-                } else {
-                    candidates[rng.nextInt(candidates.size)]
-                }
-            }
+            else -> frameOrFigures()
         }
         return RollResult(reward, odds.rarity)
     }

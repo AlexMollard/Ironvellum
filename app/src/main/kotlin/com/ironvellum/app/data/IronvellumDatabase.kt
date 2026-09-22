@@ -73,7 +73,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 27
+        const val VERSION = 28
 
         // The strength formula changed (taper + difficulty weighting). A schema
         // bump alone restates nothing: stored sessions keep the numbers the
@@ -366,6 +366,19 @@ abstract class IronvellumDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Adds the pity counter to the gacha row.
+         *
+         * Existing lifters start at 0, which is the generous reading: someone
+         * who has already had a long grey run gets pity sooner rather than
+         * carrying a debt they cannot see.
+         */
+        private val MIGRATION_27_28 = object : Migration(27, 28) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE gacha_state ADD COLUMN figureStreak INTEGER NOT NULL DEFAULT 0")
+            }
+        }
+
 
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
@@ -384,6 +397,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_24_25,
             MIGRATION_25_26,
             MIGRATION_26_27,
+            MIGRATION_27_28,
         )
 
         const val NAME = "ironvellum.db"

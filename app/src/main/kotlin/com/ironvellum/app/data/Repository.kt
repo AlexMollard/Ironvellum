@@ -1968,10 +1968,14 @@ class Repository(
     suspend fun spendRoll(seed: Long): RollResult? = db.withTransaction {
         val current = gachaDao.get() ?: GachaStateEntity()
         if (current.rolls <= 0) return@withTransaction null
-        gachaDao.upsert(current.copy(rolls = current.rolls - 1))
         // Owned frames are excluded from the draw: a duplicate was silently
         // deduped on insert, so the roll was spent and nothing was granted.
-        val result = Gacha.roll(seed, gachaDao.ownedFrameIds().toSet())
+        val result = Gacha.roll(seed, gachaDao.ownedFrameIds().toSet(), current.figureStreak)
+        // The streak is written in the SAME transaction as the payout, so a
+        // crash between the two can never leave pity counting a draw that was
+        // never paid.
+        val streak = if (result.reward is Reward.Figures) current.figureStreak + 1 else 0
+        gachaDao.upsert(current.copy(rolls = current.rolls - 1, figureStreak = streak))
         when (val reward = result.reward) {
             is Reward.Figures -> grantIdle(reward.count, 1.0)
             is Reward.Relic -> {

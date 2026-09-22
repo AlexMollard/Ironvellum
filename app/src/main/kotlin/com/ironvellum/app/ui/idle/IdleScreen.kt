@@ -1102,6 +1102,14 @@ private fun OddsTable() {
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
+        // Pity changes the real odds, so it is stated here. The table above
+        // would otherwise be quietly wrong about what the roller does.
+        Text(
+            "After ${Gacha.PITY_AFTER} inscriptions that yield only figures, the next one " +
+                "is guaranteed a relic or a crest.",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.SovereignGold,
+        )
     }
 }
 

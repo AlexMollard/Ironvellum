@@ -330,4 +330,38 @@ class MigrationForwardTest {
         }
         db.close()
     }
+
+    /**
+     * Schema 27 -> 28 adds the pity counter to the gacha row.
+     *
+     * The banked rolls and the worn crest are what a lifter would actually
+     * miss, so the assertion is that they came through beside the new column —
+     * a migration that recreated the table and lost them would still validate
+     * against the exported schema.
+     */
+    @Test
+    fun upgradeTo28AddsThePityCounterWithoutLosingTheBank() = runTest {
+        helper.createDatabase(dbName, 27).use { old ->
+            old.execSQL(
+                "INSERT OR REPLACE INTO gacha_state (id, rolls, equippedFrame) VALUES (1, 4, 'masterwork')",
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            dbName,
+            IronvellumDatabase.VERSION,
+            true,
+            *IronvellumDatabase.MIGRATIONS,
+        )
+
+        db.query("SELECT rolls, equippedFrame, figureStreak FROM gacha_state WHERE id = 1").use { c ->
+            assertTrue("the gacha row must survive the upgrade", c.moveToFirst())
+            assertEquals(4, c.getInt(0))
+            assertEquals("masterwork", c.getString(1))
+            // An existing lifter starts owing nothing: pity counts forward from
+            // the upgrade rather than carrying an invisible debt.
+            assertEquals(0, c.getInt(2))
+        }
+        db.close()
+    }
 }
