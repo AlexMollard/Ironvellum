@@ -142,4 +142,102 @@ class SkillsTest {
         val walk = Skills.forName("Handstand Walk")!!
         assertEquals(Skills.Metric.METRES, walk.metric)
     }
+
+    /**
+     * The number on the bar is LOAD, not reps. Taking the max digit run read
+     * "5 reps with +25 kg" as a 25-rep standard and sent the journal and the
+     * BEST line chasing twenty-five reps of a five-rep lift. The same slip
+     * read the 90-Degree Push-up's angle as ninety reps.
+     */
+    @Test
+    fun `a loaded standard infers the rep count, not the plate`() {
+        val wpu = Skills.forName("Weighted Pull-up")!!
+        assertEquals(Skills.Metric.REPS, wpu.metric)
+        assertEquals(5, wpu.target)
+
+        val dip = Skills.forName("Weighted Dip")!!
+        assertEquals(Skills.Metric.REPS, dip.metric)
+        assertEquals(5, dip.target)
+
+        val ninety = Skills.forName("90-Degree Push-up")!!
+        assertEquals(Skills.Metric.REPS, ninety.metric)
+        assertEquals(1, ninety.target)
+    }
+
+    /**
+     * A decimal multiple like "1.5x" splits into 1 and 5 under the digit-run
+     * scan, so a future loaded standard written in digits would silently
+     * inflate its target. Multiples are spelled out; this pins the convention.
+     */
+    @Test
+    fun `standards spell multiples as words, never decimals`() {
+        Skills.ALL.forEach { skill ->
+            assertFalse(
+                "${skill.name} writes a decimal figure; spell it out or it inflates the target",
+                Regex("\\d+\\.\\d").containsMatchIn(skill.standard),
+            )
+        }
+    }
+
+    /**
+     * The gym progression lines: four full I-V chains, every rung a rep
+     * standard, every bar parsed to the rep count the prose means.
+     */
+    @Test
+    fun `gym lines are complete rep chains with sane targets`() {
+        val gymLines = listOf("Squat", "Bench", "Press", "Deadlift")
+        gymLines.forEach { line ->
+            val skills = Skills.ALL.filter { it.line == line }.sortedBy { it.tier }
+            assertEquals("$line must run I to V", (1..5).toList(), skills.map { it.tier })
+            skills.forEach { skill ->
+                assertEquals("${skill.name} is counted, not timed", Skills.Metric.REPS, skill.metric)
+                assertTrue(
+                    "${skill.name} target must be a rep count, got ${skill.target}",
+                    skill.target in 1..20,
+                )
+            }
+            skills.drop(1).zipWithNext().forEach { (lower, higher) ->
+                assertEquals(
+                    "each rung requires the one below it",
+                    lower.name,
+                    higher.requires,
+                )
+            }
+        }
+    }
+
+    /**
+     * The published female bars exist exactly where the male prose names a
+     * male multiple - the whole gym line - and nowhere else. A missing bar
+     * would ceiling a female hunter out of a line; a stray one would claim a
+     * sex-specific bar for a bodyweight skill.
+     */
+    @Test
+    fun `female bars cover the gym lines and nothing else`() {
+        val gymNames = Skills.ALL.filter { it.line in setOf("Squat", "Bench", "Press", "Deadlift") }.map { it.name }
+        gymNames.forEach { name ->
+            val bar = Skills.femaleStandard(name)
+            assertTrue("$name has no female bar", bar != null)
+            assertTrue("$name bar must state the multiple", bar!!.endsWith("bodyweight"))
+            assertTrue("$name bar must carry a number", Regex("\\d").containsMatchIn(bar))
+        }
+        assertEquals(null, Skills.femaleStandard("Pull-up"))
+        assertEquals(null, Skills.femaleStandard("Full Planche"))
+        assertEquals("1.4x bodyweight", Skills.femaleStandard("Double-Bodyweight Bench Press"))
+    }
+
+    /**
+     * The structural repairs: the dip branch must not skip a tier, and the
+     * compression chain must not jump L-sit to V-sit.
+     */
+    @Test
+    fun `repaired lines have no tier gaps on their chains`() {
+        assertEquals(2, Skills.forName("Parallel Bar Support Hold")!!.tier)
+        assertEquals(
+            "Parallel Bar Support Hold",
+            Skills.forName("Parallel Bar Dip")!!.requires,
+        )
+        assertEquals(3, Skills.forName("Straddle L-sit")!!.tier)
+        assertEquals("Straddle L-sit", Skills.forName("V-Sit")!!.requires)
+    }
 }

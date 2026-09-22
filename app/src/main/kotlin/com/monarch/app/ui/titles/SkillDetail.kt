@@ -39,6 +39,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.monarch.app.data.SkillTrainingEvidence
 import com.monarch.app.domain.SkillClaimResult
 import com.monarch.app.domain.SkillPractice
 import com.monarch.app.ui.components.formatDate
@@ -53,8 +54,10 @@ import kotlin.math.sin
 import kotlin.random.Random
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableDoubleStateOf
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.rememberScrollState
+
+import androidx.compose.foundation.verticalScroll
+
 
 /**
  * Tapping a node opens this, never an instant claim: the standard to clear,
@@ -66,6 +69,10 @@ fun SkillDetailDialog(
     mastered: Boolean,
     unlocked: Boolean,
     entries: List<SkillPractice>,
+    /** Best set of this movement from real logged sessions; null when never trained. */
+    training: SkillTrainingEvidence? = null,
+    /** The published female bar, when this hunter's profile says it applies. */
+    sexBar: String? = null,
     onLogPractice: (value: Int, weightKg: Double?) -> Unit,
     onClaim: () -> Unit,
     onUnclaim: () -> Unit,
@@ -73,7 +80,11 @@ fun SkillDetailDialog(
 ) {
     var confirmUnclaim by remember { mutableStateOf(false) }
     val best = entries.filterNot { it.claimed }.maxOfOrNull { it.value } ?: 0
-    var attempt by remember(skill.name) { mutableIntStateOf(if (best > 0) best else skill.target) }
+    // The standard is judged on the better of practice and real training: a
+    // hunter who already hit it in a session must not read "to go".
+    val trained = training
+    val bestOverall = maxOf(best, trained?.value ?: 0)
+    var attempt by remember(skill.name) { mutableIntStateOf(if (bestOverall > 0) bestOverall else skill.target) }
     var load by remember(skill.name) {
         mutableDoubleStateOf(entries.firstOrNull { it.weightKg != null }?.weightKg ?: 0.0)
     }
@@ -113,7 +124,8 @@ fun SkillDetailDialog(
                     .fillMaxWidth()
                     .verticalScroll(rememberScrollState()),
             ) {
-                DetailBlock("CLAIM STANDARD", skill.standard, MonarchColors.SovereignGold)
+                // A female hunter reads her own published bar, not the male default.
+                DetailBlock("CLAIM STANDARD", sexBar ?: skill.standard, MonarchColors.SovereignGold)
                 DetailBlock("WHY IT MATTERS", skill.why, MonarchColors.InkMuted)
                 if (skill.requires != null) {
                     DetailBlock(
@@ -139,24 +151,68 @@ fun SkillDetailDialog(
                         color = MonarchColors.InkMuted,
                     )
                 }
-                if (best > 0) {
+                if (best > 0 || trained != null) {
                     Spacer(Modifier.height(6.dp))
+                    if (best > 0) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                "PRACTICE BEST  $best${skill.unit}",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontFamily = ChakraPetch,
+                                color = MonarchColors.SystemGreen,
+                                letterSpacing = 1.sp,
+                            )
+                            Text(
+                                formatDate(entries.filterNot { it.claimed }.maxBy { it.value }.practicedAtMs, "d MMM"),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MonarchColors.InkMuted,
+                            )
+                        }
+                    }
+                    if (trained != null) {
+                        // Clearly sourced: this came out of her logged sessions,
+                        // not an honour-system practice entry.
+                        Row(
+                            Modifier.fillMaxWidth().padding(top = if (best > 0) 3.dp else 0.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            Text(
+                                buildString {
+                                    append("FROM TRAINING  ${trained.value}${skill.unit}")
+                                    val w = trained.weightKg
+                                    if (w != null && w > 0.0) append(" @ ${formatLoad(w)}kg")
+                                },
+                                style = MaterialTheme.typography.labelMedium,
+                                fontFamily = ChakraPetch,
+                                color = MonarchColors.SystemGreen,
+                                letterSpacing = 1.sp,
+                            )
+                            Text(
+                                formatDate(trained.achievedAtMs, "d MMM"),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MonarchColors.InkMuted,
+                            )
+                        }
+                    }
                     Row(
-                        Modifier.fillMaxWidth(),
+                        Modifier.fillMaxWidth().padding(top = 3.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
                         Text(
-                            "BEST  $best${skill.unit}",
+                            "STANDARD",
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
-                            color = if (best >= skill.target) MonarchColors.SovereignGold else MonarchColors.SystemGreen,
+                            color = MonarchColors.InkMuted,
                             letterSpacing = 1.sp,
                         )
                         Text(
-                            if (best >= skill.target) "standard cleared"
-                            else "${skill.target - best}${skill.unit} to standard",
+                            if (bestOverall >= skill.target) "standard cleared"
+                            else "${skill.target - bestOverall}${skill.unit} to standard",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MonarchColors.InkMuted,
+                            color = if (bestOverall >= skill.target) MonarchColors.SovereignGold else MonarchColors.InkMuted,
                         )
                     }
                 }

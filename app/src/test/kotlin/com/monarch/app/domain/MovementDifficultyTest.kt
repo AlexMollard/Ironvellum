@@ -20,9 +20,10 @@ class MovementDifficultyTest {
         val tree = Skills.ALL.associateBy { it.name.lowercase() }
         Seed.exercises
             .mapNotNull { tree[it.name.lowercase()] }
-            // "Weighted X" is tiered by its standard's load, which XP counts
-            // separately — those are deliberately overridden below.
-            .filterNot { it.name.startsWith("Weighted ") }
+            // "Weighted X" and tiers II-V of the gym lines are tiered by their
+            // standard's load, which XP counts separately - those are
+            // deliberately overridden below.
+            .filterNot { MovementDifficulty.isLoadPriced(it.name) }
             .forEach { skill ->
                 assertEquals(
                     "${skill.name} must score at its tree tier",
@@ -42,6 +43,12 @@ class MovementDifficultyTest {
     fun `a weighted variant is tiered as its unloaded parent`() {
         assertEquals(MovementDifficulty.tier("Pull-up"), MovementDifficulty.tier("Weighted Pull-up"))
         assertEquals(MovementDifficulty.tier("Dip"), MovementDifficulty.tier("Weighted Dip"))
+        // The gym progression lines price their multiples the same way: the
+        // name stays at the line root's unloaded tier, the barbell pays.
+        assertEquals(MovementDifficulty.tier("Back Squat"), MovementDifficulty.tier("Triple-Bodyweight Squat"))
+        assertEquals(MovementDifficulty.tier("Bench Press"), MovementDifficulty.tier("Paused Bench Press"))
+        assertEquals(MovementDifficulty.tier("Overhead Press"), MovementDifficulty.tier("Half-Again Overhead Press"))
+        assertEquals(MovementDifficulty.tier("Deadlift"), MovementDifficulty.tier("Heavy Deadlift"))
         // The load still pays — through the kilos, not through the name.
         assertTrue(
             Xp.setXp(Xp.SetEffort("Weighted Pull-up", 5, weightKg = 25.0), 80.0) >

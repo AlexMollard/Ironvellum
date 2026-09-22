@@ -29,7 +29,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.Repository
+import com.monarch.app.data.SkillTrainingEvidence
 import com.monarch.app.domain.Exercise
+import com.monarch.app.domain.Sex
 import com.monarch.app.domain.HealthDay
 import com.monarch.app.domain.PlayerProfile
 import com.monarch.app.domain.SessionSet
@@ -67,6 +69,9 @@ data class TitlesUi(
     val claimedAt: Map<String, Long> = emptyMap(),
     /** Live deed progress, so every locked title can show how far off it is. */
     val ledger: Titles.Ledger = Titles.Ledger(0, 0, 0, 0),
+    /** Best logged training set per normalised movement name - evidence the hunter never had to re-log. */
+    val training: Map<String, SkillTrainingEvidence> = emptyMap(),
+    val sex: Sex = Sex.MALE,
 )
 
 class TitlesViewModel(private val repo: Repository) : ViewModel() {
@@ -82,6 +87,8 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
         repo.observeHealthDays(),
         repo.observeExercises(),
         repo.observePresets(),
+        repo.observeSkillTrainingEvidence(),
+        repo.observeBodyProfile(),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         val unlocked = values[0] as List<UnlockedTitle>
@@ -96,6 +103,9 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
         val exercises = values[5] as List<Exercise>
         @Suppress("UNCHECKED_CAST")
         val presets = values[6] as List<WorkoutPreset>
+        @Suppress("UNCHECKED_CAST")
+        val training = values[7] as Map<String, SkillTrainingEvidence>
+        val bodyProfile = values[8] as Pair<Double?, Sex>
 
         val claimed = practices.filter { it.claimed }
 
@@ -122,6 +132,8 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
                 // a number the Court disagrees with.
                 scheduledWeekdays = presets.mapNotNull { it.scheduledDay }.toSet(),
             ),
+            training = training,
+            sex = bodyProfile.second,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TitlesUi())
 
@@ -172,6 +184,8 @@ fun TitlesScreen(
                 mastered = name in mastered,
                 unlocked = Skills.unlocked(def, mastered),
                 entries = ui.log.filter { it.skillName == name },
+                training = ui.training[name.lowercase().trim()],
+                sexBar = if (ui.sex == Sex.FEMALE) Skills.femaleStandard(name) else null,
                 onLogPractice = { value, load ->
                     viewModel.practice(name, value, load)
                     openSkill = null

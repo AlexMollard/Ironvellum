@@ -147,6 +147,13 @@ object Seed {
             def.line == "Pull" || def.line == "Lever" ||
                 def.line == "Rings" || def.line == "Movement" -> MuscleGroup.PULL
             def.line == "Push" || def.line == "Handstand" || def.line == "Planche" -> MuscleGroup.PUSH
+            // The barbell lines land on the group they actually train. Without
+            // this they fell through to CORE, which mis-sorts them in every
+            // picker AND hands them the trunk sex coefficient instead of the
+            // pressing or leg one.
+            def.line == "Bench" || def.line == "Press" -> MuscleGroup.PUSH
+            def.line == "Squat" -> MuscleGroup.LEGS
+            def.line == "Deadlift" -> MuscleGroup.LEGS
             def.line == "Legs" -> MuscleGroup.LEGS
             def.line == "Core" || def.line == "Mobility" -> MuscleGroup.CORE
             def.name.contains("Squat") || def.name.contains("Curl") -> MuscleGroup.LEGS

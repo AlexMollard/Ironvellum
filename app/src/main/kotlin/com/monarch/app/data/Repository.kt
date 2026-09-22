@@ -81,6 +81,18 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.firstOrNull
 
+/**
+ * Evidence from real training, not practice: a completed session's best set of
+ * a movement. Informs the skill dialog's standard line; never claims or mints
+ * XP on its own.
+ */
+data class SkillTrainingEvidence(
+    /** Reps performed, or seconds held for a hold movement. */
+    val value: Int,
+    val weightKg: Double?,
+    val achievedAtMs: Long,
+)
+
 class Repository(
     private val db: MonarchDatabase,
     private val health: HealthSync? = null,
@@ -1152,6 +1164,36 @@ class Repository(
                     weightKg = it.weightKg,
                 )
             }
+        }
+
+    /**
+     * Best effort a hunter actually logged in real training for each movement,
+     * derived from completed sessions. Reuses [SetRecords.records] - the same
+     * per-set machinery the live PR badges read - so the tree and the session
+     * screen can never disagree about what her best set was. Keyed by
+     * normalised exercise name; only movements that are also a skill appear
+     * interesting, but the map carries every strength movement so callers
+     * decide the join.
+     */
+    fun observeSkillTrainingEvidence(): Flow<Map<String, SkillTrainingEvidence>> =
+        combine(observeHistory(), observeStats(), observeExercises()) { history, stats, exercises ->
+            val bodyweightAt = SetRecords.bodyweightLookup(stats)
+            val metricByName = exercises.associate { it.name.lowercase().trim() to it.metric }
+            val best = SetRecords.records(history, bodyweightAt) { set ->
+                metricByName[set.exerciseName.lowercase().trim()]
+            }
+            best.values
+                .groupBy { it.exerciseName.lowercase().trim() }
+                .mapValues { (_, records) ->
+                    // records() keys by set position; the hunter's best effort
+                    // is the strongest position, not the first one logged.
+                    val top = records.maxBy { it.score }
+                    SkillTrainingEvidence(
+                        value = top.reps,
+                        weightKg = top.weightKg,
+                        achievedAtMs = top.achievedAtMs,
+                    )
+                }
         }
 
     /**

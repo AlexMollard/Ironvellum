@@ -54,19 +54,19 @@ object MovementDifficulty {
         "lat pulldown" to 2,
         "face pull" to 1,
         // Push
+        // "bench press" and "overhead press" and the legs-line "back squat" /
+        // "deadlift" keys are gone: those names are now tier I rows of the gym
+        // progression lines in [Skills], and the tree is read before this
+        // table - keeping the keys here would be dead rows primed to drift.
         "dip" to 3,
         "pike push-up" to 2,
-        "overhead press" to 2,
-        "bench press" to 2,
         "incline bench press" to 2,
         // Legs
-        "back squat" to 2,
         "bulgarian split squat" to 2,
         "single-leg glute bridge" to 2,
         "single-leg calf raise" to 1,
         "knee-to-wall dorsiflexion" to 1,
         "glute bridge" to 1,
-        "deadlift" to 2,
         "romanian deadlift" to 2,
         "front squat" to 2,
         "hip thrust" to 2,
@@ -145,15 +145,40 @@ object MovementDifficulty {
     /**
      * Tree tiers that price the added load into the movement itself.
      * "Weighted Pull-up" is tier V because *five reps with +25 kg* is an elite
-     * standard — but XP already multiplies by the kilos on the belt, so
+     * standard - but XP already multiplies by the kilos on the belt, so
      * reading the tier straight would pay for that load twice. These score as
      * their unloaded parent and let the real weight do the work: a
      * +25 kg pull-up out-earns a bare one because it is heavier, not because
      * of its name.
+     *
+     * The gym progression lines (Back Squat through Triple-Bodyweight
+     * Deadlift) are the same trap at every tier above I: the tier states the
+     * UNLOADED movement and the standard's multiple is load, so tiers II-V of
+     * each line score as their line root and the barbell pays the difference.
      */
     private val loadPricedTiers: Map<String, Int> = mapOf(
         "weighted pull-up" to 3, // Pull-up
         "weighted dip" to 3, // Parallel Bar Dip
+        // Squat line -> Back Squat
+        "pause squat" to 1,
+        "heavy squat" to 1,
+        "double-bodyweight squat" to 1,
+        "triple-bodyweight squat" to 1,
+        // Bench line -> Bench Press
+        "volume bench press" to 1,
+        "paused bench press" to 1,
+        "heavy bench press" to 1,
+        "double-bodyweight bench press" to 1,
+        // Press line -> Overhead Press
+        "volume overhead press" to 1,
+        "bodyweight overhead press" to 1,
+        "heavy overhead press" to 1,
+        "half-again overhead press" to 1,
+        // Deadlift line -> Deadlift
+        "volume deadlift" to 1,
+        "double-bodyweight deadlift" to 1,
+        "heavy deadlift" to 1,
+        "triple-bodyweight deadlift" to 1,
     )
 
     /**
@@ -195,6 +220,14 @@ object MovementDifficulty {
      */
     fun loadFactor(exerciseName: String): Double =
         loadFactors[key(exerciseName)] ?: FREE_WEIGHT_LOAD
+
+    /**
+     * Whether this tree movement's tier is load-priced down to its unloaded
+     * parent ("Weighted Pull-up", tiers II-V of the gym lines). The test that
+     * holds tree rows to their own tier must skip these - their scoring tier
+     * is deliberately not their tree tier.
+     */
+    fun isLoadPriced(exerciseName: String): Boolean = key(exerciseName) in loadPricedTiers
 
     /** Plates hanging vertically off the body: the reference the bands are relative to. */
     const val FREE_WEIGHT_LOAD = 1.0

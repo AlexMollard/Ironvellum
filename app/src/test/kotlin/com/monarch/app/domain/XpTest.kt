@@ -160,32 +160,39 @@ class XpTest {
     /**
      * The defect [MovementDifficulty.loadFactor] exists to prevent: before the
      * transmission ratio, an 80 kg hunter's 10-rep leg press at 200 kg paid
-     * MORE XP and MORE strength than a 10-rep back squat, making a
+     * MORE XP and MORE strength than a 10-rep front squat, making a
      * plate-hungry machine the best-value movement in the app. The sled is not
      * harder than the squat; its NUMBER is bigger. The invariant the ratio
      * actually guarantees: the same marked number pays strictly less on a
      * machine than on a barbell, in both currencies. With the factor gone
      * (table empty or unwired) both multipliers return 3.0 and these
      * assertions flip to equality, so the test bites.
+     *
+     * The barbell reference is the front squat: a catalogue-only lift whose
+     * tier still sits beside the machines. The back squat is now tier I of the
+     * gym progression tree, and its scoring tier is deliberately below the
+     * machines' - comparing against it would pit a tier change against a load
+     * factor and prove nothing.
      */
     @Test
     fun `the same marked kilos pay less on a machine than on a barbell`() {
         val machine = machineMovement()
+        val barbell = "front squat"
         // Below the barbell's cap threshold (added = 2x bodyweight): at 200 kg
         // BOTH implements peg the 3.0 ceiling and tie, which would prove
         // nothing about the transmission ratio.
         val marked = 100.0
         Assume.assumeTrue(
             "machine $machine must share the barbell's tier for the set comparison to be fair",
-            MovementDifficulty.intensity("back squat") == MovementDifficulty.intensity(machine),
+            MovementDifficulty.intensity(barbell) == MovementDifficulty.intensity(machine),
         )
-        val squat = Xp.setXp(Xp.SetEffort("back squat", reps = 10, weightKg = marked), bodyweight)
+        val squat = Xp.setXp(Xp.SetEffort(barbell, reps = 10, weightKg = marked), bodyweight)
         val machineXp = Xp.setXp(Xp.SetEffort(machine, reps = 10, weightKg = marked), bodyweight)
         assertTrue("squat $squat must out-earn ${machine.lowercase()} $machineXp", squat > machineXp)
 
         // Same comparison through the strength score, tier-free via multipliers.
         val squatStrength =
-            StrengthIndex.repScore("back squat", reps = 10, addedKg = marked, bodyweightKg = bodyweight)
+            StrengthIndex.repScore(barbell, reps = 10, addedKg = marked, bodyweightKg = bodyweight)
         val machineStrength =
             StrengthIndex.repScore(machine, reps = 10, addedKg = marked, bodyweightKg = bodyweight)
         assertTrue(
@@ -195,7 +202,7 @@ class XpTest {
         assertTrue(
             "machine multiplier must sit below the barbell's",
             Xp.loadMultiplier(machine, marked, bodyweight) <
-                Xp.loadMultiplier("back squat", marked, bodyweight),
+                Xp.loadMultiplier(barbell, marked, bodyweight),
         )
     }
 
