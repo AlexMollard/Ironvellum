@@ -301,4 +301,32 @@ class TitleReachabilityTest {
             assertTrue(progress.current < progress.target)
         }
     }
+
+    @Test
+    fun `a sexed deed states each hunter's own bar and never the other's`() {
+        val sexed = Titles.ALL.filter { it.rule is TitleRule.LiftMultiple }
+        assertTrue("no load deeds to check", sexed.isNotEmpty())
+        sexed.forEach { def ->
+            val rule = def.rule as TitleRule.LiftMultiple
+            // A woman must not be told the men's standard with herself as a
+            // footnote: that framing is what this replaced.
+            assertFalse(
+                "${def.id} still explains a woman as an exception",
+                def.description.contains("female", ignoreCase = true),
+            )
+            val female = def.descriptionFemale
+            assertTrue("${def.id} has no wording for a female hunter", female != null)
+            assertEquals(female, def.describeFor(Sex.FEMALE))
+            assertEquals(def.description, def.describeFor(Sex.MALE))
+            // The prose carries a number, so it can disagree with the rule it
+            // describes. Read it back and hold the two together.
+            val stated = Regex("""([0-9]*\.?[0-9]+)x""").find(female!!)?.groupValues?.get(1)?.toDouble()
+            assertEquals(
+                "${def.id} promises a bar the rule does not enforce",
+                rule.female,
+                stated ?: -1.0,
+                0.0001,
+            )
+        }
+    }
 }

@@ -291,6 +291,7 @@ fun TitlesScreen(
             equippedId = ui.currentTitleId,
             ledger = ui.ledger,
             onEquip = { viewModel.equip(it) },
+            sex = ui.sex,
             // weight(1f) gives the lazy list a real height inside the
             // non-scrolling shell; fillMaxSize here would fight the header.
             modifier = Modifier.fillMaxWidth().weight(1f),
@@ -336,7 +337,7 @@ fun TitlesScreen(
                         Achievement(
                             banner = "TITLE EARNED",
                             name = title.name,
-                            subtitle = "${title.rarity.name.uppercase()} · ${title.description.uppercase()}",
+                            subtitle = "${title.rarity.name.uppercase()} · ${title.describeFor(ui.sex).uppercase()}",
                         ),
                     )
                 }

@@ -49,6 +49,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monarch.app.domain.Titles
+import com.monarch.app.domain.Sex
 import com.monarch.app.domain.TitleDef
 import com.monarch.app.domain.TitleRarity
 import com.monarch.app.ui.components.SystemWindow
@@ -129,6 +130,8 @@ fun DeedsBoard(
     equippedId: String?,
     ledger: Titles.Ledger,
     onEquip: (String) -> Unit,
+    /** Whose bar the deed wording states; a woman reads her own, not a footnote. */
+    sex: Sex,
     // The caller supplies the height bound: this list is the scroll container,
     // so it must never be handed infinite height by a scrolling parent.
     modifier: Modifier = Modifier.fillMaxSize(),
@@ -283,7 +286,7 @@ fun DeedsBoard(
                         }
                     }
                     Text(
-                        equipped?.description ?: "Earn a deed below, then wear it.",
+                        equipped?.describeFor(sex) ?: "Earn a deed below, then wear it.",
                         style = MaterialTheme.typography.bodySmall,
                         color = MonarchColors.InkMuted,
                     )
@@ -348,7 +351,7 @@ fun DeedsBoard(
             .filter {
                 !searching ||
                     it.name.contains(query.text.trim(), ignoreCase = true) ||
-                    it.description.contains(query.text.trim(), ignoreCase = true)
+                    it.describeFor(sex).contains(query.text.trim(), ignoreCase = true)
             }
             .groupBy { Titles.category(it.rule) }
             .mapValues { (_, defs) ->
@@ -395,7 +398,7 @@ fun DeedsBoard(
             }
             if (open) {
                 items(defs, key = { it.id }) { def ->
-                    DeedRow(def, progressOf.getValue(def.id), unlocked[def.id])
+                    DeedRow(def, progressOf.getValue(def.id), unlocked[def.id], sex)
                 }
             }
         }
@@ -557,7 +560,7 @@ private fun CategoryHeader(
 }
 
 @Composable
-private fun DeedRow(def: TitleDef, progress: Titles.Progress, unlockedAtMs: Long?) {
+private fun DeedRow(def: TitleDef, progress: Titles.Progress, unlockedAtMs: Long?, sex: Sex) {
     val claimed = unlockedAtMs != null
     SystemWindow(Modifier.fillMaxWidth()) {
         Column(
@@ -578,7 +581,7 @@ private fun DeedRow(def: TitleDef, progress: Titles.Progress, unlockedAtMs: Long
                         color = MonarchColors.Ink,
                     )
                     Text(
-                        if (claimed) "claimed ${formatDate(unlockedAtMs, "d MMM yyyy")}" else def.description,
+                        if (claimed) "claimed ${formatDate(unlockedAtMs, "d MMM yyyy")}" else def.describeFor(sex),
                         style = MaterialTheme.typography.labelSmall,
                         color = if (claimed) MonarchColors.SovereignGold else MonarchColors.InkMuted,
                         maxLines = 1,

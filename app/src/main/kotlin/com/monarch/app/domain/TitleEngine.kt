@@ -77,7 +77,24 @@ data class TitleDef(
     // No default: a future title must state its rarity explicitly, never
     // silently fall through to Common.
     val rarity: TitleRarity,
-)
+    /**
+     * What this deed asks of a female hunter, when her bar differs.
+     *
+     * The skill tree already shows a woman her own standard rather than a
+     * man's with a footnote (Skills.femaleStandard), and the deeds follow it:
+     * "squat your own bodyweight (0.6x if female)" made her read the men's
+     * number first and herself as the exception. Null where the deed is the
+     * same feat for everyone - rep and hold counts deliberately are.
+     *
+     * Stated as "Nx your bodyweight" so it cannot drift from the rule: a test
+     * reads the figure back out and compares it to [TitleRule.LiftMultiple].
+     */
+    val descriptionFemale: String? = null,
+) {
+    /** The bar as the hunter reading it must clear. */
+    fun describeFor(sex: Sex): String =
+        if (sex == Sex.FEMALE) descriptionFemale ?: description else description
+}
 
 object Titles {
 
@@ -456,51 +473,58 @@ object Titles {
         TitleDef(
             "iron_standard",
             "Iron Standard",
-            "Squat your own bodyweight for an estimated 1RM (0.6x if female).",
+            "Squat your own bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("back squat", "front squat"), male = 1.0, female = 0.6),
             TitleRarity.Common,
+            descriptionFemale = "Squat 0.6x your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "bench_mark",
             "Bench Mark",
-            "Bench press your bodyweight for an estimated 1RM (0.5x if female).",
+            "Bench press your bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("bench press", "incline bench press", "close-grip bench press"), male = 1.0, female = 0.5),
             TitleRarity.Rare,
+            descriptionFemale = "Bench press 0.5x your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "iron_wings",
             "Iron Wings",
-            "Weight a pull-up or chin-up with half your bodyweight for an estimated 1RM (0.3x if female).",
+            "Weight a pull-up or chin-up with half your bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("pull-up", "chin-up", "archer pull-up"), male = 0.5, female = 0.3),
             TitleRarity.Rare,
+            descriptionFemale = "Weight a pull-up or chin-up with 0.3x your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "crown_press",
             "Crown Press",
-            "Overhead press three quarters of your bodyweight for an estimated 1RM (0.35x if female).",
+            "Overhead press three quarters of your bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("overhead press", "push press"), male = 0.75, female = 0.35),
             TitleRarity.Rare,
+            descriptionFemale = "Overhead press 0.35x your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "throne_of_iron",
             "Throne of Iron",
-            "Squat double bodyweight for an estimated 1RM (1.25x if female).",
+            "Squat double bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("back squat", "front squat"), male = 2.0, female = 1.25),
             TitleRarity.Epic,
+            descriptionFemale = "Squat 1.25x your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "titans_pull",
             "Titan's Pull",
-            "Deadlift double bodyweight for an estimated 1RM (1.4x if female).",
+            "Deadlift double bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("deadlift", "sumo deadlift"), male = 2.0, female = 1.4),
             TitleRarity.Epic,
+            descriptionFemale = "Deadlift 1.4x your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "atlas",
             "Atlas",
-            "Deadlift triple bodyweight for an estimated 1RM (2.25x if female). The sky holds itself up.",
+            "Deadlift triple bodyweight for an estimated 1RM. The sky holds itself up.",
             TitleRule.LiftMultiple(setOf("deadlift", "sumo deadlift"), male = 3.0, female = 2.25),
             TitleRarity.Sovereign,
+            descriptionFemale = "Deadlift 2.25x your bodyweight for an estimated 1RM. The sky holds itself up.",
         ),
         // Rep-volume feats. The counts are deliberately the same for both
         // sexes: these are submaximal endurance feats of bodyweight work, and

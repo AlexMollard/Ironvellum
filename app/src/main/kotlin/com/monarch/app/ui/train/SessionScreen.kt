@@ -80,6 +80,7 @@ import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.domain.isStrength
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.SetRecords
+import com.monarch.app.domain.Sex
 import com.monarch.app.domain.StrengthIndex
 import com.monarch.app.domain.WorkoutSession
 import com.monarch.app.domain.WorkoutShare
@@ -139,6 +140,14 @@ class SessionViewModel(
 
     val exercises: StateFlow<List<Exercise>> =
         repo.observeExercises().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /**
+     * The reader's own bar, for the deeds the victory overlay names: a woman
+     * must not be congratulated in the wording of the men's standard.
+     */
+    val sex: StateFlow<Sex> = repo.observeBodyProfile()
+        .map { it.second }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Sex.MALE)
 
     // Most-recent-first ids from completed sessions; the picker preserves the order.
     val recentExerciseIds: StateFlow<List<Long>> =
@@ -281,6 +290,7 @@ fun SessionScreen(
     val exercises by viewModel.exercises.collectAsStateWithLifecycle()
     val recentExerciseIds by viewModel.recentExerciseIds.collectAsStateWithLifecycle()
     val bodyweight by viewModel.bodyweight.collectAsStateWithLifecycle()
+    val sex by viewModel.sex.collectAsStateWithLifecycle()
     var completion by remember { mutableStateOf<Repository.CompletionResult?>(null) }
     var confirmAbandon by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
@@ -617,7 +627,7 @@ fun SessionScreen(
                             Achievement(
                                 banner = "TITLE EARNED",
                                 name = title.name,
-                                subtitle = title.description.uppercase(),
+                                subtitle = title.describeFor(sex).uppercase(),
                             ),
                         )
                     }

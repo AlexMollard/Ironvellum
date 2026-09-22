@@ -50,7 +50,8 @@ class PresetAutoFillTest {
     fun beginningAPresetFillsTheSessionWithItsExercises() {
         driver.tab("Train")
 
-        // "Heavy Pull" is a seeded preset, so it exists on any fresh profile.
+        // "Heavy Pull" belongs to the starter week, which a fresh install no
+        // longer imposes - TestProfile writes it for every UI test instead.
         val preset = driver.awaitAnyText { it == "Heavy Pull" }
         val exercisesOnCard = driver.allText()
 

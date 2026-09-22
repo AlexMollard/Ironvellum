@@ -73,6 +73,7 @@ import com.monarch.app.domain.STEP_GOAL
 import com.monarch.app.domain.PlayerProfile
 import com.monarch.app.domain.Rank
 import com.monarch.app.domain.Streak
+import com.monarch.app.domain.Sex
 import com.monarch.app.domain.TitleDef
 import com.monarch.app.domain.Titles
 import com.monarch.app.domain.UnlockedTitle
@@ -100,6 +101,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import com.monarch.app.ui.launchGuarded
 import kotlinx.coroutines.launch
@@ -177,6 +179,14 @@ class DashboardViewModel(private val repo: Repository) : ViewModel() {
 
     /** Titles awarded by startup reconciliation, still owed their celebration. */
     val pendingCelebrations: StateFlow<List<TitleDef>> = repo.pendingCelebrations
+
+    /**
+     * The reader's own bar. A deed's wording differs by sex, and the celebration
+     * must not tell a woman she cleared the men's standard.
+     */
+    val sex: StateFlow<Sex> = repo.observeBodyProfile()
+        .map { it.second }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Sex.MALE)
 
     fun celebrationsSeen() = repo.clearPendingCelebrations()
 
@@ -817,13 +827,14 @@ fun DashboardScreen(
     // Titles reconciled at startup (health data, imports) have no session to
     // celebrate in, so the moment is paid out here on the first screen.
     val owed by viewModel.pendingCelebrations.collectAsStateWithLifecycle()
+    val sex by viewModel.sex.collectAsStateWithLifecycle()
     AchievementOverlay(
         items = owed.map { def ->
             Achievement(
                 banner = "TITLE EARNED",
                 tagline = "DEED CLAIMED",
                 name = def.name,
-                subtitle = def.description.uppercase(),
+                subtitle = def.describeFor(sex).uppercase(),
             )
         },
         onDone = { viewModel.celebrationsSeen() },
