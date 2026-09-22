@@ -10,7 +10,7 @@ Nothing is sourced from a third-party icon set.
 | Drawable | Origin | Author | Licence | Source URL |
 |---|---|---|---|---|
 | `mipmap-*/ic_launcher.png`, `ic_launcher_foreground.png`, `ic_launcher_monochrome.png` | generated for this project with Google **`gemini-3.1-flash-image`** (reached via OpenRouter because the omp `google-antigravity` route was quota-exhausted at the time — same underlying model), then cropped, background-keyed to transparency, inset to the adaptive-icon safe zone and downscaled per density with Pillow | — | generated asset, project licence | — |
-| `ic_launcher_background.xml` | original Monarch work (radial void-green gradient), no third-party source | — | project licence | — |
+| `ic_launcher_background.xml` | original Ironvellum work (radial void-green gradient), no third-party source | — | project licence | — |
 | `ic_line_pull.xml` | original artwork | — | project licence | — |
 | `ic_line_push.xml` | original artwork | — | project licence | — |
 | `ic_line_handstand.xml` | original artwork | — | project licence | — |
@@ -20,7 +20,7 @@ Nothing is sourced from a third-party icon set.
 | `ic_rank_soldier.xml` | original artwork | — | project licence | — |
 | `ic_rank_knight.xml` | original artwork | — | project licence | — |
 | `ic_rank_commander.xml` | original artwork | — | project licence | — |
-| `ic_rank_monarch.xml` | original artwork | — | project licence | — |
+| `ic_rank_grand_marshal.xml` | original artwork | — | project licence | — |
 | `art_empty_quests.xml` | original artwork | — | project licence | — |
 | `art_empty_stats.xml` | original artwork | — | project licence | — |
 | `art_empty_skills.xml` | original artwork | — | project licence | — |
@@ -44,7 +44,7 @@ screens cannot drift apart:
 - **Bone ink on transparency.** Monochrome ink is drawn dark on paper, which is
   the wrong polarity for a panel at luminance 23 - so ink density becomes alpha
   and every piece is re-tinted to one bone tone. That tone is **read from
-  `MonarchColors.Ink` in `Theme.kt`**, not copied: UI text and artwork must be
+  `IronvellumColors.Ink` in `Theme.kt`**, not copied: UI text and artwork must be
   the same ink, and holding the number twice drifted the first time it was
   tried.
 
@@ -113,7 +113,7 @@ All three empty states must swap together or one screen keeps the old style:
 `ic_rank_soldier` → `ic_rank_knight` → `ic_rank_commander` are an original
 chevron-shield family, tinted in an escalating
 sequence (`#9AA3AD` muted ink → `#6FAE8C` muted green → `#34D399` emerald);
-`ic_rank_monarch` is an original crowned shield in sovereign gold `#F2C14E`.
+`ic_rank_grand_marshal` is an original crowned shield in sovereign gold `#F2C14E`.
 
 ## Attribution string
 

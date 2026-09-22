@@ -1,4 +1,4 @@
-"""Drive Monarch on whatever Android target is available.
+"""Drive Ironvellum on whatever Android target is available.
 
 The phone is not always plugged in, so this resolves a target in one place:
 a running emulator first, then a USB device. Everything else in the repo's
@@ -8,7 +8,7 @@ so no session has to rebuild the adb incantations by hand.
     python tools/device.py up                 # boot the emulator if nothing is attached
     python tools/device.py install             # build output -> target
     python tools/device.py launch
-    python tools/device.py shot court          # .tmp/shots/court.png
+    python tools/device.py shot today          # .tmp/shots/today.png
     python tools/device.py labels              # visible text, for finding a tap target
     python tools/device.py tap "SKILL TREE"    # tap by visible text
     python tools/device.py tap --desc Codex    # tap by content-desc (nav bar)
@@ -30,10 +30,10 @@ import time
 SDK = pathlib.Path(os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk"))
 ADB = SDK / "platform-tools" / "adb.exe"
 EMULATOR = SDK / "emulator" / "emulator.exe"
-AVD = "MonarchEmu"
+AVD = "IronvellumEmu"
 PORT = "5554"
 APK = pathlib.Path("app/build/outputs/apk/debug/app-debug.apk")
-PKG = "com.monarch.app"
+PKG = "com.ironvellum.app"
 SHOTS = pathlib.Path(".tmp/shots")
 
 

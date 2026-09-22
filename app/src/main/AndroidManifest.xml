@@ -24,7 +24,7 @@
     </queries>
 
     <application
-        android:name=".MonarchApp"
+        android:name=".IronvellumApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -32,7 +32,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:label="@string/app_name"
         android:supportsRtl="true"
-        android:theme="@style/Theme.Monarch">
+        android:theme="@style/Theme.Ironvellum">
         <activity
             android:name=".MainActivity"
             android:exported="true"

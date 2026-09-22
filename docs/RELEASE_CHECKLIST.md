@@ -1,7 +1,7 @@
-# Monarch release checklist
+# Ironvellum release checklist
 
-Ordered steps to ship `com.monarch.app` to Google Play. Execute top to bottom.
-Written 2026-09-15. Verification commands assume repo root `D:\Monarch` on
+Ordered steps to ship `com.ironvellum.app` to Google Play. Execute top to bottom.
+Written 2026-09-15. Verification commands assume repo root `D:\Ironvellum` on
 Windows: `.\gradlew.bat <task>`.
 
 ## 1. Signing key
@@ -9,17 +9,17 @@ Windows: `.\gradlew.bat <task>`.
 1. Create a keystore (once, keep it safe — losing it means losing the app
    identity):
    ```
-   keytool -genkeypair -v -keystore monarch-release.jks -alias monarch ^
+   keytool -genkeypair -v -keystore ironvellum-release.jks -alias ironvellum ^
      -keyalg RSA -keysize 2048 -validity 10000
    ```
 2. Add the signing keys to `local.properties` (gitignored; the release build
    reads env vars first, then these keys — absent keys yield an unsigned APK,
    never a configuration failure):
    ```
-   monarch.keystore.path=D:/path/to/monarch-release.jks
-   monarch.keystore.password=...
-   monarch.key.alias=monarch
-   monarch.key.password=...
+   ironvellum.keystore.path=D:/path/to/ironvellum-release.jks
+   ironvellum.keystore.password=...
+   ironvellum.key.alias=ironvellum
+   ironvellum.key.password=...
    ```
 4. Add the three backend keys to `local.properties` (gitignored). They become
    BuildConfig fields `SUPABASE_URL`, `SUPABASE_KEY`, `GOOGLE_WEB_CLIENT_ID`:
@@ -60,8 +60,8 @@ out with its matching app build.
 | file | what it does | urgency |
 |---|---|---|
 | `0008_shadow_board.sql` | adds the shadow columns and the board view | optional; the client degrades gracefully without it (the shadow push is swallowed separately from training sync) |
-| `0009_backend_hardening.sql` | closes the friendship oracle, bounds feed text, blocks future-dated sessions, drops a dead view, pins a search path | **apply first — until it lands, anyone holding the shipped publishable key can enumerate the accepted-friendship graph, including for hunters who chose `private`** |
-| `0010_hunter_discovery.sql` | adds `find_hunter()` | apply before relying on friend requests: without it a by-name lookup returns nothing and the app reports that a real hunter does not exist |
+| `0009_backend_hardening.sql` | closes the friendship oracle, bounds feed text, blocks future-dated sessions, drops a dead view, pins a search path | **apply first — until it lands, anyone holding the shipped publishable key can enumerate the accepted-friendship graph, including for lifters who chose `private`** |
+| `0010_lifter_discovery.sql` | adds `find_lifter()` | apply before relying on friend requests: without it a by-name lookup returns nothing and the app reports that a real lifter does not exist |
 | `0011_server_side_aggregates.sql` | revokes direct writes to the ranked columns, derives level and title count, bounds the rest | **apply WITH the matching app build, never before** — the revoke makes an older client's profile upsert fail |
 
 1. Confirm what is already applied, then apply the pending files in numeric
@@ -78,7 +78,7 @@ out with its matching app build.
    psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/test/assert_all.sql
    ```
 3. Smoke-test sign-in, a sync, and one friend request against production before
-   the release. The `find_hunter` and `push_aggregates` call paths are
+   the release. The `find_lifter` and `push_aggregates` call paths are
    compile-verified only — no local harness speaks PostgREST, so the first real
    round trip is their first proof.
 
@@ -101,7 +101,7 @@ out with its matching app build.
    AND link it inside the app (Settings). Identical URL in all three places.
 2. **Data safety form**: fill from `docs/PLAY_DATA_SAFETY.md`. Resolve its
    remaining OPEN QUESTIONS first. Deletion (Q1) is answered: the app deletes
-   cloud data from Guild → ALLIES, so the form's deletion question is "yes".
+   cloud data from Allies → ALLIES, so the form's deletion question is "yes".
 3. **Health apps declaration**: required (App content → Health apps) because
    the app reads health data; a fitness/tracking app falls under the Health
    Content and Services policy.

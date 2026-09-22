@@ -1,16 +1,16 @@
 <div align="center">
 
-<img src="docs/images/icon.png" width="120" alt="Monarch app icon" />
+<img src="docs/images/icon.png" width="120" alt="Ironvellum app icon" />
 
-# Monarch
+# Ironvellum
 
 **An Android training tracker that scores what you actually lift.**
 
 Log a session, get a number that means something. Body-scaled strength scoring,
 a 106-technique calisthenics tree, and a first-run flow that builds you a week.
 
-[![CI](https://github.com/AlexMollard/Monarch/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexMollard/Monarch/actions/workflows/ci.yml)
-[![APK](https://github.com/AlexMollard/Monarch/actions/workflows/apk.yml/badge.svg)](https://github.com/AlexMollard/Monarch/actions/workflows/apk.yml)
+[![CI](https://github.com/AlexMollard/Ironvellum/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexMollard/Ironvellum/actions/workflows/ci.yml)
+[![APK](https://github.com/AlexMollard/Ironvellum/actions/workflows/apk.yml/badge.svg)](https://github.com/AlexMollard/Ironvellum/actions/workflows/apk.yml)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
 ![minSdk](https://img.shields.io/badge/minSdk-29-3DDC84?logo=android&logoColor=white)
@@ -22,7 +22,7 @@ a 106-technique calisthenics tree, and a first-run flow that builds you a week.
 
 <div align="center">
 
-| Your court | The week it built you | The trial |
+| Your day | The week it built you | The trial |
 |:---:|:---:|:---:|
 | <img src="docs/images/dashboard.png" width="230" alt="Dashboard showing rank, streak, titles and today's quest" /> | <img src="docs/images/train.png" width="230" alt="Training grounds listing the generated presets" /> | <img src="docs/images/session.png" width="230" alt="A session in progress with per-set load and rep steppers" /> |
 
@@ -38,7 +38,7 @@ Most trackers add up kilograms. That rewards being heavy and rewards machines
 that hide how much load you are really moving, so the number you chase drifts
 away from the training that earned it.
 
-Monarch scores a set by what it costs you:
+Ironvellum scores a set by what it costs you:
 
 - **Body-scaled.** A rep is worth `reps x (bodyweight + added) / bodyweight^0.67`,
   the standard allometric exponent, so a lighter athlete is not permanently
@@ -52,7 +52,7 @@ Monarch scores a set by what it costs you:
   the one the progression states.
 - **Per-sex standards.** Strength score is normalised by muscle group using
   published gaps (Miller et al., sanity-checked against IPF GL), and every
-  strength deed states the bar for the hunter reading it rather than the men's
+  strength deed states the bar for the lifter reading it rather than the men's
   number with a footnote.
 
 Everything works offline. An account is optional and only ever backs up
@@ -104,8 +104,8 @@ source of truth: the cloud is a backup, never an authority.
 ## Getting started
 
 ```bash
-git clone https://github.com/AlexMollard/Monarch.git
-cd Monarch
+git clone https://github.com/AlexMollard/Ironvellum.git
+cd Ironvellum
 ./gradlew :app:assembleDebug
 ```
 
@@ -120,10 +120,10 @@ supabase.key=
 google.webClientId=
 
 # only needed for a signed release build (env vars of the same name also work)
-monarch.keystore.path=
-monarch.keystore.password=
-monarch.key.alias=
-monarch.key.password=
+ironvellum.keystore.path=
+ironvellum.keystore.password=
+ironvellum.key.alias=
+ironvellum.key.password=
 ```
 
 ### Without a phone attached
@@ -131,7 +131,7 @@ monarch.key.password=
 Everything runs on a headless emulator, so no cable is needed:
 
 ```bash
-python tools/device.py up        # boots the MonarchEmu AVD if nothing is attached
+python tools/device.py up        # boots the IronvellumEmu AVD if nothing is attached
 python tools/device.py install
 python tools/device.py launch
 python tools/device.py shot home # .tmp/shots/home.png
@@ -158,7 +158,7 @@ python tools/device.py labels    # visible text, for finding a tap target
 | `:app:testDebugUnitTest` | Scoring maths, progression, titles, catalogue invariants, the cloud wire format, crash journal, migration registry |
 | `:app:connectedDebugAndroidTest` | Room migrations against real SQLite, data survival across upgrades, navigation reachability, accessibility floors, and the user journeys (workout loop, skill practice, preset auto-fill, first run, delete) |
 | `:app:lintRelease` | Release-variant lint; triage the SARIF report, not the HTML |
-| `supabase/test/assert_all.sql` | What no Kotlin test can see: which tables have row security, who may execute which function, which columns a hunter may write, whether a feed row can pin itself |
+| `supabase/test/assert_all.sql` | What no Kotlin test can see: which tables have row security, who may execute which function, which columns a lifter may write, whether a feed row can pin itself |
 
 The backend assertions need Docker rather than a device:
 
@@ -173,7 +173,7 @@ psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/test/assert_all.sql
 <summary><b>Project layout</b></summary>
 
 ```
-app/src/main/kotlin/com/monarch/app/
+app/src/main/kotlin/com/ironvellum/app/
   domain/      pure Kotlin: scoring, progression, titles, skills, share text
   data/        Room database, DAOs, Repository, seed catalogue, cloud sync
   ui/          Compose screens by feature, plus theme and shared components
@@ -191,7 +191,7 @@ docs/                  release checklist, data safety, TODO, attribution
 
 Signing in and syncing uploads the training record only: completed sessions and
 their sets, display name, visibility, earned titles, likes, friendships and the
-shadow aggregates. Body measurements and everything read from Health Connect
+muster aggregates. Body measurements and everything read from Health Connect
 stay on the device, and the app is fully usable without an account.
 
 Full statement: [PRIVACY.md](PRIVACY.md) ·

@@ -1,14 +1,14 @@
-# Play Data Safety form — answer sheet for Monarch
+# Play Data Safety form — answer sheet for Ironvellum
 
 Filled-in answers for Play Console → Policy → App content → Data safety, with
 the code that justifies each answer. Written 2026-09-15 against commit HEAD.
 
 Code references:
 - `AM` = `app/src/main/AndroidManifest.xml`
-- `CS` = `app/src/main/kotlin/com/monarch/app/data/cloud/CloudSync.kt`
-- `AR` = `app/src/main/kotlin/com/monarch/app/data/cloud/AccountRepository.kt`
-- `HS` = `app/src/main/kotlin/com/monarch/app/data/HealthSync.kt`
-- `RP` = `app/src/main/kotlin/com/monarch/app/data/Repository.kt`
+- `CS` = `app/src/main/kotlin/com/ironvellum/app/data/cloud/CloudSync.kt`
+- `AR` = `app/src/main/kotlin/com/ironvellum/app/data/cloud/AccountRepository.kt`
+- `HS` = `app/src/main/kotlin/com/ironvellum/app/data/HealthSync.kt`
+- `RP` = `app/src/main/kotlin/com/ironvellum/app/data/Repository.kt`
 - `M1`/`M2`/`M8` = `supabase/migrations/0001_init.sql` / `0002…` / `0008…`
 
 ## Form-level answers
@@ -20,7 +20,7 @@ Code references:
   (`CS`; Supabase project URL is HTTPS). Health Connect reads are on-device
   IPC, no network involved.
 - **Do you provide a way for users to request that their data is deleted?**
-  **Yes — in-app deletion.** Guild → ALLIES → ERASE MY CLOUD DATA deletes the
+  **Yes — in-app deletion.** Allies → ALLIES → ERASE MY CLOUD DATA deletes the
   caller's `profiles` row under the owner-only `profiles_delete` RLS policy;
   every other table cascades from it (`AccountRepository.deleteCloudData()`).
   The auth identity is retained by design — note this on the form if asked.
@@ -60,7 +60,7 @@ Code references:
   design") also never leave the device (`M1` header comment).
 
 ### Fitness info — idle-game aggregates (collected, shared)
-- Shadow essence / shadow count / shadow rate are pushed as profile columns.
+- Muster essence / figure count / figure rate are pushed as profile columns.
   Optional (sign-in only), shared per visibility.
 - Also pushed as profile columns by the same call: **level, total XP, earned
   title count, lifetime strength and the training streak in days** — derived
@@ -100,9 +100,9 @@ Code references:
 
 ## Deletion
 
-- **Local data:** uninstall (or Android "clear storage") removes `monarch.db`
+- **Local data:** uninstall (or Android "clear storage") removes `ironvellum.db`
   and everything else in the app's private storage.
-- **Cloud data:** in-app deletion exists — Guild → ALLIES → ERASE MY CLOUD
+- **Cloud data:** in-app deletion exists — Allies → ALLIES → ERASE MY CLOUD
   DATA calls `AccountRepository.deleteCloudData()`, deleting the caller's
   `profiles` row under the owner-only `profiles_delete` RLS policy; every
   other table cascades from it (`0001_init.sql`). The auth identity (email) is
@@ -112,11 +112,11 @@ Code references:
 ## OPEN QUESTIONS (owner must decide; do not submit the form until resolved)
 
 - **Q1 — Deletion mechanism: RESOLVED, and now asserted.** In-app cloud deletion exists
-  (`AccountRepository.deleteCloudData()`, surfaced in Guild → ALLIES). The
+  (`AccountRepository.deleteCloudData()`, surfaced in Allies → ALLIES). The
   server-side capability was present from migration 0001 via the
   `profiles_delete` policy plus `on delete cascade`; only the UI was missing.
   The promise is executed rather than assumed: `supabase/test/assert_all.sql`
-  deletes a hunter's profile as that hunter and asserts no rows survive in
+  deletes a lifter's profile as that lifter and asserts no rows survive in
   `sessions`, `session_sets`, `earned_titles`, `friendships`, `session_likes` or
   `level_ups`. Proven both ways against a real Postgres — a broken cascade fails
   on the foreign key, and a MISSING one (the silent case, which orphans rows

@@ -2,11 +2,11 @@
 <!-- Exclude the Room database (and WAL/SHM sidecars) from cloud backup and device-to-device transfer: body measurements never leave this device. -->
 <data-extraction-rules>
     <cloud-backup>
-        <exclude domain="database" path="monarch.db" />
-        <exclude domain="database" path="monarch.db-wal" />
-        <exclude domain="database" path="monarch.db-shm" />
+        <exclude domain="database" path="ironvellum.db" />
+        <exclude domain="database" path="ironvellum.db-wal" />
+        <exclude domain="database" path="ironvellum.db-shm" />
     <!--
-      The snapshots are byte copies of the database, so excluding monarch.db
+      The snapshots are byte copies of the database, so excluding ironvellum.db
       while backing these up would leak exactly the data the exclusion exists
       to protect. The crash journal carries stack traces from this device.
     -->
@@ -14,11 +14,11 @@
     <exclude domain="file" path="crash" />
     </cloud-backup>
     <device-transfer>
-        <exclude domain="database" path="monarch.db" />
-        <exclude domain="database" path="monarch.db-wal" />
-        <exclude domain="database" path="monarch.db-shm" />
+        <exclude domain="database" path="ironvellum.db" />
+        <exclude domain="database" path="ironvellum.db-wal" />
+        <exclude domain="database" path="ironvellum.db-shm" />
     <!--
-      The snapshots are byte copies of the database, so excluding monarch.db
+      The snapshots are byte copies of the database, so excluding ironvellum.db
       while backing these up would leak exactly the data the exclusion exists
       to protect. The crash journal carries stack traces from this device.
     -->

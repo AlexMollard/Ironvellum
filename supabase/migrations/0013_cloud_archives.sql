@@ -3,7 +3,7 @@
 -- archive, so a lost phone does not mean a lost training history.
 --
 -- Why this exists now: cloud sync is push-only (it feeds the leaderboards and
--- the feed, it never decodes back into Room), and `monarch.db` is excluded
+-- the feed, it never decodes back into Room), and `ironvellum.db` is excluded
 -- from Android auto-backup and device-to-device transfer. Until this table,
 -- the only complete restore was the hunter manually tapping EXPORT ARCHIVE
 -- before the phone died.

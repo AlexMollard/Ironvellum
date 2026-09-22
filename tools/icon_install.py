@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Install one square PNG as Monarch's adaptive launcher icon.
+"""Install one square PNG as Ironvellum's adaptive launcher icon.
 
 Takes a generated emblem and writes every mipmap the manifest actually
 references: `ic_launcher_foreground`, `ic_launcher_monochrome`, and the legacy

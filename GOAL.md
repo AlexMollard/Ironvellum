@@ -1,12 +1,12 @@
-# Monarch — Goal Spec (draft for approval)
+# Ironvellum — Goal Spec (draft for approval)
 
 Solo Leveling-themed Android fitness app for weighted + bodyweight calisthenics.
-Repo: D:\Monarch.
+Repo: D:\Ironvellum.
 Stack: Kotlin + Jetpack Compose + Room. Fully custom dark Solo-Leveling-style theme.
 Gamified: XP, levels, unlockable titles.
 
 ## Objective
-Build Monarch v1: a local-first workout tracker where preset training days
+Build Ironvellum v1: a local-first workout tracker where preset training days
 ("Heavy Pull", "Volume Pull") auto-fill the session so you only enter weight and
 reps; the app tracks player stats (weight, height, BMI, FFMI over time) and a
 gamification layer (XP, levels, titles) reacts to completed workouts. Installable
@@ -39,7 +39,7 @@ on the S25 Ultra, verifiable via adb.
   where practical; screenshots as visual proof.
 
 ## Boundaries
-- All work stays inside D:\Monarch.
+- All work stays inside D:\Ironvellum.
 - Local-only data: no backend, no accounts (schema structured so sync can be
   added later).
 - adb is used only to install, launch, screenshot, and read logcat on your phone.
@@ -51,7 +51,7 @@ Stop and ask the user when:
 - the 60-turn cap is hit;
 - the same build/test failure survives 3 fix attempts;
 - progress requires money, accounts, or publishing;
-- a decision would materially change what Monarch is.
+- a decision would materially change what Ironvellum is.
 
 ## Future (explicitly out of scope for v1)
 - v1.5 ideas: leaderboards, viewing others' workouts (need a backend).

@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Monarch"
+rootProject.name = "Ironvellum"
 include(":app")

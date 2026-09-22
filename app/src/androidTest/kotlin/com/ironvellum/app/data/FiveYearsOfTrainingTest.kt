@@ -1,0 +1,225 @@
+package com.ironvellum.app.data
+
+import android.content.Context
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
+import com.ironvellum.app.data.db.SessionEntity
+import com.ironvellum.app.data.db.SetLogEntity
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
+import org.junit.Before
+import org.junit.Test
+import org.junit.runner.RunWith
+
+/**
+ * What happens after five years of training?
+ *
+ * Every other data test uses a handful of rows, so nothing has ever shown how
+ * these queries behave at the size a committed lifter actually reaches: four
+ * sessions a week for five years is a bit over a thousand, each with a set per
+ * movement. The screens that read them are the journal, the titles ledger and
+ * the export — all of which load on a UI path, so a query that degrades to
+ * seconds is a freeze rather than a slow number.
+ *
+ * The thresholds are deliberately loose. This is a guard against an accidental
+ * N+1 or a whole-table scan per row, not a benchmark: the point is that the
+ * numbers stay in the same order of magnitude as the data grows.
+ */
+@RunWith(AndroidJUnit4::class)
+class FiveYearsOfTrainingTest {
+
+    private lateinit var context: Context
+    private lateinit var db: IronvellumDatabase
+    private lateinit var repo: Repository
+
+    @Before
+    fun setUp() = runBlocking {
+        context = InstrumentationRegistry.getInstrumentation().targetContext
+        context.deleteDatabase(TEST_DB)
+        db = IronvellumDatabase.create(context, TEST_DB)
+        repo = Repository(db)
+        repo.ensureSeeded()
+
+        val exercises = db.exerciseDao().observeAll().first()
+        val day = 86_400_000L
+        val start = System.currentTimeMillis() - SESSIONS * 2 * day
+        // Insert in bulk rather than through the session flow: this measures the
+        // read path, and going through completeSession() a thousand times would
+        // measure the writes instead.
+        repeat(SESSIONS) { index ->
+            val startedAt = start + index * 2 * day
+            val sessionId = db.sessionDao().insertSession(
+                SessionEntity(
+                    presetId = null,
+                    label = "Session $index",
+                    startedAtMs = startedAt,
+                    completedAtMs = startedAt + 3_600_000L,
+                    xpAwarded = 120,
+                    strengthScore = 400,
+                    title = "",
+                    note = "",
+                    privateNote = "",
+                ),
+            )
+            db.sessionDao().insertSets(
+                (0 until SETS_PER_SESSION).map { setIndex ->
+                    val exercise = exercises[(index + setIndex) % exercises.size]
+                    SetLogEntity(
+                        sessionId = sessionId,
+                        exerciseId = exercise.id,
+                        exercisePosition = setIndex,
+                        setIndex = setIndex,
+                        reps = 8,
+                        weightKg = 20.0,
+                        modifiers = "",
+                        done = true,
+                    )
+                },
+            )
+        }
+    }
+
+    @After
+    fun tearDown() {
+        db.close()
+        context.deleteDatabase(TEST_DB)
+    }
+
+    @Test
+    fun theReadPathsStayUsableAtFiveYearsOfSessions() = runBlocking {
+        assertEquals("the fixture must actually be large", SESSIONS, db.sessionDao().completedCount())
+
+        val timings = LinkedHashMap<String, Long>()
+        suspend fun time(label: String, block: suspend () -> Int) {
+            val started = System.nanoTime()
+            val size = block()
+            timings[label] = (System.nanoTime() - started) / 1_000_000
+            assertTrue("$label returned nothing", size > 0)
+        }
+
+        time("journal") { repo.observeHistory().first().size }
+        time("titles ledger") { repo.currentLedger().workouts }
+        var exportChars = 0
+        time("export") { repo.exportJson().also { exportChars = it.length }.length }
+        // Binder caps a transaction near 1 MB, and the share sheet used to carry
+        // this whole string as an intent extra.
+        // Measured: 0.87 MB at this size. Binder caps a transaction near 1 MB,
+        // which is why the share sheet stages a file and passes a content:// URI
+        // instead of EXTRA_TEXT. This records the size so the next person can
+        // see how close the old approach was to the ceiling.
+        assertTrue(
+            "the export is %.2f MB at %d sessions — larger than expected, check how it is shared"
+                .format(exportChars / 1048576.0, SESSIONS),
+            exportChars in 1 until 4_000_000,
+        )
+        time("completed count") { db.sessionDao().completedCount() }
+
+        val slow = timings.filterValues { it > BUDGET_MS }
+        assertEquals(
+            "read paths slower than ${BUDGET_MS}ms at $SESSIONS sessions: $timings",
+            emptyMap<String, Long>(),
+            slow,
+        )
+    }
+
+    /**
+     * The archive is the disaster-recovery path: the only route a lifter has
+     * back to their training after a lost phone. Export was measured at this
+     * size; importing one never was, and import is the harder direction — it
+     * parses ~0.9 MB of JSON and rewrites every table inside one transaction.
+     */
+    @Test
+    fun aFiveYearArchiveCanBeImportedBack() = runBlocking {
+        val json = repo.exportJson()
+        val sessionsBefore = db.sessionDao().completedCount()
+        val setsBefore = db.sessionDao().completedSetCount()
+        assertTrue("the fixture must be large", sessionsBefore == SESSIONS && setsBefore > SESSIONS)
+
+        val started = System.nanoTime()
+        val result = repo.importArchive(json)
+        val tookMs = (System.nanoTime() - started) / 1_000_000
+
+        assertTrue("importing a five-year archive failed: ${result.exceptionOrNull()}", result.isSuccess)
+        // Restored, not merely accepted: a silent partial restore would leave a
+        // lifter believing their history came back.
+        assertEquals(
+            "the imported archive did not restore every session",
+            sessionsBefore,
+            db.sessionDao().completedCount(),
+        )
+        assertEquals(
+            "the imported archive did not restore every set",
+            setsBefore,
+            db.sessionDao().completedSetCount(),
+        )
+        assertTrue(
+            "importing a %.2f MB archive took ${tookMs}ms at $SESSIONS sessions"
+                .format(json.length / 1048576.0),
+            tookMs < IMPORT_BUDGET_MS,
+        )
+    }
+
+    @Test
+    fun theDailySnapshotDoesNotFreezeLaunchAtFiveYears() = runBlocking {
+        // DbSnapshot.capture() runs on the MAIN thread in Application.onCreate,
+        // before Room opens, and copies the database byte for byte. It is
+        // throttled to one copy a day, so the cost lands on a single launch —
+        // but that launch is a cold start the lifter is watching.
+        val dbFile = context.getDatabasePath(TEST_DB)
+        db.close()
+        val sizeMb = dbFile.length() / 1048576.0
+        val started = System.nanoTime()
+        val snapshot = DbSnapshot.capture(context, TEST_DB)
+        val tookMs = (System.nanoTime() - started) / 1_000_000
+
+        assertTrue("nothing was copied", snapshot != null && snapshot.length() > 0)
+        assertTrue(
+            "copying a %.1f MB database took %d ms on the main thread at %d sessions"
+                .format(sizeMb, tookMs, SESSIONS),
+            tookMs < SNAPSHOT_BUDGET_MS,
+        )
+        snapshot?.delete()
+        db = IronvellumDatabase.create(context, TEST_DB)
+    }
+
+    private companion object {
+        const val TEST_DB = "ironvellum-five-years-test.db"
+
+        /** Four sessions a week for five years. */
+        const val SESSIONS = 1_000
+        const val SETS_PER_SESSION = 5
+
+        /**
+         * Measured on an emulator at this size: journal 76ms, titles ledger
+         * 122ms, export 131ms, completed count 0ms. The budget leaves roughly
+         * an order of magnitude of headroom for slower hardware while still
+         * catching the regression that matters — an accidental N+1 or a scan
+         * per row, which would land in seconds rather than tens of ms. A budget
+         * with 30x headroom would never fail, which is no guard at all.
+         */
+        const val BUDGET_MS = 1_500L
+
+        /**
+         * Measured at this data size: a 0.3 MB database copies in 11 ms, so the
+         * main-thread snapshot in `Application.onCreate` is real disk I/O but
+         * not an ANR. 150ms leaves room for slower storage while still failing
+         * if the copy stops being cheap — moving it off the main thread would
+         * race Room's first open, so the defence is that it stays fast.
+         */
+        const val SNAPSHOT_BUDGET_MS = 150L
+
+        /**
+         * Measured: a 0.87 MB archive of 1,000 sessions imports in **2,835 ms**
+         * on this emulator — parse plus a full rewrite of every user table in
+         * one transaction. Three seconds is fine for a one-off restore and the
+         * screen shows a spinner throughout, so the budget guards the shape
+         * that would not be fine: a per-row transaction or an N+1 lookup per
+         * set, which turns three seconds into minutes. 8s is ~3x the
+         * measurement; 10x would be half a minute and would never fail.
+         */
+        const val IMPORT_BUDGET_MS = 8_000L
+    }
+}

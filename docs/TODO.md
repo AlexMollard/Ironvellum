@@ -1,4 +1,4 @@
-# Monarch — outstanding work
+# Ironvellum — outstanding work
 
 What is genuinely left, why, and who can do it. Items are here because
 something verifiable is missing, not because they sound like good ideas.
@@ -11,8 +11,8 @@ open-work list.
 
 | # | Item | Why it is blocking | Notes |
 |---|---|---|---|
-| 1 | Apply `supabase/migrations/0009_backend_hardening.sql` | **Live exposure.** Until it lands, anyone holding the shipped publishable key can enumerate the accepted-friendship graph — including for hunters who set `private` — via the `is_friend` RPC | Idempotent; chain-tested against `postgres:16` |
-| 2 | Apply `0010_hunter_discovery.sql` | Friend requests cannot bootstrap without it: a by-name lookup returns nothing and the app reports that a real hunter does not exist | Idempotent |
+| 1 | Apply `supabase/migrations/0009_backend_hardening.sql` | **Live exposure.** Until it lands, anyone holding the shipped publishable key can enumerate the accepted-friendship graph — including for lifters who set `private` — via the `is_friend` RPC | Idempotent; chain-tested against `postgres:16` |
+| 2 | Apply `0010_lifter_discovery.sql` | Friend requests cannot bootstrap without it: a by-name lookup returns nothing and the app reports that a real lifter does not exist | Idempotent |
 | 3 | Apply `0011_server_side_aggregates.sql` **with the matching app build** | Revokes direct writes to the ranked columns; an older client's profile upsert starts failing the moment it lands | Ship together, never before |
 | 4 | Signing keystore | Release builds are unsigned (`app-release-unsigned.apk`); the build warns and names the four `local.properties` keys | A credential the owner must own — never generated here |
 | 5 | Hosted privacy-policy URL | Play requires a URL, not an in-app document | Content exists in `PRIVACY.md` |
@@ -28,18 +28,18 @@ open-work list.
 | Strength score still counts a hold's seconds as reps | `Xp` now converts a hold's seconds to rep-equivalents via `MovementDifficulty.isHold`, but `StrengthIndex.repScore` does not: a 45 s hollow hold scores as 45 bodyweight reps. Measured on the owner's real `Push` session — 75 s of hollow hold sits in the same 610-point `strengthScore` as 18 handstand push-ups. (a) leave it; (b) apply the same seconds conversion in `StrengthIndex`; (c) exclude holds from the strength score entirely | **Owner's call, not taken here.** `strengthScore` is stored per session and accumulated into `lifetimeStrength`, and the shadow board ranks on it — changing the curve makes new sessions incomparable with stored ones, and nothing recomputes history. (b) is the consistent fix while the board is still small |
 | XP ceiling value | `100000000` (level 1414) | Tunable one-liner in `0011`. Tighter (`10^7` ≈ level 450) is still decades of real training |
 | Touch targets in the 24–48dp band | WCAG AA (24dp) enforced everywhere and Material 48dp on the nav. Dense chips and list rows sit between | A layout/design call: forcing 48dp relayouts the information design |
-| Court at 2.0x font: manifest or single screen | The quest card fits the day, the program name and the button, but not the movement rows (4 at 1.0x, 0 at 2.0x). (a) keep today's degradation; (b) let the dashboard scroll above 1.5x; (c) drop the step ring at large scales to buy ~294px | **(a)**, currently shipped: a lost list is one tap away in Train, a lost button is not. Full measurements under the font-scale entry below |
-| Court on a short window (landscape, or the largest display size with 2.0x text) | The quest panel is weighted, and a weighted child measured after the unweighted content above it gets nothing — the button went with it. Below 520 "text lines" of height the panel wraps its content and the page scrolls; the step gauge also yields below 400. Measured: stock portrait 891, landscape 411, largest display at 2.0x 347. (a) keep this; (b) design a landscape Court; (c) lock to portrait | **(a)**, shipped. The CTA is reachable with zero swipes in all four combinations of orientation and scale. (c) was tried and reverted: lint flags `LockedOrientationActivity` and `DiscouragedApi`, and Android 16 ignores the lock on large screens anyway |
+| Today at 2.0x font: manifest or single screen | The quest card fits the day, the program name and the button, but not the movement rows (4 at 1.0x, 0 at 2.0x). (a) keep today's degradation; (b) let the dashboard scroll above 1.5x; (c) drop the step ring at large scales to buy ~294px | **(a)**, currently shipped: a lost list is one tap away in Train, a lost button is not. Full measurements under the font-scale entry below |
+| Today on a short window (landscape, or the largest display size with 2.0x text) | The quest panel is weighted, and a weighted child measured after the unweighted content above it gets nothing — the button went with it. Below 520 "text lines" of height the panel wraps its content and the page scrolls; the step gauge also yields below 400. Measured: stock portrait 891, landscape 411, largest display at 2.0x 347. (a) keep this; (b) design a landscape Court; (c) lock to portrait | **(a)**, shipped. The CTA is reachable with zero swipes in all four combinations of orientation and scale. (c) was tried and reverted: lint flags `LockedOrientationActivity` and `DiscouragedApi`, and Android 16 ignores the lock on large screens anyway |
 | Idle accrual is unbounded, and the rule says it caps | The product rule is "accumulation caps at 24 hours, the rate decays every few hours away". `Idle` implements the decay (full rate to 24h, linear taper to 10% by 72h) but **no cap**: the floor pays forever. Measured effective hours paid — 1 day 24.0, 2 days 42.6, 3 days 50.4, 1 week 60.0, 1 month 115.2, **1 year 919.2 (38x a capped day)**. Idle essence is the column the shadow board ranks on, so absence climbs the leaderboard. (a) hard cap total accrual at 24 effective hours — satisfies the rule literally, but makes the taper dead code; (b) decay *within* the first 24 hours and stop there — satisfies both clauses, and is the only reading where the word "decays" earns its place; (c) keep the floor but cap the total at a chosen multiple of a day (e.g. 3x), which bounds it without ending the "shadows never stop" flavour; (d) keep today's unbounded behaviour | **(b) or (c) — your call, because it reshapes the economy.** I have not changed it: picking the curve is a product decision, and (d) is indefensible only in the sense that a fitness app should not pay 38x for a year of not training. Whichever you pick, the code comment claiming decay "punishes stopping" needs to go — today it rewards it |
-| Text scale | **Owner decision, taken: one fixed scale.** `MonarchTheme` provides a `Density` with `fontScale = FIXED_FONT_SCALE` (1f), so the system font setting no longer reaches any Monarch layout. Measured on the emulator at 0.85x, 1.0x and 2.0x: 21 shared text nodes, **0 differing sizes**, and the Stats tabs stay one row at every setting. | **Shipped.** The cost is deliberate and worth naming: a hunter who enlarges system text gets no larger text here, which is an accessibility regression against Android's own guidance. Display size (density) still applies. In exchange every layout has exactly one size to be correct at, and the five per-screen defences this replaced (nav label cap, XP rail growth, step dial fallback, stacked tab segments, scaled button clearance) are gone rather than untested branches. Revisit if the app ever needs a store accessibility review |
-| Off-device backup vs. on-device privacy | Nothing leaves the phone automatically. `backup_rules.xml` / `data_extraction_rules.xml` exclude `monarch.db`, its WAL and `files/db-snapshots` from Android cloud backup **and** device-to-device transfer, so a new phone starts empty; the Supabase sync is push-only (`CloudSync.push`, no decode-to-Room path anywhere in `data/cloud/`), so even a signed-in hunter cannot pull his history back. The only complete restore is a manual `EXPORT ARCHIVE` the owner remembered to tap. (a) keep as-is; (b) write a dated archive automatically to shared `Documents/Monarch/`, which survives uninstall and is visible in Files, still uploading nothing; (c) add a cloud restore path, which needs server tables for measurements and so reverses "body measurements never leave this device" | **(b)**, then stop. It removes the "did I remember to export" failure without moving one byte off the device or touching the privacy rule. (c) is the only thing that survives a lost phone with no user action, and it costs the privacy rule — the owner's call, not mine |
+| Text scale | **Owner decision, taken: one fixed scale.** `IronvellumTheme` provides a `Density` with `fontScale = FIXED_FONT_SCALE` (1f), so the system font setting no longer reaches any Ironvellum layout. Measured on the emulator at 0.85x, 1.0x and 2.0x: 21 shared text nodes, **0 differing sizes**, and the Stats tabs stay one row at every setting. | **Shipped.** The cost is deliberate and worth naming: a lifter who enlarges system text gets no larger text here, which is an accessibility regression against Android's own guidance. Display size (density) still applies. In exchange every layout has exactly one size to be correct at, and the five per-screen defences this replaced (nav label cap, XP rail growth, step dial fallback, stacked tab segments, scaled button clearance) are gone rather than untested branches. Revisit if the app ever needs a store accessibility review |
+| Off-device backup vs. on-device privacy | Nothing leaves the phone automatically. `backup_rules.xml` / `data_extraction_rules.xml` exclude `ironvellum.db`, its WAL and `files/db-snapshots` from Android cloud backup **and** device-to-device transfer, so a new phone starts empty; the Supabase sync is push-only (`CloudSync.push`, no decode-to-Room path anywhere in `data/cloud/`), so even a signed-in lifter cannot pull his history back. The only complete restore is a manual `EXPORT ARCHIVE` the owner remembered to tap. (a) keep as-is; (b) write a dated archive automatically to shared `Documents/Ironvellum/`, which survives uninstall and is visible in Files, still uploading nothing; (c) add a cloud restore path, which needs server tables for measurements and so reverses "body measurements never leave this device" | **(b)**, then stop. It removes the "did I remember to export" failure without moving one byte off the device or touching the privacy rule. (c) is the only thing that survives a lost phone with no user action, and it costs the privacy rule — the owner's call, not mine |
 
 ## Verification gaps (honest, not deferred work)
 
-- `find_hunter()` and `push_aggregates()` still need one real PostgREST round
+- `find_lifter()` and `push_aggregates()` still need one real PostgREST round
   trip against the deployed project; no local harness speaks it. What is no
   longer unverified is the part that used to be loose strings: the argument
-  names are declared in `PushAggregatesArgs` / `FindHunterArgs` and checked
+  names are declared in `PushAggregatesArgs` / `FindLifterArgs` and checked
   against the `create function` signatures and the encoded body, so only the
   transport remains unproven. The SQL halves are proven in
   `supabase/test/assert_all.sql`.
@@ -69,7 +69,7 @@ open-work list.
   a startup problem. Revisit only if a real-device measurement contradicts it.
 - **The training-mode rule holds, and my audit of it was wrong first.** I
   searched the UI tree for `setTrainingMode` and `HYPERTROPHY`, found neither,
-  and concluded the two schools were unreachable — every hunter locked to
+  and concluded the two schools were unreachable — every lifter locked to
   `STRENGTH`. Both strings were the wrong probe: the control calls
   `viewModel.setMode(...)` and builds its labels from `TrainingMode.entries`,
   so it matched no literal I looked for. It has existed all along in Settings.
@@ -96,7 +96,7 @@ open-work list.
   existing upgrade test wrote one `profile` row and checked it survived 21 ->
   23 — which a migration that quietly dropped `sessions`, `set_logs`,
   `title_unlocks` or `measurements` would also have passed, and losing a
-  hunter's logged training on an app update is the worst bug this project could
+  lifter's logged training on an app update is the worst bug this project could
   ship. The new case seeds a real session (including its device-only
   `privateNote`), two sets, an earned title and a body measurement at the
   shipped baseline, walks the registered chain, and reads every one back.
@@ -123,7 +123,7 @@ open-work list.
 - **Body figures are bounded now; positivity was the only check.** Weight,
   height and body fat each accepted anything `> 0.0`. A slipped decimal on body
   fat — "500" instead of "50.0" — reaches Katch-McArdle as **lean mass of
-  -320 kg** and a resting burn of **-6542 kcal**, presented to the hunter as a
+  -320 kg** and a resting burn of **-6542 kcal**, presented to the lifter as a
   fact about their own body, with a chart drawn to match. Nothing crashed,
   which is exactly why nothing caught it. `BodyLimits` declares wide, plausible
   ranges (weight 20-400 kg, height 50-272 cm — the tallest recorded human —
@@ -183,7 +183,7 @@ open-work list.
   `fontSize / fontScale`, which renders them at ONE physical size at every
   setting — identical 102px at 0.9x, 1.0x, 1.5x and 2.0x. The cap was meant to
   stop six labels wrapping mid-word past ~1.15x; freezing them also ignored a
-  hunter who asked for **smaller** text. Now `min(fontScale, 1.15)/fontScale`,
+  lifter who asked for **smaller** text. Now `min(fontScale, 1.15)/fontScale`,
   measured on device: 0.85x -> 86px, 0.9x -> 92px, 1.0x -> 102px, then 118px at
   1.3x, 1.5x and 2.0x with all six labels still present. Pinned by
   `NavLabelScaleTest` and mutation-proven — restoring the old divide fails two
@@ -199,7 +199,7 @@ open-work list.
   is how the first three pieces shipped, and the owner spotted it on a real
   screen before any check did. The generator now cuts the film with a soft knee
   above the histogram gap, and `backdrop_audit` reports it — clear corners and
-  low opaque coverage both passed the old check. Shadow, allies, board and
+  low opaque coverage both passed the old check. Muster, allies, board and
   chronicle art wired (the last replacing a `◇` glyph). Each was cropped 7%
   first: the model draws its own faint sketch frame in the margin, which is the
   same box by another route.
@@ -221,7 +221,7 @@ open-work list.
 - **The archive is now the whole save, because it is the only restore there is.**
   Audit question was "what actually loses the owner's data", and the answer was
   not the database: there is no `fallbackToDestructiveMigration` anywhere (it was
-  removed after an upgrade wiped everything, `MonarchDatabase.kt:149-153`), Room
+  removed after an upgrade wiped everything, `IronvellumDatabase.kt:149-153`), Room
   throws on an unknown schema, `MigrationForwardTest` seeds real rows at v21 and
   asserts their values survive to v23, and `DbSnapshot` keeps 7 daily byte copies
   taken before Room opens. The hole was the archive itself. `EXPORT ARCHIVE` is
@@ -242,7 +242,7 @@ open-work list.
 - **The writer is hand-rolled and its reader is tolerant, so the archive is now
   parsed strictly.** While integrating the above I found the shape emitting
   `"exportedAtMs":0,,"profile"` — a doubled comma from two edits meeting. The
-  existing round-trip tests did catch it, but only because Monarch's own reader
+  existing round-trip tests did catch it, but only because Ironvellum's own reader
   happened to be strict at that byte; a file the owner keeps for years has to be
   readable by something other than this app. `ExportRoundTripTest` now runs the
   exported JSON through `org.json.JSONObject`, and re-introducing the comma fails
@@ -259,7 +259,7 @@ open-work list.
   `outcome.problems` and returned success, which is how a `push_aggregates`
   refusal could leave the leaderboard totals stale for days with nothing in
   logcat; both now log the cause.
-- **Large-type Court, judged by eye rather than by "no clipping".** A geometric
+- **Large-type Today, judged by eye rather than by "no clipping".** A geometric
   sweep said all six screens were clean at 2.0x, and the owner looking at the
   phone said it looked bad anyway — both were right. Three fixes came out of
   the screenshot: the XP rail was a fixed `height(20.dp)` with the count INSIDE
@@ -327,7 +327,7 @@ open-work list.
 - **The single-scale pin leaked at dialogs, and the leak was invisible.** A
   Compose `Dialog` hosts its content in its own window and composition, and
   that composition re-provides the platform `LocalDensity` — so the override
-  `MonarchTheme` installs never reached it. Measured with the app already
+  `IronvellumTheme` installs never reached it. Measured with the app already
   pinned: the weigh-in dialog's "LOG BODY READING" grew **409px -> 756px**
   between system 1.0x and 2.0x while every screen behind it held still. All
   four real `Dialog(` call sites now wrap their content in `FixedTextScale`,
@@ -346,7 +346,7 @@ open-work list.
   - *Every achievement type reaches the celebration screen, not just skill
     unlocks.* Six banners across four screens: `TITLE EARNED` and `LEVEL UP`
     and `CLASS UNLOCKED` (`SessionScreen`), `TECHNIQUE MASTERED` and
-    `A SHADOW STIRS` (`TitlesScreen`), `SHADOW DRAWN` (`IdleScreen`), plus the
+    `A FIGURE STIRS` (`TitlesScreen`), `INSCRIBED` (`IdleScreen`), plus the
     dashboard paying out titles reconciled at startup where no session existed
     to celebrate in.
   - *Line charts, never bar charts.* No bar-chart composable exists; every
@@ -355,7 +355,7 @@ open-work list.
     `measurement_goals` table is dropped in a migration and no target field
     survives.
   - *The equipped crest drives the plate's border colour.*
-    `HunterSigil(frameId = equippedFrame)` derives `frameColor` from the
+    `LifterSigil(frameId = equippedFrame)` derives `frameColor` from the
     crest's treatment and draws both the plate and its hairline with it.
   - *Home shows the step count and the step target.* `StepGauge(steps, goal)`
     sweeps the goal with the count in the middle.
@@ -374,7 +374,7 @@ open-work list.
   metric so a single denial degrades only itself, manifest/request parity across
   all seven permissions, the provider `<queries>` block and the
   `VIEW_PERMISSION_USAGE` alias both present, and empty days are never written.
-  The daily `PeriodicWorkRequest` is enqueued from `MonarchApp.onCreate`.
+  The daily `PeriodicWorkRequest` is enqueued from `IronvellumApp.onCreate`.
 - **Crash-class sweeps, clean.** Every unguarded collection access and every
   `!!` in production code was traced to its guard: leaderboard index and rank
   derive from one list, `CREST_FRAMES[index]` is bounded by `items(size)`,
@@ -387,14 +387,14 @@ open-work list.
   title rules, the equipped crest driving the plate, and calorie estimates
   derived from user data. Novel activity categories are appended by
   `activityCategoryOrder`, so a new category cannot hide an activity.
-- **Screens visually verified phone-free** (Court, Train, Stats, Codex,
-  Shadow): palette, padding, no overflow, tappable metric tiles, line-chart
+- **Screens visually verified phone-free** (Today, Train, Stats, Codex,
+  Muster): palette, padding, no overflow, tappable metric tiles, line-chart
   captions. Two suspected defects turned out to be misreads of the screenshot —
   settle layout questions with the accessibility dump's bounds, not pixels.
 - **Large system font scale, measured on device at 1.0x, 1.5x and 2.0x.** Three
   defects found and fixed: the six nav labels wrapped mid-word and then clipped,
   the rank and class line was cut mid-phrase ("E-Rank · the" instead of "the
-  Awakened"), and the worn title cut without an ellipsis.
+  Grand Marshal"), and the worn title cut without an ellipsis.
 
   Nav labels are pinned to their design size rather than merely capped — both
   `fontSize` **and** `letterSpacing` are declared in `sp`, so clamping only the
@@ -454,7 +454,7 @@ open-work list.
   (2 swipes at stock, 7 at the largest display size with 2.0x text, in both
   orientations). The first pattern was wrong too — that button is a
   Material `Button`, so its label stays `Save Preset` rather than being
-  uppercased the way `MonarchButton` does it.
+  uppercased the way `IronvellumButton` does it.
 
   Process death was checked too: with a live session open, the app was
   backgrounded and its process killed for real (`pidof` empty afterwards), then
@@ -532,7 +532,7 @@ open-work list.
 
   - **Serializer stripping.** Concatenating the dex and probing for names that
     must survive: `$$serializer` x16, and `ProfileDto`, `SessionDto`,
-    `SessionSetDto`, `FeedEntry`, `ProfileNameDto`, `MonarchDatabase_Impl` all
+    `SessionSetDto`, `FeedEntry`, `ProfileNameDto`, `IronvellumDatabase_Impl` all
     present. Kept names mean decoding will not fail for want of a serializer.
   - **The ServiceLoader engine trap.** The APK's `META-INF/services` entries ARE
     renamed (`dn1`, `fd0`, `hd2`, …), which is exactly what breaks ktor engine
@@ -583,7 +583,7 @@ open-work list.
 
   The "syncs automatically on a daily schedule" rule was checked at the OS
   rather than at the call site: `dumpsys jobscheduler` shows a job owned by
-  `com.monarch.app/androidx.work.impl.background.systemjob.SystemJobService`,
+  `com.ironvellum.app/androidx.work.impl.background.systemjob.SystemJobService`,
   waiting on `TIMING_DELAY`, with `batteryNotLow=true` and no other constraint —
   which is exactly what `HealthSyncWorker.schedule()` builds, so the job is ours
   and came from that request. The one-day interval itself is not printed in that
@@ -624,7 +624,7 @@ open-work list.
   `shareText` had **no** disk I/O because it put the whole export in
   `Intent.EXTRA_TEXT` — and the export measures **0.87 MB at 1,000 sessions**,
   against a binder transaction limit near 1 MB. The data-rescue action would
-  have thrown `TransactionTooLargeException` precisely for the hunters with the
+  have thrown `TransactionTooLargeException` precisely for the lifters with the
   most to lose, and works today only because a young database is small. The
   share sheet now stages the JSON in `cacheDir/exports` and passes a
   `content://` URI through a `FileProvider` whose path config exposes that one
@@ -634,7 +634,7 @@ open-work list.
   `cache/exports/monarch_export.json` is written, crash buffer empty.
 
   A privacy hole of my own making, found by checking the backup rules against
-  what is actually on disk: `monarch.db` is excluded from cloud backup and
+  what is actually on disk: `ironvellum.db` is excluded from cloud backup and
   device transfer, but `DbSnapshot` writes **byte-for-byte copies of that same
   database** into `files/db-snapshots/`, and the `file` domain is backed up by
   default. The exclusion was being defeated by the safety net added beside it.
@@ -642,7 +642,7 @@ open-work list.
   (cloud-backup and device-transfer), confirmed present in the packaged APK.
   The export staging directory needs no rule — `cache` is never backed up.
   Verified as far as this emulator allows: the rules are byte-present in the
-  packaged APK (`db-snapshots`, `crash`, `monarch.db` all appear in both files)
+  packaged APK (`db-snapshots`, `crash`, `ironvellum.db` all appear in both files)
   and the platform parses them with no error. A payload-level proof was
   attempted and **failed for harness reasons, not app reasons**: the local
   transport stored nothing for this package, and a control build with the
@@ -664,7 +664,7 @@ open-work list.
 
   The calorie estimator had a live defect that 16 existing tests did not reach:
   `stepsKcal` reported `"height"` as a missing input on the branch where height
-  was **present and used**, so the detail sheet told a hunter to "Log height for
+  was **present and used**, so the detail sheet told a lifter to "Log height for
   a sharper estimate" about a height they had already logged. What is actually
   absent there is Health Connect's measured distance, which nobody can log by
   hand; the basis string now discloses "stride from height" instead. No existing
@@ -699,7 +699,7 @@ open-work list.
   whole cloud read path rests on — every `@SerialName` must match its
   snake_case column exactly — and **nothing enforced it**. kotlinx does not
   fail on a mismatch, it decodes the default, so a typo in `shadow_essence`
-  shows a leaderboard where every hunter has 0 essence: a wrong ranking
+  shows a leaderboard where every lifter has 0 essence: a wrong ranking
   presented as fact, no error anywhere, and the client-side names are invisible
   to the SQL probes. `WireNamesMatchSchemaTest` now reads the migrations that
   define those relations (base tables plus their later `add column`s, and the
@@ -717,12 +717,12 @@ open-work list.
 
   The same stringly-typed hole existed on the RPC calls, which this file listed
   as "compile-verified only": `push_aggregates` took six hand-written
-  `put("p_...")` keys and `find_hunter` one, none of them checkable. A renamed
+  `put("p_...")` keys and `find_lifter` one, none of them checkable. A renamed
   parameter is a 404 from PostgREST, and because the aggregates push is wrapped
   in `runCatching` (deliberately, so a pre-0011 database doesn't fail the whole
   sync) the symptom is a cloud row that silently stops updating — the
   leaderboard freezes and nothing reports why. The names now live in
-  `PushAggregatesArgs` / `FindHunterArgs` and are encoded by `rpcArgs()`, since
+  `PushAggregatesArgs` / `FindLifterArgs` and are encoded by `rpcArgs()`, since
   the pinned postgrest-kt `rpc` overload takes only a `JsonObject`. Two tests
   check them against the `create function` signatures and against the encoded
   body, because a correct descriptor with a broken encoder would still send the
@@ -738,9 +738,9 @@ open-work list.
   The social boards are views over `profiles`, and the suite asserted they
   carry `security_invoker = true` but never read a row through them. The
   setting turns out to be necessary and not sufficient: a board wrapped in a
-  `SECURITY DEFINER` function leaks every hunter while the setting still reads
+  `SECURITY DEFINER` function leaks every lifter while the setting still reads
   true, and that mutation is caught **only** by reading the board as a
-  stranger. Four assertions added (stranger sees no friends-only hunter, friend
+  stranger. Four assertions added (stranger sees no friends-only lifter, friend
   sees them, reader sees themselves, on both boards) taking the count of
   `perform assert_true` calls in that suite to 30. Two of the four mutations I tried were already caught by existing
   table-level checks — recorded honestly, since the new value is narrower than
@@ -750,7 +750,7 @@ open-work list.
 
   Export was measured at five years; **import never was**, and import is the
   harder direction and the one that matters — it is the only route back to a
-  hunter's training after a lost phone. Measured: a 0.87 MB archive of 1,000
+  lifter's training after a lost phone. Measured: a 0.87 MB archive of 1,000
   sessions imports in **2,835 ms**, parse plus a full rewrite of every user
   table inside one transaction. Three seconds is fine for a one-off restore
   and the screen already shows a spinner throughout (checked, not assumed —
@@ -760,7 +760,7 @@ open-work list.
   came **back**, not merely that the call succeeded: mutation-proven by
   dropping every second session on import, which fails with
   `expected:<1000> but was:<500>` — a silent half-restore is exactly the
-  failure a hunter would not notice until it was too late.
+  failure a lifter would not notice until it was too late.
 
   `supportsRtl="true"` had been declared since the first manifest and never
   exercised. It holds: no absolute-direction API appears anywhere in the UI
@@ -772,11 +772,11 @@ open-work list.
   **Two false "clean" results came first, and only a control caught them.** The
   developer-options route (`settings put global debug.force_rtl 1`) changed
   nothing, and neither did a per-app locale of `ar-XB`: positions came back
-  **byte-identical** to the LTR run (`HUNTER` at x1=195 both times). Per-app
+  **byte-identical** to the LTR run (`LIFTER` at x1=195 both times). Per-app
   locales are filtered against the locales the APK actually ships, so `ar-XB`
   fell back to English and the sweep measured an LTR layout while reporting no
   problems. Debug builds now set `isPseudoLocalesEnabled = true`, after which
-  the same probe shows `HUNTER` at x1=195 LTR versus x1=601 RTL — the layout
+  the same probe shows `LIFTER` at x1=195 LTR versus x1=601 RTL — the layout
   demonstrably flipped before any claim was made about it.
 
   Honest limit: the `en-XA` pseudolocale cannot test text expansion here,
@@ -857,7 +857,7 @@ open-work list.
   (`DeedsBoard` is the scroll container that must never be handed infinite
   height; `TrendChart` carries the chart height). Changing either moves layout
   at every call site to satisfy a convention.
-- **R8 keep rules.** Reviewed: scoped to `com.monarch.app.**`, no blanket
+- **R8 keep rules.** Reviewed: scoped to `com.ironvellum.app.**`, no blanket
   `-keep class ** { *; }`, and each rule documents the consumer rule it mirrors.
 - **String extraction for localisation.** Hundreds of strings, high breakage, no
   second locale asked for.

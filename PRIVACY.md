@@ -1,6 +1,6 @@
-# Monarch Privacy Policy
+# Ironvellum Privacy Policy
 
-Monarch (package `com.monarch.app`) is a training tracker. This policy describes
+Ironvellum (package `com.ironvellum.app`) is a training tracker. This policy describes
 what the app stores, what leaves your device, and what never does. It is written
 from the app's actual behaviour; nothing here is aspirational.
 
@@ -9,8 +9,8 @@ Checked against the codebase on 2026-09-15.
 ## The short version
 
 - **Everything lives on your device first.** All training data is stored in a
-  local Room database (`monarch.db`, see
-  `app/src/main/kotlin/com/monarch/app/data/MonarchDatabase.kt`).
+  local Room database (`ironvellum.db`, see
+  `app/src/main/kotlin/com/ironvellum/app/data/IronvellumDatabase.kt`).
 - **Cloud sync is optional.** Without signing in, no data ever leaves the
   device. The cloud features are disabled entirely unless Supabase credentials
   are configured (`Cloud.configured`, `data/cloud/Cloud.kt`).
@@ -19,7 +19,7 @@ Checked against the codebase on 2026-09-15.
   `Repository.kt` "measurements — device-only by design").
 - **The database is excluded from Android's backups.** Android would otherwise
   copy app data to your Google account and to a new phone during device
-  transfer. `monarch.db`, its write-ahead sidecars, the local snapshot copies
+  transfer. `ironvellum.db`, its write-ahead sidecars, the local snapshot copies
   of it, and the crash journal are all excluded in every domain
   (`app/src/main/res/xml/backup_rules.xml`,
   `app/src/main/res/xml/data_extraction_rules.xml`), so your training data and
@@ -27,7 +27,7 @@ Checked against the codebase on 2026-09-15.
 
 ## What the app stores on your device
 
-All of the following live only in `monarch.db` (Room) in the app's private
+All of the following live only in `ironvellum.db` (Room) in the app's private
 storage:
 
 - Workout sessions and individual sets (exercise, reps, weight, modifiers,
@@ -71,7 +71,7 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 | Data | Cloud table(s) |
 | Email address — your sign-in identity, held by Supabase Auth (from email/password sign-up, or your Google account on Google sign-in) | Supabase `auth.users`; the app never reads it back beyond restoring its own session (`AccountRepository.kt`) |
 | Display name, profile visibility setting, level, total XP, streak days, title count, lifetime strength, worn title | `profiles` |
-| Idle-game aggregates (shadow essence, shadow count, shadow rate) — the idle accrual clock itself stays on-device | `profiles` columns (migration `0008`) |
+| Idle-game aggregates (muster essence, figure count, figure rate) — the idle accrual clock itself stays on-device | `profiles` columns (migration `0008`) |
 | Completed sessions: label, public title (≤80 chars), public note (≤500 chars), timestamps, XP, strength score | `sessions` |
 | Set rows: exercise name, set index, reps, weight, modifiers, done | `session_sets` |
 | Unlocked titles with timestamps | `earned_titles` |
@@ -98,9 +98,9 @@ your raw Health Connect records.
 ## Retention and deletion
 
 - **Local data** persists until you uninstall the app or clear its storage from
-  Android system settings. Uninstalling removes `monarch.db` and everything in
+  Android system settings. Uninstalling removes `ironvellum.db` and everything in
   the app's private storage.
-- **Cloud data:** Guild → ALLIES → **ERASE MY CLOUD DATA** deletes your hunter
+- **Cloud data:** Allies → ALLIES → **ERASE MY CLOUD DATA** deletes your lifter
   row, which cascades to every synced session, set, earned title, level-up,
   like and ally link (`on delete cascade` on all of them), and signs you out.
   The delete is performed by you, under the `profiles_delete` row-level

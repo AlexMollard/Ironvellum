@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate Monarch artwork with gemini-3.1-flash-image via omp's google-antigravity provider.
+"""Generate Ironvellum artwork with gemini-3.1-flash-image via omp's google-antigravity provider.
 
 Why a script and not an MCP server: the provider, the model and the credential
 already exist in omp. The only missing piece was a callable entry point, and an
@@ -221,7 +221,7 @@ def _ink_tint_from_theme() -> tuple[int, int, int]:
     """
     theme = (
         pathlib.Path(__file__).resolve().parent.parent
-        / "app/src/main/kotlin/com/monarch/app/ui/theme/Theme.kt"
+        / "app/src/main/kotlin/com/ironvellum/app/ui/theme/Theme.kt"
     )
     match = re.search(r"val Ink = Color\(0xFF([0-9A-Fa-f]{6})\)", theme.read_text(encoding="utf-8"))
     if not match:

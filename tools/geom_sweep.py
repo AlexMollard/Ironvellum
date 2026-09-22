@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Sweep every Monarch surface across modern phone geometries and report layout defects.
+"""Sweep every Ironvellum surface across modern phone geometries and report layout defects.
 
 Why this exists: the owner's S25 Ultra is 411x891dp - the roomiest phone in
 common use. Everything fits there, so verifying on it proves nothing about the
@@ -30,7 +30,7 @@ import xml.etree.ElementTree as ET
 
 ADB = os.path.expandvars(r"%LOCALAPPDATA%\Android\Sdk\platform-tools\adb.exe")
 SERIAL = os.environ.get("ANDROID_SERIAL", "emulator-5554")
-PKG = "com.monarch.app"
+PKG = "com.ironvellum.app"
 
 # Density -> the dp window it produces on a 1080x2340 panel. These are the
 # geometries real people hold, plus the narrowest a user can produce with the
@@ -41,7 +41,7 @@ GEOMETRIES = [
     (540, "320x693dp  largest Display size setting - narrowest a user can make"),
 ]
 
-TABS = ["Court", "Train", "Stats", "Codex", "Guild", "Shadow"]
+TABS = ["Today", "Train", "Stats", "Codex", "Allies", "Muster"]
 
 
 def sh(*args: str) -> str:

@@ -25,9 +25,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      MONARCH_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      MONARCH_SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-      MONARCH_GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+      IRONVELLUM_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      IRONVELLUM_SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      IRONVELLUM_GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
     steps:
       - name: Check out sources
         uses: actions/checkout@v7
@@ -53,9 +53,9 @@ jobs:
       - name: Generate local.properties
         run: |
           {
-            echo "supabase.url=${MONARCH_SUPABASE_URL:-}"
-            echo "supabase.key=${MONARCH_SUPABASE_KEY:-}"
-            echo "google.webClientId=${MONARCH_GOOGLE_WEB_CLIENT_ID:-}"
+            echo "supabase.url=${IRONVELLUM_SUPABASE_URL:-}"
+            echo "supabase.key=${IRONVELLUM_SUPABASE_KEY:-}"
+            echo "google.webClientId=${IRONVELLUM_GOOGLE_WEB_CLIENT_ID:-}"
           } > local.properties
 
       - name: Assemble debug
@@ -110,9 +110,9 @@ jobs:
   instrumented:
     runs-on: ubuntu-latest
     env:
-      MONARCH_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-      MONARCH_SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
-      MONARCH_GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+      IRONVELLUM_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      IRONVELLUM_SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      IRONVELLUM_GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
     steps:
       - name: Check out sources
         uses: actions/checkout@v7
@@ -131,9 +131,9 @@ jobs:
       - name: Generate local.properties
         run: |
           {
-            echo "supabase.url=${MONARCH_SUPABASE_URL:-}"
-            echo "supabase.key=${MONARCH_SUPABASE_KEY:-}"
-            echo "google.webClientId=${MONARCH_GOOGLE_WEB_CLIENT_ID:-}"
+            echo "supabase.url=${IRONVELLUM_SUPABASE_URL:-}"
+            echo "supabase.key=${IRONVELLUM_SUPABASE_KEY:-}"
+            echo "google.webClientId=${IRONVELLUM_GOOGLE_WEB_CLIENT_ID:-}"
           } > local.properties
 
       # KVM is what makes an x86_64 emulator usable on a runner; without it the
@@ -180,7 +180,7 @@ jobs:
       - name: Instrumented tests
         uses: reactivecircus/android-emulator-runner@v2.38.0
         with:
-          # API 35 google_apis x86_64: the same image the local MonarchEmu AVD
+          # API 35 google_apis x86_64: the same image the local IronvellumEmu AVD
           # runs, so a CI failure reproduces locally without a second guess.
           api-level: 35
           target: google_apis
@@ -215,7 +215,7 @@ jobs:
           path: app/build/outputs/androidTest-results/
 
   # The Supabase schema carries guarantees no Kotlin test can see: which tables
-  # have RLS, which functions a hunter may execute, which columns they may
+  # have RLS, which functions a lifter may execute, which columns they may
   # write, whether a feed row can pin itself. Those were each established by a
   # migration to close a specific review finding, and a later migration can
   # undo one silently. This applies the whole chain to a throwaway Postgres and

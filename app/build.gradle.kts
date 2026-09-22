@@ -16,20 +16,20 @@ val backend = Properties().apply {
 
 // Release signing: credentials come from environment variables first, then
 // local.properties. For a signed release set (never commit them):
-//   local.properties keys: monarch.keystore.path, monarch.keystore.password,
-//                          monarch.key.alias, monarch.key.password
-//   env equivalents:       MONARCH_KEYSTORE_PATH, MONARCH_KEYSTORE_PASSWORD,
-//                          MONARCH_KEY_ALIAS, MONARCH_KEY_PASSWORD
+//   local.properties keys: ironvellum.keystore.path, ironvellum.keystore.password,
+//                          ironvellum.key.alias, ironvellum.key.password
+//   env equivalents:       IRONVELLUM_KEYSTORE_PATH, IRONVELLUM_KEYSTORE_PASSWORD,
+//                          IRONVELLUM_KEY_ALIAS, IRONVELLUM_KEY_PASSWORD
 // With anything missing (or the keystore file absent) the release build still
 // configures and simply produces an unsigned APK. Resolved at the top level so
 // the release validation task can report the same state the signing block sees.
-val keystorePath = System.getenv("MONARCH_KEYSTORE_PATH")
-    ?: backend.getProperty("monarch.keystore.path")
-val keystorePassword = System.getenv("MONARCH_KEYSTORE_PASSWORD")
-    ?: backend.getProperty("monarch.keystore.password")
+val keystorePath = System.getenv("IRONVELLUM_KEYSTORE_PATH")
+    ?: backend.getProperty("ironvellum.keystore.path")
+val keystorePassword = System.getenv("IRONVELLUM_KEYSTORE_PASSWORD")
+    ?: backend.getProperty("ironvellum.keystore.password")
 // Named *Value to avoid shadowing SigningConfig.keyAlias/keyPassword inside create("release").
-val keyAliasValue = System.getenv("MONARCH_KEY_ALIAS") ?: backend.getProperty("monarch.key.alias")
-val keyPasswordValue = System.getenv("MONARCH_KEY_PASSWORD") ?: backend.getProperty("monarch.key.password")
+val keyAliasValue = System.getenv("IRONVELLUM_KEY_ALIAS") ?: backend.getProperty("ironvellum.key.alias")
+val keyPasswordValue = System.getenv("IRONVELLUM_KEY_PASSWORD") ?: backend.getProperty("ironvellum.key.password")
 val keystoreFile = keystorePath?.takeIf { it.isNotBlank() }?.let { rootProject.file(it) }
 val signingComplete = !keystorePassword.isNullOrBlank() &&
     !keyAliasValue.isNullOrBlank() &&
@@ -37,11 +37,11 @@ val signingComplete = !keystorePassword.isNullOrBlank() &&
     keystoreFile?.isFile == true
 
 android {
-    namespace = "com.monarch.app"
+    namespace = "com.ironvellum.app"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.monarch.app"
+        applicationId = "com.ironvellum.app"
         minSdk = 29
         // 36 (Android 16) is the newest STABLE level and Play's floor from
         // Aug 2026. 37 is Android 17 beta: a production upload targeting a
@@ -145,10 +145,10 @@ val validateReleaseBackend by tasks.registering {
             logger.lifecycle(
                 "WARNING: release will be UNSIGNED (app-release-unsigned.apk). " +
                     "For a signed build set local.properties keys: " +
-                    "monarch.keystore.path, monarch.keystore.password, " +
-                    "monarch.key.alias, monarch.key.password " +
-                    "(or env MONARCH_KEYSTORE_PATH, MONARCH_KEYSTORE_PASSWORD, " +
-                    "MONARCH_KEY_ALIAS, MONARCH_KEY_PASSWORD)."
+                    "ironvellum.keystore.path, ironvellum.keystore.password, " +
+                    "ironvellum.key.alias, ironvellum.key.password " +
+                    "(or env IRONVELLUM_KEYSTORE_PATH, IRONVELLUM_KEYSTORE_PASSWORD, " +
+                    "IRONVELLUM_KEY_ALIAS, IRONVELLUM_KEY_PASSWORD)."
             )
         }
     }
