@@ -552,10 +552,13 @@ private fun RateDial(
                 )
             }
             // The needle tip: an unambiguous marker for where the value sits.
+            // Drawn in the sweep's own colour, not ringed in near-white ink -
+            // a pale ring around a coloured centre is the exact shape of a
+            // stock slider handle, and it was the one machined-looking object
+            // left on a hand-drawn dial.
             val tip = ((start + span * sweep.value) * PI / 180.0).toFloat()
             val tipAt = Offset(cx + cos(tip) * radius, cy + sin(tip) * radius)
-            inkDot(center = tipAt, radius = stroke * 0.62f, color = IronvellumColors.Ink, seed = 91)
-            inkDot(center = tipAt, radius = stroke * 0.34f, color = IronvellumColors.EmeraldBright, seed = 93)
+            inkDot(center = tipAt, radius = stroke * 0.52f, color = IronvellumColors.EmeraldBright, seed = 91)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(

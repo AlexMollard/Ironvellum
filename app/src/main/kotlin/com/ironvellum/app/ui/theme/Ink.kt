@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.ImageShader
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathMeasure
 import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
@@ -362,43 +363,57 @@ fun DrawScope.inkRail(
         }
         return
     }
-    val segments = (size.width / 24f).toInt().coerceIn(6, 40)
-    val rng = Random(seed)
-
-    // Track: faint, full width, breathing slightly so it reads as drawn.
-    for (i in 0 until segments) {
-        val x0 = size.width * i / segments
-        val x1 = size.width * (i + 1) / segments
-        val breathe = 0.78f + rng.nextFloat() * 0.34f
-        drawLine(
-            color = track,
-            start = Offset(x0, mid),
-            end = Offset(x1, mid),
-            strokeWidth = h * breathe,
-            cap = StrokeCap.Round,
-        )
-    }
+    // Track and fill are each ONE filled shape whose top and bottom edges
+    // wander. They used to be chains of round-capped lines with a random width
+    // per link: neighbouring links differed in weight, so each cap bulged past
+    // its joint and the bar read as a row of lumps.
+    if (track.alpha > 0f) drawPath(railPath(size.width, h, mid, seed, taper = false), color = track)
     if (fraction <= 0f) return
-
-    // Fill: same breathing, but taper the final tenth so progress ends in a
-    // stroke lifting off rather than a guillotined rectangle.
     val end = size.width * fraction.coerceIn(0f, 1f)
-    val fillSegments = (end / 20f).toInt().coerceAtLeast(2)
-    val rngFill = Random(seed * 31 + 7)
-    for (i in 0 until fillSegments) {
-        val t0 = i.toFloat() / fillSegments
-        val x0 = end * t0
-        val x1 = end * (i + 1).toFloat() / fillSegments
-        val taper = if (t0 > 0.9f) (1f - (t0 - 0.9f) / 0.1f).coerceAtLeast(0.35f) else 1f
-        val breathe = (0.80f + rngFill.nextFloat() * 0.30f) * taper
-        drawLine(
-            brush = fill,
-            start = Offset(x0, mid),
-            end = Offset(x1, mid),
-            strokeWidth = h * breathe,
-            cap = StrokeCap.Round,
-        )
+    drawPath(railPath(end, h, mid, seed * 31 + 7, taper = true), brush = fill)
+}
+
+/**
+ * One rail as a closed, smoothed outline: a drawn bar, not a stack of strokes.
+ *
+ * The wander is keyed to ABSOLUTE x. The old rail divided its length into a
+ * segment COUNT derived from the current fill, so every frame of the 900ms
+ * level-up tween re-quantised the noise and the lumps visibly crawled along
+ * the bar. Anchoring to x means a growing fill extends the same drawn edge.
+ */
+private fun railPath(length: Float, h: Float, mid: Float, seed: Int, taper: Boolean): Path {
+    if (length <= 0f) return Path()
+    val step = 16f
+    val n = kotlin.math.ceil(length / step).toInt().coerceAtLeast(2)
+    // Index-keyed hash rather than a sequential RNG: the value at a given x
+    // must not depend on how many points came before it.
+    fun noise(i: Int, salt: Int): Float {
+        var v = i * 374761393 + seed * 668265263 + salt * 1274126177
+        v = (v xor (v ushr 13)) * 1274126177
+        return ((v xor (v ushr 16)) and 0xFFFF) / 65535f
     }
+    fun xAt(i: Int) = kotlin.math.min(i * step, length)
+    // The last stretch thins so progress ends in a stroke lifting off rather
+    // than a guillotined rectangle.
+    val taperLen = if (taper) kotlin.math.min(h * 1.2f, length * 0.18f) else 0f
+    fun halfAt(x: Float, salt: Int, i: Int): Float {
+        val breathe = 0.82f + noise(i, salt) * 0.18f
+        val lift = if (taperLen > 0f && x > length - taperLen) {
+            (1f - (x - (length - taperLen)) / taperLen).coerceIn(0.32f, 1f)
+        } else {
+            1f
+        }
+        return h / 2f * breathe * lift
+    }
+    val pts = FloatArray((n + 1) * 2 * 2)
+    var k = 0
+    for (i in 0..n) {
+        val x = xAt(i); pts[k++] = x; pts[k++] = mid - halfAt(x, 1, i)
+    }
+    for (i in n downTo 0) {
+        val x = xAt(i); pts[k++] = x; pts[k++] = mid + halfAt(x, 2, i)
+    }
+    return smoothClosedPath(pts)
 }
 
 /**
@@ -506,10 +521,16 @@ fun DrawScope.inkStroke(
 /**
  * An arc drawn as a brush sweep rather than a machined ring.
  *
- * A perfect circle is as obviously machine-made as a ruled line: constant
- * width, constant radius, no lift. This walks the sweep in short segments,
- * breathing the width and drifting the radius, and tapers both ends unless the
- * caller wants a hard stop.
+ * A perfect circle is as obviously machine-made as a ruled line, so the radius
+ * drifts along the sweep and the ends taper. The wander lives in the PATH and
+ * the whole sweep is stroked ONCE.
+ *
+ * It used to be stamped as a chain of round-capped [drawLine] segments, each
+ * with its own width and alpha. Two things followed, and both were visible on
+ * the rate dial: the wider of two neighbours pushed its round cap out past the
+ * joint, and every joint was painted twice so the alpha compounded there. The
+ * result read as a string of beads. One path cannot overlap itself, so neither
+ * happens.
  */
 fun DrawScope.inkArc(
     center: Offset,
@@ -535,16 +556,10 @@ fun DrawScope.inkArc(
         return
     }
     val arcLen = (kotlin.math.PI / 180.0 * kotlin.math.abs(sweepDeg) * radius).toFloat()
-    // Segments must be long RELATIVE TO THE STROKE, not a fixed 22px: at a
-    // gauge's 21px width that made every segment a round-capped dot, and the
-    // per-segment weight jitter then rendered the sweep as a chain of beads.
-    val segLen = maxOf(22f, widthPx * 2.2f)
-    // Floor of 2, not 4: a short sweep (a gauge at 25%) was being forced back
-    // into stubby segments by a minimum count, which is what beaded it while
-    // the long track beside it stayed smooth.
-    val segments = (arcLen / segLen).roundToInt().coerceIn(2, 64)
+    // Joints only shape the CURVE now, so they can be short without beading.
+    val segments = (arcLen / 14f).roundToInt().coerceIn(3, 96)
     val rng = Random(seed + radius.roundToInt())
-    // A thick stroke shows width jitter far more than a hairline does, so the
+    // A thick stroke shows radial drift far more than a hairline does, so the
     // amplitude shrinks as the brush gets fatter.
     val jitter = (10f / widthPx).coerceIn(0.4f, 1f)
     val drift = (widthPx * 0.22f).coerceAtMost(2.2f) * jitter
@@ -554,33 +569,48 @@ fun DrawScope.inkArc(
         return Offset(center.x + kotlin.math.cos(rad) * r, center.y + kotlin.math.sin(rad) * r)
     }
 
-    // One radius per JOINT, shared by the two segments that meet there. Drawing
-    // each segment with its own two radii left every joint mismatched by up to
-    // 2x the drift - a ring of notches rather than one stroke - and on a closed
-    // 360 sweep the wrap point showed it worst. The last joint of a full sweep
-    // reuses the first, so the ring closes on itself exactly.
+    // One radius per joint. A full sweep reuses the first at the end so the
+    // ring closes on itself exactly instead of stepping at the wrap point.
     val closed = kotlin.math.abs(sweepDeg) >= 359.9f
     val radii = FloatArray(segments + 1) { radius + (rng.nextFloat() - 0.5f) * 2f * drift }
     if (closed) radii[segments] = radii[0]
 
-    // Weight per JOINT too, averaged across each segment. Rolling an
-    // independent weight per segment stepped the width at every joint; with a
-    // round cap that reads as a bead rather than a brush drag, which is exactly
-    // how the rate dial rendered. Sharing the joint halves each step.
-    val weights = FloatArray(segments + 1) { 1f - rng.nextFloat() * 0.38f * jitter }
-    if (closed) weights[segments] = weights[0]
+    // Quadratics through the midpoints: the drifted joints become control
+    // points, so the sweep curves between them instead of hinging at each one.
+    val path = Path()
+    fun joint(i: Int) = pointAt(startDeg + sweepDeg * (i.toFloat() / segments), radii[i])
+    var prev = joint(0)
+    path.moveTo(prev.x, prev.y)
+    for (i in 1..segments) {
+        val p = joint(i)
+        val mid = Offset((prev.x + p.x) / 2f, (prev.y + p.y) / 2f)
+        if (i == segments) path.quadraticTo(prev.x, prev.y, p.x, p.y)
+        else path.quadraticTo(prev.x, prev.y, mid.x, mid.y)
+        prev = p
+    }
+    if (closed) path.close()
 
-    for (i in 0 until segments) {
-        val t0 = i.toFloat() / segments
-        val t1 = (i + 1).toFloat() / segments
-        val ends = if (taperEnds) (minOf(t0, 1f - t0) / 0.5f).coerceIn(0f, 1f) else 1f
-        val weight = (weights[i] + weights[i + 1]) / 2f * (0.4f + 0.6f * ends)
-        drawLine(
-            color = color.copy(alpha = color.alpha * (0.6f + 0.4f * weight)),
-            start = pointAt(startDeg + sweepDeg * t0, radii[i]),
-            end = pointAt(startDeg + sweepDeg * t1, radii[i + 1]),
-            strokeWidth = widthPx * (0.6f + 0.4f * weight),
-            cap = StrokeCap.Round,
+    // Taper is a second, shorter pass laid over the first rather than a
+    // per-segment width: one stroke can only have one width, and two stacked
+    // strokes still never overlap themselves.
+    val cap = if (taperEnds) StrokeCap.Round else StrokeCap.Butt
+    drawPath(
+        path,
+        color = color.copy(alpha = color.alpha * if (taperEnds) 0.72f else 1f),
+        style = Stroke(width = widthPx, cap = cap, join = StrokeJoin.Round),
+    )
+    if (taperEnds) {
+        // The body of the stroke reads heavier than its ends, which is what a
+        // loaded brush does; the ends keep the lighter first pass alone.
+        val body = Path()
+        PathMeasure().apply { setPath(path, false) }.also { m ->
+            val total = m.length
+            m.getSegment(total * 0.12f, total * 0.88f, body, true)
+        }
+        drawPath(
+            body,
+            color = color,
+            style = Stroke(width = widthPx, cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
     }
 }

@@ -1,17 +1,13 @@
 package com.ironvellum.app.ui.components
 
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
-import com.ironvellum.app.ui.theme.inkArc
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.progressSemantics
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -21,16 +17,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.progressSemantics
 import androidx.compose.material3.Icon
-import androidx.compose.ui.res.painterResource
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -41,40 +38,46 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.graphics.drawscope.clipRect
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import androidx.compose.ui.unit.Dp
-import com.ironvellum.app.ui.theme.inkRail
-import com.ironvellum.app.ui.theme.inkHairline
+import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.ui.theme.inkHairline
+import com.ironvellum.app.ui.theme.inkRail
 import com.ironvellum.app.ui.theme.inkTick
 import com.ironvellum.app.ui.theme.paperGrain
 import com.ironvellum.app.ui.theme.rememberInkShape
 import java.time.Instant
 import java.time.ZoneId
-import com.ironvellum.app.ui.theme.IronvellumTracking
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
@@ -119,52 +122,20 @@ fun InkPanel(
         // slightly different box and the accent floated off the line.
         .inkBorder(IronvellumColors.Rune, shape, 1.dp)
         .drawBehind {
-            // The accent is a STRETCH OF THE BORDER ITSELF, not a
-            // separate mark laid near the corner: straight ticks at the
-            // bounding box could never hug a hand-drawn corner, and the
-            // old pair stacked two full-width brush ends on the exact
-            // corner point, which read as a bright blob.
-            //
-            // So measure the panel's own outline and re-draw two short
-            // arcs of it in the accent colour — one at the start of the
-            // path (top-left) and one half way round (bottom-right).
+            // The panel's identity is a TINT on its own drawn edge, not a pair
+            // of marks laid at two corners: bright hooks read as applied HUD
+            // furniture, while a wash over the whole ring reads as the ink
+            // itself having a colour.
             val outline = when (val o = shape.createOutline(size, layoutDirection, this)) {
                 is Outline.Generic -> o.path
                 is Outline.Rounded -> Path().apply { addRoundRect(o.roundRect) }
                 is Outline.Rectangle -> Path().apply { addRect(o.rect) }
             }
-            val measure = PathMeasure().apply { setPath(outline, false) }
-            val total = measure.length
-            if (total > 0f) {
-                // Where does this hand-drawn outline actually PASS each corner? The
-                // wander means the answer is not at a fixed fraction of the path,
-                // so sample it and take the nearest point. Straight ticks at the
-                // bounding box cannot hug a wobbled corner, and a fixed fraction
-                // landed the mark in the middle of a flat edge.
-                fun distanceNearest(target: Offset): Float {
-                    var best = 0f
-                    var bestD = Float.MAX_VALUE
-                    val samples = 96
-                    for (s in 0 until samples) {
-                        val d = total * s / samples
-                        val pos = measure.getPosition(d)
-                        val dd = (pos - target).getDistanceSquared()
-                        if (dd < bestD) { bestD = dd; best = d }
-                    }
-                    return best
-                }
-                val run = minOf(22.dp.toPx(), total * 0.06f)
-                // Light hand: the accent marks the panel, it does not highlight it.
-                val line = Stroke(1.5.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-                val bleed = Stroke(4.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
-                listOf(Offset.Zero, Offset(size.width, size.height)).forEach { corner ->
-                    val at = distanceNearest(corner)
-                    val seg = Path()
-                    measure.getSegment(at - run / 2f, at + run / 2f, seg, true)
-                    drawPath(seg, accent.copy(alpha = accent.alpha * 0.22f), style = bleed)
-                    drawPath(seg, accent.copy(alpha = accent.alpha * 0.85f), style = line)
-                }
-            }
+            drawPath(
+                outline,
+                accent.copy(alpha = accent.alpha * 0.30f),
+                style = Stroke(1.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
+            )
         }
     if (onClick != null) {
         Surface(
@@ -340,20 +311,43 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
         // No plate behind the count. A translucent black box over a
         // hand-drawn rail read as a hard-edged rectangle sitting ON the art —
         // the one geometric shape on the card. Legibility instead comes from
-        // the ink flipping when the fill reaches the label: dark text on the
-        // bright fill, light text on the dark track.
-        val onFill = animated > 0.82f
-        Text(
-            "$into / $needed XP",
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(horizontal = 10.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = if (onFill) IronvellumColors.Abyss else IronvellumColors.Ink,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
+        // the ink flipping where the fill actually ends.
+        //
+        // The whole label used to flip together once the bar passed 82%, but
+        // the label is wide enough to STRADDLE the fill edge: at 91% the count
+        // sat on the bright fill while its "XP" hung past the tip, dark ink on
+        // the dark track. So draw it twice and clip each copy to the side it
+        // belongs to - the two are laid out identically, so they register.
+        val label = "$into / $needed XP"
+        val labelStyle = MaterialTheme.typography.labelSmall
+        @Composable
+        fun countLayer(ink: Color, clip: DrawScope.() -> ClosedFloatingPointRange<Float>) {
+            Box(
+                Modifier
+                    .matchParentSize()
+                    .drawWithContent {
+                        val span = clip()
+                        clipRect(left = span.start, right = span.endInclusive) {
+                            this@drawWithContent.drawContent()
+                        }
+                    },
+            ) {
+                Text(
+                    label,
+                    modifier = Modifier
+                        .align(Alignment.CenterEnd)
+                        .padding(horizontal = 10.dp, vertical = 2.dp),
+                    style = labelStyle,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    color = ink,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                )
+            }
+        }
+        // Dark ink over the bright fill, light ink over the bare track.
+        countLayer(IronvellumColors.Abyss) { 0f..size.width * animated }
+        countLayer(IronvellumColors.Ink) { size.width * animated..size.width }
     }
 }
 

@@ -151,7 +151,9 @@ class InkCoverageTest {
          */
         val RULED_EXEMPTIONS: Map<String, Map<String, Int>> = sortedMapOf(
             // Ink.kt IS the brush: these calls are how every other surface is drawn.
-            "Ink.kt" to sortedMapOf("drawArc" to 1, "drawCircle" to 2, "drawLine" to 8),
+            // drawLine fell 8 -> 5 when inkRail and inkArc stopped stamping chains
+            // of round-capped segments and started stroking one path each.
+            "Ink.kt" to sortedMapOf("drawArc" to 1, "drawCircle" to 2, "drawLine" to 5),
             // Ambient washes behind the essence counter: low-alpha gradient fills,
             // not geometry. Brushed, they read as dirt on the screen.
             "MusterBackdrop.kt" to sortedMapOf("drawCircle" to 2),
