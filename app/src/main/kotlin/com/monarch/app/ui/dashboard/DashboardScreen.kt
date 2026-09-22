@@ -520,9 +520,14 @@ fun DashboardScreen(
         // was completed today — otherwise the panel kept offering the same
         // quest after it was already finished.
         val todayStart = java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-        val questDoneToday = selectedPreset != null && isTodaySelected && ui.recent.any {
-            it.presetId == selectedPreset.id && (it.completedAtMs ?: 0L) >= todayStart
+        // Keep the session itself, not only the fact that one exists: the done
+        // card reports what it actually earned.
+        val questSessionToday = selectedPreset?.takeIf { isTodaySelected }?.let { preset ->
+            ui.recent.firstOrNull {
+                it.presetId == preset.id && (it.completedAtMs ?: 0L) >= todayStart
+            }
         }
+        val questDoneToday = questSessionToday != null
 
         // The quest panel takes every remaining pixel - which is what keeps its
         // button measured and on screen - and the manifest inside spreads into
@@ -612,7 +617,10 @@ fun DashboardScreen(
                         )
                         Spacer(Modifier.weight(1f))
                         Text(
-                            "6 MOVES · 22 SETS · DONE",
+                            // Was the literal "6 MOVES · 22 SETS · DONE": a
+                            // layout stand-in that shipped, telling every hunter
+                            // the same invented tally whatever she trained.
+                            "+${questSessionToday.xpAwarded} XP · ${questSessionToday.strengthScore} STR · DONE",
                             style = MaterialTheme.typography.labelSmall,
                             fontFamily = ChakraPetch,
                             letterSpacing = MonarchTracking.InlineLabel,
