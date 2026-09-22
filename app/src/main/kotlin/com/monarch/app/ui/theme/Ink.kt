@@ -180,7 +180,14 @@ fun inkEdgePoints(width: Float, height: Float, wobble: Float, salt: Int): FloatA
     val rng = Random(width.roundToInt() * 31 + height.roundToInt() * 17 + salt)
     val across = facetsFor(width)
     val down = facetsFor(height)
-    val pts = FloatArray(((across + down) * 2 + 1) * 2)
+    // The ring is closed by the path, not by a repeated point. The final run up
+    // the left edge must therefore STOP below the start corner: walking it to
+    // i == down lands back on y == 0, which is where this ring began, and the
+    // two coincident points ~1px apart (against a ~55px facet) collapsed into a
+    // degenerate segment. smoothClosedPath turns each point into a quadratic
+    // control point, so that pair pinched the curve into a visible kink - the
+    // odd top-left corner every wobbly panel showed.
+    val pts = FloatArray((across + down) * 2 * 2)
     var n = 0
     fun put(x: Float, y: Float) {
         pts[n++] = x
@@ -192,7 +199,7 @@ fun inkEdgePoints(width: Float, height: Float, wobble: Float, salt: Int): FloatA
     for (i in 1..across) put(width * (i.toFloat() / across), jitter())
     for (i in 1..down) put(width + jitter(), height * (i.toFloat() / down))
     for (i in 1..across) put(width * (1f - i.toFloat() / across), height + jitter())
-    for (i in 1..down) put(jitter(), height * (1f - i.toFloat() / down))
+    for (i in 1 until down) put(jitter(), height * (1f - i.toFloat() / down))
     return pts
 }
 

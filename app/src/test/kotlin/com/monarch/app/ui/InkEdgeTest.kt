@@ -65,17 +65,47 @@ class InkEdgeTest {
     }
 
     @Test
-    fun `edge closes back where it started`() {
-        val pts = inkEdgePoints(400f, 200f, 3f, salt = 5)
-        val startX = pts[0]
-        val startY = pts[1]
-        val lastX = pts[pts.size - 2]
-        val lastY = pts[pts.size - 1]
-        // The path is closed by the caller, so the final point must already be
-        // near the origin or the closing segment cuts across the surface.
-        assertTrue(
-            "final point ($lastX, $lastY) is too far from the start ($startX, $startY)",
-            abs(lastX - startX) <= 12f && abs(lastY - startY) <= 12f,
-        )
+    fun `the ring never repeats a point, least of all the corner it started on`() {
+        // The old contract asked the LAST point to land near the first, which
+        // is what put two points ~1px apart on the top-left corner. Each point
+        // becomes a quadratic control point, so that pair pinched the curve
+        // into a kink and every wobbly panel showed an odd top-left corner.
+        // The path is closed by Path.close(); the ring must not close itself.
+        val w = 400f
+        val h = 200f
+        val pts = inkEdgePoints(w, h, wobble = 3f, salt = 5)
+        val n = pts.size / 2
+        // Shortest facet this surface should produce, halved for slack: the
+        // seam is a real segment, not a repeat.
+        val shortest = minOf(w, h) / 16f / 2f
+        for (i in 0 until n) {
+            val j = (i + 1) % n
+            val dx = pts[i * 2] - pts[j * 2]
+            val dy = pts[i * 2 + 1] - pts[j * 2 + 1]
+            val gap = kotlin.math.sqrt(dx * dx + dy * dy)
+            assertTrue(
+                "points $i and $j are ${gap}px apart, a degenerate segment that kinks the curve",
+                gap >= shortest,
+            )
+        }
+    }
+
+    @Test
+    fun `the ring walks every edge and comes back around`() {
+        // Dropping the duplicate must not drop the edge itself: the outline
+        // still has to reach all four extremes.
+        val w = 400f
+        val h = 200f
+        val pts = inkEdgePoints(w, h, wobble = 3f, salt = 5)
+        var maxX = Float.MIN_VALUE
+        var maxY = Float.MIN_VALUE
+        var i = 0
+        while (i < pts.size) {
+            maxX = maxOf(maxX, pts[i])
+            maxY = maxOf(maxY, pts[i + 1])
+            i += 2
+        }
+        assertTrue("the ring never reached the right edge", maxX >= w - 6f)
+        assertTrue("the ring never reached the bottom edge", maxY >= h - 6f)
     }
 }
