@@ -156,13 +156,24 @@ object WorkoutShare {
             counts.joinToString("/") { "$it$unit" }
         }
 
-    /** "+20 kg" for added load; blank when every set was bodyweight. */
+    /**
+     * "+20 kg" for added load; blank when every set was bodyweight.
+     *
+     * The reps body already refuses to collapse sets that differ - three fives
+     * and an eight render "5/5/5/8", never "4x5" - and load answers to the same
+     * rule. One set of a squat at 60 kg beside three bodyweight sets was
+     * printing "4x5 +60 kg", which claims four loaded sets to whoever reads the
+     * card. When the load is not the same on every set it is labelled as the
+     * top set, which is the only figure it honestly is.
+     */
     private fun loadSuffix(group: List<SessionSet>): String {
-        val loads = group.mapNotNull { it.weightKg?.takeIf { kg -> kg > 0.0 } }
-        if (loads.isEmpty()) return ""
-        val top = loads.max()
+        val loads = group.map { it.weightKg?.takeIf { kg -> kg > 0.0 } }
+        val carried = loads.filterNotNull()
+        if (carried.isEmpty()) return ""
+        val top = carried.max()
         val text = if (top % 1.0 == 0.0) top.toInt().toString() else String.format(Locale.ENGLISH, "%.1f", top)
-        return " +$text kg"
+        val uniform = carried.size == loads.size && carried.distinct().size == 1
+        return if (uniform) " +$text kg" else " \u00B7 top +$text kg"
     }
 
     private fun clock(totalSeconds: Int): String {

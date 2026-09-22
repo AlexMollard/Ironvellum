@@ -36,6 +36,12 @@ class WorkoutLogRendersHistoryTest {
     /** The label of the session seeded below, which the log must show. */
     private lateinit var sessionLabel: String
 
+    /**
+     * How many sets the preset prescribed. Only the first is ticked below, so
+     * this is deliberately larger than the number actually trained.
+     */
+    private var plannedSetCount: Int = 0
+
     @Before
     fun seedACompletedSession() {
         // Onboarding gates the whole app until a profile height exists.
@@ -52,6 +58,7 @@ class WorkoutLogRendersHistoryTest {
             val preset = repo.observePresets().first().first()
             val sessionId = repo.startSessionFromPreset(preset.id)
             val sets = app.database.sessionDao().setsFor(sessionId)
+            plannedSetCount = sets.size
             repo.updateSet(sets.first().id, reps = 6, weightKg = 25.0, done = true)
             repo.completeSession(sessionId)
             sessionLabel = app.database.sessionDao().byId(sessionId)!!.label
@@ -92,6 +99,32 @@ class WorkoutLogRendersHistoryTest {
         // rather than any text that happens to contain XP.
         val rows = compose.onAllNodesWithText(sessionLabel, substring = true).fetchSemanticsNodes()
         assertTrue("the log did not render the session labelled \"$sessionLabel\"", rows.isNotEmpty())
+    }
+
+    @Test
+    fun theLifetimeLedgerCountsSetsTrainedNotSetsPrescribed() {
+        // The seeded session ticked exactly one of its prescribed sets, so a
+        // ledger reading the whole prescription and a ledger reading the work
+        // disagree - which is the defect, seen first on a device as a session
+        // of four sets reporting fourteen.
+        assertTrue(
+            "fixture is vacuous: the preset must prescribe more than the one set trained",
+            plannedSetCount > 1,
+        )
+
+        compose.onAllNodesWithContentDescription("Train").onFirst().performClick()
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        compose.onAllNodesWithText("FULL LOG", substring = true).onFirst().performClick()
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+
+        // The ledger pluralises its own label, so one set trained reads "SET".
+        // Counting the prescription instead would read "SETS".
+        val singular = compose.onAllNodesWithText("SET").fetchSemanticsNodes()
+        val plural = compose.onAllNodesWithText("SETS").fetchSemanticsNodes()
+        assertTrue(
+            "the lifetime record credited $plannedSetCount prescribed sets, not the one trained",
+            singular.isNotEmpty() && plural.isEmpty(),
+        )
     }
 
     private companion object {

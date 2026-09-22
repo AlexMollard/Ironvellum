@@ -107,15 +107,46 @@ class WorkoutShareTest {
     }
 
     @Test
-    fun `added load is named once at its heaviest`() {
+    fun `a load carried by every set is stated plainly`() {
+        val card = WorkoutShare.format(
+            session(),
+            listOf(set(1, "Weighted Dip", 0, 6, weightKg = 20.0), set(1, "Weighted Dip", 1, 6, weightKg = 20.0)),
+            mapOf(1L to exercise(1, "Weighted Dip")),
+            zone,
+        )
+        assertTrue(card, card.contains("2\u00D76 +20 kg"))
+        assertFalse(card, card.contains("top"))
+    }
+
+    @Test
+    fun `a load only the best set carried is labelled as the top set`() {
         val card = WorkoutShare.format(
             session(),
             listOf(set(1, "Weighted Dip", 0, 6, weightKg = 20.0), set(1, "Weighted Dip", 1, 6, weightKg = 22.5)),
             mapOf(1L to exercise(1, "Weighted Dip")),
             zone,
         )
-        assertTrue(card, card.contains("+22.5 kg"))
+        // "2x6 +22.5 kg" would tell a reader both sets carried 22.5 kg.
+        assertTrue(card, card.contains("2\u00D76 \u00B7 top +22.5 kg"))
         assertFalse(card, card.contains("+20 kg"))
+    }
+
+    @Test
+    fun `one loaded set among bodyweight sets never reads as a loaded block`() {
+        val card = WorkoutShare.format(
+            session(),
+            listOf(
+                set(1, "Back Squat", 0, 5, weightKg = 60.0),
+                set(1, "Back Squat", 1, 5),
+                set(1, "Back Squat", 2, 5),
+                set(1, "Back Squat", 3, 5),
+            ),
+            mapOf(1L to exercise(1, "Back Squat")),
+            zone,
+        )
+        // The defect this pins was read off a real share card on a device.
+        assertFalse(card, card.contains("4\u00D75 +60 kg"))
+        assertTrue(card, card.contains("4\u00D75 \u00B7 top +60 kg"))
     }
 
     @Test

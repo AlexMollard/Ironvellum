@@ -214,11 +214,16 @@ private fun LifetimeLedger(
     exercises: Map<Long, Exercise>,
 ) {
     val sessions = history.map { it.first }
-    val allSets = history.flatMap { it.second }
+    // Only sets a hunter actually conquered. A session carries its whole
+    // prescription, so a week planned at fourteen sets and finished at four
+    // was crediting the lifetime record with all fourteen and a hundred reps
+    // she never performed - while the row below it, the share card and the XP
+    // she was paid all counted the four. This figure now agrees with them.
+    val doneSets = history.flatMap { it.second }.filter { it.done }
     // Seconds held are not repetitions, and a climb's attempts or a run's
     // kilometres are neither. Each figure is totalled only over sets that
     // share its unit; a metric a mixed history never logged shows nothing.
-    val totals = metricTotals(allSets) { set -> figureMetric(set, exercises) }
+    val totals = metricTotals(doneSets) { set -> figureMetric(set, exercises) }
     val totalXp = sessions.sumOf { it.xpAwarded }
 
     SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.SovereignGold) {
@@ -233,7 +238,7 @@ private fun LifetimeLedger(
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             // Counts get explicit plural forms — appending "s" rendered "1 WORKOUTs".
             LedgerStat("${sessions.size}", plural(sessions.size, "WORKOUT", "WORKOUTS"))
-            LedgerStat("${allSets.size}", plural(allSets.size, "SET", "SETS"))
+            LedgerStat("${doneSets.size}", plural(doneSets.size, "SET", "SETS"))
             LedgerStat("%,d".format(totals.reps), plural(totals.reps, "REP", "REPS"))
             if (totals.heldSeconds > 0) LedgerStat("%,d".format(totals.heldSeconds), "SEC HELD")
             if (totals.attempts > 0) LedgerStat("%,d".format(totals.attempts), plural(totals.attempts, "ATTEMPT", "ATTEMPTS"))
