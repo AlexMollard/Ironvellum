@@ -63,7 +63,7 @@ class MigrationForwardTest {
      * Starts at the exported schema 21, writes a profile row, then migrates
      * through the full registered chain to MonarchDatabase.VERSION and checks
      * the row survived with the new column readable. This exercises 21->22
-     * (inkStyle added) and 22->23 (existing rows reset to CLEAN).
+     * (inkStyle added), 22->23 (reset to CLEAN) and 25->26 (restored to INK).
      *
      * This is the guard for a whole bug class: a migration was first written
      * against `profiles` when the table is `profile`. That compiles, passes
@@ -91,10 +91,11 @@ class MigrationForwardTest {
             assertEquals("Kaida", c.getString(0))
             assertEquals(4200L, c.getLong(1))
             assertEquals("HYPERTROPHY", c.getString(2))
-            // CLEAN is the default: the 22_23 migration resets every existing
-            // row to it (the toggle was unreleased, so no stored preference
-            // was lost).
-            assertEquals(0, c.getInt(3))
+            // INK is the app's own look and the 25_26 migration restores it on
+            // every existing row, reversing 22_23. Both overwrites are safe for
+            // the same reason: the toggle is unreleased, so no stored
+            // preference was ever expressed.
+            assertEquals(1, c.getInt(3))
         }
         db.close()
     }

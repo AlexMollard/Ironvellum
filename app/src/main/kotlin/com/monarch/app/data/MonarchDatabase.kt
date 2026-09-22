@@ -73,7 +73,7 @@ abstract class MonarchDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 25
+        const val VERSION = 26
 
         // The strength formula changed (taper + difficulty weighting). A schema
         // bump alone restates nothing: stored sessions keep the numbers the
@@ -332,6 +332,22 @@ abstract class MonarchDatabase : RoomDatabase() {
             }
         }
 
+        /**
+         * Restores INK as the appearance, reversing [MIGRATION_22_23].
+         *
+         * That migration made CLEAN the default on the same grounds this one
+         * uses to undo it: the toggle is still unreleased, so no hunter has
+         * expressed a preference and overwriting the stored value costs nobody
+         * a choice they made. The reason for the reversal is that CLEAN is
+         * indistinguishable from every other dark RPG fitness tracker, while
+         * the brushed edges are the one thing in this UI that is only ours.
+         */
+        private val MIGRATION_25_26 = object : Migration(25, 26) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("UPDATE profile SET inkStyle = 1")
+            }
+        }
+
 
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
@@ -348,6 +364,7 @@ abstract class MonarchDatabase : RoomDatabase() {
             MIGRATION_22_23,
             MIGRATION_23_24,
             MIGRATION_24_25,
+            MIGRATION_25_26,
         )
 
         const val NAME = "monarch.db"

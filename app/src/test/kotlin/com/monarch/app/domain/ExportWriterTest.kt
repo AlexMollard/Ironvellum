@@ -72,7 +72,7 @@ class ExportWriterTest {
         assertTrue(
             json.contains(
                 "\"profile\":{\"name\":\"x\",\"totalXp\":0,\"currentTitleId\":null," +
-                    "\"heightCm\":null,\"sex\":null,\"inkStyle\":false},\"trainingMode\":\"STRENGTH\"",
+                    "\"heightCm\":null,\"sex\":null,\"inkStyle\":true},\"trainingMode\":\"STRENGTH\"",
             ),
         )
     }
@@ -181,7 +181,7 @@ class ExportWriterTest {
         assertEquals(
             "{\"formatVersion\":${ExportWriter.FORMAT_VERSION},\"exportedAtMs\":0," +
                 "\"profile\":{\"name\":\"x\",\"totalXp\":0,\"currentTitleId\":null," +
-                "\"heightCm\":null,\"sex\":null,\"inkStyle\":false}," +
+                "\"heightCm\":null,\"sex\":null,\"inkStyle\":true}," +
                 "\"trainingMode\":\"STRENGTH\"," +
                 "\"presets\":[],\"sessions\":[],\"stats\":[],\"titles\":[],\"skills\":[],\"healthDays\":[]," +
                 "\"measurements\":[],\"exercises\":[]}",

@@ -116,8 +116,13 @@ data class ProfileEntity(
     val heightCm: Double? = null,
     /** Sex enum name; feeds the Navy body-fat estimator. */
     val sex: String = "MALE",
-    /** CLEAN is the default look; ink is the opt-in hand-drawn treatment. */
-    val inkStyle: Boolean = false,
+    /**
+     * The hand-drawn treatment is the app's own look, so it is what a hunter
+     * gets; CLEAN is the opt-out. Dark panels with a neon accent are the house
+     * style of every RPG fitness tracker, and the brushed edges are the one
+     * part of this UI no other app in the genre has.
+     */
+    val inkStyle: Boolean = true,
     /**
      * Which strength-scoring formula last touched the stored sessions, as
      * [com.monarch.app.domain.StrengthIndex.SCORING_VERSION]. A marker only:

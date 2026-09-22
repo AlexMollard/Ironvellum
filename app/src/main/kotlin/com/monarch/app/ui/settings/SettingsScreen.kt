@@ -545,9 +545,9 @@ fun SettingsScreen(
             Spacer(Modifier.height(8.dp))
             Text(
                 if (inkOn) {
-                    "Hand-drawn edges, paper grain and brushed rules."
+                    "Hand-drawn edges, paper grain and brushed rules. Monarch's own look."
                 } else {
-                    "Straight edges and even rules, as the app first shipped."
+                    "Straight edges and even rules, for anyone who wants the plain version."
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = MonarchColors.InkMuted,
