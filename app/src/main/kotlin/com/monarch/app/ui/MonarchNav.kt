@@ -48,7 +48,14 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.ui.components.formatDate
+import com.monarch.app.ui.onboarding.OnboardingScreen
+import com.monarch.app.ui.onboarding.OnboardingViewModel
+import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.dashboard.DashboardScreen
 import com.monarch.app.ui.settings.SettingsScreen
 import com.monarch.app.ui.social.SocialScreen
@@ -113,6 +120,14 @@ fun MonarchRoot() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
 
+    // First-run gate, driven by state the profile already stores: a null
+    // height means the hunter has never set up. Completing writes a height and
+    // the flow releases; skipping flips an in-memory flag for this process.
+    val onboardingViewModel: OnboardingViewModel = viewModel(
+        factory = viewModelFactory { initializer { OnboardingViewModel(monarchRepository()) } },
+    )
+    val needsSetup by onboardingViewModel.needsSetup.collectAsStateWithLifecycle()
+
     val destinations = listOf(
         BottomDestination(Routes.DASHBOARD, "Court", Icons.Outlined.Home),
         BottomDestination(Routes.PRESETS, "Train", Icons.Outlined.FitnessCenter),
@@ -127,6 +142,11 @@ fun MonarchRoot() {
             Brush.verticalGradient(listOf(Color(0xFF0B0C0F), Color(0xFF0E1013), Color(0xFF0B0C0F))),
         ),
     ) {
+        // Gate render, not a route: onboarding has no back stack, no bottom
+        // bar and nothing to navigate back to.
+        if (needsSetup == true) {
+            OnboardingScreen(viewModel = onboardingViewModel)
+        } else if (needsSetup != null) {
         Scaffold(
             containerColor = Color.Transparent,
             bottomBar = {
@@ -367,6 +387,7 @@ fun MonarchRoot() {
                     )
                 }
             }
+        }
         }
     }
 }

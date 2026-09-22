@@ -42,6 +42,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.Repository
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.Exercise
+import com.monarch.app.domain.ExerciseMetric
+import com.monarch.app.domain.isStrength
 import com.monarch.app.domain.Energy
 import com.monarch.app.domain.MovementDifficulty
 import com.monarch.app.domain.EnergyConfidence
@@ -51,7 +53,10 @@ import com.monarch.app.domain.WorkoutShare
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.ShareCardDialog
 import com.monarch.app.ui.components.SystemWindow
+import com.monarch.app.ui.components.formatBodyValue
 import com.monarch.app.ui.components.formatDate
+import com.monarch.app.ui.components.metricTotals
+import com.monarch.app.ui.components.setFigure
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.inkBorder
@@ -345,11 +350,16 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
         val hold = groupSets.firstOrNull()?.let { set ->
             MovementDifficulty.isHoldSet(exercises[set.exerciseId]?.metric, set.exerciseName, set.modifiers)
         } == true
+        // A legacy hold catalogued as REPS still holds seconds, so the hold
+        // detection overrides the catalogue before anything counts reps.
+        val metric = if (hold) ExerciseMetric.HOLD
+        else groupSets.firstOrNull()?.let { exercises[it.exerciseId]?.metric } ?: ExerciseMetric.REPS
         val doneInGroup = groupSets.filter { it.done }
-        // Seconds are seconds. Summing them as reps is what printed
-        // "140 reps" for a session that held two thirds of that figure.
-        val totalReps = if (hold) doneInGroup.sumOf { it.durationSec ?: it.reps } else doneInGroup.sumOf { it.reps }
-        val volumeKg = if (hold) 0.0 else doneInGroup.sumOf { set -> (set.weightKg ?: 0.0) * set.reps }
+        // Seconds are seconds, attempts are attempts. Summing them as reps is
+        // what printed "140 reps" for a session that held two thirds of that
+        // figure and "7 reps" for 7 boulder problems.
+        val totals = metricTotals(doneInGroup) { metric }
+        val volumeKg = if (metric.isStrength) doneInGroup.sumOf { set -> (set.weightKg ?: 0.0) * set.reps } else 0.0
         SystemWindow(Modifier.fillMaxWidth()) {
             Row(
                 Modifier.fillMaxWidth(),
@@ -366,7 +376,22 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
                 )
                 Text(
                     buildString {
-                        append(if (hold) "${totalReps}s held" else "$totalReps reps")
+                        when (metric) {
+                            ExerciseMetric.HOLD -> append("${totals.heldSeconds}s held")
+                            ExerciseMetric.REPS -> append("${totals.reps} reps")
+                            ExerciseMetric.ATTEMPTS_GRADE -> {
+                                append("${totals.attempts} attempts")
+                                // Grades are free text with no ordering, so the
+                                // group shows the last one entered rather than
+                                // pretending to rank them.
+                                groupSets.lastOrNull { !it.grade.isNullOrBlank() }
+                                    ?.grade?.let { append(" · $it") }
+                            }
+                            ExerciseMetric.DISTANCE_TIME ->
+                                append(setFigure(metric, 0, totals.secondsWorked, totals.km * 1000.0).figure)
+                            ExerciseMetric.DURATION ->
+                                append(setFigure(metric, 0, totals.secondsWorked, null).figure)
+                        }
                         if (volumeKg > 0.0) append(" · ${"%.0f".format(volumeKg)} kg vol")
                     },
                     style = MaterialTheme.typography.labelSmall,
@@ -384,7 +409,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                groupSets.forEach { set -> SetChip(set, hold) }
+                groupSets.forEach { set -> SetChip(set, metric, hold) }
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -392,7 +417,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
 }
 
 @Composable
-private fun SetChip(set: SessionSet, hold: Boolean) {
+private fun SetChip(set: SessionSet, metric: ExerciseMetric, hold: Boolean) {
     val weight = if (set.weightKg == null || set.weightKg == 0.0) "BW" else "${"%.1f".format(set.weightKg)} kg"
     Column(
         Modifier
@@ -402,10 +427,18 @@ private fun SetChip(set: SessionSet, hold: Boolean) {
             .padding(horizontal = 10.dp, vertical = 7.dp),
     ) {
         Text(
-            if (hold) {
-                "${set.durationSec ?: set.reps}s" + if (set.weightKg != null && set.weightKg > 0.0) " × $weight" else ""
-            } else {
-                "${set.reps} × $weight"
+            when {
+                hold -> "${set.durationSec ?: set.reps}s" +
+                    if (set.weightKg != null && set.weightKg > 0.0) " × $weight" else ""
+                metric == ExerciseMetric.ATTEMPTS_GRADE ->
+                    // The grade is the climb's identity; the weight slot is not
+                    // (a boulder problem carries no load).
+                    set.reps.toString() + set.grade?.takeIf { it.isNotBlank() }?.let { " × $it" }.orEmpty()
+                metric == ExerciseMetric.DISTANCE_TIME ->
+                    setFigure(metric, set.reps, set.durationSec, set.distanceM).figure
+                metric == ExerciseMetric.DURATION ->
+                    setFigure(metric, set.reps, set.durationSec, null).figure
+                else -> "${set.reps} × $weight"
             },
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,

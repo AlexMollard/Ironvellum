@@ -47,13 +47,16 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.monarch.app.data.Repository
 import com.monarch.app.domain.Exercise
+import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.domain.MovementDifficulty
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.WorkoutSession
 import com.monarch.app.ui.components.plural
+import com.monarch.app.ui.components.metricTotals
 import com.monarch.app.ui.components.SectionHeader
 import com.monarch.app.ui.components.SystemWindow
 import com.monarch.app.ui.components.TrendChart
+import com.monarch.app.ui.components.formatBodyValue
 import com.monarch.app.ui.components.formatDate
 import com.monarch.app.ui.monarchRepository
 import com.monarch.app.ui.theme.ChakraPetch
@@ -210,10 +213,10 @@ private fun LifetimeLedger(
 ) {
     val sessions = history.map { it.first }
     val allSets = history.flatMap { it.second }
-    // Seconds held are not repetitions. Summing them here is what made the
-    // lifetime ledger read 140 reps for 65 reps and 75 seconds of hollow hold.
-    val totalReps = allSets.filterNot { isHoldSet(it, exercises) }.sumOf { it.reps }
-    val totalHeld = allSets.filter { isHoldSet(it, exercises) }.sumOf { it.durationSec ?: it.reps }
+    // Seconds held are not repetitions, and a climb's attempts or a run's
+    // kilometres are neither. Each figure is totalled only over sets that
+    // share its unit; a metric a mixed history never logged shows nothing.
+    val totals = metricTotals(allSets) { set -> figureMetric(set, exercises) }
     val totalXp = sessions.sumOf { it.xpAwarded }
 
     SystemWindow(Modifier.fillMaxWidth(), accent = MonarchColors.SovereignGold) {
@@ -229,8 +232,16 @@ private fun LifetimeLedger(
             // Counts get explicit plural forms — appending "s" rendered "1 WORKOUTs".
             LedgerStat("${sessions.size}", plural(sessions.size, "WORKOUT", "WORKOUTS"))
             LedgerStat("${allSets.size}", plural(allSets.size, "SET", "SETS"))
-            LedgerStat("%,d".format(totalReps), plural(totalReps, "REP", "REPS"))
-            if (totalHeld > 0) LedgerStat("%,d".format(totalHeld), "SEC HELD")
+            LedgerStat("%,d".format(totals.reps), plural(totals.reps, "REP", "REPS"))
+            if (totals.heldSeconds > 0) LedgerStat("%,d".format(totals.heldSeconds), "SEC HELD")
+            if (totals.attempts > 0) LedgerStat("%,d".format(totals.attempts), plural(totals.attempts, "ATTEMPT", "ATTEMPTS"))
+            // One slot for timed and distance work: both same-unit totals, and
+            // either may be absent from a history that never logged them.
+            if (totals.km > 0 || totals.secondsWorked > 0) {
+                val kmPart = if (totals.km > 0) "${formatBodyValue(totals.km)} KM" else null
+                val minPart = if (totals.secondsWorked > 0) "${(totals.secondsWorked + 59) / 60} MIN" else null
+                LedgerStat(listOfNotNull(kmPart, minPart).joinToString(" · "), "KM · MIN")
+            }
             LedgerStat("%,d".format(totalXp), "XP")
         }
         Spacer(Modifier.height(14.dp))
@@ -290,8 +301,9 @@ private fun LogRow(
     onDelete: () -> Unit,
 ) {
     val doneSets = sets.filter { it.done }
-    val totalReps = doneSets.filterNot { isHoldSet(it, exercises) }.sumOf { it.reps }
-    val totalHeld = doneSets.filter { isHoldSet(it, exercises) }.sumOf { it.durationSec ?: it.reps }
+    // Same-unit figures only: a climb's attempts and a run's kilometres must
+    // not pass through the rep counter on their way onto this line.
+    val totals = metricTotals(doneSets) { set -> figureMetric(set, exercises) }
     // Inline confirm, same treatment as ERASE MY CLOUD DATA: the destructive
     // step says what it does and asks once more before it does it. Row-local,
     // so arming one entry never arms another.
@@ -347,8 +359,14 @@ private fun LogRow(
             buildString {
                 append(sets.map { it.exerciseId }.distinct().size).append(" exercises")
                 append("  ·  ").append(doneSets.size).append("/").append(sets.size).append(" sets")
-                if (totalReps > 0) append("  ·  ").append("%,d".format(totalReps)).append(" reps")
-                if (totalHeld > 0) append("  ·  ").append("%,d".format(totalHeld)).append("s held")
+                if (totals.reps > 0) append("  ·  ").append("%,d".format(totals.reps)).append(" reps")
+                if (totals.heldSeconds > 0) append("  ·  ").append("%,d".format(totals.heldSeconds)).append("s held")
+                if (totals.attempts > 0) append("  ·  ").append("%,d".format(totals.attempts)).append(" attempts")
+                if (totals.km > 0) append("  ·  ").append(formatBodyValue(totals.km)).append(" km")
+                if (totals.secondsWorked > 0) {
+                    val minutes = totals.secondsWorked / 60
+                    append("  ·  ").append(if (minutes > 0) "$minutes min" else "<1 min")
+                }
             },
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
@@ -455,3 +473,12 @@ private fun ScorePill(value: String, label: String, accent: androidx.compose.ui.
 /** A hold's figure is seconds; the catalogue metric decides, name is the fallback. */
 private fun isHoldSet(set: SessionSet, exercises: Map<Long, Exercise>): Boolean =
     MovementDifficulty.isHoldSet(exercises[set.exerciseId]?.metric, set.exerciseName, set.modifiers)
+
+/**
+ * Which unit a set's figure is counted in. A legacy hold row catalogued as
+ * REPS still holds seconds, so the name/modifier hold detection overrides the
+ * catalogue before anything sums its `reps` as repetitions.
+ */
+private fun figureMetric(set: SessionSet, exercises: Map<Long, Exercise>): ExerciseMetric =
+    if (isHoldSet(set, exercises)) ExerciseMetric.HOLD
+    else exercises[set.exerciseId]?.metric ?: ExerciseMetric.REPS

@@ -61,6 +61,8 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.monarch.app.domain.ExerciseMetric
+import com.monarch.app.domain.SessionSet
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.MonarchColors
 import androidx.compose.ui.unit.Dp
@@ -451,6 +453,83 @@ fun formatBodyValue(value: Double): String = String.format(Locale.US, "%.1f", va
  * own log header read "1 WORKOUTS".
  */
 fun plural(count: Int, one: String, many: String): String = if (count == 1) one else many
+
+/** One set's figure text plus the noun it is counted in. */
+data class SetFigure(val figure: String, val noun: String)
+
+/**
+ * One set's figure and its noun, in the vocabulary SessionScreen's columns
+ * use: REPS / SECONDS (holds) / ATTEMPTS / KM + MINUTES (distance work) /
+ * MINUTES (timed work). The per-screen copies this replaces all branched
+ * hold-vs-not, so every activity metric fell into the rep branch: a climb's
+ * attempts read "7 REPS" and a run read "0 REPS". A figure its metric does
+ * not carry (a DURATION set's `reps`, which is always 0) is never printed.
+ *
+ * Legacy hold rows wrote their seconds into `reps`, hence the fallback.
+ * Pure function, no Compose state, callable from anywhere.
+ */
+fun setFigure(
+    metric: ExerciseMetric,
+    reps: Int,
+    durationSec: Int?,
+    distanceM: Double?,
+): SetFigure = when (metric) {
+    ExerciseMetric.REPS -> SetFigure(reps.toString(), plural(reps, "REP", "REPS"))
+    ExerciseMetric.HOLD -> {
+        val seconds = durationSec ?: reps
+        SetFigure(seconds.toString(), plural(seconds, "SECOND", "SECONDS"))
+    }
+    ExerciseMetric.DURATION -> {
+        val minutes = (durationSec ?: 0) / 60
+        // A 40-minute yoga set rounds cleanly; a 40-second one must not read
+        // as zero work.
+        SetFigure(if (durationSec != null && durationSec < 60) "<1" else minutes.toString(), "MINUTES")
+    }
+    ExerciseMetric.DISTANCE_TIME -> {
+        val km = (distanceM ?: 0.0) / 1000.0
+        val minutes = (durationSec ?: 0) / 60
+        SetFigure("${formatBodyValue(km)} km · $minutes min", "KM · MIN")
+    }
+    // The attempt count rides `reps` (as ActivityScore reads it). The
+    // free-text grade is presentation, so the caller shows it where it fits.
+    ExerciseMetric.ATTEMPTS_GRADE -> SetFigure(reps.toString(), plural(reps, "ATTEMPT", "ATTEMPTS"))
+}
+
+/**
+ * Same-unit totals for a stretch of sets: reps and attempts are never merged
+ * (a climb's attempts are not repetitions), seconds held stay separate from
+ * seconds worked, and distance work contributes to both km and minutes. The
+ * lifetime ledger used to sum every non-hold set through `reps`, which turned
+ * 7 boulder attempts into "7 REPS" and paid a 30-minute yoga set zero.
+ */
+data class MetricTotals(
+    val reps: Int,
+    val heldSeconds: Int,
+    val attempts: Int,
+    val km: Double,
+    val secondsWorked: Int,
+)
+
+fun metricTotals(sets: List<SessionSet>, metricOf: (SessionSet) -> ExerciseMetric): MetricTotals {
+    var reps = 0
+    var heldSeconds = 0
+    var attempts = 0
+    var km = 0.0
+    var secondsWorked = 0
+    for (set in sets) {
+        when (metricOf(set)) {
+            ExerciseMetric.REPS -> reps += set.reps
+            ExerciseMetric.HOLD -> heldSeconds += set.durationSec ?: set.reps
+            ExerciseMetric.ATTEMPTS_GRADE -> attempts += set.reps
+            ExerciseMetric.DURATION -> secondsWorked += set.durationSec ?: 0
+            ExerciseMetric.DISTANCE_TIME -> {
+                km += (set.distanceM ?: 0.0) / 1000.0
+                secondsWorked += set.durationSec ?: 0
+            }
+        }
+    }
+    return MetricTotals(reps, heldSeconds, attempts, km, secondsWorked)
+}
 
 /**
  * Bounded text+icon navigation chip; 48dp+ tap target.

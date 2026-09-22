@@ -936,18 +936,29 @@ private fun StatStrip(entry: FeedEntry) {
         // "MOVE/S" and truncated XP to "+6…" on a 1080px screen; movement count
         // and duration ride the movement line instead.
         Stat(Icons.Outlined.FitnessCenter, "${entry.setsDone}", "SETS", modifier = Modifier.weight(1f))
-        // A hold-only session has reps 0 and its work in held_seconds. Showing
-        // "0 REPS" claimed the hunter did nothing; the chip follows whichever
-        // figure the session actually has.
-        val timed = entry.repsDone == 0 && entry.heldSeconds > 0
+        // The chip follows whichever figure the session's payload actually
+        // carries. `reps_done` arrives as one number with no metric split, so
+        // a climb's attempts are only identifiable when the hunt has a hardest
+        // grade and no load-bearing set at all - then the count is attempts.
+        val climbOnly = entry.bestSet.isNullOrBlank() && !entry.hardestGrade.isNullOrBlank()
+        val timed = !climbOnly && entry.repsDone == 0 && entry.heldSeconds > 0
         Stat(
             Icons.Outlined.Repeat,
             when {
+                climbOnly && entry.repsDone > 0 -> "${entry.repsDone}"
                 timed -> "${entry.heldSeconds}s"
+                entry.repsDone == 0 && (entry.distanceM ?: 0.0) > 0 -> formatDistance(entry.distanceM ?: 0.0)
+                entry.repsDone == 0 && (entry.durationSec ?: 0) >= 60 -> formatDuration(entry.durationSec ?: 0)
                 entry.repsDone == 0 && entry.setsDone > 0 -> "—"
                 else -> "${entry.repsDone}"
             },
-            if (timed) "HELD" else "REPS",
+            when {
+                climbOnly && entry.repsDone > 0 -> "ATTEMPTS"
+                timed -> "HELD"
+                entry.repsDone == 0 && (entry.distanceM ?: 0.0) > 0 -> "COVERED"
+                entry.repsDone == 0 && (entry.durationSec ?: 0) >= 60 -> "DURATION"
+                else -> "REPS"
+            },
             modifier = Modifier.weight(1f),
         )
         Stat(Icons.Outlined.AutoAwesome, "+${entry.xpAwarded}", "XP", tint = MonarchColors.Emerald, modifier = Modifier.weight(1f))
