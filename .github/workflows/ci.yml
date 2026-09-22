@@ -1,4 +1,4 @@
-# Continuous integration for Monarch.
+# Continuous integration for Ironvellum.
 #
 # Runs on every push and pull request: debug build, unit tests, release lint,
 # and compilation of the instrumented tests.
