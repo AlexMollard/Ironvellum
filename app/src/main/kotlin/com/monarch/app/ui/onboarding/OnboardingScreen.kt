@@ -1,5 +1,6 @@
 package com.monarch.app.ui.onboarding
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -30,13 +31,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.focusGroup
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -291,6 +296,11 @@ fun OnboardingScreen(
     }
     val profileValid = missing.isEmpty()
 
+    // Deliberately not saved: a rotation should not restore a keyboard, and the
+    // back contract below only cares about focus as it stands right now.
+    var fieldFocused by remember { mutableStateOf(false) }
+    val focusManager = LocalFocusManager.current
+
     Box(
         Modifier
             .fillMaxSize()
@@ -320,7 +330,25 @@ fun OnboardingScreen(
             StepHeader(step = step, onSkip = viewModel::skip)
             Spacer(Modifier.height(20.dp))
 
-            Box(Modifier.weight(1f)) {
+            // System back belongs to the flow, not the task stack: with a field
+            // focused it puts the keyboard away, past the first step it walks a
+            // step back, and only on step one untouched does it leave the app -
+            // which is what back means on a first screen. Without this, one
+            // press during a weigh-in dismissed the keyboard AND killed the app.
+            BackHandler(enabled = fieldFocused || step > 0) {
+                if (fieldFocused) {
+                    focusManager.clearFocus()
+                } else {
+                    step -= 1
+                }
+            }
+
+            Box(
+                Modifier
+                    .weight(1f)
+                    .focusGroup()
+                    .onFocusChanged { fieldFocused = it.hasFocus },
+            ) {
                 when (step) {
                     0 -> ProfileStep(
                         name = name,
