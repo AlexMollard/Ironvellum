@@ -36,6 +36,8 @@ class SkillPracticeFlowTest {
      */
     @Before
     fun clearPractice() {
+        // Onboarding gates the whole app until a profile height exists.
+        TestProfile.ensureSetUp()
         val app = InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as MonarchApp
         app.database.openHelper.writableDatabase.execSQL("DELETE FROM skill_practices")

@@ -755,6 +755,8 @@ class Repository(
             practices = observeSkillPractices().first(),
             exercises = exerciseCatalogue(),
             scheduledWeekdays = scheduledWeekdays(),
+            sex = profileSex(),
+            bodyweightAt = bodyweightLookup(),
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         val now = finishedAt
@@ -1149,7 +1151,19 @@ class Repository(
         practices = observeSkillPractices().first(),
         exercises = exerciseCatalogue(),
         scheduledWeekdays = scheduledWeekdays(),
+        sex = profileSex(),
+        bodyweightAt = bodyweightLookup(),
     )
+
+    /**
+     * Weigh-in history as a bodyweight-at-time lookup for the strength-title
+     * ledger — the same rule [SetRecords.bodyweightLookup] applies to a set
+     * logged before any weigh-in. Load deeds compare against the bodyweight
+     * in force at the session, never today's, or a hunter who gained weight
+     * would silently lose a title she earned.
+     */
+    private suspend fun bodyweightLookup(): (Long) -> Double =
+        SetRecords.bodyweightLookup(observeStats().first())
 
     // ---------------------------------------------------------------- skills
 
@@ -1244,6 +1258,8 @@ class Repository(
             practices = observeSkillPractices().first(),
             exercises = exerciseCatalogue(),
             scheduledWeekdays = scheduledWeekdays(),
+            sex = profileSex(),
+            bodyweightAt = bodyweightLookup(),
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })

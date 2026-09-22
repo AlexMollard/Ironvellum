@@ -1,0 +1,79 @@
+# Build an installable APK on demand.
+#
+# Manual only (workflow_dispatch): this exists so a build can be handed to
+# someone to sideload - a friend trialling the app, a second device - without
+# waiting on a release or asking the owner to plug a cable in. Every push
+# already gets the full CI gate, so building an APK on push too would burn
+# runner minutes producing an artifact nobody asked for.
+#
+# Debug variant by design. The release keystore is a credential and never
+# enters CI (see ci.yml), and an unsigned release APK cannot be installed, so
+# a release build here would produce a file that does not work on a phone.
+name: APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      label:
+        description: 'Label for the artifact, e.g. who it is for'
+        required: false
+        default: 'sideload'
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    env:
+      MONARCH_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      MONARCH_SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+      MONARCH_GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+    steps:
+      - name: Check out sources
+        uses: actions/checkout@v7
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          # Matches app/build.gradle.kts compileOptions (JavaVersion.VERSION_17).
+          java-version: '17'
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      # Same generation as ci.yml: local.properties is gitignored, and blank
+      # credentials are valid for a debug build - they disable the cloud
+      # features at runtime via `Cloud.configured` rather than failing the
+      # build, so a fork with no secrets still produces a working APK.
+      - name: Generate local.properties
+        run: |
+          {
+            echo "supabase.url=${MONARCH_SUPABASE_URL:-}"
+            echo "supabase.key=${MONARCH_SUPABASE_KEY:-}"
+            echo "google.webClientId=${MONARCH_GOOGLE_WEB_CLIENT_ID:-}"
+          } > local.properties
+
+      - name: Assemble debug
+        run: ./gradlew :app:assembleDebug
+
+      # Name the artifact after the commit it came from. Someone holding an APK
+      # a week later otherwise has no way to tell which build they are running,
+      # which turns every "is this fixed in mine?" into a guess.
+      - name: Describe the build
+        id: describe
+        run: |
+          apk=$(find app/build/outputs/apk/debug -name '*.apk' -print -quit)
+          if [ -z "$apk" ]; then
+            echo "::error::assembleDebug produced no APK under app/build/outputs/apk/debug"
+            exit 1
+          fi
+          echo "path=$apk" >> "$GITHUB_OUTPUT"
+          echo "Built $apk ($(du -h "$apk" | cut -f1)) from ${GITHUB_SHA:0:7}"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v6
+        with:
+          name: monarch-${{ inputs.label }}-${{ github.sha }}
+          path: ${{ steps.describe.outputs.path }}
+          if-no-files-found: error

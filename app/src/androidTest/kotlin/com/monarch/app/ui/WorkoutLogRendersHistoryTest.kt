@@ -38,6 +38,8 @@ class WorkoutLogRendersHistoryTest {
 
     @Before
     fun seedACompletedSession() {
+        // Onboarding gates the whole app until a profile height exists.
+        TestProfile.ensureSetUp()
         // The app's own live instance, as the other flow tests do: a second
         // handle on the database while the app holds it open is the divergence
         // trap documented on DbSnapshot.

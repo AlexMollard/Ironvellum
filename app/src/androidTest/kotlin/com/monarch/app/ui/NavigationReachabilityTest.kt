@@ -39,6 +39,8 @@ class NavigationReachabilityTest {
      */
     @Before
     fun takeTheClock() {
+        // Onboarding gates the whole app until a profile height exists.
+        TestProfile.ensureSetUp()
         compose.mainClock.autoAdvance = false
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
     }

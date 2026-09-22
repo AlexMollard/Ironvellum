@@ -38,6 +38,8 @@ class AccessibilityChecksTest {
 
     @Before
     fun takeTheClock() {
+        // Onboarding gates the whole app until a profile height exists.
+        TestProfile.ensureSetUp()
         // The ink treatment animates forever, so Compose never idles.
         compose.mainClock.autoAdvance = false
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
@@ -155,6 +157,18 @@ class AccessibilityChecksTest {
      * cannot strand the rest of the sweep.
      */
     private fun returnToNavigation() {
+        // The first-run gate renders NOTHING until the profile flow emits, so
+        // an immediate back press here exited the app outright and every later
+        // assertion died with "no compose hierarchies". Let the bar appear
+        // before concluding we are lost inside a sub-surface.
+        repeat(8) {
+            if (compose.onAllNodesWithContentDescription("Court")
+                    .fetchSemanticsNodes().isNotEmpty()
+            ) {
+                return
+            }
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        }
         repeat(4) {
             val navPresent = compose.onAllNodesWithContentDescription("Court")
                 .fetchSemanticsNodes().isNotEmpty()

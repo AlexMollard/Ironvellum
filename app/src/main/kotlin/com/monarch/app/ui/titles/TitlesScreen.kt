@@ -37,6 +37,8 @@ import com.monarch.app.domain.PlayerProfile
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.SkillClaimResult
 import com.monarch.app.domain.SkillPractice
+import com.monarch.app.domain.SetRecords
+import com.monarch.app.domain.StatEntry
 import com.monarch.app.domain.Skills
 import com.monarch.app.domain.Titles
 import com.monarch.app.domain.UnlockedTitle
@@ -89,6 +91,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
         repo.observePresets(),
         repo.observeSkillTrainingEvidence(),
         repo.observeBodyProfile(),
+        repo.observeStats(),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         val unlocked = values[0] as List<UnlockedTitle>
@@ -106,6 +109,8 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
         @Suppress("UNCHECKED_CAST")
         val training = values[7] as Map<String, SkillTrainingEvidence>
         val bodyProfile = values[8] as Pair<Double?, Sex>
+        @Suppress("UNCHECKED_CAST")
+        val stats = values[9] as List<StatEntry>
 
         val claimed = practices.filter { it.claimed }
 
@@ -131,6 +136,11 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
                 // would read as a missed day and the streak deeds would sit at
                 // a number the Court disagrees with.
                 scheduledWeekdays = presets.mapNotNull { it.scheduledDay }.toSet(),
+                // Without these the codex drew every load deed against the
+                // MALE bar at zero progress, so a woman reading the board saw
+                // neither her own threshold nor how close she was to it.
+                bodyweightAt = SetRecords.bodyweightLookup(stats),
+                sex = bodyProfile.second,
             ),
             training = training,
             sex = bodyProfile.second,

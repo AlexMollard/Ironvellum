@@ -14,6 +14,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -401,7 +403,9 @@ private fun LogRow(
                     modifier = Modifier
                         .clip(MaterialTheme.shapes.extraSmall)
                         .clickable { armed = false }
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                        .heightIn(min = 24.dp)
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .wrapContentHeight(),
                 )
                 Text(
                     "DELETE",
@@ -415,7 +419,9 @@ private fun LogRow(
                             armed = false
                             onDelete()
                         }
-                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                        .heightIn(min = 24.dp)
+                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                        .wrapContentHeight(),
                 )
             } else {
                 Text(
@@ -427,7 +433,11 @@ private fun LogRow(
                     modifier = Modifier
                         .clip(MaterialTheme.shapes.extraSmall)
                         .clickable { armed = true }
-                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                        // A 17dp glyph row sits under the WCAG 24dp floor the
+                        // house sweep enforces, and is genuinely hard to hit.
+                        .heightIn(min = 24.dp)
+                        .padding(horizontal = 8.dp, vertical = 2.dp)
+                        .wrapContentHeight(),
                 )
             }
         }

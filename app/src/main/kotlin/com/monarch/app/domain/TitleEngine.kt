@@ -41,6 +41,23 @@ sealed interface TitleRule {
     data class HardestGrade(val grade: String) : TitleRule
     /** Completed sessions that contained any Sport-category work. */
     data class SportSessions(val count: Int) : TitleRule
+
+    // ---- strength milestones ----
+    // Recognition only. These never touch XP, tiers, load factors or the
+    // strength score; they read the same logged sets through their own lens.
+
+    /**
+     * A loaded lift at a multiple of bodyweight. [names] are catalogue
+     * exercise names (normalised) whose marked load can honestly stand for
+     * the lift; thresholds are the estimated 1RM multiple of the bodyweight
+     * IN FORCE at the session, per sex, so a woman must do an equivalently
+     * hard lift to wear the same title.
+     */
+    data class LiftMultiple(val names: Set<String>, val male: Double, val female: Double) : TitleRule
+    /** Best rep total on one movement within a single completed session. */
+    data class SessionReps(val names: Set<String>, val count: Int) : TitleRule
+    /** Longest single static hold, in seconds. */
+    data class LongestHold(val seconds: Int) : TitleRule
 }
 
 
@@ -427,6 +444,89 @@ object Titles {
         TitleDef("arena_regular", "Arena Regular", "Complete 10 sessions with sport play in them.", TitleRule.SportSessions(10), TitleRarity.Common),
         TitleDef("field_commander", "Field Commander", "Complete 50 sessions with sport play in them.", TitleRule.SportSessions(50), TitleRarity.Rare),
         TitleDef("champion_of_games", "Champion of Games", "Complete 100 sessions with sport play in them.", TitleRule.SportSessions(100), TitleRarity.Epic),
+        // ---- Strength milestones ----
+        // Load thresholds are estimated-1RM multiples of bodyweight, read per
+        // sex (male / female). Female cells come from the ExRx-derived
+        // restatement Skills.femaleBars already ships (squat 0.6/1.25,
+        // bench 0.5, press 0.35, deadlift 1.4/2.25); the weighted pull-up has
+        // no published ExRx cell, so it scales by the app's own upper-body
+        // factor StrengthIndex.UPPER_BODY_FEMALE (Bishop 1983): 0.5 / 1.54
+        // rounds down to 0.3. Any set estimates the 1RM (Epley, rep term
+        // capped at 12), so a hunter logging fives still earns a one-rep deed.
+        TitleDef(
+            "iron_standard",
+            "Iron Standard",
+            "Squat your own bodyweight for an estimated 1RM (0.6x if female).",
+            TitleRule.LiftMultiple(setOf("back squat", "front squat"), male = 1.0, female = 0.6),
+            TitleRarity.Common,
+        ),
+        TitleDef(
+            "bench_mark",
+            "Bench Mark",
+            "Bench press your bodyweight for an estimated 1RM (0.5x if female).",
+            TitleRule.LiftMultiple(setOf("bench press", "incline bench press", "close-grip bench press"), male = 1.0, female = 0.5),
+            TitleRarity.Rare,
+        ),
+        TitleDef(
+            "iron_wings",
+            "Iron Wings",
+            "Weight a pull-up or chin-up with half your bodyweight for an estimated 1RM (0.3x if female).",
+            TitleRule.LiftMultiple(setOf("pull-up", "chin-up", "archer pull-up"), male = 0.5, female = 0.3),
+            TitleRarity.Rare,
+        ),
+        TitleDef(
+            "crown_press",
+            "Crown Press",
+            "Overhead press three quarters of your bodyweight for an estimated 1RM (0.35x if female).",
+            TitleRule.LiftMultiple(setOf("overhead press", "push press"), male = 0.75, female = 0.35),
+            TitleRarity.Rare,
+        ),
+        TitleDef(
+            "throne_of_iron",
+            "Throne of Iron",
+            "Squat double bodyweight for an estimated 1RM (1.25x if female).",
+            TitleRule.LiftMultiple(setOf("back squat", "front squat"), male = 2.0, female = 1.25),
+            TitleRarity.Epic,
+        ),
+        TitleDef(
+            "titans_pull",
+            "Titan's Pull",
+            "Deadlift double bodyweight for an estimated 1RM (1.4x if female).",
+            TitleRule.LiftMultiple(setOf("deadlift", "sumo deadlift"), male = 2.0, female = 1.4),
+            TitleRarity.Epic,
+        ),
+        TitleDef(
+            "atlas",
+            "Atlas",
+            "Deadlift triple bodyweight for an estimated 1RM (2.25x if female). The sky holds itself up.",
+            TitleRule.LiftMultiple(setOf("deadlift", "sumo deadlift"), male = 3.0, female = 2.25),
+            TitleRarity.Sovereign,
+        ),
+        // Rep-volume feats. The counts are deliberately the same for both
+        // sexes: these are submaximal endurance feats of bodyweight work, and
+        // muscular endurance gaps between the sexes are far smaller than the
+        // maximal-strength gaps the load titles above price in.
+        TitleDef(
+            "century_of_rungs",
+            "Century of Rungs",
+            "Log 100 pull-ups or chin-ups in a single session.",
+            TitleRule.SessionReps(setOf("pull-up", "chin-up"), count = 100),
+            TitleRarity.Rare,
+        ),
+        TitleDef(
+            "two_hundred_suns",
+            "Two Hundred Suns",
+            "Log 200 push-ups in a single session.",
+            TitleRule.SessionReps(setOf("push-up"), count = 200),
+            TitleRarity.Rare,
+        ),
+        TitleDef(
+            "unshaking",
+            "The Unshaking",
+            "Hold a single static position for 240 seconds without letting go.",
+            TitleRule.LongestHold(240),
+            TitleRarity.Rare,
+        ),
     )
 
     fun byId(id: String): TitleDef? = ALL.firstOrNull { it.id == id }
@@ -458,7 +558,22 @@ object Titles {
         val bestSwimKm: Double = 0.0,
         val hardestGrade: String = "", // raw text of hardest recognised climb sent
         val sportSessions: Int = 0, // completed sessions containing any Sport-category work
+        // Sex scales the bar of every LiftMultiple deed, exactly as the
+        // strength score scales the feat; defaults to MALE so a ledger built
+        // without a profile never falsely strips a female hunter of reach.
+        val sex: Sex = Sex.MALE,
+        // Normalised exercise name -> best marked-load e1RM as a multiple of
+        // the bodyweight in force at that session. Empty when no weigh-in
+        // history was supplied: an unknown bodyweight can never half-satisfy
+        // a load deed.
+        val bestLiftMultiple: Map<String, Double> = emptyMap(),
+        // Normalised exercise name -> best rep total inside one session.
+        val bestSessionReps: Map<String, Int> = emptyMap(),
+        val bestHoldSeconds: Int = 0,
     )
+
+    /** Catalogue names drift in case and padding between screens; keys never do. */
+    fun normaliseName(name: String): String = name.lowercase().trim()
 
     /**
      * The one place a ledger is assembled. Unlocking used to build a partial
@@ -484,6 +599,12 @@ object Titles {
         // known", which trainingStreakDays reads as the strict consecutive
         // rule — never as "no streak".
         scheduledWeekdays: Set<Int> = emptySet(),
+        // Weigh-in history for the bodyweight IN FORCE at each session — the
+        // load deeds compare against that, not today's weight, or a hunter
+        // who gained weight would silently lose a title she earned. Null (or
+        // an empty history) leaves every load field at its empty default.
+        bodyweightAt: ((Long) -> Double)? = null,
+        sex: Sex = Sex.MALE,
     ): Ledger {
         val doneSets = history.flatMap { (_, sets) -> sets.filter { it.done } }
         val metricOf: (SessionSet) -> ExerciseMetric =
@@ -508,6 +629,45 @@ object Titles {
                 sets.filter { it.done && categoryOf(it) == category }
                     .sumOf { it.distanceM ?: 0.0 }
             }?.div(1000.0) ?: 0.0
+        // ---- strength milestones ----
+        // The marked kilo is the load the deed is about (bar load for the
+        // free-weight band; machines pass through loadFactor like every other
+        // consumer). Epley converts any honest set to an estimated 1RM, with
+        // the rep term capped at 12 because extrapolating beyond that flatters
+        // volume into imaginary strength. Assisted machines are excluded:
+        // their marked kilo SUBTRACTS load, so counting it would award deeds
+        // for doing less. Bodyweight-rep moves (unweighted pull-ups) mark no
+        // kilo and so can never satisfy a load deed — the rep deeds carry them.
+        val liftMultiples = HashMap<String, Double>()
+        val bestSessionReps = HashMap<String, Int>()
+        var bestHoldSeconds = 0
+        for ((session, sets) in history) {
+            val repsThisSession = HashMap<String, Int>()
+            for (set in sets.filter { it.done }) {
+                val exercise = exercises[set.exerciseId] ?: continue
+                if (!metricOf(set).isStrength) continue
+                val name = normaliseName(exercise.name)
+                repsThisSession[name] = (repsThisSession[name] ?: 0) + set.reps
+                if (exercise.metric == ExerciseMetric.HOLD) {
+                    val held = set.durationSec ?: 0
+                    if (held > bestHoldSeconds) bestHoldSeconds = held
+                } else if (set.reps > 0 && bodyweightAt != null &&
+                    !exercise.name.contains("assisted", ignoreCase = true)
+                ) {
+                    val bodyweight = bodyweightAt(session.startedAtMs)
+                    if (bodyweight > 0.0) {
+                        val e1rm = (set.weightKg ?: 0.0).coerceAtLeast(0.0) *
+                            MovementDifficulty.loadFactor(exercise.name) *
+                            (1.0 + minOf(set.reps, 12) / 30.0)
+                        val multiple = e1rm / bodyweight
+                        if (multiple > (liftMultiples[name] ?: 0.0)) liftMultiples[name] = multiple
+                    }
+                }
+            }
+            for ((name, reps) in repsThisSession) {
+                if (reps > (bestSessionReps[name] ?: 0)) bestSessionReps[name] = reps
+            }
+        }
         return Ledger(
             totalXp = totalXp,
             workouts = history.size,
@@ -547,6 +707,10 @@ object Titles {
             // This was never assigned, so it defaulted to 0 and every
             // TrainingStreak deed (7/14/30/100 days) was unreachable.
             trainingStreakDays = trainingStreakDays(workoutDates, scheduledWeekdays),
+            sex = sex,
+            bestLiftMultiple = liftMultiples,
+            bestSessionReps = bestSessionReps,
+            bestHoldSeconds = bestHoldSeconds,
         )
     }
 
@@ -625,6 +789,13 @@ object Titles {
             sent != null && asked != null && sent >= asked
         }
         is TitleRule.SportSessions -> ledger.sportSessions >= rule.count
+        is TitleRule.LiftMultiple -> {
+            val bar = if (ledger.sex == Sex.FEMALE) rule.female else rule.male
+            rule.names.any { (ledger.bestLiftMultiple[normaliseName(it)] ?: 0.0) >= bar }
+        }
+        is TitleRule.SessionReps ->
+            rule.names.any { (ledger.bestSessionReps[normaliseName(it)] ?: 0) >= rule.count }
+        is TitleRule.LongestHold -> ledger.bestHoldSeconds >= rule.seconds
     }
 
     /** How far along a rule is: current value, target, and the unit's name. */
@@ -685,6 +856,19 @@ object Titles {
             Progress(ledger.trainingStreakDays.toLong(), rule.days.toLong(), "day streak")
         is TitleRule.WorkoutsInWeek ->
             Progress(ledger.bestWeekWorkouts.toLong(), rule.count.toLong(), "workouts in a week")
+        is TitleRule.LiftMultiple -> {
+            // Floored to whole percent like LongestRun floors to whole km:
+            // rounding 0.4999x up to the bar would claim a deed not earned.
+            val bar = if (ledger.sex == Sex.FEMALE) rule.female else rule.male
+            val best = rule.names.maxOfOrNull { ledger.bestLiftMultiple[normaliseName(it)] ?: 0.0 } ?: 0.0
+            Progress((best * 100).toLong(), (bar * 100).toLong(), "% of bodyweight (estimated 1RM)")
+        }
+        is TitleRule.SessionReps -> {
+            val best = rule.names.maxOfOrNull { ledger.bestSessionReps[normaliseName(it)] ?: 0 } ?: 0
+            Progress(best.toLong(), rule.count.toLong(), "reps in one session")
+        }
+        is TitleRule.LongestHold ->
+            Progress(ledger.bestHoldSeconds.toLong(), rule.seconds.toLong(), "seconds in one hold")
     }
 
     /** Rule family, for grouping the codex by the kind of deed it demands. */
@@ -698,6 +882,7 @@ object Titles {
         is TitleRule.SleepMinutesInNight -> "Recovery"
         is TitleRule.SkillsMastered, is TitleRule.PracticeAttempts -> "Mastery"
         is TitleRule.TrainingStreak -> "Campaigns"
+        is TitleRule.LiftMultiple, is TitleRule.SessionReps, is TitleRule.LongestHold -> "Strength"
         is TitleRule.ActivityMinutes, is TitleRule.ActivityDistanceKm,
         is TitleRule.DistinctActivities, is TitleRule.LongestRun, is TitleRule.LongestSwim,
         is TitleRule.HardestGrade, is TitleRule.SportSessions -> "Activities"
