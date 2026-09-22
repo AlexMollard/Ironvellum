@@ -145,6 +145,38 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
+      # Measured on run 35684256057, the 726 s emulator step spent 32 s pulling
+      # the system image, 6 s creating the AVD and 69 s booting it. A cached
+      # snapshot turns the boot into a restore, so that cost is paid once per
+      # api level rather than on every push.
+      - name: Cache the AVD snapshot
+        uses: actions/cache@v5
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          # The key must name every setting baked into the snapshot: a cached
+          # AVD built at a different RAM size or image is not the one the test
+          # step then asks for.
+          key: avd-35-google_apis-x86_64-pixel_6-2048M
+
+      # Cold cache only: boot once with snapshot saving left on, purely so the
+      # step below has something to restore.
+      - name: Create the AVD snapshot
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2.38.0
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 2048M
+          force-avd-creation: false
+          disable-animations: false
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none
+          script: echo "Generated AVD snapshot for caching."
+
       - name: Instrumented tests
         uses: reactivecircus/android-emulator-runner@v2.38.0
         with:
@@ -160,10 +192,13 @@ jobs:
           # so the original 4 GB emulator plus Gradle at -Xmx4g and a Kotlin
           # daemon inheriting it never had room. Heaps are capped below.
           ram-size: 2048M
+          # Reuse the cached AVD rather than overwriting it, and do not spend
+          # time writing the snapshot back out at the end of every run.
+          force-avd-creation: false
           # The ink treatment animates continuously and the flow tests drive the
           # test clock by hand; system animations on top of that only add jitter.
           disable-animations: true
-          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none
+          emulator-options: -no-snapshot-save -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect -camera-back none
           # One line per command: the action feeds this to `sh -c`, where a
           # backslash continuation arrives literally and Gradle reports
           # `Task '\' not found`.
