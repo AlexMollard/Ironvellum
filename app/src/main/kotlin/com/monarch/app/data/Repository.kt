@@ -1058,6 +1058,13 @@ class Repository(
     suspend fun setSex(sex: Sex) = profileDao.setSex(sex.name)
 
     /**
+     * Movements this hunter has actually logged, newest first, for the picker
+     * to float above a catalogue that is now 200+ rows deep.
+     */
+    fun observeRecentExerciseIds(limit: Int = RECENT_EXERCISE_LIMIT): Flow<List<Long>> =
+        sessionDao.observeRecentExerciseIds(limit)
+
+    /**
      * The sex the strength normalisation scores against. An unreadable stored
      * string means MALE, the 1.0 scale every stored score was already on, so a
      * corrupt row under-credits nobody's history by silently rescaling it.
@@ -1852,6 +1859,14 @@ class Repository(
 
     private fun IdleStateEntity.toIdleState() =
         IdleState(essence = essence, shadows = shadows, relicMultiplier = relicMultiplier, lastCollectedAtMs = lastCollectedAtMs)
+
+    companion object {
+        /**
+         * Enough to cover a week's training without the recent strip becoming
+         * a second catalogue to scroll.
+         */
+        const val RECENT_EXERCISE_LIMIT = 12
+    }
 }
 
 /** Raw training inputs feeding Idle.rate — exposed for the rate WHY-breakdown. */

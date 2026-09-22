@@ -42,9 +42,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.monarch.app.domain.Exercise
+import com.monarch.app.domain.ExerciseMetric
+import com.monarch.app.domain.MovementDifficulty
 import com.monarch.app.domain.MuscleGroup
 import com.monarch.app.domain.Skills
-import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.ui.theme.ChakraPetch
 import com.monarch.app.ui.theme.inkBorder
 import com.monarch.app.ui.theme.MonarchColors
@@ -56,6 +57,7 @@ import com.monarch.app.ui.theme.MonarchColors
 @Composable
 fun ExercisePickerPanel(
     exercises: List<Exercise>,
+    recentIds: List<Long>,
     onPick: (Exercise) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
@@ -63,16 +65,35 @@ fun ExercisePickerPanel(
     var query by remember { mutableStateOf("") }
     var group by remember { mutableStateOf<MuscleGroup?>(null) }
     var category by remember { mutableStateOf<String?>(null) }
+    var equipment by remember { mutableStateOf<EquipmentFacet?>(null) }
 
+    // Every whitespace-separated token must match somewhere in the name, so
+    // "ext leg" finds Leg Extension regardless of word order. A single
+    // contains() on the whole string made "pulldown lat" find nothing.
+    val tokens = query.trim().split(WHITESPACE).filter { it.isNotEmpty() }
     val filtered = exercises
         .filter { group == null || it.muscleGroup == group }
         .filter { category == null || it.category == category }
-        .filter { query.isBlank() || it.name.contains(query.trim(), ignoreCase = true) }
+        .filter { equipment == null || equipmentFacet(it) == equipment }
+        .filter { tokens.all { token -> it.name.contains(token, ignoreCase = true) } }
         .sortedWith(compareBy({ it.muscleGroup.ordinal }, { it.name }))
     // Grouped for display; a search term filters every group, so only non-empty groups appear.
     val grouped = activityCategoryOrder(exercises)
         .map { c -> c to filtered.filter { it.category == c } }
         .filter { (_, list) -> list.isNotEmpty() }
+
+    // Recents only pin when nothing narrows the list; under a query or filter
+    // they would float above results that already answer the question. The id
+    // list arrives most-recent-first and is NOT re-sorted: the order is the
+    // only thing that makes it useful. Catalogue rows the hunter no longer
+    // has (removed or imported under a new id) drop out silently, and no
+    // history means an empty list, so no RECENT heading renders.
+    val showRecents = query.isBlank() && group == null && category == null && equipment == null
+    val recents = if (showRecents) {
+        recentIds.distinct().mapNotNull { id -> exercises.firstOrNull { it.id == id } }
+    } else {
+        emptyList()
+    }
 
     Column(modifier.fillMaxWidth()) {
         Row(
@@ -165,32 +186,34 @@ fun ExercisePickerPanel(
             }
         }
 
+        Spacer(Modifier.height(8.dp))
+
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            FilterChip("ALL", equipment == null) { equipment = null }
+            EquipmentFacet.entries.forEach { facet ->
+                FilterChip(facet.label, equipment == facet) {
+                    equipment = if (equipment == facet) null else facet
+                }
+            }
+        }
+
         Spacer(Modifier.height(12.dp))
 
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
+            if (recents.isNotEmpty()) {
+                item(key = "header_recent") {
+                    PickerSectionHeader("RECENT")
+                }
+                items(recents, key = { "recent_${it.id}" }) { exercise ->
+                    PickerRow(exercise = exercise, onPick = onPick)
+                }
+            }
             grouped.forEach { (cat, list) ->
                 item(key = "header_$cat") {
-                    Text(
-                        if (cat.isBlank()) "STRENGTH" else cat.uppercase(),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = MonarchColors.SovereignGold,
-                        letterSpacing = 2.sp,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            // Inked after all: the full-bleed rule protects
-                            // surfaces whose edges are the SCREEN's edge. This
-                            // strip sits inside the picker panel with both ends
-                            // visible, so a square bar just reads as old chrome.
-                            // The fill sits ~2 luminance units from the panel, so
-                            // its hand-drawn edge was invisible however much the
-                            // shape wandered. The brushed border is what actually
-                            // reads as drawn here.
-                            .background(Color(0xFF101512), MaterialTheme.shapes.extraSmall)
-                            .inkBorder(MonarchColors.Bracket, MaterialTheme.shapes.extraSmall, 1.dp)
-                            .padding(vertical = 6.dp, horizontal = 4.dp),
-                    )
+                    PickerSectionHeader(if (cat.isBlank()) "STRENGTH" else cat.uppercase())
                 }
                 items(list, key = { it.id }) { exercise ->
                     PickerRow(exercise = exercise, onPick = onPick)
@@ -199,8 +222,11 @@ fun ExercisePickerPanel(
         }
 
         if (filtered.isEmpty()) {
+            // Say WHY nothing matched: a blank query with the catalogue present
+            // means the filters did it, not the words.
             Text(
-                "No movement matches \"$query\"",
+                if (query.isNotBlank()) "No movement matches \"$query\""
+                else "No movement matches the filters set",
                 style = MaterialTheme.typography.bodySmall,
                 color = MonarchColors.InkMuted,
                 modifier = Modifier.padding(vertical = 12.dp),
@@ -220,6 +246,60 @@ fun ExercisePickerPanel(
                 .padding(8.dp),
         )
     }
+}
+
+/** Header strip shared by RECENT and the category groups, so the pinned section reads as a peer. */
+@Composable
+private fun PickerSectionHeader(label: String) {
+    Text(
+        label,
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = ChakraPetch,
+        fontWeight = FontWeight.Bold,
+        color = MonarchColors.SovereignGold,
+        letterSpacing = 2.sp,
+        modifier = Modifier
+            .fillMaxWidth()
+            // Inked after all: the full-bleed rule protects
+            // surfaces whose edges are the SCREEN's edge. This
+            // strip sits inside the picker panel with both ends
+            // visible, so a square bar just reads as old chrome.
+            // The fill sits ~2 luminance units from the panel, so
+            // its hand-drawn edge was invisible however much the
+            // shape wandered. The brushed border is what actually
+            // reads as drawn here.
+            .background(Color(0xFF101512), MaterialTheme.shapes.extraSmall)
+            .inkBorder(MonarchColors.Bracket, MaterialTheme.shapes.extraSmall, 1.dp)
+            .padding(vertical = 6.dp, horizontal = 4.dp),
+    )
+}
+
+private val WHITESPACE = Regex("\\s+")
+
+/**
+ * Where the load comes from, derived from data the catalogue already carries:
+ * [Exercise.isWeighted] separates bodyweight work, and
+ * [MovementDifficulty.loadFactor] separates machine/cable/smith/sled stations
+ * (a marked discount off the free-weight reference) from barbell and dumbbell
+ * loading. Activities (cardio, sport, climbing) carry no equipment facet:
+ * the facet answers a gym-floor question, so selecting one hides activities.
+ */
+enum class EquipmentFacet(val label: String) {
+    BODYWEIGHT("BODYWEIGHT"),
+    FREE_WEIGHT("FREE WEIGHT"),
+    MACHINE("MACHINE"),
+}
+
+fun equipmentFacet(exercise: Exercise): EquipmentFacet? = when {
+    exercise.category.isNotBlank() -> null
+    !exercise.isWeighted -> EquipmentFacet.BODYWEIGHT
+    // Assisted machines are deliberately absent from the loadFactor table
+    // (their marked weight SUBTRACTS), so loadFactor alone would file them
+    // under free weights. The catalogue names them with the "assisted"
+    // prefix, which is an existing fact, not a second table.
+    MovementDifficulty.loadFactor(exercise.name) < MovementDifficulty.FREE_WEIGHT_LOAD ||
+        exercise.name.trim().lowercase().startsWith("assisted") -> EquipmentFacet.MACHINE
+    else -> EquipmentFacet.FREE_WEIGHT
 }
 
 /**

@@ -140,6 +140,10 @@ class SessionViewModel(
     val exercises: StateFlow<List<Exercise>> =
         repo.observeExercises().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    // Most-recent-first ids from completed sessions; the picker preserves the order.
+    val recentExerciseIds: StateFlow<List<Long>> =
+        repo.observeRecentExerciseIds().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     val bodyweight: StateFlow<Double?> = repo.observeStats()
         .map { it.firstOrNull()?.weightKg }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -275,6 +279,7 @@ fun SessionScreen(
     val records by viewModel.records.collectAsStateWithLifecycle()
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val exercises by viewModel.exercises.collectAsStateWithLifecycle()
+    val recentExerciseIds by viewModel.recentExerciseIds.collectAsStateWithLifecycle()
     val bodyweight by viewModel.bodyweight.collectAsStateWithLifecycle()
     var completion by remember { mutableStateOf<Repository.CompletionResult?>(null) }
     var confirmAbandon by remember { mutableStateOf(false) }
@@ -552,6 +557,7 @@ fun SessionScreen(
             text = {
                 ExercisePickerPanel(
                     exercises = exercises,
+                    recentIds = recentExerciseIds,
                     onPick = { exercise ->
                         viewModel.addExercise(exercise.id, exercise.metric == ExerciseMetric.HOLD)
                         showExercisePicker = false

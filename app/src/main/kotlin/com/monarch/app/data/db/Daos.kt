@@ -134,6 +134,21 @@ interface SessionDao {
     )
     suspend fun recentDoneSets(exerciseId: Long): List<SetLogEntity>
 
+    /**
+     * The movements this hunter actually trains, most recently used first.
+     *
+     * With 200+ catalogue rows, a picker sorted alphabetically buries the
+     * fifteen movements someone repeats every week under progressions they
+     * will never log. Completed sessions only: an abandoned session is not
+     * evidence that anything was trained.
+     */
+    @Query(
+        "SELECT s.exerciseId FROM set_logs s JOIN sessions x ON s.sessionId = x.id " +
+            "WHERE s.done = 1 AND x.completedAtMs IS NOT NULL " +
+            "GROUP BY s.exerciseId ORDER BY MAX(x.startedAtMs) DESC LIMIT :limit",
+    )
+    fun observeRecentExerciseIds(limit: Int): Flow<List<Long>>
+
     @Query("SELECT * FROM sessions ORDER BY startedAtMs DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<SessionEntity>>
 

@@ -86,9 +86,14 @@ class PresetEditorViewModel(
     private val _ui = MutableStateFlow(EditorUi(presetId = presetId))
     val ui: StateFlow<EditorUi> = _ui.asStateFlow()
 
+    // Most-recent-first ids from completed sessions; the picker preserves the order.
+    private val _recentExerciseIds = MutableStateFlow<List<Long>>(emptyList())
+    val recentExerciseIds: StateFlow<List<Long>> = _recentExerciseIds.asStateFlow()
+
     init {
         viewModelScope.launch {
             val exercises = repo.observeExercises().first()
+            _recentExerciseIds.value = repo.observeRecentExerciseIds().first()
             val loaded = if (presetId != null) {
                 val existing = repo.observePresets().first().firstOrNull { it.id == presetId }
                 if (existing != null) {
@@ -212,6 +217,7 @@ fun PresetEditorScreen(
         ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val recentExerciseIds by viewModel.recentExerciseIds.collectAsStateWithLifecycle()
 
     Column(
         Modifier
@@ -279,6 +285,7 @@ fun PresetEditorScreen(
             EntryRow(
                 entry = entry,
                 exercises = ui.exercises,
+                recentIds = recentExerciseIds,
                 isFirst = index == 0,
                 isLast = index == ui.entries.lastIndex,
                 onEntry = { viewModel.updateEntry(index, it) },
@@ -315,6 +322,7 @@ fun PresetEditorScreen(
 private fun EntryRow(
     entry: EditorEntry,
     exercises: List<Exercise>,
+    recentIds: List<Long>,
     isFirst: Boolean,
     isLast: Boolean,
     onEntry: (EditorEntry) -> Unit,
@@ -344,6 +352,7 @@ private fun EntryRow(
                         text = {
                             ExercisePickerPanel(
                                 exercises = exercises,
+                                recentIds = recentIds,
                                 onPick = { exercise ->
                                     // A metric switch invalidates the old targets (10 reps ≠ 40 min).
                                     val defaults = if (exercise.metric == ExerciseMetric.REPS) {

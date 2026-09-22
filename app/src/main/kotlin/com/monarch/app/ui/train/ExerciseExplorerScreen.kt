@@ -84,6 +84,11 @@ class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
     private val statsFlow = repo.observeStats()
 
     private val selected = MutableStateFlow<Exercise?>(null)
+
+    // Most-recent-first ids from completed sessions; the picker preserves the order.
+    val recentExerciseIds: StateFlow<List<Long>> =
+        repo.observeRecentExerciseIds().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     val ui: StateFlow<ExplorerUi> = combine(
         repo.observeExercises(),
         selected,
@@ -115,6 +120,7 @@ fun ExerciseExplorerScreen(
         viewModel(factory = viewModelFactory { initializer { ExerciseExplorerViewModel(monarchRepository()) } }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val recentExerciseIds by viewModel.recentExerciseIds.collectAsStateWithLifecycle()
 
     Column(
         Modifier
@@ -154,6 +160,7 @@ fun ExerciseExplorerScreen(
             SystemWindow(Modifier.fillMaxWidth()) {
                 ExercisePickerPanel(
                     exercises = ui.exercises,
+                    recentIds = recentExerciseIds,
                     onPick = viewModel::pick,
                     onDismiss = onBack,
                 )
