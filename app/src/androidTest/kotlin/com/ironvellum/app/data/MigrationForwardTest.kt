@@ -303,14 +303,10 @@ class MigrationForwardTest {
     fun upgradeTo27RenamesTheTopCrestFrameEverywhereItIsStored() = runTest {
         helper.createDatabase(dbName, 26).use { old ->
             old.execSQL(
-                "INSERT OR REPLACE INTO profile " +
-                    "(id, name, totalXp, currentTitleId, lifetimeStrength, trainingMode, " +
-                    "heightCm, sex, inkStyle, scoringVersion, equippedFrame) " +
-                    "VALUES (1, 'Kaida', 4200, 'shadow_ascendant', 777, 'HYPERTROPHY', " +
-                    "178.0, 'FEMALE', 1, 0, 'monarch')",
+                "INSERT OR REPLACE INTO gacha_state (id, rolls, equippedFrame) VALUES (1, 9, 'monarch')",
             )
-            old.execSQL("INSERT OR REPLACE INTO owned_crest_frames (id, ownedAtMs) VALUES ('monarch', 555)")
-            old.execSQL("INSERT OR REPLACE INTO owned_crest_frames (id, ownedAtMs) VALUES ('gold', 111)")
+            old.execSQL("INSERT OR REPLACE INTO owned_crest_frames (frameId, ownedAtMs) VALUES ('monarch', 555)")
+            old.execSQL("INSERT OR REPLACE INTO owned_crest_frames (frameId, ownedAtMs) VALUES ('gold', 111)")
         }
 
         val db = helper.runMigrationsAndValidate(
@@ -320,11 +316,12 @@ class MigrationForwardTest {
             *IronvellumDatabase.MIGRATIONS,
         )
 
-        db.query("SELECT equippedFrame FROM profile WHERE id = 1").use { c ->
-            assertTrue("the profile row must survive the upgrade", c.moveToFirst())
-            assertEquals("masterwork", c.getString(0))
+        db.query("SELECT rolls, equippedFrame FROM gacha_state WHERE id = 1").use { c ->
+            assertTrue("the gacha row must survive the upgrade", c.moveToFirst())
+            assertEquals(9, c.getInt(0))
+            assertEquals("masterwork", c.getString(1))
         }
-        db.query("SELECT id, ownedAtMs FROM owned_crest_frames ORDER BY ownedAtMs").use { c ->
+        db.query("SELECT frameId, ownedAtMs FROM owned_crest_frames ORDER BY ownedAtMs").use { c ->
             val owned = mutableListOf<Pair<String, Long>>()
             while (c.moveToNext()) owned.add(c.getString(0) to c.getLong(1))
             // The unrelated frame is untouched, the renamed one keeps the date

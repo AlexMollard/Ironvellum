@@ -353,7 +353,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
          * "masterwork".
          *
          * That id is not cosmetic bookkeeping: it is stored per owned row and
-         * again on the profile as the equipped frame, so leaving it behind
+         * again on `gacha_state` as the equipped frame, so leaving it behind
          * would keep the old name on disk forever and orphan the art the
          * moment the catalogue stopped answering to it. Both sites move
          * together, and [ExportReader] maps the legacy id on the way in so an
@@ -361,8 +361,8 @@ abstract class IronvellumDatabase : RoomDatabase() {
          */
         private val MIGRATION_26_27 = object : Migration(26, 27) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                db.execSQL("UPDATE owned_crest_frames SET id = 'masterwork' WHERE id = 'monarch'")
-                db.execSQL("UPDATE profile SET equippedFrame = 'masterwork' WHERE equippedFrame = 'monarch'")
+                db.execSQL("UPDATE owned_crest_frames SET frameId = 'masterwork' WHERE frameId = 'monarch'")
+                db.execSQL("UPDATE gacha_state SET equippedFrame = 'masterwork' WHERE equippedFrame = 'monarch'")
             }
         }
 
