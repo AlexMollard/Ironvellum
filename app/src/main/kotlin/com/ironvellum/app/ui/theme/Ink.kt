@@ -393,13 +393,16 @@ private fun railPath(length: Float, h: Float, mid: Float, seed: Int, taper: Bool
         return ((v xor (v ushr 16)) and 0xFFFF) / 65535f
     }
     fun xAt(i: Int) = kotlin.math.min(i * step, length)
-    // The last stretch thins so progress ends in a stroke lifting off rather
-    // than a guillotined rectangle.
-    val taperLen = if (taper) kotlin.math.min(h * 1.2f, length * 0.18f) else 0f
+    // The last stretch thins SLIGHTLY, so the fill ends as a brush edge rather
+    // than a ruled vertical. It used to fall to 32% of the bar height over a
+    // full 1.2x its height, which drew a pen nib: a long wedge, lopsided
+    // because the two edges taper on independent noise, and slanted enough
+    // that the label's vertical clip line no longer followed it.
+    val taperLen = if (taper) kotlin.math.min(h * 0.35f, length * 0.08f) else 0f
     fun halfAt(x: Float, salt: Int, i: Int): Float {
         val breathe = 0.82f + noise(i, salt) * 0.18f
         val lift = if (taperLen > 0f && x > length - taperLen) {
-            (1f - (x - (length - taperLen)) / taperLen).coerceIn(0.32f, 1f)
+            (1f - (x - (length - taperLen)) / taperLen).coerceIn(0.86f, 1f)
         } else {
             1f
         }
