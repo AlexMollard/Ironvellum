@@ -51,6 +51,9 @@ class ExportRoundTripTest {
         db = MonarchDatabase.create(context, TEST_DB)
         repo = Repository(db)
         repo.ensureSeeded()
+        // A fresh install no longer imposes a week, so the training these tests
+        // export is written through the same path onboarding uses.
+        repo.applyStarterTemplate()
     }
 
     @After

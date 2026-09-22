@@ -121,8 +121,10 @@ fun MonarchRoot() {
     val currentRoute = backStackEntry?.destination?.route
 
     // First-run gate, driven by state the profile already stores: a null
-    // height means the hunter has never set up. Completing writes a height and
-    // the flow releases; skipping flips an in-memory flag for this process.
+    // height means the hunter has never set up. Completing the profile step
+    // writes the height; the flow then holds the gate open for the rest of
+    // that process (OnboardingViewModel._flowActive) so the training questions
+    // and the proposed week still run, and accepting or skipping releases it.
     val onboardingViewModel: OnboardingViewModel = viewModel(
         factory = viewModelFactory { initializer { OnboardingViewModel(monarchRepository()) } },
     )

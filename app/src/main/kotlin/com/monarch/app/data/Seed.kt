@@ -4,6 +4,9 @@ import com.monarch.app.data.db.ExerciseEntity
 import com.monarch.app.domain.MuscleGroup
 import com.monarch.app.domain.ExerciseMetric
 import com.monarch.app.domain.MovementDifficulty
+import com.monarch.app.domain.PlannedEntry
+import com.monarch.app.domain.PlannedPreset
+import com.monarch.app.domain.RoutinePlan
 import com.monarch.app.domain.Skills
 
 /** Static catalog and preset seeds; runs once on an empty database. */
@@ -282,7 +285,12 @@ object Seed {
         val entries: List<SeedEntry>,
     )
 
-    /** The user's real four-day split, pre-loaded as the quest board. ISO days: Mon=1 .. Sun=7. */
+    /**
+     * The owner's original four-day calisthenics split. No longer seeded on a
+     * fresh install - a new hunter must not inherit somebody else's week - but
+     * kept as [bodyweightStarterTemplate], an explicit choice in setup beside
+     * the generated plan.
+     */
     val presets: List<PresetSpec> = listOf(
         PresetSpec(
             name = "Heavy Pull",
@@ -335,4 +343,35 @@ object Seed {
         ),
     )
 
+    /**
+     * The opt-in starter week offered in setup: pure bodyweight, ISO days
+     * Mon=1 .. Sun=7. Applied through Repository.applyStarterTemplate, which
+     * carries the hand-written modifiers and loads the generated-plan path
+     * cannot express. Aliases [presets] so the catalogue-invariant tests keep
+     * guarding the same rows.
+     */
+    val bodyweightStarterTemplate: List<PresetSpec> get() = presets
+
+    /**
+     * The template as a reviewable [RoutinePlan] for the setup proposal step.
+     * Preview and accept with this; accept via Repository.applyStarterTemplate,
+     * which also carries the hand-written modifiers [PlannedEntry] cannot.
+     */
+    fun starterPlan(): RoutinePlan = RoutinePlan(
+        presets = presets.map { spec ->
+            PlannedPreset(
+                name = spec.name,
+                note = spec.note,
+                scheduledDay = spec.scheduledDay ?: 0,
+                entries = spec.entries.map {
+                    PlannedEntry(
+                        exerciseName = it.exercise,
+                        sets = it.sets,
+                        reps = it.reps,
+                        targetWeightKg = it.weightKg,
+                    )
+                },
+            )
+        },
+    )
 }

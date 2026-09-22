@@ -15,6 +15,11 @@ import kotlinx.coroutines.runBlocking
  * through the app's OWN repository - a second handle on the database while the
  * app holds it open is the divergence trap DbSnapshot documents - and it is
  * idempotent, so a test that runs after a real profile exists changes nothing.
+ *
+ * Setup also no longer imposes a training week, so a hunter who skips it owns
+ * an empty board. Tests that begin a session need one to begin, so this writes
+ * the starter week through the same call the setup flow offers - only when the
+ * board is empty, leaving a real hunter's own presets untouched.
  */
 object TestProfile {
 
@@ -29,6 +34,9 @@ object TestProfile {
             repo.ensureSeeded()
             if (app.database.profileDao().get()?.heightCm == null) {
                 repo.setHeight(HEIGHT_CM)
+            }
+            if (app.database.presetDao().count() == 0) {
+                repo.applyStarterTemplate()
             }
         }
     }

@@ -35,6 +35,9 @@ class DeleteWorkoutTest {
         db = MonarchDatabase.create(context, TEST_DB)
         repo = Repository(db)
         repo.ensureSeeded()
+        // A fresh install no longer imposes a week, so these tests write the one
+        // they train from through the same path onboarding uses.
+        repo.applyStarterTemplate()
         repo.addStat(weightKg = 80.0, bodyFatPct = 14.0)
     }
 

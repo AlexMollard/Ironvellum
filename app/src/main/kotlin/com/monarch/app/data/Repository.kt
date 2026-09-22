@@ -53,6 +53,7 @@ import com.monarch.app.domain.PresetEntry
 import com.monarch.app.domain.Progression
 import com.monarch.app.domain.Reward
 import com.monarch.app.domain.RollResult
+import com.monarch.app.domain.RoutinePlan
 import com.monarch.app.domain.SessionSet
 import com.monarch.app.domain.SetRecords
 import com.monarch.app.domain.SkillClaimResult
@@ -121,27 +122,12 @@ class Repository(
         if (missing.isNotEmpty()) {
             exerciseDao.insertAll(missing)
         }
-        if (presetDao.count() == 0) {
-            val idByName = exerciseDao.observeAll().first().associate { it.name to it.id }
-            Seed.presets.forEach { spec ->
-                val presetId = presetDao.insertPreset(
-                    PresetEntity(name = spec.name, note = spec.note, scheduledDay = spec.scheduledDay),
-                )
-                presetDao.insertEntries(
-                    spec.entries.mapIndexed { position, entry ->
-                        PresetEntryEntity(
-                            presetId = presetId,
-                            exerciseId = idByName.getValue(entry.exercise),
-                            targetSets = entry.sets,
-                            targetReps = entry.reps,
-                            targetWeightKg = entry.weightKg,
-                            modifiers = entry.modifiers,
-                            position = position,
-                        )
-                    },
-                )
-            }
-        }
+        // Presets are NOT seeded here any more. A fresh install used to wake
+        // up owning somebody else's training week; setup now asks a few
+        // questions and writes a plan through applyRoutine, or applies
+        // applyStarterTemplate when the hunter explicitly picks it. The
+        // catalogue above stays automatic: every screen reads it, and an
+        // upgrade must gain new movements without touching history.
         // Sessions logged before the first weigh-in banked no strength at
         // all. Waiting for the next weigh-in to notice would leave a hunter
         // who already measured himself staring at zeros forever; the count
@@ -344,6 +330,121 @@ class Repository(
     }
 
     suspend fun deletePreset(presetId: Long) = presetDao.deletePreset(presetId)
+
+    /** Zero presets means setup has never run; the UI uses this to tell an
+     *  empty first-run from a configured hunter. */
+    suspend fun presetCount(): Int = presetDao.count()
+
+    /**
+     * Replaces every preset with [plan]'s, in one transaction. A re-run of
+     * setup is a deliberate act: the hunter has seen the proposal and chosen
+     * it, so keeping half her old week and half the new one would be worse
+     * than replacing. Completed sessions carry denormalised set rows and a
+     * nullable presetId, so history survives the swap intact.
+     *
+     * Any entry name missing from the catalogue aborts the whole apply with
+     * [IllegalArgumentException] and the transaction rolls back - the plan is
+     * generated from this very catalogue, so a miss is a bug, and writing a
+     * preset that silently drops a movement would look like a working week.
+     */
+    suspend fun applyRoutine(plan: RoutinePlan) {
+        val presets = plan.presets.map { spec ->
+            PlannedPresetRows(
+                name = spec.name,
+                note = spec.note,
+                scheduledDay = spec.scheduledDay,
+                entries = spec.entries.map { entry ->
+                    PlannedEntryRows(
+                        exerciseName = entry.exerciseName,
+                        targetSets = entry.sets,
+                        targetReps = entry.reps,
+                        targetWeightKg = entry.targetWeightKg,
+                        modifiers = "",
+                    )
+                },
+            )
+        }
+        writeRoutinePresets(presets)
+    }
+
+    /**
+     * Writes the owner's original bodyweight starter week
+     * ([Seed.bodyweightStarterTemplate]) as the hunter's presets. This is the
+     * only path left to those four presets: chosen in setup, never imposed.
+     * Unlike [applyRoutine] it carries the hand-written modifiers and loads.
+     */
+    suspend fun applyStarterTemplate() {
+        writeRoutinePresets(
+            Seed.bodyweightStarterTemplate.map { spec ->
+                PlannedPresetRows(
+                    name = spec.name,
+                    note = spec.note,
+                    scheduledDay = spec.scheduledDay,
+                    entries = spec.entries.map { entry ->
+                        PlannedEntryRows(
+                            exerciseName = entry.exercise,
+                            targetSets = entry.sets,
+                            targetReps = entry.reps,
+                            targetWeightKg = entry.weightKg,
+                            modifiers = entry.modifiers,
+                        )
+                    },
+                )
+            },
+        )
+    }
+
+    /** Name-resolved rows awaiting the write; the resolve step runs before any
+     *  insert so a bad name can abort before the first preset exists. */
+    private data class PlannedPresetRows(
+        val name: String,
+        val note: String,
+        val scheduledDay: Int?,
+        val entries: List<PlannedEntryRows>,
+    )
+
+    private data class PlannedEntryRows(
+        val exerciseName: String,
+        val targetSets: Int,
+        val targetReps: Int,
+        val targetWeightKg: Double?,
+        val modifiers: String,
+    )
+
+    private suspend fun writeRoutinePresets(presets: List<PlannedPresetRows>) {
+        db.withTransaction {
+            val idByName = exerciseDao.observeAll().first().associate { it.name to it.id }
+            // The plan is the caller's argument, so an unknown movement is a bad
+            // argument, not bad state: every preset is validated before the first
+            // row is touched, so a half-built week can never reach the board.
+            val resolved = presets.map { preset ->
+                val missing = preset.entries.filterNot { it.exerciseName in idByName }
+                require(missing.isEmpty()) {
+                    "Unknown exercises in preset \"${preset.name}\": ${missing.map { it.exerciseName }}"
+                }
+                preset
+            }
+            presetDao.clearAll()
+            resolved.forEach { preset ->
+                val presetId = presetDao.insertPreset(
+                    PresetEntity(name = preset.name, note = preset.note, scheduledDay = preset.scheduledDay),
+                )
+                presetDao.insertEntries(
+                    preset.entries.mapIndexed { position, entry ->
+                        PresetEntryEntity(
+                            presetId = presetId,
+                            exerciseId = idByName.getValue(entry.exerciseName),
+                            targetSets = entry.targetSets,
+                            targetReps = entry.targetReps,
+                            targetWeightKg = entry.targetWeightKg,
+                            modifiers = entry.modifiers,
+                            position = position,
+                        )
+                    },
+                )
+            }
+        }
+    }
 
     // ---------------------------------------------------------------- sessions
 

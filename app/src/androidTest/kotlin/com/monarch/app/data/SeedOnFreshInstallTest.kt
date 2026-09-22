@@ -13,9 +13,13 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 /**
- * A clean install must end up with the full exercise catalogue and the four
- * day-split presets with their entries — i.e. Repository.ensureSeeded still
- * runs against the current schema.
+ * A clean install must end up with the full exercise catalogue and NO presets.
+ *
+ * The four day-split presets used to be seeded here, which meant every new
+ * hunter opened the app to the owner's personal training week - his movements,
+ * on his weekdays. They are now a template offered during setup, so the
+ * property worth pinning is the opposite of the old one: ensureSeeded stocks
+ * the catalogue and leaves the week empty for its owner to fill.
  */
 @RunWith(AndroidJUnit4::class)
 class SeedOnFreshInstallTest {
@@ -37,7 +41,7 @@ class SeedOnFreshInstallTest {
     }
 
     @Test
-    fun freshInstallSeedsCatalogueAndPresets() = runTest {
+    fun freshInstallSeedsCatalogueButNotAnybodyElsesWeek() = runTest {
         Repository(db).ensureSeeded()
 
         val expected = Seed.exercises.distinctBy { it.name }
@@ -49,22 +53,13 @@ class SeedOnFreshInstallTest {
             )
         }
 
-        val presets = db.presetDao().observePresets().first()
-        // observePresets() is "ORDER BY name", so the list is alphabetical, not
-        // in seed-declaration order. Assert the SET is complete, then pin the
-        // ordering contract the DAO actually promises.
-        assertEquals(Seed.presets.map { it.name }.toSet(), presets.map { it.preset.name }.toSet())
         assertEquals(
-            "presets are served in name order",
-            presets.map { it.preset.name }.sorted(),
-            presets.map { it.preset.name },
+            "a fresh install must not arrive with somebody else's training week",
+            0,
+            db.presetDao().count(),
         )
-        for (spec in Seed.presets) {
-            val withEntries = db.presetDao().presetWithEntries(
-                presets.single { it.preset.name == spec.name }.preset.id,
-            )
-            assertEquals("Preset ${spec.name} entry count", spec.entries.size, withEntries?.entries?.size)
-        }
+        // The starter week still EXISTS to be chosen; it is just not imposed.
+        assertEquals(4, Seed.presets.size)
     }
 
     private companion object {
