@@ -4,6 +4,8 @@ import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.monarch.app.data.db.SessionEntity
+import com.monarch.app.domain.MuscleGroup
+import com.monarch.app.domain.Sex
 import com.monarch.app.domain.StrengthIndex
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -194,8 +196,17 @@ class UnweighedSessionRescoreTest {
         repo.completeSession(id)
         val exercise = db.exerciseDao().observeAll().first().first { it.metric == "REPS" }
         val fresh = StrengthIndex.sessionScore(
-            listOf(StrengthIndex.Effort(exercise.name, 8, null, 60.0)),
+            listOf(
+                StrengthIndex.Effort(
+                    exercise.name,
+                    8,
+                    null,
+                    60.0,
+                    MuscleGroup.valueOf(exercise.muscleGroup),
+                ),
+            ),
             82.5,
+            Sex.MALE,
         )!!
         assertTrue("the fixture must score under the current formula", fresh > 0)
 

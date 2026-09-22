@@ -55,6 +55,71 @@ object Seed {
         ExerciseEntity(name = "Weighted Plank", muscleGroup = MuscleGroup.CORE.name, isWeighted = true),
         ExerciseEntity(name = "Plank", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
         ExerciseEntity(name = "Side Plank", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
+
+        // Gym floor - barbell. Free-weight band (no loadFactor entry).
+        ExerciseEntity(name = "Close-Grip Bench Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Push Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Sumo Deadlift", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Rack Pull", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Pendlay Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "T-Bar Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Good Morning", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Barbell Lunge", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Barbell Step-Up", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Barbell Shrug", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        // Gym floor - dumbbell. Free-weight band.
+        ExerciseEntity(name = "Dumbbell Bench Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Incline Dumbbell Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Dumbbell Shoulder Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Arnold Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Lateral Raise", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Front Raise", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Reverse Fly", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Dumbbell Fly", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Hammer Curl", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Preacher Curl", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Dumbbell Shrug", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Goblet Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Walking Lunge", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Dumbbell Step-Up", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Triceps Kickback", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Dumbbell Pullover", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        // Gym floor - cable stations. Stack band (0.85); the fly/crossover is the
+        // dual-pulley band and gets its factor in MovementDifficulty.loadFactors.
+        ExerciseEntity(name = "Seated Cable Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Triceps Pushdown", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Overhead Cable Extension", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Cable Fly", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Cable Lateral Raise", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Cable Curl", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Cable Pull-Through", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Woodchop", muscleGroup = MuscleGroup.CORE.name, isWeighted = true),
+        // Gym floor - plate-loaded lever machines. Sled band (0.70): the plates
+        // ride an angled lever, so a marked kilo imposes less than a vertical one.
+        ExerciseEntity(name = "Leg Press", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Hack Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Chest-Supported Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        // Gym floor - selectorised pin machines. Stack band (0.85).
+        ExerciseEntity(name = "Leg Extension", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Seated Leg Curl", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Lying Leg Curl", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Pec Deck", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Machine Chest Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Machine Shoulder Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Machine Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Hip Adduction", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Hip Abduction", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Seated Calf Raise", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Standing Calf Raise", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        // Gym floor - Smith machine. Smith band (0.90).
+        ExerciseEntity(name = "Smith Machine Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Smith Machine Bench Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Smith Machine Overhead Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Smith Machine Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        // Gym floor - assisted machines. The marked weight SUBTRACTS load; the
+        // existing "assisted" modifier factor models that, so no loadFactor here.
+        ExerciseEntity(name = "Assisted Pull-up", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Assisted Dip", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
     )
 
     /**
@@ -124,6 +189,10 @@ object Seed {
         activity("Stair Climbing", "CARDIO", ExerciseMetric.DURATION, "Cardio"),
         activity("Elliptical", "CARDIO", ExerciseMetric.DURATION, "Cardio"),
         activity("Assault Bike", "CARDIO", ExerciseMetric.DURATION, "Cardio"),
+        activity("Treadmill", "CARDIO", ExerciseMetric.DISTANCE_TIME, "Cardio"),
+        activity("Ski Erg", "CARDIO", ExerciseMetric.DISTANCE_TIME, "Cardio"),
+        activity("Indoor Cycling", "CARDIO", ExerciseMetric.DISTANCE_TIME, "Cardio"),
+        activity("Versaclimber", "CARDIO", ExerciseMetric.DURATION, "Cardio"),
         // Water
         activity("Swimming", "WATER", ExerciseMetric.DISTANCE_TIME, "Water"),
         activity("Water Polo", "WATER", ExerciseMetric.DURATION, "Water"),

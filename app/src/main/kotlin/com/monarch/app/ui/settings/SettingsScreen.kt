@@ -488,7 +488,9 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Height powers BMI, FFMI and step estimates. Sex picks the body-fat formula.",
+                "Height powers BMI, FFMI and step estimates. Sex picks the body-fat formula " +
+                    "and normalises the strength score, so the shared board ranks the feat " +
+                    "rather than the physiology.",
                 style = MaterialTheme.typography.labelSmall,
                 color = MonarchColors.InkMuted,
             )

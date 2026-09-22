@@ -659,6 +659,12 @@ class Repository(
         }
         val names = catalogue.associate { it.id to it.name }
         val categories = catalogue.associate { it.id to it.category }
+        // The sex normalisation differs upper vs lower body, so the score needs
+        // the catalogue row's own group. An unknown stored group falls back to
+        // CORE's midpoint factor rather than crashing the whole completion.
+        val groups = catalogue.associate { row ->
+            row.id to (runCatching { MuscleGroup.valueOf(row.muscleGroup) }.getOrNull() ?: MuscleGroup.CORE)
+        }
         fun metricOf(exerciseId: Long) = metrics[exerciseId] ?: ExerciseMetric.REPS
         /** Seconds when the set is a hold, null when it is counted in reps. */
         fun holdSecondsOf(set: SetLogEntity): Int? =
@@ -695,9 +701,16 @@ class Repository(
         val xp = liftingXp + activityXp
         val sessionStrength = StrengthIndex.sessionScore(
             liftingSets.map { set ->
-                StrengthIndex.Effort(names[set.exerciseId] ?: "", set.reps, holdSecondsOf(set), set.weightKg)
+                StrengthIndex.Effort(
+                    exerciseName = names[set.exerciseId] ?: "",
+                    reps = set.reps,
+                    holdSeconds = holdSecondsOf(set),
+                    addedKg = set.weightKg,
+                    muscleGroup = groups[set.exerciseId] ?: MuscleGroup.CORE,
+                )
             },
             latestBodyweight,
+            profileSex(),
         ) ?: 0
 
         // Quest bonus: completing the preset scheduled for today.
@@ -914,6 +927,14 @@ class Repository(
                     .getOrDefault(ExerciseMetric.REPS)
             }
             val names = exerciseDao.observeAll().first().associate { it.id to it.name }
+            val groups = exerciseDao.observeAll().first().associate { row ->
+                row.id to (runCatching { MuscleGroup.valueOf(row.muscleGroup) }.getOrNull() ?: MuscleGroup.CORE)
+            }
+            // The sex in force is the CURRENT one: a hunter's history is restated
+            // onto the scale they are ranked on today, because a leaderboard that
+            // mixed two scales for one person would be the exact incomparability
+            // SCORING_VERSION exists to prevent.
+            val sex = profileSex()
             sessionDao.observeCompletedWithSets().first().forEach { row ->
                 if (onlyUnscored && row.session.strengthScore != 0) return@forEach
                 val efforts = row.sets
@@ -925,10 +946,12 @@ class Repository(
                             holdSeconds = set.durationSec
                                 .takeIf { metrics[set.exerciseId] == ExerciseMetric.HOLD },
                             addedKg = set.weightKg,
+                            muscleGroup = groups[set.exerciseId] ?: MuscleGroup.CORE,
                         )
                     }
                 if (efforts.isEmpty()) return@forEach
-                val score = StrengthIndex.sessionScore(efforts, bodyweightAt(row.session.startedAtMs)) ?: 0
+                val score =
+                    StrengthIndex.sessionScore(efforts, bodyweightAt(row.session.startedAtMs), sex) ?: 0
                 if (score != 0 && score != row.session.strengthScore) {
                     sessionDao.updateSession(row.session.copy(strengthScore = score))
                 }
@@ -1033,6 +1056,14 @@ class Repository(
     }
 
     suspend fun setSex(sex: Sex) = profileDao.setSex(sex.name)
+
+    /**
+     * The sex the strength normalisation scores against. An unreadable stored
+     * string means MALE, the 1.0 scale every stored score was already on, so a
+     * corrupt row under-credits nobody's history by silently rescaling it.
+     */
+    private suspend fun profileSex(): Sex =
+        profileDao.get()?.sex?.let { runCatching { Sex.valueOf(it) }.getOrNull() } ?: Sex.MALE
 
     fun observeUnlockedTitles(): Flow<List<UnlockedTitle>> =
         titleDao.observeAll().map { list -> list.map { UnlockedTitle(it.titleId, it.unlockedAtMs) } }

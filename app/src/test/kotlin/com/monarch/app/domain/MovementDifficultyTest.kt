@@ -4,6 +4,7 @@ import com.monarch.app.data.Seed
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assume
 import org.junit.Test
 
 class MovementDifficultyTest {
@@ -75,6 +76,29 @@ class MovementDifficultyTest {
         val seeded = Seed.exercises.map { it.name.trim().lowercase() }.toSet()
         val orphaned = MovementDifficulty.catalogueOnlyKeys.filterNot { it in seeded }.sorted()
         assertEquals(emptyList<String>(), orphaned)
+    }
+
+    /**
+     * The same dead-classification bug, third table: a `loadFactors` key that
+     * names no shipped movement converts nothing while looking like coverage
+     * (the plank case that sat dead for months, one table over). The map is
+     * private because scoring goes through [MovementDifficulty.loadFactor], so
+     * the keys are read reflectively; if the field is renamed, the readable
+     * failure here says to update this accessor rather than silently passing.
+     */
+    @Test
+    fun `every load-factor key names a movement the catalogue actually ships`() {
+        val field = MovementDifficulty::class.java.getDeclaredField("loadFactors")
+        field.isAccessible = true
+        @Suppress("UNCHECKED_CAST")
+        val loadFactors = field.get(null) as Map<String, Double>
+        Assume.assumeTrue(
+            "no load factors are wired yet: the reverse-coverage check needs the table filled",
+            loadFactors.isNotEmpty(),
+        )
+        val seeded = Seed.exercises.map { it.name.trim().lowercase() }.toSet()
+        val orphaned = loadFactors.keys.filterNot { it in seeded }.sorted()
+        assertEquals("dead load-factor keys: $orphaned", emptyList<String>(), orphaned)
     }
 
     @Test

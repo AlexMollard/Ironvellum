@@ -75,6 +75,71 @@ object MovementDifficulty {
         "weighted plank" to 2,
         "plank" to 1,
         "side plank" to 1,
+
+        // Gym floor - barbell. UNLOADED difficulty only: every loaded compound
+        // sits at tier 2 like its free-weight neighbours, XP is paid by the kilos.
+        "close-grip bench press" to 2,
+        "push press" to 2,
+        "sumo deadlift" to 2,
+        "rack pull" to 2,
+        "pendlay row" to 2,
+        "t-bar row" to 2,
+        "good morning" to 2,
+        "barbell lunge" to 2,
+        "barbell step-up" to 2,
+        "barbell shrug" to 1, // isolation: single-joint elevation against gravity
+        // Gym floor - dumbbell.
+        "dumbbell bench press" to 2,
+        "incline dumbbell press" to 2,
+        "dumbbell shoulder press" to 2,
+        "arnold press" to 2,
+        "lateral raise" to 1,
+        "front raise" to 1,
+        "reverse fly" to 1,
+        "dumbbell fly" to 1,
+        "hammer curl" to 1,
+        "preacher curl" to 1,
+        "dumbbell shrug" to 1,
+        "goblet squat" to 2,
+        "walking lunge" to 2,
+        "dumbbell step-up" to 2,
+        "triceps kickback" to 1,
+        "dumbbell pullover" to 1,
+        // Gym floor - cable.
+        "seated cable row" to 2,
+        "triceps pushdown" to 1,
+        "overhead cable extension" to 1,
+        "cable fly" to 1,
+        "cable lateral raise" to 1,
+        "cable curl" to 1,
+        "cable pull-through" to 1,
+        "woodchop" to 1,
+        // Gym floor - plate-loaded machines.
+        "leg press" to 2,
+        "hack squat" to 2,
+        "chest-supported row" to 2,
+        // Gym floor - selectorised machines.
+        "leg extension" to 1,
+        "seated leg curl" to 1,
+        "lying leg curl" to 1,
+        "pec deck" to 1,
+        "machine chest press" to 2,
+        "machine shoulder press" to 2,
+        "machine row" to 2,
+        "hip adduction" to 1,
+        "hip abduction" to 1,
+        "seated calf raise" to 1,
+        "standing calf raise" to 1,
+        // Gym floor - Smith machine. Same unloaded movement as the free-weight
+        // lift the rails replace, so the same tier as its barbell twin.
+        "smith machine squat" to 2,
+        "smith machine bench press" to 2,
+        "smith machine overhead press" to 2,
+        "smith machine row" to 2,
+        // Gym floor - assisted machines. Unloaded pattern is a pull-up / dip,
+        // but the assistance makes them the beginner's entry point, not tier 3.
+        "assisted pull-up" to 2,
+        "assisted dip" to 2,
     )
 
     /**
@@ -89,6 +154,100 @@ object MovementDifficulty {
     private val loadPricedTiers: Map<String, Int> = mapOf(
         "weighted pull-up" to 3, // Pull-up
         "weighted dip" to 3, // Parallel Bar Dip
+    )
+
+    /**
+     * How much load a marked kilogram on this implement actually imposes,
+     * against a free-weight kilogram. Both currencies read it, so an implement
+     * cannot be priced differently by XP and the strength score.
+     *
+     * Without it, seeding gym machines hands out the best-paying movement in
+     * the app: measured on the pre-machine code, an 80 kg hunter's 10-rep leg
+     * press at 200 kg paid 53 XP / 210 strength against 41 / 135 for a 10-rep
+     * back squat at +100 kg. The sled is not harder than the squat; its
+     * NUMBER is bigger, because the plates never hang vertically off the body.
+     *
+     * This is a transmission ratio, NOT a difficulty statement - difficulty is
+     * the tier, and pricing the implement into the tier as well would repeat
+     * the [loadPricedTiers] double-count.
+     *
+     * - 0.70, angled sleds: a 45-degree sled transmits sin(45) of its mass.
+     *   Published leg-press-to-squat strength ratios run 1.1x to 2.0x, far
+     *   wider than the physics, because they also vary with sled counterweight
+     *   and range of motion - so the physics floor is used and the spread is
+     *   left alone rather than averaged into a number nobody measured.
+     * - 0.90, Smith machine: rails near vertical. The bar's own 7-25 kg
+     *   effective start load is a constant offset, not a per-kilo factor, and
+     *   is frequently unmarked - it is not modelled.
+     * - 0.85, pinned stacks and single-pulley cable stations: the pinned mass
+     *   is what moves, but a machine chest press needs 1.10-1.20x its marked
+     *   weight to match a bench press of the same number.
+     * - 0.50, crossover and fly stations: dual-pulley trainers are commonly
+     *   2:1, so half the stack reaches the handle. FLAGGED as the least
+     *   certain number here: the ratio is either printed on the machine or not
+     *   discoverable at all, and one gym floor mixes 1:1 and 2:1 stacks that
+     *   look identical.
+     *
+     * Assisted pull-up and dip machines are deliberately absent: there the
+     * marked weight SUBTRACTS load, which the existing "assisted" entry in
+     * [modifierFactors] already models. A second mechanism for the same fact
+     * would be one more table to drift.
+     */
+    fun loadFactor(exerciseName: String): Double =
+        loadFactors[key(exerciseName)] ?: FREE_WEIGHT_LOAD
+
+    /** Plates hanging vertically off the body: the reference the bands are relative to. */
+    const val FREE_WEIGHT_LOAD = 1.0
+    const val SLED_LOAD = 0.70
+    const val SMITH_LOAD = 0.90
+    const val STACK_LOAD = 0.85
+    const val DUAL_PULLEY_LOAD = 0.50
+
+    /**
+     * Keyed by lowercase catalogue name, matching [key]. Free-weight barbell and
+     * dumbbell lifts are deliberately absent: FREE_WEIGHT_LOAD is the default
+     * and a redundant 1.0 entry would be one more line to drift. The assisted
+     * machines are also absent - their marked weight subtracts, which the
+     * "assisted" modifier factor already models.
+     */
+    private val loadFactors: Map<String, Double> = mapOf(
+        // Smith band: rails near vertical.
+        "smith machine squat" to SMITH_LOAD,
+        "smith machine bench press" to SMITH_LOAD,
+        "smith machine overhead press" to SMITH_LOAD,
+        "smith machine row" to SMITH_LOAD,
+        // Sled band: plates ride an angled lever, so sin(angle) of the marked
+        // mass reaches the body. The T-bar's pivot is the same physics as a
+        // 45-degree sled plus its counterweight.
+        "leg press" to SLED_LOAD,
+        "hack squat" to SLED_LOAD,
+        "chest-supported row" to SLED_LOAD,
+        "t-bar row" to SLED_LOAD,
+        // Stack band: the pinned mass is what moves.
+        "seated cable row" to STACK_LOAD,
+        "triceps pushdown" to STACK_LOAD,
+        "overhead cable extension" to STACK_LOAD,
+        "cable lateral raise" to STACK_LOAD,
+        "cable curl" to STACK_LOAD,
+        "cable pull-through" to STACK_LOAD,
+        "woodchop" to STACK_LOAD,
+        "leg extension" to STACK_LOAD,
+        "seated leg curl" to STACK_LOAD,
+        "lying leg curl" to STACK_LOAD,
+        "pec deck" to STACK_LOAD,
+        "machine chest press" to STACK_LOAD,
+        "machine shoulder press" to STACK_LOAD,
+        "machine row" to STACK_LOAD,
+        "hip adduction" to STACK_LOAD,
+        "hip abduction" to STACK_LOAD,
+        "seated calf raise" to STACK_LOAD,
+        "standing calf raise" to STACK_LOAD,
+        // The existing pulldown is a pin-stack station; leaving it off the map
+        // would score its marked kilos as free-weight ones.
+        "lat pulldown" to STACK_LOAD,
+        // Dual-pulley band (2:1 on most crossover stations) - the flagged,
+        // least-certain ratio in the class KDoc.
+        "cable fly" to DUAL_PULLEY_LOAD,
     )
 
     /**
@@ -185,7 +344,7 @@ object MovementDifficulty {
      * Plank row existed, so the classification sat there dead.
      */
     val catalogueOnlyKeys: Set<String>
-        get() = catalogueTiers.keys + catalogueHolds + loadPricedTiers.keys
+        get() = catalogueTiers.keys + catalogueHolds + loadPricedTiers.keys + loadFactors.keys
 
     /**
      * Whether this movement has a stated difficulty rather than falling back

@@ -57,13 +57,26 @@ object Progression {
         TrainingMode.HYPERTROPHY -> 90
     }
 
-    /** Load step scales with the movement: legs/compounds 5 kg, standard 2.5 kg, isolation 1.25 kg. */
+    /**
+     * Load step scales with the movement: legs/compounds 5 kg, standard
+     * 2.5 kg, isolation 1.25 kg - but only where the hunter can actually make
+     * that jump. A pinned stack moves one plate at a time and a loaded sled
+     * moves a disc a side, so prescribing 2.5 kg on a leg press is an
+     * instruction nobody in a real gym can follow. Which movements are
+     * machines is read from [MovementDifficulty.loadFactor], the table that
+     * already knows, rather than a second list of names to drift.
+     */
     fun weightStepKg(muscleGroup: String, exerciseName: String): Double {
         val name = exerciseName.lowercase()
+        val implement = MovementDifficulty.loadFactor(exerciseName)
+        val isSled = implement == MovementDifficulty.SLED_LOAD
+        val isStack = implement < MovementDifficulty.FREE_WEIGHT_LOAD && !isSled
         val isIsolation = listOf("curl", "raise", "wrist", "hang", "plank", "dorsiflexion").any { it in name }
         val isLowerBody = muscleGroup.equals("LEGS", ignoreCase = true) ||
             listOf("squat", "bridge", "lunge", "hinge").any { it in name }
         return when {
+            isSled -> 10.0
+            isStack -> 5.0
             isIsolation -> 1.25
             isLowerBody -> 5.0
             else -> 2.5

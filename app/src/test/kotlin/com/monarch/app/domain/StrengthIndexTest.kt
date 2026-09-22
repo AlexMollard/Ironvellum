@@ -1,5 +1,6 @@
 package com.monarch.app.domain
 
+import com.monarch.app.domain.Sex
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -68,6 +69,7 @@ class StrengthIndexTest {
             StrengthIndex.sessionScore(
                 listOf(effort("Pull-up", 10), effort("Dip", 8, addedKg = 20.0)),
                 null,
+                Sex.MALE,
             ),
         )
     }
@@ -76,7 +78,7 @@ class StrengthIndexTest {
     fun `session score sums rounded reps`() {
         // sessionScore rounds the SUM, not each set — flooring the per-set
         // double here read 84 against a correctly-rounded 85.
-        val score = StrengthIndex.sessionScore(listOf(effort("Pull-up", 10)), 80.0)!!
+        val score = StrengthIndex.sessionScore(listOf(effort("Pull-up", 10)), 80.0, Sex.MALE)!!
         assertEquals(StrengthIndex.repScore("Pull-up", 10, 0.0, 80.0).roundToInt(), score)
     }
 
@@ -113,6 +115,7 @@ class StrengthIndexTest {
         val mixed = StrengthIndex.sessionScore(
             listOf(effort("Pull-up", 10), effort("Hollow Hold", 0, holdSeconds = 60)),
             80.0,
+            Sex.MALE,
         )!!
         val expected = StrengthIndex.repScore("Pull-up", 10, null, 80.0) +
             StrengthIndex.holdScore("Hollow Hold", 60, null, 80.0)
@@ -134,6 +137,60 @@ class StrengthIndexTest {
         assertTrue(hold < asSixtyReps)
     }
 
-    private fun effort(name: String, reps: Int, holdSeconds: Int? = null, addedKg: Double? = null) =
-        StrengthIndex.Effort(name, reps, holdSeconds, addedKg)
+    /**
+     * MALE is the scale every stored score was already computed on. If this
+     * drifts off 1.0, every male hunter's history silently restates and the
+     * lifetime sum stops matching the sessions it is summed from.
+     */
+    @Test
+    fun `a male session scores exactly the unnormalised sum`() {
+        val sets = listOf(
+            effort("Pull-up", 10),
+            effort("Back Squat", 5, addedKg = 60.0, muscleGroup = MuscleGroup.LEGS),
+        )
+        val raw = StrengthIndex.repScore("Pull-up", 10, null, 80.0) +
+            StrengthIndex.repScore("Back Squat", 5, 60.0, 80.0)
+        assertEquals(raw.roundToInt(), StrengthIndex.sessionScore(sets, 80.0, Sex.MALE))
+    }
+
+    /**
+     * The owner's point, and the sport's: the same bar at the same bodyweight
+     * is a harder feat for a woman, so the shared board must not read it as a
+     * weaker one. A flat coefficient was rejected because the gap is about
+     * twice as large upstairs - this pins that the two differ.
+     */
+    @Test
+    fun `an identical session scores higher for a woman, and more so upstairs`() {
+        val pull = listOf(effort("Pull-up", 10))
+        val legs = listOf(effort("Back Squat", 10, addedKg = 60.0, muscleGroup = MuscleGroup.LEGS))
+        val pullGain = StrengthIndex.sessionScore(pull, 80.0, Sex.FEMALE)!!
+            .toDouble() / StrengthIndex.sessionScore(pull, 80.0, Sex.MALE)!!
+        val legGain = StrengthIndex.sessionScore(legs, 80.0, Sex.FEMALE)!!
+            .toDouble() / StrengthIndex.sessionScore(legs, 80.0, Sex.MALE)!!
+        assertTrue("a woman's identical session must not score lower", pullGain > 1.0)
+        assertTrue("the upper-body correction must exceed the lower-body one", pullGain > legGain)
+        // Beyond the IPF's own 1.44 ceiling it stops being a normalisation.
+        assertTrue("normalisation must stay inside the sourced band", pullGain < 1.6)
+        assertTrue("legs must still be corrected at all", legGain > 1.0)
+    }
+
+    /**
+     * Trunk work has no dataset of its own, so it is the midpoint by
+     * construction. Pinning it stops a later edit quietly making core the
+     * best-paying group for a female hunter.
+     */
+    @Test
+    fun `core sits between the two limb factors`() {
+        val core = StrengthIndex.sexFactor(Sex.FEMALE, MuscleGroup.CORE)
+        assertTrue(core < StrengthIndex.sexFactor(Sex.FEMALE, MuscleGroup.PULL))
+        assertTrue(core > StrengthIndex.sexFactor(Sex.FEMALE, MuscleGroup.LEGS))
+    }
+
+    private fun effort(
+        name: String,
+        reps: Int,
+        holdSeconds: Int? = null,
+        addedKg: Double? = null,
+        muscleGroup: MuscleGroup = MuscleGroup.PULL,
+    ) = StrengthIndex.Effort(name, reps, holdSeconds, addedKg, muscleGroup)
 }

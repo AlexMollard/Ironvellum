@@ -79,10 +79,18 @@ object Xp {
      */
     fun taperedVolume(rawUnits: Double): Double = MovementDifficulty.taperedVolume(rawUnits)
 
-    /** Added kilos as a multiple of the lifter's own mass, capped. */
-    fun loadMultiplier(addedKg: Double?, bodyweightKg: Double?): Double {
-        val added = (addedKg ?: 0.0).coerceAtLeast(0.0)
-        if (added <= 0.0) return 1.0
+    /**
+     * Added kilos as a multiple of the lifter's own mass, capped.
+     *
+     * The marked number is converted to real load first
+     * ([MovementDifficulty.loadFactor]): 200 kg on an angled sled is not
+     * 200 kg hanging off a belt, and paying it as though it were made the
+     * leg press the best-value movement in the catalogue.
+     */
+    fun loadMultiplier(exerciseName: String, addedKg: Double?, bodyweightKg: Double?): Double {
+        val marked = (addedKg ?: 0.0).coerceAtLeast(0.0)
+        if (marked <= 0.0) return 1.0
+        val added = marked * MovementDifficulty.loadFactor(exerciseName)
         val bw = bodyweightKg?.takeIf { it > 0.0 } ?: ASSUMED_BODYWEIGHT_KG
         return ((bw + added) / bw).coerceAtMost(MAX_LOAD_MULTIPLIER)
     }
@@ -101,7 +109,7 @@ object Xp {
         if (raw <= 0.0) return 0.0
         return taperedVolume(raw) *
             MovementDifficulty.intensity(set.exerciseName) *
-            loadMultiplier(set.weightKg, bodyweightKg) *
+            loadMultiplier(set.exerciseName, set.weightKg, bodyweightKg) *
             MovementDifficulty.modifierFactor(set.modifiers)
     }
 
