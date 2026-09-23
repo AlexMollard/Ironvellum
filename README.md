@@ -197,6 +197,25 @@ stay on the device, and the app is fully usable without an account.
 Full statement: [PRIVACY.md](PRIVACY.md) ·
 [Play Data Safety answers](docs/PLAY_DATA_SAFETY.md)
 
+## Contributing
+
+Issues and pull requests are welcome. There is no automatic CI: run the gate on
+your own machine before opening a pull request.
+
+```bash
+python3 tools/gate.py              # build, unit, lint, instrumented (emulator)
+python3 tools/gate.py --backend    # plus the Supabase schema assertions (Docker)
+```
+
+Point instrumented runs at an emulator, never a phone with real training on it.
+
+## Licence
+
+Ironvellum is free software under the
+[GNU General Public License v3.0 or later](LICENSE). The artwork is original
+or generated for this project and shares that licence; the Chakra Petch font is
+under the SIL Open Font License 1.1. See [NOTICE](NOTICE).
+
 ## Docs
 
 - [GOAL.md](GOAL.md) - product direction

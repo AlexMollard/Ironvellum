@@ -1,0 +1,27 @@
+Ironvellum
+Copyright (C) 2026 Alex Mollard
+
+This program is free software: you can redistribute it and/or modify it under
+the terms of the GNU General Public License as published by the Free Software
+Foundation, either version 3 of the License, or (at your option) any later
+version. See LICENSE for the full text.
+
+This program is distributed in the hope that it will be useful, but WITHOUT
+ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.
+
+Third-party material
+====================
+
+Fonts (app/src/main/res/font/chakra_petch_*.ttf)
+  Chakra Petch, Copyright 2018 The Chakra Petch Project Authors
+  (https://github.com/m4rc1e/Chakra-Petch), licensed under the SIL Open Font
+  License 1.1. Full text: licenses/OFL-ChakraPetch.txt.
+
+Artwork
+=======
+
+All artwork is original to Ironvellum. Rank emblems are hand-authored vectors;
+the launcher icon, empty-state and crest images were generated for this
+project with Google Gemini (tools/art.py). All of it is released under the
+project licence above. Details: docs/ART_ATTRIBUTION.md.

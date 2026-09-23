@@ -1,31 +1,20 @@
 # Art Attribution
 
-All artwork in this project is original. Icons are hand-authored Android
-VectorDrawables and generated pieces were made for the project with Google
-`gemini-3.1-flash-image`; all of it is released under the project licence.
-Nothing is sourced from a third-party icon set.
+Ironvellum ships no third-party artwork. Every image is either generated for
+this project with Google **`gemini-3.1-flash-image`** (via `tools/art.py`) or
+hand-authored as an Android VectorDrawable, and all of it is released under
+the project licence (GPL-3.0-or-later, see `LICENSE`).
 
 ## Assets
 
-| Drawable | Origin | Author | Licence | Source URL |
-|---|---|---|---|---|
-| `mipmap-*/ic_launcher.png`, `ic_launcher_foreground.png`, `ic_launcher_monochrome.png` | generated for this project with Google **`gemini-3.1-flash-image`** (reached via OpenRouter because the omp `google-antigravity` route was quota-exhausted at the time — same underlying model), then cropped, background-keyed to transparency, inset to the adaptive-icon safe zone and downscaled per density with Pillow | — | generated asset, project licence | — |
-| `ic_launcher_background.xml` | original Ironvellum work (radial void-green gradient), no third-party source | — | project licence | — |
-| `ic_line_pull.xml` | original artwork | — | project licence | — |
-| `ic_line_push.xml` | original artwork | — | project licence | — |
-| `ic_line_handstand.xml` | original artwork | — | project licence | — |
-| `ic_line_lever.xml` | original artwork | — | project licence | — |
-| `ic_line_planche.xml` | original artwork | — | project licence | — |
-| `ic_line_legs.xml` | original artwork | — | project licence | — |
-| `ic_rank_soldier.xml` | original artwork | — | project licence | — |
-| `ic_rank_knight.xml` | original artwork | — | project licence | — |
-| `ic_rank_commander.xml` | original artwork | — | project licence | — |
-| `ic_rank_grand_marshal.xml` | original artwork | — | project licence | — |
-| `art_empty_quests.xml` | original artwork | — | project licence | — |
-| `art_empty_stats.xml` | original artwork | — | project licence | — |
-| `art_empty_skills.xml` | original artwork | — | project licence | — |
-| `mipmap-anydpi-v26/ic_launcher.xml` | adaptive icon composition (no artwork) | — | project licence | — |
-| `mipmap-anydpi-v26/ic_launcher_round.xml` | adaptive round icon composition (no artwork) | — | project licence | — |
+| Drawable | Origin | Licence |
+|---|---|---|
+| `mipmap-*/ic_launcher.png`, `ic_launcher_foreground.png`, `ic_launcher_monochrome.png` | generated with Google **`gemini-3.1-flash-image`** (reached via OpenRouter because the omp `google-antigravity` route was quota-exhausted at the time — same underlying model), then cropped, background-keyed to transparency, inset to the adaptive-icon safe zone and downscaled per density with Pillow | project licence |
+| `ic_launcher_background.xml` | hand-authored (radial void-green gradient) | project licence |
+| `mipmap-anydpi-v26/ic_launcher.xml`, `ic_launcher_round.xml` | adaptive icon composition, no artwork of its own | project licence |
+| `drawable-nodpi/art_empty_*.png` (quests, stats, skills, board, chronicle, allies, muster) | generated with `tools/art.py` in the house ink style below | project licence |
+| `drawable-nodpi/art_crest_*.png` (ten crest frames) | generated with `tools/art.py` from `tools/art_batches/crests.txt` | project licence |
+| `drawable/ic_rank_*.xml` (soldier, knight, commander, grand marshal) | hand-authored 48-unit vectors | project licence |
 
 ## House style: monochrome ink (adopted)
 
@@ -80,19 +69,11 @@ repaints immediately with no restart.
 the app shipped with: cut-corner silhouettes, even rules, flat rails, true arcs,
 single-pass borders, and no paper grain.
 
-### Status: on hold
+### Regenerating a piece
 
-The `google-antigravity` image route is **quota-exhausted**
-(`QUOTA_EXHAUSTED`, `cloudcode-pa.googleapis.com`); the error carries a
-`quotaResetDelay` - last seen `4h38m`, so check it rather than guessing. The
-allowance is small enough that a single throwaway probe can consume it, so
-spend the window on real subjects only.
-
-The shipped `art_empty_*` assets remain the original vectors listed
-above; nothing half-finished is wired in. Approved ink compositions (gate,
-balance scale, bare tree) are parked in `.tmp/art-parked/` at 256px -
-recovered from a preview composite, so they are NOT release-quality and exist
-only as a reference for re-prompting. When quota resets, regenerate at 512px:
+The `google-antigravity` image route has a small quota that can run out
+mid-batch (`QUOTA_EXHAUSTED`; the error carries a `quotaResetDelay`), so batch
+runs go through the resumable `tools/art_batches/run.py`. One piece:
 
 ```
 python tools/art.py --style ink "<subject>" \
@@ -100,21 +81,17 @@ python tools/art.py --style ink "<subject>" \
   --size 512 --alpha --colors 64
 ```
 
-All three empty states must swap together or one screen keeps the old style:
-
-| drawable | call site |
-|---|---|
-| `art_empty_quests` | `ui/dashboard/DashboardScreen.kt` (rest-day quest panel) |
-| `art_empty_stats` | `ui/stats/StatsScreen.kt` (Readings section) |
-| `art_empty_skills` | `ui/titles/SkillJournal.kt:227` |
+Empty-state art must swap as a set, or one screen keeps the old style.
 
 ## Rank emblem set
 
-`ic_rank_soldier` → `ic_rank_knight` → `ic_rank_commander` are an original
-chevron-shield family, tinted in an escalating
-sequence (`#9AA3AD` muted ink → `#6FAE8C` muted green → `#34D399` emerald);
-`ic_rank_grand_marshal` is an original crowned shield in sovereign gold `#F2C14E`.
+`ic_rank_soldier` → `ic_rank_knight` → `ic_rank_commander` →
+`ic_rank_grand_marshal` escalate from a single chevron to a crowned shield,
+tinted in sequence (`#9AA3AD` muted ink → `#6FAE8C` muted green → `#34D399`
+emerald, gold accents on the last).
 
 ## Attribution string
 
-No artwork needs third-party credit: every drawable is original to the project.
+No artwork needs third-party credit. The only bundled third-party asset is the
+Chakra Petch font (SIL Open Font License 1.1), credited in `NOTICE` and on the
+app's Support/About screen.

@@ -61,13 +61,12 @@ Files to add at the repository root:
 |---|---|
 | `LICENSE` | Verbatim GPL-3.0 text from https://www.gnu.org/licenses/gpl-3.0.txt |
 | `NOTICE` | Copyright line (`Copyright (C) 2026 Alex Mollard`), the GPL-3.0-or-later statement, the Chakra Petch fonts under SIL OFL 1.1, and a note that all artwork is original or Gemini-generated for this project and shares its licence |
-| `app/src/main/res/font/OFL.txt` | The OFL 1.1 text that ships with Chakra Petch |
+| `licenses/OFL-ChakraPetch.txt` | The OFL 1.1 text that ships with Chakra Petch. Not under `res/font/`: aapt rejects any non-font file there |
 
 Checks before writing them:
 
-- Confirm Chakra Petch's licence from the font's own name table
-  (`fc-query app/src/main/res/font/chakra_petch_bold.ttf | grep -i license`) or
-  from the Google Fonts repository. Nothing in the repo states it today.
+- Chakra Petch's licence is confirmed by the OFL string in all three bundled
+  TTFs' name tables and by the upstream `google/fonts` `ofl/chakrapetch/OFL.txt`.
 - OFL 1.1 can be distributed inside a GPL-3.0 app, provided its licence text
   is kept. No artwork is third-party (`docs/ART_ATTRIBUTION.md`), so nothing
   else needs credit. The Support screen from plan 04 shows the font credit.
