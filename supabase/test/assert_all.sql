@@ -286,13 +286,36 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 14,
-        format('schema_version() reports %s, not 14 — bump the literal with the migration', public.schema_version())
+        (select public.schema_version()) = 15,
+        format('schema_version() reports %s, not 15 — bump the literal with the migration', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 14,
+        (select public.schema_version()) = 15,
         'anon cannot execute schema_version() — the app probe would read 401'
+    );
+    reset role;
+
+    -- 0015: the shipped publishable key is the `anon` role. Supabase grants it
+    -- EXECUTE on every public function directly, so a `revoke ... from public`
+    -- alone leaves each of these callable by anyone holding an APK.
+    perform assert_true(
+        not has_function_privilege('anon', 'public.is_friend(uuid, uuid)', 'execute'),
+        'anon can execute is_friend(): the friendship oracle is open to the shipped key'
+    );
+    perform assert_true(
+        not has_function_privilege('anon', 'public.can_view(uuid)', 'execute'),
+        'anon can execute can_view(): any visibility setting can be probed without an account'
+    );
+    perform assert_true(
+        not has_function_privilege('anon', 'public.find_hunter(text)', 'execute'),
+        'anon can execute find_hunter(): names resolve to ids without an account'
+    );
+    perform assert_true(
+        not has_function_privilege('anon', 'public.push_aggregates(bigint, bigint, int, bigint, int, double precision)', 'execute')
+            and not has_function_privilege('anon', 'public.monarch_level(bigint)', 'execute')
+            and not has_function_privilege('authenticated', 'public.monarch_level(bigint)', 'execute'),
+        '0011 functions are callable beyond their intended callers'
     );
     reset role;
 

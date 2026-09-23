@@ -11,8 +11,8 @@ open-work list.
 
 | # | Item | Why it is blocking | Notes |
 |---|---|---|---|
-| 1 | Apply `supabase/migrations/0009_backend_hardening.sql` | **Live exposure.** Until it lands, anyone holding the shipped publishable key can enumerate the accepted-friendship graph — including for lifters who set `private` — via the `is_friend` RPC | Idempotent; chain-tested against `postgres:16` |
-| 2 | Apply `0010_lifter_discovery.sql` | Friend requests cannot bootstrap without it: a by-name lookup returns nothing and the app reports that a real lifter does not exist | Idempotent |
+| 1 | Apply `supabase/migrations/0015_function_grants.sql` | **Live exposure.** `0009` is applied but only revoked from PUBLIC; Supabase grants functions to `anon` directly, so the shipped publishable key can still call `is_friend` and enumerate the accepted-friendship graph, including for lifters set to `private`. Measured on the live project 2026-09-23: anon `is_friend` answers 200 | Idempotent; the backend suite now emulates Supabase's function grants and fails without it |
+| 2 | ~~Apply `0010_lifter_discovery.sql`~~ | Applied 2026-09-23 (0008, 0009, 0010, 0013, 0014 are live) | |
 | 3 | Apply `0011_server_side_aggregates.sql` **with the matching app build** | Revokes direct writes to the ranked columns; an older client's profile upsert starts failing the moment it lands | Ship together, never before |
 | 4 | Signing keystore | Release builds are unsigned (`app-release-unsigned.apk`); the build warns and names the four `local.properties` keys | A credential the owner must own — never generated here |
 | 5 | Hosted privacy-policy URL | Play requires a URL, not an in-app document | Content exists in `PRIVACY.md` |

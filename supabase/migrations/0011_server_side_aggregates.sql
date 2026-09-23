@@ -66,7 +66,10 @@ begin
 end;
 $$;
 
-revoke execute on function public.monarch_level(bigint) from public;
+-- Supabase grants EXECUTE on new public functions directly to anon and
+-- authenticated, so PUBLIC alone is not enough (see 0015). Only
+-- push_aggregates' SECURITY DEFINER body calls this.
+revoke execute on function public.monarch_level(bigint) from public, anon, authenticated;
 
 -- ------------------------------------------------- take the write privilege
 -- Supabase grants table-level UPDATE/INSERT to `authenticated`, which covers
@@ -136,5 +139,5 @@ begin
 end;
 $$;
 
-revoke execute on function public.push_aggregates(bigint, bigint, int, bigint, int, double precision) from public;
+revoke execute on function public.push_aggregates(bigint, bigint, int, bigint, int, double precision) from public, anon;
 grant execute on function public.push_aggregates(bigint, bigint, int, bigint, int, double precision) to authenticated;

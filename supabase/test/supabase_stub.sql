@@ -48,3 +48,10 @@ end $$;
 grant usage on schema public to anon, authenticated;
 alter default privileges in schema public
     grant select, insert, update, delete on tables to anon, authenticated;
+-- Supabase also grants EXECUTE on every new public-schema FUNCTION directly
+-- to anon and authenticated. Without this line a `revoke ... from public`
+-- looks sufficient here while the live project still answers the shipped
+-- publishable key: exactly how 0009's friendship-oracle fix passed this suite
+-- and stayed open in production.
+alter default privileges in schema public
+    grant execute on functions to anon, authenticated;

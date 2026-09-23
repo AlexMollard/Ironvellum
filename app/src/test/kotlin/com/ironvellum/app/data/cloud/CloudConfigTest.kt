@@ -92,11 +92,12 @@ class CloudConfigTest {
 
     @Test
     fun `the beacon number decides ready versus outdated`() {
-        assertEquals(ProbeResult.Ready(14), probeResultFor(200, null, "14"))
-        assertEquals(ProbeResult.Ready(15), probeResultFor(200, null, "15"))
-        assertEquals(ProbeResult.Outdated(9, 14), probeResultFor(200, null, "9"))
+        val need = NEEDED_SCHEMA_VERSION
+        assertEquals(ProbeResult.Ready(need), probeResultFor(200, null, "$need"))
+        assertEquals(ProbeResult.Ready(need + 1), probeResultFor(200, null, "${need + 1}"))
+        assertEquals(ProbeResult.Outdated(need - 1, need), probeResultFor(200, null, "${need - 1}"))
         // PostgREST may quote scalars in the body; whitespace and quotes go.
-        assertEquals(ProbeResult.Ready(14), probeResultFor(200, null, "  \"14\" "))
+        assertEquals(ProbeResult.Ready(need), probeResultFor(200, null, "  \"$need\" "))
     }
 
     @Test

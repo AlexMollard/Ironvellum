@@ -16,8 +16,10 @@ lifters set to `private`. The key ships inside every APK, and a public repo
 makes it trivial to find.
 
 1. Prove the migration chain still holds: `python3 tools/gate.py --backend`.
-2. Apply `0008`, `0009` and `0010` in the Supabase SQL editor, in order. All
-   three are idempotent.
+2. Apply `0008`, `0009`, `0010`, `0014` and `0015` in the Supabase SQL
+   editor, in order. All are idempotent. `0015` is the one that actually
+   closes the hole: Supabase grants functions to `anon` directly, so
+   `0009`'s `revoke ... from public` alone left `is_friend` callable.
 3. **Do not** apply `0011` on its own. It revokes the direct profile writes
    the current build still makes, so it goes out together with the next app
    release (`docs/RELEASE_CHECKLIST.md` §4).
