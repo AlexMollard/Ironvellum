@@ -59,7 +59,7 @@ class ExportWriterTest {
     @Test
     fun `trainingMode follows profile section`() {
         val json = ExportWriter.write(
-            profile = PlayerProfile(name = "x", totalXp = 0),
+            profile = PlayerProfile(name = "x", totalXp = 0, inkStyle = true),
             trainingMode = TrainingMode.STRENGTH,
             presets = emptyList(),
             sessions = emptyList(),
@@ -168,7 +168,7 @@ class ExportWriterTest {
     @Test
     fun `empty collections render as empty arrays`() {
         val json = ExportWriter.write(
-            profile = PlayerProfile("x", 0),
+            profile = PlayerProfile("x", 0, inkStyle = true),
             trainingMode = TrainingMode.STRENGTH,
             presets = emptyList(),
             sessions = emptyList(),

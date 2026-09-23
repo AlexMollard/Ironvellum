@@ -123,12 +123,12 @@ data class ProfileEntity(
     /** Sex enum name; feeds the Navy body-fat estimator. */
     val sex: String = "MALE",
     /**
-     * The hand-drawn treatment is the app's own look, so it is what a lifter
-     * gets; CLEAN is the opt-out. Dark panels with a neon accent are the house
-     * style of every RPG fitness tracker, and the brushed edges are the one
-     * part of this UI no other app in the genre has.
+     * CLEAN is what a new lifter gets: it is easier on the eyes for a screen
+     * read mid-workout, and the hand-drawn INK treatment is one tap away in
+     * Settings → APPEARANCE for anyone who wants it (owner decision,
+     * 2026-09-23). A stored choice is never overwritten.
      */
-    val inkStyle: Boolean = true,
+    val inkStyle: Boolean = false,
     /**
      * Which strength-scoring formula last touched the stored sessions, as
      * [com.ironvellum.app.domain.StrengthIndex.SCORING_VERSION]. A marker only:
