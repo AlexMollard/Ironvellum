@@ -335,14 +335,15 @@ class ExportRoundTripTest {
 
     /**
      * The CLOUD archive, not the local one. `BACK UP NOW` uploads
-     * `exportArchive(includePrivateNotes = false)`, so that exact shape is
-     * what a lifter restores from onto a new phone — and nothing else tests
-     * it. The private note is dropped on purpose (the app promises it never
-     * leaves the device), and dropping a key is precisely the kind of change
-     * that can take the rest of the session with it.
+     * `exportArchive(includeDeviceOnly = false)`, so that exact shape is what
+     * a lifter restores from onto a new phone — and nothing else tests it.
+     * The private note, body readings, measurements, height, sex and Health
+     * Connect days are promised never to leave the device (PRIVACY.md), so
+     * the upload must carry none of them, and a restore must keep the
+     * device's own copies rather than wiping them.
      */
     @Test
-    fun theCloudArchiveRestoresTrainingWithoutCarryingThePrivateNote() = runTest {
+    fun theCloudArchiveRestoresTrainingWithoutCarryingDeviceOnlyData() = runTest {
         val preset = db.presetDao().observePresets().first().first().preset
         val sessionId = repo.startSessionFromPreset(preset.id)
         val sets = db.sessionDao().setsFor(sessionId)
@@ -354,6 +355,7 @@ class ExportRoundTripTest {
         repo.setSessionPrivateNote(sessionId, "SECRET-SORE-ELBOW")
         repo.completeSession(sessionId)
         repo.addStat(weightKg = 79.1, bodyFatPct = 13.5)
+        db.measurementDao().insert(MeasurementEntity(site = "WAIST", valueCm = 81.7, takenAtMs = 11))
 
         val completedBefore = db.sessionDao().completedCount()
         val setsBefore = db.sessionDao().setsFor(sessionId).size
@@ -361,24 +363,29 @@ class ExportRoundTripTest {
         val xpBefore = repo.observeProfile().first()!!.totalXp
         assertTrue("the fixture must have training to lose", completedBefore > 0 && setsBefore > 0)
 
-        val cloud = repo.exportArchive(includePrivateNotes = false)
-        assertFalse(
-            "the uploaded archive must carry no trace of the private note",
-            cloud.json.contains("SECRET-SORE-ELBOW") || cloud.json.contains("privateNote"),
-        )
+        val cloud = repo.exportArchive(includeDeviceOnly = false)
+        listOf(
+            "SECRET-SORE-ELBOW", "\"privateNote\"", "79.1", "81.7", "\"stats\"", "\"measurements\"",
+            "\"healthDays\"", "\"heightCm\"", "\"sex\"",
+        ).forEach { trace ->
+            assertFalse("the uploaded archive must carry no trace of $trace", cloud.json.contains(trace))
+        }
         assertTrue("the public note is not private and must travel", cloud.json.contains("public: felt strong"))
 
+        // Training is lost (a new phone); the body history stays on this one.
         db.presetDao().clearAll()
         db.sessionDao().clearAll()
-        db.statDao().clearAll()
         assertEquals("the wipe must actually clear the record", 0, db.sessionDao().completedCount())
 
         val result = repo.importArchive(cloud.json)
         assertTrue("restore failed: ${result.exceptionOrNull()?.message}", result.isSuccess)
 
         assertEquals("completed sessions", completedBefore, db.sessionDao().completedCount())
-        assertEquals("body stats", statsBefore, db.statDao().observeAll().first().size)
         assertEquals("total XP", xpBefore, repo.observeProfile().first()!!.totalXp)
+        // Kept, not cleared: the backup never held them, so a restore must not
+        // wipe the device's own copies.
+        assertEquals("body readings on this device", statsBefore, db.statDao().observeAll().first().size)
+        assertEquals("measurements on this device", 1, db.measurementDao().observeAll().first().size)
 
         val restoredSession = db.sessionDao().observeCompletedWithSets().first().single()
         assertEquals("restored set rows", setsBefore, restoredSession.sets.size)

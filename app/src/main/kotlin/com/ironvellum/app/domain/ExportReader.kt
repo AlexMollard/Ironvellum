@@ -36,12 +36,20 @@ object ExportReader {
         val gacha: ExportWriter.GachaSnapshot? = null,
         val crestFrames: List<ExportWriter.CrestFrameSnapshot> = emptyList(),
         val relics: List<ExportWriter.RelicSnapshot> = emptyList(),
+        /**
+         * True for the CLOUD copy, which leaves out stats, measurements,
+         * Health Connect days, height and sex (device-only by promise). The
+         * importer then keeps the restoring device's own copies instead of
+         * clearing them.
+         */
+        val deviceDataOmitted: Boolean = false,
     )
 
     fun read(json: String): Result<Archive> = runCatching {
         val p = Parser(json)
         val root = p.parseDocument()
         val profileObj = root.obj("profile") ?: fail("missing profile")
+        val deviceDataOmitted = root.bool("deviceDataOmitted") ?: false
         Archive(
             formatVersion = root.int("formatVersion") ?: fail("missing formatVersion"),
             exportedAtMs = root.long("exportedAtMs") ?: fail("missing exportedAtMs"),
@@ -54,7 +62,8 @@ object ExportReader {
             } ?: TrainingMode.STRENGTH,
             presets = (root.arr("presets") ?: fail("missing presets")).map { readPreset(it as Obj) },
             sessions = (root.arr("sessions") ?: fail("missing sessions")).map { readSession(it as Obj) },
-            stats = (root.arr("stats") ?: fail("missing stats")).map { readStat(it as Obj) },
+            stats = (root.arr("stats") ?: if (deviceDataOmitted) emptyList() else fail("missing stats"))
+                .map { readStat(it as Obj) },
             titles = (root.arr("titles") ?: fail("missing titles")).map { readTitle(it as Obj) },
             skills = (root.arr("skills") ?: emptyList()).map { readSkill(it as Obj) },
             healthDays = (root.arr("healthDays") ?: emptyList()).map { readHealthDay(it as Obj) },
@@ -64,6 +73,7 @@ object ExportReader {
             gacha = root.obj("gacha")?.let { readGacha(it) },
             crestFrames = (root.arr("crestFrames") ?: emptyList()).map { readCrestFrame(it as Obj) },
             relics = (root.arr("relics") ?: emptyList()).map { readRelic(it as Obj) },
+            deviceDataOmitted = deviceDataOmitted,
             // Legacy v4 archives may still carry a "measurementGoals" section;
             // the parser absorbs it and we deliberately ignore it — an old
             // backup must restore, not fail.

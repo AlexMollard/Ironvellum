@@ -77,6 +77,7 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 | Unlocked titles with timestamps | `earned_titles` |
 | Likes you give/receive | `session_likes` |
 | Friend requests / friendships | `friendships` |
+| Cloud backup, only when you tap BACK UP NOW: a copy of your training record (presets, completed sessions and sets with public notes, titles, skill practice, idle-game state, display name, XP). It leaves out private notes, body readings, measurements, height, sex and Health Connect data; restoring it keeps whatever of those is already on the phone | `cloud_archives` (migration `0013`), readable only by you |
 
 Access to all of it is governed by row-level security on the server; every
 table is RLS-enabled (`0001_init.sql`). Your profile `visibility` setting
@@ -88,9 +89,10 @@ configured, everything listed above goes to YOUR project — nothing is sent to
 the maintainer's shared instance — and Google sign-in is unavailable there
 (email sign-in only). See `supabase/SELF_HOSTING.md`.
 
-**Not uploaded:** body measurements, private notes, local-only row ids beyond
-the sync watermark, in-progress (abandoned) sessions, device identifiers, or
-your raw Health Connect records.
+**Not uploaded:** body readings and measurements, height, sex, private notes,
+local-only row ids beyond the sync watermark, in-progress (abandoned)
+sessions, device identifiers, or anything read from Health Connect. This
+holds for the cloud backup too: it is built without them.
 
 ## What the app does NOT contain
 

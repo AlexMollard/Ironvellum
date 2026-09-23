@@ -277,10 +277,11 @@ class CloudSync(
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         return runCatching {
-            // The private note is device-only by the app's own promise; the
-            // cloud archive must omit it, which is the entire reason for the
-            // flag rather than reusing the EXPORT ARCHIVE path verbatim.
-            val archive = repo.exportArchive(includePrivateNotes = false)
+            // The private note, body readings, measurements, height, sex and
+            // Health Connect days are device-only by the app's own promise
+            // (PRIVACY.md); the cloud copy omits all of them, which is the
+            // entire reason for the flag rather than reusing EXPORT ARCHIVE.
+            val archive = repo.exportArchive(includeDeviceOnly = false)
             val bytes = archive.json.toByteArray()
             // Refuse here, where the message can name the fix: the server
             // check would answer the same payload with an opaque 23514.
@@ -336,10 +337,10 @@ class CloudSync(
                 filter { eq("user_id", me.userId) }
             }.decodeList<ArchiveDto>().firstOrNull()
                 ?: throw IllegalStateException("No cloud backup yet — back up on the old device first")
-            // Private notes come back empty BY DESIGN: the archive was built
-            // with includePrivateNotes = false because the note is promised
-            // to never leave the device (SessionScreen, WireLimits). Restore
-            // is for a NEW device; the old one still holds its own notes.
+            // Device-only data comes back absent BY DESIGN: the archive was
+            // built with includeDeviceOnly = false, so private notes are empty
+            // and the importer keeps this device's own readings, measurements
+            // and Health Connect days instead of clearing them.
             repo.importArchive(row.archive).getOrElse { error ->
                 throw IllegalStateException(error.message ?: "The backup could not be restored")
             }

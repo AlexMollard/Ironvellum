@@ -228,8 +228,11 @@ def main() -> int:
     unit_total, unit_failed = counts(
         f"app/build/test-results/test{fl}DebugUnitTest/*.xml"
     )
+    # Only this flavour's directory: results from an earlier run of another
+    # flavour (or the pre-flavour `connected/debug/`) are never cleaned and
+    # would be counted, and their failures reported, as if this run made them.
     inst_total, inst_failed = counts(
-        "app/build/outputs/androidTest-results/connected/**/*.xml"
+        f"app/build/outputs/androidTest-results/connected/debug/flavors/{args.flavour}/**/*.xml"
     )
     print("\n=== gate ===")
     print(f"  flavour       {args.flavour}")

@@ -62,36 +62,42 @@ object ExportWriter {
         crestFrames: List<CrestFrameSnapshot> = emptyList(),
         relics: List<RelicSnapshot> = emptyList(),
         exportedAtMs: Long,
-        // false = cloud copy. The app promises in user-visible UI
-        // (SessionScreen.kt:1081) that the private note never leaves this
-        // device; a backup that quietly broke that promise would be worse
-        // than no backup. The key is omitted entirely — not written empty —
-        // so the archive carries no trace of the field. ExportReader
-        // tolerates its absence (defaults to ""). Default true keeps every
-        // existing caller byte-identical: the LOCAL archive keeps the note.
-        includePrivateNotes: Boolean = true,
+        // false = cloud copy. The app promises (PRIVACY.md, and in the UI at
+        // SessionScreen.kt:1081 for the note) that the private note, body
+        // measurements, height, sex and Health Connect data never leave this
+        // device, so the cloud copy carries none of them. The keys are
+        // omitted entirely, not written empty, and `deviceDataOmitted` tells
+        // the importer to KEEP the restoring device's own copies instead of
+        // clearing them. Default true keeps the LOCAL archive complete and
+        // byte-identical.
+        includeDeviceOnly: Boolean = true,
     ): String = buildString {
         append("{")
         append("\"formatVersion\":$FORMAT_VERSION,")
         append("\"exportedAtMs\":$exportedAtMs,")
+        if (!includeDeviceOnly) append("\"deviceDataOmitted\":true,")
         append("\"profile\":")
-        appendProfile(profile, heightCm, sex)
+        appendProfile(profile, heightCm, sex, includeDeviceOnly)
         append(",\"trainingMode\":")
         appendEscaped(trainingMode.name)
         append(",\"presets\":")
         appendPresets(presets)
         append(",\"sessions\":")
-        appendSessions(sessions, includePrivateNotes)
-        append(",\"stats\":")
-        appendStats(stats)
+        appendSessions(sessions, includeDeviceOnly)
+        if (includeDeviceOnly) {
+            append(",\"stats\":")
+            appendStats(stats)
+        }
         append(",\"titles\":")
         appendTitles(titles)
         append(",\"skills\":")
         appendSkills(skills)
-        append(",\"healthDays\":")
-        appendHealthDays(healthDays)
-        append(",\"measurements\":")
-        appendMeasurements(measurements)
+        if (includeDeviceOnly) {
+            append(",\"healthDays\":")
+            appendHealthDays(healthDays)
+            append(",\"measurements\":")
+            appendMeasurements(measurements)
+        }
         append(",\"exercises\":")
         appendExercises(exercises)
         if (idle != null) {
@@ -109,7 +115,12 @@ object ExportWriter {
         append("}")
     }
 
-    private fun StringBuilder.appendProfile(profile: PlayerProfile, heightCm: Double?, sex: String?) {
+    private fun StringBuilder.appendProfile(
+        profile: PlayerProfile,
+        heightCm: Double?,
+        sex: String?,
+        includeDeviceOnly: Boolean,
+    ) {
         append("{\"name\":")
         appendEscaped(profile.name)
         append(",\"totalXp\":")
@@ -117,11 +128,15 @@ object ExportWriter {
         append(",\"currentTitleId\":")
         appendNullable(profile.currentTitleId) { appendEscaped(it) }
         // Height and sex feed every BMI/FFMI/calorie estimate — dropping them
-        // silently degraded the owner's headline metrics on restore.
-        append(",\"heightCm\":")
-        appendNullable(heightCm) { append(it) }
-        append(",\"sex\":")
-        appendNullable(sex) { appendEscaped(it) }
+        // silently degraded the owner's headline metrics on restore. They are
+        // body data, so the cloud copy leaves them out and the importer keeps
+        // the device's own values.
+        if (includeDeviceOnly) {
+            append(",\"heightCm\":")
+            appendNullable(heightCm) { append(it) }
+            append(",\"sex\":")
+            appendNullable(sex) { appendEscaped(it) }
+        }
         append(",\"inkStyle\":")
         append(profile.inkStyle)
         append("}")
@@ -207,7 +222,7 @@ object ExportWriter {
 
     private fun StringBuilder.appendSessions(
         sessions: List<Pair<WorkoutSession, List<SessionSet>>>,
-        includePrivateNotes: Boolean,
+        includeDeviceOnly: Boolean,
     ) {
         append("[")
         sessions.forEachIndexed { si, (session, sets) ->
@@ -224,7 +239,7 @@ object ExportWriter {
             // The private note belongs in the user's own archive — it is kept
             // out of the CLOUD, not out of their backup. Dropping it here meant
             // a restore silently destroyed it.
-            if (includePrivateNotes) {
+            if (includeDeviceOnly) {
                 append(",\"privateNote\":").appendEscaped(session.privateNote)
             }
             // Only written when true so archives from before the CSV import

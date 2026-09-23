@@ -1455,11 +1455,11 @@ class Repository(
 
     suspend fun exportJson(): String = exportArchive().json
 
-    // includePrivateNotes = false is the CLOUD copy (see ExportWriter.write):
-    // the app promises in user-visible UI (SessionScreen.kt:1081) that the
-    // private note never leaves this device, so a cloud backup must omit it.
-    // Default true keeps exportJson()/EXPORT ARCHIVE byte-identical.
-    suspend fun exportArchive(includePrivateNotes: Boolean = true): ExportResult {
+    // includeDeviceOnly = false is the CLOUD copy (see ExportWriter.write): the
+    // private note, body readings, measurements, height, sex and Health
+    // Connect days are promised never to leave this device, so a cloud backup
+    // omits them. Default true keeps exportJson()/EXPORT ARCHIVE complete.
+    suspend fun exportArchive(includeDeviceOnly: Boolean = true): ExportResult {
         val profileEntity = profileDao.get()
         val profile = profileEntity?.let {
             PlayerProfile(
@@ -1581,7 +1581,7 @@ class Repository(
             crestFrames = crestFrames,
             relics = relics,
             exportedAtMs = System.currentTimeMillis(),
-            includePrivateNotes = includePrivateNotes,
+            includeDeviceOnly = includeDeviceOnly,
         )
         return ExportResult(json, exportProblems)
     }
@@ -1604,6 +1604,11 @@ class Repository(
      * half-restored database. The seeded exercise catalogue survives; archive
      * exercises are matched by NAME (ids differ between installs) and created
      * when missing.
+     *
+     * A CLOUD copy ([ExportReader.Archive.deviceDataOmitted]) never carried
+     * the device-only data, so the device's own readings, measurements and
+     * Health Connect days are kept rather than cleared: restoring training
+     * must never wipe a body history the backup was not allowed to hold.
      */
     suspend fun importArchive(json: String): Result<ImportResult> = Result.runCatching {
         val archive = ExportReader.read(json).getOrThrow()
@@ -1611,11 +1616,13 @@ class Repository(
                 // User data goes; the seeded exercise catalogue stays.
                 presetDao.clearAll()
                 sessionDao.clearAll()
-                statDao.clearAll()
                 titleDao.clearAll()
                 skillPracticeDao.clearAll()
-                healthDayDao.clearAll()
-                measurementDao.clearAll()
+                if (!archive.deviceDataOmitted) {
+                    statDao.clearAll()
+                    healthDayDao.clearAll()
+                    measurementDao.clearAll()
+                }
 
                 // v5 archives carry height/sex/inkStyle; a v4 archive carries
                 // none, so absence falls back to the LOCAL value instead of
