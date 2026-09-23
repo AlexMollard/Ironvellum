@@ -736,6 +736,25 @@ fun DashboardScreen(
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
+            } else if (ui.presets.isEmpty()) {
+                // A lifter who skipped onboarding has no routine at all: every
+                // day reads REST DAY and "pick another day above" dead-ends on
+                // the same card. Name the real state and offer the way out.
+                Text(
+                    "NO WEEK YET",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    color = IronvellumColors.SystemGreen,
+                    letterSpacing = 1.sp,
+                )
+                Text(
+                    "Nothing is scheduled. Build a training week and it lands here.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+                Spacer(Modifier.weight(1f))
+                IronvellumButton(label = "Build a Week", onClick = onOpenPresets, modifier = Modifier.fillMaxWidth())
             } else {
                 Text(
                     "REST DAY",
@@ -750,7 +769,8 @@ fun DashboardScreen(
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
-                // The rest-day art was drawn for this panel and never wired in,
+            }
+            // The rest-day art was drawn for this panel and never wired in,
                 // leaving the quest card's slack as dead space.
                 Spacer(Modifier.weight(1f))
                 Image(
@@ -768,7 +788,6 @@ fun DashboardScreen(
                         .alpha(0.6f),
                 )
                 Spacer(Modifier.weight(1f))
-            }
         }
 
         // Last result and the way into the full routine: one quiet line each.

@@ -168,7 +168,13 @@ internal class LifterViewModel(
                         )
                     }
                 }
-                .onFailure { _ui.value = _ui.value.copy(allyState = AllyState.None, allyBusy = false) }
+                .onFailure {
+                    _ui.value = _ui.value.copy(
+                        allyState = AllyState.None,
+                        allyBusy = false,
+                        allyError = it.message ?: it::class.simpleName ?: "Unknown failure",
+                    )
+                }
         }
     }
 }
@@ -246,10 +252,11 @@ internal fun LifterScreen(
                     onClick = {},
                 )
             }
-            // The ally read itself failed: say so instead of silently guessing.
-            if (ui.allyError != null && ui.allyState == null) {
+            // The ally read itself failed, or a sent request was refused: say
+            // so instead of silently guessing or snapping the button back.
+            if (ui.allyError != null && (ui.allyState == null || ui.allyState == AllyState.None)) {
                 Spacer(Modifier.height(6.dp))
-                InlineErrorBanner("Ally status unknown — the Ledger did not answer: ${ui.allyError}")
+                InlineErrorBanner("Ally request failed: ${ui.allyError}")
             }
         }
         Spacer(Modifier.height(14.dp))

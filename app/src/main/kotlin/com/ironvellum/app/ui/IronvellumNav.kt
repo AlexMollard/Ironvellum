@@ -311,6 +311,7 @@ fun IronvellumRoot() {
                         onQuickSession = { id -> navController.navigate(Routes.session(id)) },
                         onOpenExercises = { navController.navigate(Routes.EXERCISES) },
                         onOpenLog = { navController.navigate(Routes.WORKOUT_LOG) },
+                        onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                     )
                 }
                 composable(Routes.EXERCISES) {

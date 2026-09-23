@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.stats
 
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -24,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -291,12 +294,50 @@ fun MeasurementDetailScreen(
                                 color = IronvellumColors.InkMuted,
                             )
                         }
-                        IconButton(onClick = { viewModel.delete(entry.id) }) {
-                            Icon(
-                                Icons.Outlined.Delete,
-                                contentDescription = "Delete reading",
-                                tint = IronvellumColors.InkMuted,
-                            )
+                        // One tap on a trash icon used to erase the reading
+                        // outright. Arm first, name the cost, match the
+                        // WorkoutLog row treatment.
+                        var armed by remember { mutableStateOf(false) }
+                        if (armed) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "KEEP",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontFamily = ChakraPetch,
+                                    color = IronvellumColors.InkMuted,
+                                    letterSpacing = IronvellumTracking.InlineLabel,
+                                    modifier = Modifier
+                                        .clip(MaterialTheme.shapes.extraSmall)
+                                        .clickable { armed = false }
+                                        .heightIn(min = 24.dp)
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                        .wrapContentHeight(),
+                                )
+                                Text(
+                                    "DELETE",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontFamily = ChakraPetch,
+                                    color = IronvellumColors.DangerRed,
+                                    letterSpacing = IronvellumTracking.InlineLabel,
+                                    modifier = Modifier
+                                        .clip(MaterialTheme.shapes.extraSmall)
+                                        .clickable {
+                                            armed = false
+                                            viewModel.delete(entry.id)
+                                        }
+                                        .heightIn(min = 24.dp)
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                        .wrapContentHeight(),
+                                )
+                            }
+                        } else {
+                            IconButton(onClick = { armed = true }) {
+                                Icon(
+                                    Icons.Outlined.Delete,
+                                    contentDescription = "Delete reading",
+                                    tint = IronvellumColors.InkMuted,
+                                )
+                            }
                         }
                     }
                 }

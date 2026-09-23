@@ -101,6 +101,7 @@ fun PresetsScreen(
     onQuickSession: (Long) -> Unit,
     onOpenExercises: () -> Unit,
     onOpenLog: () -> Unit,
+    onOpenWorkout: (Long) -> Unit,
     viewModel: PresetsViewModel =
         viewModel(factory = viewModelFactory { initializer { PresetsViewModel(ironvellumRepository()) } }),
 ) {
@@ -284,7 +285,14 @@ fun PresetsScreen(
             // show the top five, and FULL LOG above already leads to
             // the complete, month-grouped history.
             ui.history.take(ACTIVITY_LOG_ROWS).forEach { (session, sets) ->
-                InkPanel(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
+                // The same rows are tappable in the full log; here they only
+                // informed. A completed row now opens what it names.
+                InkPanel(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                        .clickable { onOpenWorkout(session.id) },
+                ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Column(Modifier.weight(1f)) {
                             Text(session.label, style = MaterialTheme.typography.titleSmall)

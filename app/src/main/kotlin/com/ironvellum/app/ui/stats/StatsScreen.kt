@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.stats
 
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -397,9 +398,47 @@ fun StatsScreen(
                                     color = IronvellumColors.SystemGreen,
                                 )
                             }
-                            IconButton(onClick = { viewModel.deleteStat(stat.id) }) {
+                        // One tap on the trash icon used to erase the weigh-in
+                        // outright; it feeds the strength score's weight
+                        // interpolation. Arm first, match the WorkoutLog row.
+                        var armed by remember { mutableStateOf(false) }
+                        if (armed) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Text(
+                                    "KEEP",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontFamily = ChakraPetch,
+                                    color = IronvellumColors.InkMuted,
+                                    letterSpacing = IronvellumTracking.InlineLabel,
+                                    modifier = Modifier
+                                        .clip(MaterialTheme.shapes.extraSmall)
+                                        .clickable { armed = false }
+                                        .heightIn(min = 24.dp)
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                        .wrapContentHeight(),
+                                )
+                                Text(
+                                    "DELETE",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontFamily = ChakraPetch,
+                                    color = IronvellumColors.DangerRed,
+                                    letterSpacing = IronvellumTracking.InlineLabel,
+                                    modifier = Modifier
+                                        .clip(MaterialTheme.shapes.extraSmall)
+                                        .clickable {
+                                            armed = false
+                                            viewModel.deleteStat(stat.id)
+                                        }
+                                        .heightIn(min = 24.dp)
+                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                        .wrapContentHeight(),
+                                )
+                            }
+                        } else {
+                            IconButton(onClick = { armed = true }) {
                                 Icon(Icons.Outlined.Delete, contentDescription = "Delete reading", tint = IronvellumColors.InkMuted)
                             }
+                        }
                         }
                     }
                 }

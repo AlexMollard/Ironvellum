@@ -309,8 +309,23 @@ fun PresetEditorScreen(
                 Text("Save Preset")
             }
             if (ui.presetId != null) {
-                OutlinedButton(onClick = { viewModel.delete(onDone) }, shape = MaterialTheme.shapes.small) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                // Delete used to fire on the first tap; a new user prodding the
+                // button lost the whole training day. Arm first, name the cost.
+                var armedDelete by remember { mutableStateOf(false) }
+                OutlinedButton(
+                    onClick = {
+                        if (armedDelete) {
+                            viewModel.delete(onDone)
+                        } else {
+                            armedDelete = true
+                        }
+                    },
+                    shape = MaterialTheme.shapes.small,
+                ) {
+                    Text(
+                        if (armedDelete) "Tap again to delete" else "Delete",
+                        color = MaterialTheme.colorScheme.error,
+                    )
                 }
             }
         }

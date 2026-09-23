@@ -109,6 +109,8 @@ data class FeedUi(
     val friends: Map<String, FriendRow> = emptyMap(),
     /** Optimistically-sent ally requests, settled from the server once it answers. */
     val requestedAlly: Set<String> = emptySet(),
+    /** A sent ally request that the server refused; null once the next attempt starts. */
+    val allyError: String? = null,
     val likers: Map<String, List<Liker>> = emptyMap(),
     val likersErrors: Map<String, String> = emptyMap(),
     val likersLoadingSessionId: String? = null,
@@ -255,7 +257,7 @@ class FeedViewModel(
         // Any existing row means already requested, incoming, or allies — a second
         // tap must never fire another insert.
         if (userId in _ui.value.friends || userId in _ui.value.requestedAlly) return
-        _ui.value = _ui.value.copy(requestedAlly = _ui.value.requestedAlly + userId)
+        _ui.value = _ui.value.copy(requestedAlly = _ui.value.requestedAlly + userId, allyError = null)
         viewModelScope.launch {
             cloudSync.requestFriendById(userId)
                 .onSuccess {
@@ -263,7 +265,14 @@ class FeedViewModel(
                         _ui.value = _ui.value.copy(friends = rows.associateBy { it.userId })
                     }
                 }
-                .onFailure { _ui.value = _ui.value.copy(requestedAlly = _ui.value.requestedAlly - userId) }
+                .onFailure {
+                    // The optimistic revert used to be the whole story: the row
+                    // snapped back and nothing said why.
+                    _ui.value = _ui.value.copy(
+                        requestedAlly = _ui.value.requestedAlly - userId,
+                        allyError = it.message ?: it::class.simpleName ?: "Unknown failure",
+                    )
+                }
         }
     }
 
@@ -354,6 +363,10 @@ fun FeedScreen(
                 // banner rides above the list, rows stay in place.
                 if (ui.error != null) {
                     InlineErrorBanner("The newest fetch failed — these sessions are the last synced board: ${ui.error}")
+                    Spacer(Modifier.height(10.dp))
+                }
+                ui.allyError?.let {
+                    InlineErrorBanner("Ally request failed: $it")
                     Spacer(Modifier.height(10.dp))
                 }
                 Feed(
