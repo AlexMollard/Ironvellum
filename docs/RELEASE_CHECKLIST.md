@@ -33,8 +33,8 @@ Windows: `.\gradlew.bat <task>`.
    whose social features can never sign in — treat them as mandatory for the
    release build and confirm the values are non-blank before step 3.
 5. Verify configuration succeeds even without keys:
-   `.\gradlew.bat :app:assembleRelease` (with keys: check
-   `app/build/outputs/apk/release/` is signed; without: unsigned APK is fine
+   `.\gradlew.bat :app:assembleFossRelease` (with keys: check
+   `app/build/outputs/apk/foss/release/` is signed; without: unsigned APK is fine
    for CI).
 
 ## 2. Version bump
@@ -47,9 +47,9 @@ Windows: `.\gradlew.bat <task>`.
 Run all three; all must pass before anything is uploaded:
 
 ```
-.\gradlew.bat :app:testDebugUnitTest
-.\gradlew.bat :app:lintRelease        # baseline: 0 errors / 31 warnings
-.\gradlew.bat :app:assembleRelease
+.\gradlew.bat :app:testFossDebugUnitTest
+.\gradlew.bat :app:lintFossRelease        # baseline: 0 errors / 31 warnings
+.\gradlew.bat :app:assembleFossRelease
 ```
 
 ## 4. Supabase migrations

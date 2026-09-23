@@ -106,12 +106,14 @@ source of truth: the cloud is a backup, never an authority.
 ```bash
 git clone https://github.com/AlexMollard/Ironvellum.git
 cd Ironvellum
-./gradlew :app:assembleDebug
+./gradlew :app:assembleFossDebug
 ```
 
-The app runs with no backend. Supabase and Google sign-in keys are read from
-`local.properties` and written into `BuildConfig`; leave them blank and the
-cloud features stay switched off.
+The app runs with no backend. The cloud defaults are committed in
+`cloud-defaults.properties` (public URL + publishable key — row-level security
+is what protects the data); `local.properties` overrides them. Google sign-in
+keys are read from `local.properties` only and only reach the `play` flavour.
+Build `assemblePlayDebug` for the Google sign-in variant.
 
 ```properties
 # local.properties, gitignored
@@ -148,16 +150,16 @@ python tools/device.py labels    # visible text, for finding a tap target
 > With a personal phone attached, pin the run to the emulator or it will destroy
 > real training history:
 > ```bash
-> ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest
+> ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedFossDebugAndroidTest
 > ```
 
 ## Testing
 
 | Command | What it is there to catch |
 |---|---|
-| `:app:testDebugUnitTest` | Scoring maths, progression, titles, catalogue invariants, the cloud wire format, crash journal, migration registry |
-| `:app:connectedDebugAndroidTest` | Room migrations against real SQLite, data survival across upgrades, navigation reachability, accessibility floors, and the user journeys (workout loop, skill practice, preset auto-fill, first run, delete) |
-| `:app:lintRelease` | Release-variant lint; triage the SARIF report, not the HTML |
+| `:app:testFossDebugUnitTest` | Scoring maths, progression, titles, catalogue invariants, the cloud wire format, crash journal, migration registry |
+| `:app:connectedFossDebugAndroidTest` | Room migrations against real SQLite, data survival across upgrades, navigation reachability, accessibility floors, and the user journeys (workout loop, skill practice, preset auto-fill, first run, delete) |
+| `:app:lintFossRelease` | Release-variant lint; triage the SARIF report, not the HTML |
 | `supabase/test/assert_all.sql` | What no Kotlin test can see: which tables have row security, who may execute which function, which columns a lifter may write, whether a feed row can pin itself |
 
 The backend assertions need Docker rather than a device:

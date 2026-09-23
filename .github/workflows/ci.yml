@@ -68,23 +68,23 @@ jobs:
           } > local.properties
 
       - name: Assemble debug
-        run: ./gradlew :app:assembleDebug
+        run: ./gradlew :app:assembleFossDebug
 
       - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest
+        run: ./gradlew :app:testFossDebugUnitTest
 
       - name: Release lint
-        run: ./gradlew :app:lintRelease
+        run: ./gradlew :app:lintFossRelease
 
       # assembleDebug does NOT compile src/androidTest, so instrumented tests
       # (Room migrations etc.) can be committed broken and go unnoticed until
       # someone attaches a device. This compiles them without needing one.
       - name: Compile instrumented tests
-        run: ./gradlew :app:assembleDebugAndroidTest
+        run: ./gradlew :app:assembleFossDebugAndroidTest
 
       # A signed release is a local/owner step: the keystore is a credential
       # and must never enter CI. Release-variant lint coverage is already
-      # provided by the :app:lintRelease step above; the signed APK is built
+      # provided by the :app:lintFossRelease step above; the signed APK is built
       # and verified locally only.
 
       - name: Upload lint reports
@@ -109,8 +109,8 @@ jobs:
         with:
           name: test-reports
           path: |
-            app/build/reports/tests/testDebugUnitTest/
-            app/build/test-results/testDebugUnitTest/
+            app/build/reports/tests/testFossDebugUnitTest/
+            app/build/test-results/testFossDebugUnitTest/
 
   # The instrumented suite is where migrations against real SQLite, navigation
   # reachability, the accessibility floors and the three user journeys are
@@ -213,7 +213,7 @@ jobs:
           # `Task '\' not found`.
           script: |
             free -h; df -h /
-            ./gradlew :app:connectedDebugAndroidTest -Dorg.gradle.jvmargs="-Xmx2g -Dfile.encoding=UTF-8" -Pkotlin.daemon.jvmargs=-Xmx1g
+            ./gradlew :app:connectedFossDebugAndroidTest -Dorg.gradle.jvmargs="-Xmx2g -Dfile.encoding=UTF-8" -Pkotlin.daemon.jvmargs=-Xmx1g
             free -h
 
       - name: Upload instrumented results

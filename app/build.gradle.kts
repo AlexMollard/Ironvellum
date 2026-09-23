@@ -7,10 +7,15 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
-// Backend config lives in local.properties (gitignored). The publishable key is
-// safe in a shipped APK — row-level security is what protects the data — but
-// keeping it out of the repo means a fork gets its own project, not ours.
+// Backend config: cloud-defaults.properties (committed) holds the public
+// Supabase URL and publishable key — both are already inside every shipped APK
+// and row-level security is what protects the data, so committing them keeps
+// F-Droid's build server (which has no local.properties) able to build.
+// local.properties overrides any key, so a fork or a private backend just sets
+// its own values there. google.webClientId stays local.properties-only: only
+// the play flavour uses it.
 val backend = Properties().apply {
+    rootProject.file("cloud-defaults.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
     rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
 }
 
@@ -75,6 +80,22 @@ android {
         )
     }
 
+    // Two distributions from one source: `foss` carries no proprietary
+    // libraries (F-Droid + GitHub Releases) and shows support links; `play`
+    // adds Google sign-in and shows none of them (Play policy on donation
+    // links). Same applicationId — different signing keys keep them apart.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("foss") {
+            dimension = "distribution"
+            buildConfigField("boolean", "SUPPORT_LINKS", "true")
+        }
+        create("play") {
+            dimension = "distribution"
+            buildConfigField("boolean", "SUPPORT_LINKS", "false")
+        }
+    }
+
     if (signingComplete) {
         signingConfigs {
             create("release") {
@@ -121,41 +142,57 @@ android {
     }
 }
 
-// Fail fast on a misconfigured release: a release APK built with blank Supabase
+// Fail fast on a misconfigured release: a release APK built with blank cloud
 // or Google credentials ships cloud/sign-in/social features silently dead.
-// Debug builds keep working with blanks. Scoped via dependsOn on the release
-// tasks (not configuration time) so configuring assembleDebug never fails on
-// absent release secrets.
-val validateReleaseBackend by tasks.registering {
-    doLast {
-        val missing = buildList {
-            if (backend.getProperty("supabase.url", "").isBlank()) add("supabase.url")
-            if (backend.getProperty("supabase.key", "").isBlank()) add("supabase.key")
-            if (backend.getProperty("google.webClientId", "").isBlank()) add("google.webClientId")
-        }
-        check(missing.isEmpty()) {
-            "Release build requires backend credentials. " +
-                "Missing local.properties keys: ${missing.joinToString(", ")}. " +
-                "(Debug builds do not need them.)"
-        }
-        // Warn, don't fail: an unsigned assembleRelease must stay usable as a
-        // local smoke build, so silence about app-release-unsigned.apk is the
-        // thing to remove, not the build itself.
-        if (!signingComplete) {
-            logger.lifecycle(
-                "WARNING: release will be UNSIGNED (app-release-unsigned.apk). " +
-                    "For a signed build set local.properties keys: " +
-                    "ironvellum.keystore.path, ironvellum.keystore.password, " +
-                    "ironvellum.key.alias, ironvellum.key.password " +
-                    "(or env IRONVELLUM_KEYSTORE_PATH, IRONVELLUM_KEYSTORE_PASSWORD, " +
-                    "IRONVELLUM_KEY_ALIAS, IRONVELLUM_KEY_PASSWORD)."
-            )
+// foss needs only the public cloud values (committed in cloud-defaults, so a
+// missing local.properties — F-Droid's situation — still builds); play also
+// needs google.webClientId, which stays local-only. Debug builds keep working
+// with blanks. Scoped via dependsOn on the flavoured release tasks (not
+// configuration time) so configuring assembleFossDebug never fails on absent
+// release secrets.
+val validateFossReleaseBackend by tasks.registering {
+    doLast { validateBackend(needsWebClientId = false) }
+}
+val validatePlayReleaseBackend by tasks.registering {
+    doLast { validateBackend(needsWebClientId = true) }
+}
+
+fun validateBackend(needsWebClientId: Boolean) {
+    val missing = buildList {
+        if (backend.getProperty("supabase.url", "").isBlank()) add("supabase.url")
+        if (backend.getProperty("supabase.key", "").isBlank()) add("supabase.key")
+        if (needsWebClientId && backend.getProperty("google.webClientId", "").isBlank()) {
+            add("google.webClientId")
         }
     }
+    check(missing.isEmpty()) {
+        "Release build requires backend credentials. " +
+            "Missing property keys: ${missing.joinToString(", ")}. " +
+            "(Debug builds do not need them.)"
+    }
+    // Warn, don't fail: an unsigned assembleRelease must stay usable as a
+    // local smoke build, so silence about app-release-unsigned.apk is the
+    // thing to remove, not the build itself.
+    if (!signingComplete) {
+        logger.lifecycle(
+            "WARNING: release will be UNSIGNED (app-release-unsigned.apk). " +
+                "For a signed build set local.properties keys: " +
+                "ironvellum.keystore.path, ironvellum.keystore.password, " +
+                "ironvellum.key.alias, ironvellum.key.password " +
+                "(or env IRONVELLUM_KEYSTORE_PATH, IRONVELLUM_KEYSTORE_PASSWORD, " +
+                "IRONVELLUM_KEY_ALIAS, IRONVELLUM_KEY_PASSWORD)."
+        )
+    }
 }
-tasks.matching { it.name in setOf("assembleRelease", "bundleRelease", "packageRelease") }
-    .configureEach { dependsOn(validateReleaseBackend) }
-tasks.matching { it.name == "packageRelease" }.configureEach { mustRunAfter(validateReleaseBackend) }
+val releaseGate = mapOf(
+    "validateFossReleaseBackend" to setOf("assembleFossRelease", "bundleFossRelease", "packageFossRelease"),
+    "validatePlayReleaseBackend" to setOf("assemblePlayRelease", "bundlePlayRelease", "packagePlayRelease"),
+)
+releaseGate.forEach { (gate, names) ->
+    tasks.matching { it.name in names }.configureEach { dependsOn(gate) }
+    tasks.matching { it.name in names.filter { n -> n.startsWith("package") } }
+        .configureEach { mustRunAfter(gate) }
+}
 
 // Export Room's schema JSON for migration testing and history.
 ksp {
@@ -181,9 +218,12 @@ dependencies {
     implementation(libs.supabase.auth)
     implementation(libs.supabase.postgrest)
     implementation(libs.ktor.client.okhttp)
-    implementation(libs.androidx.credentials)
-    implementation(libs.androidx.credentials.play.services)
-    implementation(libs.google.id)
+    // Proprietary Google credential libraries: play flavour only. The foss
+    // APK must contain none of these classes (F-Droid policy) — enforced by
+    // the dex probe in the release checklist.
+    add("playImplementation", libs.androidx.credentials)
+    add("playImplementation", libs.androidx.credentials.play.services)
+    add("playImplementation", libs.google.id)
     ksp(libs.androidx.room.compiler)
 
     debugImplementation(libs.androidx.ui.tooling)

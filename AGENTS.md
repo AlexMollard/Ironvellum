@@ -41,8 +41,8 @@ physical device is only used when named explicitly with `--serial`. Any manual
 Gradle invocation must pin it by hand:
 
 ```bash
-ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedDebugAndroidTest
+ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedFossDebugAndroidTest
 ```
 
-Installing a build on the phone (`:app:installDebug`) is safe and is how visual
+Installing a build on the phone (`:app:installFossDebug`) is safe and is how visual
 changes get verified.

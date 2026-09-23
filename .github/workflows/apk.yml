@@ -55,7 +55,7 @@ jobs:
           } > local.properties
 
       - name: Assemble debug
-        run: ./gradlew :app:assembleDebug
+        run: ./gradlew :app:assembleFossDebug
 
       # Name the artifact after the commit it came from. Someone holding an APK
       # a week later otherwise has no way to tell which build they are running,
@@ -63,9 +63,9 @@ jobs:
       - name: Describe the build
         id: describe
         run: |
-          apk=$(find app/build/outputs/apk/debug -name '*.apk' -print -quit)
+          apk=$(find app/build/outputs/apk/foss/debug -name '*.apk' -print -quit)
           if [ -z "$apk" ]; then
-            echo "::error::assembleDebug produced no APK under app/build/outputs/apk/debug"
+            echo "::error::assembleFossDebug produced no APK under app/build/outputs/apk/foss/debug"
             exit 1
           fi
           echo "path=$apk" >> "$GITHUB_OUTPUT"

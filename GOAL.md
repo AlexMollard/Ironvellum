@@ -13,8 +13,8 @@ gamification layer (XP, levels, titles) reacts to completed workouts. Installabl
 on the S25 Ultra, verifiable via adb.
 
 ## Success criteria
-1. `.\gradlew :app:assembleDebug` exits 0.
-2. `.\gradlew :app:testDebugUnitTest` exits 0, with tests covering FFMI/BMI math,
+1. `.\gradlew :app:assembleFossDebug` exits 0.
+2. `.\gradlew :app:testFossDebugUnitTest` exits 0, with tests covering FFMI/BMI math,
    the XP/level curve, and title-unlock rules.
 3. App installs and launches on the S25 Ultra via adb without crashing.
 4. Workout flow works on device: create a preset (e.g. "Heavy Pull" with exercises,

@@ -82,8 +82,10 @@ def counts(pattern: str) -> tuple[int, int]:
     return total, failed
 
 
-def lint_summary() -> str:
-    path = os.path.join(ROOT, "app/build/reports/lint-results-release.txt")
+def lint_summary(flavour: str) -> str:
+    path = os.path.join(
+        ROOT, "app/build/reports", f"lint-results-{flavour}Release.txt"
+    )
     if not os.path.exists(path):
         return "no report"
     with open(path, encoding="utf-8", errors="replace") as handle:
@@ -178,6 +180,8 @@ def backend() -> int:
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run the Ironvellum gate locally.")
     parser.add_argument("--serial", help="device to run instrumented tests on")
+    parser.add_argument("--flavour", choices=("foss", "play"), default="foss",
+                        help="distribution flavour to build and test (default foss)")
     parser.add_argument("--no-device", action="store_true", help="skip instrumented tests")
     parser.add_argument("--backend", action="store_true", help="also assert the Supabase schema")
     args = parser.parse_args()
@@ -189,14 +193,27 @@ def main() -> int:
             return 1
         print(f"-- instrumented tests pinned to {serial}")
 
-    tasks = [":app:assembleDebug", ":app:testDebugUnitTest", ":app:lintRelease"]
+    # The named flavour is built, tested and linted; the other flavour's debug
+    # APK and androidTest compile too, so a play-only break (Google sign-in
+    # sources, playImplementation deps) cannot rot unnoticed while everyone
+    # runs the foss gate.
+    other = "play" if args.flavour == "foss" else "foss"
+    fl = args.flavour.capitalize()
+    other_fl = other.capitalize()
+    tasks = [
+        f":app:assemble{fl}Debug",
+        f":app:test{fl}DebugUnitTest",
+        f":app:lint{fl}Release",
+        f":app:assemble{other_fl}Debug",
+        f":app:assemble{other_fl}DebugAndroidTest",
+    ]
     if serial:
-        tasks.insert(2, ":app:connectedDebugAndroidTest")
+        tasks.insert(3, f":app:connected{fl}DebugAndroidTest")
     else:
         # Without a device, at least prove the instrumented sources still
         # compile — assembleDebug does not build src/androidTest, so they can
         # be committed broken and nobody notices until a cable appears.
-        tasks.append(":app:assembleDebugAndroidTest")
+        tasks.append(f":app:assemble{fl}DebugAndroidTest")
 
     print(f"-- gradle: {' '.join(tasks)}")
     failures = []
@@ -208,15 +225,18 @@ def main() -> int:
         if backend():
             failures.append("backend")
 
-    unit_total, unit_failed = counts("app/build/test-results/testDebugUnitTest/*.xml")
+    unit_total, unit_failed = counts(
+        f"app/build/test-results/test{fl}DebugUnitTest/*.xml"
+    )
     inst_total, inst_failed = counts(
         "app/build/outputs/androidTest-results/connected/**/*.xml"
     )
     print("\n=== gate ===")
+    print(f"  flavour       {args.flavour}")
     print(f"  unit          {unit_total:>4} tests, {unit_failed} failed")
     if serial:
         print(f"  instrumented  {inst_total:>4} tests, {inst_failed} failed")
-    print(f"  lint          {lint_summary()}")
+    print(f"  lint          {lint_summary(fl)}")
     if args.backend:
         print(f"  backend       {'FAILED' if 'backend' in failures else 'assertions passed'}")
 
