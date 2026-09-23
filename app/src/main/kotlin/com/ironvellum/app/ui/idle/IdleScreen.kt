@@ -820,8 +820,8 @@ private fun CapWindow() {
     InkPanel(accent = IronvellumColors.Bracket) {
         Text(
             "The figures hold full strength for ${Idle.FULL_RATE_HOURS.toInt()} hours, " +
-                "then tire over the next ${Idle.TAPER_WINDOW_HOURS.toInt()} — but they never stop, " +
-                "labouring on at a tenth of their strength until you return.",
+                "then tire over the next ${Idle.TAPER_WINDOW_HOURS.toInt()} and labour on at a tenth. " +
+                "One absence never pays more than ${(Idle.MAX_EFFECTIVE_HOURS / 24).toInt()} full days of work.",
             style = MaterialTheme.typography.bodyMedium,
             color = IronvellumColors.InkMuted,
             textAlign = TextAlign.Start,

@@ -14,7 +14,8 @@ package com.ironvellum.app.domain
  * Balance intent: RECENT TRAINING is the engine — a committed week reaches x4
  * and dominates everything else. Skills are a permanent bonus that approaches
  * x2 asymptotically, so every unlock helps forever but the whole tree can
- * never out-earn a trained week. Decay to the floor punishes stopping.
+ * never out-earn a trained week. Time away is paid generously for a normal
+ * rest week and then stops: absence must never climb the muster board.
  */
 data class IdleState(
     val essence: Long,
@@ -32,13 +33,22 @@ object Idle {
 
     /**
      * After the full day, output falls off linearly across this window down to
-     * [MIN_EFFICIENCY] — and then holds there forever. The figures never stop
-     * working; they just work badly while you are gone.
+     * [MIN_EFFICIENCY], and then holds there until [MAX_EFFECTIVE_HOURS] of
+     * work are banked.
      */
     const val TAPER_WINDOW_HOURS = 48.0
 
-    /** Output never drops below a tenth of the roll's rate, however long you are away. */
+    /** Past the taper the roll labours on at a tenth of its rate, up to the cap. */
     const val MIN_EFFICIENCY = 0.10
+
+    /**
+     * The most one absence can ever pay: three full days of work. Idle
+     * essence is what the muster board ranks on, and without a ceiling the
+     * floor paid forever — a year away banked 919 effective hours, 38 times a
+     * day, so NOT training climbed the board. A normal rest week (60 hours) is
+     * untouched; the cap is reached only after 12 days away.
+     */
+    const val MAX_EFFECTIVE_HOURS = 72.0
 
     // Rate floor: with zero recent training the roll still scavenges a trickle.
     private const val FLOOR = 10.0
@@ -98,11 +108,12 @@ object Idle {
     }
 
     /**
-     * Essence banked for time away. Three phases, and the roll NEVER stops:
+     * Essence banked for time away, in three phases and one ceiling:
      *
      *  - 0 .. 24h        full output, an untouched day costs you nothing
      *  - 24 .. 72h       output falls linearly from 100% to [MIN_EFFICIENCY]
-     *  - beyond 72h      output holds at [MIN_EFFICIENCY] forever
+     *  - beyond 72h      output holds at [MIN_EFFICIENCY]
+     *  - at any length   never more than [MAX_EFFECTIVE_HOURS] of work
      *
      * Effective hours are the integral of that efficiency, computed piecewise
      * so every value can be checked by hand:
@@ -110,6 +121,7 @@ object Idle {
      *   48h  -> 24 + 24 * 0.775  = 42.6
      *   72h  -> 24 + 48 * 0.55   = 50.4
      *   7d   -> 50.4 + 96 * 0.10 = 60.0
+     *   12d+ -> 72.0 (capped)
      */
     fun accrued(state: IdleState, rate: IdleRate, nowMs: Long): Long {
         val amount = accruedExact(state, rate, nowMs)
@@ -124,9 +136,9 @@ object Idle {
      */
     fun accruedExact(state: IdleState, rate: IdleRate, nowMs: Long): Double {
         // No baseline yet: a freshly created idle_state row carries
-        // lastCollectedAtMs = 0, and because the curve never stops paying, the
-        // epoch reads as a 56-year absence and banks half a million essence on
-        // a brand new account. No baseline means nothing has been earned.
+        // lastCollectedAtMs = 0, which would read as a 56-year absence and
+        // bank a full capped absence on a brand new account. No baseline
+        // means nothing has been earned.
         if (state.lastCollectedAtMs <= 0L) return 0.0
         val elapsedMs = nowMs - state.lastCollectedAtMs
         // Clock moved backwards (manual change, timezone/DST shift): collect nothing.
@@ -146,7 +158,7 @@ object Idle {
                 val rampArea = TAPER_WINDOW_HOURS * (1.0 + MIN_EFFICIENCY) / 2.0
                 FULL_RATE_HOURS + rampArea + (hours - taperEnd) * MIN_EFFICIENCY
             }
-        }
+        }.coerceAtMost(MAX_EFFECTIVE_HOURS)
         val perHour = if (rate.perHour.isFinite()) rate.perHour.coerceAtLeast(0.0) else 0.0
         val amount = perHour * effectiveHours
         return if (amount.isFinite()) amount else 0.0

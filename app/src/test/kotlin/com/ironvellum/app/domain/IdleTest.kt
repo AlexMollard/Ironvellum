@@ -77,7 +77,7 @@ class IdleTest {
     }
 
     @Test
-    fun `output tapers after a day but never stops`() {
+    fun `output tapers after a day and keeps paying through a rest week`() {
         val s = state()
         val rate = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 200.0, skillsUnlocked = 0, streakDays = 0)
 
@@ -85,7 +85,7 @@ class IdleTest {
         val threeDays = Idle.accrued(s, rate, nowMs = base + 3 * dayMs)
         val sevenDays = Idle.accrued(s, rate, nowMs = base + 7 * dayMs)
 
-        // Still growing at every horizon — the army never fully stops.
+        // Still growing through a normal rest week.
         assertTrue(threeDays > oneDay)
         assertTrue(sevenDays > threeDays)
         // But the extra days are worth far less than the first: 48h of taper
@@ -95,15 +95,27 @@ class IdleTest {
     }
 
     @Test
-    fun `a long absence still earns the ten percent floor`() {
+    fun `past the taper a day pays the ten percent floor`() {
         val s = state()
         val rate = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 200.0, skillsUnlocked = 0, streakDays = 0)
-        val thirty = Idle.accrued(s, rate, nowMs = base + 30 * dayMs)
-        val thirtyOne = Idle.accrued(s, rate, nowMs = base + 31 * dayMs)
-        // A day deep into the floor pays exactly 10% of a day at full output.
+        // Days 5 and 6 sit past the taper (72h) and short of the cap (12 days).
+        val five = Idle.accrued(s, rate, nowMs = base + 5 * dayMs)
+        val six = Idle.accrued(s, rate, nowMs = base + 6 * dayMs)
         // Each accrual truncates independently, so allow a single unit of slack.
         val floorDay = (rate.perHour * 24 * Idle.MIN_EFFICIENCY).toLong()
-        assertTrue(kotlin.math.abs((thirtyOne - thirty) - floorDay) <= 1L)
+        assertTrue(kotlin.math.abs((six - five) - floorDay) <= 1L)
+    }
+
+    @Test
+    fun `no absence pays more than the cap, so a year away cannot climb the board`() {
+        val s = state()
+        val rate = Idle.rate(state(), sessionsLast7d = 4, volumeLast7d = 200.0, skillsUnlocked = 0, streakDays = 0)
+        val cap = (rate.perHour * Idle.MAX_EFFECTIVE_HOURS).toLong()
+        // The floor reaches 72 effective hours at day 12 (50.4 + 0.1 * 216h).
+        val elevenDays = Idle.accrued(s, rate, nowMs = base + 11 * dayMs)
+        assertTrue("the cap must not bite before day 12", elevenDays < cap)
+        assertTrue(kotlin.math.abs(Idle.accrued(s, rate, nowMs = base + 13 * dayMs) - cap) <= 1L)
+        assertTrue(kotlin.math.abs(Idle.accrued(s, rate, nowMs = base + 365 * dayMs) - cap) <= 1L)
     }
 
     @Test
