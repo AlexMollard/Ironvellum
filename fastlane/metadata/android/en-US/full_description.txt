@@ -1,0 +1,47 @@
+An Android training tracker that scores what you actually lift. Log a session,
+get a number that means something.
+
+Most trackers add up kilograms. That rewards being heavy and rewards machines
+that hide how much load you are really moving, so the number you chase drifts
+away from the training that earned it.
+
+Ironvellum scores a set by what it costs you:
+
+- Body-scaled: a rep is worth reps x (bodyweight + added) / bodyweight^0.67,
+  the standard allometric exponent, so a lighter athlete is not permanently
+  outranked for being light.
+- Priced per implement: a marked kilogram is not the same load on every
+  machine. A 45 degree sled transmits 0.70, a smith bar 0.90, a pinned stack
+  0.85, a dual pulley 0.50. The plate you see is converted to the load you
+  actually carry.
+- Difficulty-weighted: a handstand push-up and a push-up are not the same rep.
+  Tiers come from the skill tree the app already ships.
+- Per-sex standards: strength score is normalised by muscle group using
+  published gaps, and every strength deed states the bar for the lifter
+  reading it rather than the men's number with a footnote.
+
+Everything works offline. An account is optional and only ever backs up
+training.
+
+Features:
+
+- Guided first run: answer your days, equipment and goal, and the app proposes
+  an editable week built from the real catalogue. No routine is imposed on you.
+- 214 movements: barbell, dumbbell, cable, plate-loaded, selectorised, smith,
+  assisted, bodyweight, plus cardio, sport, climbing, water and mobility.
+- 106-technique skill tree: fourteen lines, each rung gated on the one before
+  it and carrying a written claim standard.
+- 105 deeds: level, volume, streak, strength and activity milestones, with
+  progress you can watch rather than a surprise.
+- Progressive overload: strength and hypertrophy schools with their own rep
+  bands, per-movement load steps and a stall rule that deloads instead of
+  repeating a failed session.
+- Measurements and health: weight, body fat, BMI and FFMI over time; optional
+  Health Connect read for steps, distance, energy and sleep.
+- Shareable sessions: a plain text card shaped after Wordle, no link and no
+  image, that states only what you did.
+- Optional cloud: sign in to back up training and see a feed and leaderboard.
+  Body measurements and health data never leave the device.
+
+Ironvellum is free software under GPL-3.0-or-later. It has no ads, no trackers
+and no paid tier. Source: https://github.com/AlexMollard/Ironvellum
