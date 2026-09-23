@@ -82,6 +82,12 @@ Access to all of it is governed by row-level security on the server; every
 table is RLS-enabled (`0001_init.sql`). Your profile `visibility` setting
 (`public` / `friends` / `private`) controls who else can see your shared data.
 
+**Using your own backend:** Settings → CLOUD lets you point the app at your
+own Supabase project instead of the shared one. When a custom backend is
+configured, everything listed above goes to YOUR project — nothing is sent to
+the maintainer's shared instance — and Google sign-in is unavailable there
+(email sign-in only). See `supabase/SELF_HOSTING.md`.
+
 **Not uploaded:** body measurements, private notes, local-only row ids beyond
 the sync watermark, in-progress (abandoned) sessions, device identifiers, or
 your raw Health Connect records.

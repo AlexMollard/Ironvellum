@@ -94,7 +94,9 @@ import androidx.compose.material3.TextButton
 
 /** One honest snapshot of the account state: which panel to show and why. */
 data class AccountUi(
-    val configured: Boolean = Cloud.configured,
+    // Snapshot for ViewModel logic; the SCREEN collects Cloud.config so a
+    // backend switch redraws here without a restart.
+    val configured: Boolean = Cloud.config.value != null,
     val account: Account? = null,
     val busy: Boolean = false,
     /** The real server/network reason, verbatim — never a generic "failed". */
@@ -358,12 +360,16 @@ fun AccountScreen(
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    // The backend can change at runtime (Settings → CLOUD); collecting the
+    // flow here redraws the account surface — including the re-evaluated
+    // Cloud.googleConfigured below — without an app restart.
+    val cloudConfigured = Cloud.config.collectAsStateWithLifecycle().value != null
 
     // One refresh idiom: pull-to-refresh, like the feed and board. The roster
     // text link is gone. Hosting it here means the signed-in surface owns its
     // own scroll container — a PullToRefreshBox nested inside a verticalScroll
     // Column never sees the drag.
-    if (ui.configured && ui.account != null) {
+    if (cloudConfigured && ui.account != null) {
         val pullState = rememberPullToRefreshState()
         PullToRefreshBox(
             isRefreshing = ui.friendsLoading,
@@ -422,7 +428,7 @@ fun AccountScreen(
         AccountTitle()
 
         when {
-            !ui.configured -> NotConfiguredPanel()
+            !cloudConfigured -> NotConfiguredPanel()
             ui.busy && ui.account == null -> BusyPanel("Linking to the Ledger…")
             // Signed OUT with a configured cloud: this is the sign-in form itself.
             // Losing this branch left ACCOUNT rendering nothing but its own

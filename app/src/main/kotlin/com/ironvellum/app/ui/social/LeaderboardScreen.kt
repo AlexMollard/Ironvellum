@@ -70,7 +70,9 @@ import kotlinx.coroutines.launch
 
 /** Full snapshot of the leader board state: config, session, and data state. */
 data class LeaderboardUi(
-    val configured: Boolean = Cloud.configured,
+    // Snapshot for ViewModel logic; the SCREEN collects Cloud.config so a
+    // backend switch redraws here without a restart.
+    val configured: Boolean = Cloud.config.value != null,
     val signedIn: Boolean = false,
     val myUserId: String? = null,
     val rows: List<LeaderboardRow> = emptyList(),
@@ -229,6 +231,9 @@ fun LeaderboardScreen(
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    // The backend can change at runtime (Settings → CLOUD); collecting the
+    // flow here redraws the board without an app restart.
+    val cloudConfigured = Cloud.config.collectAsStateWithLifecycle().value != null
     val muster by viewModel.muster.collectAsStateWithLifecycle()
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     var board by remember { mutableStateOf(Board.Training) }
@@ -260,7 +265,7 @@ fun LeaderboardScreen(
         Spacer(Modifier.height(12.dp))
 
         when {
-            !ui.configured -> NotConfigured()
+            !cloudConfigured -> NotConfigured()
             !ui.signedIn && ui.loading -> LoadingPanel()
             !ui.signedIn -> NotSignedIn()
             ui.loading && ui.rows.isEmpty() && board == Board.Training -> LoadingPanel()

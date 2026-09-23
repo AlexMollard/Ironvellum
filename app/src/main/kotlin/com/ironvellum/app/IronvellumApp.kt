@@ -4,6 +4,7 @@ import android.app.Application
 import android.os.StrictMode
 import com.ironvellum.app.data.DbSnapshot
 import com.ironvellum.app.data.cloud.AccountRepository
+import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.HealthSync
 import com.ironvellum.app.data.IronvellumDatabase
@@ -64,6 +65,10 @@ class IronvellumApp : Application() {
         // Before anything touches Room: a failed migration leaves the data on
         // disk but unreachable, so the byte copy has to happen first.
         DbSnapshot.capture(this)
+        // Load the stored backend override (Settings → CLOUD) before anything
+        // restores a session or touches the cloud, so the first client is
+        // built against the backend the lifter actually chose.
+        Cloud.init(this)
         // Mirror the stored display preference into the holder the ink
         // primitives read. Collected for the process lifetime so a flip in
         // Settings redraws every surface immediately.

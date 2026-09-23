@@ -115,6 +115,10 @@ is what protects the data); `local.properties` overrides them. Google sign-in
 keys are read from `local.properties` only and only reach the `play` flavour.
 Build `assemblePlayDebug` for the Google sign-in variant.
 
+Prefer not to use the shared cloud at all? Settings → CLOUD accepts any
+Supabase project of your own — hosted free tier or self-hosted with Docker.
+See [supabase/SELF_HOSTING.md](supabase/SELF_HOSTING.md).
+
 ```properties
 # local.properties, gitignored
 supabase.url=

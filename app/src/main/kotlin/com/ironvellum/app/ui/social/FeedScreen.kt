@@ -92,7 +92,9 @@ import kotlinx.coroutines.launch
 
 /** Snapshot of the public board: state, entries, paging cursor, and refresh state. */
 data class FeedUi(
-    val configured: Boolean = Cloud.configured,
+    // Snapshot for ViewModel logic; the SCREEN collects Cloud.config so a
+    // backend switch redraws here without a restart.
+    val configured: Boolean = Cloud.config.value != null,
     val signedIn: Boolean = false,
     val myUserId: String? = null,
     val entries: List<FeedEntry> = emptyList(),
@@ -309,6 +311,9 @@ fun FeedScreen(
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    // The backend can change at runtime (Settings → CLOUD); collecting the
+    // flow here redraws the feed without an app restart.
+    val cloudConfigured = Cloud.config.collectAsStateWithLifecycle().value != null
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
 
     Column(
@@ -327,7 +332,7 @@ fun FeedScreen(
         // A subtitle only when it counts something. Every other case had a
         // panel below saying the same thing in a whole sentence, so the line
         // above it was decoration.
-        if (ui.configured && ui.signedIn && ui.entries.isNotEmpty()) {
+        if (cloudConfigured && ui.signedIn && ui.entries.isNotEmpty()) {
             Text(
                 "${ui.entries.size} sessions witnessed",
                 style = MaterialTheme.typography.labelLarge,
@@ -339,7 +344,7 @@ fun FeedScreen(
 
         val err = ui.error
         when {
-            !ui.configured -> NotConfigured()
+            !cloudConfigured -> NotConfigured()
             !ui.signedIn -> NotSignedIn()
             ui.loading && ui.entries.isEmpty() -> LoadingPanel()
             ui.entries.isEmpty() && err != null -> ErrorPanel(err, onRetry = { viewModel.load(force = true) })

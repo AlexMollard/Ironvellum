@@ -61,6 +61,10 @@ import com.ironvellum.app.data.HealthSnapshot
 import com.ironvellum.app.data.CrashJournal
 import com.ironvellum.app.data.HealthSync
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.cloud.Cloud
+import com.ironvellum.app.data.cloud.CloudConfig
+import com.ironvellum.app.data.cloud.CloudSync
+import com.ironvellum.app.data.cloud.ProbeResult
 import com.ironvellum.app.domain.BodyLimits
 import com.ironvellum.app.domain.HealthDay
 import com.ironvellum.app.domain.Sex
@@ -71,6 +75,7 @@ import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.ironvellumHealthSync
+import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -120,9 +125,19 @@ data class ImportUi(
     val problems: String? = null,
 )
 
+/** State of the Settings → CLOUD controls: probe/switch progress and result. */
+data class CloudUi(
+    val testing: Boolean = false,
+    /** Result of the last TEST, or null before the first one. */
+    val probe: ProbeResult? = null,
+    /** True while a confirmed switch (probe already passed) is being applied. */
+    val switching: Boolean = false,
+)
+
 class SettingsViewModel(
     private val repo: Repository,
     private val healthSync: HealthSync,
+    private val cloudSync: CloudSync,
 ) : ViewModel() {
 
     private val _exporting = MutableStateFlow(false)
@@ -132,6 +147,12 @@ class SettingsViewModel(
     val import: StateFlow<ImportUi> = _import.asStateFlow()
     private val _sync = MutableStateFlow(SyncUi(available = runCatching { healthSync.available() }.getOrDefault(false)))
     val sync: StateFlow<SyncUi> = _sync.asStateFlow()
+
+    /** The active backend, straight from Cloud — a switch elsewhere redraws here. */
+    val cloudConfig: StateFlow<CloudConfig?> = Cloud.config
+
+    private val _cloud = MutableStateFlow(CloudUi())
+    val cloud: StateFlow<CloudUi> = _cloud.asStateFlow()
 
     val profile = repo.observeProfile()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -196,6 +217,49 @@ class SettingsViewModel(
 
     fun setInkStyle(on: Boolean) {
         viewModelScope.launch { repo.setInkStyle(on) }
+    }
+
+    /** Ask a candidate backend whether it is ready. Never disturbs the live session. */
+    fun testBackend(url: String, key: String) {
+        val trimmedUrl = url.trim()
+        val trimmedKey = key.trim()
+        if (trimmedUrl.isBlank() || trimmedKey.isBlank() || _cloud.value.testing) return
+        viewModelScope.launch {
+            _cloud.value = CloudUi(testing = true)
+            val result = Cloud.probe(CloudConfig(trimmedUrl, trimmedKey, isDefault = false))
+            _cloud.value = CloudUi(probe = result)
+        }
+    }
+
+    /**
+     * Switch to a lifter's own project. The ordering guarantee lives inside
+     * [Cloud.reconfigure]: sign out against the OLD backend, forget the push
+     * watermark (beforeSwap), then swap the client and persist — so every
+     * session re-uploads to the new backend after the lifter signs in there.
+     */
+    fun switchBackend(url: String, key: String) {
+        val trimmedUrl = url.trim()
+        val trimmedKey = key.trim()
+        if (trimmedUrl.isBlank() || trimmedKey.isBlank() || _cloud.value.switching) return
+        viewModelScope.launch {
+            _cloud.value = CloudUi(switching = true)
+            Cloud.reconfigure(CloudConfig(trimmedUrl, trimmedKey, isDefault = false)) {
+                cloudSync.forgetPushedState()
+            }
+            _cloud.value = CloudUi()
+        }
+    }
+
+    /** Drop the override and return to the maintainer's shared cloud. */
+    fun useSharedCloud() {
+        if (_cloud.value.switching) return
+        viewModelScope.launch {
+            _cloud.value = CloudUi(switching = true)
+            Cloud.reconfigure(null) {
+                cloudSync.forgetPushedState()
+            }
+            _cloud.value = CloudUi()
+        }
     }
 
     fun syncFromHealth() {
@@ -333,7 +397,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel =
         viewModel(
             factory = viewModelFactory {
-                initializer { SettingsViewModel(ironvellumRepository(), ironvellumHealthSync()) }
+                initializer { SettingsViewModel(ironvellumRepository(), ironvellumHealthSync(), ironvellumCloudSync()) }
             },
         ),
 ) {
@@ -348,6 +412,16 @@ fun SettingsScreen(
     // loaded profile must not overwrite a typed-but-unsaved edit.
     var name by rememberSaveable(profile?.name) { mutableStateOf(profile?.name ?: "") }
     var confirmImport by remember { mutableStateOf(false) }
+    // Cloud panel state. Inputs are saveable across rotation; the probe
+    // result lives in the ViewModel so a TEST survives the same.
+    val cloudConfig by viewModel.cloudConfig.collectAsStateWithLifecycle()
+    val cloudUi by viewModel.cloud.collectAsStateWithLifecycle()
+    var cloudFieldsShown by rememberSaveable { mutableStateOf(false) }
+    var cloudUrl by rememberSaveable { mutableStateOf("") }
+    var cloudKey by rememberSaveable { mutableStateOf("") }
+    var confirmCloudSwitch by remember { mutableStateOf(false) }
+    var confirmSharedSwitch by remember { mutableStateOf(false) }
+    val cloudInputValid = cloudUrl.trim().isNotBlank() && cloudKey.trim().isNotBlank()
     // Read off the main thread: these list a directory, and doing that during
     // composition is main-thread disk I/O on every visit to this screen —
     // which is what StrictMode reported. The counts arrive a frame later.
@@ -385,6 +459,53 @@ fun SettingsScreen(
                 if (json.isNotBlank()) viewModel.importArchive(json)
             }
         }
+    }
+
+    if (confirmCloudSwitch) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            onDismissRequest = { confirmCloudSwitch = false },
+            title = { Text("Use this backend?") },
+            text = {
+                Text(
+                    "You'll be signed out. Your training stays on this phone and uploads to the new backend when you sign in there.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmCloudSwitch = false
+                    viewModel.switchBackend(cloudUrl, cloudKey)
+                    cloudFieldsShown = false
+                    cloudUrl = ""
+                    cloudKey = ""
+                }) { Text("Switch") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmCloudSwitch = false }) { Text("Stay") }
+            },
+        )
+    }
+
+    if (confirmSharedSwitch) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            onDismissRequest = { confirmSharedSwitch = false },
+            title = { Text("Return to the shared cloud?") },
+            text = {
+                Text(
+                    "You'll be signed out. Your training stays on this phone and uploads to the Ironvellum shared cloud when you sign in there.",
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmSharedSwitch = false
+                    viewModel.useSharedCloud()
+                }) { Text("Switch") }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirmSharedSwitch = false }) { Text("Stay") }
+            },
+        )
     }
 
     if (confirmImport) {
@@ -687,6 +808,118 @@ fun SettingsScreen(
             importUi.problems?.let {
                 Spacer(Modifier.height(4.dp))
                 Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        InkPanel(Modifier.fillMaxWidth()) {
+            Text(
+                "CLOUD",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SystemGreen,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(6.dp))
+            when (val backend = cloudConfig) {
+                null -> Text(
+                    "No cloud configured on this build.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+                // The default is the maintainer's shared instance; anything
+                // else is the lifter's own project, named by its host.
+                else -> Text(
+                    if (backend.isDefault) {
+                        "Ironvellum shared cloud"
+                    } else {
+                        "Your own backend · " + backend.url.removePrefix("https://").removeSuffix("/")
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            if (cloudUi.switching) {
+                InkSpinner()
+            } else {
+                if (cloudConfig?.isDefault == false) {
+                    IronvellumButton(
+                        label = "Use Shared Cloud",
+                        onClick = { confirmSharedSwitch = true },
+                        quiet = true,
+                    )
+                    Spacer(Modifier.height(10.dp))
+                }
+                IronvellumButton(
+                    label = "Use My Own Backend",
+                    onClick = { cloudFieldsShown = !cloudFieldsShown },
+                    quiet = cloudFieldsShown,
+                )
+                if (cloudFieldsShown) {
+                    Spacer(Modifier.height(10.dp))
+                    OutlinedTextField(
+                        shape = MaterialTheme.shapes.small,
+                        value = cloudUrl,
+                        onValueChange = { cloudUrl = it },
+                        label = { Text("Project URL (https://…supabase.co)") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        shape = MaterialTheme.shapes.small,
+                        value = cloudKey,
+                        onValueChange = { cloudKey = it },
+                        label = { Text("Publishable (anon) key") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    if (cloudUi.testing) {
+                        InkSpinner()
+                    } else {
+                        IronvellumButton(
+                            label = "Test",
+                            onClick = { viewModel.testBackend(cloudUrl, cloudKey) },
+                            enabled = cloudInputValid,
+                            quiet = true,
+                        )
+                    }
+                    cloudUi.probe?.let { result ->
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            when (result) {
+                                is ProbeResult.Ready ->
+                                    "Backend ready — schema v${result.version}. Save to move your cloud here."
+                                is ProbeResult.Outdated ->
+                                    "The backend is live but its schema is v${result.have}; apply the migrations up to v${result.need}."
+                                ProbeResult.NoSchema ->
+                                    "Reached the project, but its database migrations have not been applied."
+                                ProbeResult.BadKey ->
+                                    "The key was refused — copy the publishable (anon) key, not the secret one."
+                                ProbeResult.Unreachable ->
+                                    "Could not reach the backend — check the URL, your connection, or resume the paused project."
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (result is ProbeResult.Ready) {
+                                IronvellumColors.SystemGreen
+                            } else {
+                                IronvellumColors.InkMuted
+                            },
+                        )
+                    }
+                    Spacer(Modifier.height(10.dp))
+                    IronvellumButton(
+                        label = "Save",
+                        onClick = { confirmCloudSwitch = true },
+                        // Saving an unprobed backend would strand the lifter on
+                        // a project that cannot hold their data — TEST first.
+                        enabled = cloudInputValid && cloudUi.probe is ProbeResult.Ready,
+                    )
+                }
             }
         }
 

@@ -282,6 +282,20 @@ begin
         'erasing a profile left rows behind in another table'
     );
 
+    -- 0014: the version beacon is public and tells the truth. The app probes
+    -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
+    -- at a custom backend, so both the number and the grant are load-bearing.
+    perform assert_true(
+        (select public.schema_version()) = 14,
+        format('schema_version() reports %s, not 14 — bump the literal with the migration', public.schema_version())
+    );
+    set local role anon;
+    perform assert_true(
+        (select public.schema_version()) = 14,
+        'anon cannot execute schema_version() — the app probe would read 401'
+    );
+    reset role;
+
     raise notice 'ALL BACKEND ASSERTIONS PASSED';
 end $$;
 
