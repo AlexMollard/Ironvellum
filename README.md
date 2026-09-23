@@ -203,3 +203,4 @@ Full statement: [PRIVACY.md](PRIVACY.md) ·
 - [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) - what ships before a release
 - [docs/TODO.md](docs/TODO.md) - outstanding work and open decisions
 - [docs/ART_ATTRIBUTION.md](docs/ART_ATTRIBUTION.md) - how the artwork was made
+- [docs/open-source/](docs/open-source/README.md) - plan for open-sourcing, funding and self-hosting
