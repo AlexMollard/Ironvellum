@@ -56,6 +56,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.BuildConfig
 import com.ironvellum.app.data.HealthSnapshot
 import com.ironvellum.app.data.CrashJournal
 import com.ironvellum.app.data.HealthSync
@@ -328,6 +329,7 @@ class SettingsViewModel(
 
 @Composable
 fun SettingsScreen(
+    onOpenSupport: () -> Unit = {},
     viewModel: SettingsViewModel =
         viewModel(
             factory = viewModelFactory {
@@ -749,8 +751,32 @@ fun SettingsScreen(
             }
         }
         Spacer(Modifier.height(14.dp))
+
+        InkPanel(Modifier.fillMaxWidth()) {
+            Text(
+                if (BuildConfig.SUPPORT_LINKS) "SUPPORT IRONVELLUM" else "ABOUT",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SystemGreen,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Licence, attributions and where this project lives.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
+            Spacer(Modifier.height(10.dp))
+            IronvellumButton(
+                label = if (BuildConfig.SUPPORT_LINKS) "Support Ironvellum" else "About Ironvellum",
+                onClick = onOpenSupport,
+                quiet = true,
+            )
+        }
+
+        Spacer(Modifier.height(14.dp))
         Text(
-            "Ironvellum v1.0  ·  measurements stay on this device",
+            "Ironvellum ${BuildConfig.VERSION_NAME}  ·  measurements stay on this device",
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(horizontal = 4.dp),

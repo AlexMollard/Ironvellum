@@ -58,6 +58,7 @@ import com.ironvellum.app.ui.onboarding.OnboardingViewModel
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.dashboard.DashboardScreen
 import com.ironvellum.app.ui.settings.SettingsScreen
+import com.ironvellum.app.ui.settings.SupportScreen
 import com.ironvellum.app.ui.social.SocialScreen
 import com.ironvellum.app.ui.social.LifterScreen
 import com.ironvellum.app.ui.train.WorkoutLogScreen
@@ -86,6 +87,7 @@ object Routes {
     const val TITLES = "titles"
     const val IDLE = "idle"
     const val SETTINGS = "settings"
+    const val SUPPORT = "support"
     const val SOCIAL = "social"
     const val WORKOUT_LOG = "workout_log"
     const val WORKOUT_DETAIL = "workout/{sessionId}"
@@ -339,7 +341,10 @@ fun IronvellumRoot() {
                     )
                 }
                 composable(Routes.TITLES) { TitlesScreen() }
-                composable(Routes.SETTINGS) { SettingsScreen() }
+                composable(Routes.SETTINGS) {
+                    SettingsScreen(onOpenSupport = { navController.navigate(Routes.SUPPORT) })
+                }
+                composable(Routes.SUPPORT) { SupportScreen() }
                 composable(
                     Routes.MEASUREMENT,
                     arguments = listOf(navArgument("site") { type = NavType.StringType }),
