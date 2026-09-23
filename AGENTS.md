@@ -1,15 +1,15 @@
 # Ironvellum — standing rules
 
-## No automatic git actions
+## Git: commit and push as you go
 
-Never run `git commit`, `git push`, `git tag`, `git merge`, `git rebase`, or any
-other history- or remote-mutating command on the owner's behalf. Make the edits,
-report what changed, and print the command for the owner to run. Read-only
-inspection (`status`, `diff`, `log`, `show`) is fine.
+The owner has authorised agents to `git commit` and `git push` to `main` as work
+progresses (2026-09-23). Commit each coherent unit once it is verified, using the
+house commit style, and push it.
 
-This is not a style preference. Pushes trigger billed work and put code on a
-remote the owner has not reviewed; both are the owner's decision to make, every
-time.
+Still the owner's call, every time: force-push, history rewrites (`rebase` of
+pushed commits, `filter-repo`, `reset` of pushed work), tags and GitHub
+releases, and changing repository visibility. Pushing no longer triggers billed
+work because every workflow is `workflow_dispatch` only (see below).
 
 ## Tests run locally, never on GitHub Actions
 
