@@ -118,7 +118,23 @@ out with its matching app build.
    families/ads policies), and upload the signed `app-release.apk` /
    `.aab` from step 3.
 
-## 7. Post-upload
+
+## 7. F-Droid merge request
+
+The fdroiddata MR (https://gitlab.com/fdroid/fdroiddata/-/merge_requests/49794)
+carries the 1.0 recipe. linsui (2026-09-23): update the MR with every new
+release, or it stalls. After tagging vX.Y per step 2:
+
+1. Append a new `Builds:` block to `docs/fdroid/com.ironvellum.app.yml`
+   (versionName/versionCode from step 2, `commit:` = `git rev-parse vX^{commit}`,
+   keep only the latest block in the MR).
+2. Bump `CurrentVersion`/`CurrentVersionCode`.
+3. Add `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` upstream
+   if the release changes anything user-visible.
+4. Commit the recipe change to the `ironvellum` branch of the fork
+   (AlexMollard/fdroiddata) and let the MR pipeline run.
+
+## 8. Post-upload
 
 - Internal testing track first; verify sign-in (release SHA-1!), Health Connect
   sync, and a full workout push on a real device before promoting.
