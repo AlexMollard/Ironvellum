@@ -65,6 +65,9 @@ import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.CloudConfig
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.ProbeResult
+import com.ironvellum.app.domain.CsvWorkoutReader
+import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.ImportAliases
 import com.ironvellum.app.domain.BodyLimits
 import com.ironvellum.app.domain.HealthDay
 import com.ironvellum.app.domain.Sex
@@ -145,6 +148,12 @@ class SettingsViewModel(
 
     private val _import = MutableStateFlow(ImportUi())
     val import: StateFlow<ImportUi> = _import.asStateFlow()
+    private val _importReview = MutableStateFlow<ImportReviewUi?>(null)
+    val importReview: StateFlow<ImportReviewUi?> = _importReview.asStateFlow()
+
+    /** Catalogue names for the review picker; refreshed when review opens. */
+    val catalogueNames: StateFlow<List<String>> = repo.observeCatalogueNames()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     private val _sync = MutableStateFlow(SyncUi(available = runCatching { healthSync.available() }.getOrDefault(false)))
     val sync: StateFlow<SyncUi> = _sync.asStateFlow()
 
@@ -182,6 +191,175 @@ class SettingsViewModel(
             _exporting.value = false
             onReady(json)
         }
+    }
+
+    /**
+     * Opens the CSV review: parse off the main thread, pre-select Strong's
+     * unit with the barbell heuristic, and auto-map every name the curated
+     * aliases resolve. Unmatched names land in the review list.
+     */
+    fun startCsvImport(raw: String) {
+        viewModelScope.launch {
+            val firstPass = withContext(Dispatchers.IO) {
+                CsvWorkoutReader.read(raw, strongWeightIsLbs = false)
+            }
+            if (firstPass.problems.isNotEmpty() && firstPass.workouts.isEmpty()) {
+                _import.value = ImportUi(summary = firstPass.problems.first().message)
+                return@launch
+            }
+            var unit: CsvWorkoutReader.WeightUnit? = null
+            var guessed = false
+            if (firstPass.source == CsvWorkoutReader.Source.STRONG) {
+                guessed = true
+                unit = if (looksLikePounds(firstPass)) {
+                    CsvWorkoutReader.WeightUnit.LB
+                } else {
+                    CsvWorkoutReader.WeightUnit.KG
+                }
+            }
+            applyCsvParse(raw, unit, guessed)
+        }
+    }
+
+    fun setImportUnit(unit: CsvWorkoutReader.WeightUnit) {
+        val review = _importReview.value ?: return
+        if (review.selectedUnit == unit) return
+        viewModelScope.launch { applyCsvParse(reviewRaw ?: return@launch, unit, guessed = false) }
+    }
+
+    fun chooseImportMapping(rawName: String, catalogueName: String?) {
+        val review = _importReview.value ?: return
+        _importReview.value = review.copy(choices = review.choices + (rawName to catalogueName))
+    }
+
+    fun dismissImportReview() {
+        _importReview.value = null
+        reviewRaw = null
+    }
+
+    fun confirmCsvImport() {
+        val review = _importReview.value ?: return
+        if (review.importing) return
+        viewModelScope.launch {
+            _importReview.value = review.copy(importing = true, result = null)
+            val run = runCatching {
+                val catalogue = repo.catalogueNamesOnce()
+                val mapping = HashMap<String, Long>()
+                val newNames = LinkedHashMap<String, ExerciseMetric>()
+                review.parsed.workouts.forEach { w ->
+                    w.sets.forEach { s ->
+                        val key = s.exerciseName.trim().lowercase()
+                        if (key.isEmpty() || mapping.containsKey(key)) return@forEach
+                        val resolved = ImportAliases.resolve(s.exerciseName, catalogue)
+                        if (resolved != null) {
+                            mapping[key] = repo.exerciseIdByName(resolved)
+                                ?: error("catalogue lost \"$resolved\"")
+                        } else {
+                            val choice = review.choices[s.exerciseName.trim()]
+                            when {
+                                choice != null ->
+                                    mapping[key] = repo.exerciseIdByName(choice)
+                                        ?: error("catalogue lost \"$choice\"")
+                                else -> newNames.putIfAbsent(
+                                    ImportAliases.stripEquipment(s.exerciseName),
+                                    inferredMetric(review.parsed, s.exerciseName),
+                                )
+                            }
+                        }
+                    }
+                }
+                newNames.forEach { (name, metric) ->
+                    mapping[name.trim().lowercase()] = repo.ensureImportMovement(name, metric)
+                }
+                repo.mergeImported(review.parsed, mapping)
+            }
+            _importReview.value = _importReview.value?.copy(
+                importing = false,
+                result = run.fold(
+                    { r ->
+                        "Imported ${r.sessions} workouts · ${r.sets} sets · " +
+                            "+${r.xpAwarded} XP · ${r.skipped} already in your log"
+                    },
+                    { "Import failed: ${it.message ?: it.javaClass.simpleName}" },
+                ),
+            )
+        }
+    }
+
+    private var reviewRaw: String? = null
+
+    private fun inferredMetric(
+        parsed: CsvWorkoutReader.ParsedImport,
+        rawName: String,
+    ): ExerciseMetric {
+        val sets = parsed.workouts.flatMap { it.sets }.filter { it.exerciseName == rawName }
+        return when {
+            sets.any { (it.distanceM ?: 0.0) > 0.0 } -> ExerciseMetric.DISTANCE_TIME
+            sets.any { (it.durationSec ?: 0) > 0 } -> ExerciseMetric.DURATION
+            else -> ExerciseMetric.REPS
+        }
+    }
+
+    /**
+     * Strong's Weight column follows the exporter's app setting, so the unit
+     * is a guess until the lifter confirms. The heuristic from the plan: a
+     * barbell lift's median working weight at least 1.6x what a trained kg
+     * lifter would typically log reads as pounds. Typical trained working
+     * weights (kg): bench 60, incline 50, squat 100, deadlift 120, press 40,
+     * row 60.
+     */
+    private fun looksLikePounds(parsed: CsvWorkoutReader.ParsedImport): Boolean {
+        val catalogue = catalogueNames.value
+        val typical = mapOf(
+            "Bench Press" to 60.0,
+            "Incline Bench Press" to 50.0,
+            "Back Squat" to 100.0,
+            "Squat" to 100.0,
+            "Deadlift" to 120.0,
+            "Overhead Press" to 40.0,
+            "Barbell Row" to 60.0,
+        )
+        return parsed.workouts.asSequence()
+            .flatMap { it.sets }
+            .filter { (it.weightKg ?: 0.0) > 0.0 }
+            .mapNotNull { set ->
+                val resolved = ImportAliases.resolve(set.exerciseName, catalogue)
+                typical[resolved]?.let { typicalKg -> set.weightKg!! / typicalKg }
+            }
+            .toList()
+            .let { ratios -> ratios.any { it >= 1.6 } }
+    }
+
+    private suspend fun applyCsvParse(
+        raw: String,
+        unit: CsvWorkoutReader.WeightUnit?,
+        guessed: Boolean,
+    ) {
+        reviewRaw = raw
+        val parsed = withContext(Dispatchers.IO) {
+            CsvWorkoutReader.read(raw, strongWeightIsLbs = unit == CsvWorkoutReader.WeightUnit.LB)
+        }
+        val catalogue = repo.catalogueNamesOnce()
+        val unmatched = parsed.workouts.asSequence()
+            .flatMap { it.sets }
+            .map { it.exerciseName.trim() }
+            .filter { it.isNotEmpty() }
+            .distinct()
+            .filter { ImportAliases.resolve(it, catalogue) == null }
+            .toList()
+        _importReview.value = ImportReviewUi(
+            source = parsed.source,
+            parsed = parsed,
+            selectedUnit = unit,
+            unitGuessed = guessed,
+            unmatched = unmatched.map { rawName ->
+                UnmatchedImportName(
+                    rawName = rawName,
+                    inferredMetric = inferredMetric(parsed, rawName).name,
+                )
+            },
+            choices = unmatched.associateWith { null },
+        )
     }
 
     fun importArchive(json: String) {
@@ -508,6 +686,24 @@ fun SettingsScreen(
         )
     }
 
+    // CSV import: providers mislabel CSVs wildly, so offer every mime that
+    // could be one and let the header sniff decide.
+    val csvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val csv = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)
+                        ?.use { stream -> stream.readBytes().toString(Charsets.UTF_8) }
+                        .orEmpty()
+                }
+                if (csv.isNotBlank()) viewModel.startCsvImport(csv)
+            }
+        }
+    }
+
+    val importReview by viewModel.importReview.collectAsStateWithLifecycle()
+    val catalogueNames by viewModel.catalogueNames.collectAsStateWithLifecycle()
+
     if (confirmImport) {
         AlertDialog(
             // Material's dialog container is a 28dp rounded rect - the most
@@ -809,6 +1005,23 @@ fun SettingsScreen(
                 Spacer(Modifier.height(4.dp))
                 Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
             }
+            Spacer(Modifier.height(10.dp))
+            IronvellumButton(
+                label = "Import From Another App",
+                onClick = {
+                    csvLauncher.launch(
+                        arrayOf(
+                            "text/csv",
+                            "text/comma-separated-values",
+                            "application/csv",
+                            "application/vnd.ms-excel",
+                            "text/plain",
+                            "*/*",
+                        ),
+                    )
+                },
+                quiet = true,
+            )
         }
 
         Spacer(Modifier.height(14.dp))
@@ -1015,6 +1228,17 @@ fun SettingsScreen(
             modifier = Modifier.padding(horizontal = 4.dp),
         )
         Spacer(Modifier.height(24.dp))
+    }
+
+    importReview?.let { review ->
+        ImportReviewOverlay(
+            ui = review,
+            catalogueNames = catalogueNames,
+            onPick = viewModel::chooseImportMapping,
+            onUnitPick = viewModel::setImportUnit,
+            onImport = viewModel::confirmCsvImport,
+            onDismiss = viewModel::dismissImportReview,
+        )
     }
 }
 

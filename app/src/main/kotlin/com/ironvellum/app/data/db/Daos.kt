@@ -188,6 +188,17 @@ interface SessionDao {
     @Query("DELETE FROM sessions")
     suspend fun clearAll()
 
+    /**
+     * The CSV-import idempotence key: (startedAtMs, normalised label). A
+     * re-imported file must add nothing, so every candidate session asks this
+     * before it is allowed in.
+     */
+    @Query(
+        "SELECT COUNT(*) FROM sessions WHERE startedAtMs = :startedAtMs " +
+            "AND LOWER(TRIM(label)) = :label",
+    )
+    suspend fun countImportKey(startedAtMs: Long, label: String): Int
+
     /** Every logged set for one movement, joined with its session timestamp, newest first. */
     @Query(
         "SELECT s.sessionId AS sessionId, x.startedAtMs AS atMs, s.setIndex AS setIndex, " +

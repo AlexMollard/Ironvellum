@@ -30,6 +30,7 @@ import com.ironvellum.app.data.db.TitleUnlockEntity
 import com.ironvellum.app.data.db.GachaDao
 import com.ironvellum.app.data.db.OwnedRelicEntity
 import com.ironvellum.app.domain.ActivityScore
+import com.ironvellum.app.domain.CsvWorkoutReader
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
@@ -240,6 +241,16 @@ class Repository(
      */
     private suspend fun exerciseCatalogue(): Map<Long, Exercise> =
         exerciseDao.observeAll().first().associate { it.id to it.toDomain() }
+
+    /** Live catalogue names for the CSV import's movement picker. */
+    fun observeCatalogueNames(): Flow<List<String>> =
+        exerciseDao.observeAll().map { rows -> rows.map { it.name } }
+
+    suspend fun catalogueNamesOnce(): List<String> =
+        exerciseDao.observeAll().first().map { it.name }
+
+    /** NOCASE lookup, same rule the log screen resolves names by. */
+    suspend fun exerciseIdByName(name: String): Long? = exerciseDao.byName(name)?.id
 
     // ---------------------------------------------------------------- mapping
 
@@ -958,6 +969,7 @@ class Repository(
         title = title,
         note = note,
         privateNote = privateNote,
+        imported = imported,
     )
 
     // ---------------------------------------------------------------- stats
@@ -1705,6 +1717,7 @@ class Repository(
                             title = session.title,
                             note = session.note,
                             privateNote = session.privateNote.take(WireLimits.PRIVATE_NOTE_MAX),
+                            imported = session.imported,
                         ),
                     )
                     restoredSets += sessionDao.insertSets(
@@ -1838,6 +1851,204 @@ class Repository(
                     problems = problems,
                 )
             }
+    }
+
+    // ------------------------------------------------------------------ CSV import
+
+    data class MergeResult(
+        val sessions: Int,
+        val sets: Int,
+        val skipped: Int,
+        val xpAwarded: Int,
+        val newMovements: List<String>,
+    )
+
+    /**
+     * Creates (or returns the existing) catalogue row for an unmatched import
+     * name the lifter chose to KEEP AS NEW MOVEMENT. The metric comes from the
+     * columns the file actually carries data in — never importArchive's blind
+     * PULL/REPS guess.
+     */
+    suspend fun ensureImportMovement(name: String, metric: ExerciseMetric): Long {
+        exerciseDao.byName(name)?.let { return it.id }
+        val existing = exerciseDao.observeAll().first().firstOrNull { it.name.equals(name, true) }
+        if (existing != null) return existing.id
+        return exerciseDao.insertAll(
+            listOf(
+                ExerciseEntity(
+                    name = name,
+                    muscleGroup = MuscleGroup.CORE.name,
+                    isWeighted = false,
+                    metric = metric.name,
+                ),
+            ),
+        ).first()
+    }
+
+    /**
+     * APPENDS parsed Strong/Hevy history to the lifter's log. This is the one
+     * import path that clears nothing: pre-existing sessions, presets, stats
+     * and titles are untouched, and [importArchive] (a destructive replace) is
+     * never involved.
+     *
+     * - Idempotence key (startedAtMs, lowercased trimmed label): a workout
+     *   already in the log is skipped, so re-importing the same file adds 0.
+     * - Sessions land completed with strengthScore = 0 and imported = true;
+     *   [rescoreStrengthScores] then scores them from their stored sets with
+     *   the app's own formula and interpolated bodyweight.
+     * - XP decision (owner, 2026-09-23): imported history DOES earn level XP,
+     *   computed per session with the same Xp.award / ActivityScore.xp calls
+     *   completeSession uses, summed and added to totalXp ONCE. No quest
+     *   bonus, NO gacha rolls for level-ups — history is not fresh play.
+     * - Titles re-evaluate through the existing engine, dated at import time.
+     * - Workout notes go to the PRIVATE note only; a public note is never
+     *   filled from an import.
+     */
+    suspend fun mergeImported(
+        parsed: CsvWorkoutReader.ParsedImport,
+        mapping: Map<String, Long>,
+    ): MergeResult = db.withTransaction {
+        val catalogue = exerciseDao.observeAll().first()
+        val metrics = catalogue.associate { row ->
+            row.id to runCatching { ExerciseMetric.valueOf(row.metric) }
+                .getOrDefault(ExerciseMetric.REPS)
+        }
+        val names = catalogue.associate { it.id to it.name }
+        val categories = catalogue.associate { it.id to it.category }
+        val groups = catalogue.associate { row ->
+            row.id to (runCatching { MuscleGroup.valueOf(row.muscleGroup) }.getOrNull() ?: MuscleGroup.CORE)
+        }
+        val latestBodyweight = statDao.observeAll().first().firstOrNull()?.weightKg
+        fun metricOf(exerciseId: Long) = metrics[exerciseId] ?: ExerciseMetric.REPS
+
+        var insertedSets = 0
+        var skipped = 0
+        var totalXp = 0L
+        var sessionsInserted = 0
+
+        parsed.workouts.forEach { workout ->
+            val key = workout.startedAtMs
+            val normalisedLabel = workout.label.lowercase().trim()
+            if (sessionDao.countImportKey(key, normalisedLabel) > 0) {
+                skipped++
+                return@forEach
+            }
+            val mapped = workout.sets.mapNotNull { set ->
+                val exerciseId = mapping[set.exerciseName.trim().lowercase()] ?: return@mapNotNull null
+                val mods = buildList {
+                    if (set.setType == "dropset") add("dropset")
+                    if (set.setType == "failure") add("failure")
+                    set.rpe?.let { add("RPE ${if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()}") }
+                    set.notes.takeIf { it.isNotBlank() }?.let { add(it) }
+                }.joinToString(", ")
+                Triple(set, exerciseId, mods)
+            }
+            val sessionId = sessionDao.insertSession(
+                SessionEntity(
+                    presetId = null,
+                    label = workout.label.trim().ifBlank { "Imported workout" },
+                    startedAtMs = workout.startedAtMs,
+                    completedAtMs = workout.completedAtMs ?: workout.startedAtMs,
+                    xpAwarded = 0,
+                    strengthScore = 0,
+                    title = "",
+                    note = "",
+                    // Workout notes are private: an import never speaks publicly.
+                    privateNote = workout.notes.take(WireLimits.PRIVATE_NOTE_MAX),
+                    imported = true,
+                ),
+            )
+            // exercisePosition groups each movement's sets together, in
+            // first-appearance order like the exporting apps.
+            val positionByExercise = HashMap<Long, Int>()
+            val setEntities = mapped.map { (set, exerciseId, mods) ->
+                val position = positionByExercise.getOrPut(exerciseId) { positionByExercise.size }
+                SetLogEntity(
+                    sessionId = sessionId,
+                    exerciseId = exerciseId,
+                    exercisePosition = position,
+                    setIndex = set.setIndex,
+                    reps = set.reps,
+                    weightKg = set.weightKg,
+                    modifiers = mods,
+                    done = set.setType != "warmup",
+                    durationSec = set.durationSec,
+                    distanceM = set.distanceM,
+                    grade = null,
+                )
+            }
+            sessionDao.insertSets(setEntities)
+            insertedSets += setEntities.size
+            sessionsInserted++
+
+            // Per-session XP, same calls completeSession makes.
+            val doneSets = setEntities.filter { it.done }
+            val liftingSets = doneSets.filter { metricOf(it.exerciseId).isStrength }
+            val activitySets = doneSets.filterNot { metricOf(it.exerciseId).isStrength }
+            val liftingXp = Xp.award(
+                liftingSets.map { set ->
+                    Xp.SetEffort(
+                        exerciseName = names[set.exerciseId] ?: "",
+                        reps = set.reps,
+                        holdSeconds = set.durationSec
+                            .takeIf { metricOf(set.exerciseId) == ExerciseMetric.HOLD },
+                        weightKg = set.weightKg,
+                        modifiers = set.modifiers,
+                        metric = metricOf(set.exerciseId),
+                    )
+                },
+                latestBodyweight,
+            )
+            val activityXp = activitySets.sumOf { set ->
+                val metric = metricOf(set.exerciseId)
+                val per = ActivityScore.xp(
+                    exerciseName = names[set.exerciseId] ?: "",
+                    category = categories[set.exerciseId] ?: "",
+                    metric = metric,
+                    durationSec = set.durationSec,
+                    distanceM = set.distanceM,
+                    addedKg = set.weightKg,
+                    bodyweightKg = latestBodyweight ?: 0.0,
+                )
+                if (metric == ExerciseMetric.ATTEMPTS_GRADE) per * set.reps else per
+            }
+            val sessionXp = liftingXp + activityXp
+            if (sessionXp > 0) {
+                sessionDao.updateSession(sessionDao.byId(sessionId)!!.copy(xpAwarded = sessionXp))
+            }
+            totalXp += sessionXp
+        }
+
+        if (totalXp > 0) profileDao.addXp(totalXp)
+
+        // Titles re-evaluate through the existing engine, dated at import time.
+        // Same ledger call completeSession uses; nothing is "newly dated".
+        val profile = profileDao.get() ?: error("Profile missing")
+        val ledger = Titles.ledgerOf(
+            totalXp = profile.totalXp,
+            history = observeHistory().first(),
+            healthDays = observeHealthDays().first(),
+            practices = observeSkillPractices().first(),
+            exercises = exerciseCatalogue(),
+            scheduledWeekdays = scheduledWeekdays(),
+            sex = profileSex(),
+            bodyweightAt = bodyweightLookup(),
+        )
+        val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
+        titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, System.currentTimeMillis()) })
+        profileDao.setCurrentTitle(newly.firstOrNull()?.id ?: profile.currentTitleId)
+
+        MergeResult(
+            sessions = sessionsInserted,
+            sets = insertedSets,
+            skipped = skipped,
+            xpAwarded = totalXp.toInt(),
+            newMovements = emptyList(),
+        )
+    }.also {
+        // Scores and the lifetime sum are recomputed from the stored sets
+        // after the transaction, exactly like the weigh-in repair path.
+        rescoreStrengthScores(onlyUnscored = true)
     }
 
     // ------------------------------------------------------------------ idle

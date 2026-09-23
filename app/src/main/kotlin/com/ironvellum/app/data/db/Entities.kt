@@ -65,6 +65,12 @@ data class SessionEntity(
     val note: String = "",
     /** Device-only note. NEVER uploaded - there is no server column for it. */
     val privateNote: String = "",
+    /**
+     * True for sessions merged in from a Strong/Hevy CSV import. Imported
+     * history earns XP and strength locally but is excluded from the cloud
+     * feed push — it still reaches the cloud inside the full-archive backup.
+     */
+    val imported: Boolean = false,
 )
 
 @Entity(

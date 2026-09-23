@@ -121,6 +121,9 @@ object ExportReader {
         title = o.str("title") ?: "",
         note = o.str("note") ?: "",
         privateNote = o.str("privateNote") ?: "",
+        // Absent in archives written before the CSV import existed, and absent
+        // from every app-logged session's row: default false, never fail.
+        imported = o.bool("imported") ?: false,
     ) to (o.arr("sets") ?: emptyList()).map { s ->
         val set = s as Obj
         SessionSet(

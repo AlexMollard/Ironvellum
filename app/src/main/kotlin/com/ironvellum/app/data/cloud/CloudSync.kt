@@ -67,9 +67,7 @@ class CloudSync(
             // session differs from "never pushed", an edited one from its old
             // fingerprint — so edits re-push without any updated-at column.
             val watermark = repo.pushWatermark()
-            val pending = completed.filter { (session, sets) ->
-                watermark[session.id] != pushFingerprint(session, sets)
-            }
+            val pending = pendingForPush(completed, watermark)
             val level = Xp.progress(profile.totalXp).level
             // Same rule as Today and the deeds: rest days are rest, so the
             // leaderboard cannot publish a different streak from the one the
@@ -785,27 +783,48 @@ class CloudSync(
             }
         }.toSet()
 
-    /**
-     * Content fingerprint of one completed session — every field the push
-     * uploads, sets included. Equality with the stored watermark means "the
-     * cloud already holds exactly this", so the session is skipped.
-     */
-    private fun pushFingerprint(session: WorkoutSession, sets: List<SessionSet>): Int = Objects.hash(
-        session.label,
-        session.title,
-        session.note,
-        session.completedAtMs,
-        session.xpAwarded,
-        session.strengthScore,
-        sets.map { set ->
-            // Every field the push uploads must be here, or an edit that only
-            // changes a hold's seconds matches the watermark and never syncs.
-            listOf(
-                set.exerciseName, set.setIndex, set.reps, set.weightKg, set.modifiers, set.done,
-                set.durationSec, set.distanceM, set.grade,
-            )
-        },
-    )
+    // Internal (not private) so the instrumented push-selection test can call
+    // pendingForPush; the fingerprint itself stays private.
+    internal companion object {
+        /**
+         * The sessions a push must upload: changed-since-last-push, and never
+         * CSV-imported. Imported history reaches the cloud only inside the
+         * full-archive backup (cloud_archives) — the feed would otherwise
+         * flood with years of back-filled workouts the lifter never chose to
+         * publish. Filtering BEFORE the watermark check also means an
+         * imported session never enters the retry path: it is skipped each
+         * push and simply never advances the watermark, so there is nothing
+         * to retry forever.
+         */
+        internal fun pendingForPush(
+            completed: List<Pair<WorkoutSession, List<SessionSet>>>,
+            watermark: Map<Long, Int>,
+        ): List<Pair<WorkoutSession, List<SessionSet>>> = completed
+            .filterNot { (session, _) -> session.imported }
+            .filter { (session, sets) -> pushFingerprint(session, sets) != watermark[session.id] }
+
+        /**
+         * Content fingerprint of one completed session — every field the push
+         * uploads, sets included. Equality with the stored watermark means
+         * "the cloud already holds exactly this", so the session is skipped.
+         */
+        internal fun pushFingerprint(session: WorkoutSession, sets: List<SessionSet>): Int = Objects.hash(
+            session.label,
+            session.title,
+            session.note,
+            session.completedAtMs,
+            session.xpAwarded,
+            session.strengthScore,
+            sets.map { set ->
+                // Every field the push uploads must be here, or an edit that only
+                // changes a hold's seconds matches the watermark and never syncs.
+                listOf(
+                    set.exerciseName, set.setIndex, set.reps, set.weightKg, set.modifiers, set.done,
+                    set.durationSec, set.distanceM, set.grade,
+                )
+            },
+        )
+    }
 }
 
 /**

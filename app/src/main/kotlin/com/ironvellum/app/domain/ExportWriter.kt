@@ -227,6 +227,11 @@ object ExportWriter {
             if (includePrivateNotes) {
                 append(",\"privateNote\":").appendEscaped(session.privateNote)
             }
+            // Only written when true so archives from before the CSV import
+            // existed stay byte-identical for app-logged sessions.
+            if (session.imported) {
+                append(",\"imported\":true")
+            }
             append(",\"sets\":[")
             sets.forEachIndexed { ti, set ->
                 if (ti > 0) append(",")

@@ -87,6 +87,8 @@ data class WorkoutSession(
     val note: String = "",
     /** Device-only note, never leaves the app. "" when unset. */
     val privateNote: String = "",
+    /** Merged in from a Strong/Hevy CSV import; excluded from the feed push. */
+    val imported: Boolean = false,
 )
 
 data class StatEntry(

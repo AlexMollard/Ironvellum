@@ -73,7 +73,17 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 28
+        const val VERSION = 29
+
+        /**
+         * Marks sessions merged in from a Strong/Hevy CSV import. Existing
+         * rows are all app-logged: default 0 keeps every one of them pushable.
+         */
+        private val MIGRATION_28_29 = object : Migration(28, 29) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sessions ADD COLUMN imported INTEGER NOT NULL DEFAULT 0")
+            }
+        }
 
         // The strength formula changed (taper + difficulty weighting). A schema
         // bump alone restates nothing: stored sessions keep the numbers the
@@ -398,6 +408,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_25_26,
             MIGRATION_26_27,
             MIGRATION_27_28,
+            MIGRATION_28_29,
         )
 
         const val NAME = "ironvellum.db"
