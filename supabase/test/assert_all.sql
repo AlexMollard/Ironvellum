@@ -286,12 +286,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 15,
-        format('schema_version() reports %s, not 15 — bump the literal with the migration', public.schema_version())
+        (select public.schema_version()) = 16,
+        format('schema_version() reports %s, not 16 — bump the literal with the migration', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 15,
+        (select public.schema_version()) = 16,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;

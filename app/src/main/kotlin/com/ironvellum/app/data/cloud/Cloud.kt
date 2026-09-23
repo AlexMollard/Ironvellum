@@ -24,7 +24,7 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 
 /** The schema literal the newest migration writes into [Cloud.NEEDED_SCHEMA_VERSION]. */
-const val NEEDED_SCHEMA_VERSION = 15
+const val NEEDED_SCHEMA_VERSION = 16
 
 /**
  * The backend the app currently talks to. [isDefault] distinguishes the

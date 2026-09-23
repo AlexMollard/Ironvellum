@@ -11,9 +11,9 @@ open-work list.
 
 | # | Item | Why it is blocking | Notes |
 |---|---|---|---|
-| 1 | Apply `supabase/migrations/0015_function_grants.sql` | **Live exposure.** `0009` is applied but only revoked from PUBLIC; Supabase grants functions to `anon` directly, so the shipped publishable key can still call `is_friend` and enumerate the accepted-friendship graph, including for lifters set to `private`. Measured on the live project 2026-09-23: anon `is_friend` answers 200 | Idempotent; the backend suite now emulates Supabase's function grants and fails without it |
+| 1 | ~~Apply `0015_function_grants.sql`~~ | Applied 2026-09-23. The publishable key now gets `42501` for `is_friend`, `can_view` and `find_hunter` | |
 | 2 | ~~Apply `0010_lifter_discovery.sql`~~ | Applied 2026-09-23 (0008, 0009, 0010, 0013, 0014 are live) | |
-| 3 | Apply `0011_server_side_aggregates.sql` **with the matching app build** | Revokes direct writes to the ranked columns; an older client's profile upsert starts failing the moment it lands | Ship together, never before |
+| 3 | ~~Apply `0011_server_side_aggregates.sql` and `0016_aggregate_grants.sql`~~ | Applied 2026-09-23; the live `schema_version()` answers 16. `0016` re-asserts `0011`'s grants, because the live project still let the publishable key execute `monarch_level` and `push_aggregates` after `0011`. Both now answer `42501` | |
 | 4 | Signing keystore | Release builds are unsigned (`app-release-unsigned.apk`); the build warns and names the four `local.properties` keys | A credential the owner must own — never generated here |
 | 5 | Hosted privacy-policy URL | Play requires a URL, not an in-app document | Content exists in `PRIVACY.md` |
 | 6 | Play health-data declaration | All seven Health Connect permissions need the form; none are in the heightened-scrutiny family | Mapping in `docs/PLAY_DATA_SAFETY.md` |

@@ -17,7 +17,7 @@ stack (Postgres, GoTrue auth, PostgREST, Studio) behind a single host.
 ## 2. Apply every migration, in order
 
 The app expects the schema built by `supabase/migrations/`, applied in numeric
-order (`0001_init.sql` → `0015_function_grants.sql`, and any later files). With
+order (`0001_init.sql` → `0016_aggregate_grants.sql`, and any later files). With
 psql:
 
 ```bash
