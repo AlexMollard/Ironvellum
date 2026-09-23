@@ -16,7 +16,7 @@ Repo: https://github.com/AlexMollard/Ironvellum.git
 Builds:
   - versionName: '1.0'
     versionCode: 1
-    commit: 14e476e42ec725ba514a793eba02c494dd2c93bd
+    commit: 35b93b6749aea514a9599a26f1743b155a511812
     subdir: app
     gradle:
       - foss
