@@ -36,8 +36,21 @@ class TrainingCalendarTest {
     }
 
     @Test
-    fun `two empty days do break the streak`() {
+    fun `two empty days inside the current week stay open`() {
+        // Fri–Sun trained, Monday and Tuesday empty: the week is not over, so
+        // the empty days cannot have broken anything yet.
         val today = LocalDate.parse("2026-03-10")
+        assertEquals(
+            3,
+            Titles.trainingStreakDays(days("2026-03-06", "2026-03-07", "2026-03-08"), today = today),
+        )
+    }
+
+    @Test
+    fun `a washed previous week breaks the streak`() {
+        // Same training, one week later and nothing since: the empty week has
+        // closed untrained, so the streak dies at its boundary.
+        val today = LocalDate.parse("2026-03-17")
         assertEquals(
             0,
             Titles.trainingStreakDays(days("2026-03-06", "2026-03-07", "2026-03-08"), today = today),

@@ -1,13 +1,20 @@
 package com.ironvellum.app.domain
 
+import java.time.DayOfWeek
 import java.time.LocalDate
 
 /**
- * Streak = consecutive scheduled training days completed. Rest days (days
- * without a scheduled preset) neither grow nor break the streak; a scheduled
- * day that was skipped breaks it, counting back from today (today itself only
- * breaks the streak if the day is over or it is scheduled and a later day was
- * already missed — i.e. today is forgiving).
+ * Streak = consecutive scheduled training days completed, with a catch-up
+ * window so rest days and one bad day cannot erase a month.
+ *
+ *  - Rest days (days without a scheduled preset) never grow or break it.
+ *  - Today never breaks it (today is forgiving).
+ *  - A missed scheduled day inside the CURRENT week is still open: you can
+ *    still train it late, so it does not break the streak yet.
+ *  - A missed scheduled day in a PAST week is forgiven when a later day in
+ *    that same week was completed — the week got trained around the slip.
+ *    The week closing with the slip untrained is what breaks the streak,
+ *    so a washed week costs the streak, one bad Tuesday does not.
  */
 object Streak {
 
@@ -18,20 +25,31 @@ object Streak {
         today: LocalDate,
     ): Int {
         val byDate = records.associateBy { it.date }
+        val thisWeekStart = today.with(DayOfWeek.MONDAY)
         var streak = 0
         var date = today
+        // Completions already walked past inside the week [date] falls in.
+        // The walk runs backward, so these are all LATER than [date]: a slip
+        // with one of these behind it was trained around, not skipped.
+        var weekCompletions = 0
+        var weekStart = today.with(DayOfWeek.MONDAY)
         // Walk back at most ~2 years; enough for any realistic streak.
         repeat(730) {
+            val start = date.with(DayOfWeek.MONDAY)
+            if (start != weekStart) {
+                weekStart = start
+                weekCompletions = 0
+            }
             val record = byDate[date]
             if (record != null) {
                 if (record.completed) {
                     streak++
-                } else {
+                    weekCompletions++
+                } else if (record.scheduledDay != null) {
                     val isToday = date == today
-                    val scheduled = record.scheduledDay != null
-                    if (scheduled && !isToday) return streak
-                    // unscheduled but completed (freeform) still counts;
-                    // today without a completion just waits.
+                    val stillOpen = date >= thisWeekStart
+                    if (!isToday && !stillOpen && weekCompletions == 0) return streak
+                    // rescued (trained around), today, or still open: keep walking.
                 }
             }
             date = date.minusDays(1)

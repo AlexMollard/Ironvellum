@@ -25,10 +25,25 @@ class TitleEngineTest {
         )
         assertEquals(5, Titles.trainingStreakDays(trained, monWedFri, today))
 
-        // Skipping a SCHEDULED day breaks it: Wednesday the 16th was missed.
+        // Skipping a SCHEDULED day no longer snaps mid-week: Wednesday the
+        // 16th is still open — train Friday and the week closes trained. The
+        // walk continues through the slip; it dies at Monday the 7th, the
+        // washed previous week's untrained day.
         assertEquals(
-            1,
+            4,
             Titles.trainingStreakDays(trained - LocalDate.of(2026, 9, 16), monWedFri, today),
+        )
+
+        // A week that CLOSES with its scheduled days untrained is what costs
+        // the streak: here Monday 14th and Wednesday 16th were both missed,
+        // and the washed week before them has no rescues either.
+        assertEquals(
+            3,
+            Titles.trainingStreakDays(
+                trained - LocalDate.of(2026, 9, 14) - LocalDate.of(2026, 9, 16),
+                monWedFri,
+                today,
+            ),
         )
 
         // Today is forgiving: a scheduled day not yet trained still shows the
