@@ -837,10 +837,15 @@ class Repository(
             profileSex(),
         ) ?: 0
 
-        // Quest bonus: completing the preset scheduled for today.
+        // Quest bonus: completing the preset scheduled for today — ONCE.
+        // Without the completed-today check, re-running the same preset paid
+        // the bonus (and re-ran the level-up rolls) on every repeat, which is
+        // exactly the farming path the economy rules forbid.
         val today = LocalDate.now().dayOfWeek.value
+        val todayStart = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
         val questBonus = session.presetId?.let { pid ->
-            presetDao.presetWithEntries(pid)?.preset?.scheduledDay == today
+            presetDao.presetWithEntries(pid)?.preset?.scheduledDay == today &&
+                sessionDao.countCompletedSince(pid, todayStart) == 0
         } == true
         val totalXpGain = xp + if (questBonus) Xp.QUEST_BONUS else 0
 

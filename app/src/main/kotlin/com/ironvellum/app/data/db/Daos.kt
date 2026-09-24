@@ -80,6 +80,14 @@ interface SessionDao {
     @Query("SELECT * FROM sessions WHERE id = :id")
     suspend fun byId(id: Long): SessionEntity?
 
+    /** Completed sessions of one preset since an instant; the quest-bonus once-per-day guard. */
+    @Query(
+        "SELECT COUNT(*) FROM sessions " +
+            "WHERE presetId = :presetId AND completedAtMs IS NOT NULL AND completedAtMs >= :sinceEpochMs",
+    )
+    suspend fun countCompletedSince(presetId: Long, sinceEpochMs: Long): Int
+
+
     @Insert
     suspend fun insertSets(sets: List<SetLogEntity>): List<Long>
 
