@@ -32,7 +32,7 @@ ADB = SDK / "platform-tools" / "adb.exe"
 EMULATOR = SDK / "emulator" / "emulator.exe"
 AVD = "IronvellumEmu"
 PORT = "5554"
-APK = pathlib.Path("app/build/outputs/apk/debug/app-debug.apk")
+APK = pathlib.Path("app/build/outputs/apk/foss/debug/app-foss-debug.apk")  # :app:assembleFossDebug
 PKG = "com.ironvellum.app"
 SHOTS = pathlib.Path(".tmp/shots")
 
