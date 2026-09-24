@@ -15,6 +15,9 @@ import androidx.work.ExistingPeriodicWorkPolicy
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import com.ironvellum.app.R
+import com.ironvellum.app.domain.Titles
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.first
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -87,7 +90,7 @@ object Reminders {
     }
 
     /** The worker's whole job. Returns false when it had nothing to say. */
-    fun notifyIfWanted(context: Context): Boolean {
+    suspend fun notifyIfWanted(context: Context, repo: Repository): Boolean {
         if (!enabled(context)) return false
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
@@ -99,14 +102,66 @@ object Reminders {
             context, 0, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
+
+        // What today actually is: a quest, a rest day, or already done.
+        val today = LocalDate.now()
+        val history = repo.observeHistory().firstOrNull() ?: emptyList()
+        val zone = java.time.ZoneId.systemDefault()
+        val doneToday = history.any {
+            it.first.completedAtMs?.let { ms ->
+                java.time.Instant.ofEpochMilli(ms).atZone(zone).toLocalDate() == today
+            } == true
+        }
+        // Already claimed today: the kindest notification is silence.
+        if (doneToday) return false
+
+        val dates = history.mapNotNull {
+            it.first.completedAtMs?.let { ms -> java.time.Instant.ofEpochMilli(ms).atZone(zone).toLocalDate() }
+        }.toSet()
+        val streak = Titles.trainingStreakDays(dates)
+        val next = DEED_MILESTONES.firstOrNull { it > streak }
+        val days = pluralDays(streak)
+
+        val quest = repo.observePresets().firstOrNull()
+            ?.firstOrNull { it.scheduledDay == today.dayOfWeek.value }
+        val (title, text, bigText) = if (quest == null) {
+            // A scheduled rest day is a kept day, not a missed one: say so.
+            Triple(
+                "REST DAY",
+                "Rest up. The streak holds at $days.",
+                "Nothing scheduled today. Recovery is part of the program, " +
+                    "and the $days streak sits safe until your next quest.",
+            )
+        } else {
+            val moves = quest.entries.size
+            val sets = quest.entries.sumOf { it.targetSets }
+            Triple(
+                "QUEST OPEN · ${quest.name.uppercase()}",
+                "$moves moves · $sets sets waiting.",
+                buildString {
+                    append("${quest.name}: $moves moves, $sets sets today. ")
+                    append(
+                        if (streak == 0) "Today's session starts the streak."
+                        else "$days streak. ${next ?: streak} is the next deed.",
+                    )
+                },
+            )
+        }
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_reminder)
-            .setContentTitle("IRONVELLUM")
-            .setContentText("Today's quest is still open. The forge remembers.")
+            .setContentTitle(title)
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
             .setContentIntent(pending)
             .setAutoCancel(true)
             .build()
         NotificationManagerCompat.from(context).notify(1, notification)
         return true
     }
+
+    /** Streak deed thresholds — keep in step with the TrainingStreak deeds. */
+    private val DEED_MILESTONES = listOf(3, 7, 14, 30, 100)
+
+    private fun pluralDays(n: Int) = if (n == 1) "1 day" else "$n days"
 }

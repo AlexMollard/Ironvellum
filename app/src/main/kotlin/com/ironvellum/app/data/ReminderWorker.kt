@@ -1,6 +1,7 @@
 package com.ironvellum.app.data
 
 import android.content.Context
+import com.ironvellum.app.IronvellumApp
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
 
@@ -10,7 +11,8 @@ import androidx.work.WorkerParameters
  */
 class ReminderWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
-        Reminders.notifyIfWanted(applicationContext)
+        val app = applicationContext as? IronvellumApp ?: return Result.success()
+        Reminders.notifyIfWanted(app, app.repository)
         return Result.success()
     }
 }
