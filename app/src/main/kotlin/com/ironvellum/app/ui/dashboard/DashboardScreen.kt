@@ -112,13 +112,15 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
 
-data class DashboardUi(
+class DashboardUi(
     val profile: PlayerProfile? = null,
     val recent: List<WorkoutSession> = emptyList(),
     val unlockedCount: Int = 0,
     val presets: List<WorkoutPreset> = emptyList(),
     val streak: Int = 0,
     val stepsToday: Int = 0,
+    /** Weekdays (ISO 1-7) with a completed session in the current Monday-week. */
+    val completedWeekdays: Set<Int> = emptySet(),
 )
 
 class DashboardViewModel(private val repo: Repository) : ViewModel() {
@@ -172,6 +174,10 @@ class DashboardViewModel(private val repo: Repository) : ViewModel() {
                 today,
             ),
             stepsToday = healthDays.firstOrNull { it.date == today }?.steps ?: 0,
+            completedWeekdays = doneDates
+                .filter { !it.isBefore(today.with(java.time.DayOfWeek.MONDAY)) }
+                .map { it.dayOfWeek.value }
+                .toSet(),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
 
@@ -472,6 +478,10 @@ fun DashboardScreen(
                     val preset = ui.presets.firstOrNull { it.scheduledDay == day }
                     val isToday = day == today.dayOfWeek.value
                     val isSelected = day == selectedDay
+                    // The rail must answer "did I train this week?" at a
+                    // glance: a done day is struck bright, a missed scheduled
+                    // day stays dim. No red, no nag - the ledger, not guilt.
+                    val isDone = day in ui.completedWeekdays
                     Column(
                         Modifier
                             .weight(1f)
@@ -483,11 +493,14 @@ fun DashboardScreen(
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
-                            label.take(1),
+                            label.take(1) + if (isDone) "\u2713" else "",
                             style = MaterialTheme.typography.titleSmall,
                             fontFamily = ChakraPetch,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            fontWeight = if (isSelected || isDone) FontWeight.Bold else FontWeight.Normal,
                             color = when {
+                                // Done outranks selection: a selected day that
+                                // hides its tick answers neither question.
+                                isDone -> IronvellumColors.EmeraldBright
                                 isSelected -> IronvellumColors.Ink
                                 isToday -> IronvellumColors.SovereignGold
                                 preset != null -> IronvellumColors.SystemGreen
@@ -500,16 +513,18 @@ fun DashboardScreen(
                         // look struck by hand.
                         Box(
                             Modifier
-                                .width(if (isSelected) 24.dp else 15.dp)
+                                .width(if (isSelected) 24.dp else if (isDone) 18.dp else 15.dp)
                                 .height(if (isSelected) 5.dp else 4.dp)
                                 .inkHairline(
                                     color = when {
+                                        isDone -> IronvellumColors.EmeraldBright
+                                        isSelected -> IronvellumColors.Ink
                                         isToday -> IronvellumColors.SovereignGold
                                         preset != null -> IronvellumColors.SystemGreen
                                         else -> IronvellumColors.Rune
                                     },
                                     seed = day,
-                                    thickness = if (isSelected) 3.dp else 2.dp,
+                                    thickness = if (isSelected || isDone) 3.dp else 2.dp,
                                 ),
                         )
                     }

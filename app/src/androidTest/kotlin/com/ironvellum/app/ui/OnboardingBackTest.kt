@@ -7,6 +7,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import android.content.Context
 import com.ironvellum.app.MainActivity
 import com.ironvellum.app.IronvellumApp
 import kotlinx.coroutines.runBlocking
@@ -64,12 +65,22 @@ class OnboardingBackTest {
         fun standTheGateUp() = runBlocking {
             app.repository.ensureSeeded()
             app.database.profileDao().setHeight(null)
+            // The skip is persisted now, and the suite shares the real app
+            // prefs: a skipped manual session on this emulator would keep the
+            // gate down. Clear it; restored below with the height.
+            prefs = app.getSharedPreferences("onboarding", Context.MODE_PRIVATE)
+            dismissedBefore = prefs.getBoolean("dismissed", false)
+            prefs.edit().putBoolean("dismissed", false).apply()
         }
 
         @AfterClass
         @JvmStatic
         fun letTheAppBackIn() = runBlocking {
             app.database.profileDao().setHeight(TestProfile.HEIGHT_CM)
+            prefs.edit().putBoolean("dismissed", dismissedBefore).apply()
         }
+
+        private lateinit var prefs: android.content.SharedPreferences
+        private var dismissedBefore: Boolean = false
     }
 }

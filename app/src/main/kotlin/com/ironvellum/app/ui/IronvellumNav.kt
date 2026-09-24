@@ -127,8 +127,12 @@ fun IronvellumRoot() {
     // writes the height; the flow then holds the gate open for the rest of
     // that process (OnboardingViewModel._flowActive) so the training questions
     // and the proposed week still run, and accepting or skipping releases it.
+    val appContext = androidx.compose.ui.platform.LocalContext.current
     val onboardingViewModel: OnboardingViewModel = viewModel(
-        factory = viewModelFactory { initializer { OnboardingViewModel(ironvellumRepository()) } },
+        factory = viewModelFactory { initializer {
+                        val app = appContext.applicationContext
+                        OnboardingViewModel(ironvellumRepository(), app)
+                    } },
     )
     val needsSetup by onboardingViewModel.needsSetup.collectAsStateWithLifecycle()
 

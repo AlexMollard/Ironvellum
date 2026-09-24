@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
+    <!-- Only the optional daily reminder posts notifications; off until the
+         lifter enables it in Settings, and the runtime grant is requested there. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <!--
       Package visibility: without this, getSdkStatus() cannot see the Health

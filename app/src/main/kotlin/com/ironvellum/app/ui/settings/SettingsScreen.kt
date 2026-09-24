@@ -83,7 +83,12 @@ import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.IronvellumColors
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import com.ironvellum.app.data.Reminders
 import java.io.File
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -1218,6 +1223,60 @@ fun SettingsScreen(
                 onClick = onOpenSupport,
                 quiet = true,
             )
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        // The only bring-back mechanism the app has: one toggle, one evening
+        // nudge. Lives beside the support panel, near where a lifter decides
+        // how much of themselves this app gets to keep.
+        InkPanel(Modifier.fillMaxWidth()) {
+            Text(
+                "DAILY REMINDER",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SystemGreen,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "One nudge in the evening when today's quest is still open. No streak guilt, no noise.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
+            Spacer(Modifier.height(10.dp))
+            var remindersOn by remember { mutableStateOf(Reminders.enabled(context)) }
+            // Declined notifications must not wedge the toggle: the work is
+            // still scheduled, Android just drops the posts, and re-enabling
+            // re-asks through the system settings rather than a dead dialog.
+            val askNotifications = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission(),
+            ) { }
+            val deniedNotifications = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+            IronvellumButton(
+                label = if (remindersOn) "Reminder on" else "Reminder off",
+                quiet = true,
+                onClick = {
+                    if (remindersOn) {
+                        Reminders.disable(context)
+                        remindersOn = false
+                    } else {
+                        Reminders.enable(context)
+                        remindersOn = true
+                        if (deniedNotifications) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                },
+            )
+            if (remindersOn && deniedNotifications) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Notifications are muted in Android's settings — the reminder fires silently until you allow them.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
         }
 
         Spacer(Modifier.height(14.dp))

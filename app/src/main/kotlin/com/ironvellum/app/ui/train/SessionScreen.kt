@@ -1127,9 +1127,9 @@ private fun SetDeltaBadge(delta: SetRecords.Delta?, displaySetNo: Int) {
     }
 }
 
-/** "40kg" or plain "BW" when the PR was a pure bodyweight set. */
+/** "40kg" or plain "BW" when the PR was a pure bodyweight set. formatKg already carries the unit. */
 private fun prLoad(weightKg: Double?): String =
-    weightKg?.let { "${formatKg(it)}kg" } ?: "BW"
+    weightKg?.let { formatKg(it) } ?: "BW"
 
 private fun stepDownKg(kg: Double?): Double? = kg?.minus(2.5)?.takeIf { it > 0.0 }
 

@@ -102,6 +102,19 @@ class QuestBonusOncePerDayTest {
     }
 
     @Test
+    fun aCompletionWithNoConqueredSetsPaysNoBonus() = runBlocking {
+        val presetId = saveTodayPreset("Quest day")
+        // Started, but every set left unticked: the claim is a tap-through.
+        val sessionId = repo.startSessionFromPreset(presetId)
+
+        val result = repo.completeSession(sessionId)
+        assertFalse(
+            "an empty-handed completion must not pay the quest bonus",
+            result.questBonus,
+        )
+    }
+
+    @Test
     fun completingThePresetOnAnotherDayPaysAgain() = runBlocking {
         val presetId = saveTodayPreset("Quest day")
         assertTrue(repo.completeSession(startDoneSession(presetId)).questBonus)

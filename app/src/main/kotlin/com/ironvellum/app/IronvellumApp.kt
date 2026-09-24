@@ -9,6 +9,7 @@ import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.HealthSync
 import com.ironvellum.app.data.IronvellumDatabase
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.Reminders
 import com.ironvellum.app.ui.theme.InkStyle
 import com.ironvellum.app.data.HealthSyncWorker
 import com.ironvellum.app.data.cloud.CloudSyncWorker
@@ -36,6 +37,9 @@ class IronvellumApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // The channel must exist before any notification can post on O+; the
+        // worker only fires daily, so the cold-start call is the reliable one.
+        Reminders.ensureChannel(this)
         // Debug only, and log rather than crash: main-thread disk or network
         // work is how an app earns an ANR on a cold morning with a big
         // database, and nothing else in this project would notice it.

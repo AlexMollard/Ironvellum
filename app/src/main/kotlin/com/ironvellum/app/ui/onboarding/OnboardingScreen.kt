@@ -82,16 +82,28 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import android.content.Context
+import androidx.core.content.edit
+import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class OnboardingViewModel(
     private val repo: Repository,
+    appContext: Context,
 ) : ViewModel() {
 
-    /** In-memory only: a skip must not need a new persisted flag to hold for this process. */
-    private val _dismissed = MutableStateFlow(false)
+    private val prefs = appContext.getSharedPreferences("onboarding", Context.MODE_PRIVATE)
+
+    /**
+     * Persisted: the comment that called this in-memory argued a skip "must
+     * not need a persisted flag" - but the gate's other signal is the null
+     * height, and a lifter who skips never writes one. In-memory meant every
+     * cold start re-gated her, for the life of the app, until she either
+     * completed the profile or skipped again forever.
+     */
+    private val _dismissed = MutableStateFlow(prefs.getBoolean(KEY_DISMISSED, false))
     val dismissed: StateFlow<Boolean> = _dismissed.asStateFlow()
 
     /**
@@ -208,6 +220,7 @@ class OnboardingViewModel(
                 onSuccess = {
                     _applyError.value = null
                     _dismissed.value = true
+                    prefs.edit { putBoolean(KEY_DISMISSED, true) }
                 },
                 onFailure = {
                     _applyError.value = "Could not save the routine" +
@@ -219,6 +232,11 @@ class OnboardingViewModel(
 
     fun skip() {
         _dismissed.value = true
+        prefs.edit { putBoolean(KEY_DISMISSED, true) }
+    }
+
+    companion object {
+        private const val KEY_DISMISSED = "dismissed"
     }
 }
 
@@ -268,8 +286,12 @@ private fun joinHuman(items: List<String>): String = when (items.size) {
  */
 @Composable
 fun OnboardingScreen(
+    appContext: Context = LocalContext.current,
     viewModel: OnboardingViewModel = viewModel(
-        factory = viewModelFactory { initializer { OnboardingViewModel(ironvellumRepository()) } },
+        factory = viewModelFactory { initializer {
+                    val app = appContext.applicationContext
+                    OnboardingViewModel(ironvellumRepository(), app)
+                    } },
     ),
 ) {
     var step by rememberSaveable { mutableIntStateOf(0) }
