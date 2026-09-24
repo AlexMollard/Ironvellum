@@ -141,7 +141,7 @@ class WorkoutFlowTest {
         val xpBefore = xpFromHeader()
 
         // The quest CTA depends on state: "Accept Quest" on a fresh day,
-        // "Resume" once a session exists, "Start Anyway" on a non-scheduled day.
+        // "Start Session" on a non-scheduled day.
         // IronvellumButton uppercases every label.
         //
         // The seeded programs cover four weekdays, so on the others Today shows
@@ -152,7 +152,7 @@ class WorkoutFlowTest {
         // The quest card arrives after seeding, so poll for the CTA rather
         // than sampling the tree once on the first frame.
         val cta = awaitAnyText { label ->
-            label == "ACCEPT QUEST" || label == "START ANYWAY" || label.startsWith("RESUME")
+            label == "ACCEPT QUEST" || label == "START SESSION" || label.startsWith("RESUME")
         }
         compose.onAllNodesWithText(cta).onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)

@@ -228,6 +228,24 @@ fun DashboardScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val selectedDay by viewModel.selected.collectAsStateWithLifecycle()
+    // A cached process outlives midnight: the lifter opened the app Monday
+    // night, Android parked it, and Thursday's open resumed Monday's
+    // selection. On each return to the foreground, follow the calendar — but
+    // only when the day actually changed, so a quick app-switch preserves the
+    // day she was reading.
+    val launchDay = remember { LocalDate.now().dayOfWeek.value }
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_START &&
+                LocalDate.now().dayOfWeek.value != launchDay
+            ) {
+                viewModel.selectDay(LocalDate.now().dayOfWeek.value)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     val profile = ui.profile
     val progress = Xp.progress(profile?.totalXp ?: 0L)
@@ -746,7 +764,10 @@ fun DashboardScreen(
                     // look like scrolling, which is what it is.
                     Spacer(Modifier.height(10.dp))
                     IronvellumButton(
-                        label = if (isTodaySelected) "Accept Quest" else "Start Anyway",
+                        // "Start Anyway" read as an apology: the day header
+                        // already says which day this is, so the button just
+                        // states the act.
+                        label = if (isTodaySelected) "Accept Quest" else "Start Session",
                         onClick = { viewModel.beginPreset(selectedPreset.id, onStartSession) },
                         modifier = Modifier.fillMaxWidth(),
                     )

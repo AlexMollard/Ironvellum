@@ -1256,7 +1256,9 @@ fun SettingsScreen(
                 ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
                 PackageManager.PERMISSION_GRANTED
             IronvellumButton(
-                label = if (remindersOn) "Reminder on" else "Reminder off",
+                // The label is the action, not the state: "Reminder on" read
+                // like a command to turn it on while it was already on.
+                label = if (remindersOn) "Turn reminders off" else "Turn reminders on",
                 quiet = true,
                 onClick = {
                     if (remindersOn) {
