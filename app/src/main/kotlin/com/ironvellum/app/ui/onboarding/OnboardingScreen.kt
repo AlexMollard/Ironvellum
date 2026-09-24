@@ -152,7 +152,7 @@ class OnboardingViewModel(
                 repo.setHeight(heightCm)
                 repo.addStat(weightKg, null)
             }.onFailure {
-                _applyError.value = "Could not save your profile: ${it.message}"
+                _applyError.value = "Could not save your profile" + (it.message?.let { m -> ": $m" } ?: "")
             }
         }
     }
@@ -210,7 +210,8 @@ class OnboardingViewModel(
                     _dismissed.value = true
                 },
                 onFailure = {
-                    _applyError.value = "Could not save the routine: ${it.message}. Nothing was written."
+                    _applyError.value = "Could not save the routine" +
+                        (it.message?.let { m -> ": $m" } ?: "") + ". Nothing was written."
                 },
             )
         }

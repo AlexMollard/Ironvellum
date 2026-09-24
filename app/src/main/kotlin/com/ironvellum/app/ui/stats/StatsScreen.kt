@@ -197,6 +197,7 @@ fun StatsScreen(
     // which is how five screens ended up unreachable earlier.
     onOpenMeasurement: (MeasurementSite) -> Unit,
     onOpenLog: () -> Unit,
+    onOpenSettings: () -> Unit,
     viewModel: StatsViewModel =
         viewModel(factory = viewModelFactory { initializer { StatsViewModel(ironvellumRepository()) } }),
 ) {
@@ -578,6 +579,10 @@ fun StatsScreen(
             sex = viewModel.sex.collectAsStateWithLifecycle().value,
             measurements = viewModel.latestMeasurements.collectAsStateWithLifecycle().value,
             onDismiss = { showAdd = false },
+            onOpenSettings = {
+                showAdd = false
+                onOpenSettings()
+            },
             onConfirm = { weight, bf ->
                 viewModel.addStat(weight, bf)
                 showAdd = false
@@ -880,6 +885,7 @@ private fun AddStatDialog(
     sex: Sex,
     measurements: Map<MeasurementSite, Double>,
     onDismiss: () -> Unit,
+    onOpenSettings: () -> Unit,
     onConfirm: (Double, Double?) -> Unit,
 ) {
     // Saveable so a half-entered weigh-in survives rotation/process death; the
@@ -950,11 +956,18 @@ private fun AddStatDialog(
                     modifier = Modifier.fillMaxWidth(),
                 )
                 if (heightCm == null || heightCm <= 0.0) {
-                    // BMI/FFMI need it, but logging must not demand it every time.
+                    // BMI/FFMI need it, but logging must not demand it every
+                    // time. The hint is the button: SETTINGS was otherwise two
+                    // tabs and a gear away from this dialog.
                     Text(
                         "Set your height once in SETTINGS to unlock BMI and FFMI.",
                         style = MaterialTheme.typography.labelSmall,
-                        color = IronvellumColors.InkMuted,
+                        color = IronvellumColors.SystemGreen,
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .clickable(onClick = onOpenSettings)
+                            .heightIn(min = 24.dp)
+                            .padding(vertical = 4.dp),
                     )
                 }
                 TextButton(onClick = { showEstimator = !showEstimator }) {

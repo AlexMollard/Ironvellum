@@ -280,7 +280,7 @@ class SettingsViewModel(
                         "Imported ${r.sessions} workouts · ${r.sets} sets · " +
                             "+${r.xpAwarded} XP · ${r.skipped} already in your log"
                     },
-                    { "Import failed: ${it.message ?: it.javaClass.simpleName}" },
+                    { "Import failed: ${it.message ?: "the file could not be read"}" },
                 ),
             )
         }
@@ -378,7 +378,7 @@ class SettingsViewModel(
                         },
                     )
                 },
-                { e -> ImportUi(summary = e.message ?: e.javaClass.simpleName) },
+                { e -> ImportUi(summary = e.message ?: "Import failed — the file may not be an Ironvellum archive") },
             )
         }
     }
@@ -483,7 +483,7 @@ class SettingsViewModel(
                     syncing = false,
                     available = true,
                     message = read.exceptionOrNull()
-                        ?.let { "Health Connect read failed: ${it.javaClass.simpleName} ${it.message.orEmpty()}".trim() }
+                        ?.let { "Health Connect read failed${it.message?.let { m -> ": $m" } ?: ""}" }
                         ?: "Health Connect returned no data.",
                 )
                 return@launch
@@ -513,7 +513,7 @@ class SettingsViewModel(
                         syncing = false,
                         available = true,
                         message = "Could not store the imported reading: " +
-                            stored.exceptionOrNull()?.message.orEmpty(),
+                            (stored.exceptionOrNull()?.message ?: "unknown reason"),
                     )
                     return@launch
                 }

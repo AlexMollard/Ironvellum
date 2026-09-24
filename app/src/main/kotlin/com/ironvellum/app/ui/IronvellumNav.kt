@@ -339,6 +339,7 @@ fun IronvellumRoot() {
                     StatsScreen(
                         onOpenMeasurement = { site -> navController.navigate(Routes.measurement(site)) },
                         onOpenLog = { navController.navigate(Routes.WORKOUT_LOG) },
+                        onOpenSettings = { navController.navigate(Routes.SETTINGS) },
                     )
                 }
                 composable(Routes.TITLES) { TitlesScreen() }
