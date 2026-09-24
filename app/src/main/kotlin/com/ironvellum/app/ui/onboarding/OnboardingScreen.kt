@@ -868,6 +868,14 @@ private fun ProposalStep(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
+        // Nothing else in the flow names the other tabs. One line, so the moon
+        // (Muster) and the people (Allies) are not discovered by accident.
+        Text(
+            "Rest trains too: MUSTER pays idle essence while you are away, " +
+                "and ALLIES is there when you want company.",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
         Spacer(Modifier.height(2.dp))
     }
 }
