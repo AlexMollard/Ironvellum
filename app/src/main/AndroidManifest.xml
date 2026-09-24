@@ -11,6 +11,9 @@
     <!-- Only the optional daily reminder posts notifications; off until the
          lifter enables it in Settings, and the runtime grant is requested there. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- The mid-workout notification runs as a special-use foreground service:
+         it mirrors the live session the lifter has open. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <!--
       Package visibility: without this, getSdkStatus() cannot see the Health
@@ -48,6 +51,18 @@
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
             </intent-filter>
         </activity>
+
+        <!-- Live-session companion notification. specialUse because "glanceable
+             workout progress" is not one of the platform's fixed FGS types;
+             the subtype documents that for the Play review, should one happen. -->
+        <service
+            android:name=".WorkoutSessionService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Displays live progress of the workout session the user has open." />
+        </service>
 
         <!--
           Android 14+ requires a privacy-rationale entry point for health

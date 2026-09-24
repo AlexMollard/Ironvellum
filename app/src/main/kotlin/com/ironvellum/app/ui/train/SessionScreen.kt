@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import com.ironvellum.app.WorkoutSessionService
 import com.ironvellum.app.ui.theme.InkCircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -295,6 +296,14 @@ fun SessionScreen(
     var confirmAbandon by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
     var editModifiersFor by remember { mutableStateOf<Long?>(null) }
+
+    // The lock-screen companion. The service watches the database and stops
+    // itself when the session completes or is abandoned - the screen only
+    // has to announce that the session is the live one.
+    val screenContext = androidx.compose.ui.platform.LocalContext.current
+    androidx.compose.runtime.LaunchedEffect(sessionId) {
+        WorkoutSessionService.start(screenContext, sessionId)
+    }
 
     val session = ui.session
     if (session == null) {
