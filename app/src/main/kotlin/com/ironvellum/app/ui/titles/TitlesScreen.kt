@@ -133,10 +133,6 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
                 // metric/category live on the Exercise, so activity deeds read
                 // zero without the catalogue
                 exercises = exercises.associateBy { it.id },
-                // The streak rule needs the schedule: without it a rest day
-                // would read as a missed day and the streak deeds would sit at
-                // a number Today disagrees with.
-                scheduledWeekdays = presets.mapNotNull { it.scheduledDay }.toSet(),
                 // Without these the codex drew every load deed against the
                 // MALE bar at zero progress, so a woman reading the board saw
                 // neither her own threshold nor how close she was to it.

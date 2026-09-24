@@ -170,7 +170,6 @@ class DashboardViewModel(private val repo: Repository) : ViewModel() {
             presets = presets,
             streak = Titles.trainingStreakDays(
                 doneDates,
-                presets.mapNotNull { it.scheduledDay }.toSet(),
                 today,
             ),
             stepsToday = healthDays.firstOrNull { it.date == today }?.steps ?: 0,

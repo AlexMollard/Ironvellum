@@ -26,22 +26,23 @@ class TrainingCalendarTest {
     }
 
     @Test
-    fun `a rest day so far today does not break the streak`() {
-        // Opening the app in the morning before training must not show 0.
+    fun `a rest stretch so far today does not break the streak`() {
+        // Opening the app in the morning before training must not show 0: the
+        // chain is alive, and today sits inside its span.
         val today = LocalDate.parse("2026-03-10")
         assertEquals(
-            2,
+            3,
             Titles.trainingStreakDays(days("2026-03-08", "2026-03-09"), today = today),
         )
     }
 
     @Test
     fun `two empty days inside the current week stay open`() {
-        // Fri–Sun trained, Monday and Tuesday empty: the week is not over, so
-        // the empty days cannot have broken anything yet.
+        // Fri–Sun trained, Monday and Tuesday empty: the chain is still alive,
+        // and its span runs through today.
         val today = LocalDate.parse("2026-03-10")
         assertEquals(
-            3,
+            5,
             Titles.trainingStreakDays(days("2026-03-06", "2026-03-07", "2026-03-08"), today = today),
         )
     }

@@ -6,101 +6,53 @@ import java.time.LocalDate
 
 class StreakTest {
 
-    private fun day(date: String, scheduled: Int?, completed: Boolean) =
-        Streak.DayRecord(LocalDate.parse(date), scheduled, completed)
+    private fun d(vararg iso: String) = iso.map { LocalDate.parse(it) }.toSet()
 
     @Test
     fun `no records no streak`() {
-        assertEquals(0, Streak.current(emptyList(), LocalDate.parse("2026-09-10")))
+        assertEquals(0, Streak.current(emptySet(), LocalDate.parse("2026-09-10")))
     }
 
     @Test
-    fun `today completed counts immediately`() {
-        val records = listOf(day("2026-09-10", 4, true))
-        assertEquals(1, Streak.current(records, LocalDate.parse("2026-09-10")))
+    fun `today trained counts today itself`() {
+        assertEquals(1, Streak.current(d("2026-09-10"), LocalDate.parse("2026-09-10")))
     }
 
     @Test
-    fun `consecutive scheduled days accumulate across rest days`() {
-        val records = listOf(
-            day("2026-09-10", 4, true), // Thu
-            day("2026-09-09", null, false), // Wed rest
-            day("2026-09-08", 2, true), // Tue
-            day("2026-09-07", 1, true), // Mon
+    fun `the chain spans from the oldest linked workout through today`() {
+        // Mon + Thu, today Thursday: the chain opened Monday, so it reads 4.
+        assertEquals(4, Streak.current(d("2026-09-07", "2026-09-10"), LocalDate.parse("2026-09-10")))
+    }
+
+    @Test
+    fun `a seven day gap holds the chain together`() {
+        // Trained Mon Sep 7, then Mon Sep 14: exactly a week, still linked.
+        assertEquals(8, Streak.current(d("2026-09-07", "2026-09-14"), LocalDate.parse("2026-09-14")))
+    }
+
+    @Test
+    fun `a gap past the week closes the chain`() {
+        // Mon Sep 7 then Thu Sep 17: ten days apart, the chain broke.
+        assertEquals(1, Streak.current(d("2026-09-07", "2026-09-17"), LocalDate.parse("2026-09-17")))
+    }
+
+    @Test
+    fun `letting a whole week slip since the last workout reads zero`() {
+        // Trained Mon Sep 14, nothing since, today Tue Sep 22: eight days.
+        assertEquals(0, Streak.current(d("2026-09-14"), LocalDate.parse("2026-09-22")))
+    }
+
+    @Test
+    fun `only the current chain counts - an old block before a break is gone`() {
+        // A week of training, a ten-day hole, then one workout today: the old
+        // block must not leak into the new chain.
+        assertEquals(
+            1,
+            Streak.current(
+                d("2026-08-24", "2026-08-25", "2026-08-26", "2026-08-27", "2026-08-28", "2026-09-11"),
+                LocalDate.parse("2026-09-11"),
+            ),
         )
-        assertEquals(3, Streak.current(records, LocalDate.parse("2026-09-10")))
-    }
-
-    @Test
-    fun `a skipped scheduled day inside the current week is still open`() {
-        // Trained Monday, skipped Tuesday, today Thursday: the week is not
-        // over, so the slip cannot have broken anything yet.
-        val records = listOf(
-            day("2026-09-10", 4, true),
-            day("2026-09-08", 2, false), // skipped Tuesday
-            day("2026-09-07", 1, true),
-        )
-        assertEquals(2, Streak.current(records, LocalDate.parse("2026-09-10")))
-    }
-
-    @Test
-    fun `a later workout in the week rescues a skipped day`() {
-        // Last week: skipped Tuesday, trained Wednesday anyway. The week was
-        // trained around the slip, so the streak walks straight through it.
-        val records = listOf(
-            day("2026-09-10", 4, true), // this Thursday
-            day("2026-09-07", 1, true), // this Monday
-            day("2026-09-02", 3, true), // LAST Wednesday: the rescue
-            day("2026-09-01", 2, false), // LAST Tuesday: the slip
-            day("2026-08-31", 1, true), // LAST Monday
-        )
-        assertEquals(4, Streak.current(records, LocalDate.parse("2026-09-10")))
-    }
-
-    @Test
-    fun `a washed week still breaks the streak at its boundary`() {
-        // Last week's scheduled days never happened and nothing rescued them:
-        // once the week closed, the streak dies at the boundary.
-        val records = listOf(
-            day("2026-09-10", 4, true), // this Thursday
-            day("2026-09-07", 1, true), // this Monday
-            day("2026-09-01", 2, false), // LAST Tuesday, unrescued
-            day("2026-08-31", 1, true), // LAST Monday
-        )
-        assertEquals(2, Streak.current(records, LocalDate.parse("2026-09-10")))
-    }
-
-    @Test
-    fun `the owners week - train monday, rest wednesday, miss tuesday - survives`() {
-        // Real week pulled off the phone: schedule Mon/Tue/Thu/Fri, completed
-        // Monday's session, missed Tuesday, Wednesday was never scheduled.
-        // Under the old rule this read a hard 0; the catch-up window keeps it.
-        val records = listOf(
-            day("2026-09-24", 4, false), // today (Thu), Volume Pull pending
-            day("2026-09-23", null, false), // Wed rest
-            day("2026-09-22", 2, false), // Tue: Legs, slipped - still open
-            day("2026-09-21", 1, true), // Mon: done (the quick session)
-            day("2026-09-20", null, false), // Sun rest
-        )
-        assertEquals(1, Streak.current(records, LocalDate.parse("2026-09-24")))
-    }
-
-    @Test
-    fun `today pending does not break the streak yet`() {
-        val records = listOf(
-            day("2026-09-09", 3, true),
-            day("2026-09-10", 4, false), // today, not trained yet
-        )
-        assertEquals(1, Streak.current(records, LocalDate.parse("2026-09-10")))
-    }
-
-    @Test
-    fun `freeform completions count`() {
-        val records = listOf(
-            day("2026-09-10", null, true),
-            day("2026-09-09", null, true),
-        )
-        assertEquals(2, Streak.current(records, LocalDate.parse("2026-09-10")))
     }
 }
 
@@ -124,6 +76,7 @@ class ArmyClassTest {
         assertEquals(null, ArmyClass.nextFor(70))
     }
 }
+
 
 class RankTest {
 

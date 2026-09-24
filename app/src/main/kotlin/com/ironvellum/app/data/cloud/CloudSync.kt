@@ -74,7 +74,6 @@ class CloudSync(
             // lifter can see at home.
             val streakDays = Titles.trainingStreakDays(
                 completedDates(completed.map { it.first }),
-                repo.scheduledWeekdays(),
             )
             val lifetimeStrength = history.sumOf { (session, _) -> session.strengthScore.toLong() }
 

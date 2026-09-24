@@ -871,7 +871,6 @@ class Repository(
             healthDays = observeHealthDays().first(),
             practices = observeSkillPractices().first(),
             exercises = exerciseCatalogue(),
-            scheduledWeekdays = scheduledWeekdays(),
             sex = profileSex(),
             bodyweightAt = bodyweightLookup(),
         )
@@ -1258,8 +1257,6 @@ class Repository(
      * needs them: an unscheduled day is rest, a scheduled day that was skipped
      * breaks the streak.
      */
-    suspend fun scheduledWeekdays(): Set<Int> =
-        presetDao.observePresets().first().mapNotNull { it.preset.scheduledDay }.toSet()
 
     /** Ledger over everything logged: sessions, health days and skill practice. */
     suspend fun currentLedger(): Titles.Ledger = Titles.ledgerOf(
@@ -1268,7 +1265,6 @@ class Repository(
         healthDays = observeHealthDays().first(),
         practices = observeSkillPractices().first(),
         exercises = exerciseCatalogue(),
-        scheduledWeekdays = scheduledWeekdays(),
         sex = profileSex(),
         bodyweightAt = bodyweightLookup(),
     )
@@ -1375,7 +1371,6 @@ class Repository(
             healthDays = observeHealthDays().first(),
             practices = observeSkillPractices().first(),
             exercises = exerciseCatalogue(),
-            scheduledWeekdays = scheduledWeekdays(),
             sex = profileSex(),
             bodyweightAt = bodyweightLookup(),
         )
@@ -2042,7 +2037,6 @@ class Repository(
             healthDays = observeHealthDays().first(),
             practices = observeSkillPractices().first(),
             exercises = exerciseCatalogue(),
-            scheduledWeekdays = scheduledWeekdays(),
             sex = profileSex(),
             bodyweightAt = bodyweightLookup(),
         )
@@ -2071,9 +2065,8 @@ class Repository(
     fun observeIdleInputs(): Flow<IdleInputs> = combine(
         sessionDao.observeCompletedWithSets(),
         skillPracticeDao.observeAll(),
-        presetDao.observePresets(),
-    ) { completed, practices, presets ->
-        idleInputs(completed, practices, presets.mapNotNull { it.preset.scheduledDay }.toSet())
+    ) { completed, practices ->
+        idleInputs(completed, practices)
     }
 
     fun observeIdleRate(): Flow<IdleRate> = combine(
@@ -2116,7 +2109,6 @@ class Repository(
         val inputs = idleInputs(
             sessionDao.observeCompletedWithSets().first(),
             skillPracticeDao.observeAll().first(),
-            scheduledWeekdays(),
         )
         val rate = Idle.rate(state, inputs.sessionsLast7d, inputs.volumeLast7d, inputs.skillsUnlocked, inputs.streakDays)
         val gained = Idle.accrued(state, rate, nowMs)
@@ -2223,7 +2215,6 @@ class Repository(
     private fun idleInputs(
         completed: List<SessionWithSets>,
         practices: List<SkillPracticeEntity>,
-        scheduledWeekdays: Set<Int>,
     ): IdleInputs {
         val weekAgoMs = System.currentTimeMillis() - 7 * 24 * 60 * 60 * 1000L
         val recent = completed.filter { (it.session.completedAtMs ?: 0L) >= weekAgoMs }
@@ -2239,7 +2230,7 @@ class Repository(
             sessionsLast7d = recent.size,
             volumeLast7d = volume,
             skillsUnlocked = practices.filter { it.claimed }.map { it.skillName }.distinct().size,
-            streakDays = Titles.trainingStreakDays(completedDates, scheduledWeekdays),
+            streakDays = Titles.trainingStreakDays(completedDates),
         )
     }
 

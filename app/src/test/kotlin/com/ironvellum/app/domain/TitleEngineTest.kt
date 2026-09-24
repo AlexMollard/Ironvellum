@@ -13,44 +13,38 @@ class TitleEngineTest {
     private val ledger = Titles.Ledger(totalXp = 0, workouts = 0, sets = 0, reps = 0)
 
     @Test
-    fun `a rest day does not break the streak but a skipped training day does`() {
+    fun `the rolling streak ignores the schedule entirely`() {
         val today = LocalDate.of(2026, 9, 18) // a Friday
-        // Scheduled Mon/Wed/Fri. The days in between are rest, and rest must
-        // neither grow nor break the run — the streak counted calendar days
-        // before, so anyone training three times a week read 1.
-        val monWedFri = setOf(1, 3, 5)
+        // Mon/Wed/Fri was the old schedule; under the rolling chain it has no
+        // vote. Five sessions a week apart from each other read as one chain.
         val trained = setOf(
-            LocalDate.of(2026, 9, 9), LocalDate.of(2026, 9, 11),
-            LocalDate.of(2026, 9, 14), LocalDate.of(2026, 9, 16), LocalDate.of(2026, 9, 18),
+            LocalDate.of(2026, 9, 18), LocalDate.of(2026, 9, 16), LocalDate.of(2026, 9, 14),
+            LocalDate.of(2026, 9, 11), LocalDate.of(2026, 9, 9),
         )
-        assertEquals(5, Titles.trainingStreakDays(trained, monWedFri, today))
+        assertEquals(10, Titles.trainingStreakDays(trained, today))
 
-        // Skipping a SCHEDULED day no longer snaps mid-week: Wednesday the
-        // 16th is still open — train Friday and the week closes trained. The
-        // walk continues through the slip; it dies at Monday the 7th, the
-        // washed previous week's untrained day.
+        // Dropping a session opens a five-day gap (9th to 14th) — rest, not a
+        // break: the chain still runs from the 9th through today.
         assertEquals(
-            4,
-            Titles.trainingStreakDays(trained - LocalDate.of(2026, 9, 16), monWedFri, today),
+            10,
+            Titles.trainingStreakDays(trained - LocalDate.of(2026, 9, 11), today),
         )
 
-        // A week that CLOSES with its scheduled days untrained is what costs
-        // the streak: here Monday 14th and Wednesday 16th were both missed,
-        // and the washed week before them has no rescues either.
+        // A nine-day hole snaps the chain: everything before it is gone, and
+        // only the sessions after it count.
         assertEquals(
-            3,
+            1,
             Titles.trainingStreakDays(
-                trained - LocalDate.of(2026, 9, 14) - LocalDate.of(2026, 9, 16),
-                monWedFri,
+                trained - LocalDate.of(2026, 9, 14) - LocalDate.of(2026, 9, 11) - LocalDate.of(2026, 9, 16),
                 today,
             ),
         )
 
-        // Today is forgiving: a scheduled day not yet trained still shows the
-        // run, so opening the app in the morning never reads 0.
+        // Today is forgiving within the week: training up to yesterday keeps
+        // the chain alive into this morning.
         assertEquals(
-            4,
-            Titles.trainingStreakDays(trained - today, monWedFri, today),
+            10,
+            Titles.trainingStreakDays(trained - today, today),
         )
     }
 
