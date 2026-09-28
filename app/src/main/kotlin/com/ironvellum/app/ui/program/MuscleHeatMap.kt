@@ -105,11 +105,11 @@ fun coverageGaps(volume: Map<Muscle, Double>, target: ClosedFloatingPointRange<D
 private val FRONT = listOf(
     Region(Muscle.FRONT_DELTS, 0.072f to 0.132f, 0.118f to 0.140f, 0.136f to 0.170f, 0.128f to 0.205f, 0.103f to 0.196f, 0.088f to 0.165f),
     Region(Muscle.SIDE_DELTS, 0.120f to 0.140f, 0.146f to 0.158f, 0.158f to 0.196f, 0.148f to 0.228f, 0.133f to 0.207f, 0.138f to 0.172f),
-    Region(Muscle.CHEST, 0.012f to 0.150f, 0.070f to 0.141f, 0.098f to 0.170f, 0.103f to 0.212f, 0.072f to 0.243f, 0.012f to 0.238f),
+    Region(Muscle.CHEST, 0.012f to 0.150f, 0.070f to 0.141f, 0.100f to 0.156f, 0.108f to 0.180f, 0.096f to 0.206f, 0.060f to 0.224f, 0.012f to 0.226f),
     Region(Muscle.BICEPS, 0.116f to 0.228f, 0.148f to 0.232f, 0.156f to 0.280f, 0.146f to 0.322f, 0.122f to 0.318f, 0.112f to 0.272f),
     Region(Muscle.FOREARMS, 0.121f to 0.338f, 0.160f to 0.338f, 0.166f to 0.395f, 0.154f to 0.448f, 0.131f to 0.448f, 0.121f to 0.392f),
     Region(Muscle.ABS, 0.012f to 0.256f, 0.058f to 0.254f, 0.066f to 0.330f, 0.060f to 0.430f, 0.012f to 0.455f),
-    Region(Muscle.QUADS, 0.034f to 0.520f, 0.100f to 0.488f, 0.114f to 0.560f, 0.104f to 0.640f, 0.083f to 0.690f, 0.050f to 0.690f, 0.040f to 0.618f),
+    Region(Muscle.QUADS, 0.034f to 0.520f, 0.098f to 0.490f, 0.110f to 0.560f, 0.102f to 0.640f, 0.083f to 0.690f, 0.050f to 0.690f, 0.040f to 0.618f),
     Region(Muscle.ADDUCTORS, 0.008f to 0.500f, 0.030f to 0.518f, 0.038f to 0.615f, 0.027f to 0.640f, 0.010f to 0.560f),
     Region(Muscle.CALVES, 0.084f to 0.730f, 0.098f to 0.790f, 0.086f to 0.868f, 0.060f to 0.868f, 0.050f to 0.800f, 0.060f to 0.742f),
 )
@@ -121,28 +121,31 @@ private val BACK = listOf(
     Region(Muscle.TRICEPS, 0.116f to 0.220f, 0.150f to 0.222f, 0.160f to 0.270f, 0.150f to 0.320f, 0.125f to 0.320f, 0.113f to 0.262f),
     Region(Muscle.FOREARMS, 0.121f to 0.338f, 0.160f to 0.338f, 0.166f to 0.395f, 0.154f to 0.448f, 0.131f to 0.448f, 0.121f to 0.392f),
     Region(Muscle.LOWER_BACK, 0.012f to 0.370f, 0.034f to 0.376f, 0.070f to 0.392f, 0.074f to 0.448f, 0.012f to 0.460f),
-    Region(Muscle.GLUTES, 0.008f to 0.470f, 0.080f to 0.460f, 0.114f to 0.500f, 0.110f to 0.560f, 0.070f to 0.580f, 0.010f to 0.572f),
+    Region(Muscle.GLUTES, 0.008f to 0.470f, 0.080f to 0.462f, 0.104f to 0.492f, 0.108f to 0.556f, 0.070f to 0.580f, 0.010f to 0.572f),
     Region(Muscle.HAMSTRINGS, 0.020f to 0.592f, 0.070f to 0.590f, 0.108f to 0.582f, 0.100f to 0.660f, 0.084f to 0.700f, 0.042f to 0.700f, 0.026f to 0.650f),
     Region(Muscle.CALVES, 0.036f to 0.730f, 0.090f to 0.730f, 0.098f to 0.790f, 0.085f to 0.870f, 0.055f to 0.880f, 0.036f to 0.800f),
 )
 
 /**
  * Right half of the silhouette, crown to crotch, in figure space: a muscular
- * build, because the map is a lifter's. Traps rise in a curve into a short
- * neck, delts cap the shoulder, lats flare into a narrow waist, thighs and
- * calves swell. Head, hands and feet belong to the one outline - a head
- * circle on a flat shoulder line, wedge hands and triangle feet read as a
- * mannequin. Palms face forward (the anatomical position muscle charts
+ * male build, because the map is a lifter's. Traps rise in a curve into a
+ * short neck, delts cap the shoulder, lats flare into a narrow waist over
+ * straight hips, thighs and calves swell; the jaw is square and the pec
+ * regions are flat plates. A hip flare and round pecs read as a mixed
+ * physique on device. Head, hands and feet belong to the one outline - a
+ * head circle on a flat shoulder line, wedge hands and triangle feet read as
+ * a mannequin. Palms face forward (the anatomical position muscle charts
  * use), so the thumb sits on the outside of each hand.
  */
 private val HALF_OUTLINE = listOf(
     0.000f to 0.004f, // crown
     0.027f to 0.010f,
     0.042f to 0.028f,
-    0.047f to 0.052f, // temple
-    0.043f to 0.076f,
-    0.034f to 0.094f,
-    0.027f to 0.102f, // jaw
+    0.046f to 0.052f,
+    0.044f to 0.074f,
+    0.040f to 0.088f, // jaw angle
+    0.032f to 0.099f,
+    0.024f to 0.103f, // chin
     0.031f to 0.106f, // neck
     0.044f to 0.108f, // traps rise into the neck
     0.062f to 0.113f,
@@ -192,15 +195,15 @@ private val HALF_OUTLINE = listOf(
     0.114f to 0.290f,
     0.108f to 0.228f, // armpit
     0.113f to 0.250f, // lat flare
-    0.108f to 0.290f,
-    0.100f to 0.330f,
-    0.092f to 0.370f,
-    0.091f to 0.405f, // waist
-    0.100f to 0.442f,
-    0.112f to 0.475f, // hip
-    0.122f to 0.520f, // thigh sweep
-    0.120f to 0.580f,
-    0.110f to 0.640f,
+    0.109f to 0.290f,
+    0.102f to 0.330f,
+    0.096f to 0.370f,
+    0.095f to 0.405f, // waist
+    0.100f to 0.440f,
+    0.106f to 0.470f, // hip
+    0.116f to 0.520f, // thigh sweep
+    0.117f to 0.580f,
+    0.108f to 0.640f,
     0.094f to 0.700f, // knee, outer
     0.096f to 0.722f,
     0.103f to 0.768f, // calf, outer
