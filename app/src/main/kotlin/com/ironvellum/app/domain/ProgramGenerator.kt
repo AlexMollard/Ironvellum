@@ -191,18 +191,24 @@ object ProgramGenerator {
      * cannot be volume-counted or explained, so it degrades out. Skills
      * measured in metres (Handstand Walk) are also out: Seed stamps their
      * catalogue rows REPS, but "10 metres" is not a rep target a program
-     * can dose.
+     * can dose. [compoundOnly] also drops every isolation movement: every
+     * slot - backbone, deficit fill, a priority's second practice, an
+     * improve addition, a dumbbell-cap harder variant - selects from this
+     * pool, so filtering here is the one place the preference has to hold.
+     * A slot with no compound left for it is dropped (DEGRADE RULE).
      */
     internal fun eligible(
         catalogue: List<Exercise>,
         equipment: Equipment,
         focus: TrainingFocus,
+        compoundOnly: Boolean = false,
     ): List<Exercise> =
         catalogue.filter {
             equipmentAllows(it, equipment) &&
                 !MovementDifficulty.isLoadPriced(it.name) &&
                 MuscleMap.profile(it.name) != null &&
                 (focus == TrainingFocus.SKILL || !MuscleMap.isTechnique(it.name)) &&
+                !(compoundOnly && MovementDifficulty.isIsolation(it.name)) &&
                 Skills.ALL.firstOrNull { skill -> skill.name.equals(it.name, ignoreCase = true) }
                     ?.metric != Skills.Metric.METRES
         }
@@ -530,7 +536,7 @@ object ProgramGenerator {
     fun week(request: ProgramRequest, catalogue: List<Exercise>, strength: StrengthProfile): RoutinePlan {
         val days = request.daysPerWeek.coerceIn(1, 6)
         val split = request.split.takeIf { days in it.dayOptions } ?: TrainingSplit.forDays(days)
-        val pool = eligible(catalogue, request.equipment, request.focus)
+        val pool = eligible(catalogue, request.equipment, request.focus, request.compoundOnly)
         if (pool.isEmpty()) return RoutinePlan(emptyList())
         val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.volume))
         val sessions = layout(split, days).map { (day, role) -> Draft(day, role) }
@@ -1121,7 +1127,7 @@ object ProgramGenerator {
         catalogue: List<Exercise>,
         strength: StrengthProfile,
     ): PlannedPreset? {
-        val pool = eligible(catalogue, request.equipment, request.focus)
+        val pool = eligible(catalogue, request.equipment, request.focus, request.compoundOnly)
         if (pool.isEmpty()) return null
         val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.volume))
         val existing = ProgramRules.weeklyVolume(existingWeek)
@@ -1276,6 +1282,55 @@ object ProgramGenerator {
         return ProgramRules.TRACKED.filter { it in scope }
     }
 
+    /** Cosine floor a compound or skill movement must clear to stand in for isolation work. */
+    internal const val COMPOUND_ONLY_MIN_SIMILARITY = 0.5
+
+    /** Cosine similarity of two profiles' muscle-contribution vectors, 0..1. */
+    internal fun similarity(a: ExerciseProfile, b: ExerciseProfile): Double {
+        val keys = a.muscles.keys + b.muscles.keys
+        var dot = 0.0
+        var na = 0.0
+        var nb = 0.0
+        for (k in keys) {
+            val x = a.muscles[k] ?: 0.0
+            val y = b.muscles[k] ?: 0.0
+            dot += x * y
+            na += x * x
+            nb += y * y
+        }
+        if (na == 0.0 || nb == 0.0) return 0.0
+        return dot / kotlin.math.sqrt(na * nb)
+    }
+
+    /**
+     * The compound or skill movement closest to an isolation entry's
+     * [profile] - any pattern, since an isolation pattern has no compound
+     * twin - or null when none clears [COMPOUND_ONLY_MIN_SIMILARITY]. Never
+     * one already in the session ([taken], lowercase), and never a press on
+     * a pull session or a pull on a press session ([dayGroups]): the split
+     * stays distinct.
+     */
+    private fun compoundStandIn(
+        ctx: Ctx,
+        profile: ExerciseProfile,
+        taken: Set<String>,
+        dayGroups: Set<MuscleGroup>,
+    ): Exercise? = ctx.pool
+        .filter { it.name.trim().lowercase() !in taken }
+        .filter { candidate ->
+            val group = candidate.muscleGroup
+            !(group == MuscleGroup.PUSH && MuscleGroup.PULL in dayGroups && MuscleGroup.PUSH !in dayGroups) &&
+                !(group == MuscleGroup.PULL && MuscleGroup.PUSH in dayGroups && MuscleGroup.PULL !in dayGroups)
+        }
+        .filter { similarity(profile, profileOf(it)) >= COMPOUND_ONLY_MIN_SIMILARITY }
+        .maxWithOrNull(
+            compareBy<Exercise> { similarity(profile, profileOf(it)) }
+                .thenBy { if (profileOf(it).compound) 1 else 0 }
+                .thenBy { -fitScore(it, ctx.request.equipment) }
+                .thenBy { -MovementDifficulty.tier(it.name) }
+                .thenByDescending { it.name },
+        )
+
     /**
      * Improves one preset toward the request's goal, keeping name, day and
      * every entry's modifiers:
@@ -1290,8 +1345,11 @@ object ProgramGenerator {
      *    leaves under the tier minimum, gain one movement each;
      *  - missing loads are filled from the strength profile.
      * Movements without a MuscleMap profile (user-created, CSV imports) are
-     * passed through untouched. Idempotent by construction: run it on its
-     * own output and nothing changes.
+     * passed through untouched. With [ProgramRequest.compoundOnly] each of
+     * the lifter's own isolation entries becomes its closest compound or
+     * skill stand-in ([compoundStandIn]) or is removed - unless removing
+     * would empty the session, in which case they stay. Idempotent by
+     * construction: run it on its own output and nothing changes.
      */
     fun improve(
         target: PlannedPreset,
@@ -1300,7 +1358,7 @@ object ProgramGenerator {
         catalogue: List<Exercise>,
         strength: StrengthProfile,
     ): Improvement {
-        val pool = eligible(catalogue, request.equipment, request.focus)
+        val pool = eligible(catalogue, request.equipment, request.focus, request.compoundOnly)
         val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.volume))
         val changes = mutableListOf<PlanChange>()
         val result = mutableListOf<PlannedEntry>()
@@ -1308,7 +1366,28 @@ object ProgramGenerator {
         val dominantSeen = mutableMapOf<Pair<Muscle, MovementPattern>, Int>()
         val rir = ProgramRules.targetRir(request.volume, request.focus)
 
-        for (entry in target.entries) {
+        // Compound & skill only: every isolation entry's stand-in, decided
+        // before the walk so two entries never claim the same movement.
+        val standIns = mutableMapOf<Int, Exercise?>()
+        if (request.compoundOnly) {
+            val taken = target.entries.map { it.exerciseName.trim().lowercase() }.toMutableSet()
+            val dayGroups = target.entries
+                .filterNot { MovementDifficulty.isIsolation(it.exerciseName) }
+                .mapNotNull { e -> catalogue.firstOrNull { it.name.equals(e.exerciseName, ignoreCase = true) }?.muscleGroup }
+                .toSet()
+            target.entries.forEachIndexed { index, entry ->
+                if (!MovementDifficulty.isIsolation(entry.exerciseName)) return@forEachIndexed
+                val profile = MuscleMap.profile(entry.exerciseName) ?: return@forEachIndexed
+                val standIn = compoundStandIn(ctx, profile, taken, dayGroups)
+                standIn?.let { taken += it.name.trim().lowercase() }
+                standIns[index] = standIn
+            }
+        }
+        // Never an empty session: when nothing but isolation without a
+        // stand-in is left, it stays.
+        val dropAllowed = target.entries.indices.any { it !in standIns || standIns[it] != null }
+
+        for ((index, entry) in target.entries.withIndex()) {
             // Modifiers count: a deficit push-up is already long-length work.
             val profile = MuscleMap.profile(entry)
             if (profile == null) {
@@ -1323,9 +1402,28 @@ object ProgramGenerator {
             var loadNote = entry.loadNote
             var swapNote: String? = null
 
+            if (index in standIns) {
+                val standIn = standIns[index]
+                if (standIn != null) {
+                    swapNote = "Swapped the ${entry.exerciseName} for the ${standIn.name}: compound & skill " +
+                        "only, and it trains your ${muscleListOf(standIn)} - Gentil 2015"
+                    name = standIn.name
+                    // The isolation load says nothing about the stand-in.
+                    load = null
+                    loadNote = null
+                } else if (dropAllowed) {
+                    changes += PlanChange(
+                        PlanChange.Kind.REMOVED, entry.exerciseName,
+                        "Removed: compound & skill only, and no compound or skill movement " +
+                            "trains the same muscles closely enough - Gentil 2015",
+                    )
+                    continue
+                }
+            }
+
             // Specificity guard: a STRENGTH main lift is never swapped away.
             val swapAllowed = !(request.focus == TrainingFocus.STRENGTH && isMainLift(name))
-            if (swapAllowed && !profile.stretchBias) {
+            if (swapNote == null && swapAllowed && !profile.stretchBias) {
                 val primary = dominantMuscle(profile)
                 val replacement = pool
                     .filter { profileOf(it).pattern == profile.pattern && profileOf(it).stretchBias }

@@ -126,6 +126,7 @@ class ProgramBuilderViewModel(
     val daysPerWeek = MutableStateFlow(4)
     val split = MutableStateFlow(TrainingSplit.UPPER_LOWER)
     val priorities = MutableStateFlow<Set<MuscleArea>>(emptySet())
+    val compoundOnly = MutableStateFlow(false)
     val sessionKind = MutableStateFlow(SessionKind.AUTO)
     val sessionDay = MutableStateFlow<Int?>(1)
     val selectedTemplateId = MutableStateFlow<String?>(null)
@@ -174,6 +175,7 @@ class ProgramBuilderViewModel(
             daysPerWeek.value = saved.daysPerWeek
             split.value = saved.split
             priorities.value = saved.priorities
+            compoundOnly.value = saved.compoundOnly
         }
         // Templates exist only for strength and hypertrophy; a saved or
         // default Skills / All-round goal would match no template.
@@ -223,6 +225,7 @@ class ProgramBuilderViewModel(
         priorities = priorities.value,
         sex = sex.value,
         split = split.value,
+        compoundOnly = compoundOnly.value,
     )
 
     fun setSplit(value: TrainingSplit, days: Int) {
@@ -249,7 +252,9 @@ class ProgramBuilderViewModel(
                     val templates = matchingTemplates()
                     val chosen = templates.firstOrNull { it.id == selectedTemplateId.value } ?: templates.firstOrNull()
                     selectedTemplateId.value = chosen?.id
-                    chosen?.let { ProgramTemplates.build(it, tier.value, equipment.value, cat, _strength.value) }
+                    chosen?.let {
+                        ProgramTemplates.build(it, tier.value, equipment.value, cat, _strength.value, compoundOnly.value)
+                    }
                 }
                 "session" -> {
                     val week = planned(presets.value)
@@ -257,13 +262,21 @@ class ProgramBuilderViewModel(
                         request(), sessionKind.value, sessionDay.value, week, cat, _strength.value,
                     )
                     // Null is a message for her, not a silent blank. For
-                    // "what my week is missing" it means nothing is missing.
+                    // "what my week is missing" it means nothing is missing -
+                    // unless compound & skill only is what emptied it, which
+                    // the same request without the flag tells apart.
                     requireNotNull(preset) {
-                        if (sessionKind.value == SessionKind.AUTO) {
-                            "Your week already reaches the target on every muscle. " +
-                                "Pick Full body, Upper or Lower for an extra session."
-                        } else {
-                            "The catalogue cannot fill this workout with your equipment."
+                        val isolationWouldFill = compoundOnly.value && ProgramGenerator.session(
+                            request().copy(compoundOnly = false), sessionKind.value, sessionDay.value,
+                            week, cat, _strength.value,
+                        ) != null
+                        when {
+                            isolationWouldFill ->
+                                "Only isolation work would fill the gaps. Turn off Compound & skill only to add it."
+                            sessionKind.value == SessionKind.AUTO ->
+                                "Your week already reaches the target on every muscle. " +
+                                    "Pick Full body, Upper or Lower for an extra session."
+                            else -> "The catalogue cannot fill this workout with your equipment."
                         }
                     }
                     RoutinePlan(listOf(preset))
@@ -341,7 +354,10 @@ class ProgramBuilderViewModel(
     private fun rememberAnswers() {
         ProgramAnswersStore.save(
             appContext,
-            ProgramAnswers(tier.value, focus.value, equipment.value, daysPerWeek.value, priorities.value, split.value),
+            ProgramAnswers(
+                tier.value, focus.value, equipment.value, daysPerWeek.value, priorities.value, split.value,
+                compoundOnly.value,
+            ),
         )
     }
 
@@ -467,6 +483,7 @@ fun ProgramBuilderScreen(
     val daysPerWeek by viewModel.daysPerWeek.collectAsStateWithLifecycle()
     val split by viewModel.split.collectAsStateWithLifecycle()
     val priorities by viewModel.priorities.collectAsStateWithLifecycle()
+    val compoundOnly by viewModel.compoundOnly.collectAsStateWithLifecycle()
     val sessionKind by viewModel.sessionKind.collectAsStateWithLifecycle()
     val sessionDay by viewModel.sessionDay.collectAsStateWithLifecycle()
     val templateId by viewModel.selectedTemplateId.collectAsStateWithLifecycle()
@@ -491,7 +508,7 @@ fun ProgramBuilderScreen(
 
     // Any answer change rebuilds; the tier suggestion has settled by the time
     // the catalogue is non-empty, so this cannot thrash.
-    LaunchedEffect(mode, catalogue, presets, focus, tier, equipment, daysPerWeek, split, priorities, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
+    LaunchedEffect(mode, catalogue, presets, focus, tier, equipment, daysPerWeek, split, priorities, compoundOnly, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
         viewModel.generate()
     }
 
@@ -593,6 +610,19 @@ fun ProgramBuilderScreen(
 
         QuestionPanel("WHAT YOU HAVE ACCESS TO") {
             GearPicker(equipment = equipment, onChange = { viewModel.equipment.value = it })
+        }
+
+        QuestionPanel("MOVEMENTS") {
+            // The same drawn toggle cell as the gear items: gold when on.
+            PickCell(
+                label = "Compound & skill only",
+                selected = compoundOnly,
+                modifier = Modifier.fillMaxWidth(),
+                description = "Compound & skill only, ${if (compoundOnly) "on" else "off"}",
+                onClick = { viewModel.compoundOnly.value = !compoundOnly },
+            )
+            Spacer(Modifier.height(8.dp))
+            Caption("No curls, raises, calf, bridge or machine isolation work.")
         }
 
         if (mode != "template") {

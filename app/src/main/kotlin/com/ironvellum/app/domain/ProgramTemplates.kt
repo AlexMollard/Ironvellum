@@ -300,7 +300,9 @@ object ProgramTemplates {
      * becomes the allowed movement with the closest MuscleMap profile and the
      * same pattern - substitution is legitimate for hypertrophy (Kikuchi 2017,
      * Calatayud 2015, Plotkin 2023) and the entry's `why` says when it
-     * happened. A day left with no entries is dropped honestly.
+     * happened. A day left with no entries is dropped honestly. With
+     * [compoundOnly] an isolation entry becomes its closest same-pattern
+     * compound or skill movement, or is dropped when there is none.
      *
      * Sets scale by the ratio of the chosen level's weekly range to the one
      * the template was written at (midpoints; STRENGTH ranges are equal, so
@@ -315,8 +317,9 @@ object ProgramTemplates {
         equipment: Equipment,
         catalogue: List<Exercise>,
         strength: StrengthProfile,
+        compoundOnly: Boolean = false,
     ): RoutinePlan {
-        val pool = ProgramGenerator.eligible(catalogue, equipment, template.focus)
+        val pool = ProgramGenerator.eligible(catalogue, equipment, template.focus, compoundOnly)
         val rir = ProgramRules.targetRir(volume, template.focus)
         val chosenRange = ProgramRules.weeklySetTarget(volume, template.focus)
         val factor = midpoint(chosenRange) /
@@ -331,7 +334,16 @@ object ProgramTemplates {
                 var substituted = false
                 if (exercise == null) {
                     if (profile == null) return@mapNotNull entry.copy(targetWeightKg = null)
-                    exercise = closestSubstitute(pool.filter { it.name !in used }, profile, entry.exerciseName)
+                    // Dropped for compound & skill only, an isolation entry is
+                    // replaced only by a movement that really trains its
+                    // muscles: a calf raise has no compound twin, and "the
+                    // closest" ISOLATION-pattern skill (a bench dip) is not one.
+                    val minSimilarity = if (compoundOnly && MovementDifficulty.isIsolation(entry.exerciseName)) {
+                        ProgramGenerator.COMPOUND_ONLY_MIN_SIMILARITY
+                    } else {
+                        0.0
+                    }
+                    exercise = closestSubstitute(pool.filter { it.name !in used }, profile, entry.exerciseName, minSimilarity)
                         ?: return@mapNotNull null
                     substituted = true
                 }
@@ -349,6 +361,9 @@ object ProgramTemplates {
                 val why = if (capSwapped) {
                     "Your dumbbell is too light for the ${entry.exerciseName}; the " +
                         "${exercise.name} is harder - Lopez 2021"
+                } else if (substituted && compoundOnly && MovementDifficulty.isIsolation(entry.exerciseName)) {
+                    "Compound & skill only: the ${exercise.name} stands in for the " +
+                        "${entry.exerciseName} - Gentil 2015"
                 } else if (substituted) {
                     "No gear for the ${entry.exerciseName}; the ${exercise.name} is the " +
                         "closest match - Kikuchi 2017; Calatayud 2015"
@@ -513,38 +528,24 @@ object ProgramTemplates {
     /**
      * Same pattern, most similar muscle profile (cosine over the shared
      * contribution vector), then compound, equipment fit, tier, name - all
-     * deterministic.
+     * deterministic. A candidate under [minSimilarity] is never picked.
      */
     private fun closestSubstitute(
         pool: List<Exercise>,
         target: ExerciseProfile,
         originalName: String,
+        minSimilarity: Double,
     ): Exercise? = pool
         .filter { (MuscleMap.profile(it.name)?.pattern) == target.pattern }
         .filter { !it.name.equals(originalName, ignoreCase = true) }
+        .filter { ProgramGenerator.similarity(target, MuscleMap.profile(it.name)!!) >= minSimilarity }
         .maxWithOrNull(
             compareBy(
-                { similarity(target, MuscleMap.profile(it.name)!!) },
+                { ProgramGenerator.similarity(target, MuscleMap.profile(it.name)!!) },
                 { if (MuscleMap.profile(it.name)!!.compound) 1 else 0 },
                 { -MovementDifficulty.tier(it.name) },
                 { it.name },
             ),
         )
-
-    private fun similarity(a: ExerciseProfile, b: ExerciseProfile): Double {
-        val keys = a.muscles.keys + b.muscles.keys
-        var dot = 0.0
-        var na = 0.0
-        var nb = 0.0
-        for (k in keys) {
-            val x = a.muscles[k] ?: 0.0
-            val y = b.muscles[k] ?: 0.0
-            dot += x * y
-            na += x * x
-            nb += y * y
-        }
-        if (na == 0.0 || nb == 0.0) return 0.0
-        return dot / kotlin.math.sqrt(na * nb)
-    }
 
 }

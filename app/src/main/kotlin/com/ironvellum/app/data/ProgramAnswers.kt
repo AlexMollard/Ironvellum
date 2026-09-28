@@ -25,6 +25,8 @@ data class ProgramAnswers(
     val daysPerWeek: Int,
     val priorities: Set<MuscleArea>,
     val split: TrainingSplit,
+    /** Compound & skill only: the generator never picks isolation work. */
+    val compoundOnly: Boolean = false,
 )
 
 /**
@@ -50,6 +52,7 @@ object ProgramAnswersStore {
     private const val KEY_DUMBBELL_PAIR = "dumbbellPair"
     private const val KEY_DAYS = "daysPerWeek"
     private const val KEY_PRIORITIES = "priorities"
+    private const val KEY_COMPOUND_ONLY = "compoundOnly"
 
     private val _answers = MutableStateFlow<ProgramAnswers?>(null)
 
@@ -81,6 +84,8 @@ object ProgramAnswersStore {
                 ?.map { MuscleArea.valueOf(it) }
                 ?.toSet()
                 ?: emptySet()
+            // Absent on answers saved before the toggle existed: off.
+            val compoundOnly = prefs.getBoolean(KEY_COMPOUND_ONLY, false)
             if (volume == null || split == null || focus == null || fullGym == null || days !in split.dayOptions) {
                 null
             } else {
@@ -90,7 +95,7 @@ object ProgramAnswersStore {
                     dumbbellMaxKg = dumbbellMaxKg,
                     dumbbellPair = dumbbellPair ?: true,
                 )
-                ProgramAnswers(volume, focus, equipment, days, priorities, split)
+                ProgramAnswers(volume, focus, equipment, days, priorities, split, compoundOnly)
             }
         }.getOrNull()
         _answers.value = parsed
@@ -109,6 +114,7 @@ object ProgramAnswersStore {
             putBoolean(KEY_DUMBBELL_PAIR, answers.equipment.dumbbellPair)
             putInt(KEY_DAYS, answers.daysPerWeek)
             putString(KEY_PRIORITIES, answers.priorities.joinToString(",") { it.name })
+            putBoolean(KEY_COMPOUND_ONLY, answers.compoundOnly)
         }
         _answers.value = answers
     }

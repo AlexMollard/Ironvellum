@@ -192,6 +192,24 @@ class MovementDifficultyTest {
         assertEquals(Skills.Metric.REPS, Skills.forName("One-Arm Negative")!!.metric)
     }
 
+    /**
+     * The owner's dislikes are isolation; skill-tree progressions, holds and
+     * trunk work are not, even where their profile is single-joint - a
+     * compound & skill only week must keep the Nordic Curl and the Bench Dip.
+     */
+    @Test
+    fun `isolation covers single-joint accessories but never skills, holds or trunk work`() {
+        listOf(
+            "Lateral Raise", "Bicep Curl", "Single-Leg Calf Raise", "Knee-to-Wall Dorsiflexion",
+            "Glute Bridge", "Single-Leg Glute Bridge", "Leg Extension", " cable fly ",
+        ).forEach { assertTrue("$it is isolation", MovementDifficulty.isIsolation(it)) }
+        listOf(
+            "Nordic Curl", "Bench Dip", "Sissy Squat", "Hamstring Bridge", "Scapular Pull",
+            "Plank", "Active Bar Hang", "Pallof Press", "Ab Wheel Rollout",
+            "Pull-up", "Hip Thrust", "Romanian Deadlift", "My Own Movement",
+        ).forEach { assertFalse("$it is not isolation", MovementDifficulty.isIsolation(it)) }
+    }
+
     @Test
     fun `modifier factors combine and stay inside their bounds`() {
         assertEquals(1.0, MovementDifficulty.modifierFactor(""), 0.0001)

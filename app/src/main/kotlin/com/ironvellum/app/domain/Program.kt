@@ -205,6 +205,8 @@ data class ProgramRequest(
     val sex: Sex = Sex.MALE,
     /** Week mode only. A day count the split does not fit falls back to [TrainingSplit.forDays]. */
     val split: TrainingSplit = TrainingSplit.forDays(daysPerWeek),
+    /** Compound & skill only: no [MovementDifficulty.isIsolation] movement is ever selected. */
+    val compoundOnly: Boolean = false,
 )
 
 /**

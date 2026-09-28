@@ -418,6 +418,28 @@ object MovementDifficulty {
     }
 
     /**
+     * Whether a movement is single-joint isolation work: the curls, raises,
+     * flyes, calf and dorsiflexion work, bridges and machine extensions a
+     * "compound & skill only" program leaves out.
+     *
+     * Single-joint-ness is read from [MuscleMap]'s `compound` flag - the
+     * statement the generator already ranks on - not from [tier], which is a
+     * price: a Single-Leg Glute Bridge is tier 2 and still a bridge. Three
+     * things are never isolation, whatever their profile says:
+     * - skill-tree progressions (Bench Dip, Sissy Squat, Nordic Curl): the
+     *   tree is practice, not accessory work;
+     * - holds (Plank, Active Bar Hang): measured in seconds, never dosed;
+     * - trunk work ([MovementPattern.CORE]): bracing the whole chain is not
+     *   a limb moving about one joint.
+     * An unprofiled name (a user's own movement) is not isolation either.
+     */
+    fun isIsolation(exerciseName: String): Boolean {
+        if (key(exerciseName) in skillsByKey || isHoldByName(exerciseName)) return false
+        val profile = MuscleMap.profile(exerciseName) ?: return false
+        return !profile.compound && profile.pattern != MovementPattern.CORE
+    }
+
+    /**
      * Whether one logged set is a hold. The exercise's metric decides; the
      * name and the legacy "hold seconds" modifier are fallbacks for rows the
      * migration never saw — a custom exercise the lifter named himself, or an

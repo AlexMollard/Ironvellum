@@ -1300,4 +1300,138 @@ class ProgramGeneratorTest {
         assertTrue(fill.overCap)
         assertTrue(fill.note!!.contains("harder variant"))
     }
+
+    // ------------------------------------------------ compound & skill only
+
+    private val compoundOnlyKits = listOf(
+        Equipment.NOTHING, ownerKit, Equipment(fullGym = false, gear = Gear.entries.toSet()), Equipment.FULL_GYM,
+    )
+
+    /** Shoulders are served by raises and arms by curls, and BACK asks for a second practice. */
+    private val isolationBait = setOf(MuscleArea.BACK, MuscleArea.SHOULDERS, MuscleArea.ARMS)
+
+    private fun assertNoIsolation(plan: RoutinePlan, label: String) {
+        plan.presets.forEach { preset ->
+            assertTrue("empty day ${preset.name} ($label)", preset.entries.isNotEmpty())
+            preset.entries.forEach { entry ->
+                assertFalse(
+                    "isolation ${entry.exerciseName} with compound & skill only ($label)",
+                    MovementDifficulty.isIsolation(entry.exerciseName),
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `compound and skill only weeks never select isolation work`() {
+        for (kit in compoundOnlyKits) for ((split, days) in TrainingSplit.OPTIONS) {
+            for (focus in TrainingFocus.entries) for (volume in VolumeLevel.entries) {
+                val label = "$kit/$split/$days/$focus/$volume"
+                val plan = ProgramGenerator.week(
+                    ProgramRequest(
+                        focus, volume, kit, days, priorities = isolationBait, split = split, compoundOnly = true,
+                    ),
+                    catalogue, strength,
+                )
+                assertTrue("empty plan $label", plan.presets.isNotEmpty())
+                assertNoIsolation(plan, label)
+            }
+        }
+    }
+
+    @Test
+    fun `compound and skill only sessions and improvements never select isolation work`() {
+        val upper = PlannedPreset(
+            "Upper", "", 1,
+            listOf(PlannedEntry("Bench Press", 3, 8, null), PlannedEntry("Lat Pulldown", 3, 10, null)),
+        )
+        for (kit in compoundOnlyKits) for (focus in TrainingFocus.entries) {
+            val request = ProgramRequest(
+                focus, VolumeLevel.STANDARD, kit, priorities = isolationBait, compoundOnly = true,
+            )
+            for (kind in SessionKind.entries) {
+                val preset = ProgramGenerator.session(request, kind, 1, emptyList(), catalogue, strength) ?: continue
+                assertNoIsolation(RoutinePlan(listOf(preset)), "$kit/$focus/$kind")
+            }
+            val improved = ProgramGenerator.improve(upper, emptyList(), request, catalogue, strength).after
+            assertNoIsolation(RoutinePlan(listOf(improved)), "improve $kit/$focus")
+        }
+    }
+
+    @Test
+    fun `compound and skill only improve takes the lifter's own isolation work out of the preset`() {
+        val pull = PlannedPreset(
+            "Pull", "", 3,
+            listOf(
+                PlannedEntry("Pull-up", 4, 6, null),
+                PlannedEntry("Chin-up", 3, 8, null),
+                PlannedEntry("Dumbbell Row", 3, 10, 24.0),
+                PlannedEntry("Lateral Raise", 3, 15, 8.0),
+                PlannedEntry("Ab Wheel Rollout", 3, 10, null),
+            ),
+        )
+        val request = ProgramRequest(TrainingFocus.MUSCLE, VolumeLevel.STANDARD, ownerKit, compoundOnly = true)
+        val improvement = ProgramGenerator.improve(pull, emptyList(), request, catalogue, strength)
+        val names = improvement.after.entries.map { it.exerciseName }
+        assertNoIsolation(RoutinePlan(listOf(improvement.after)), "owner pull $names")
+        assertTrue("the pull-up was lost: $names", "Pull-up" in names)
+        assertTrue(
+            "the lateral raise left without a reason line: ${improvement.changes}",
+            improvement.changes.any {
+                it.detail.contains("compound & skill only") &&
+                    (it.exerciseName == "Lateral Raise" || it.detail.contains("Lateral Raise"))
+            },
+        )
+
+        // Flag off, improve is untouched: the raise stays an isolation move.
+        val off = ProgramGenerator.improve(pull, emptyList(), request.copy(compoundOnly = false), catalogue, strength)
+        assertTrue(
+            "fixture broken: improve without the flag dropped the isolation work",
+            off.after.entries.any { MovementDifficulty.isIsolation(it.exerciseName) },
+        )
+    }
+
+    @Test
+    fun `compound and skill only improve never empties a session`() {
+        // Nothing compound trains the calves, so the raise has no stand-in;
+        // removing it would leave nothing to improve and nothing to train.
+        val calves = PlannedPreset("Calves", "", 6, listOf(PlannedEntry("Standing Calf Raise", 3, 12, null)))
+        val request = ProgramRequest(
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, compoundOnly = true,
+        )
+        val after = ProgramGenerator.improve(calves, emptyList(), request, catalogue, strength).after
+        assertTrue("session emptied", after.entries.isNotEmpty())
+    }
+
+    @Test
+    fun `compound and skill only templates drop or replace their isolation entries`() {
+        val plans = compoundOnlyKits.flatMap { kit ->
+            ProgramTemplates.ALL.flatMap { template ->
+                VolumeLevel.entries.map { volume ->
+                    val plan = ProgramTemplates.build(template, volume, kit, catalogue, strength, compoundOnly = true)
+                    assertTrue("empty template ${template.id}/$volume/$kit", plan.presets.isNotEmpty())
+                    assertNoIsolation(plan, "${template.id}/$volume/$kit")
+                    plan
+                }
+            }
+        }
+        assertCitationsResolve(plans)
+    }
+
+    @Test
+    fun `isolation work is still selected when compound and skill only is off`() {
+        // The control for the sweeps above: were the flag ignored, this same
+        // request with it on would still carry these movements.
+        val request = ProgramRequest(
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4, priorities = isolationBait,
+        )
+        val off = entriesOf(ProgramGenerator.week(request, catalogue, strength)).map { it.exerciseName }
+        assertTrue("fixture broken: no isolation in $off", off.any { MovementDifficulty.isIsolation(it) })
+        val template = ProgramTemplates.ALL.first { it.id == "upper_lower_muscle" }
+        val built = ProgramTemplates.build(template, template.authoredVolume, Equipment.FULL_GYM, catalogue, strength)
+        assertTrue(
+            "fixture broken: template carries no isolation",
+            built.presets.flatMap { it.entries }.any { MovementDifficulty.isIsolation(it.exerciseName) },
+        )
+    }
 }
