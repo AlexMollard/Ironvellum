@@ -59,6 +59,41 @@ object MuscleMap {
      */
     fun profile(exerciseName: String): ExerciseProfile? = profiles[key(exerciseName)]
 
+    /**
+     * [exerciseName]'s profile as the lifter actually performs it. Modifiers
+     * that change the angle or range move credit; ones that change the load
+     * (weighted, assisted, banded, tempo, paused) do not - the same muscles
+     * move, just harder or easier.
+     *
+     * - Angle, on a flat chest movement (sternal 1.0, both neighbours 0.5):
+     *   an incline raises the clavicular chest to 1.0 and leaves the rest as
+     *   they were - an incline press grew the upper chest more and the other
+     *   sites equally (Chaves 2020). A decline raises the costal chest the
+     *   same way; no trial measured that one, it mirrors the incline. On a
+     *   push-up the body moves, not the bench, so the words flip: feet
+     *   "elevated" (or "decline") is the incline, hands up ("incline") the
+     *   decline. Both directions at once cancel.
+     * - "deficit" extends the bottom of the range, so the movement loads its
+     *   target long ([ExerciseProfile.stretchBias]).
+     */
+    fun profile(exerciseName: String, modifiers: String): ExerciseProfile? {
+        val base = profile(exerciseName) ?: return null
+        val words = Regex("[a-z]+").findAll(modifiers.lowercase()).map { it.value }.toSet()
+        if (words.isEmpty()) return base
+        val flatChest = base.muscles[Muscle.MID_CHEST] == 1.0 &&
+            base.muscles[Muscle.UPPER_CHEST] == 0.5 && base.muscles[Muscle.LOWER_CHEST] == 0.5
+        val bodyMoves = "push-up" in key(exerciseName)
+        val up = if (bodyMoves) "elevated" in words || "decline" in words else "incline" in words
+        val down = if (bodyMoves) "incline" in words else "decline" in words
+        var result = base
+        if (flatChest && up != down) result = angled(result, if (up) Muscle.UPPER_CHEST else Muscle.LOWER_CHEST)
+        if ("deficit" in words) result = result.copy(stretchBias = true)
+        return result
+    }
+
+    /** An entry's profile with its modifiers applied - see the two-argument [profile]. */
+    fun profile(entry: PlannedEntry): ExerciseProfile? = profile(entry.exerciseName, entry.modifiers)
+
     /** Every profiled movement, lowercased - exposed for the coverage tests. */
     val keys: Set<String> get() = profiles.keys
 
@@ -448,7 +483,8 @@ object MuscleMap {
         ))
         put("one-arm negative", verticalPull(rearDelts = false))
         put("one-arm pull-up", verticalPull(rearDelts = false))
-        put("incline push-up", pressFamily(MovementPattern.HORIZONTAL_PUSH, pushUp = true))
+        // Hands up, feet down: the body angle of a decline press.
+        put("incline push-up", angled(pressFamily(MovementPattern.HORIZONTAL_PUSH, pushUp = true), Muscle.LOWER_CHEST))
         put("one-arm negative push-up", pressFamily(MovementPattern.HORIZONTAL_PUSH, pushUp = true))
         put("one-arm push-up", pressFamily(MovementPattern.HORIZONTAL_PUSH, pushUp = true))
         put("bench dip", ExerciseProfile(
@@ -547,17 +583,17 @@ object MuscleMap {
     )
 
     /**
-     * Incline presses: the clavicular chest leads and the sternal chest
-     * assists. The delt and triceps sub-levels are the flat press's measured
-     * ones (Lanza 2024), not re-estimated for the angle.
+     * A flat chest movement pressed at an angle: [region] rises to 1.0 and
+     * leads (first in the map, so it is the dominant muscle); every other
+     * share stays - Chaves 2020 found the incline grew the other sites as
+     * much as the flat press did.
      */
-    private fun inclinePress() = ExerciseProfile(
-        muscles = mapOf(
-            Muscle.UPPER_CHEST to 1.0, Muscle.MID_CHEST to 0.5,
-            Muscle.FRONT_DELTS to 0.7, Muscle.TRICEPS to 0.6, Muscle.SIDE_DELTS to 0.3,
-        ),
-        pattern = MovementPattern.HORIZONTAL_PUSH, compound = true, stretchBias = true,
+    private fun angled(profile: ExerciseProfile, region: Muscle) = profile.copy(
+        muscles = linkedMapOf(region to 1.0) + profile.muscles.filterKeys { it != region },
     )
+
+    /** Incline presses: the flat press with the clavicular chest leading (Chaves 2020). */
+    private fun inclinePress() = angled(pressFamily(MovementPattern.HORIZONTAL_PUSH), Muscle.UPPER_CHEST)
 
     /**
      * Every dip: the costal chest leads with the triceps (the arm drives

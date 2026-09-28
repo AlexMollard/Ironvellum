@@ -739,7 +739,7 @@ object ProgramGenerator {
     private fun weeklyVolumeOf(sessions: List<Draft>): Map<Muscle, Double> {
         val volume = mutableMapOf<Muscle, Double>()
         for (session in sessions) for (entry in session.entries) {
-            val profile = MuscleMap.profile(entry.exerciseName) ?: continue
+            val profile = MuscleMap.profile(entry) ?: continue
             for ((muscle, share) in profile.muscles) {
                 if (share > 0.0) volume.merge(muscle, entry.sets * share, Double::plus)
             }
@@ -1199,7 +1199,7 @@ object ProgramGenerator {
         )
         val trunkMuscles = setOf(Muscle.ABS, Muscle.OBLIQUES, Muscle.HIP_FLEXORS)
         val dominants = entries.mapNotNull { entry ->
-            MuscleMap.profile(entry.exerciseName)?.let { dominantMuscle(it) }
+            MuscleMap.profile(entry)?.let { dominantMuscle(it) }
         }.toSet()
         val scope = mutableSetOf<Muscle>()
         if (dominants.any { it in lowerMuscles }) {
@@ -1248,7 +1248,8 @@ object ProgramGenerator {
         val rir = ProgramRules.targetRir(request.volume, request.focus)
 
         for (entry in target.entries) {
-            val profile = MuscleMap.profile(entry.exerciseName)
+            // Modifiers count: a deficit push-up is already long-length work.
+            val profile = MuscleMap.profile(entry)
             if (profile == null) {
                 // Unknown movement: kept, untouched, modifiers intact.
                 result += entry
@@ -1288,7 +1289,7 @@ object ProgramGenerator {
                     name = replacement.name
                 }
             }
-            val newProfile = MuscleMap.profile(name) ?: profile
+            val newProfile = MuscleMap.profile(name, entry.modifiers) ?: profile
 
             var adjusted = false
             val range = repRange(request.focus, newProfile.compound)
@@ -1356,7 +1357,7 @@ object ProgramGenerator {
         for (muscle in scope) {
             if (result.size >= ctx.cap) break
             val covered = result.any {
-                (MuscleMap.profile(it.exerciseName)?.muscles?.get(muscle) ?: 0.0) >= 0.5
+                (MuscleMap.profile(it)?.muscles?.get(muscle) ?: 0.0) >= 0.5
             }
             val minimum = ctx.targetRange.start
             if (covered || (weekVolume[muscle] ?: 0.0) >= minimum) continue
@@ -1396,7 +1397,7 @@ object ProgramGenerator {
                 val week = ProgramRules.weeklyVolume(restOfWeek + listOf(target.copy(entries = result)))
                 if ((week[muscle] ?: 0.0) >= ctx.targetRange.start) break
                 val index = result.indices.filter { i ->
-                    val profile = MuscleMap.profile(result[i].exerciseName) ?: return@filter false
+                    val profile = MuscleMap.profile(result[i]) ?: return@filter false
                     (profile.muscles[muscle] ?: 0.0) >= 0.5 && result[i].sets < 5 &&
                         ProgramRules.sessionSeconds(result, request.focus) +
                         ProgramRules.setSeconds(request.focus, profile.compound) <=

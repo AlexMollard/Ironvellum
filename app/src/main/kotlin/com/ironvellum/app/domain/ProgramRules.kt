@@ -97,7 +97,7 @@ object ProgramRules {
     fun weeklyVolume(presets: List<PlannedPreset>): Map<Muscle, Double> {
         val volume = mutableMapOf<Muscle, Double>()
         for (preset in presets) for (entry in preset.entries) {
-            val profile = MuscleMap.profile(entry.exerciseName) ?: continue
+            val profile = MuscleMap.profile(entry) ?: continue
             for ((muscle, share) in profile.muscles) {
                 if (share > 0.0) volume.merge(muscle, entry.sets * share, Double::plus)
             }

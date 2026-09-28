@@ -147,19 +147,44 @@ class MuscleMapTest {
             assertTrue("$name credits no upper chest", (muscles[Muscle.UPPER_CHEST] ?: 0.0) > 0.0)
             assertTrue("$name credits no lower chest", (muscles[Muscle.LOWER_CHEST] ?: 0.0) > 0.0)
         }
-        // Incline presses: the clavicular chest leads, the mid chest assists.
+        // Incline presses: the clavicular chest leads and the mid chest keeps
+        // the flat press's credit - the incline grew the other sites as much
+        // as the flat press did (Chaves 2020).
         listOf("Incline Bench Press", "Incline Dumbbell Press").forEach { name ->
             val muscles = MuscleMap.profile(name)!!.muscles
             assertEquals("$name must lead with the upper chest", Muscle.UPPER_CHEST, dominant(name))
-            assertTrue(
-                "$name: upper chest ${muscles[Muscle.UPPER_CHEST]} not above mid ${muscles[Muscle.MID_CHEST]}",
-                (muscles[Muscle.UPPER_CHEST] ?: 0.0) > (muscles[Muscle.MID_CHEST] ?: 0.0),
-            )
+            assertEquals(1.0, muscles[Muscle.MID_CHEST] ?: 0.0, 1e-9)
         }
         // Dips: the costal chest leads.
         listOf("Dip", "Parallel Bar Dip", "Ring Dip", "Assisted Dip").forEach { name ->
             assertEquals("$name must lead with the lower chest", Muscle.LOWER_CHEST, dominant(name))
         }
+    }
+
+    @Test
+    fun `angle and range modifiers move credit, load modifiers do not`() {
+        fun lead(name: String, modifiers: String) =
+            MuscleMap.profile(name, modifiers)!!.muscles.entries.first { it.value == 1.0 }.key
+        // A push-up moves the body, so feet elevated is the incline and hands up the decline.
+        assertEquals(Muscle.UPPER_CHEST, lead("Push-up", "weighted, deficit, elevated"))
+        assertEquals(Muscle.LOWER_CHEST, lead("Push-up", "incline"))
+        assertEquals(Muscle.LOWER_CHEST, lead("Incline Push-up", ""))
+        // A bench moves the implement, so the words keep their bench meaning.
+        assertEquals(Muscle.UPPER_CHEST, lead("Bench Press", "incline"))
+        assertEquals(Muscle.LOWER_CHEST, lead("Dumbbell Fly", "decline"))
+        // Opposite angles cancel; load changes nothing.
+        assertEquals(MuscleMap.profile("Push-up"), MuscleMap.profile("Push-up", "elevated, incline"))
+        assertEquals(MuscleMap.profile("Bench Press"), MuscleMap.profile("Bench Press", "weighted, paused, tempo"))
+        // Angling keeps the other regions' credit rather than moving it.
+        val elevated = MuscleMap.profile("Push-up", "elevated")!!.muscles
+        assertEquals(1.0, elevated[Muscle.MID_CHEST] ?: 0.0, 1e-9)
+        assertEquals(0.5, elevated[Muscle.LOWER_CHEST] ?: 0.0, 1e-9)
+        // A deficit is long-length work even where the plain movement is not.
+        assertFalse(MuscleMap.profile("Glute Bridge")!!.stretchBias)
+        assertTrue(MuscleMap.profile("Glute Bridge", "deficit")!!.stretchBias)
+        // The weekly count reads the modifiers.
+        val week = listOf(PlannedPreset("Push", "", 5, listOf(PlannedEntry("Push-up", 3, 12, null, modifiers = "elevated"))))
+        assertEquals(3.0, ProgramRules.weeklyVolume(week)[Muscle.UPPER_CHEST] ?: 0.0, 1e-9)
     }
 
     @Test

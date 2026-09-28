@@ -110,10 +110,11 @@ class MuscleCoverageViewModel(
 
         val cutoff = Instant.now().minus(java.time.Duration.ofDays(7)).toEpochMilli()
         val recent = history.filter { (session, _) -> session.startedAtMs >= cutoff }
-        // Done sets grouped per movement, then read through the SAME
-        // weeklyVolume rule as the plan, so the two views can be compared.
+        // Done sets grouped per movement and modifiers, then read through
+        // the SAME weeklyVolume rule as the plan, so the two views can be
+        // compared - a feet-elevated push-up credits the upper chest here too.
         val loggedSets = recent.flatMap { (_, sets) -> sets.filter { it.done } }
-        val byExercise = loggedSets.groupBy { it.exerciseName }
+        val byExercise = loggedSets.groupBy { it.exerciseName to it.modifiers }
         val loggedPresets = if (byExercise.isEmpty()) {
             emptyList()
         } else {
@@ -122,14 +123,15 @@ class MuscleCoverageViewModel(
                     name = "Last 7 days",
                     note = "",
                     scheduledDay = null,
-                    entries = byExercise.map { (name, sets) ->
+                    entries = byExercise.map { (key, sets) ->
                         PlannedEntry(
-                            exerciseName = name,
+                            exerciseName = key.first,
                             sets = sets.size,
                             // Coverage only counts sets; the average reps
                             // here is display filler for the data class.
                             reps = if (sets.isEmpty()) 10 else sets.sumOf { it.reps } / sets.size,
                             targetWeightKg = null,
+                            modifiers = key.second,
                         )
                     },
                 ),
