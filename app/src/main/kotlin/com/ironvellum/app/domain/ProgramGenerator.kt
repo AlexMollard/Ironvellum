@@ -449,12 +449,12 @@ object ProgramGenerator {
         val capacityLimited = fillDeficits(ctx, sessions) { muscle -> ctx.targetFor(muscle) }
 
         // Honest capacity line: when the chosen days cannot fit the tier's
-        // weekly range under the per-session ceiling, name the muscles that
+        // weekly range inside the session time budget, name the muscles that
         // land short and by how much. The old line quoted the single lowest
         // muscle as "about N sets per muscle", which read as if the whole week
         // were that thin.
         val volume = weeklyVolumeOf(sessions)
-        val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < ctx.targetRange.start - 0.5 }
+        val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < ctx.targetRange.start - 1e-9 }
         val capacityNote = if (capacityLimited && short.isNotEmpty()) {
             val low = short.minOf { volume[it] ?: 0.0 }
             " Heads-up: $days days leave ${joinWithAnd(short.map { it.label.lowercase() })} short of the " +
@@ -539,7 +539,7 @@ object ProgramGenerator {
         return joinWithAnd(ordered.map { it.label.lowercase() })
     }
 
-    private fun joinWithAnd(items: List<String>): String = when (items.size) {
+    internal fun joinWithAnd(items: List<String>): String = when (items.size) {
         0 -> ""
         1 -> items[0]
         2 -> "${items[0]} and ${items[1]}"
@@ -596,10 +596,10 @@ object ProgramGenerator {
      *  3. a new direct movement (2 sets) where the session has room;
      *  4. one more set on an indirect (0.5-share) movement.
      * A step is refused when it would push any tracked muscle past its
-     * collateral limit (see [overflows]) or the session past its exercise or
-     * hard-set ceiling. A muscle no step can serve is dropped - the plan
-     * degrades honestly. Returns true when the set/exercise ceilings, not the
-     * targets, ended the fill.
+     * collateral limit (see [overflows]) or the session past its exercise
+     * cap or its time budget ([ProgramRules.SESSION_BUDGET_SECONDS]). A
+     * muscle no step can serve is dropped - the plan degrades honestly.
+     * Returns true when the session ceilings, not the targets, ended the fill.
      */
     private fun fillDeficits(ctx: Ctx, sessions: List<Draft>, targetOf: (Muscle) -> Double): Boolean {
         val skipped = mutableSetOf<Muscle>()
@@ -609,8 +609,10 @@ object ProgramGenerator {
             val muscle = ProgramRules.TRACKED
                 .filter { it !in skipped && targetOf(it) > 0.0 }
                 .map { it to (targetOf(it) - (volume[it] ?: 0.0)) }
-                // Under half a set short is fractional-counting noise.
-                .filter { it.second > 0.5 }
+                // Filled to the floor itself: the coverage map calls 11.6 of
+                // 12 UNDER, so stopping half a set short (once treated as
+                // fractional noise) showed a fresh plan as under target.
+                .filter { it.second > 1e-9 }
                 .maxWithOrNull(
                     compareBy<Pair<Muscle, Double>>({ it.second / targetOf(it.first) })
                         .thenBy { -ProgramRules.TRACKED.indexOf(it.first) },
@@ -633,8 +635,6 @@ object ProgramGenerator {
     private fun share(name: String, muscle: Muscle): Double =
         MuscleMap.profile(name)?.muscles?.get(muscle) ?: 0.0
 
-    private fun setsIn(session: Draft): Int = session.entries.sumOf { it.sets }
-
     private fun growOnce(ctx: Ctx, sessions: List<Draft>, muscle: Muscle, targetOf: (Muscle) -> Double): Grow {
         val fitting = sessions.filter { s ->
             ctx.pool.any { groupFitsSession(s.role, it.muscleGroup) && share(it.name, muscle) >= 0.5 }
@@ -642,9 +642,10 @@ object ProgramGenerator {
         if (fitting.isEmpty()) return Grow.NO_MOVEMENT
         var sawMovement = false
 
-        fun roomForSet(s: Draft) = setsIn(s) + 1 <= ProgramRules.SESSION_HARD_SET_CAP
-        fun roomForNew(s: Draft) =
-            s.entries.size < ctx.cap && setsIn(s) + 2 <= ProgramRules.SESSION_HARD_SET_CAP
+        fun roomFor(s: Draft, exercise: Exercise, sets: Int) =
+            ProgramRules.sessionSeconds(s.entries, ctx.focus) +
+                sets * ProgramRules.setSeconds(ctx.focus, profileOf(exercise).compound) <=
+                ProgramRules.SESSION_BUDGET_SECONDS
 
         /**
          * Collateral a set spends on tracked muscles already at their target.
@@ -661,18 +662,18 @@ object ProgramGenerator {
 
         fun bump(s: Draft, index: Int): Boolean {
             val entry = s.entries[index]
-            if (entry.sets >= 5 || !roomForSet(s)) return false
             val exercise = ctx.pool.firstOrNull { it.name == entry.exerciseName } ?: return false
+            if (entry.sets >= 5 || !roomFor(s, exercise, 1)) return false
             if (overflows(ctx, sessions, exercise, 1, targetOf)) return false
             s.entries[index] = entry.copy(sets = entry.sets + 1)
             return true
         }
 
         fun addNew(s: Draft, maxWaste: Double): Boolean {
-            if (!roomForNew(s)) return false
+            if (s.entries.size >= ctx.cap) return false
             val candidate = ranked(ctx, s, null, muscle)
                 .filter { groupFitsSession(s.role, it.muscleGroup) && !redundantIn(s, it) }
-                .filter { waste(it.name) <= maxWaste }
+                .filter { waste(it.name) <= maxWaste && roomFor(s, it, 2) }
                 .sortedBy { waste(it.name) }
                 .firstOrNull { !overflows(ctx, sessions, it, 2, targetOf) }
                 ?: return false
@@ -684,7 +685,7 @@ object ProgramGenerator {
 
         /** Bump candidates across the week: least wasteful first, then fewest sets. */
         fun bumpables(minShare: Double, wasteFree: Boolean?): List<Pair<Draft, Int>> =
-            bySpaceOf(fitting).flatMap { s ->
+            bySpaceOf(ctx, fitting).flatMap { s ->
                 s.entries.indices
                     .filter { share(s.entries[it].exerciseName, muscle) >= minShare }
                     .map { s to it }
@@ -699,7 +700,7 @@ object ProgramGenerator {
         // 1. Frequency: a second session for the muscle before more sets in one.
         val trainedIn = fitting.count { s -> s.entries.any { share(it.exerciseName, muscle) >= 0.5 } }
         if (trainedIn < minOf(2, fitting.size)) {
-            for (s in bySpaceOf(fitting)) {
+            for (s in bySpaceOf(ctx, fitting)) {
                 if (s.entries.any { share(it.exerciseName, muscle) >= 0.5 }) continue
                 if (addNew(s, Double.MAX_VALUE)) return Grow.GREW
             }
@@ -710,13 +711,13 @@ object ProgramGenerator {
             if (bump(s, i)) return Grow.GREW
         }
         // 3. A new movement that spends nothing on served muscles.
-        for (s in bySpaceOf(fitting)) if (addNew(s, 0.0)) return Grow.GREW
+        for (s in bySpaceOf(ctx, fitting)) if (addNew(s, 0.0)) return Grow.GREW
         // 4. Any direct set, then any new movement, then indirect sets.
         for ((s, i) in bumpables(1.0, wasteFree = null)) {
             sawMovement = true
             if (bump(s, i)) return Grow.GREW
         }
-        for (s in bySpaceOf(fitting)) if (addNew(s, Double.MAX_VALUE)) return Grow.GREW
+        for (s in bySpaceOf(ctx, fitting)) if (addNew(s, Double.MAX_VALUE)) return Grow.GREW
         for ((s, i) in bumpables(0.5, wasteFree = null)) {
             sawMovement = true
             if (bump(s, i)) return Grow.GREW
@@ -727,9 +728,15 @@ object ProgramGenerator {
         return if (sawMovement || anyCandidate) Grow.NO_ROOM else Grow.NO_MOVEMENT
     }
 
-    /** Least-loaded sessions first, so volume spreads across the week. */
-    private fun bySpaceOf(sessions: List<Draft>): List<Draft> =
-        sessions.withIndex().sortedWith(compareBy({ setsIn(it.value) }, { it.index })).map { it.value }
+    /**
+     * Shortest sessions first, by estimated clock time rather than set count,
+     * so work lands where there is time for it: counting sets put a 5-set
+     * knee raise on a 74-minute upper day beside two lower days under an hour.
+     */
+    private fun bySpaceOf(ctx: Ctx, sessions: List<Draft>): List<Draft> =
+        sessions.withIndex().sortedWith(
+            compareBy({ ProgramRules.sessionSeconds(it.value.entries, ctx.focus) }, { it.index }),
+        ).map { it.value }
 
     /**
      * A second movement with the same pattern and the same main muscle as one
@@ -776,17 +783,17 @@ object ProgramGenerator {
 
     /**
      * A movement lands on a day whose role trains its region: leg work on
-     * lower/leg/full-body days, presses and pulls on upper/push/pull/
-     * full-body days, core anywhere. FULL_BODY trains everything; AUTO
-     * (null role) accepts all.
+     * lower/leg days, presses on upper/push days, pulls on upper/pull days,
+     * core anywhere. FULL_BODY trains everything; AUTO (null role) accepts
+     * all. A push day carrying rows (or a pull day carrying diamond push-ups,
+     * as a 6-day week once did) breaks the split the lifter chose.
      */
     private fun groupFitsSession(role: Role?, group: MuscleGroup): Boolean {
         if (role == null || role == Role.FULL_BODY) return true
-        val upper = setOf(Role.UPPER, Role.PUSH_DAY, Role.PULL_DAY)
-        val lower = setOf(Role.LOWER, Role.LEGS_DAY)
         return when (group) {
-            MuscleGroup.LEGS -> role in lower
-            MuscleGroup.PUSH, MuscleGroup.PULL -> role in upper
+            MuscleGroup.LEGS -> role == Role.LOWER || role == Role.LEGS_DAY
+            MuscleGroup.PUSH -> role == Role.UPPER || role == Role.PUSH_DAY
+            MuscleGroup.PULL -> role == Role.UPPER || role == Role.PULL_DAY
             else -> true
         }
     }
@@ -909,11 +916,11 @@ object ProgramGenerator {
                     profileOf(candidate).muscles.none { (other, share) -> other in served && share >= 0.5 }
                 } ?: pick(ctx, draft, null, muscle) ?: continue
                 val contribution = profileOf(exercise).muscles[muscle] ?: 0.0
-                add(
-                    ctx, draft, exercise,
-                    sets = setsForDeficit(deficit, contribution),
-                    why = muscleWhy(exercise, muscle, ctx, deficit),
-                )
+                val sets = setsForDeficit(deficit, contribution)
+                val seconds = ProgramRules.sessionSeconds(draft.entries, ctx.focus) +
+                    sets * ProgramRules.setSeconds(ctx.focus, profileOf(exercise).compound)
+                if (seconds > ProgramRules.SESSION_BUDGET_SECONDS) continue
+                add(ctx, draft, exercise, sets = sets, why = muscleWhy(exercise, muscle, ctx, deficit))
             }
         } else {
             val role = draft.role ?: return null
@@ -1166,6 +1173,9 @@ object ProgramGenerator {
             // present would leave the muscle untrained.
             draft.names += result.map { it.exerciseName }
             val exercise = pick(ctx, draft, null, muscle) ?: continue
+            val seconds = ProgramRules.sessionSeconds(result, request.focus) +
+                3 * ProgramRules.setSeconds(request.focus, profileOf(exercise).compound)
+            if (seconds > ProgramRules.SESSION_BUDGET_SECONDS) continue
             val added = add(ctx, draft, exercise, sets = 3, why = muscleWhy(exercise, muscle, ctx, ctx.targetRange.start))
             // add() prescribes the focus anchor; keep it inside the same
             // rep range improve holds every other entry to, or the second
@@ -1177,6 +1187,46 @@ object ProgramGenerator {
                 "Added the ${exercise.name}: your week is ${setsPhrase(ctx.targetRange.start - (weekVolume[muscle] ?: 0.0))} " +
                     "short on ${muscle.label.lowercase()} (minimum ${ctx.targetRange.start.toInt()}) - " +
                     "it covers ${muscleListOf(exercise, muscle)} - Pelland 2026",
+            )
+        }
+
+        // Top-ups: a muscle this session already trains that the week still
+        // leaves under the minimum gains sets on its most direct movement
+        // here - at most 5 per movement, inside the session time budget, and
+        // never pushing another tracked muscle past the top of its range.
+        // Without this, improve answered "no changes needed" for a day whose
+        // calves sat half a set under target with a calf raise at 2 sets.
+        val originalSets = result.map { it.sets }
+        val raisedFor = result.indices.associateWith { mutableSetOf<Muscle>() }
+        for (muscle in scope) {
+            while (true) {
+                val week = ProgramRules.weeklyVolume(restOfWeek + listOf(target.copy(entries = result)))
+                if ((week[muscle] ?: 0.0) >= ctx.targetRange.start) break
+                val index = result.indices.filter { i ->
+                    val profile = MuscleMap.profile(result[i].exerciseName) ?: return@filter false
+                    (profile.muscles[muscle] ?: 0.0) >= 0.5 && result[i].sets < 5 &&
+                        ProgramRules.sessionSeconds(result, request.focus) +
+                        ProgramRules.setSeconds(request.focus, profile.compound) <=
+                        ProgramRules.SESSION_BUDGET_SECONDS &&
+                        profile.muscles.none { (other, share) ->
+                            other in ProgramRules.TRACKED &&
+                                (week[other] ?: 0.0) + share > ctx.targetRange.endInclusive + 1e-9
+                        }
+                }.sortedWith(
+                    compareByDescending<Int> { MuscleMap.profile(result[it].exerciseName)!!.muscles[muscle] ?: 0.0 }
+                        .thenBy { result[it].sets },
+                ).firstOrNull() ?: break
+                result[index] = result[index].copy(sets = result[index].sets + 1)
+                raisedFor.getValue(index) += muscle
+            }
+        }
+        result.indices.filter { result[it].sets > originalSets[it] }.forEach { i ->
+            val muscles = raisedFor.getValue(i).joinToString(" and ") { it.label.lowercase() }
+            changes += PlanChange(
+                PlanChange.Kind.ADJUSTED, result[i].exerciseName,
+                "Sets raised from ${originalSets[i]} to ${result[i].sets}: your week is short on $muscles " +
+                    "(minimum ${ctx.targetRange.start.toInt()} sets) and more weekly sets build more " +
+                    "muscle up to that range - Pelland 2026",
             )
         }
 

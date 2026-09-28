@@ -299,14 +299,29 @@ object ProgramRules {
     }
 
     /**
-     * Hard-set ceiling per session (warm-up excluded): 24 sets at the
-     * prescribed 1.5-3 min rests is roughly 75-80 minutes. PRACTICAL
-     * HEURISTIC: the brief lists no verified per-session set ceiling; only
-     * the weekly dose (rule 6) is evidence-backed. At 22 a 4-day intermediate
-     * week could not reach 12 sets on every upper-body muscle (two upper days
-     * share seven muscles). When the week's dose still does not fit the
-     * chosen days, the generator lands muscles at the reachable level and
-     * says so in the plan note instead of cramming.
+     * Time under load for one working set, added to the prescribed rest to
+     * give the clock time a set costs. 8-12 reps at a controlled tempo.
      */
-    const val SESSION_HARD_SET_CAP = 24
+    const val SET_WORK_SECONDS = 40
+
+    /** Clock time one working set costs: work plus its prescribed rest. */
+    fun setSeconds(focus: TrainingFocus, compound: Boolean): Int =
+        restSeconds(focus, compound) + SET_WORK_SECONDS
+
+    /**
+     * Session time ceiling, warm-up excluded. PRACTICAL HEURISTIC: the brief
+     * lists no verified per-session ceiling; only the weekly dose (rule 6) is
+     * evidence-backed. The limit is TIME, not a set count, because a set
+     * costs its rest: a 90 s lateral-raise set (Singer 2024) is two-thirds of
+     * a 150 s squat set, and a flat 24-set cap charged both the same - which
+     * left a 4-day intermediate week unable to reach 12 sets on its upper
+     * muscles while the sessions still finished early. When the week's dose
+     * still does not fit the chosen days, the generator lands muscles at the
+     * reachable level and says so in the plan note instead of cramming.
+     */
+    const val SESSION_BUDGET_SECONDS = 75 * 60
+
+    /** Estimated clock time of a session; unprofiled movements count as compounds. */
+    fun sessionSeconds(entries: List<PlannedEntry>, focus: TrainingFocus): Int =
+        entries.sumOf { it.sets * setSeconds(focus, MuscleMap.profile(it.exerciseName)?.compound ?: true) }
 }

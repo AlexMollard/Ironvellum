@@ -65,20 +65,21 @@ class ProgramGeneratorTest {
     // ------------------------------------------------- acceptance example 1
 
     @Test
-    fun `four days that cannot fit the intermediate dose name every short muscle instead of cramming`() {
-        // Two upper days share seven muscles; under the per-session ceiling
-        // they cannot all reach 12 sets. The plan must stay finishable and say
-        // which muscles land short, rather than silently padding sessions.
+    fun `three days that cannot fit the intermediate dose name every short muscle instead of cramming`() {
+        // Three full-body days share twelve muscles; inside the session time
+        // budget they cannot all reach 12 sets. The plan must stay finishable
+        // and say which muscles land short, rather than silently padding.
         val request = ProgramRequest(
             TrainingFocus.MUSCLE, ExperienceTier.INTERMEDIATE, EquipmentAccess.FULL_GYM,
-            daysPerWeek = 4, priorities = setOf(MuscleArea.ARMS),
+            daysPerWeek = 3, priorities = setOf(MuscleArea.ARMS),
         )
         val plan = ProgramGenerator.week(request, catalogue, strength)
-        assertEquals(listOf(1, 2, 4, 5), plan.presets.map { it.scheduledDay })
+        assertEquals(listOf(1, 3, 5), plan.presets.map { it.scheduledDay })
         plan.presets.forEach { preset ->
+            val seconds = ProgramRules.sessionSeconds(preset.entries, TrainingFocus.MUSCLE)
             assertTrue(
-                "${preset.name} runs ${preset.entries.sumOf { it.sets }} sets",
-                preset.entries.sumOf { it.sets } <= ProgramRules.SESSION_HARD_SET_CAP,
+                "${preset.name} runs ${seconds / 60} min",
+                seconds <= ProgramRules.SESSION_BUDGET_SECONDS,
             )
         }
         val volume = volumeOf(plan)
@@ -98,6 +99,67 @@ class ProgramGeneratorTest {
         val arms = minOf(volume[Muscle.BICEPS]!!, volume[Muscle.TRICEPS]!!)
         listOf(Muscle.CHEST, Muscle.SIDE_DELTS, Muscle.REAR_DELTS).forEach {
             assertTrue("arms $arms did not out-volume $it ${volume[it]}", arms > (volume[it] ?: 0.0))
+        }
+    }
+
+    @Test
+    fun `every muscle a generated week leaves under the floor is named in its note`() {
+        // The coverage map calls any muscle below the floor UNDER, even 11.6
+        // of 12; a plan that shows UNDER there without saying so here reads
+        // as a generator bug rather than an honest capacity limit.
+        for (tier in ExperienceTier.entries) {
+            for (equipment in EquipmentAccess.entries) {
+                for (days in 2..6) {
+                    val plan = ProgramGenerator.week(
+                        ProgramRequest(TrainingFocus.MUSCLE, tier, equipment, days), catalogue, strength,
+                    )
+                    val volume = volumeOf(plan)
+                    val floor = ProgramRules.weeklySetTarget(tier, TrainingFocus.MUSCLE).start
+                    val note = plan.presets.first().note
+                    ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < floor }.forEach { muscle ->
+                        assertTrue(
+                            "$tier $equipment ${days}d: ${muscle.label} at ${volume[muscle]} not in note: $note",
+                            muscle.label.lowercase() in note,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `four intermediate days fill the upper muscles inside the session time budget`() {
+        // The session limit is clock time, not a set count: isolation sets
+        // rest 90 s where compounds rest 150 s. A flat 24-set cap left five
+        // upper muscles at 10.5-11 sets while the lower days ended early.
+        val request = ProgramRequest(
+            TrainingFocus.MUSCLE, ExperienceTier.INTERMEDIATE, EquipmentAccess.FULL_GYM, 4,
+        )
+        val plan = ProgramGenerator.week(request, catalogue, strength)
+        plan.presets.forEach { preset ->
+            val seconds = ProgramRules.sessionSeconds(preset.entries, TrainingFocus.MUSCLE)
+            assertTrue("${preset.name} runs ${seconds / 60} min", seconds <= ProgramRules.SESSION_BUDGET_SECONDS)
+        }
+        val volume = volumeOf(plan)
+        val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < 11.0 }
+        assertTrue("under 11 sets: ${short.map { it to volume[it] }}", short.isEmpty())
+    }
+
+    @Test
+    fun `push days carry no pulling and pull days carry no pressing`() {
+        val plan = ProgramGenerator.week(
+            ProgramRequest(TrainingFocus.MUSCLE, ExperienceTier.ADVANCED, EquipmentAccess.FULL_GYM, 6),
+            catalogue, strength,
+        )
+        val forbidden = mapOf("Push" to MuscleGroup.PULL, "Pull" to MuscleGroup.PUSH)
+        plan.presets.forEach { preset ->
+            val banned = forbidden.entries.firstOrNull { preset.name.startsWith(it.key) }?.value ?: return@forEach
+            preset.entries.forEach { entry ->
+                assertFalse(
+                    "${entry.exerciseName} on ${preset.name}",
+                    byName(entry.exerciseName).muscleGroup == banned,
+                )
+            }
         }
     }
 
@@ -219,6 +281,39 @@ class ProgramGeneratorTest {
         val bench = entries.first { it.exerciseName == "Bench Press" }
         assertEquals(65.0, bench.targetWeightKg!!, 1e-9)
         assertTrue(bench.loadNote!!.contains("e1RM"))
+    }
+
+    @Test
+    fun `improve raises sets on a covered muscle the week leaves short and stays idempotent`() {
+        val request = ProgramRequest(
+            TrainingFocus.MUSCLE, ExperienceTier.INTERMEDIATE, EquipmentAccess.FULL_GYM,
+        )
+        val lower = PlannedPreset("Lower", "", 2, listOf(
+            PlannedEntry("Back Squat", 3, 8, null),
+            PlannedEntry("Romanian Deadlift", 3, 8, null),
+            PlannedEntry("Standing Calf Raise", 2, 12, null),
+        ))
+        // The rest of the week serves every lower muscle except calves (8).
+        val restOfWeek = listOf(PlannedPreset("Other", "", 4, listOf(
+            PlannedEntry("Leg Press", 9, 10, null),
+            PlannedEntry("Seated Leg Curl", 9, 12, null),
+            PlannedEntry("Hip Thrust", 9, 10, null),
+            PlannedEntry("Standing Calf Raise", 8, 12, null),
+            PlannedEntry("Hanging Knee Raise", 12, 12, null),
+        )))
+        val improvement = ProgramGenerator.improve(lower, restOfWeek, request, catalogue, strength)
+        val calf = improvement.after.entries.first { it.exerciseName == "Standing Calf Raise" }
+        // 8 + 2 = 10 of a 12-set minimum: two more sets on the calf raise.
+        assertEquals(4, calf.sets)
+        assertTrue(
+            "no set change explained: ${improvement.changes}",
+            improvement.changes.any {
+                it.kind == PlanChange.Kind.ADJUSTED && it.exerciseName == "Standing Calf Raise" &&
+                    "calves" in it.detail
+            },
+        )
+        val second = ProgramGenerator.improve(improvement.after, restOfWeek, request, catalogue, strength)
+        assertTrue("second improve changed: ${second.changes}", second.changes.isEmpty())
     }
 
     // ------------------------------------------------- acceptance example 2
