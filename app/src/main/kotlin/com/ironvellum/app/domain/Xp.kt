@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import kotlin.math.pow
 import kotlin.math.roundToInt
 
 /**
@@ -18,6 +19,9 @@ import kotlin.math.roundToInt
  *  3. Reps past [FULL_VALUE_REPS] in one set pay [TAPERED_RATE]. Deep into a
  *     set of twenty-five the work is endurance; the app should not make
  *     grinding out easy volume the fastest way to level.
+ *  4. Added load is cubed ([LOAD_EXPONENT]) and converts reps into
+ *     rep-equivalents BEFORE the taper. Paid in proportion to mass, 5x5
+ *     pull-ups at +15 kg earned less than 3x8 bodyweight chin-ups.
  *
  * Scaled so an ordinary session lands where it always did — this is a
  * rebalance between movements, not an inflation. Past sessions keep the XP
@@ -57,6 +61,20 @@ object Xp {
     /** Added load cannot multiply a rep beyond this, so 200 kg cannot run away. */
     const val MAX_LOAD_MULTIPLIER = 3.0
 
+    /**
+     * A rep's cost climbs far faster than the mass on it: by Epley
+     * (1RM = w(1 + r/30)), five reps at +15 kg on a 79 kg lifter match about
+     * eleven bodyweight reps, not the six a linear ratio paid. The cube pays
+     * those five as 8.5. Applied before the taper, so load cannot turn easy
+     * high-rep sets into a farm: 3x20 push-ups at +20 kg still land within a
+     * quarter of 3x5 handstand push-ups.
+     *
+     * shortcut: with the x3 cap, loads past +44% of bodyweight all pay the
+     * same rate, so barbell-scale lifts lose load resolution; revisit (cap
+     * higher, let the taper damp) if gym lifters report it.
+     */
+    const val LOAD_EXPONENT = 3.0
+
     /** Used only when no bodyweight has ever been recorded. */
     const val ASSUMED_BODYWEIGHT_KG = 75.0
 
@@ -80,7 +98,7 @@ object Xp {
     fun taperedVolume(rawUnits: Double): Double = MovementDifficulty.taperedVolume(rawUnits)
 
     /**
-     * Added kilos as a multiple of the lifter's own mass, capped.
+     * Added kilos as a multiple of the lifter's own mass, cubed, capped.
      *
      * The marked number is converted to real load first
      * ([MovementDifficulty.loadFactor]): 200 kg on an angled sled is not
@@ -92,7 +110,7 @@ object Xp {
         if (marked <= 0.0) return 1.0
         val added = marked * MovementDifficulty.loadFactor(exerciseName)
         val bw = bodyweightKg?.takeIf { it > 0.0 } ?: ASSUMED_BODYWEIGHT_KG
-        return ((bw + added) / bw).coerceAtMost(MAX_LOAD_MULTIPLIER)
+        return ((bw + added) / bw).pow(LOAD_EXPONENT).coerceAtMost(MAX_LOAD_MULTIPLIER)
     }
 
     /** Effort units for one set, before [PER_EFFORT_UNIT] converts them to XP. */
@@ -107,9 +125,8 @@ object Xp {
             set.reps.coerceAtLeast(0).toDouble()
         }
         if (raw <= 0.0) return 0.0
-        return taperedVolume(raw) *
+        return taperedVolume(raw * loadMultiplier(set.exerciseName, set.weightKg, bodyweightKg)) *
             MovementDifficulty.intensity(set.exerciseName) *
-            loadMultiplier(set.exerciseName, set.weightKg, bodyweightKg) *
             MovementDifficulty.modifierFactor(set.modifiers)
     }
 

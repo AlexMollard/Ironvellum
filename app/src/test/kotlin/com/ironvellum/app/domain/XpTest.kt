@@ -5,6 +5,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Assume
 import org.junit.Test
+import kotlin.math.pow
 
 class XpTest {
 
@@ -137,6 +138,19 @@ class XpTest {
         )
     }
 
+    /**
+     * The owner's Pull session, as logged at 78.9 kg: 5,5,5,3 pull-ups at
+     * +15.2 kg paid 88 XP against 93 for 3x8 bodyweight chin-ups - the same
+     * tier, so load was the only difference and it bought less than volume.
+     */
+    @Test
+    fun `heavy weighted pull-ups out-earn more bodyweight chin-up volume`() {
+        val bw = 78.9
+        val weighted = listOf(5, 5, 5, 3).sumOf { Xp.setXp(Xp.SetEffort("Pull-up", reps = it, weightKg = 15.2, modifiers = "weighted"), bw) }
+        val chinUps = sets(3, "Chin-up", 8).sumOf { Xp.setXp(it, bw) }
+        assertTrue("weighted=$weighted chinUps=$chinUps", weighted > chinUps * 1.15)
+    }
+
     // ------------------------------------------------------- machine implements
 
     /**
@@ -178,10 +192,10 @@ class XpTest {
     fun `the same marked kilos pay less on a machine than on a barbell`() {
         val machine = machineMovement()
         val barbell = "front squat"
-        // Below the barbell's cap threshold (added = 2x bodyweight): at 200 kg
-        // BOTH implements peg the 3.0 ceiling and tie, which would prove
-        // nothing about the transmission ratio.
-        val marked = 100.0
+        // Below the barbell's cap threshold (cubed ratio 3.0, about +44% of
+        // bodyweight): past it BOTH implements peg the ceiling and tie, which
+        // would prove nothing about the transmission ratio.
+        val marked = 30.0
         Assume.assumeTrue(
             "machine $machine must share the barbell's tier for the set comparison to be fair",
             MovementDifficulty.intensity(barbell) == MovementDifficulty.intensity(machine),
@@ -214,12 +228,12 @@ class XpTest {
     @Test
     fun `a free-weight movement's load passes through at its marked value`() {
         assertEquals(
-            (bodyweight + 100.0) / bodyweight,
-            Xp.loadMultiplier("back squat", 100.0, bodyweight),
-            0.0,
+            ((bodyweight + 10.0) / bodyweight).pow(Xp.LOAD_EXPONENT),
+            Xp.loadMultiplier("back squat", 10.0, bodyweight),
+            1e-12,
         )
-        // Same through the strength score: identical ratio, so the two
-        // currencies restate nobody's history.
+        // The strength score stays linear in the transmitted mass; only XP
+        // cubes it, so no stored strength score is restated.
         val bare = StrengthIndex.repScore("back squat", 10, null, bodyweight)
         val loaded = StrengthIndex.repScore("back squat", 10, 100.0, bodyweight)
         assertEquals((bodyweight + 100.0) / bodyweight, loaded / bare, 1e-9)
@@ -244,7 +258,7 @@ class XpTest {
         assertEquals(
             "machine=$machine marked=$marked: xp ratio $xpRatio vs strength ratio ${loaded / bare}",
             xpRatio,
-            loaded / bare,
+            (loaded / bare).pow(Xp.LOAD_EXPONENT),
             1e-9,
         )
     }
@@ -252,9 +266,9 @@ class XpTest {
     /**
      * The cap binds AFTER the transmission ratio, and the ratio therefore
      * moves where the cap is reached: a barbell's marked kilos hit
-     * [Xp.MAX_LOAD_MULTIPLIER] at twice bodyweight, a sled's marked number
-     * has to climb further before its transmitted load gets there. A huge
-     * marked number still cannot run away on either implement.
+     * [Xp.MAX_LOAD_MULTIPLIER] where the cubed ratio reaches it, a sled's
+     * marked number has to climb further before its transmitted load gets
+     * there. A huge marked number still cannot run away on either implement.
      */
     @Test
     fun `the load cap binds after the transmission ratio`() {
@@ -271,18 +285,18 @@ class XpTest {
             Xp.loadMultiplier(machine, 10_000.0, bodyweight),
             0.0,
         )
-        // The barbell caps exactly at twice bodyweight.
-        assertEquals(Xp.MAX_LOAD_MULTIPLIER, Xp.loadMultiplier("back squat", 2 * bodyweight, bodyweight), 0.0)
+        // Added kilos at which the cubed ratio reaches the cap on a barbell.
+        val capKg = bodyweight * (Xp.MAX_LOAD_MULTIPLIER.pow(1 / Xp.LOAD_EXPONENT) - 1)
+        assertEquals(Xp.MAX_LOAD_MULTIPLIER, Xp.loadMultiplier("back squat", capKg, bodyweight), 1e-9)
         // The machine's transmitted load at the same marked number is below
-        // the cap, and it caps exactly where bodyweight + marked * factor
-        // reaches three bodyweights.
+        // the cap, and it caps exactly where its transmitted load does.
         assertTrue(
             "machine factor $factor must delay the cap",
-            Xp.loadMultiplier(machine, 2 * bodyweight, bodyweight) < Xp.MAX_LOAD_MULTIPLIER,
+            Xp.loadMultiplier(machine, capKg, bodyweight) < Xp.MAX_LOAD_MULTIPLIER,
         )
         assertEquals(
             Xp.MAX_LOAD_MULTIPLIER,
-            Xp.loadMultiplier(machine, 2 * bodyweight / factor, bodyweight),
+            Xp.loadMultiplier(machine, capKg / factor, bodyweight),
             1e-9,
         )
     }
