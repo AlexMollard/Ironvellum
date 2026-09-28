@@ -50,6 +50,12 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -296,6 +302,18 @@ fun SessionScreen(
     var confirmAbandon by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
     var editModifiersFor by remember { mutableStateOf<Long?>(null) }
+    var editLoadFor by remember { mutableStateOf<SessionSet?>(null) }
+
+    // One route per metric, each passing the set's current values for the
+    // columns it does not own, exactly as the row's own callbacks do.
+    fun applyLoad(set: SessionSet, kg: Double?) {
+        val metric = exercises.firstOrNull { it.id == set.exerciseId }?.metric ?: ExerciseMetric.REPS
+        when {
+            metric == ExerciseMetric.HOLD -> viewModel.updateHoldSet(set.id, set.durationSec ?: 0, kg, set.done)
+            metric.isStrength -> viewModel.updateSet(set.id, set.reps, kg, set.done)
+            else -> viewModel.updateActivitySet(set.id, set.reps, set.durationSec, set.distanceM, set.grade, kg, set.done)
+        }
+    }
 
     // The lock-screen companion. The service watches the database and stops
     // itself when the session completes or is abandoned - the screen only
@@ -482,6 +500,7 @@ fun SessionScreen(
                         // every row printed the same two words 36 times in an
                         // 18-set session, on top of identical steppers.
                         showColumnLabels = position == 0,
+                        onLoadTap = { editLoadFor = set },
                         // the final set stays: drop the exercise instead of emptying it
                         onRemove = if (sets.size > 1) ({ viewModel.removeSet(set.id) }) else null,
                         onChange = { value, w, d ->
@@ -543,6 +562,61 @@ fun SessionScreen(
             },
             dismissButton = {
                 TextButton(onClick = { confirmAbandon = false }) { Text("Keep fighting") }
+            },
+        )
+    }
+
+    editLoadFor?.let { target ->
+        val initial = target.weightKg?.let { loadText(it) }.orEmpty()
+        var field by remember(target.id) { mutableStateOf(TextFieldValue(initial, TextRange(0, initial.length))) }
+        val parsed = parseLoadKg(field.text)
+        // This set and every later set of the movement not yet ticked off:
+        // a working weight usually holds for the rest of the exercise.
+        val following = ui.sets.filter {
+            it.exerciseId == target.exerciseId && it.setIndex >= target.setIndex && (it.id == target.id || !it.done)
+        }
+        val focus = remember { FocusRequester() }
+        LaunchedEffect(target.id) { focus.requestFocus() }
+        fun apply(sets: List<SessionSet>) {
+            val kg = parsed.getOrNull() ?: return
+            sets.forEach { applyLoad(it, kg.takeIf { v -> v > 0.0 }) }
+            editLoadFor = null
+        }
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            onDismissRequest = { editLoadFor = null },
+            title = { Text("${target.exerciseName} - set ${target.setIndex + 1}") },
+            text = {
+                OutlinedTextField(
+                    shape = MaterialTheme.shapes.small,
+                    value = field,
+                    onValueChange = { field = it.copy(text = it.text.take(LOAD_INPUT_MAX_CHARS)) },
+                    singleLine = true,
+                    label = { Text("Load (kg)") },
+                    placeholder = { Text("Blank or 0 for bodyweight") },
+                    isError = parsed.isFailure,
+                    supportingText = if (parsed.isFailure) {
+                        { Text("Enter 0 to ${MAX_LOAD_KG.toInt()} kg.") }
+                    } else {
+                        null
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    colors = fieldColors(accent = IronvellumColors.SystemGreen),
+                    modifier = Modifier.fillMaxWidth().focusRequester(focus),
+                )
+            },
+            confirmButton = {
+                Row {
+                    if (following.size > 1) {
+                        TextButton(enabled = parsed.isSuccess, onClick = { apply(following) }) {
+                            Text("Sets ${target.setIndex + 1}-${following.maxOf { it.setIndex } + 1}")
+                        }
+                    }
+                    TextButton(enabled = parsed.isSuccess, onClick = { apply(listOf(target)) }) { Text("This set") }
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { editLoadFor = null }) { Text("Cancel") }
             },
         )
     }
@@ -828,6 +902,8 @@ private fun SetRow(
     showColumnLabels: Boolean = true,
     onRemove: (() -> Unit)? = null,
     onChange: (Int, Double?, Boolean) -> Unit,
+    /** Opens the typed-load dialog; the stepper's ± only walk the plate grid. */
+    onLoadTap: () -> Unit = {},
     /**
      * The activity route: writes the whole set shape. Every caller passes the
      * set's CURRENT values for the fields its metric does not edit — a null
@@ -925,6 +1001,7 @@ private fun SetRow(
                     value = formatKg(weightKg),
                     onMinus = { onChange(reps, stepDownKg(weightKg), done) },
                     onPlus = { onChange(reps, stepUpKg(weightKg), done) },
+                    onValueClick = onLoadTap,
                     dimmed = done,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -953,6 +1030,7 @@ private fun SetRow(
                             value = formatKg(weightKg),
                             onMinus = { onActivityChange(reps, durationSec, distanceM, grade, stepDownKg(weightKg), done) },
                             onPlus = { onActivityChange(reps, durationSec, distanceM, grade, stepUpKg(weightKg), done) },
+                            onValueClick = onLoadTap,
                             dimmed = done,
                             modifier = Modifier.fillMaxWidth(),
                         )
@@ -1140,9 +1218,36 @@ private fun SetDeltaBadge(delta: SetRecords.Delta?, displaySetNo: Int) {
 private fun prLoad(weightKg: Double?): String =
     weightKg?.let { formatKg(it) } ?: "BW"
 
-private fun stepDownKg(kg: Double?): Double? = kg?.minus(2.5)?.takeIf { it > 0.0 }
+/** The ± buttons walk the plate grid, so 15.2 kg steps to 17.5 or 15, never 17.7 or 12.7. */
+internal const val LOAD_STEP_KG = 2.5
 
-private fun stepUpKg(kg: Double?): Double = (kg ?: 0.0) + 2.5
+/** Heavier than any lift on record; a guard against a stray extra digit. */
+internal const val MAX_LOAD_KG = 500.0
+
+private const val LOAD_INPUT_MAX_CHARS = 7
+
+internal fun stepDownKg(kg: Double?): Double? =
+    kg?.let { (kotlin.math.ceil(it / LOAD_STEP_KG - 1e-9) - 1) * LOAD_STEP_KG }?.takeIf { it > 0.0 }
+
+internal fun stepUpKg(kg: Double?): Double =
+    (kotlin.math.floor((kg ?: 0.0) / LOAD_STEP_KG + 1e-9) + 1) * LOAD_STEP_KG
+
+/**
+ * A typed load: blank is bodyweight (0.0), a comma is a decimal point, and
+ * the value is kept to the gram. Anything else, or out of range, fails.
+ */
+internal fun parseLoadKg(text: String): Result<Double> {
+    val trimmed = text.trim().replace(',', '.')
+    if (trimmed.isEmpty()) return Result.success(0.0)
+    val kg = trimmed.toDoubleOrNull()
+        ?: return Result.failure(IllegalArgumentException("not a number: $text"))
+    if (kg.isNaN() || kg < 0.0 || kg > MAX_LOAD_KG) return Result.failure(IllegalArgumentException("out of range: $text"))
+    return Result.success(Math.round(kg * 1000.0) / 1000.0)
+}
+
+/** A load as the dialog shows it for editing: no unit, no trailing ".0". */
+private fun loadText(kg: Double): String =
+    if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
 
 @Composable
 private fun Stepper(
@@ -1150,6 +1255,8 @@ private fun Stepper(
     onMinus: () -> Unit,
     onPlus: () -> Unit,
     dimmed: Boolean = false,
+    /** When set, tapping the figure itself opens exact entry. */
+    onValueClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -1168,6 +1275,14 @@ private fun Stepper(
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
             color = if (dimmed) IronvellumColors.InkMuted else IronvellumColors.Ink,
+            modifier = if (onValueClick != null) {
+                Modifier
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .clickable(onClickLabel = "Type a load", onClick = onValueClick)
+                    .padding(horizontal = 6.dp, vertical = 4.dp)
+            } else {
+                Modifier
+            },
         )
         StepIcon("+", onPlus)
     }
