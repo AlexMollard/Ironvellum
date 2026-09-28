@@ -32,7 +32,10 @@ package com.ironvellum.app.domain
  * upper fibres shrug, hold a loaded hinge and upward-rotate overhead (0.5
  * each; 1.0 on shrugs). Rows lead with the rhomboids. Serratus
  * protracts and upward-rotates the blade (push-ups, overhead and handstand
- * pressing), the rotator cuff externally rotates the humerus, the brachialis
+ * pressing). The rotator cuff holds the ball of the shoulder in its socket
+ * whenever the arm works overhead or pulls under load - pull-ups, rows,
+ * overhead and handstand presses, raises (0.5) - and is the mover in
+ * external rotation (1.0). The brachialis
  * flexes the elbow in every grip. Map order matters: the FIRST 1.0 entry is
  * the movement's dominant muscle for redundancy and stretch credit.
  */
@@ -209,7 +212,9 @@ object MuscleMap {
             pattern = MovementPattern.HINGE, compound = false, stretchBias = false,
         ))
         put("cossack squat", ExerciseProfile(
-            muscles = mapOf(Muscle.ADDUCTORS to 1.0, Muscle.QUADS to 0.5, Muscle.GLUTES to 0.5),
+            // A sideways lunge: the glute med works as hard as in a forward
+            // lunge (39% vs 42% MVIC, DiStefano 2009), so it gets the same 0.5.
+            muscles = mapOf(Muscle.ADDUCTORS to 1.0, Muscle.QUADS to 0.5, Muscle.GLUTES to 0.5, Muscle.ABDUCTORS to 0.5),
             pattern = MovementPattern.LUNGE, compound = true, stretchBias = true,
         ))
         // Dorsiflexion against bodyweight, back to a wall: the one direct
@@ -334,7 +339,8 @@ object MuscleMap {
         put("lateral raise", ExerciseProfile(
             // Presses grow little medial delt (Lanza 2024 negative control),
             // so the isolation earns its full 1.0.
-            muscles = mapOf(Muscle.SIDE_DELTS to 1.0),
+            // The supraspinatus starts every raise, so the cuff assists.
+            muscles = mapOf(Muscle.SIDE_DELTS to 1.0, Muscle.ROTATOR_CUFF to 0.5),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = false,
         ))
         put("front raise", ExerciseProfile(
@@ -391,7 +397,7 @@ object MuscleMap {
         ))
         put("cable fly", fly())
         put("cable lateral raise", ExerciseProfile(
-            muscles = mapOf(Muscle.SIDE_DELTS to 1.0),
+            muscles = mapOf(Muscle.SIDE_DELTS to 1.0, Muscle.ROTATOR_CUFF to 0.5),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
         ))
         put("cable curl", ExerciseProfile(
@@ -629,7 +635,7 @@ object MuscleMap {
     private fun verticalPress() = ExerciseProfile(
         muscles = mapOf(
             Muscle.FRONT_DELTS to 1.0, Muscle.TRICEPS to 0.5, Muscle.SIDE_DELTS to 0.5,
-            Muscle.TRAPS to 0.5, Muscle.SERRATUS to 0.5,
+            Muscle.TRAPS to 0.5, Muscle.SERRATUS to 0.5, Muscle.ROTATOR_CUFF to 0.5,
         ),
         pattern = MovementPattern.VERTICAL_PUSH, compound = true, stretchBias = true,
     )
@@ -638,7 +644,7 @@ object MuscleMap {
     private fun handstandPress() = ExerciseProfile(
         muscles = mapOf(
             Muscle.FRONT_DELTS to 1.0, Muscle.TRICEPS to 0.5, Muscle.ABS to 0.5,
-            Muscle.SERRATUS to 0.5,
+            Muscle.SERRATUS to 0.5, Muscle.ROTATOR_CUFF to 0.5,
         ),
         pattern = MovementPattern.VERTICAL_PUSH, compound = true, stretchBias = true,
     )
@@ -653,6 +659,7 @@ object MuscleMap {
             if (rearDelts) put(Muscle.REAR_DELTS, 0.5)
             put(Muscle.BRACHIALIS, 0.5)
             put(Muscle.FOREARMS, 0.5)
+            put(Muscle.ROTATOR_CUFF, 0.5)
         },
         pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
     )
@@ -661,7 +668,7 @@ object MuscleMap {
     private fun muscleUp(top: Muscle) = ExerciseProfile(
         muscles = mapOf(
             Muscle.LATS to 1.0, Muscle.RHOMBOIDS to 0.5, Muscle.TRAPS to 0.5, Muscle.BICEPS to 0.5, top to 0.5,
-            Muscle.BRACHIALIS to 0.5, Muscle.FOREARMS to 0.5,
+            Muscle.BRACHIALIS to 0.5, Muscle.FOREARMS to 0.5, Muscle.ROTATOR_CUFF to 0.5,
         ),
         pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
     )
@@ -677,6 +684,7 @@ object MuscleMap {
             if (lowerBack) put(Muscle.LOWER_BACK, 0.5)
             put(Muscle.BRACHIALIS, 0.5)
             put(Muscle.FOREARMS, 0.5)
+            put(Muscle.ROTATOR_CUFF, 0.5)
         },
         pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
     )
