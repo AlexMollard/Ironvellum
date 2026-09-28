@@ -102,13 +102,14 @@ fun coverageGaps(volume: Map<Muscle, Double>, target: ClosedFloatingPointRange<D
 /**
  * Muscles drawn but not judged: ProgramRules does not track them (front
  * delts ride on every press, forearms, adductors and lower back ride along
- * as indirect work), so a worked one takes a neutral grey instead of a
- * verdict that would call pressing-heavy weeks "over" on the front delts.
- * The grey is lighter than NONE's so a worked forearm never reads as
- * "missing"; with no sets at all it IS missing, and takes NONE's fill.
+ * as indirect work), so a worked one takes a dim green - trained, no verdict
+ * - instead of a range colour that would call pressing-heavy weeks "over" on
+ * the front delts. A neutral grey here was indistinguishable from NONE on
+ * device, so worked forearms read as "missing". With no sets at all the
+ * muscle IS missing, and takes NONE's fill.
  */
 private fun untrackedFill(volume: Double): Color =
-    if (volume > 0.0) IronvellumColors.InkMuted.copy(alpha = 0.35f) else regionFill(0.0, 1.0..1.0)
+    if (volume > 0.0) IronvellumColors.SystemGreen.copy(alpha = 0.65f) else regionFill(0.0, 1.0..1.0)
 
 private val FRONT = listOf(
     Region(Muscle.FRONT_DELTS, 0.072f to 0.132f, 0.118f to 0.140f, 0.136f to 0.170f, 0.128f to 0.205f, 0.103f to 0.196f, 0.088f to 0.165f),
