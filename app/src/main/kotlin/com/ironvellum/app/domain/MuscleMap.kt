@@ -26,9 +26,11 @@ package com.ironvellum.app.domain
  * THE SPLIT MUSCLES are movement anatomy on the same 1.0 / 0.5 scale: the
  * pec's clavicular head flexes the shoulder (incline presses), its costal
  * fibres pull the arm down toward the hips (dips), and a flat press or fly
- * works the sternal middle with both neighbours assisting. Rows and pulls
- * retract the blade (rhomboids and mid traps); shrugs elevate it (upper
- * traps); overhead lockouts and hinges hold it (traps 0.5). Serratus
+ * works the sternal middle with both neighbours assisting. TRAPS is the
+ * whole trapezius: its lower fibres pull the blade down in every pull-up,
+ * its middle fibres squeeze it back with the rhomboids in every row, its
+ * upper fibres shrug, hold a loaded hinge and upward-rotate overhead (0.5
+ * each; 1.0 on shrugs). Rows lead with the rhomboids. Serratus
  * protracts and upward-rotates the blade (push-ups, overhead and handstand
  * pressing), the rotator cuff externally rotates the humerus, the brachialis
  * flexes the elbow in every grip. Map order matters: the FIRST 1.0 entry is
@@ -233,7 +235,8 @@ object MuscleMap {
             pattern = MovementPattern.HINGE, compound = true, stretchBias = true,
         ))
         put("romanian deadlift", ExerciseProfile(
-            muscles = mapOf(Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 1.0, Muscle.LOWER_BACK to 0.5),
+            // The load hangs from the hands, so the upper traps hold it as in a deadlift.
+            muscles = mapOf(Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 1.0, Muscle.LOWER_BACK to 0.5, Muscle.TRAPS to 0.5),
             pattern = MovementPattern.HINGE, compound = true, stretchBias = true,
         ))
         put("front squat", squatProfile(MovementPattern.SQUAT, glutes = 0.5))
@@ -645,6 +648,7 @@ object MuscleMap {
         muscles = buildMap {
             put(Muscle.LATS, 1.0)
             put(Muscle.RHOMBOIDS, 0.5)
+            put(Muscle.TRAPS, 0.5)
             put(Muscle.BICEPS, 0.5)
             if (rearDelts) put(Muscle.REAR_DELTS, 0.5)
             put(Muscle.BRACHIALIS, 0.5)
@@ -656,16 +660,17 @@ object MuscleMap {
     /** Muscle-ups: a pull-up with a press on top ([top] is the pressing muscle). */
     private fun muscleUp(top: Muscle) = ExerciseProfile(
         muscles = mapOf(
-            Muscle.LATS to 1.0, Muscle.RHOMBOIDS to 0.5, Muscle.BICEPS to 0.5, top to 0.5,
+            Muscle.LATS to 1.0, Muscle.RHOMBOIDS to 0.5, Muscle.TRAPS to 0.5, Muscle.BICEPS to 0.5, top to 0.5,
             Muscle.BRACHIALIS to 0.5, Muscle.FOREARMS to 0.5,
         ),
         pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
     )
 
-    /** Horizontal rows: rhomboids and mid traps lead. Bent-over rows also brace the lower back. */
+    /** Horizontal rows: the rhomboids lead, the mid traps squeeze beside them. Bent-over rows also brace the lower back. */
     private fun row(lowerBack: Boolean = false) = ExerciseProfile(
         muscles = buildMap {
             put(Muscle.RHOMBOIDS, 1.0)
+            put(Muscle.TRAPS, 0.5)
             put(Muscle.LATS, 0.5)
             put(Muscle.BICEPS, 0.5)
             put(Muscle.REAR_DELTS, 0.5)

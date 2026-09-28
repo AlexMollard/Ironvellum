@@ -279,15 +279,16 @@ fun WeeklyVolumePanel(
             val open = range.endInclusive == Double.MAX_VALUE
             val bound = if (open) "${trim1(range.start)}+" else "${trim1(range.start)}-${trim1(range.endInclusive)}"
             val spoken = if (open) "at least ${trim1(range.start)}" else "${trim1(range.start)} to ${trim1(range.endInclusive)}"
-            val verdict = when {
-                sets < range.start -> "UNDER"
-                sets > range.endInclusive -> "OVER"
-                else -> "IN RANGE"
+            val verdict = when (levelOf(muscle, sets, target)) {
+                CoverageLevel.LIGHT -> "LIGHT"
+                CoverageLevel.NONE, CoverageLevel.UNDER -> "UNDER"
+                CoverageLevel.OVER -> "OVER"
+                CoverageLevel.IN_RANGE -> "IN RANGE"
             }
-            val colour = when {
-                sets < range.start -> IronvellumColors.SovereignGold
-                sets > range.endInclusive -> IronvellumColors.SovereignGold
-                else -> IronvellumColors.SystemGreen
+            val colour = when (verdict) {
+                "IN RANGE" -> IronvellumColors.SystemGreen
+                "LIGHT" -> IronvellumColors.InkMuted
+                else -> IronvellumColors.SovereignGold
             }
             Row(
                 Modifier

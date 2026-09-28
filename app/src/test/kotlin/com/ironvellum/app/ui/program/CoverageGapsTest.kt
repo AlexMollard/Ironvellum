@@ -10,9 +10,10 @@ import org.junit.Test
 
 /**
  * The Train card's "N SHORT OR MISSING" and the coverage screen's flags: a
- * major muscle counts when under its range or untrained, a helper (front
- * delts, forearms, lower back, adductors and the rest) when under its floor - and never
- * for being over it, because a helper has no ceiling.
+ * major muscle counts when under its range or untrained. A helper (front
+ * delts, forearms, the rotator cuff and the rest) below its floor reads
+ * LIGHT and is never a gap - the floor is a convention, and a lifter's goal
+ * outranks it - and it is never over, because a helper has no ceiling.
  */
 class CoverageGapsTest {
 
@@ -22,12 +23,17 @@ class CoverageGapsTest {
         Muscle.entries.associateWith { sets }.toMutableMap()
 
     @Test
-    fun `a helper under its floor is a gap, at the floor it is not`() {
+    fun `a helper under its floor reads light and is never a gap`() {
         val volume = everyMuscleAt(8.0)
         volume[Muscle.LOWER_BACK] = ProgramRules.HELPER_FLOOR_SETS - 0.5
-        volume[Muscle.ADDUCTORS] = ProgramRules.HELPER_FLOOR_SETS
-        volume.remove(Muscle.FOREARMS)
-        assertEquals(setOf(Muscle.LOWER_BACK, Muscle.FOREARMS), coverageGaps(volume, target).toSet())
+        volume.remove(Muscle.ROTATOR_CUFF)
+        volume[Muscle.QUADS] = 4.0
+        assertEquals(listOf(Muscle.QUADS), coverageGaps(volume, target))
+        assertEquals(CoverageLevel.LIGHT, levelOf(Muscle.LOWER_BACK, 2.5, target))
+        assertEquals(CoverageLevel.LIGHT, levelOf(Muscle.ROTATOR_CUFF, 0.0, target))
+        assertEquals(CoverageLevel.IN_RANGE, levelOf(Muscle.LOWER_BACK, ProgramRules.HELPER_FLOOR_SETS, target))
+        // A major muscle short of its range is still under, never light.
+        assertEquals(CoverageLevel.UNDER, levelOf(Muscle.QUADS, 4.0, target))
     }
 
     @Test
@@ -35,7 +41,7 @@ class CoverageGapsTest {
         val volume = everyMuscleAt(8.0)
         volume[Muscle.FRONT_DELTS] = 30.0
         assertTrue(coverageGaps(volume, target).isEmpty())
-        assertEquals(CoverageLevel.IN_RANGE, coverageLevel(30.0, rangeFor(Muscle.FRONT_DELTS, target)))
+        assertEquals(CoverageLevel.IN_RANGE, levelOf(Muscle.FRONT_DELTS, 30.0, target))
     }
 
     @Test

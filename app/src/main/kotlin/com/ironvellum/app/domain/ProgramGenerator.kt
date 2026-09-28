@@ -32,7 +32,9 @@ import kotlin.math.floor
  * (Buckner 2017, TaskSpec 2025): Back Squat, Bench Press, Deadlift, Overhead
  * Press, or the closest allowed equivalent under the equipment. Squat and
  * bench land >=2x/week (Grgic 2018), 3-5 reps at ~2 RIR with 3-5 min rest
- * (Lopez 2021, Schoenfeld 2016); accessories are hypertrophy-style.
+ * (Lopez 2021, Schoenfeld 2016); accessories are hypertrophy-style. A
+ * priority's main movement (a BACK priority's pull-up) is practised at least
+ * twice a week from three days up, before any fill (Grgic 2018).
  *
  * MUSCLE - 6-15 reps at 1-3 RIR (Lopez 2021, Robinson 2024, Refalo 2023);
  * beginners sit at the conservative 3 RIR. GENERAL - strength-style compounds
@@ -576,14 +578,22 @@ object ProgramGenerator {
             }
         }
 
+        // Phase 1b: a STRENGTH priority's main movement is practised twice.
+        // Before any fill, so no deficit or helper filler can crowd it out.
+        if (ctx.focus == TrainingFocus.STRENGTH && days >= 3) addSecondPractice(ctx, sessions)
+
         // Phase 2: close each tracked muscle's weekly fractional deficit.
-        val majorsLimited = fillDeficits(ctx, sessions) { muscle -> ctx.targetFor(muscle) }
-        // Phase 3: lift each helper muscle to its floor. No frequency rule
-        // and no ceiling: a floor asks for some work, not a second session.
-        val helpersLimited = fillDeficits(ctx, sessions, ProgramRules.HELPERS, frequency = false) { muscle ->
+        // Priorities aim at the top of the range and this whole phase ends
+        // before helpers get any time: a helper can never take a set a
+        // prioritised muscle needed.
+        val capacityLimited = fillDeficits(ctx, sessions) { muscle -> ctx.targetFor(muscle) }
+        // Phase 3: lift each helper muscle to its floor with the time left.
+        // No frequency rule and no ceiling: a floor asks for some work, not a
+        // second session. A helper the time cannot reach stays light, never
+        // a shortfall.
+        fillDeficits(ctx, sessions, ProgramRules.HELPERS, frequency = false) { muscle ->
             floorOrTarget(ctx, muscle, sessionsShare = 1.0)
         }
-        val capacityLimited = majorsLimited || helpersLimited
 
         // Honest capacity line: when the chosen days cannot fit the level's
         // weekly range inside the session time budget, name the muscles that
@@ -623,10 +633,11 @@ object ProgramGenerator {
 
     /**
      * " Heads-up: [lead] X and Y short of the target (...)." naming every
-     * tracked muscle under the range's floor and every helper under the
-     * helper floor - the same tests the coverage map uses to call a muscle
-     * UNDER - or "" when none is. The volume level is not named: for
-     * strength and skill goals it does not move the range.
+     * tracked muscle under the range's floor - the same test the coverage
+     * map uses to call a muscle UNDER - or "" when none is. Helpers are never
+     * named: under their floor they are light, not a problem. The volume
+     * level is not named: for strength and skill goals it does not move the
+     * range.
      */
     internal fun shortfallNote(
         volume: Map<Muscle, Double>,
@@ -635,24 +646,74 @@ object ProgramGenerator {
         advice: String,
     ): String {
         val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < range.start - 1e-9 }
-        val helpers = ProgramRules.HELPERS.filter { (volume[it] ?: 0.0) < ProgramRules.HELPER_FLOOR_SETS - 1e-9 }
-        if (short.isEmpty() && helpers.isEmpty()) return ""
-        val parts = buildList {
-            if (short.isNotEmpty()) {
-                val low = short.minOf { volume[it] ?: 0.0 }
-                add(
-                    "${joinWithAnd(short.map { it.label.lowercase() })} short " +
-                        "(${range.start.toInt()}-${range.endInclusive.toInt()} sets; lowest ${setsPhrase(low)})",
-                )
-            }
-            if (helpers.isNotEmpty()) {
-                add(
-                    "${joinWithAnd(helpers.map { it.label.lowercase() })} under the " +
-                        "${fmtSets(ProgramRules.HELPER_FLOOR_SETS)}-set helper floor",
-                )
-            }
+        if (short.isEmpty()) return ""
+        val low = short.minOf { volume[it] ?: 0.0 }
+        return " Heads-up: $lead ${joinWithAnd(short.map { it.label.lowercase() })} short " +
+            "(${range.start.toInt()}-${range.endInclusive.toInt()} sets; lowest ${setsPhrase(low)}). $advice"
+    }
+
+    /**
+     * The main compound pattern of each priority area's dominant tracked
+     * muscle. Areas without one (arms, calves, core) are absent, and so are
+     * the hamstrings: their compound is the hinge, whose practice is held
+     * to once a week under five days for recovery ([mainTargetCount]).
+     * Shoulders are absent too: their tracked muscles are the side and rear
+     * delts, which an overhead press barely loads (its lead is the front
+     * delt, a helper), so a second press would spend another day's time on
+     * the wrong muscle. A shoulder priority is served by lateral raises.
+     */
+    private val PRIORITY_PATTERNS: Map<MuscleArea, MovementPattern> = mapOf(
+        MuscleArea.BACK to MovementPattern.VERTICAL_PULL,
+        MuscleArea.CHEST to MovementPattern.HORIZONTAL_PUSH,
+        MuscleArea.QUADS to MovementPattern.SQUAT,
+        MuscleArea.GLUTES to MovementPattern.SQUAT,
+    )
+
+    /**
+     * STRENGTH: a priority's main movement practised only once in the week
+     * gets a second, lighter practice (3 sets of the same movement) at the
+     * front of the shortest session that lacks it and whose role does not
+     * train the opposing push or pull muscles - on a 3-day push/pull/legs
+     * week a BACK priority's pull-up lands on the legs day. Strength comes
+     * from practising the lift itself, more often (Grgic 2018; Buckner 2017).
+     * Skipped when the kit never practises the pattern or no session has
+     * room for it.
+     */
+    private fun addSecondPractice(ctx: Ctx, sessions: List<Draft>) {
+        val leading = mutableMapOf<Draft, Int>()
+        val patterns = MuscleArea.entries
+            .filter { it in ctx.request.priorities }
+            .mapNotNull { PRIORITY_PATTERNS[it] }
+            .distinct()
+        for (pattern in patterns) {
+            val practised = sessions.filter { s -> s.entries.any { MuscleMap.profile(it)?.pattern == pattern } }
+            if (practised.size != 1) continue
+            val source = practised.single().entries.first { MuscleMap.profile(it)?.pattern == pattern }
+            val exercise = ctx.pool.firstOrNull { it.name == source.exerciseName } ?: continue
+            val host = bySpaceOf(ctx, sessions).firstOrNull { s ->
+                s !in practised && hostsPractice(s.role, exercise.muscleGroup) &&
+                    s.entries.size < ctx.cap && exercise.name !in s.names &&
+                    ProgramRules.sessionSeconds(s.entries, ctx.focus) +
+                    3 * ProgramRules.setSeconds(ctx.focus, profileOf(exercise).compound) <=
+                    ProgramRules.SESSION_BUDGET_SECONDS
+            } ?: continue
+            val entry = add(
+                ctx, host, exercise, sets = 3,
+                why = "Second ${exercise.name.lowercase()} practice: strength comes from practising " +
+                    "the lift - Grgic 2018; Buckner 2017",
+            )
+            host.entries.removeAt(host.entries.lastIndex)
+            val at = leading.getOrDefault(host, 0)
+            host.entries.add(at, entry)
+            leading[host] = at + 1
         }
-        return " Heads-up: $lead ${parts.joinToString(", and ")}. $advice"
+    }
+
+    /** A push day never hosts a pull and a pull day never hosts a press: the split stays distinct. */
+    private fun hostsPractice(role: Role?, group: MuscleGroup): Boolean = when (role) {
+        Role.PUSH_DAY -> group != MuscleGroup.PULL
+        Role.PULL_DAY -> group != MuscleGroup.PUSH
+        else -> true
     }
 
     /** Push/pull/legs on three days: allowed, and honest about what it trades. */

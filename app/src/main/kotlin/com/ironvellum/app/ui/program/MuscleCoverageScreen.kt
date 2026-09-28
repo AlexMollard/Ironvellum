@@ -260,13 +260,13 @@ fun MuscleCoverageScreen(
         Spacer(Modifier.height(12.dp))
         SectionHeader("Helper muscles")
         Text(
-            "Mostly trained by your other lifts, so a floor of " +
-                "${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week, not a range.",
+            "Mostly trained by your other lifts. Under " +
+                "${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week reads light, not short.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
-        helpers.forEach { muscle -> MuscleRow(muscle, volume[muscle] ?: 0.0, ProgramRules.HELPER_RANGE) }
+        helpers.forEach { muscle -> MuscleRow(muscle, volume[muscle] ?: 0.0, target) }
 
         if (underCount > 0) {
             Spacer(Modifier.height(12.dp))
@@ -286,19 +286,22 @@ fun MuscleCoverageScreen(
     }
 }
 
-/** One muscle's sets against its range; an open-ended floor reads "3+". */
+/** One muscle's sets against its own range; a helper's open-ended floor reads "3+". */
 @Composable
-private fun MuscleRow(muscle: Muscle, sets: Double, range: ClosedFloatingPointRange<Double>) {
-    val level = coverageLevel(sets, range)
+private fun MuscleRow(muscle: Muscle, sets: Double, target: ClosedFloatingPointRange<Double>) {
+    val range = rangeFor(muscle, target)
+    val level = levelOf(muscle, sets, target)
     val verdict = when (level) {
         CoverageLevel.NONE -> "UNTRAINED"
         CoverageLevel.UNDER -> "UNDER"
+        CoverageLevel.LIGHT -> "LIGHT"
         CoverageLevel.IN_RANGE -> "IN RANGE"
         CoverageLevel.OVER -> "OVER"
     }
     val colour = when (level) {
         CoverageLevel.IN_RANGE -> IronvellumColors.SystemGreen
         CoverageLevel.OVER -> IronvellumColors.SovereignGold
+        CoverageLevel.LIGHT -> IronvellumColors.InkMuted
         else -> IronvellumColors.DangerRed
     }
     val bound = if (range.endInclusive == Double.MAX_VALUE) {

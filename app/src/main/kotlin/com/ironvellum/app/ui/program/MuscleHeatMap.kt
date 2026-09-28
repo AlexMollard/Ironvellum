@@ -37,8 +37,12 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkStroke
 
-/** Verdict for one muscle against the tier/focus weekly-set range. */
-enum class CoverageLevel { NONE, UNDER, IN_RANGE, OVER }
+/**
+ * Verdict for one muscle against the tier/focus weekly-set range. LIGHT is a
+ * helper below its floor: shown, never a gap - the floor is a convention, and
+ * a lifter chasing a goal should not be told to pad the week to meet it.
+ */
+enum class CoverageLevel { NONE, UNDER, LIGHT, IN_RANGE, OVER }
 
 /**
  * Pure colour decision. Zero volume is NONE (never trained), not UNDER - the
@@ -55,6 +59,7 @@ fun coverageLevel(volume: Double, target: ClosedFloatingPointRange<Double>): Cov
 private fun levelColor(level: CoverageLevel): Color = when (level) {
     CoverageLevel.NONE -> IronvellumColors.Bracket
     CoverageLevel.UNDER -> IronvellumColors.DangerRed
+    CoverageLevel.LIGHT -> IronvellumColors.InkMuted
     CoverageLevel.IN_RANGE -> IronvellumColors.Emerald
     CoverageLevel.OVER -> IronvellumColors.SovereignGold
 }
@@ -64,11 +69,11 @@ private fun levelColor(level: CoverageLevel): Color = when (level) {
  * shortfall - a muscle at 10 of 12 sets reads differently from one at 2 -
  * which is what makes the figure a heat map rather than four flat colours.
  */
-private fun regionFill(volume: Double, target: ClosedFloatingPointRange<Double>): Color {
-    val level = coverageLevel(volume, target)
+private fun regionFill(level: CoverageLevel, volume: Double, target: ClosedFloatingPointRange<Double>): Color {
     val alpha = when (level) {
         CoverageLevel.NONE -> 0.55f
         CoverageLevel.UNDER -> 0.35f + 0.5f * (volume / target.start).toFloat().coerceIn(0f, 1f)
+        CoverageLevel.LIGHT -> 0.35f
         else -> 0.9f
     }
     return levelColor(level).copy(alpha = alpha)
@@ -89,17 +94,27 @@ val JUDGED: List<Muscle> = ProgramRules.TRACKED + ProgramRules.HELPERS
 
 /**
  * The range a muscle is judged against: the goal's weekly range for the
- * majors, the helper floor with no ceiling for the four helpers (see
+ * majors, the helper floor with no ceiling for the helpers (see
  * ProgramRules.HELPERS) - so a pressing-heavy week is never "over" on the
- * front delts, but a week that leaves the lower back at 1 set is under.
+ * front delts.
  */
 fun rangeFor(muscle: Muscle, target: ClosedFloatingPointRange<Double>): ClosedFloatingPointRange<Double> =
     if (muscle in ProgramRules.HELPERS) ProgramRules.HELPER_RANGE else target
 
-/** Every judged muscle the week leaves under its range or untrained. */
+/** [muscle]'s verdict at [volume]: a helper below its floor, trained or not, is LIGHT. */
+fun levelOf(muscle: Muscle, volume: Double, target: ClosedFloatingPointRange<Double>): CoverageLevel {
+    val range = rangeFor(muscle, target)
+    return if (muscle in ProgramRules.HELPERS && volume < range.start) {
+        CoverageLevel.LIGHT
+    } else {
+        coverageLevel(volume, range)
+    }
+}
+
+/** Every major muscle the week leaves under its range or untrained. Helpers are never gaps. */
 fun coverageGaps(volume: Map<Muscle, Double>, target: ClosedFloatingPointRange<Double>): List<Muscle> =
     JUDGED.filter {
-        coverageLevel(volume[it] ?: 0.0, rangeFor(it, target)).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE }
+        levelOf(it, volume[it] ?: 0.0, target).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE }
     }
 
 private val FRONT = listOf(
@@ -123,8 +138,8 @@ private val FRONT = listOf(
 )
 
 private val BACK = listOf(
-    Region(Muscle.TRAPS, 0.010f to 0.118f, 0.040f to 0.122f, 0.070f to 0.132f, 0.100f to 0.142f, 0.092f to 0.150f, 0.060f to 0.152f, 0.030f to 0.172f, 0.024f to 0.230f, 0.018f to 0.290f, 0.010f to 0.305f),
-    Region(Muscle.RHOMBOIDS, 0.034f to 0.178f, 0.058f to 0.160f, 0.064f to 0.172f, 0.060f to 0.214f, 0.034f to 0.232f),
+    Region(Muscle.TRAPS, 0.010f to 0.118f, 0.040f to 0.122f, 0.070f to 0.132f, 0.100f to 0.142f, 0.092f to 0.150f, 0.060f to 0.152f, 0.026f to 0.168f, 0.017f to 0.230f, 0.013f to 0.290f, 0.008f to 0.305f),
+    Region(Muscle.RHOMBOIDS, 0.026f to 0.176f, 0.048f to 0.162f, 0.066f to 0.176f, 0.066f to 0.214f, 0.044f to 0.240f, 0.026f to 0.236f),
     Region(Muscle.ROTATOR_CUFF, 0.068f to 0.160f, 0.096f to 0.152f, 0.110f to 0.160f, 0.106f to 0.196f, 0.078f to 0.214f, 0.068f to 0.198f),
     Region(Muscle.REAR_DELTS, 0.125f to 0.148f, 0.143f to 0.157f, 0.154f to 0.165f, 0.159f to 0.174f, 0.163f to 0.183f, 0.162f to 0.192f, 0.158f to 0.201f, 0.153f to 0.209f, 0.147f to 0.218f, 0.139f to 0.218f, 0.131f to 0.209f, 0.126f to 0.201f, 0.123f to 0.192f, 0.121f to 0.183f, 0.119f to 0.174f, 0.120f to 0.165f, 0.121f to 0.157f, 0.121f to 0.148f),
     Region(Muscle.LATS, 0.020f to 0.272f, 0.062f to 0.232f, 0.105f to 0.236f, 0.107f to 0.262f, 0.104f to 0.292f, 0.098f to 0.326f, 0.092f to 0.360f, 0.070f to 0.382f, 0.030f to 0.366f),
@@ -302,7 +317,8 @@ private fun DrawScope.drawFigure(
     drawPath(body, IronvellumColors.VaultHigh)
 
     regions.forEach { region ->
-        val fill = regionFill(volume[region.muscle] ?: 0.0, rangeFor(region.muscle, target))
+        val sets = volume[region.muscle] ?: 0.0
+        val fill = regionFill(levelOf(region.muscle, sets, target), sets, rangeFor(region.muscle, target))
         for (side in listOf(1f, -1f)) {
             val path = Path()
             smoothClosed(path, region.points.map { (x, y) -> at(x * side, y) })
@@ -348,11 +364,12 @@ private fun smoothClosed(path: Path, points: List<Offset>) {
 
 /** Screen-reader summary over every judged muscle, each against its own range. */
 private fun coverageSummary(volume: Map<Muscle, Double>, target: ClosedFloatingPointRange<Double>): String {
-    val byLevel = JUDGED.groupBy { coverageLevel(volume[it] ?: 0.0, rangeFor(it, target)) }
+    val byLevel = JUDGED.groupBy { levelOf(it, volume[it] ?: 0.0, target) }
     fun names(muscles: List<Muscle>) = muscles.joinToString { it.label.lowercase() }
     val parts = buildList {
         byLevel[CoverageLevel.NONE]?.let { add("${names(it)} untrained") }
         byLevel[CoverageLevel.UNDER]?.let { add("${names(it)} under target") }
+        byLevel[CoverageLevel.LIGHT]?.let { add("${names(it)} light") }
         byLevel[CoverageLevel.IN_RANGE]?.let { add("${names(it)} in range") }
         byLevel[CoverageLevel.OVER]?.let { add("${names(it)} over target") }
     }
@@ -382,6 +399,7 @@ private fun Legend(modifier: Modifier = Modifier) {
         listOf(
             CoverageLevel.NONE to "NONE",
             CoverageLevel.UNDER to "UNDER",
+            CoverageLevel.LIGHT to "LIGHT",
             CoverageLevel.IN_RANGE to "IN RANGE",
             CoverageLevel.OVER to "OVER",
         ).forEach { (level, label) ->

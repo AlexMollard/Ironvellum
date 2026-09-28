@@ -957,8 +957,11 @@ class ProgramGeneratorTest {
     private val pairOnlyDumbbell = setOf("Dumbbell Bench Press", "Incline Dumbbell Press", "Dumbbell Fly")
 
     @Test
-    fun `generated weeks lift every helper muscle to its floor or name it`() {
+    fun `generated weeks never call a light helper a shortfall`() {
+        // A helper under its floor is light, shown and counted but never a
+        // problem: the note names tracked muscles only.
         val kits = listOf(Equipment.FULL_GYM, Equipment.NOTHING, ownerKit)
+        var lightSeen = 0
         for (kit in kits) for ((split, days) in TrainingSplit.OPTIONS) for (focus in TrainingFocus.entries) {
             val plan = ProgramGenerator.week(
                 ProgramRequest(focus, VolumeLevel.STANDARD, kit, daysPerWeek = days, split = split),
@@ -968,11 +971,25 @@ class ProgramGeneratorTest {
             val notes = plan.presets.joinToString(" ") { it.note }.lowercase()
             for (helper in ProgramRules.HELPERS) {
                 val sets = volume[helper] ?: 0.0
-                assertTrue(
-                    "${helper.label} at $sets sets, under the floor and unnamed ($kit/$split$days/$focus)",
-                    sets >= ProgramRules.HELPER_FLOOR_SETS - 1e-9 || helper.label.lowercase() in notes,
+                if (sets >= ProgramRules.HELPER_FLOOR_SETS - 1e-9) continue
+                lightSeen++
+                assertFalse(
+                    "${helper.label} at $sets sets is light, yet the note names it ($kit/$split$days/$focus): $notes",
+                    helper.label.lowercase() in notes,
                 )
             }
+        }
+        assertTrue("no week left a helper light, so nothing was checked", lightSeen > 0)
+    }
+
+    @Test
+    fun `generated weeks stay inside the session time budget`() {
+        val kits = listOf(Equipment.FULL_GYM, Equipment.NOTHING, ownerKit)
+        for (kit in kits) for ((split, days) in TrainingSplit.OPTIONS) for (focus in TrainingFocus.entries) {
+            val plan = ProgramGenerator.week(
+                ProgramRequest(focus, VolumeLevel.STANDARD, kit, daysPerWeek = days, split = split),
+                catalogue, strength,
+            )
             // Fourteen helpers must not buy their floors with overlong sessions.
             plan.presets.forEach { preset ->
                 val seconds = ProgramRules.sessionSeconds(preset.entries, focus)
@@ -1011,6 +1028,139 @@ class ProgramGeneratorTest {
                 .map { "$it=${volume[it] ?: 0.0}" }
             assertEquals("helpers under the floor ($kit/$focus)", emptyList<String>(), short)
         }
+    }
+
+    @Test
+    fun `the shortfall note names short tracked muscles and never a helper`() {
+        val range = 5.0..15.0
+        val everyHelperLight = ProgramRules.TRACKED.associateWith { 5.0 } + ProgramRules.HELPERS.associateWith { 0.0 }
+        assertEquals(
+            "", ProgramGenerator.shortfallNote(everyHelperLight, range, "3 days leave", "Add a day to reach it."),
+        )
+        val note = ProgramGenerator.shortfallNote(
+            everyHelperLight + (Muscle.QUADS to 3.0), range, "3 days leave", "Add a day to reach it.",
+        )
+        assertTrue(note, "quads short" in note)
+        ProgramRules.HELPERS.forEach { helper ->
+            assertFalse("light ${helper.label} named: $note", helper.label.lowercase() in note)
+        }
+    }
+
+    private fun strengthPpl3(priorities: Set<MuscleArea>, focus: TrainingFocus = TrainingFocus.STRENGTH) =
+        ProgramGenerator.week(
+            ProgramRequest(
+                focus, VolumeLevel.STANDARD, ownerKit, daysPerWeek = 3,
+                priorities = priorities, split = TrainingSplit.PUSH_PULL_LEGS,
+            ),
+            catalogue, strength,
+        )
+
+    private fun verticalPulls(preset: PlannedPreset) =
+        preset.entries.filter { MuscleMap.profile(it)?.pattern == MovementPattern.VERTICAL_PULL }
+
+    @Test
+    fun `a strength back priority practises the pull-day vertical pull again first on legs day`() {
+        val plan = strengthPpl3(setOf(MuscleArea.BACK))
+        val byName = plan.presets.associateBy { it.name }
+        val pull = byName.getValue("Pull A")
+        val legs = byName.getValue("Legs A")
+        val main = verticalPulls(pull).first()
+        val practice = legs.entries.first()
+        assertEquals(main.exerciseName, practice.exerciseName)
+        assertEquals(3, practice.sets)
+        assertTrue(practice.why, "Grgic 2018" in practice.why && "Buckner 2017" in practice.why)
+        assertTrue("push day pulls", verticalPulls(byName.getValue("Push A")).isEmpty())
+
+        // No priority, no strength focus, or no compound pattern: one practice only.
+        for (other in listOf(
+            strengthPpl3(emptySet()),
+            strengthPpl3(setOf(MuscleArea.ARMS)),
+            strengthPpl3(setOf(MuscleArea.BACK), focus = TrainingFocus.MUSCLE),
+        )) {
+            assertEquals(
+                "vertical pulls outside the pull day: ${other.presets}",
+                listOf("Pull A"), other.presets.filter { verticalPulls(it).isNotEmpty() }.map { it.name },
+            )
+        }
+        // Two days have no room for a second practice.
+        val twoDays = ProgramGenerator.week(
+            ProgramRequest(
+                TrainingFocus.STRENGTH, VolumeLevel.STANDARD, ownerKit, daysPerWeek = 2,
+                priorities = setOf(MuscleArea.BACK),
+            ),
+            catalogue, strength,
+        )
+        assertTrue(entriesOf(twoDays).none { it.why.startsWith("Second ") })
+        // A shoulder priority is for the side delts: no second overhead press
+        // taking the legs day's time for a front-delt lift.
+        val vTaper = strengthPpl3(setOf(MuscleArea.BACK, MuscleArea.SHOULDERS))
+        assertEquals(
+            listOf("Second ${main.exerciseName.lowercase()} practice"),
+            entriesOf(vTaper).filter { it.why.startsWith("Second ") }.map { it.why.substringBefore(":") },
+        )
+    }
+
+    /** The muscle a deficit fill was added for, read from its why ("2 sets short on tibialis - ..."). */
+    private fun filledFor(entry: PlannedEntry): Muscle? {
+        val label = Regex("(?:short|target) on ([a-z ]+?)(?:,| -|$)").find(entry.why)?.groupValues?.get(1)
+        return Muscle.entries.firstOrNull { it.label.lowercase() == label }
+    }
+
+    @Test
+    fun `back and shoulder priorities reach their top before a helper gets any time`() {
+        // The owner's tight week: three strength days, one bar, one 24 kg
+        // dumbbell. Every prioritised tracked muscle reaches the top of its
+        // range, or every session that trains it is out of time for one more
+        // set - and no session that could have served it spends time on a helper.
+        val plan = strengthPpl3(setOf(MuscleArea.BACK, MuscleArea.SHOULDERS))
+        val volume = volumeOf(plan)
+        val top = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.STRENGTH).endInclusive
+        assertEquals(top, volume[Muscle.LATS]!!, 1e-9)
+        for (muscle in listOf(Muscle.LATS, Muscle.SIDE_DELTS)) {
+            if ((volume[muscle] ?: 0.0) >= top - 1e-9) continue
+            for (preset in plan.presets) {
+                val training = preset.entries.filter { (MuscleMap.profile(it)?.muscles?.get(muscle) ?: 0.0) > 0.0 }
+                if (training.isEmpty()) continue
+                val seconds = ProgramRules.sessionSeconds(preset.entries, TrainingFocus.STRENGTH)
+                training.filter { it.sets < 5 }.forEach { entry ->
+                    val oneMore = ProgramRules.setSeconds(TrainingFocus.STRENGTH, MuscleMap.profile(entry)!!.compound)
+                    assertTrue(
+                        "${muscle.label} at ${volume[muscle]}: ${preset.name} has time for another ${entry.exerciseName} set",
+                        seconds + oneMore > ProgramRules.SESSION_BUDGET_SECONDS,
+                    )
+                }
+                val helperFills = preset.entries.filter { filledFor(it) in ProgramRules.HELPERS }
+                assertEquals("${preset.name} feeds helpers while ${muscle.label} is short", emptyList<PlannedEntry>(), helperFills)
+            }
+        }
+        // The side delts' own isolation carries the priority first: it sits
+        // at its 5-set ceiling before any press takes the rest.
+        assertEquals(5, entriesOf(plan).single { it.exerciseName == "Lateral Raise" }.sets)
+    }
+
+    @Test
+    fun `a shoulder priority lands on the side delts and leaves the front delts at their helper dose`() {
+        // Presses already cover the front delts, a helper; a V-taper wants
+        // the side delts. With the days to spare they reach the top of their
+        // range through lateral raises, and the front delts gain nothing.
+        fun sixDays(priorities: Set<MuscleArea>) = ProgramGenerator.week(
+            ProgramRequest(
+                TrainingFocus.STRENGTH, VolumeLevel.STANDARD, ownerKit, daysPerWeek = 6,
+                priorities = priorities, split = TrainingSplit.PUSH_PULL_LEGS,
+            ),
+            catalogue, strength,
+        )
+        val prioritised = sixDays(setOf(MuscleArea.SHOULDERS))
+        val plain = sixDays(emptySet())
+        val volume = volumeOf(prioritised)
+        val top = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.STRENGTH).endInclusive
+        // Within one lateral-raise set of the top: the next would overshoot it.
+        assertTrue("side delts at ${volume[Muscle.SIDE_DELTS]}", volume[Muscle.SIDE_DELTS]!! > top - 1.0)
+        assertEquals(
+            10, entriesOf(prioritised).filter { it.exerciseName == "Lateral Raise" }.sumOf { it.sets },
+        )
+        assertEquals(volumeOf(plain)[Muscle.FRONT_DELTS]!!, volume[Muscle.FRONT_DELTS]!!, 1e-9)
+        assertTrue(entriesOf(prioritised).none { filledFor(it) == Muscle.FRONT_DELTS })
     }
 
     /** A name the owner's kit cannot express, per the gear brief. */

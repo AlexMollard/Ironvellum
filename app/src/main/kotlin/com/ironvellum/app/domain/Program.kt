@@ -94,8 +94,9 @@ enum class TrainingSplit(val label: String, val dayOptions: List<Int>) {
  * counts sets per muscle, and a push day can starve the side delts while the
  * chest is over-served. Declared in display order. The chest is split into
  * its clavicular (upper), sternal (mid) and costal (lower) regions, and the
- * upper back into the rhomboids plus mid traps that rows aim at and the
- * upper traps that shrugs aim at. Never persisted, so renames are data-safe.
+ * upper back into the rhomboids that rows aim at and the whole trapezius,
+ * which every pull, row, shrug and overhead lockout works in part. Never
+ * persisted, so renames are data-safe.
  */
 enum class Muscle(val label: String) {
     UPPER_CHEST("Upper chest"),
