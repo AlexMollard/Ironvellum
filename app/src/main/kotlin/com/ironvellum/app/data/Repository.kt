@@ -32,6 +32,7 @@ import com.ironvellum.app.data.db.OwnedRelicEntity
 import com.ironvellum.app.domain.ActivityScore
 import com.ironvellum.app.domain.CsvWorkoutReader
 import com.ironvellum.app.domain.ArmyClass
+import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseHistoryCalculator
@@ -366,7 +367,9 @@ class Repository(
         val presets = plan.presets.map { spec ->
             PlannedPresetRows(
                 name = spec.name,
-                note = spec.note,
+                // Papers are listed under Sources in the builder; a saved
+                // note is read on the dashboard in one line.
+                note = Evidence.split(spec.note).first,
                 scheduledDay = spec.scheduledDay,
                 entries = spec.entries.map { entry ->
                     PlannedEntryRows(
@@ -425,7 +428,7 @@ class Repository(
         return savePreset(
             presetId = presetId,
             name = preset.name,
-            note = preset.note,
+            note = Evidence.split(preset.note).first,
             scheduledDay = preset.scheduledDay,
             entries = preset.entries.map { entry ->
                 PresetDraftEntry(

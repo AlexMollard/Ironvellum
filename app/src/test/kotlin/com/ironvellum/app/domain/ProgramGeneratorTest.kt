@@ -62,6 +62,19 @@ class ProgramGeneratorTest {
 
     private fun volumeOf(plan: RoutinePlan) = ProgramRules.weeklyVolume(plan.presets)
 
+    @Test
+    fun `every generated reason cites only registered papers`() {
+        assertCitationsResolve(
+            allPlans() + TrainingSplit.OPTIONS.map { (split, days) ->
+                ProgramGenerator.week(
+                    ProgramRequest(TrainingFocus.STRENGTH, VolumeLevel.LOW, Equipment.NOTHING, days, split = split),
+                    catalogue,
+                    strength,
+                )
+            },
+        )
+    }
+
     // ------------------------------------------------- acceptance example 1
 
     @Test

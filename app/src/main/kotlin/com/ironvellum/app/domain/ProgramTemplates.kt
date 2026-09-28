@@ -347,24 +347,22 @@ object ProgramTemplates {
                 val isMainLift = exercise.name.trim().lowercase() in
                     setOf("back squat", "bench press", "deadlift", "overhead press")
                 val why = if (capSwapped) {
-                    "Your dumbbell cannot load the ${entry.exerciseName} near failure, so the " +
-                        "${exercise.name} takes over: the same pattern, harder to move - Lopez 2021"
+                    "Your dumbbell is too light for the ${entry.exerciseName}; the " +
+                        "${exercise.name} is harder - Lopez 2021"
                 } else if (substituted) {
-                    "Your equipment has no ${entry.exerciseName}, so the ${exercise.name} takes " +
-                        "over: closest match in movement pattern and muscles - Kikuchi 2017; Calatayud 2015"
+                    "No gear for the ${entry.exerciseName}; the ${exercise.name} is the " +
+                        "closest match - Kikuchi 2017; Calatayud 2015"
                 } else if (template.focus == TrainingFocus.STRENGTH && isMainLift) {
-                    "Practises the ${exercise.name} itself: strength is specific to the lift you " +
-                        "train, moved by heavy loads - Buckner 2017; TaskSpec 2025; Lopez 2021"
+                    "Main lift: strength is specific to the lift trained - Buckner 2017; TaskSpec 2025; Lopez 2021"
                 } else if (template.focus == TrainingFocus.MUSCLE &&
                     MuscleMap.profile(exercise.name)?.stretchBias == true
                 ) {
                     val primary = MuscleMap.profile(exercise.name)!!.muscles
                         .filterValues { it >= 0.5 }.maxWithOrNull(compareBy { it.value })!!.key
-                    "In this program for your ${ProgramGenerator.muscleListOf(exercise, primary)}, " +
-                        "trained at long muscle length where they grow best - " +
+                    "For your ${ProgramGenerator.muscleListOf(exercise, primary)}, trained stretched - " +
                         ProgramGenerator.longLengthEvidence(primary)
                 } else {
-                    "In this program for your ${ProgramGenerator.muscleListOf(exercise)} - Pelland 2026"
+                    "For your ${ProgramGenerator.muscleListOf(exercise)} - Pelland 2026"
                 }
                 entry.copy(
                     exerciseName = exercise.name,

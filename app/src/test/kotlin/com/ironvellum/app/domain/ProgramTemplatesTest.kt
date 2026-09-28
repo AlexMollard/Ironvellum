@@ -146,6 +146,21 @@ class ProgramTemplatesTest {
     }
 
     @Test
+    fun `every adapted reason cites only registered papers`() {
+        // A light single dumbbell forces the cap swap, no gear the substitution.
+        val kits = listOf(
+            Equipment.NOTHING,
+            Equipment(fullGym = false, gear = setOf(Gear.PULL_UP_BAR, Gear.DUMBBELLS), dumbbellMaxKg = 8.0, dumbbellPair = false),
+            Equipment.FULL_GYM,
+        )
+        assertCitationsResolve(
+            ProgramTemplates.ALL.flatMap { template ->
+                kits.map { ProgramTemplates.build(template, template.authoredVolume, it, catalogue, emptyStrength) }
+            },
+        )
+    }
+
+    @Test
     fun `bodyweight adaptation never prescribes a loaded movement`() {
         for (template in ProgramTemplates.ALL) {
             val plan = ProgramTemplates.build(template, template.authoredVolume, Equipment.NOTHING, catalogue, emptyStrength)

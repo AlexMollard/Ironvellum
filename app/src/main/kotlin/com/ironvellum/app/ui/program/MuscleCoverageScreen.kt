@@ -244,7 +244,7 @@ fun MuscleCoverageScreen(
         )
         if (unattributed > 0) {
             Text(
-                "$unattributed sets could not be attributed to a muscle profile and are not counted.",
+                "$unattributed sets not counted: no muscle data for those moves.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -258,9 +258,8 @@ fun MuscleCoverageScreen(
         Spacer(Modifier.height(12.dp))
         SectionHeader("Helper muscles")
         Text(
-            "Your other lifts do most of this work - presses the front delts, every grip the forearms, " +
-                "hinges the lower back, squats the adductors. No study sets a dose for them, so they " +
-                "need a floor of ${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week, not a range.",
+            "Mostly trained by your other lifts, so a floor of " +
+                "${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week, not a range.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -270,7 +269,7 @@ fun MuscleCoverageScreen(
         if (underCount > 0) {
             Spacer(Modifier.height(12.dp))
             Text(
-                "$underCount muscles are short of target this week. One session can cover the gaps.",
+                "$underCount muscles short this week.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -342,9 +341,9 @@ private fun MuscleRow(muscle: Muscle, sets: Double, range: ClosedFloatingPointRa
 internal fun targetCaption(volume: VolumeLevel, focus: TrainingFocus, target: ClosedFloatingPointRange<Double>): String {
     val sets = "${trimSets(target.start)}-${trimSets(target.endInclusive)} sets per muscle a week"
     return when (focus) {
-        TrainingFocus.STRENGTH -> "Target for strength training: $sets"
-        TrainingFocus.SKILL -> "Target for skill training: $sets"
-        else -> "Target for muscle growth at ${volume.label.lowercase()} volume: $sets"
+        TrainingFocus.STRENGTH -> "Strength target: $sets"
+        TrainingFocus.SKILL -> "Skill target: $sets"
+        else -> "Muscle target, ${volume.label.lowercase()} volume: $sets"
     }
 }
 

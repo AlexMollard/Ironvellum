@@ -44,6 +44,7 @@ import com.ironvellum.app.data.ProgramAnswers
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.Equipment
+import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.MuscleArea
@@ -600,8 +601,6 @@ fun ProgramBuilderScreen(
                     selectedAreas = priorities,
                     onToggle = viewModel::togglePriority,
                 )
-                Spacer(Modifier.height(8.dp))
-                Caption("Prioritising everything prioritises nothing. Three is the ceiling.")
             }
         }
 
@@ -682,7 +681,7 @@ fun ProgramBuilderScreen(
                     )
                 }
             }
-            Caption("Written for a full gym; adapted to what you have. Sets follow your weekly volume.")
+            Caption("Adapted to your gear and weekly volume.")
         }
 
         if (mode == "improve") {
@@ -709,10 +708,8 @@ fun ProgramBuilderScreen(
             }
         }
 
-        // Sex enters the request on purpose, and the preview says what it does
-        // and does not change, citing the evidence - quietly, once.
         Spacer(Modifier.height(8.dp))
-        Caption("Profile sex: ${if (sex == Sex.MALE) "male" else "female"}. ${ProgramRules.SEX_NOTE}")
+        Caption("Profile sex: ${if (sex == Sex.MALE) "male" else "female"}. ${Evidence.split(ProgramRules.SEX_NOTE).first}")
 
         if (error != null) {
             Spacer(Modifier.height(8.dp))
@@ -841,6 +838,13 @@ fun ProgramBuilderScreen(
                 }
             }
         }
+        // Every paper the screen leans on, once, below the actions.
+        SourcesPanel(
+            listOf(ProgramRules.SEX_NOTE) + when (mode) {
+                "improve" -> improvement?.let { planTexts(listOf(it.after)) + it.changes.map { c -> c.detail } }.orEmpty()
+                else -> plan?.let { planTexts(it.presets) }.orEmpty()
+            },
+        )
         Spacer(Modifier.height(24.dp))
     }
 
@@ -872,14 +876,21 @@ fun ProgramBuilderScreen(
 }
 
 private fun volumeSuggestion(hasHistory: Boolean, years: Double?): String {
-    // The caption names where the suggestion came from; a lifter with no
-    // history must not be told she has "1.4 years of logged sessions".
-    val logged = years?.let { "${trimYears(it)} year${if (it == 1.0) "" else "s"}" }
+    // Selection-independent on purpose: a saved answer can preselect
+    // Standard, and "starts low" would then contradict it.
+    if (!hasHistory || years == null) return "No history yet: pick what you can recover from."
+    return "Suggested from ${historySpan(years)} of training."
+}
+
+/** "3 weeks", "5 months", "1.4 years" - under a year, "0 years" read as no history at all. */
+private fun historySpan(years: Double): String {
+    val days = (years * 365.25).toInt()
+    fun plural(n: Int, unit: String) = "$n $unit${if (n == 1) "" else "s"}"
     return when {
-        // Selection-independent on purpose: a saved answer can preselect
-        // Standard, and "starts low" would then contradict it.
-        !hasHistory -> "No logged sessions yet to suggest a level from - pick the dose you can recover from."
-        else -> "Suggested from $logged of logged sessions."
+        days < 14 -> plural(days.coerceAtLeast(1), "day")
+        days < 61 -> plural(days / 7, "week")
+        years < 1.0 -> plural((days / 30.44).toInt(), "month")
+        else -> "${trimYears(years)} year${if (years == 1.0) "" else "s"}"
     }
 }
 

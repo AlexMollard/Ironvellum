@@ -261,9 +261,7 @@ object ProgramRules {
      * sex and deliberately ignores it.
      */
     const val SEX_NOTE: String =
-        "Men and women get the same relative plan - volumes, reps and rest " +
-            "are identical, and loads scale off your own e1RM either way " +
-            "(Roberts 2020; Hunter 2014)."
+        "Same plan for men and women; loads scale off your own e1RM (Roberts 2020; Hunter 2014)."
 
     // ------------------------------------------------------------------ rest
 

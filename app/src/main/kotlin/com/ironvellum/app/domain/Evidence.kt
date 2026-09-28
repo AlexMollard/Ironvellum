@@ -124,6 +124,11 @@ enum class Evidence(val label: String, val citation: String, val doi: String) {
         "Kikuchi N, Nakazato K (2017). Low-load bench press and push-up induce similar muscle hypertrophy and strength gain. Journal of Exercise Science & Fitness 15(1):37-42.",
         "10.1016/j.jesf.2017.06.003",
     ),
+    CALATAYUD_2015(
+        "Calatayud 2015",
+        "Calatayud J, Borreani S, Colado JC, Martin F, Tella V, Andersen LL (2015). Bench Press and Push-up at Comparable Levels of Muscle Activity Results in Similar Strength Gains. J Strength Cond Res 29(1):246-253.",
+        "10.1519/JSC.0000000000000589",
+    ),
     ROBERTS_2020(
         "Roberts 2020",
         "Roberts BM, Nuckols G, Krieger JW (2020). Sex Differences in Resistance Training: A Systematic Review and Meta-Analysis. J Strength Cond Res 34(5):1448-1460.",
@@ -184,5 +189,25 @@ enum class Evidence(val label: String, val citation: String, val doi: String) {
     companion object {
         /** Short label by key, for tests and notes: `Evidence.of("Maeo 2021")`. */
         fun of(label: String): Evidence? = entries.firstOrNull { it.label == label }
+
+        private const val LABEL = """[A-Z][A-Za-z]+ (?:19|20)\d\d"""
+
+        /** A " - A 2017; B 2020" tail or a "(A 2017; B 2020)" aside - never other parentheses. */
+        private val CITATION = Regex("""(?:\s+-\s+|\s*\()$LABEL(?:;\s*$LABEL)*\)?""")
+
+        /**
+         * [text] with its citation clauses removed, and the papers they cite in
+         * order. Reasons carry their citations inline so a claim never drifts
+         * from its paper; the screens show the reason clean and list the
+         * papers once, under Sources.
+         */
+        fun split(text: String): Pair<String, List<Evidence>> {
+            val cited = CITATION.findAll(text)
+                .flatMap { Regex(LABEL).findAll(it.value) }
+                .mapNotNull { of(it.value) }
+                .distinct()
+                .toList()
+            return CITATION.replace(text, "").trim() to cited
+        }
     }
 }

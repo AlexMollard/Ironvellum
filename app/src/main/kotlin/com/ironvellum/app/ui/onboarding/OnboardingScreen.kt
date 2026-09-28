@@ -84,6 +84,8 @@ import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.program.EquipmentSaver
 import com.ironvellum.app.ui.program.GearPicker
 import com.ironvellum.app.ui.program.ProposedDay
+import com.ironvellum.app.ui.program.SourcesPanel
+import com.ironvellum.app.ui.program.planTexts
 import com.ironvellum.app.ui.program.SplitPicker
 import com.ironvellum.app.ui.program.splitCaption
 import com.ironvellum.app.ui.program.volumeCaption
@@ -753,7 +755,7 @@ private fun TrainingStep(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         InkPanel(Modifier.fillMaxWidth()) {
-            FieldLabel("HOW YOU SPLIT THE WEEK - BE HONEST, IT IS BUILT TO FIT")
+            FieldLabel("HOW YOU SPLIT THE WEEK")
             Spacer(Modifier.height(8.dp))
             SplitPicker(split = split, days = daysPerWeek, onPick = onSplit)
             Spacer(Modifier.height(8.dp))
@@ -970,6 +972,7 @@ private fun ProposalStep(
                 color = IronvellumColors.InkMuted,
             )
         }
+        current?.let { SourcesPanel(planTexts(it.presets)) }
         Spacer(Modifier.height(2.dp))
     }
 }

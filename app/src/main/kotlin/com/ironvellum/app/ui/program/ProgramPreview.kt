@@ -20,6 +20,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Equipment
+import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.Gear
 import com.ironvellum.app.domain.Improvement
 import com.ironvellum.app.domain.Muscle
@@ -109,10 +114,11 @@ fun ProposedDay(
             letterSpacing = IronvellumTracking.InlineLabel,
         )
         // Rest + RIR guidance rides every generated preset's note; it belongs
-        // with the session, not buried per movement.
-        if (preset.note.isNotBlank()) {
+        // with the session, not buried per movement. Its papers go to Sources.
+        val note = Evidence.split(preset.note).first
+        if (note.isNotBlank()) {
             Text(
-                preset.note,
+                note,
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -167,25 +173,18 @@ fun ProposedEntryRow(
                 letterSpacing = IronvellumTracking.InlineLabel,
             )
         }
-        // The generator's evidence travels with the movement: why this lift and
-        // dose, and where the load came from. Quiet by design - it answers the
-        // question when she asks it, it does not shout over the plan.
-        if (entry.why.isNotBlank()) {
-            Text(
-                entry.why,
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-        entry.loadNote?.let { note ->
-            if (note.isNotBlank()) {
+        // Why this lift and dose, and where the load came from - quiet, and
+        // without the citations, which [SourcesPanel] lists once per screen.
+        listOfNotNull(entry.why, entry.loadNote)
+            .map { Evidence.split(it).first }
+            .filter { it.isNotBlank() }
+            .forEach { line ->
                 Text(
-                    note,
+                    line,
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
             }
-        }
         if (editable) {
             Spacer(Modifier.height(4.dp))
             Row(
@@ -362,13 +361,11 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
             Spacer(Modifier.height(4.dp))
             Text(
                 if (stillShort.isEmpty()) {
-                    "This workout already matches the evidence for your goal. Nothing was altered."
+                    "Already fits your goal. Nothing changed."
                 } else {
-                    "This workout's movements, reps and sets already fit your goal. " +
+                    "Already fits your goal. " +
                         "${ProgramGenerator.joinWithAnd(stillShort.map { it.label.lowercase() }).replaceFirstChar { it.uppercase() }} " +
-                        "stay under target for the week: this session has no room left for them " +
-                        "inside about ${ProgramRules.SESSION_BUDGET_SECONDS / 60} minutes, or does not " +
-                        "train them. Another day would."
+                        "stay short this week: no room in this session. Another day would cover them."
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -455,9 +452,48 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
                     color = IronvellumColors.Ink,
                 )
                 Text(
-                    change.detail,
+                    Evidence.split(change.detail).first,
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
+                )
+            }
+        }
+    }
+}
+
+/** Every note and reason a plan carries, for [SourcesPanel]. */
+internal fun planTexts(presets: List<PlannedPreset>): List<String> =
+    presets.flatMap { preset -> listOf(preset.note) + preset.entries.flatMap { listOfNotNull(it.why, it.loadNote) } }
+
+/**
+ * The papers behind [texts], once each, at the foot of the screen: the
+ * reasons above read clean, and the evidence is a tap away. Closed by default.
+ */
+@Composable
+internal fun SourcesPanel(texts: List<String>) {
+    val sources = texts.flatMap { Evidence.split(it).second }.distinct()
+    if (sources.isEmpty()) return
+    var open by rememberSaveable { mutableStateOf(false) }
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            "SOURCES (${sources.size})  ${if (open) "-" else "+"}",
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+            letterSpacing = IronvellumTracking.InlineLabel,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .clickable(onClickLabel = if (open) "Hide sources" else "Show sources") { open = !open }
+                .padding(vertical = 14.dp),
+        )
+        if (open) {
+            sources.forEach { source ->
+                Text(
+                    "${source.citation} doi:${source.doi}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(bottom = 8.dp),
                 )
             }
         }
@@ -495,17 +531,16 @@ internal fun SplitPicker(
 /** What the picked split does with the week, in one line. */
 internal fun splitCaption(split: TrainingSplit, days: Int): String = when (split) {
     TrainingSplit.FULL_BODY ->
-        "Every muscle, every session. The fewest days, so each one runs longest."
+        "Every muscle, every session. Fewest days, longest sessions."
     TrainingSplit.UPPER_LOWER ->
-        "Upper body, lower body, twice each: every muscle trained twice a week."
+        "Upper, then lower, twice each. Every muscle twice a week."
     TrainingSplit.PUSH_PULL_LEGS -> if (days == 3) {
-        "Each muscle once a week. Weekly sets drive growth, not frequency (Pelland 2026), " +
-            "but strength practice drops to once a week (Grgic 2018)."
+        "Each muscle once a week. Fine for growth, but lifts get practised less often."
     } else {
-        "Push, pull and legs twice over: short, focused sessions, every muscle twice a week."
+        "Push, pull, legs twice over. Short sessions, every muscle twice a week."
     }
     TrainingSplit.UPPER_LOWER_PPL ->
-        "Push, pull and legs, then upper and lower: every muscle twice in five days."
+        "Push, pull, legs, then upper and lower. Every muscle twice in five days."
 }
 
 /**
@@ -517,12 +552,12 @@ internal fun volumeCaption(volume: VolumeLevel, focus: TrainingFocus): String {
     val range = ProgramRules.weeklySetTarget(volume, focus)
     val sets = "${range.start.toInt()}-${range.endInclusive.toInt()} sets per muscle a week"
     if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL) {
-        return "$sets at every level: strength needs less volume. Higher levels add movements per session."
+        return "$sets at every level. Higher levels add movements."
     }
     return when (volume) {
-        VolumeLevel.LOW -> "$sets. Plenty in a first year, or when time is short."
-        VolumeLevel.STANDARD -> "$sets. The usual dose after a year or so of steady training."
-        VolumeLevel.HIGH -> "$sets. For years of training: more sets still help, by less each time."
+        VolumeLevel.LOW -> "$sets. Enough for a first year."
+        VolumeLevel.STANDARD -> "$sets. After a year or so of training."
+        VolumeLevel.HIGH -> "$sets. For years of training."
     }
 }
 
@@ -690,17 +725,16 @@ internal fun GearPicker(
 
 /** What the current answer opens up, in plain words. */
 private fun gearCaption(equipment: Equipment): String = when {
-    equipment.fullGym -> "Barbells, machines and cables: the whole catalogue opens up."
-    equipment.gear.isEmpty() -> "Floor work only: push-ups, single-leg squats and core, no gear."
+    equipment.fullGym -> "Barbells, machines and cables."
+    equipment.gear.isEmpty() -> "Floor work only."
     else -> {
         val owned = equipment.gear.joinToString(", ") { it.label.lowercase() }
         val pair = if (Gear.DUMBBELLS in equipment.gear) {
             val max = equipment.dumbbellMaxKg?.toInt() ?: DEFAULT_DUMBBELL_KG.toInt()
-            val count = if (equipment.dumbbellPair) "a pair of" else "one"
-            ", $count dumbbell${if (equipment.dumbbellPair) "s" else ""} up to $max kg"
+            " (${if (equipment.dumbbellPair) "pair" else "one"}, up to $max kg)"
         } else {
             ""
         }
-        "Your $owned$pair open those movements; the rest stays floor work."
+        "Floor work plus $owned$pair."
     }
 }

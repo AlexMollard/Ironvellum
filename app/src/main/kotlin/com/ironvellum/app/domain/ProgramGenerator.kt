@@ -559,13 +559,10 @@ object ProgramGenerator {
                             add(
                                 ctx, session, main, sets = 3,
                                 why = if (main.name.equals(mainName, true)) {
-                                    "Practises the ${main.name} itself: strength is specific to the " +
-                                        "lift you train, and it loads your ${muscleListOf(main)} - " +
-                                        "Buckner 2017; TaskSpec 2025"
+                                    "Main lift: strength is specific to the lift trained - Buckner 2017; TaskSpec 2025"
                                 } else {
-                                    "No access to the ${mainName} here, so the ${main.name} stands in: " +
-                                        "closest match in pattern and muscles - a fair swap for muscle " +
-                                        "growth, never for max strength - Kikuchi 2017; Buckner 2017"
+                                    "Stands in for the ${mainName}: closest match, fine for size, not max strength - " +
+                                        "Kikuchi 2017; Buckner 2017"
                                 },
                             )
                             handled = true
@@ -642,15 +639,14 @@ object ProgramGenerator {
             if (short.isNotEmpty()) {
                 val low = short.minOf { volume[it] ?: 0.0 }
                 add(
-                    "${joinWithAnd(short.map { it.label.lowercase() })} short of the target " +
-                        "(${range.start.toInt()}-${range.endInclusive.toInt()} sets a week; " +
-                        "the lowest sits at ${setsPhrase(low)})",
+                    "${joinWithAnd(short.map { it.label.lowercase() })} short " +
+                        "(${range.start.toInt()}-${range.endInclusive.toInt()} sets; lowest ${setsPhrase(low)})",
                 )
             }
             if (helpers.isNotEmpty()) {
                 add(
                     "${joinWithAnd(helpers.map { it.label.lowercase() })} under the " +
-                        "${fmtSets(ProgramRules.HELPER_FLOOR_SETS)}-set floor for helper muscles",
+                        "${fmtSets(ProgramRules.HELPER_FLOOR_SETS)}-set helper floor",
                 )
             }
         }
@@ -659,9 +655,7 @@ object ProgramGenerator {
 
     /** Push/pull/legs on three days: allowed, and honest about what it trades. */
     internal const val ONCE_A_WEEK_NOTE =
-        " Push/pull/legs on three days trains each muscle once a week. Weekly sets drive growth, " +
-            "not frequency (Pelland 2026), but one session carries each muscle's whole week and " +
-            "strength practice drops to once a week (Grgic 2018). Six days trains everything twice."
+        " Each muscle once a week: fine for growth, but lifts get practised less often (Pelland 2026; Grgic 2018)."
 
     /** Deadlift and press practice scales with the room the week has. */
     private fun mainTargetCount(days: Int): Int = if (days >= 5) 2 else 1
@@ -680,17 +674,12 @@ object ProgramGenerator {
     private fun backboneWhy(exercise: Exercise, focus: TrainingFocus): String {
         val profile = profileOf(exercise)
         val muscles = muscleListOf(exercise)
+        val lead = "${patternLabel(profile.pattern).replaceFirstChar { it.uppercase() }} compound: $muscles"
         return when {
-            focus == TrainingFocus.STRENGTH || focus == TrainingFocus.GENERAL ->
-                "${exercise.name} is the ${patternLabel(profile.pattern)} compound here: it builds the " +
-                    "$muscles behind your main lifts and keeps pushing and pulling balanced - Gentil 2015"
+            focus == TrainingFocus.STRENGTH || focus == TrainingFocus.GENERAL -> "$lead - Gentil 2015"
             profile.stretchBias ->
-                "${exercise.name} is the ${patternLabel(profile.pattern)} compound here: one movement " +
-                    "trains your $muscles together, loaded deep in the stretch where muscle grows best - " +
-                    "Gentil 2015; ${longLengthEvidence(dominantMuscle(profile))}"
-            else ->
-                "${exercise.name} is the ${patternLabel(profile.pattern)} compound here: one movement " +
-                    "trains your $muscles together - Gentil 2015"
+                "$lead, loaded stretched - Gentil 2015; ${longLengthEvidence(dominantMuscle(profile))}"
+            else -> "$lead - Gentil 2015"
         }
     }
 
@@ -1021,34 +1010,20 @@ object ProgramGenerator {
     }
 
     /**
-     * Plain-language reason for a deficit fill: how short the week was, on
-     * which muscle, why THIS movement (long length where applicable), and
-     * the citation - deterministic down to the numbers. The filled muscle is
-     * always named, even at a 0.5 share.
+     * Plain-language reason for a deficit fill: how short the week was and
+     * on which muscle, whether THIS movement trains it stretched, and the
+     * citation. The filled muscle is always named, even at a 0.5 share.
      */
     private fun muscleWhy(exercise: Exercise, muscle: Muscle, ctx: Ctx, deficit: Double): String {
-        val target = if (muscle in ProgramRules.HELPERS) {
-            "floor ${fmtSets(ProgramRules.HELPER_FLOOR_SETS)}"
-        } else {
-            "target ${ctx.targetRange.start.toInt()}-${ctx.targetRange.endInclusive.toInt()}"
-        }
         // A sub-set shortfall is indirect-share noise; say so instead of
-        // printing "0.1 sets".
-        val shortfall = if (deficit < 0.5) {
-            "Your week is just under target on ${muscle.label.lowercase()} ($target)"
-        } else {
-            "Your week was ${setsPhrase(deficit)} short on ${muscle.label.lowercase()} ($target)"
-        }
-        val priority = if (muscle in ctx.priorityMuscles) {
-            "Priority muscle you picked. $shortfall"
-        } else {
-            shortfall
-        }
+        // printing "0.1 sets". The target itself is on the volume panel.
+        val name = muscle.label.lowercase()
+        val shortfall = if (deficit < 0.5) "Just under target on $name" else "${setsPhrase(deficit)} short on $name"
+        val lead = if (muscle in ctx.priorityMuscles) "Priority: $shortfall" else shortfall.replaceFirstChar { it.uppercase() }
         return if (stretchesFor(exercise, muscle)) {
-            "$priority. The ${exercise.name} trains your ${muscleListOf(exercise, muscle)} at long " +
-                "muscle length, where they grow more - ${longLengthEvidence(muscle)}"
+            "$lead, trained stretched - ${longLengthEvidence(muscle)}"
         } else {
-            "$priority. The ${exercise.name} trains your ${muscleListOf(exercise, muscle)} - Pelland 2026"
+            "$lead - Pelland 2026"
         }
     }
 
@@ -1455,12 +1430,11 @@ object ProgramGenerator {
     internal fun presetNote(tier: VolumeLevel, focus: TrainingFocus): String {
         val rir = ProgramRules.targetRir(tier, focus)
         return if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.GENERAL) {
-            "Rest 3-5 min on the main lifts (Schoenfeld 2016; Grgic 2018), " +
-                "at least 90 s on accessories (Singer 2024). " +
-                "Keep $rir reps in reserve - nothing to failure (Refalo 2023)."
+            "Rest 3-5 min on main lifts, 90 s+ on the rest. Keep $rir reps in reserve " +
+                "(Schoenfeld 2016; Singer 2024; Refalo 2023)."
         } else {
-            "Rest 2-3 min on compounds, never under 90 s (Singer 2024). " +
-                "Keep $rir reps in reserve - no set to failure (Refalo 2023; Robinson 2024)."
+            "Rest 2-3 min, never under 90 s. Keep $rir reps in reserve " +
+                "(Singer 2024; Refalo 2023)."
         }
     }
 }
