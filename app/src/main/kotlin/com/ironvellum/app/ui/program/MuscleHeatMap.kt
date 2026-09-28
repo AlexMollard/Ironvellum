@@ -34,7 +34,6 @@ import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
-import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkStroke
 
@@ -116,7 +115,7 @@ private val FRONT = listOf(
 )
 
 private val BACK = listOf(
-    Region(Muscle.UPPER_BACK, 0.012f to 0.112f, 0.042f to 0.108f, 0.100f to 0.138f, 0.098f to 0.168f, 0.058f to 0.228f, 0.012f to 0.268f),
+    Region(Muscle.UPPER_BACK, 0.012f to 0.112f, 0.042f to 0.112f, 0.100f to 0.138f, 0.098f to 0.168f, 0.058f to 0.228f, 0.012f to 0.268f),
     Region(Muscle.REAR_DELTS, 0.102f to 0.140f, 0.136f to 0.150f, 0.155f to 0.190f, 0.142f to 0.218f, 0.112f to 0.192f),
     Region(Muscle.LATS, 0.020f to 0.272f, 0.062f to 0.232f, 0.100f to 0.192f, 0.110f to 0.240f, 0.100f to 0.318f, 0.070f to 0.378f, 0.030f to 0.362f),
     Region(Muscle.TRICEPS, 0.116f to 0.220f, 0.150f to 0.222f, 0.160f to 0.270f, 0.150f to 0.320f, 0.125f to 0.320f, 0.113f to 0.262f),
@@ -127,40 +126,107 @@ private val BACK = listOf(
     Region(Muscle.CALVES, 0.036f to 0.730f, 0.090f to 0.730f, 0.098f to 0.790f, 0.085f to 0.870f, 0.055f to 0.880f, 0.036f to 0.800f),
 )
 
-/** Right half of the silhouette, crown-side neck to crotch, in figure space. */
+/**
+ * Right half of the silhouette, crown to crotch, in figure space: a muscular
+ * build, because the map is a lifter's. Traps rise in a curve into a short
+ * neck, delts cap the shoulder, lats flare into a narrow waist, thighs and
+ * calves swell. Head, hands and feet belong to the one outline - a head
+ * circle on a flat shoulder line, wedge hands and triangle feet read as a
+ * mannequin. Palms face forward (the anatomical position muscle charts
+ * use), so the thumb sits on the outside of each hand.
+ */
 private val HALF_OUTLINE = listOf(
-    0.030f to 0.104f, // neck
-    0.070f to 0.126f, // trapezius slope
-    0.128f to 0.142f, // shoulder
-    0.154f to 0.170f,
-    0.162f to 0.225f, // upper arm, outer
-    0.166f to 0.330f, // elbow, outer
-    0.171f to 0.398f, // forearm, outer
-    0.158f to 0.458f, // wrist
-    0.164f to 0.500f, // hand
-    0.140f to 0.522f,
-    0.126f to 0.470f, // wrist, inner
-    0.118f to 0.400f, // forearm, inner
-    0.113f to 0.330f, // elbow, inner
+    0.000f to 0.004f, // crown
+    0.027f to 0.010f,
+    0.042f to 0.028f,
+    0.047f to 0.052f, // temple
+    0.043f to 0.076f,
+    0.034f to 0.094f,
+    0.027f to 0.102f, // jaw
+    0.031f to 0.106f, // neck
+    0.044f to 0.108f, // traps rise into the neck
+    0.062f to 0.113f,
+    0.084f to 0.121f,
+    0.106f to 0.131f, // traps meet the shoulder
+    0.132f to 0.141f,
+    0.156f to 0.158f,
+    0.168f to 0.184f, // deltoid cap
+    0.167f to 0.210f,
+    0.170f to 0.240f,
+    0.172f to 0.275f, // upper arm
+    0.168f to 0.312f,
+    0.165f to 0.333f, // elbow, outer
+    0.172f to 0.360f, // forearm swell
+    0.171f to 0.398f,
+    0.168f to 0.428f,
+    0.164f to 0.452f, // wrist, outer
+    0.166f to 0.466f,
+    0.172f to 0.478f,
+    0.179f to 0.494f,
+    0.181f to 0.505f, // thumb tip
+    0.176f to 0.509f,
+    0.170f to 0.498f, // thumb crotch
+    0.169f to 0.512f,
+    0.169f to 0.545f,
+    0.165f to 0.552f, // index finger
+    0.161f to 0.549f,
+    0.160f to 0.523f,
+    0.158f to 0.556f,
+    0.153f to 0.561f, // middle finger
+    0.148f to 0.558f,
+    0.148f to 0.525f,
+    0.146f to 0.554f,
+    0.141f to 0.558f, // ring finger
+    0.137f to 0.555f,
+    0.137f to 0.523f,
+    0.135f to 0.546f,
+    0.131f to 0.550f, // little finger
+    0.127f to 0.546f,
+    0.124f to 0.515f, // heel of the hand
+    0.121f to 0.472f,
+    0.121f to 0.452f, // wrist, inner
+    0.117f to 0.420f,
+    0.118f to 0.400f,
+    0.119f to 0.365f, // forearm, inner
+    0.113f to 0.332f, // elbow, inner
+    0.114f to 0.290f,
     0.108f to 0.228f, // armpit
-    0.104f to 0.300f, // flank
-    0.092f to 0.400f, // waist
+    0.113f to 0.250f, // lat flare
+    0.108f to 0.290f,
+    0.100f to 0.330f,
+    0.092f to 0.370f,
+    0.091f to 0.405f, // waist
+    0.100f to 0.442f,
     0.112f to 0.475f, // hip
-    0.118f to 0.560f, // thigh, outer
-    0.092f to 0.700f, // knee, outer
-    0.099f to 0.785f, // calf, outer
-    0.068f to 0.930f, // ankle, outer
-    0.084f to 0.978f, // foot
-    0.026f to 0.985f,
-    0.030f to 0.930f, // ankle, inner
-    0.030f to 0.785f, // calf, inner
+    0.122f to 0.520f, // thigh sweep
+    0.120f to 0.580f,
+    0.110f to 0.640f,
+    0.094f to 0.700f, // knee, outer
+    0.096f to 0.722f,
+    0.103f to 0.768f, // calf, outer
+    0.099f to 0.812f,
+    0.088f to 0.860f,
+    0.074f to 0.900f,
+    0.064f to 0.922f, // ankle, outer
+    0.069f to 0.938f,
+    0.077f to 0.960f,
+    0.083f to 0.978f, // little toe
+    0.082f to 0.988f,
+    0.072f to 0.993f,
+    0.058f to 0.996f,
+    0.044f to 0.997f, // toe line
+    0.032f to 0.994f,
+    0.026f to 0.986f, // big toe
+    0.025f to 0.966f, // arch
+    0.029f to 0.942f,
+    0.034f to 0.922f, // ankle, inner
+    0.030f to 0.860f,
+    0.027f to 0.790f, // calf, inner
     0.034f to 0.700f, // knee, inner
+    0.030f to 0.676f,
     0.020f to 0.560f, // thigh, inner
     0.000f to 0.505f, // crotch
 )
-
-private const val HEAD_CY = 0.056f
-private const val HEAD_R = 0.046f
 
 /**
  * Front and back figures side by side in ONE Canvas of fixed [figureHeight],
@@ -240,16 +306,6 @@ private fun DrawScope.drawFigure(
             taperEnds = false,
         )
     }
-    inkArc(
-        center = at(0f, HEAD_CY),
-        radius = HEAD_R * height,
-        startDeg = 0f,
-        sweepDeg = 360f,
-        color = IronvellumColors.InkMuted,
-        widthPx = 1.4.dp.toPx(),
-        seed = seed,
-        taperEnds = false,
-    )
 }
 
 /**
