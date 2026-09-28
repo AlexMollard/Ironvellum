@@ -76,6 +76,8 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.train.ExerciseExplorerScreen
 import com.ironvellum.app.ui.train.PresetsScreen
 import com.ironvellum.app.ui.train.PresetEditorScreen
+import com.ironvellum.app.ui.program.ProgramBuilderScreen
+import com.ironvellum.app.ui.program.MuscleCoverageScreen
 import com.ironvellum.app.ui.train.SessionScreen
 import com.ironvellum.app.ui.idle.IdleScreen
 
@@ -90,11 +92,16 @@ object Routes {
     const val SUPPORT = "support"
     const val SOCIAL = "social"
     const val WORKOUT_LOG = "workout_log"
+    const val MUSCLE_COVERAGE = "muscle_coverage"
     const val WORKOUT_DETAIL = "workout/{sessionId}"
     const val LIFTER = "hunter/{userId}?name={name}"
     const val MEASUREMENT = "measurement/{site}"
     const val PRESET_EDITOR = "preset_editor?presetId={presetId}"
     const val SESSION = "session/{sessionId}"
+    const val PROGRAM_BUILDER = "program_builder?mode={mode}&presetId={presetId}"
+
+    fun programBuilder(mode: String, presetId: Long? = null): String =
+        if (presetId == null) "program_builder?mode=$mode" else "program_builder?mode=$mode&presetId=$presetId"
 
     fun presetEditor(presetId: Long? = null): String =
         if (presetId == null) "preset_editor" else "preset_editor?presetId=$presetId"
@@ -311,11 +318,36 @@ fun IronvellumRoot() {
                     PresetsScreen(
                         onEdit = { id -> navController.navigate(Routes.presetEditor(id)) },
                         onNew = { navController.navigate(Routes.presetEditor()) },
+                        onGenerate = { mode, presetId ->
+                            navController.navigate(Routes.programBuilder(mode, presetId))
+                        },
                         onStartSession = { id -> navController.navigate(Routes.session(id)) },
                         onQuickSession = { id -> navController.navigate(Routes.session(id)) },
                         onOpenExercises = { navController.navigate(Routes.EXERCISES) },
                         onOpenLog = { navController.navigate(Routes.WORKOUT_LOG) },
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
+                        onOpenCoverage = { navController.navigate(Routes.MUSCLE_COVERAGE) },
+                    )
+                }
+                composable(Routes.MUSCLE_COVERAGE) {
+                    MuscleCoverageScreen(
+                        onBack = { navController.popBackStack() },
+                        // "session" mode builds one workout aimed at the
+                        // muscles this map just showed as neglected.
+                        onGenerateSession = { navController.navigate(Routes.programBuilder("session")) },
+                    )
+                }
+                composable(
+                    Routes.PROGRAM_BUILDER,
+                    arguments = listOf(
+                        navArgument("mode") { type = NavType.StringType },
+                        navArgument("presetId") { type = NavType.LongType; defaultValue = -1L },
+                    ),
+                ) { entry ->
+                    ProgramBuilderScreen(
+                        mode = entry.arguments?.getString("mode") ?: "week",
+                        presetId = entry.arguments?.getLong("presetId")?.takeIf { it > 0 },
+                        onDone = { navController.popBackStack() },
                     )
                 }
                 composable(Routes.EXERCISES) {

@@ -25,8 +25,15 @@ training.
 
 Features:
 
-- Guided first run: answer your days, equipment and goal, and the app proposes
-  an editable week built from the real catalogue. No routine is imposed on you.
+- Guided first run: answer your training age, days, equipment and goal, and the
+  app proposes an editable week built from the real catalogue. No routine is
+  imposed on you.
+- Evidence-based program builder: beginner, intermediate and advanced templates
+  for strength or muscle, a generated week or single session, or an improved
+  version of a preset you already have, shown before and after. Every movement
+  explains why it was picked, citing 2020-2026 research.
+- Weekly muscle coverage: a body map of the sets each muscle gets, planned or
+  from the last seven days.
 - 214 movements: barbell, dumbbell, cable, plate-loaded, selectorised, smith,
   assisted, bodyweight, plus cardio, sport, climbing, water and mobility.
 - 106-technique skill tree: fourteen lines, each rung gated on the one before

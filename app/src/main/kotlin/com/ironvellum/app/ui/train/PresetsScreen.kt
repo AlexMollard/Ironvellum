@@ -25,11 +25,14 @@ import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
@@ -42,12 +45,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.domain.ExperienceTier
+import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MovementDifficulty
+import com.ironvellum.app.domain.PlannedPreset
+import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.TrainingFocus
+import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.program.BodyHeatMap
+import com.ironvellum.app.ui.program.CoverageLevel
+import com.ironvellum.app.ui.program.coverageLevel
+import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.inkBorder
@@ -57,22 +70,58 @@ import kotlinx.coroutines.flow.SharingStarted
 import com.ironvellum.app.ui.components.NavChip
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.stateIn
 import com.ironvellum.app.ui.launchGuarded
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
 data class TrainUi(
     val presets: List<WorkoutPreset> = emptyList(),
     val history: List<Pair<com.ironvellum.app.domain.WorkoutSession, List<com.ironvellum.app.domain.SessionSet>>> = emptyList(),
+    /** Scheduled presets (or all of them), in planned form, for the coverage card. */
+    val plannedPresets: List<PlannedPreset> = emptyList(),
+    val tier: ExperienceTier = ExperienceTier.BEGINNER,
+    val focus: TrainingFocus = TrainingFocus.MUSCLE,
 )
 
-class PresetsViewModel(private val repo: Repository) : ViewModel() {
+class PresetsViewModel(
+    private val repo: Repository,
+    appContext: android.content.Context,
+) : ViewModel() {
+
+    /** What she last told the generator; when present it outranks the
+     *  history/profile guesses, which said "beginner, strength" minutes
+     *  after she accepted an INTERMEDIATE / MUSCLE week. */
+    private val savedAnswers = com.ironvellum.app.data.ProgramAnswersStore.get(appContext)
+
+    /** Training age is derived once, not per emission; it only grows. */
+    private val tierFlow = flow {
+        emit(
+            savedAnswers?.tier
+                ?: ProgramRules.suggestTier(repo.firstSessionEpochDay(), LocalDate.now().toEpochDay()),
+        )
+    }
 
     val ui: StateFlow<TrainUi> = combine(
         repo.observePresets(),
         repo.observeHistory(),
-    ) { presets, history ->
-        TrainUi(presets, history)
+        repo.observeProfile(),
+        tierFlow,
+    ) { presets, history, profile, tier ->
+        // The coverage card maps the ROUTINE: scheduled days when they exist,
+        // the whole board when nothing is scheduled.
+        val routine = presets.filter { it.scheduledDay != null }.ifEmpty { presets }
+        TrainUi(
+            presets = presets,
+            history = history,
+            plannedPresets = routine.map { it.toPlanned() },
+            tier = tier,
+            focus = savedAnswers?.focus ?: when (profile?.trainingMode) {
+                TrainingMode.STRENGTH -> TrainingFocus.STRENGTH
+                else -> TrainingFocus.MUSCLE
+            },
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrainUi())
 
     fun begin(presetId: Long, onStarted: (Long) -> Unit) {
@@ -97,15 +146,21 @@ internal fun formatKg(kg: Double?): String =
 fun PresetsScreen(
     onEdit: (Long) -> Unit,
     onNew: () -> Unit,
+    onGenerate: (mode: String, presetId: Long?) -> Unit,
     onStartSession: (Long) -> Unit,
     onQuickSession: (Long) -> Unit,
     onOpenExercises: () -> Unit,
     onOpenLog: () -> Unit,
     onOpenWorkout: (Long) -> Unit,
+    onOpenCoverage: () -> Unit,
     viewModel: PresetsViewModel =
-        viewModel(factory = viewModelFactory { initializer { PresetsViewModel(ironvellumRepository()) } }),
+        viewModel(factory = viewModelFactory {
+            val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
+            initializer { PresetsViewModel(ironvellumRepository(), appContext) }
+        }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    var showNewChooser by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -125,6 +180,12 @@ fun PresetsScreen(
             IronvellumButton(
                 label = "Quick Session",
                 onClick = { viewModel.beginQuick(onQuickSession) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Spacer(Modifier.height(12.dp))
+            WeeklyCoverageCard(
+                ui = ui,
+                onOpen = onOpenCoverage,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(12.dp))
@@ -245,7 +306,7 @@ fun PresetsScreen(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
                         onClickLabel = "New preset",
-                    ) { onNew() },
+                    ) { showNewChooser = true },
             ) {
                 Row(
                     Modifier.fillMaxWidth(),
@@ -313,10 +374,127 @@ fun PresetsScreen(
             Spacer(Modifier.height(20.dp))
         }
     }
+
+    if (showNewChooser) {
+        // Material's dialog container is a 28dp rounded rect - the most
+        // obviously stock surface in the app. Give it the ink shape and the
+        // dark container the session dialogs use.
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = androidx.compose.ui.graphics.Color(0xFF0D1110),
+            onDismissRequest = { showNewChooser = false },
+            title = {
+                Text(
+                    "NEW PRESET",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.SystemGreen,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    val options = buildList {
+                        add("Blank preset" to { showNewChooser = false; onNew() })
+                        add("From a template" to { showNewChooser = false; onGenerate("template", null) })
+                        add("Generate a week" to { showNewChooser = false; onGenerate("week", null) })
+                        add("Generate one workout" to { showNewChooser = false; onGenerate("session", null) })
+                        // Improving needs a target: nothing to improve on an
+                        // empty board.
+                        if (ui.presets.isNotEmpty()) {
+                            add("Improve a preset" to { showNewChooser = false; onGenerate("improve", null) })
+                        }
+                    }
+                    options.forEach { (label, action) ->
+                        Text(
+                            label,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = IronvellumColors.Ink,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(MaterialTheme.shapes.extraSmall)
+                                .clickable(onClick = action)
+                                .padding(horizontal = 8.dp, vertical = 12.dp),
+                        )
+                    }
+                }
+            },
+            confirmButton = {},
+            dismissButton = {
+                TextButton(onClick = { showNewChooser = false }) { Text("Cancel") }
+            },
+        )
+    }
 }
 
 /** Enough to show the week's work; the full log carries the rest. */
 private const val ACTIVITY_LOG_ROWS = 6
+
+/**
+ * The at-a-glance muscle map. The planned routine only - the full view (with
+ * the PLANNED / LAST 7 DAYS switch and per-muscle tiles) opens from here.
+ * The figure gets a wide aspect so the card stays compact; the shapes are
+ * normalised, so they stretch rather than clip.
+ */
+@Composable
+private fun WeeklyCoverageCard(
+    ui: TrainUi,
+    onOpen: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val volume = remember(ui.plannedPresets) { ProgramRules.weeklyVolume(ui.plannedPresets) }
+    val target = ProgramRules.weeklySetTarget(ui.tier, ui.focus)
+    val underCount = ProgramRules.TRACKED.count { muscle ->
+        when (coverageLevel(volume[muscle] ?: 0.0, target)) {
+            CoverageLevel.UNDER, CoverageLevel.NONE -> true
+            else -> false
+        }
+    }
+    InkPanel(
+        modifier
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                onClickLabel = "Open weekly coverage",
+            ) { onOpen() },
+    ) {
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "WEEKLY COVERAGE",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SystemGreen,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            )
+            Text(
+                if (ui.plannedPresets.isEmpty()) "NO ROUTINE YET" else "$underCount UNDER TARGET",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = if (underCount > 0) IronvellumColors.SovereignGold else IronvellumColors.SystemGreen,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            )
+        }
+        Spacer(Modifier.height(8.dp))
+        if (ui.plannedPresets.isEmpty()) {
+            Text(
+                "Build your week and see which muscles it covers.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        } else {
+            BodyHeatMap(
+                volume = volume,
+                target = target,
+                modifier = Modifier.fillMaxWidth(),
+                figureHeight = 190.dp,
+            )
+        }
+    }
+}
 
 /**
  * Per-card movement cap. Presets can hold many exercises and rendering every
