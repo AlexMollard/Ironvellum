@@ -27,7 +27,7 @@ class ProgramRulesTest {
         // Every press already serves the front delts (Lanza 2024); a target
         // of their own would just over-press people.
         assertFalse(Muscle.FRONT_DELTS in ProgramRules.TRACKED)
-        assertTrue(Muscle.CHEST in ProgramRules.TRACKED)
+        assertTrue(Muscle.MID_CHEST in ProgramRules.TRACKED)
         assertTrue(Muscle.HAMSTRINGS in ProgramRules.TRACKED)
         assertTrue(Muscle.SIDE_DELTS in ProgramRules.TRACKED)
     }
@@ -42,7 +42,7 @@ class ProgramRulesTest {
             )),
         )
         val volume = ProgramRules.weeklyVolume(week)
-        assertEquals(3.0, volume[Muscle.CHEST]!!, 1e-9)
+        assertEquals(3.0, volume[Muscle.MID_CHEST]!!, 1e-9)
         assertEquals(2.1, volume[Muscle.FRONT_DELTS]!!, 1e-9)
         assertEquals(1.8, volume[Muscle.TRICEPS]!!, 1e-9)
         assertEquals(0.9, volume[Muscle.SIDE_DELTS]!!, 1e-9)

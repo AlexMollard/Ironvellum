@@ -36,9 +36,9 @@ object ProgramRules {
 
     /** GENERAL trains like a hypertrophy block with strength-style compounds. */
     val TRACKED: List<Muscle> = listOf(
-        Muscle.CHEST,
+        Muscle.MID_CHEST,
         Muscle.LATS,
-        Muscle.UPPER_BACK,
+        Muscle.RHOMBOIDS,
         Muscle.SIDE_DELTS,
         Muscle.REAR_DELTS,
         Muscle.BICEPS,
@@ -51,20 +51,35 @@ object ProgramRules {
     )
 
     /**
-     * Muscles judged against the tier range are the "major" set. The four
-     * HELPERS are mostly worked as synergists - front delts in every press
-     * (0.5-0.7 per the press family, Lanza 2024), forearms in every grip,
-     * lower back bracing hinges and squats, adductors in squats (Kubo 2019)
-     * - and no study sets a weekly dose for them, so the full range would
-     * pad weeks with front raises and wrist curls. They get a floor instead:
-     * at least [HELPER_FLOOR_SETS] fractional sets a week, no ceiling. The
-     * floor value is a convention, not a trial result.
+     * Muscles judged against the tier range are the "major" set. The
+     * HELPERS are mostly worked as synergists or stabilisers - front delts
+     * in every press (0.5-0.7 per the press family, Lanza 2024), forearms in
+     * every grip, lower back bracing hinges and squats, adductors in squats
+     * (Kubo 2019), the upper and lower chest beside the mid chest in every
+     * press, traps in hinges and overhead lockouts, the rotator cuff and
+     * serratus steering the shoulder blade, the brachialis in every curl and
+     * pull, obliques and hip flexors in leg raises, the abductors
+     * steadying single-leg work, and the tibialis against every calf raise -
+     * and no study sets a weekly dose for any of them, so the full range
+     * would pad weeks with front raises and wrist curls. They get a floor
+     * instead: at least [HELPER_FLOOR_SETS] fractional sets a week, no
+     * ceiling. The floor value is a convention, not a trial result.
      */
     val HELPERS: List<Muscle> = listOf(
         Muscle.FRONT_DELTS,
         Muscle.FOREARMS,
         Muscle.LOWER_BACK,
         Muscle.ADDUCTORS,
+        Muscle.UPPER_CHEST,
+        Muscle.LOWER_CHEST,
+        Muscle.TRAPS,
+        Muscle.SERRATUS,
+        Muscle.OBLIQUES,
+        Muscle.HIP_FLEXORS,
+        Muscle.ROTATOR_CUFF,
+        Muscle.TIBIALIS,
+        Muscle.ABDUCTORS,
+        Muscle.BRACHIALIS,
     )
 
     const val HELPER_FLOOR_SETS = 3.0

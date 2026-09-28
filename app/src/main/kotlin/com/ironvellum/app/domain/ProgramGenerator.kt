@@ -89,7 +89,7 @@ object ProgramGenerator {
      * days alternate A/B (fullBodyIndex even = A, odd = B; null = a lone
      * session) so every week trains both pulls and both pushes: the old single
      * list carried a vertical pull and no row, so a 3-day beginner week never
-     * rowed and upper back and rear delts sat at 6 sets.
+     * rowed and rhomboids and rear delts sat at 6 sets.
      */
     private fun slotsFor(role: Role, focus: TrainingFocus, fullBodyIndex: Int?): List<MovementPattern> = when (role) {
         Role.FULL_BODY -> fullBodySlots(focus, fullBodyIndex)
@@ -589,12 +589,14 @@ object ProgramGenerator {
         // weekly range inside the session time budget, name the muscles that
         // land short and by how much. The old line quoted the single lowest
         // muscle as "about N sets per muscle", which read as if the whole week
-        // were that thin.
+        // were that thin. When time was not the limit, whatever is still
+        // short is short because the kit has no movement for it (no
+        // brachialis work with no bar and no weights, say), and the line says so.
         val volume = weeklyVolumeOf(sessions)
         val capacityNote = if (capacityLimited) {
             shortfallNote(volume, ctx.targetRange, "$days days leave", "Add a day to reach it.")
         } else {
-            ""
+            shortfallNote(volume, ctx.targetRange, "your equipment leaves", "More gear would reach it.")
         }
         val frequencyNote = if (split == TrainingSplit.PUSH_PULL_LEGS && days == 3) ONCE_A_WEEK_NOTE else ""
 
@@ -695,7 +697,7 @@ object ProgramGenerator {
         MovementPattern.CORE -> "core"
     }
 
-    /** Main muscles of a movement, plain-labelled and deterministic: "chest, front delts and triceps". */
+    /** Main muscles of a movement, plain-labelled and deterministic: "mid chest, front delts and triceps". */
     internal fun muscleListOf(exercise: Exercise, include: Muscle? = null): String {
         val profile = profileOf(exercise)
         val shares = profile.muscles.filterValues { it >= 0.5 }
@@ -950,7 +952,7 @@ object ProgramGenerator {
      * Wasted collateral BELOW that ceiling is steered by [growOnce]'s
      * waste ordering rather than forbidden: forbidding it (the old
      * target+3 bystander cap) blocked every rear-delt isolation once rows
-     * had served the upper back, leaving rear delts at 9 with sets to spare.
+     * had served the rhomboids, leaving rear delts at 9 with sets to spare.
      */
     private fun overflows(
         ctx: Ctx,
@@ -1030,7 +1032,7 @@ object ProgramGenerator {
     /**
      * Whether the long-length advantage applies to [muscle] in this movement.
      * stretchBias describes the movement's DOMINANT muscle: a row stretches
-     * the upper back, not the rear delts it also trains at a 0.5 share, so a
+     * the rhomboids, not the rear delts it also trains at a 0.5 share, so a
      * rear-delt fill must neither rank the row as long-length work nor cite
      * that evidence for it. A null [muscle] (a pattern slot) takes the flag
      * as it stands.
@@ -1186,12 +1188,16 @@ object ProgramGenerator {
      * Tracked muscles a session's existing movements put in scope, by the
      * region of each movement's DOMINANT muscle. Classifying by pattern put
      * a leg extension or calf raise (pattern ISOLATION) in the upper scope,
-     * so improving a lower day added a bench press to it.
+     * so improving a lower day added a bench press to it. Tib raises and
+     * hip abductions are lower-body work; Pallof presses and leg raises are
+     * trunk work, which fits any day.
      */
     private fun trainedScope(entries: List<PlannedEntry>): List<Muscle> {
         val lowerMuscles = setOf(
             Muscle.QUADS, Muscle.HAMSTRINGS, Muscle.GLUTES, Muscle.CALVES, Muscle.ADDUCTORS,
+            Muscle.ABDUCTORS, Muscle.TIBIALIS,
         )
+        val trunkMuscles = setOf(Muscle.ABS, Muscle.OBLIQUES, Muscle.HIP_FLEXORS)
         val dominants = entries.mapNotNull { entry ->
             MuscleMap.profile(entry.exerciseName)?.let { dominantMuscle(it) }
         }.toSet()
@@ -1199,13 +1205,13 @@ object ProgramGenerator {
         if (dominants.any { it in lowerMuscles }) {
             scope += listOf(Muscle.QUADS, Muscle.HAMSTRINGS, Muscle.GLUTES, Muscle.CALVES, Muscle.ABS)
         }
-        if (dominants.any { it !in lowerMuscles && it != Muscle.ABS }) {
+        if (dominants.any { it !in lowerMuscles && it !in trunkMuscles }) {
             scope += listOf(
-                Muscle.CHEST, Muscle.LATS, Muscle.UPPER_BACK, Muscle.SIDE_DELTS,
+                Muscle.MID_CHEST, Muscle.LATS, Muscle.RHOMBOIDS, Muscle.SIDE_DELTS,
                 Muscle.REAR_DELTS, Muscle.BICEPS, Muscle.TRICEPS,
             )
         }
-        if (Muscle.ABS in dominants) scope += Muscle.ABS
+        if (dominants.any { it in trunkMuscles }) scope += Muscle.ABS
         return ProgramRules.TRACKED.filter { it in scope }
     }
 

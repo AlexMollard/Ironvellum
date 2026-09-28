@@ -11,7 +11,7 @@ import org.junit.Test
 /**
  * The Train card's "N SHORT OR MISSING" and the coverage screen's flags: a
  * major muscle counts when under its range or untrained, a helper (front
- * delts, forearms, lower back, adductors) when under its floor - and never
+ * delts, forearms, lower back, adductors and the rest) when under its floor - and never
  * for being over it, because a helper has no ceiling.
  */
 class CoverageGapsTest {
@@ -43,7 +43,7 @@ class CoverageGapsTest {
         val volume = everyMuscleAt(8.0)
         volume[Muscle.QUADS] = 4.0
         volume.remove(Muscle.CALVES)
-        volume[Muscle.CHEST] = 20.0
+        volume[Muscle.MID_CHEST] = 20.0
         assertEquals(setOf(Muscle.QUADS, Muscle.CALVES), coverageGaps(volume, target).toSet())
     }
 
@@ -51,5 +51,12 @@ class CoverageGapsTest {
     fun `a pull-up week credits the forearms`() {
         val week = listOf(PlannedPreset("Pull", "", 1, listOf(PlannedEntry("Pull-up", 5, 5, null))))
         assertTrue((ProgramRules.weeklyVolume(week)[Muscle.FOREARMS] ?: 0.0) > 0.0)
+    }
+
+    @Test
+    fun `every judged muscle has a region on the figure`() {
+        // A judged muscle without a region is flagged in the list but never
+        // coloured, so the figure would show it as trained when it is not.
+        assertEquals(emptyList<Muscle>(), JUDGED.filterNot { it in DRAWN })
     }
 }

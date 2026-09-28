@@ -110,7 +110,7 @@ class ProgramGeneratorTest {
         }
         // The prioritised arms out-volume every unprioritised upper muscle.
         val arms = minOf(volume[Muscle.BICEPS]!!, volume[Muscle.TRICEPS]!!)
-        listOf(Muscle.CHEST, Muscle.SIDE_DELTS, Muscle.REAR_DELTS).forEach {
+        listOf(Muscle.MID_CHEST, Muscle.SIDE_DELTS, Muscle.REAR_DELTS).forEach {
             assertTrue("arms $arms did not out-volume $it ${volume[it]}", arms > (volume[it] ?: 0.0))
         }
     }
@@ -402,7 +402,7 @@ class ProgramGeneratorTest {
         val volume = ProgramRules.weeklyVolume(existingWeek)
         assertNull("calves were supposed to be untrained", volume[Muscle.CALVES])
         assertTrue("fixture broken: hamstrings served", (volume[Muscle.HAMSTRINGS] ?: 0.0) < 6.0)
-        assertTrue("fixture broken: chest short", volume[Muscle.CHEST]!! >= 12.0)
+        assertTrue("fixture broken: chest short", volume[Muscle.MID_CHEST]!! >= 12.0)
 
         val session = ProgramGenerator.session(
             request, SessionKind.AUTO, scheduledDay = 6,
@@ -422,7 +422,7 @@ class ProgramGeneratorTest {
         )
         assertFalse(
             "AUTO session re-trained chest although the week already covers it",
-            entries.any { (MuscleMap.profile(it.exerciseName)?.muscles?.get(Muscle.CHEST) ?: 0.0) >= 0.5 },
+            entries.any { (MuscleMap.profile(it.exerciseName)?.muscles?.get(Muscle.MID_CHEST) ?: 0.0) >= 0.5 },
         )
     }
 
@@ -706,7 +706,7 @@ class ProgramGeneratorTest {
         )
         val volume = volumeOf(prioritised)
         val sideDelts = volume[Muscle.SIDE_DELTS] ?: 0.0
-        val chest = volume[Muscle.CHEST] ?: 0.0
+        val chest = volume[Muscle.MID_CHEST] ?: 0.0
         assertTrue(
             "side delts ($sideDelts) did not out-volume chest ($chest) under a shoulder priority",
             sideDelts > chest,
@@ -973,6 +973,43 @@ class ProgramGeneratorTest {
                     sets >= ProgramRules.HELPER_FLOOR_SETS - 1e-9 || helper.label.lowercase() in notes,
                 )
             }
+            // Fourteen helpers must not buy their floors with overlong sessions.
+            plan.presets.forEach { preset ->
+                val seconds = ProgramRules.sessionSeconds(preset.entries, focus)
+                assertTrue(
+                    "${preset.name} runs ${seconds / 60} min ($kit/$split$days/$focus)",
+                    seconds <= ProgramRules.SESSION_BUDGET_SECONDS,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `every kit has a movement that trains each helper muscle`() {
+        // Reachability, not dose: with no gear at all a lifter can still
+        // train the tibialis, rotator cuff, serratus and abductors.
+        for (kit in listOf(Equipment.NOTHING, ownerKit, Equipment.FULL_GYM)) {
+            val pool = ProgramGenerator.eligible(catalogue, kit, TrainingFocus.STRENGTH)
+            val unreachable = ProgramRules.HELPERS.filter { helper ->
+                pool.none { (MuscleMap.profile(it.name)!!.muscles[helper] ?: 0.0) >= 0.5 }
+            }
+            assertEquals("helpers with no movement on $kit", emptyList<Muscle>(), unreachable)
+        }
+    }
+
+    @Test
+    fun `a six-day week lifts every helper to its floor on every kit`() {
+        // Six sessions leave the time the helper floors need: none may be
+        // left short, whatever the gear.
+        for (kit in listOf(Equipment.NOTHING, ownerKit, Equipment.FULL_GYM)) for (focus in TrainingFocus.entries) {
+            val plan = ProgramGenerator.week(
+                ProgramRequest(focus, VolumeLevel.STANDARD, kit, daysPerWeek = 6, split = TrainingSplit.PUSH_PULL_LEGS),
+                catalogue, strength,
+            )
+            val volume = volumeOf(plan)
+            val short = ProgramRules.HELPERS.filter { (volume[it] ?: 0.0) < ProgramRules.HELPER_FLOOR_SETS - 1e-9 }
+                .map { "$it=${volume[it] ?: 0.0}" }
+            assertEquals("helpers under the floor ($kit/$focus)", emptyList<String>(), short)
         }
     }
 

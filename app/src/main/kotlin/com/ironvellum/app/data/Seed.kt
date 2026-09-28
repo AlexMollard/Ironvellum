@@ -26,6 +26,7 @@ object Seed {
         ExerciseEntity(name = "Dumbbell Row", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
         ExerciseEntity(name = "Lat Pulldown", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
         ExerciseEntity(name = "Face Pull", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Prone Y Raise", muscleGroup = MuscleGroup.PULL.name, isWeighted = false),
         // Push
         ExerciseEntity(name = "Dip", muscleGroup = MuscleGroup.PUSH.name, isWeighted = false),
         ExerciseEntity(name = "Push-up", muscleGroup = MuscleGroup.PUSH.name, isWeighted = false),
@@ -36,6 +37,7 @@ object Seed {
         ExerciseEntity(name = "Overhead Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
         ExerciseEntity(name = "Bench Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
         ExerciseEntity(name = "Incline Bench Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
+        ExerciseEntity(name = "Scapular Push-up", muscleGroup = MuscleGroup.PUSH.name, isWeighted = false),
         // Legs
         ExerciseEntity(name = "Pistol Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
         ExerciseEntity(name = "Back Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
@@ -51,6 +53,8 @@ object Seed {
         ExerciseEntity(name = "Romanian Deadlift", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         ExerciseEntity(name = "Front Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         ExerciseEntity(name = "Hip Thrust", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Tib Raise", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
+        ExerciseEntity(name = "Side-Lying Hip Abduction", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
         // Core
         ExerciseEntity(name = "Hanging Leg Raise", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
         ExerciseEntity(name = "Hanging Knee Raise", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
@@ -82,6 +86,8 @@ object Seed {
         ExerciseEntity(name = "Reverse Fly", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
         ExerciseEntity(name = "Dumbbell Fly", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
         ExerciseEntity(name = "Hammer Curl", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Reverse Curl", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
+        ExerciseEntity(name = "Dumbbell External Rotation", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
         ExerciseEntity(name = "Preacher Curl", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
         ExerciseEntity(name = "Dumbbell Shrug", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
         ExerciseEntity(name = "Goblet Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
@@ -99,6 +105,7 @@ object Seed {
         ExerciseEntity(name = "Cable Curl", muscleGroup = MuscleGroup.PULL.name, isWeighted = true),
         ExerciseEntity(name = "Cable Pull-Through", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         ExerciseEntity(name = "Woodchop", muscleGroup = MuscleGroup.CORE.name, isWeighted = true),
+        ExerciseEntity(name = "Pallof Press", muscleGroup = MuscleGroup.CORE.name, isWeighted = true),
         // Gym floor - plate-loaded lever machines. Sled band (0.70): the plates
         // ride an angled lever, so a marked kilo imposes less than a vertical one.
         ExerciseEntity(name = "Leg Press", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),

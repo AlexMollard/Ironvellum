@@ -104,6 +104,7 @@ object GearRequirements {
         "reverse fly" to listOf(setOf(Gear.DUMBBELLS)),
         "hammer curl" to listOf(setOf(Gear.DUMBBELLS)),
         "preacher curl" to listOf(setOf(Gear.DUMBBELLS)),
+        "dumbbell external rotation" to listOf(setOf(Gear.DUMBBELLS)),
         "dumbbell shrug" to listOf(setOf(Gear.DUMBBELLS)),
         "goblet squat" to listOf(setOf(Gear.DUMBBELLS)),
         "walking lunge" to listOf(setOf(Gear.DUMBBELLS)),
@@ -112,6 +113,7 @@ object GearRequirements {
         "dumbbell pullover" to listOf(setOf(Gear.DUMBBELLS)),
         "wrist curl" to listOf(setOf(Gear.DUMBBELLS)),
         "bicep curl" to listOf(setOf(Gear.DUMBBELLS), setOf(Gear.BARBELL)),
+        "reverse curl" to listOf(setOf(Gear.DUMBBELLS), setOf(Gear.BARBELL)),
         // Shared-implement lifts: either implement as applicable.
         "romanian deadlift" to listOf(setOf(Gear.DUMBBELLS), setOf(Gear.BARBELL)),
         "bulgarian split squat" to listOf(setOf(Gear.DUMBBELLS), setOf(Gear.BARBELL)),

@@ -92,31 +92,50 @@ enum class TrainingSplit(val label: String, val dayOptions: List<Int>) {
  * The muscles weekly volume is counted against. Finer than [MuscleGroup]
  * (which files the catalogue into PUSH/PULL/LEGS/CORE) because the evidence
  * counts sets per muscle, and a push day can starve the side delts while the
- * chest is over-served.
+ * chest is over-served. Declared in display order. The chest is split into
+ * its clavicular (upper), sternal (mid) and costal (lower) regions, and the
+ * upper back into the rhomboids plus mid traps that rows aim at and the
+ * upper traps that shrugs aim at. Never persisted, so renames are data-safe.
  */
 enum class Muscle(val label: String) {
-    CHEST("Chest"),
+    UPPER_CHEST("Upper chest"),
+    MID_CHEST("Mid chest"),
+    LOWER_CHEST("Lower chest"),
     LATS("Lats"),
-    UPPER_BACK("Upper back"),
+    RHOMBOIDS("Rhomboids"),
+    TRAPS("Traps"),
     FRONT_DELTS("Front delts"),
     SIDE_DELTS("Side delts"),
     REAR_DELTS("Rear delts"),
+    ROTATOR_CUFF("Rotator cuff"),
+    SERRATUS("Serratus"),
     BICEPS("Biceps"),
+    BRACHIALIS("Brachialis"),
     TRICEPS("Triceps"),
     FOREARMS("Forearms"),
+    ABS("Abs"),
+    OBLIQUES("Obliques"),
+    LOWER_BACK("Lower back"),
+    HIP_FLEXORS("Hip flexors"),
     QUADS("Quads"),
     HAMSTRINGS("Hamstrings"),
     GLUTES("Glutes"),
     ADDUCTORS("Adductors"),
+    ABDUCTORS("Abductors"),
     CALVES("Calves"),
-    ABS("Abs"),
-    LOWER_BACK("Lower back"),
+    TIBIALIS("Tibialis"),
 }
 
-/** What a lifter can ask to prioritise; each area names the muscles it raises. */
+/**
+ * What a lifter can ask to prioritise; each area names the muscles it raises.
+ * Persisted by constant name (ProgramAnswers), so never rename a constant.
+ * An area may name helper muscles: prioritising only raises the TRACKED
+ * muscles to the top of their range - helpers keep their floor either way
+ * (see ProgramGenerator.floorOrTarget) and only gain the "Priority" wording.
+ */
 enum class MuscleArea(val label: String, val muscles: Set<Muscle>) {
-    CHEST("Chest", setOf(Muscle.CHEST)),
-    BACK("Back", setOf(Muscle.LATS, Muscle.UPPER_BACK)),
+    CHEST("Chest", setOf(Muscle.UPPER_CHEST, Muscle.MID_CHEST, Muscle.LOWER_CHEST)),
+    BACK("Back", setOf(Muscle.LATS, Muscle.RHOMBOIDS, Muscle.TRAPS)),
     SHOULDERS("Shoulders", setOf(Muscle.SIDE_DELTS, Muscle.REAR_DELTS, Muscle.FRONT_DELTS)),
     ARMS("Arms", setOf(Muscle.BICEPS, Muscle.TRICEPS)),
     QUADS("Quads", setOf(Muscle.QUADS)),

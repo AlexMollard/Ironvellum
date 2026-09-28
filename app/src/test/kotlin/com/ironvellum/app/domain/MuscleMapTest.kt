@@ -125,10 +125,41 @@ class MuscleMapTest {
     fun `press family carries the measured Lanza sub-levels`() {
         val bench = MuscleMap.profile("Bench Press")
         assertNotNull(bench)
-        assertEquals(1.0, bench!!.muscles[Muscle.CHEST]!!, 1e-9)
+        assertEquals(1.0, bench!!.muscles[Muscle.MID_CHEST]!!, 1e-9)
         assertEquals(0.7, bench.muscles[Muscle.FRONT_DELTS]!!, 1e-9)
         assertEquals(0.6, bench.muscles[Muscle.TRICEPS]!!, 1e-9)
         assertEquals(0.3, bench.muscles[Muscle.SIDE_DELTS]!!, 1e-9)
+    }
+
+    /** The muscle a profile is chosen for: its largest share, first in map order on a tie. */
+    private fun dominant(name: String): Muscle =
+        MuscleMap.profile(name)!!.muscles.entries.maxWithOrNull(compareBy { it.value })!!.key
+
+    @Test
+    fun `the chest is credited by region, not as one muscle`() {
+        // Flat presses and flyes: the sternal chest leads, both neighbours assist.
+        listOf(
+            "Bench Press", "Dumbbell Bench Press", "Machine Chest Press", "Smith Machine Bench Press",
+            "Push-up", "Dumbbell Fly", "Cable Fly", "Pec Deck",
+        ).forEach { name ->
+            val muscles = MuscleMap.profile(name)!!.muscles
+            assertEquals("$name must lead with the mid chest", Muscle.MID_CHEST, dominant(name))
+            assertTrue("$name credits no upper chest", (muscles[Muscle.UPPER_CHEST] ?: 0.0) > 0.0)
+            assertTrue("$name credits no lower chest", (muscles[Muscle.LOWER_CHEST] ?: 0.0) > 0.0)
+        }
+        // Incline presses: the clavicular chest leads, the mid chest assists.
+        listOf("Incline Bench Press", "Incline Dumbbell Press").forEach { name ->
+            val muscles = MuscleMap.profile(name)!!.muscles
+            assertEquals("$name must lead with the upper chest", Muscle.UPPER_CHEST, dominant(name))
+            assertTrue(
+                "$name: upper chest ${muscles[Muscle.UPPER_CHEST]} not above mid ${muscles[Muscle.MID_CHEST]}",
+                (muscles[Muscle.UPPER_CHEST] ?: 0.0) > (muscles[Muscle.MID_CHEST] ?: 0.0),
+            )
+        }
+        // Dips: the costal chest leads.
+        listOf("Dip", "Parallel Bar Dip", "Ring Dip", "Assisted Dip").forEach { name ->
+            assertEquals("$name must lead with the lower chest", Muscle.LOWER_CHEST, dominant(name))
+        }
     }
 
     @Test

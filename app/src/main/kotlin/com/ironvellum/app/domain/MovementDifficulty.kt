@@ -53,6 +53,7 @@ object MovementDifficulty {
         "dumbbell row" to 2,
         "lat pulldown" to 2,
         "face pull" to 1,
+        "prone y raise" to 1, // isolation: bodyweight arm raise, shoulder health
         // Push
         // "bench press" and "overhead press" and the legs-line "back squat" /
         // "deadlift" keys are gone: those names are now tier I rows of the gym
@@ -61,6 +62,7 @@ object MovementDifficulty {
         "dip" to 3,
         "pike push-up" to 2,
         "incline bench press" to 2,
+        "scapular push-up" to 1, // isolation: blade protraction only, elbows locked
         // Legs
         "bulgarian split squat" to 2,
         "single-leg glute bridge" to 2,
@@ -72,6 +74,8 @@ object MovementDifficulty {
         "romanian deadlift" to 2,
         "front squat" to 2,
         "hip thrust" to 2,
+        "tib raise" to 1, // isolation: single-joint dorsiflexion
+        "side-lying hip abduction" to 1, // isolation: single-joint, leg weight only
         // Core
         "ab wheel rollout" to 3,
         "weighted plank" to 2,
@@ -100,6 +104,8 @@ object MovementDifficulty {
         "reverse fly" to 1,
         "dumbbell fly" to 1,
         "hammer curl" to 1,
+        "reverse curl" to 1,
+        "dumbbell external rotation" to 1,
         "preacher curl" to 1,
         "dumbbell shrug" to 1,
         "goblet squat" to 2,
@@ -116,6 +122,7 @@ object MovementDifficulty {
         "cable curl" to 1,
         "cable pull-through" to 1,
         "woodchop" to 1,
+        "pallof press" to 1,
         // Gym floor - plate-loaded machines.
         "leg press" to 2,
         "hack squat" to 2,
@@ -266,6 +273,7 @@ object MovementDifficulty {
         "cable curl" to STACK_LOAD,
         "cable pull-through" to STACK_LOAD,
         "woodchop" to STACK_LOAD,
+        "pallof press" to STACK_LOAD,
         "leg extension" to STACK_LOAD,
         "seated leg curl" to STACK_LOAD,
         "lying leg curl" to STACK_LOAD,
