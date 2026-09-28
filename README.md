@@ -63,8 +63,8 @@ training.
 |  | |
 |---|---|
 | **Guided first run** | Pick your split (full body, upper/lower, push/pull/legs), weekly volume, equipment and goal, then review an editable week built from the real catalogue. No routine is imposed on you. |
-| **Evidence-based program builder** | Hand-written templates for each split, for strength or muscle, fitted to your weekly volume (lean, standard or high) and your equipment. Or generate a week or a single session sized to the 2020-2026 volume research, or improve a preset you already have and see the before and after. Every movement says in plain words why it was picked and cites the study. Loads come from your own PRs. |
-| **Weekly muscle coverage** | A body map on Train shows the sets each muscle gets in your planned week or the last seven days, against the range for your volume and goal. |
+| **Evidence-based program builder** | Hand-written templates for each split, for strength or muscle, fitted to your weekly volume (low, standard or high) and your equipment. Or generate a week or a single session sized to the 2020-2026 volume research, or improve a preset you already have and see the before and after. Every movement says in plain words why it was picked and cites the study. Loads come from your own PRs. |
+| **Weekly muscle coverage** | A body map on Train shows the sets each muscle gets in your planned week or the last seven days, against the range for your volume and goal, and flags any muscle group nothing in the week trains. |
 | **214 movements** | Barbell, dumbbell, cable, plate-loaded, selectorised, smith, assisted, bodyweight, plus cardio, sport, climbing, water and mobility. |
 | **106-technique skill tree** | Fourteen lines: pull, push, handstand, lever, planche, rings, movement, legs, core, mobility, plus squat, bench, press and deadlift ladders with bodyweight-relative bars. Each rung is gated on the one before it and carries a written claim standard. |
 | **105 deeds** | Level, volume, streak, strength and activity milestones, with progress you can watch rather than a surprise. |

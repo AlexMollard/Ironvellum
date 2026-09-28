@@ -14,7 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 /** What the lifter last told the program generator, kept so the Weekly
  *  Coverage screen and the next builder visit can read the SAME volume and
  *  goal she answered with. The Weekly Coverage bug this replaces: it guessed
- *  the level from history (none -> lean) and focus from the profile's
+ *  the level from history (none -> low) and focus from the profile's
  *  progression mode (default STRENGTH), contradicting the STANDARD / MUSCLE
  *  week she had just accepted moments earlier. */
 data class ProgramAnswers(

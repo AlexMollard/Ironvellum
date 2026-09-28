@@ -321,7 +321,7 @@ class ProgramGeneratorTest {
     @Test
     fun `beginner strength at home practises the main lifts full body`() {
         val request = ProgramRequest(
-            TrainingFocus.STRENGTH, VolumeLevel.LEAN, EquipmentAccess.HOME_WEIGHTS,
+            TrainingFocus.STRENGTH, VolumeLevel.LOW, EquipmentAccess.HOME_WEIGHTS,
             daysPerWeek = 3,
         )
         val plan = ProgramGenerator.week(request, catalogue, strength)
@@ -441,13 +441,13 @@ class ProgramGeneratorTest {
     @Test
     fun `auto session builds nothing when the week already meets every target`() {
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.LEAN, EquipmentAccess.FULL_GYM, 5,
+            TrainingFocus.MUSCLE, VolumeLevel.LOW, EquipmentAccess.FULL_GYM, 5,
         )
         // The generated week twice over: every tracked muscle past target.
         val once = ProgramGenerator.week(request, catalogue, strength).presets
         val week = once + once
         val volume = ProgramRules.weeklyVolume(week)
-        val range = ProgramRules.weeklySetTarget(VolumeLevel.LEAN, TrainingFocus.MUSCLE)
+        val range = ProgramRules.weeklySetTarget(VolumeLevel.LOW, TrainingFocus.MUSCLE)
         assertTrue(
             "fixture broken: $volume",
             ProgramRules.TRACKED.all { (volume[it] ?: 0.0) >= range.start },
@@ -474,7 +474,7 @@ class ProgramGeneratorTest {
     fun `home weights plans never prescribe a machine`() {
         for (days in 2..6) for (focus in TrainingFocus.entries) {
             val plan = ProgramGenerator.week(
-                ProgramRequest(focus, VolumeLevel.LEAN, EquipmentAccess.HOME_WEIGHTS, days),
+                ProgramRequest(focus, VolumeLevel.LOW, EquipmentAccess.HOME_WEIGHTS, days),
                 catalogue, strength,
             )
             val names = entriesOf(plan).map { it.exerciseName }
@@ -657,7 +657,7 @@ class ProgramGeneratorTest {
             Exercise(name = "Hanging Knee Raise", muscleGroup = MuscleGroup.CORE, isWeighted = false),
         )
         val plan = ProgramGenerator.week(
-            ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.LEAN, EquipmentAccess.BODYWEIGHT, 4),
+            ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.LOW, EquipmentAccess.BODYWEIGHT, 4),
             fixture, StrengthProfile(emptyMap()),
         )
         val names = entriesOf(plan).map { it.exerciseName }

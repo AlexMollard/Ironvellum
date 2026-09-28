@@ -364,7 +364,7 @@ object ProgramGenerator {
 
     /** Skill-tree tier a bodyweight movement should sit at for each training age. */
     private fun desiredBodyweightTier(tier: VolumeLevel): Int = when (tier) {
-        VolumeLevel.LEAN -> 2
+        VolumeLevel.LOW -> 2
         VolumeLevel.STANDARD -> 3
         VolumeLevel.HIGH -> 4
     }
@@ -462,7 +462,7 @@ object ProgramGenerator {
         // were that thin.
         val volume = weeklyVolumeOf(sessions)
         val capacityNote = if (capacityLimited) {
-            shortfallNote(volume, ctx.volume, ctx.targetRange, "$days days leave", "Add a day to reach it.")
+            shortfallNote(volume, ctx.targetRange, "$days days leave", "Add a day to reach it.")
         } else {
             ""
         }
@@ -490,13 +490,13 @@ object ProgramGenerator {
     }
 
     /**
-     * " Heads-up: [lead] X and Y short of the standard range (...)." naming
-     * every tracked muscle under the floor - the same test the coverage map
-     * uses to call a muscle UNDER - or "" when none is.
+     * " Heads-up: [lead] X and Y short of the target (...)." naming every
+     * tracked muscle under the floor - the same test the coverage map uses
+     * to call a muscle UNDER - or "" when none is. The volume level is not
+     * named: for strength and skill goals it does not move the range.
      */
     internal fun shortfallNote(
         volume: Map<Muscle, Double>,
-        level: VolumeLevel,
         range: ClosedFloatingPointRange<Double>,
         lead: String,
         advice: String,
@@ -505,7 +505,7 @@ object ProgramGenerator {
         if (short.isEmpty()) return ""
         val low = short.minOf { volume[it] ?: 0.0 }
         return " Heads-up: $lead ${joinWithAnd(short.map { it.label.lowercase() })} short of the " +
-            "${level.label.lowercase()} range (${range.start.toInt()}-${range.endInclusive.toInt()} " +
+            "target (${range.start.toInt()}-${range.endInclusive.toInt()} " +
             "sets a week; the lowest sits at ${setsPhrase(low)}). $advice"
     }
 

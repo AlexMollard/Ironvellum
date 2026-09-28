@@ -72,7 +72,7 @@ data class CoverageUi(
     val unattributedLoggedSets: Int = 0,
     /** Preset sets with no profile (planned view honesty count). */
     val unattributedPlannedSets: Int = 0,
-    val tier: VolumeLevel = VolumeLevel.LEAN,
+    val tier: VolumeLevel = VolumeLevel.LOW,
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
     val hasAnyPreset: Boolean = false,
     val hasLoggedWeek: Boolean = false,
@@ -236,7 +236,7 @@ fun MuscleCoverageScreen(
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "Target for ${tierLabel(ui.tier)}, ${focusLabel(ui.focus)}: ${trimSets(target.start)}-${trimSets(target.endInclusive)} sets per muscle",
+            targetCaption(ui.tier, ui.focus, target),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -294,6 +294,50 @@ fun MuscleCoverageScreen(
             }
         }
 
+        // Never judged against a range, but still flagged when nothing
+        // trains them: without this list a lifter reads the grey forearms
+        // and lower back on the map as "missing".
+        Spacer(Modifier.height(12.dp))
+        SectionHeader("No target of their own")
+        Text(
+            "Your other lifts work these - presses the front delts, pulls and hangs the forearms, " +
+                "hinges the lower back - so they get no weekly target, only a flag when nothing trains them.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(4.dp))
+        UNJUDGED.forEach { muscle ->
+            val sets = volume[muscle] ?: 0.0
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    muscle.label.uppercase(),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.Ink,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    trimSets(sets),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (sets > 0.0) "WORKED" else "UNTRAINED",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = if (sets > 0.0) IronvellumColors.InkMuted else IronvellumColors.DangerRed,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                )
+            }
+        }
+
         if (underCount > 0) {
             Spacer(Modifier.height(12.dp))
             Text(
@@ -312,11 +356,17 @@ fun MuscleCoverageScreen(
     }
 }
 
-private fun tierLabel(tier: VolumeLevel): String = "${tier.label.lowercase()} volume"
-
-private fun focusLabel(focus: TrainingFocus): String = when (focus) {
-    TrainingFocus.STRENGTH -> "strength"
-    else -> "hypertrophy"
+/**
+ * Strength and skill targets are 5-15 at every volume level, so naming the
+ * level there says nothing - "lean volume, strength" read as a contradiction.
+ */
+internal fun targetCaption(volume: VolumeLevel, focus: TrainingFocus, target: ClosedFloatingPointRange<Double>): String {
+    val sets = "${trimSets(target.start)}-${trimSets(target.endInclusive)} sets per muscle a week"
+    return when (focus) {
+        TrainingFocus.STRENGTH -> "Target for strength training: $sets"
+        TrainingFocus.SKILL -> "Target for skill training: $sets"
+        else -> "Target for muscle growth at ${volume.label.lowercase()} volume: $sets"
+    }
 }
 
 /** One decimal, trimmed of a trailing .0 - "14" and "14.5", never "14.0000". */

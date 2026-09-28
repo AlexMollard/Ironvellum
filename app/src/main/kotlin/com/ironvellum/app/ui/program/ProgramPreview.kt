@@ -512,7 +512,7 @@ internal fun volumeCaption(volume: VolumeLevel, focus: TrainingFocus): String {
         return "$sets at every level: strength needs less volume. Higher levels add movements per session."
     }
     return when (volume) {
-        VolumeLevel.LEAN -> "$sets. Plenty in a first year, or when time is short."
+        VolumeLevel.LOW -> "$sets. Plenty in a first year, or when time is short."
         VolumeLevel.STANDARD -> "$sets. The usual dose after a year or so of steady training."
         VolumeLevel.HIGH -> "$sets. For years of training: more sets still help, by less each time."
     }

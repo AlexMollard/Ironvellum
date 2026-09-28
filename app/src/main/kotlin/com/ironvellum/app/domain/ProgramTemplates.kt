@@ -37,7 +37,7 @@ object ProgramTemplates {
         ProgramTemplate(
             id = "full_body_strength",
             split = TrainingSplit.FULL_BODY,
-            authoredVolume = VolumeLevel.LEAN,
+            authoredVolume = VolumeLevel.LOW,
             focus = TrainingFocus.STRENGTH,
             name = "Full-Body Barbell",
             summary = "Three full-body days on five lifts. Add a little weight " +
@@ -64,7 +64,7 @@ object ProgramTemplates {
         ProgramTemplate(
             id = "full_body_muscle",
             split = TrainingSplit.FULL_BODY,
-            authoredVolume = VolumeLevel.LEAN,
+            authoredVolume = VolumeLevel.LOW,
             focus = TrainingFocus.MUSCLE,
             name = "Full-Body Size",
             summary = "Three full-body days: every muscle trained each session, " +
@@ -376,7 +376,7 @@ object ProgramTemplates {
         }
         val fitted = fitToRange(presets.map { it.first }, presets.map { it.second }, template.focus, chosenRange)
         val shortfall = ProgramGenerator.shortfallNote(
-            ProgramRules.weeklyVolume(fitted), volume, chosenRange,
+            ProgramRules.weeklyVolume(fitted), chosenRange,
             "this program leaves", "Generate a week to fill them.",
         )
         return RoutinePlan(

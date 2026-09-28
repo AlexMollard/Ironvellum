@@ -15,13 +15,13 @@ enum class TrainingFocus { STRENGTH, MUSCLE, SKILL, GENERAL }
 
 /**
  * How much weekly work the plan prescribes. The volume evidence is tiered on
- * training age (see ProgramRules.weeklySetTarget: under a year LEAN, one to
+ * training age (see ProgramRules.weeklySetTarget: under a year LOW, one to
  * three years STANDARD, beyond that HIGH), so the app suggests the level from
  * logged history - but it is the lifter's dose to pick, not a rank. It also
  * sets reps in reserve, movements per session and bodyweight progressions.
  */
 enum class VolumeLevel(val label: String) {
-    LEAN("Lean"),
+    LOW("Low"),
     STANDARD("Standard"),
     HIGH("High"),
 }

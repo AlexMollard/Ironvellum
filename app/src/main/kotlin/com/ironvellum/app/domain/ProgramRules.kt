@@ -19,7 +19,7 @@ object ProgramRules {
 
     /**
      * Fractional weekly hard sets per muscle, per volume level and goal
-     * (lean 8-12, standard 12-18, high 15-22; strength focus 5-15 mostly
+     * (low 8-12, standard 12-18, high 15-22; strength focus 5-15 mostly
      * direct on the practised lift because the strength dose saturates early
      * - Pelland 2026, Ralston 2017). The levels come from the evidence's
      * training-age tiers (ACSM 2009 / Moesgaard 2022: novices progress on low
@@ -28,7 +28,7 @@ object ProgramRules {
     fun weeklySetTarget(tier: VolumeLevel, focus: TrainingFocus): ClosedFloatingPointRange<Double> {
         if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL) return 5.0..15.0
         return when (tier) {
-            VolumeLevel.LEAN -> 8.0..12.0
+            VolumeLevel.LOW -> 8.0..12.0
             VolumeLevel.STANDARD -> 12.0..18.0
             VolumeLevel.HIGH -> 15.0..22.0
         }
@@ -79,16 +79,16 @@ object ProgramRules {
     // ------------------------------------------------------------------ tier
 
     /**
-     * Training age to a suggested level: under a year lean, one to three
+     * Training age to a suggested level: under a year low, one to three
      * years standard, beyond that high (ACSM 2009 tiering; boundaries are
      * convention anchored on the diminishing-returns curves). No history
-     * means lean - a new lifter must never be offered a high dose by default.
+     * means low - a new lifter must never be offered a high dose by default.
      */
     fun suggestVolume(firstSessionEpochDay: Long?, todayEpochDay: Long): VolumeLevel {
-        if (firstSessionEpochDay == null) return VolumeLevel.LEAN
+        if (firstSessionEpochDay == null) return VolumeLevel.LOW
         val days = (todayEpochDay - firstSessionEpochDay).coerceAtLeast(0)
         return when {
-            days < 365 -> VolumeLevel.LEAN
+            days < 365 -> VolumeLevel.LOW
             days < 1095 -> VolumeLevel.STANDARD
             else -> VolumeLevel.HIGH
         }
@@ -273,7 +273,7 @@ object ProgramRules {
      * failure for novices).
      */
     fun targetRir(tier: VolumeLevel, focus: TrainingFocus): Int = when {
-        focus == TrainingFocus.MUSCLE && tier == VolumeLevel.LEAN -> 3
+        focus == TrainingFocus.MUSCLE && tier == VolumeLevel.LOW -> 3
         focus == TrainingFocus.MUSCLE -> 2
         else -> 2
     }
@@ -288,12 +288,12 @@ object ProgramRules {
         else -> 5
     }
 
-    /** Per-session exercise cap by volume level: 6 lean, 8 standard, 9
+    /** Per-session exercise cap by volume level: 6 low, 8 standard, 9
      * high. Practical scheduling heuristic - the evidence brief lists no
      * verified per-session ceiling; it exists so a generated session stays
      * finishable in roughly an hour. */
     fun sessionCap(tier: VolumeLevel): Int = when (tier) {
-        VolumeLevel.LEAN -> 6
+        VolumeLevel.LOW -> 6
         VolumeLevel.STANDARD -> 8
         VolumeLevel.HIGH -> 9
     }

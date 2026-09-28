@@ -68,9 +68,9 @@ class ProgramTemplatesTest {
                 ProgramTemplates.build(template, volume, EquipmentAccess.FULL_GYM, catalogue, emptyStrength)
                     .presets.sumOf { day -> day.entries.sumOf { it.sets } }
             }
-            val lean = total(VolumeLevel.LEAN)
+            val low = total(VolumeLevel.LOW)
             val high = total(VolumeLevel.HIGH)
-            assertTrue("${template.id}: lean $lean sets not below high $high", lean < high)
+            assertTrue("${template.id}: low $low sets not below high $high", low < high)
         }
     }
 

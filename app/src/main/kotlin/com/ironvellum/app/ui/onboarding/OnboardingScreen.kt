@@ -352,7 +352,7 @@ fun OnboardingScreen(
     var split by rememberSaveable { mutableStateOf(TrainingSplit.FULL_BODY) }
     var equipment by rememberSaveable { mutableStateOf(EquipmentAccess.BODYWEIGHT) }
     var focus by rememberSaveable { mutableStateOf(TrainingFocus.GENERAL) }
-    var tier by rememberSaveable { mutableStateOf(VolumeLevel.LEAN) }
+    var tier by rememberSaveable { mutableStateOf(VolumeLevel.LOW) }
 
     val applyError by viewModel.applyError.collectAsStateWithLifecycle()
     val plan by viewModel.plan.collectAsStateWithLifecycle()

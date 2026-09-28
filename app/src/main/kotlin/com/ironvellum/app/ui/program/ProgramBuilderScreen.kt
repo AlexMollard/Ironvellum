@@ -120,7 +120,7 @@ class ProgramBuilderViewModel(
     // Answers. The screen renders them; the view model owns them so the
     // generated plan survives rotation the same way the editor's does.
     val focus = MutableStateFlow(TrainingFocus.GENERAL)
-    val tier = MutableStateFlow(VolumeLevel.LEAN)
+    val tier = MutableStateFlow(VolumeLevel.LOW)
     val equipment = MutableStateFlow(EquipmentAccess.FULL_GYM)
     val daysPerWeek = MutableStateFlow(4)
     val split = MutableStateFlow(TrainingSplit.UPPER_LOWER)
@@ -885,7 +885,7 @@ private fun volumeSuggestion(hasHistory: Boolean, years: Double?): String {
     val logged = years?.let { "${trimYears(it)} year${if (it == 1.0) "" else "s"}" }
     return when {
         // Selection-independent on purpose: a saved answer can preselect
-        // Standard, and "starts lean" would then contradict it.
+        // Standard, and "starts low" would then contradict it.
         !hasHistory -> "No logged sessions yet to suggest a level from - pick the dose you can recover from."
         else -> "Suggested from $logged of logged sessions."
     }

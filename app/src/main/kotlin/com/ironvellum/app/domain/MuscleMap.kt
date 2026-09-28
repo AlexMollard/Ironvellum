@@ -68,24 +68,27 @@ object MuscleMap {
 
     private val profiles: Map<String, ExerciseProfile> = buildMap {
         // ---- Base catalogue: pull ----
+        // Every bar, handle, sheet or ring pull credits FOREARMS 0.5: the
+        // grip holds the whole load for the whole set. Without it a week of
+        // weighted pull-ups and rows reads "forearms untrained" on coverage.
         put("pull-up", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("chin-up", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("archer pull-up", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("inverted row", ExerciseProfile(
-            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
         put("door sheet row", ExerciseProfile(
-            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
         put("wrist curl", ExerciseProfile(
@@ -100,15 +103,16 @@ object MuscleMap {
             muscles = mapOf(
                 Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5,
                 Muscle.REAR_DELTS to 0.5, Muscle.LOWER_BACK to 0.5,
+                Muscle.FOREARMS to 0.5,
             ),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
         put("dumbbell row", ExerciseProfile(
-            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
         put("lat pulldown", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("face pull", ExerciseProfile(
@@ -220,6 +224,7 @@ object MuscleMap {
             muscles = mapOf(
                 Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5,
                 Muscle.REAR_DELTS to 0.5, Muscle.LOWER_BACK to 0.5,
+                Muscle.FOREARMS to 0.5,
             ),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
@@ -227,6 +232,7 @@ object MuscleMap {
             muscles = mapOf(
                 Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5,
                 Muscle.REAR_DELTS to 0.5, Muscle.LOWER_BACK to 0.5,
+                Muscle.FOREARMS to 0.5,
             ),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
@@ -297,7 +303,7 @@ object MuscleMap {
         ))
         // ---- Gym floor: cable ----
         put("seated cable row", ExerciseProfile(
-            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
         put("triceps pushdown", ExerciseProfile(
@@ -337,7 +343,7 @@ object MuscleMap {
             pattern = MovementPattern.SQUAT, compound = true, stretchBias = true,
         ))
         put("chest-supported row", ExerciseProfile(
-            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
         // ---- Gym floor: pin-stack machines ----
@@ -364,7 +370,7 @@ object MuscleMap {
         put("machine chest press", pressFamily(MovementPattern.HORIZONTAL_PUSH))
         put("machine shoulder press", verticalPress())
         put("machine row", ExerciseProfile(
-            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
         put("hip adduction", ExerciseProfile(
@@ -393,12 +399,12 @@ object MuscleMap {
         put("smith machine bench press", pressFamily(MovementPattern.HORIZONTAL_PUSH))
         put("smith machine overhead press", verticalPress())
         put("smith machine row", ExerciseProfile(
-            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
         // ---- Assisted machines ----
         put("assisted pull-up", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("assisted dip", ExerciseProfile(
@@ -407,23 +413,23 @@ object MuscleMap {
         ))
         // ---- Skill-tree rows (REPS-metric, not milestone-priced) ----
         put("scapular pull", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 0.5, Muscle.UPPER_BACK to 0.5),
+            muscles = mapOf(Muscle.LATS to 0.5, Muscle.UPPER_BACK to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = false, stretchBias = true,
         ))
         put("australian pull-up", ExerciseProfile(
-            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
         put("l-sit pull-up", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.ABS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.ABS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("one-arm negative", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("one-arm pull-up", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("incline push-up", pressFamily(MovementPattern.HORIZONTAL_PUSH))
@@ -456,11 +462,11 @@ object MuscleMap {
             pattern = MovementPattern.HORIZONTAL_PUSH, compound = true, stretchBias = true,
         ))
         put("skin the cat", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("ring row", ExerciseProfile(
-            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            muscles = mapOf(Muscle.UPPER_BACK to 1.0, Muscle.LATS to 0.5, Muscle.BICEPS to 0.5, Muscle.REAR_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = true,
         ))
         put("ring dip", ExerciseProfile(
@@ -468,7 +474,7 @@ object MuscleMap {
             pattern = MovementPattern.HORIZONTAL_PUSH, compound = true, stretchBias = true,
         ))
         put("ring muscle-up", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.TRICEPS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.TRICEPS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("kip-up", ExerciseProfile(
@@ -476,15 +482,15 @@ object MuscleMap {
             pattern = MovementPattern.CORE, compound = false, stretchBias = false,
         ))
         put("muscle-up", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.TRICEPS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.TRICEPS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("strict muscle-up", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.TRICEPS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.TRICEPS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("inverted muscle-up", ExerciseProfile(
-            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.FRONT_DELTS to 0.5),
+            muscles = mapOf(Muscle.LATS to 1.0, Muscle.UPPER_BACK to 0.5, Muscle.BICEPS to 0.5, Muscle.FRONT_DELTS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
         ))
         put("handstand-to-bridge", ExerciseProfile(

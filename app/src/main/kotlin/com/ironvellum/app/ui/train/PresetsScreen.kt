@@ -58,8 +58,7 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.program.BodyHeatMap
-import com.ironvellum.app.ui.program.CoverageLevel
-import com.ironvellum.app.ui.program.coverageLevel
+import com.ironvellum.app.ui.program.coverageGaps
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -81,7 +80,7 @@ data class TrainUi(
     val history: List<Pair<com.ironvellum.app.domain.WorkoutSession, List<com.ironvellum.app.domain.SessionSet>>> = emptyList(),
     /** Scheduled presets (or all of them), in planned form, for the coverage card. */
     val plannedPresets: List<PlannedPreset> = emptyList(),
-    val tier: VolumeLevel = VolumeLevel.LEAN,
+    val tier: VolumeLevel = VolumeLevel.LOW,
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
 )
 
@@ -444,12 +443,7 @@ private fun WeeklyCoverageCard(
 ) {
     val volume = remember(ui.plannedPresets) { ProgramRules.weeklyVolume(ui.plannedPresets) }
     val target = ProgramRules.weeklySetTarget(ui.tier, ui.focus)
-    val underCount = ProgramRules.TRACKED.count { muscle ->
-        when (coverageLevel(volume[muscle] ?: 0.0, target)) {
-            CoverageLevel.UNDER, CoverageLevel.NONE -> true
-            else -> false
-        }
-    }
+    val gaps = coverageGaps(volume, target).size
     InkPanel(
         modifier
             .clickable(
@@ -471,10 +465,14 @@ private fun WeeklyCoverageCard(
                 letterSpacing = IronvellumTracking.InlineLabel,
             )
             Text(
-                if (ui.plannedPresets.isEmpty()) "NO ROUTINE YET" else "$underCount UNDER TARGET",
+                when {
+                    ui.plannedPresets.isEmpty() -> "NO ROUTINE YET"
+                    gaps == 0 -> "ALL COVERED"
+                    else -> "$gaps SHORT OR MISSING"
+                },
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
-                color = if (underCount > 0) IronvellumColors.SovereignGold else IronvellumColors.SystemGreen,
+                color = if (gaps > 0) IronvellumColors.SovereignGold else IronvellumColors.SystemGreen,
                 letterSpacing = IronvellumTracking.InlineLabel,
             )
         }
