@@ -126,6 +126,10 @@ class PresetsViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrainUi())
 
+    /** The unfinished session: its preset's button reads Continue. */
+    val live: StateFlow<com.ironvellum.app.domain.WorkoutSession?> = repo.observeLiveSession()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     fun begin(presetId: Long, onStarted: (Long) -> Unit) {
         viewModelScope.launchGuarded("begin preset") { onStarted(repo.startSessionFromPreset(presetId)) }
     }
@@ -162,6 +166,7 @@ fun PresetsScreen(
         }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val live by viewModel.live.collectAsStateWithLifecycle()
     var showNewChooser by remember { mutableStateOf(false) }
 
     Box(Modifier.fillMaxSize()) {
@@ -291,7 +296,12 @@ fun PresetsScreen(
                                 ) { onEdit(preset.id) }
                                 .padding(horizontal = 12.dp, vertical = 6.dp),
                         )
-                        IronvellumButton("Begin", onClick = { viewModel.begin(preset.id, onStartSession) })
+                        val resume = live?.takeIf { it.presetId == preset.id }
+                        if (resume != null) {
+                            IronvellumButton("Continue", onClick = { onStartSession(resume.id) })
+                        } else {
+                            IronvellumButton("Begin", onClick = { viewModel.begin(preset.id, onStartSession) })
+                        }
                     }
                 }
             }

@@ -59,6 +59,7 @@ android {
         versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments["listener"] = "com.ironvellum.app.NoLiveSessionListener"
 
         buildConfigField(
             "String",

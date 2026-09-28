@@ -960,6 +960,18 @@ class Repository(
     fun observeRecentSessions(limit: Int = 5): Flow<List<WorkoutSession>> =
         sessionDao.observeRecent(limit).map { list -> list.map { it.toDomain() } }
 
+    /** The unfinished session, if any: what Today and Train offer to continue. */
+    fun observeLiveSession(): Flow<WorkoutSession?> =
+        sessionDao.observeLiveSession().map { it?.toDomain() }
+
+    /**
+     * The unfinished session to reopen on launch, or null. Only one started
+     * within [RESUME_WINDOW_MS]: an old trial left open is offered on Today,
+     * not forced on the lifter.
+     */
+    suspend fun resumableSessionId(nowMs: Long): Long? =
+        sessionDao.liveSession()?.takeIf { nowMs - it.startedAtMs in 0..RESUME_WINDOW_MS }?.id
+
     /** Full activity log: every completed session with its sets. */
     fun observeHistory(): Flow<List<Pair<WorkoutSession, List<SessionSet>>>> = combine(
         sessionDao.observeCompletedWithSets(),
@@ -2300,6 +2312,9 @@ class Repository(
          * a second catalogue to scroll.
          */
         const val RECENT_EXERCISE_LIMIT = 12
+
+        /** A trial started this recently reopens on launch, as though never left. */
+        const val RESUME_WINDOW_MS = 3L * 60 * 60 * 1000
     }
 }
 

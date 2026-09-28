@@ -122,6 +122,9 @@ interface SessionDao {
     @Query("SELECT * FROM sessions WHERE completedAtMs IS NULL ORDER BY startedAtMs DESC LIMIT 1")
     suspend fun liveSession(): SessionEntity?
 
+    @Query("SELECT * FROM sessions WHERE completedAtMs IS NULL ORDER BY startedAtMs DESC LIMIT 1")
+    fun observeLiveSession(): Flow<SessionEntity?>
+
     @Query("SELECT * FROM sessions WHERE id = :id")
     fun observeSession(id: Long): Flow<SessionEntity?>
 

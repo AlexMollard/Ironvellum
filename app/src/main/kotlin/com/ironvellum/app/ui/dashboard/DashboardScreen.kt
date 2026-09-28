@@ -131,6 +131,10 @@ class DashboardViewModel(private val repo: Repository) : ViewModel() {
     val equippedFrame: StateFlow<String?> = repo.observeEquippedFrame()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** The unfinished session: the quest button continues it instead of starting another. */
+    val live: StateFlow<WorkoutSession?> = repo.observeLiveSession()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     val ui: StateFlow<DashboardUi> = combine(
         repo.observeProfile(),
         repo.observeRecentSessions(5),
@@ -246,6 +250,7 @@ fun DashboardScreen(
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
+    val live by viewModel.live.collectAsStateWithLifecycle()
     val profile = ui.profile
     val progress = Xp.progress(profile?.totalXp ?: 0L)
     val today = LocalDate.now()
@@ -762,12 +767,21 @@ fun DashboardScreen(
                     // as the button covering the row. The gap makes the clip
                     // look like scrolling, which is what it is.
                     Spacer(Modifier.height(10.dp))
+                    val resume = live
                     IronvellumButton(
                         // "Start Anyway" read as an apology: the day header
                         // already says which day this is, so the button just
-                        // states the act.
-                        label = if (isTodaySelected) "Accept Quest" else "Start Session",
-                        onClick = { viewModel.beginPreset(selectedPreset.id, onStartSession) },
+                        // states the act. A trial already under way is
+                        // continued, never offered as a fresh start.
+                        label = when {
+                            resume != null -> "Continue ${resume.label}"
+                            isTodaySelected -> "Accept Quest"
+                            else -> "Start Session"
+                        },
+                        onClick = {
+                            if (resume != null) onStartSession(resume.id)
+                            else viewModel.beginPreset(selectedPreset.id, onStartSession)
+                        },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }

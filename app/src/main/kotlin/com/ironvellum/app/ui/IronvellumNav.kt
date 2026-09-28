@@ -25,6 +25,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.withStarted
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -162,6 +164,23 @@ fun IronvellumRoot() {
         if (needsSetup == true) {
             OnboardingScreen(viewModel = onboardingViewModel)
         } else if (needsSetup != null) {
+        // Leaving mid-workout (a stray back swipe, Android reclaiming the
+        // process) used to land the lifter on Today with a Start button, as if
+        // the trial were gone. Once per launch, a recent one reopens instead.
+        // Saveable, so rotation or a restored task does not re-trigger it.
+        val repo = (appContext.applicationContext as com.ironvellum.app.IronvellumApp).repository
+        val lifecycle = androidx.lifecycle.compose.LocalLifecycleOwner.current.lifecycle
+        var resumeChecked by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableStateOf(false) }
+        androidx.compose.runtime.LaunchedEffect(Unit) {
+            if (resumeChecked) return@LaunchedEffect
+            resumeChecked = true
+            val id = repo.resumableSessionId(System.currentTimeMillis()) ?: return@LaunchedEffect
+            // Only on a started screen: navigating while the activity is being
+            // torn down strands a back stack entry mid-lifecycle and crashes.
+            lifecycle.withStarted {
+                if (navController.currentDestination?.route != Routes.SESSION) navController.navigate(Routes.session(id))
+            }
+        }
         Scaffold(
             containerColor = Color.Transparent,
             bottomBar = {
