@@ -32,6 +32,7 @@ import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.PlanChange
+import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.ExperienceTier
 import com.ironvellum.app.domain.TrainingFocus
@@ -330,10 +331,12 @@ private fun trim1(value: Double): String {
  * The improve pass, shown honestly: what left (struck through, named as
  * removed), what arrived (named as added/swapped), and the reason for every
  * line. An empty changes list is a result too - "no changes needed" - and it
- * gets its own quiet panel rather than an empty box.
+ * gets its own quiet panel rather than an empty box. [stillShort] names the
+ * muscles the week leaves under target even so, so the panel never claims
+ * the week is complete above a volume list that says otherwise.
  */
 @Composable
-fun BeforeAfter(improvement: Improvement) {
+fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()) {
     if (improvement.changes.isEmpty()) {
         InkPanel(Modifier.fillMaxWidth()) {
             Text(
@@ -346,7 +349,15 @@ fun BeforeAfter(improvement: Improvement) {
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "This workout already matches the evidence for your goal. Nothing was altered.",
+                if (stillShort.isEmpty()) {
+                    "This workout already matches the evidence for your goal. Nothing was altered."
+                } else {
+                    "This workout's movements, reps and sets already fit your goal. " +
+                        "${ProgramGenerator.joinWithAnd(stillShort.map { it.label.lowercase() }).replaceFirstChar { it.uppercase() }} " +
+                        "stay under target for the week: this session has no room left for them " +
+                        "inside about ${ProgramRules.SESSION_BUDGET_SECONDS / 60} minutes, or does not " +
+                        "train them. Another day would."
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )

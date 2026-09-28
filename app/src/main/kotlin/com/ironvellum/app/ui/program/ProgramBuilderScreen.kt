@@ -730,21 +730,20 @@ fun ProgramBuilderScreen(
             if (current == null) {
                 Caption("Reading your preset against the evidence...")
             } else {
-                BeforeAfter(current)
-                Spacer(Modifier.height(10.dp))
                 // The rest of the week feeds the volume read but is NOT
                 // listed: on a five-day split it buried the diff under every
                 // other session's full movement list.
                 val others = presets.filter { it.id != (selectedPresetId ?: presetId) }
+                val week = listOf(current.after) + others.map { it.toPlanned() }
+                val volume = ProgramRules.weeklyVolume(week)
+                val floor = ProgramRules.weeklySetTarget(tier, focus).start
+                BeforeAfter(current, stillShort = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < floor })
+                Spacer(Modifier.height(10.dp))
                 if (others.isNotEmpty()) {
                     val noun = if (others.size == 1) "preset" else "presets"
                     Caption("Weekly volume includes your ${others.size} other $noun.")
                 }
-                WeeklyVolumePanel(
-                    listOf(current.after) + others.map { it.toPlanned() },
-                    tier,
-                    focus,
-                )
+                WeeklyVolumePanel(week, tier, focus)
             }
         } else {
             val current = plan
@@ -820,21 +819,26 @@ fun ProgramBuilderScreen(
                 )
             }
             else -> {
-                val hasChanges = improvement?.changes?.isNotEmpty() == true
-                IronvellumButton(
-                    label = "Apply changes",
-                    onClick = { viewModel.applyImprovement(onDone) },
-                    enabled = hasChanges,
-                    gold = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(10.dp))
-                IronvellumButton(
-                    label = "Keep original",
-                    onClick = onDone,
-                    quiet = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                if (improvement?.changes?.isEmpty() == true) {
+                    // Nothing to apply: a disabled Apply beside "Keep
+                    // original" offered a choice that did not exist.
+                    IronvellumButton(label = "Done", onClick = onDone, modifier = Modifier.fillMaxWidth())
+                } else {
+                    IronvellumButton(
+                        label = "Apply changes",
+                        onClick = { viewModel.applyImprovement(onDone) },
+                        enabled = improvement != null,
+                        gold = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    IronvellumButton(
+                        label = "Keep original",
+                        onClick = onDone,
+                        quiet = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
         Spacer(Modifier.height(24.dp))
