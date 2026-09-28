@@ -48,6 +48,10 @@ import com.ironvellum.app.domain.MeasurementEntry
 import com.ironvellum.app.domain.MeasurementSite
 import com.ironvellum.app.domain.BodyLimits
 import com.ironvellum.app.domain.MuscleGroup
+import com.ironvellum.app.domain.PlannedPreset
+import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.LoggedLift
+import com.ironvellum.app.domain.StrengthProfile
 import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.PresetEntry
@@ -358,7 +362,7 @@ class Repository(
      * generated from this very catalogue, so a miss is a bug, and writing a
      * preset that silently drops a movement would look like a working week.
      */
-    suspend fun applyRoutine(plan: RoutinePlan) {
+    suspend fun applyRoutine(plan: RoutinePlan, replaceExisting: Boolean = true) {
         val presets = plan.presets.map { spec ->
             PlannedPresetRows(
                 name = spec.name,
@@ -370,12 +374,14 @@ class Repository(
                         targetSets = entry.sets,
                         targetReps = entry.reps,
                         targetWeightKg = entry.targetWeightKg,
-                        modifiers = "",
+                        // Was hardcoded to "", so "Add to my presets" silently
+                        // stripped every generated modifier the preview showed.
+                        modifiers = entry.modifiers,
                     )
                 },
             )
         }
-        writeRoutinePresets(presets)
+        writeRoutinePresets(presets, clearFirst = replaceExisting)
     }
 
     /**
@@ -405,6 +411,53 @@ class Repository(
         )
     }
 
+    /**
+     * Writes ONE planned preset, new ([presetId] null) or overwriting the
+     * existing row. Names resolve before anything is written - an unknown
+     * movement aborts with every unknown listed, so "Improve a preset" can
+     * never half-save a day - and the planned entry's modifiers travel through,
+     * because improve promises to keep a CSV import's "sissy squat" tags.
+     */
+    suspend fun savePlannedPreset(presetId: Long?, preset: PlannedPreset): Long {
+        val idByName = exerciseDao.observeAll().first().associate { it.name to it.id }
+        val unknown = preset.entries.map { it.exerciseName }.filterNot { it in idByName }
+        require(unknown.isEmpty()) { "Unknown exercises in preset \"${preset.name}\": $unknown" }
+        return savePreset(
+            presetId = presetId,
+            name = preset.name,
+            note = preset.note,
+            scheduledDay = preset.scheduledDay,
+            entries = preset.entries.map { entry ->
+                PresetDraftEntry(
+                    exerciseId = idByName.getValue(entry.exerciseName),
+                    targetSets = entry.sets,
+                    targetReps = entry.reps,
+                    targetWeightKg = entry.targetWeightKg,
+                    modifiers = entry.modifiers,
+                )
+            },
+        )
+    }
+
+    /**
+     * The lifter's own estimated 1RM per movement, from every DONE, weighted
+     * set she actually logged - the same completed-session stream the history
+     * screen reads, so the generator and the record can never disagree about
+     * what her best bench was.
+     */
+    suspend fun strengthProfile(): StrengthProfile =
+        ProgramRules.strengthProfile(
+            observeHistory().first()
+                .flatMap { (_, sets) -> sets }
+                .filter { it.done && (it.weightKg ?: 0.0) > 0.0 }
+                .map { LoggedLift(it.exerciseName, it.weightKg!!, it.reps) },
+        )
+
+    /** The first completed session's day, or null for a lifter with no history. */
+    suspend fun firstSessionEpochDay(): Long? =
+        observeHistory().first().minOfOrNull { (session, _) -> session.startedAtMs }
+            ?.let { Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate().toEpochDay() }
+
     /** Name-resolved rows awaiting the write; the resolve step runs before any
      *  insert so a bad name can abort before the first preset exists. */
     private data class PlannedPresetRows(
@@ -422,7 +475,7 @@ class Repository(
         val modifiers: String,
     )
 
-    private suspend fun writeRoutinePresets(presets: List<PlannedPresetRows>) {
+    private suspend fun writeRoutinePresets(presets: List<PlannedPresetRows>, clearFirst: Boolean = true) {
         db.withTransaction {
             val idByName = exerciseDao.observeAll().first().associate { it.name to it.id }
             // The plan is the caller's argument, so an unknown movement is a bad
@@ -435,7 +488,7 @@ class Repository(
                 }
                 preset
             }
-            presetDao.clearAll()
+            if (clearFirst) presetDao.clearAll()
             resolved.forEach { preset ->
                 val presetId = presetDao.insertPreset(
                     PresetEntity(name = preset.name, note = preset.note, scheduledDay = preset.scheduledDay),

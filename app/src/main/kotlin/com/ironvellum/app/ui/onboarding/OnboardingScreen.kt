@@ -56,6 +56,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.data.ProgramAnswers
+import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Seed
 import com.ironvellum.app.domain.BodyLimits
@@ -63,10 +65,14 @@ import com.ironvellum.app.domain.EquipmentAccess
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
-import com.ironvellum.app.domain.RoutineBuilder
+import com.ironvellum.app.domain.ExperienceTier
+import com.ironvellum.app.domain.ProgramGenerator
+import com.ironvellum.app.domain.ProgramRequest
+import com.ironvellum.app.domain.StrengthProfile
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrainingFocus
+import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.ui.components.CrestMark
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.InkSegmented
@@ -74,6 +80,7 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.ironvellumRepository
+import com.ironvellum.app.ui.program.ProposedDay
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -91,7 +98,7 @@ import kotlinx.coroutines.launch
 
 class OnboardingViewModel(
     private val repo: Repository,
-    appContext: Context,
+    private val appContext: Context,
 ) : ViewModel() {
 
     private val prefs = appContext.getSharedPreferences("onboarding", Context.MODE_PRIVATE)
@@ -127,7 +134,7 @@ class OnboardingViewModel(
             (body.first == null || active) && !dismissed
         }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /** The full movement list, feeding RoutineBuilder. Empty until Room emits. */
+    /** The full movement list, feeding ProgramGenerator. Empty until Room emits. */
     val catalogue: StateFlow<List<Exercise>> =
         repo.observeExercises().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -148,7 +155,15 @@ class OnboardingViewModel(
      * only touched from the main thread, and its job is to answer "did a
      * choice actually change", not to be rendered.
      */
-    private var planKey: Triple<Int, EquipmentAccess, TrainingFocus>? = null
+    private var planKey: PlanKey? = null
+
+    private data class PlanKey(
+        val daysPerWeek: Int,
+        val equipment: EquipmentAccess,
+        val focus: TrainingFocus,
+        val tier: ExperienceTier,
+        val sex: Sex,
+    )
 
     /**
      * Height is written BEFORE the weigh-in on purpose: addStat stamps the
@@ -179,12 +194,28 @@ class OnboardingViewModel(
         daysPerWeek: Int,
         equipment: EquipmentAccess,
         focus: TrainingFocus,
+        tier: ExperienceTier,
+        sex: Sex,
         catalogue: List<Exercise>,
         force: Boolean = false,
     ) {
-        val key = Triple(daysPerWeek, equipment, focus)
+        val key = PlanKey(daysPerWeek, equipment, focus, tier, sex)
         if (force || _plan.value == null || _isStarter.value || planKey != key) {
-            _plan.value = RoutineBuilder.plan(daysPerWeek, equipment, focus, catalogue)
+            // RoutineBuilder is gone: one generator everywhere, and the first
+            // run now uses the same evidence-backed engine as Train ->
+            // NEW PRESET. No history exists yet, so the strength profile the
+            // loads would come from is honestly empty.
+            _plan.value = ProgramGenerator.week(
+                ProgramRequest(
+                    focus = focus,
+                    tier = tier,
+                    equipment = equipment,
+                    daysPerWeek = daysPerWeek,
+                    sex = sex,
+                ),
+                catalogue,
+                StrengthProfile(),
+            )
             _isStarter.value = false
             planKey = key
             _applyError.value = null
@@ -210,12 +241,28 @@ class OnboardingViewModel(
      * review step with the reason on screen. Dismissing afterwards releases
      * the gate the same way a skip does - the profile height, once saved, is
      * the durable half of that signal.
+     *
+     * On the generated path her answers are remembered (Weekly Coverage and
+     * the next builder visit read them back) and the progression mode follows
+     * the goal, so a hypertrophy plan never runs on the strength engine.
      */
-    fun acceptRoutine() {
+    fun acceptRoutine(tier: ExperienceTier, focus: TrainingFocus, equipment: EquipmentAccess, daysPerWeek: Int) {
         val plan = _plan.value ?: return
+        val generated = !_isStarter.value
         viewModelScope.launch {
             runCatching {
                 if (_isStarter.value) repo.applyStarterTemplate() else repo.applyRoutine(plan)
+                if (generated) {
+                    ProgramAnswersStore.save(
+                        appContext,
+                        ProgramAnswers(tier, focus, equipment, daysPerWeek, emptySet()),
+                    )
+                    when (focus) {
+                        TrainingFocus.STRENGTH -> repo.setTrainingMode(TrainingMode.STRENGTH)
+                        TrainingFocus.MUSCLE -> repo.setTrainingMode(TrainingMode.HYPERTROPHY)
+                        else -> {}
+                    }
+                }
             }.fold(
                 onSuccess = {
                     _applyError.value = null
@@ -240,21 +287,6 @@ class OnboardingViewModel(
     }
 }
 
-private val DAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-
-private fun dayLabel(scheduledDay: Int): String =
-    DAY_NAMES.getOrNull(scheduledDay - 1) ?: "Unscheduled"
-
-private fun entryScheme(entry: PlannedEntry): String = buildString {
-    append(entry.sets)
-    append(" x ")
-    append(entry.reps)
-    entry.targetWeightKg?.let {
-        append(" @ ")
-        append(formatBodyValue(it))
-        append(" kg")
-    }
-}
 
 /** "your name, height and a first weigh-in" - a list a person reads, not "a, b, and c". */
 private fun joinHuman(items: List<String>): String = when (items.size) {
@@ -270,7 +302,7 @@ private fun joinHuman(items: List<String>): String = when (items.size) {
  * strength scores need a bodyweight, BMI and FFMI need a height, the Navy
  * estimator needs a sex - which is why the profile comes first.
  *
- * The half-automatic part is the proposal: RoutineBuilder proposes, she
+ * The half-automatic part is the proposal: ProgramGenerator proposes, she
  * disposes. The owner's own calisthenics week is offered as an alternative
  * template instead of being forced on every fresh install.
  *
@@ -306,6 +338,7 @@ fun OnboardingScreen(
     var daysPerWeek by rememberSaveable { mutableIntStateOf(3) }
     var equipment by rememberSaveable { mutableStateOf(EquipmentAccess.BODYWEIGHT) }
     var focus by rememberSaveable { mutableStateOf(TrainingFocus.GENERAL) }
+    var tier by rememberSaveable { mutableStateOf(ExperienceTier.BEGINNER) }
 
     val applyError by viewModel.applyError.collectAsStateWithLifecycle()
     val plan by viewModel.plan.collectAsStateWithLifecycle()
@@ -390,12 +423,16 @@ fun OnboardingScreen(
                         onEquipment = { equipment = it },
                         focus = focus,
                         onFocus = { focus = it },
+                        tier = tier,
+                        onTier = { tier = it },
                     )
                     else -> ProposalStep(
                         viewModel = viewModel,
                         daysPerWeek = daysPerWeek,
                         equipment = equipment,
                         focus = focus,
+                        tier = tier,
+                        sex = sex,
                     )
                 }
             }
@@ -414,7 +451,9 @@ fun OnboardingScreen(
                 },
                 onBack = { step -= 1 },
                 onForward = { step = 2 },
-                onAccept = viewModel::acceptRoutine,
+                onAccept = {
+                    viewModel.acceptRoutine(tier, focus, equipment, daysPerWeek)
+                },
             )
         }
     }
@@ -429,7 +468,7 @@ private fun stepTitle(step: Int): String = when (step) {
 
 private fun stepProse(step: Int): String = when (step) {
     0 -> "Three facts scale every number this app shows you."
-    1 -> "Three answers, and the forge proposes a week."
+    1 -> "Answer four things and Ironvellum builds you a week."
     else -> "Built from your answers. Change anything before you take it."
 }
 
@@ -685,6 +724,8 @@ private fun TrainingStep(
     onEquipment: (EquipmentAccess) -> Unit,
     focus: TrainingFocus,
     onFocus: (TrainingFocus) -> Unit,
+    tier: ExperienceTier,
+    onTier: (ExperienceTier) -> Unit,
 ) {
     Column(
         Modifier
@@ -692,6 +733,30 @@ private fun TrainingStep(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        InkPanel(Modifier.fillMaxWidth()) {
+            FieldLabel("TRAINING AGE - HOW LONG HAVE YOU LIFTED")
+            Spacer(Modifier.height(8.dp))
+            InkSegmented(
+                options = ExperienceTier.entries.map { it to it.label },
+                selected = tier,
+                onPick = onTier,
+            )
+            Spacer(Modifier.height(8.dp))
+            // The volume evidence is tiered on training age, so this one answer
+            // sets how much work the week prescribes; the builder explains why.
+            Text(
+                when (tier) {
+                    ExperienceTier.BEGINNER ->
+                        "Under about a year. Beginners grow on less volume - the week starts lean."
+                    ExperienceTier.INTERMEDIATE ->
+                        "One to three years. More sets per muscle to keep progressing."
+                    ExperienceTier.ADVANCED ->
+                        "Beyond three years. The highest volumes the evidence supports."
+                },
+                style = MaterialTheme.typography.labelSmall,
+                color = IronvellumColors.InkMuted,
+            )
+        }
         InkPanel(Modifier.fillMaxWidth()) {
             FieldLabel("DAYS PER WEEK - BE HONEST, THE WEEK IS BUILT TO FIT")
             Spacer(Modifier.height(8.dp))
@@ -790,6 +855,8 @@ private fun ProposalStep(
     daysPerWeek: Int,
     equipment: EquipmentAccess,
     focus: TrainingFocus,
+    tier: ExperienceTier,
+    sex: Sex,
 ) {
     val catalogue by viewModel.catalogue.collectAsStateWithLifecycle()
     val plan by viewModel.plan.collectAsStateWithLifecycle()
@@ -798,9 +865,9 @@ private fun ProposalStep(
     // Rebuild only when an upstream choice actually changed (the guard lives
     // in the view model). Waiting for a non-empty catalogue means the first
     // generation is never run against a half-loaded Room list.
-    LaunchedEffect(daysPerWeek, equipment, focus, catalogue) {
+    LaunchedEffect(daysPerWeek, equipment, focus, tier, sex, catalogue) {
         if (catalogue.isNotEmpty()) {
-            viewModel.ensurePlan(daysPerWeek, equipment, focus, catalogue)
+            viewModel.ensurePlan(daysPerWeek, equipment, focus, tier, sex, catalogue)
         }
     }
 
@@ -883,7 +950,7 @@ private fun ProposalStep(
                 label = "Build from my answers instead",
                 onClick = {
                     if (catalogue.isNotEmpty()) {
-                        viewModel.ensurePlan(daysPerWeek, equipment, focus, catalogue, force = true)
+                        viewModel.ensurePlan(daysPerWeek, equipment, focus, tier, sex, catalogue, force = true)
                     }
                 },
                 quiet = true,
@@ -898,159 +965,19 @@ private fun ProposalStep(
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
+        // Stated where she accepts, not discovered in Settings later: the
+        // progression engine follows the goal she picked.
+        if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.MUSCLE) {
+            Text(
+                if (focus == TrainingFocus.STRENGTH) {
+                    "Taking this routine switches progression to linear progression for strength."
+                } else {
+                    "Taking this routine switches progression to double progression for hypertrophy."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
+        }
         Spacer(Modifier.height(2.dp))
-    }
-}
-
-/**
- * One proposed training day. The day and its focus lead, in the app's crest
- * voice; a brush hairline separates the plan from its movement list.
- */
-@Composable
-private fun ProposedDay(
-    preset: PlannedPreset,
-    editable: Boolean,
-    onSets: (entryIndex: Int, delta: Int) -> Unit,
-    onReps: (entryIndex: Int, delta: Int) -> Unit,
-    onRemove: (entryIndex: Int) -> Unit,
-) {
-    // The ink identity is hand-drawn: a geometric RoundedCornerShape here
-    // reads as a foreign rectangle, which is why InkCoverageTest fails the
-    // build on one.
-    val dayShape = MaterialTheme.shapes.extraSmall
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(dayShape)
-            .background(IronvellumColors.Vault)
-            .inkBorder(IronvellumColors.Rune, dayShape, 1.dp)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-    ) {
-        Text(
-            dayLabel(preset.scheduledDay).uppercase(),
-            style = MaterialTheme.typography.titleMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.EmeraldBright,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Text(
-            preset.name.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
-        preset.entries.forEachIndexed { entryIndex, entry ->
-            ProposedEntryRow(
-                entry = entry,
-                dayName = dayLabel(preset.scheduledDay),
-                editable = editable,
-                onSets = { delta -> onSets(entryIndex, delta) },
-                onReps = { delta -> onReps(entryIndex, delta) },
-                onRemove = { onRemove(entryIndex) },
-            )
-        }
-    }
-}
-
-/**
- * One proposed movement. Name and scheme are the content; the edit cluster
- * sits beneath, captioned, so the plan is what the eye lands on and the
- * glyphs read as annotation. The steppers are 32dp tappable boxes - well
- * over the 24dp accessibility floor - and each announces its purpose by
- * name, because a bare "-" tells a screen reader nothing.
- */
-@Composable
-private fun ProposedEntryRow(
-    entry: PlannedEntry,
-    dayName: String,
-    editable: Boolean,
-    onSets: (delta: Int) -> Unit,
-    onReps: (delta: Int) -> Unit,
-    onRemove: () -> Unit,
-) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                entry.exerciseName,
-                style = MaterialTheme.typography.bodyMedium,
-                color = IronvellumColors.Ink,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                entryScheme(entry),
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
-        }
-        if (editable) {
-            Spacer(Modifier.height(4.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    "SETS",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.clearAndSetSemantics {},
-                )
-                TapPad("-", "Fewer sets for ${entry.exerciseName}") { onSets(-1) }
-                TapPad("+", "More sets for ${entry.exerciseName}") { onSets(1) }
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    "REPS",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.clearAndSetSemantics {},
-                )
-                TapPad("-", "Fewer reps for ${entry.exerciseName}") { onReps(-1) }
-                TapPad("+", "More reps for ${entry.exerciseName}") { onReps(1) }
-                Spacer(Modifier.weight(1f))
-                TapPad("x", "Remove ${entry.exerciseName} from $dayName") { onRemove() }
-            }
-        }
-    }
-}
-
-/**
- * The small tap target used by the proposal editor. Not IronvellumButton: five
- * steppers per movement row need a control that stays narrow while clearing
- * the 24dp touch floor, which the 32dp box guarantees on both axes.
- */
-@Composable
-private fun TapPad(
-    label: String,
-    description: String,
-    onClick: () -> Unit,
-) {
-    val shape = MaterialTheme.shapes.extraSmall
-    Box(
-        Modifier
-            .clip(shape)
-            .background(IronvellumColors.VaultHigh)
-            .clickable(onClick = onClick)
-            .heightIn(min = 32.dp)
-            .widthIn(min = 32.dp)
-            .padding(horizontal = 8.dp, vertical = 5.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            modifier = Modifier.semantics { contentDescription = description },
-        )
     }
 }

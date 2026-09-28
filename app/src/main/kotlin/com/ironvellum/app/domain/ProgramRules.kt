@@ -1,0 +1,312 @@
+package com.ironvellum.app.domain
+
+import kotlin.math.floor
+
+/**
+ * The evidence-backed constants the generator, the templates and the improve
+ * pass share: weekly volume tiers, RIR and rest prescriptions, the tracked
+ * muscle set, and the load arithmetic that turns the lifter's own e1RMs into
+ * working weights.
+ *
+ * Every constant names the [Evidence] entry behind it. The volume tier BOUNDARIES
+ * (8-12 / 12-18 / 15-22) are informed interpolations on the diminishing-returns
+ * curves of Pelland 2026, not directly tested values - the brief says so
+ * plainly, and so does this file.
+ */
+object ProgramRules {
+
+    // ---------------------------------------------------------------- volume
+
+    /**
+     * Fractional weekly hard sets per muscle, per tier and goal
+     * (beginner 8-12, intermediate 12-18, advanced 15-22; strength focus
+     * 5-15 mostly direct on the practised lift because the strength dose
+     * saturates early - Pelland 2026, Ralston 2017). Tiering by training age
+     * follows ACSM 2009 / Moesgaard 2022 (novices progress on low volume;
+     * periodisation adds little for hypertrophy).
+     */
+    fun weeklySetTarget(tier: ExperienceTier, focus: TrainingFocus): ClosedFloatingPointRange<Double> {
+        if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL) return 5.0..15.0
+        return when (tier) {
+            ExperienceTier.BEGINNER -> 8.0..12.0
+            ExperienceTier.INTERMEDIATE -> 12.0..18.0
+            ExperienceTier.ADVANCED -> 15.0..22.0
+        }
+    }
+
+    /** GENERAL trains like a hypertrophy block with strength-style compounds. */
+    val TRACKED: List<Muscle> = listOf(
+        Muscle.CHEST,
+        Muscle.LATS,
+        Muscle.UPPER_BACK,
+        Muscle.SIDE_DELTS,
+        Muscle.REAR_DELTS,
+        Muscle.BICEPS,
+        Muscle.TRICEPS,
+        Muscle.QUADS,
+        Muscle.HAMSTRINGS,
+        Muscle.GLUTES,
+        Muscle.CALVES,
+        Muscle.ABS,
+    )
+
+    /**
+     * Muscles judged against the tier range are the "major" set. FRONT_DELTS
+     * are deliberately absent: every pressing movement already serves them
+     * (0.5-0.7 per the press family, Lanza 2024), so a dedicated target just
+     * over-presses people. FOREARMS, LOWER_BACK and ADDUCTORS ride along as
+     * indirect contributions and are not audited.
+     */
+
+    // ------------------------------------------------------------- fractions
+
+    /**
+     * Fractional weekly sets per muscle: direct sets count 1.0 per set,
+     * indirect sets per their MuscleMap share (0.5 model - Pelland 2026;
+     * movements without a profile contribute nothing, honestly).
+     */
+    fun weeklyVolume(presets: List<PlannedPreset>): Map<Muscle, Double> {
+        val volume = mutableMapOf<Muscle, Double>()
+        for (preset in presets) for (entry in preset.entries) {
+            val profile = MuscleMap.profile(entry.exerciseName) ?: continue
+            for ((muscle, share) in profile.muscles) {
+                if (share > 0.0) volume.merge(muscle, entry.sets * share, Double::plus)
+            }
+        }
+        return volume
+    }
+
+    // ------------------------------------------------------------------ tier
+
+    /**
+     * Training age to tier: under a year beginner, one to three years
+     * intermediate, beyond that advanced (ACSM 2009 tiering; boundaries are
+     * convention anchored on the diminishing-returns curves). No history
+     * means beginner - a new lifter must never start on an advanced dose.
+     */
+    fun suggestTier(firstSessionEpochDay: Long?, todayEpochDay: Long): ExperienceTier {
+        if (firstSessionEpochDay == null) return ExperienceTier.BEGINNER
+        val days = (todayEpochDay - firstSessionEpochDay).coerceAtLeast(0)
+        return when {
+            days < 365 -> ExperienceTier.BEGINNER
+            days < 1095 -> ExperienceTier.INTERMEDIATE
+            else -> ExperienceTier.ADVANCED
+        }
+    }
+
+    // ----------------------------------------------------------------- loads
+
+    /** Reps above 12 stop flattering the Epley estimate (LeSuer 1997). */
+    const val MAX_E1RM_REPS = 12
+
+    /** Accuracy of the Epley inversion degrades past ~10 reps (LeSuer 1997). */
+    const val MAX_WORKING_REPS = 10
+
+    /**
+     * Best estimated one-rep max per movement, in the MARKED kilos the lifter
+     * logs, from working sets with real load and an honest rep count
+     * (weight > 0, 1..12 reps - Epley with the rep term capped at 12, the
+     * same convention TitleEngine uses, LeSuer 1997).
+     */
+    fun strengthProfile(lifts: List<LoggedLift>): StrengthProfile {
+        val best = mutableMapOf<String, Double>()
+        for (lift in lifts) {
+            if (lift.weightKg <= 0.0) continue
+            if (lift.reps < 1 || lift.reps > MAX_E1RM_REPS) continue
+            val e1rm = lift.weightKg * (1.0 + lift.reps / 30.0)
+            val key = lift.exerciseName.trim().lowercase()
+            if (e1rm > (best[key] ?: 0.0)) best[key] = e1rm
+        }
+        return StrengthProfile(best)
+    }
+
+    /**
+     * Working load for [reps] at [rir] reps in reserve, straight from the
+     * lifter's own e1RM: e1RM x (1 - (reps + rir) / 30) - the Epley inversion
+     * (Zourdos 2016 RIR scale; LeSuer 1997 validity; Helms 2016). Rounded
+     * DOWN to the movement's real load step so the prescription is on the
+     * bar's actual increments. Null when the lifter never logged the lift.
+     */
+    fun workingLoadKg(
+        exerciseName: String,
+        muscleGroup: String,
+        strength: StrengthProfile,
+        reps: Int,
+        rir: Int,
+    ): Pair<Double, String>? {
+        val e1rm = strength.bestE1rmKg[exerciseName.trim().lowercase()] ?: return null
+        return loadFromE1rm(exerciseName, muscleGroup, e1rm, reps, rir) to
+            "from your ${maxE1rmLabel(e1rm)} kg e1RM"
+    }
+
+    private fun maxE1rmLabel(e1rm: Double): String =
+        if (e1rm % 1.0 == 0.0) e1rm.toInt().toString() else "%.1f".format(e1rm)
+
+    private fun loadFromE1rm(
+        exerciseName: String,
+        muscleGroup: String,
+        e1rm: Double,
+        reps: Int,
+        rir: Int,
+    ): Double {
+        val raw = e1rm * (1.0 - (reps + rir) / 30.0)
+        val step = Progression.weightStepKg(muscleGroup, exerciseName)
+        val floored = floor(raw / step) * step
+        return floored.coerceAtLeast(step)
+    }
+
+    // ------------------------------------------------- related-lift estimates
+
+    /**
+     * One hop of the related-lift graph, as PAIRS: the second lift's FORCE
+     * e1RM is roughly [ratio] x the first lift's. Ratios are marked-kilogram
+     * independent: both sides run through MovementDifficulty.loadFactor, so
+     * a sled's inflated numbers do not leak into the estimate.
+     */
+    private val related: List<Triple<String, String, Double>> = listOf(
+        Triple("bench press", "incline bench press", 0.85),
+        Triple("bench press", "dumbbell bench press", 0.80),
+        Triple("bench press", "machine chest press", 0.90),
+        Triple("bench press", "smith machine bench press", 0.95),
+        Triple("bench press", "close-grip bench press", 0.85),
+        Triple("bench press", "dip", 0.90),
+        Triple("overhead press", "dumbbell shoulder press", 0.80),
+        Triple("overhead press", "machine shoulder press", 0.85),
+        Triple("overhead press", "arnold press", 0.80),
+        Triple("overhead press", "smith machine overhead press", 0.95),
+        Triple("overhead press", "push press", 1.20),
+        Triple("back squat", "front squat", 0.85),
+        Triple("back squat", "leg press", 1.20),
+        Triple("back squat", "hack squat", 1.00),
+        Triple("back squat", "smith machine squat", 1.00),
+        Triple("back squat", "goblet squat", 0.50),
+        Triple("back squat", "bulgarian split squat", 0.50),
+        Triple("deadlift", "sumo deadlift", 0.95),
+        Triple("deadlift", "rack pull", 1.20),
+        Triple("deadlift", "romanian deadlift", 0.80),
+        Triple("deadlift", "good morning", 0.70),
+        Triple("barbell row", "dumbbell row", 0.80),
+        Triple("barbell row", "pendlay row", 0.95),
+        Triple("barbell row", "t-bar row", 0.95),
+        Triple("barbell row", "seated cable row", 0.90),
+        Triple("barbell row", "chest-supported row", 0.90),
+        Triple("barbell row", "machine row", 0.90),
+        Triple("barbell row", "smith machine row", 0.95),
+    )
+
+    /**
+     * Estimated working load for a movement the lifter never logged, via a
+     * logged relative (specificity: strength transfers only within a task -
+     * Buckner 2017, TaskSpec 2025). The ratio runs in FORCE units (marked kg
+     * x loadFactor), the result is shaved by a further safety margin because
+     * the transfer is one-directional, converted back to this implement's
+     * marked kilos, and rounded DOWN to the load step. The loadNote says
+     * plainly where the number came from.
+     */
+    fun estimatedLoadKg(
+        exerciseName: String,
+        muscleGroup: String,
+        strength: StrengthProfile,
+        reps: Int,
+        rir: Int,
+    ): Pair<Double, String>? {
+        val key = exerciseName.trim().lowercase()
+        val ownFactor = MovementDifficulty.loadFactor(exerciseName)
+        // Deterministic order: the table's own sequence, so the first logged
+        // relative always wins and two logged relatives cannot tie-break.
+        for ((a, b, ratio) in related) {
+            val (source, target, r) =
+                if (b == key) Triple(a, b, ratio)
+                else if (a == key) Triple(b, a, 1.0 / ratio)
+                else continue
+            val sourceE1rm = strength.bestE1rmKg[source] ?: continue
+            val sourceFactor = MovementDifficulty.loadFactor(source)
+            val forceE1rm = sourceE1rm * sourceFactor
+            val estimatedForce = forceE1rm * r * ESTIMATE_SAFETY_MARGIN
+            val marked = estimatedForce / ownFactor
+            val load = loadFromE1rm(exerciseName, muscleGroup, marked, reps, rir)
+            val sourceLabel = source.split(" ").joinToString(" ") { it.replaceFirstChar(Char::uppercase) }
+            return load to "estimate from $sourceLabel"
+        }
+        return null
+    }
+
+    /**
+     * Transferred strength is not owned strength: shave the estimate so the
+     * first session on the new implement is always completable.
+     */
+    const val ESTIMATE_SAFETY_MARGIN = 0.90
+
+    // ------------------------------------------------------------------- sex
+
+    /**
+     * The one line the preview shows for the sex question. Roberts 2020
+     * (relative hypertrophy identical, ES 0.07 +- 0.16) and Hunter 2014
+     * (fatigability, task- and muscle-specific) say the same thing: nothing
+     * in the STRUCTURE of the plan may change by sex, so the generator takes
+     * sex and deliberately ignores it.
+     */
+    const val SEX_NOTE: String =
+        "Men and women get the same relative plan - volumes, reps and rest " +
+            "are identical, and loads scale off your own e1RM either way " +
+            "(Roberts 2020; Hunter 2014)."
+
+    // ------------------------------------------------------------------ rest
+
+    /**
+     * Rest in seconds for a working set: strength compounds 3-5 min (300 s
+     * cap on the main lifts, Schoenfeld 2016, Grgic 2018), hypertrophy work
+     * >=90 s with 2-3 min typical (Singer 2024: benefit above 60 s, plateau
+     * near 90 s).
+     */
+    fun restSeconds(focus: TrainingFocus, compound: Boolean): Int = when {
+        focus == TrainingFocus.STRENGTH && compound -> 300
+        compound -> 150
+        else -> 90
+    }
+
+    /**
+     * Reps in reserve per focus. Hypertrophy lives at 1-3 RIR (Robinson 2024,
+     * Refalo 2023: failure adds nothing and costs recovery); strength at ~2
+     * RIR on the practice sets (Zourdos 2016: trust the RIR report near
+     * failure); beginners get the conservative end (ACSM 2009: never program
+     * failure for novices).
+     */
+    fun targetRir(tier: ExperienceTier, focus: TrainingFocus): Int = when {
+        focus == TrainingFocus.MUSCLE && tier == ExperienceTier.BEGINNER -> 3
+        focus == TrainingFocus.MUSCLE -> 2
+        else -> 2
+    }
+
+    /**
+     * The rep anchor per focus: MUSCLE compounds 8, isolation 12 (inside the
+     * 6-15 band, Lopez 2021); STRENGTH/GENERAL/SKILL compounds 5 (1-6 band at
+     * >=80% 1RM, Lopez 2021).
+     */
+    fun repAnchor(focus: TrainingFocus, compound: Boolean): Int = when {
+        focus == TrainingFocus.MUSCLE -> if (compound) 8 else 12
+        else -> 5
+    }
+
+    /** Per-session exercise cap by tier: 6 beginner, 8 intermediate, 9
+     * advanced. Practical scheduling heuristic - the evidence brief lists no
+     * verified per-session ceiling; it exists so a generated session stays
+     * finishable in roughly an hour. */
+    fun sessionCap(tier: ExperienceTier): Int = when (tier) {
+        ExperienceTier.BEGINNER -> 6
+        ExperienceTier.INTERMEDIATE -> 8
+        ExperienceTier.ADVANCED -> 9
+    }
+
+    /**
+     * Hard-set ceiling per session (warm-up excluded): 24 sets at the
+     * prescribed 1.5-3 min rests is roughly 75-80 minutes. PRACTICAL
+     * HEURISTIC: the brief lists no verified per-session set ceiling; only
+     * the weekly dose (rule 6) is evidence-backed. At 22 a 4-day intermediate
+     * week could not reach 12 sets on every upper-body muscle (two upper days
+     * share seven muscles). When the week's dose still does not fit the
+     * chosen days, the generator lands muscles at the reachable level and
+     * says so in the plan note instead of cramming.
+     */
+    const val SESSION_HARD_SET_CAP = 24
+}
