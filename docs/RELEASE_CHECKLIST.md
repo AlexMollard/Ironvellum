@@ -39,8 +39,8 @@ Windows: `.\gradlew.bat <task>`.
 
 ## 2. Version bump
 
-- In `app/build.gradle.kts` → `defaultConfig`: increment `versionCode` (currently
-  `1`) and set `versionName`. Play rejects a `versionCode` already uploaded.
+- In `app/build.gradle.kts` → `defaultConfig`: increment `versionCode` and set
+  `versionName` to match the tag. Play rejects a `versionCode` already uploaded.
 
 ## 3. Local validation
 

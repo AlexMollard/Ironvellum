@@ -1,0 +1,5 @@
+Program builder: generate a week or one workout from your split, weekly volume, gear and goal, start from a template, or improve an existing preset with a before and after view
+Weekly coverage map across 26 muscles, including three chest regions, rhomboids, traps and serratus
+Angle and deficit modifiers now count toward the muscles they work
+Priorities lead: your main lift gets a second practice day
+Citations collected under Sources
