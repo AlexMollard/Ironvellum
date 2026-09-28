@@ -51,12 +51,26 @@ object ProgramRules {
     )
 
     /**
-     * Muscles judged against the tier range are the "major" set. FRONT_DELTS
-     * are deliberately absent: every pressing movement already serves them
-     * (0.5-0.7 per the press family, Lanza 2024), so a dedicated target just
-     * over-presses people. FOREARMS, LOWER_BACK and ADDUCTORS ride along as
-     * indirect contributions and are not audited.
+     * Muscles judged against the tier range are the "major" set. The four
+     * HELPERS are mostly worked as synergists - front delts in every press
+     * (0.5-0.7 per the press family, Lanza 2024), forearms in every grip,
+     * lower back bracing hinges and squats, adductors in squats (Kubo 2019)
+     * - and no study sets a weekly dose for them, so the full range would
+     * pad weeks with front raises and wrist curls. They get a floor instead:
+     * at least [HELPER_FLOOR_SETS] fractional sets a week, no ceiling. The
+     * floor value is a convention, not a trial result.
      */
+    val HELPERS: List<Muscle> = listOf(
+        Muscle.FRONT_DELTS,
+        Muscle.FOREARMS,
+        Muscle.LOWER_BACK,
+        Muscle.ADDUCTORS,
+    )
+
+    const val HELPER_FLOOR_SETS = 3.0
+
+    /** The helpers' "range" for coverage verdicts: the floor, and no top. */
+    val HELPER_RANGE: ClosedFloatingPointRange<Double> = HELPER_FLOOR_SETS..Double.MAX_VALUE
 
     // ------------------------------------------------------------- fractions
 

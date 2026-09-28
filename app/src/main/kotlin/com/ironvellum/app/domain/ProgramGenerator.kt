@@ -2,6 +2,7 @@ package com.ironvellum.app.domain
 
 import com.ironvellum.app.domain.MovementDifficulty.FREE_WEIGHT_LOAD
 import kotlin.math.ceil
+import kotlin.math.floor
 
 /**
  * Proposes evidence-backed training weeks, single sessions, and improvements
@@ -153,26 +154,27 @@ object ProgramGenerator {
         exercise.name.trim().lowercase().startsWith("assisted") ||
             MovementDifficulty.loadFactor(exercise.name) < FREE_WEIGHT_LOAD
 
-    private fun equipmentAllows(exercise: Exercise, equipment: EquipmentAccess): Boolean {
+    private fun equipmentAllows(exercise: Exercise, equipment: Equipment): Boolean {
         if (exercise.category.isNotBlank()) return false
         // Holds are measured in seconds; a rep target on a plank is nonsense.
         if (exercise.metric != ExerciseMetric.REPS) return false
-        if (!exercise.isWeighted) return true
-        if (equipment == EquipmentAccess.BODYWEIGHT) return false
-        if (equipment == EquipmentAccess.HOME_WEIGHTS) return !isMachine(exercise)
-        return true
+        return GearRequirements.allows(exercise.name, exercise.isWeighted, equipment)
     }
 
-    /** How well the implement matches the access level: free weight 0, machine 1,
-     * bodyweight 2 - and assisted machines last of all (3): they are regressions
-     * for lifters who cannot yet do the bodyweight movement, never choices for
-     * people who can. */
-    private fun fitScore(exercise: Exercise, equipment: EquipmentAccess): Int = when {
-        equipment == EquipmentAccess.BODYWEIGHT -> 0
-        !exercise.isWeighted -> 2
-        exercise.name.trim().lowercase().startsWith("assisted") -> 3
-        isMachine(exercise) -> 1
-        else -> 0
+    /** How well the implement matches the gear: free weight 0, machine 1,
+     * bodyweight 2, assisted machines last of all (3) - they are regressions
+     * for lifters who cannot yet do the bodyweight movement. Machines only
+     * reach the pool with a full gym. With no loading gear (no full gym,
+     * dumbbells or barbell) everything is bodyweight and scores 0. */
+    private fun fitScore(exercise: Exercise, equipment: Equipment): Int {
+        val canLoad = equipment.fullGym || Gear.DUMBBELLS in equipment.gear || Gear.BARBELL in equipment.gear
+        return when {
+            !canLoad -> 0
+            !exercise.isWeighted -> 2
+            exercise.name.trim().lowercase().startsWith("assisted") -> 3
+            isMachine(exercise) -> 1
+            else -> 0
+        }
     }
 
     /** A movement the skill tree owns, detectable without importing Skills. */
@@ -191,7 +193,7 @@ object ProgramGenerator {
      */
     internal fun eligible(
         catalogue: List<Exercise>,
-        equipment: EquipmentAccess,
+        equipment: Equipment,
         focus: TrainingFocus,
     ): List<Exercise> =
         catalogue.filter {
@@ -336,17 +338,24 @@ object ProgramGenerator {
     ): PlannedEntry {
         val profile = profileOf(exercise)
         val reps = prescriptionReps(ctx, profile)
-        val load = fillLoad(exercise, ctx.strength, reps, ProgramRules.targetRir(ctx.volume, ctx.focus))
-        val fit = fitScore(exercise, ctx.request.equipment)
-        session.fits[exercise.name] = fit
-        session.names += exercise.name
+        val rir = ProgramRules.targetRir(ctx.volume, ctx.focus)
+        val (chosen, fill) = fillWithCap(
+            exercise, ctx.pool, ctx.strength, reps, rir, ctx.request.equipment,
+        )
+        val fit = fitScore(chosen, ctx.request.equipment)
+        session.fits[chosen.name] = fit
+        session.names += chosen.name
+        if (chosen !== exercise) {
+            session.fits[exercise.name] = fit
+            session.names += exercise.name
+        }
         val entry = PlannedEntry(
-            exerciseName = exercise.name,
+            exerciseName = chosen.name,
             sets = sets.coerceIn(2, 5),
-            reps = reps,
-            targetWeightKg = load?.first,
+            reps = fill?.reps ?: reps,
+            targetWeightKg = fill?.kg,
             why = why,
-            loadNote = load?.second,
+            loadNote = fill?.note,
         )
         session.entries += entry
         return entry
@@ -376,24 +385,142 @@ object ProgramGenerator {
     }
 
     /**
+     * One filled prescription: the load, the reps to do it for (raised when
+     * the dumbbell cap forces lighter weight), the loadNote, and whether the
+     * movement needs a harder variant (the capped load cannot reach failure
+     * inside 20 reps). Callers that can substitute MUST act on [overCap];
+     * when it is set the pair already carries the honest fallback - the cap
+     * at 20 reps with a loadNote that says so.
+     */
+    internal class LoadFill(
+        val kg: Double,
+        val reps: Int,
+        val note: String?,
+        val overCap: Boolean,
+    )
+
+    /**
+     * The per-dumbbell ceiling for this movement under this equipment, or
+     * null when no cap applies: full gym has no cap, movements that need no
+     * dumbbells have no cap, and an unset max is treated as no cap. A
+     * two-dumbbell movement's load numbers are totals, so a pair doubles the
+     * ceiling.
+     */
+    internal fun dumbbellCapKg(exerciseName: String, equipment: Equipment): Double? {
+        if (equipment.fullGym) return null
+        if (Gear.DUMBBELLS !in equipment.gear) return null
+        val max = equipment.dumbbellMaxKg ?: return null
+        if (GearRequirements.needsPair(exerciseName)) {
+            if (!equipment.dumbbellPair) return null
+            return 2 * max
+        }
+        return max
+    }
+
+    /** The movement's e1RM on file, or the one the prescribed load implies
+     * (Epley inverted) when the lifter never logged it directly. */
+    private fun impliedE1rm(
+        exerciseName: String,
+        strength: StrengthProfile,
+        load: Double,
+        reps: Int,
+        rir: Int,
+    ): Double {
+        val direct = strength.bestE1rmKg[exerciseName.trim().lowercase()]
+        if (direct != null) return direct
+        val factor = 1.0 - (reps + rir) / 30.0
+        return if (factor > 0) load / factor else load
+    }
+
+    /**
      * Loads from the lifter's own PRs; a related logged lift estimates the
      * rest (labelled); bodyweight work carries no load. Prescriptions past
      * ~10 reps stop trusting the Epley inversion, so the estimate path caps
      * its reps (LeSuer 1997).
+     *
+     * DUMBBELL CAP - the single place both the generator and the templates
+     * go through: for a movement that needs dumbbells (and is not full gym)
+     * with a max set, a prescription above the cap is cut to the cap and the
+     * reps are raised to what the lifter's e1RM supports at the target RIR
+     * (Epley inverted), clamped to at most 20 (Lopez 2021: lighter loads
+     * still reach near failure with more reps). Past 20 reps the load can no
+     * longer be rescued, so [LoadFill.overCap] asks the caller for a harder
+     * variant; without one the cap stays at 20 reps and the loadNote says so.
      */
     internal fun fillLoad(
         exercise: Exercise,
         strength: StrengthProfile,
         reps: Int,
         rir: Int,
-    ): Pair<Double, String>? {
+        equipment: Equipment,
+    ): LoadFill? {
         if (!exercise.isWeighted) return null
         val group = exercise.muscleGroup.name
-        val direct = ProgramRules.workingLoadKg(exercise.name, group, strength, reps, rir)
-        if (direct != null) return direct
-        return ProgramRules.estimatedLoadKg(
-            exercise.name, group, strength, reps.coerceAtMost(ProgramRules.MAX_WORKING_REPS), rir,
-        )
+        var base = ProgramRules.workingLoadKg(exercise.name, group, strength, reps, rir)
+        if (base == null) {
+            base = ProgramRules.estimatedLoadKg(
+                exercise.name, group, strength, reps.coerceAtMost(ProgramRules.MAX_WORKING_REPS), rir,
+            )
+        }
+        base ?: return null
+        val cap = dumbbellCapKg(exercise.name, equipment)
+        if (cap == null || base.first <= cap) return LoadFill(base.first, reps, base.second, overCap = false)
+
+        val e1rm = impliedE1rm(exercise.name, strength, base.first, reps, rir)
+        val rawReps = floor(30.0 * (e1rm / cap - 1.0)).toInt() - rir
+        // The cap is a total for two-dumbbell lifts; the note names the
+        // dumbbell the lifter owns, not "48 kg per dumbbells".
+        val each = equipment.dumbbellMaxKg ?: cap
+        val eachLabel = if (each % 1.0 == 0.0) each.toInt().toString() else "%.1f".format(each)
+        val kit = if (GearRequirements.needsPair(exercise.name)) {
+            "your $eachLabel kg dumbbells"
+        } else {
+            "your $eachLabel kg dumbbell"
+        }
+        return if (rawReps > MAX_DUMBBELL_REPS) {
+            LoadFill(
+                cap, MAX_DUMBBELL_REPS,
+                "capped at $kit for $MAX_DUMBBELL_REPS reps, still short of failure - " +
+                    "move to a harder variant of this when you can",
+                overCap = true,
+            )
+        } else {
+            val raised = rawReps.coerceAtLeast(reps).coerceAtMost(MAX_DUMBBELL_REPS)
+            val note = if (raised > reps) {
+                "capped at $kit; reps raised to stay near failure - Lopez 2021"
+            } else {
+                "capped at $kit"
+            }
+            LoadFill(cap, raised, note, overCap = false)
+        }
+    }
+
+    /** Ceiling where a lighter load stops rescuing the set with reps (Lopez 2021). */
+    internal const val MAX_DUMBBELL_REPS = 20
+
+    /**
+     * [fillLoad] plus the harder-variant swap it calls for: when the capped
+     * load cannot reach failure inside 20 reps, the movement becomes the
+     * one-step harder variant from [GearRequirements.harderVariant] - if that
+     * variant is in the pool under this equipment. Returns the movement that
+     * was actually filled. Used by the generator's [add] and the templates'
+     * build, so the cap can never be routed around.
+     */
+    internal fun fillWithCap(
+        exercise: Exercise,
+        pool: List<Exercise>,
+        strength: StrengthProfile,
+        reps: Int,
+        rir: Int,
+        equipment: Equipment,
+    ): Pair<Exercise, LoadFill?> {
+        val fill = fillLoad(exercise, strength, reps, rir, equipment)
+        if (fill?.overCap != true) return exercise to fill
+        val variantName = GearRequirements.harderVariant[exercise.name.trim().lowercase()]
+        val variant = variantName?.let { name -> pool.firstOrNull { it.name.equals(name, ignoreCase = true) } }
+            ?: return exercise to fill
+        val variantFill = fillLoad(variant, strength, reps, rir, equipment)
+        return variant to variantFill
     }
 
     // ------------------------------------------------------------------ week
@@ -453,7 +580,13 @@ object ProgramGenerator {
         }
 
         // Phase 2: close each tracked muscle's weekly fractional deficit.
-        val capacityLimited = fillDeficits(ctx, sessions) { muscle -> ctx.targetFor(muscle) }
+        val majorsLimited = fillDeficits(ctx, sessions) { muscle -> ctx.targetFor(muscle) }
+        // Phase 3: lift each helper muscle to its floor. No frequency rule
+        // and no ceiling: a floor asks for some work, not a second session.
+        val helpersLimited = fillDeficits(ctx, sessions, ProgramRules.HELPERS, frequency = false) { muscle ->
+            floorOrTarget(ctx, muscle, sessionsShare = 1.0)
+        }
+        val capacityLimited = majorsLimited || helpersLimited
 
         // Honest capacity line: when the chosen days cannot fit the level's
         // weekly range inside the session time budget, name the muscles that
@@ -491,9 +624,10 @@ object ProgramGenerator {
 
     /**
      * " Heads-up: [lead] X and Y short of the target (...)." naming every
-     * tracked muscle under the floor - the same test the coverage map uses
-     * to call a muscle UNDER - or "" when none is. The volume level is not
-     * named: for strength and skill goals it does not move the range.
+     * tracked muscle under the range's floor and every helper under the
+     * helper floor - the same tests the coverage map uses to call a muscle
+     * UNDER - or "" when none is. The volume level is not named: for
+     * strength and skill goals it does not move the range.
      */
     internal fun shortfallNote(
         volume: Map<Muscle, Double>,
@@ -502,11 +636,25 @@ object ProgramGenerator {
         advice: String,
     ): String {
         val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < range.start - 1e-9 }
-        if (short.isEmpty()) return ""
-        val low = short.minOf { volume[it] ?: 0.0 }
-        return " Heads-up: $lead ${joinWithAnd(short.map { it.label.lowercase() })} short of the " +
-            "target (${range.start.toInt()}-${range.endInclusive.toInt()} " +
-            "sets a week; the lowest sits at ${setsPhrase(low)}). $advice"
+        val helpers = ProgramRules.HELPERS.filter { (volume[it] ?: 0.0) < ProgramRules.HELPER_FLOOR_SETS - 1e-9 }
+        if (short.isEmpty() && helpers.isEmpty()) return ""
+        val parts = buildList {
+            if (short.isNotEmpty()) {
+                val low = short.minOf { volume[it] ?: 0.0 }
+                add(
+                    "${joinWithAnd(short.map { it.label.lowercase() })} short of the target " +
+                        "(${range.start.toInt()}-${range.endInclusive.toInt()} sets a week; " +
+                        "the lowest sits at ${setsPhrase(low)})",
+                )
+            }
+            if (helpers.isNotEmpty()) {
+                add(
+                    "${joinWithAnd(helpers.map { it.label.lowercase() })} under the " +
+                        "${fmtSets(ProgramRules.HELPER_FLOOR_SETS)}-set floor for helper muscles",
+                )
+            }
+        }
+        return " Heads-up: $lead ${parts.joinToString(", and ")}. $advice"
     }
 
     /** Push/pull/legs on three days: allowed, and honest about what it trades. */
@@ -630,12 +778,18 @@ object ProgramGenerator {
      * muscle no step can serve is dropped - the plan degrades honestly.
      * Returns true when the session ceilings, not the targets, ended the fill.
      */
-    private fun fillDeficits(ctx: Ctx, sessions: List<Draft>, targetOf: (Muscle) -> Double): Boolean {
+    private fun fillDeficits(
+        ctx: Ctx,
+        sessions: List<Draft>,
+        muscles: List<Muscle> = ProgramRules.TRACKED,
+        frequency: Boolean = true,
+        targetOf: (Muscle) -> Double,
+    ): Boolean {
         val skipped = mutableSetOf<Muscle>()
         var capacityBlocked = false
         repeat(MAX_FILL_STEPS) {
             val volume = weeklyVolumeOf(sessions)
-            val muscle = ProgramRules.TRACKED
+            val muscle = muscles
                 .filter { it !in skipped && targetOf(it) > 0.0 }
                 .map { it to (targetOf(it) - (volume[it] ?: 0.0)) }
                 // Filled to the floor itself: the coverage map calls 11.6 of
@@ -644,10 +798,10 @@ object ProgramGenerator {
                 .filter { it.second > 1e-9 }
                 .maxWithOrNull(
                     compareBy<Pair<Muscle, Double>>({ it.second / targetOf(it.first) })
-                        .thenBy { -ProgramRules.TRACKED.indexOf(it.first) },
+                        .thenBy { -muscles.indexOf(it.first) },
                 )
                 ?.first ?: return capacityBlocked
-            when (growOnce(ctx, sessions, muscle, targetOf)) {
+            when (growOnce(ctx, sessions, muscle, frequency, targetOf)) {
                 Grow.GREW -> Unit
                 Grow.NO_ROOM -> { capacityBlocked = true; skipped += muscle }
                 Grow.NO_MOVEMENT -> skipped += muscle
@@ -655,6 +809,15 @@ object ProgramGenerator {
         }
         return capacityBlocked
     }
+
+    /**
+     * Fill target for the helper phase: helpers aim at their floor, every
+     * major keeps its own target so [overflows] and the waste ordering still
+     * judge collateral on the majors correctly. [sessionsShare] splits the
+     * weekly figure across the sessions assumed to carry it.
+     */
+    private fun floorOrTarget(ctx: Ctx, muscle: Muscle, sessionsShare: Double): Double =
+        (if (muscle in ProgramRules.HELPERS) ProgramRules.HELPER_FLOOR_SETS else ctx.targetFor(muscle)) / sessionsShare
 
     private enum class Grow { GREW, NO_ROOM, NO_MOVEMENT }
 
@@ -664,7 +827,13 @@ object ProgramGenerator {
     private fun share(name: String, muscle: Muscle): Double =
         MuscleMap.profile(name)?.muscles?.get(muscle) ?: 0.0
 
-    private fun growOnce(ctx: Ctx, sessions: List<Draft>, muscle: Muscle, targetOf: (Muscle) -> Double): Grow {
+    private fun growOnce(
+        ctx: Ctx,
+        sessions: List<Draft>,
+        muscle: Muscle,
+        frequency: Boolean,
+        targetOf: (Muscle) -> Double,
+    ): Grow {
         val fitting = sessions.filter { s ->
             ctx.pool.any { groupFitsSession(s.role, it.muscleGroup) && share(it.name, muscle) >= 0.5 }
         }
@@ -728,7 +897,7 @@ object ProgramGenerator {
 
         // 1. Frequency: a second session for the muscle before more sets in one.
         val trainedIn = fitting.count { s -> s.entries.any { share(it.exerciseName, muscle) >= 0.5 } }
-        if (trainedIn < minOf(2, fitting.size)) {
+        if (frequency && trainedIn < minOf(2, fitting.size)) {
             for (s in bySpaceOf(ctx, fitting)) {
                 if (s.entries.any { share(it.exerciseName, muscle) >= 0.5 }) continue
                 if (addNew(s, Double.MAX_VALUE)) return Grow.GREW
@@ -858,15 +1027,17 @@ object ProgramGenerator {
      * always named, even at a 0.5 share.
      */
     private fun muscleWhy(exercise: Exercise, muscle: Muscle, ctx: Ctx, deficit: Double): String {
-        val range = ctx.targetRange
+        val target = if (muscle in ProgramRules.HELPERS) {
+            "floor ${fmtSets(ProgramRules.HELPER_FLOOR_SETS)}"
+        } else {
+            "target ${ctx.targetRange.start.toInt()}-${ctx.targetRange.endInclusive.toInt()}"
+        }
         // A sub-set shortfall is indirect-share noise; say so instead of
         // printing "0.1 sets".
         val shortfall = if (deficit < 0.5) {
-            "Your week is just under target on ${muscle.label.lowercase()} " +
-                "(target ${range.start.toInt()}-${range.endInclusive.toInt()})"
+            "Your week is just under target on ${muscle.label.lowercase()} ($target)"
         } else {
-            "Your week was ${setsPhrase(deficit)} short on " +
-                "${muscle.label.lowercase()} (target ${range.start.toInt()}-${range.endInclusive.toInt()})"
+            "Your week was ${setsPhrase(deficit)} short on ${muscle.label.lowercase()} ($target)"
         }
         val priority = if (muscle in ctx.priorityMuscles) {
             "Priority muscle you picked. $shortfall"
@@ -930,9 +1101,18 @@ object ProgramGenerator {
                 .sortedWith(
                     compareByDescending<Pair<Muscle, Double>> { it.second }
                         .thenBy { ProgramRules.TRACKED.indexOf(it.first) },
-                )
+                ) +
+                // Helpers after every major: their whole floor fits one session.
+                ProgramRules.HELPERS
+                    .map { it to ProgramRules.HELPER_FLOOR_SETS - (existing[it] ?: 0.0) }
+                    .filter { it.second > 0.01 }
             for ((muscle, weeklyDeficit) in under) {
-                val deficit = minOf(weeklyDeficit, ctx.targetFor(muscle) / dose)
+                val deficit = if (muscle in ProgramRules.HELPERS) {
+                    weeklyDeficit - (weeklyVolumeOf(listOf(draft))[muscle] ?: 0.0)
+                } else {
+                    minOf(weeklyDeficit, ctx.targetFor(muscle) / dose)
+                }
+                if (deficit <= 0.01) continue
                 if (draft.entries.size >= ctx.cap) break
                 // Prefer a movement whose other main muscles still want sets:
                 // a dip for triceps also loads a chest the week already
@@ -963,6 +1143,9 @@ object ProgramGenerator {
             // draft, so adding the existing week's volume to the target (as
             // this once did) overshot every muscle the week already trained.
             fillDeficits(ctx, listOf(draft)) { muscle -> ctx.targetFor(muscle) / 2.0 }
+            fillDeficits(ctx, listOf(draft), ProgramRules.HELPERS, frequency = false) { muscle ->
+                floorOrTarget(ctx, muscle, sessionsShare = 2.0)
+            }
         }
         if (draft.entries.isEmpty()) return null
         return PlannedPreset(
@@ -1148,14 +1331,14 @@ object ProgramGenerator {
                 val exercise = pool.firstOrNull { it.name.equals(name, ignoreCase = true) }
                     ?: catalogue.firstOrNull { it.name.equals(name, ignoreCase = true) }
                 if (exercise != null) {
-                    val filled = fillLoad(exercise, strength, reps, rir)
+                    val filled = fillLoad(exercise, strength, reps, rir, request.equipment)
                     if (filled != null) {
-                        load = filled.first
-                        loadNote = filled.second
+                        load = filled.kg
+                        loadNote = filled.note
                         changes += PlanChange(
                             PlanChange.Kind.LOAD_SET, name,
                             "No load was set, so this one comes from your own logged lifts " +
-                                "(${filled.second}) - Zourdos 2016",
+                                "(${filled.note}) - Zourdos 2016",
                         )
                     }
                 }

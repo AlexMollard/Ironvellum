@@ -45,6 +45,8 @@ object Seed {
         ExerciseEntity(name = "Nordic Curl", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
         ExerciseEntity(name = "Knee-to-Wall Dorsiflexion", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
         ExerciseEntity(name = "Glute Bridge", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
+        ExerciseEntity(name = "Back Extension", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
+        ExerciseEntity(name = "Cossack Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
         ExerciseEntity(name = "Deadlift", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         ExerciseEntity(name = "Romanian Deadlift", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         ExerciseEntity(name = "Front Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),

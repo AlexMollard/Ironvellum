@@ -67,6 +67,8 @@ object MovementDifficulty {
         "single-leg calf raise" to 1,
         "knee-to-wall dorsiflexion" to 1,
         "glute bridge" to 1,
+        "back extension" to 1,
+        "cossack squat" to 2,
         "romanian deadlift" to 2,
         "front squat" to 2,
         "hip thrust" to 2,

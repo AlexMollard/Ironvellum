@@ -4,7 +4,7 @@ package com.ironvellum.app.domain
  * Six hand-authored programs, keyed by split and goal - full body, upper/
  * lower and push/pull/legs for muscle; full body, upper/lower and a
  * heavy/light week for strength - written for a full gym and adapted on
- * [build] to HOME_WEIGHTS and BODYWEIGHT by substituting each disallowed
+ * [build] to any gear set ([Equipment], via [GearRequirements]) by substituting each disallowed
  * movement with the allowed movement of the closest [MuscleMap] profile and
  * the same pattern (a strength main lift becomes the closest pattern
  * equivalent, and its `why` says so). At its authored volume the weekly
@@ -312,7 +312,7 @@ object ProgramTemplates {
     fun build(
         template: ProgramTemplate,
         volume: VolumeLevel,
-        equipment: EquipmentAccess,
+        equipment: Equipment,
         catalogue: List<Exercise>,
         strength: StrengthProfile,
     ): RoutinePlan {
@@ -336,10 +336,20 @@ object ProgramTemplates {
                     substituted = true
                 }
                 used += exercise.name
-                val load = ProgramGenerator.fillLoad(exercise, strength, entry.reps, rir)
+                // The dumbbell cap lives in fillWithCap: an over-cap movement
+                // becomes its harder variant when the pool has one.
+                val (filledExercise, load) = ProgramGenerator.fillWithCap(
+                    exercise, pool, strength, entry.reps, rir, equipment,
+                )
+                val capSwapped = filledExercise !== exercise
+                if (capSwapped) used += filledExercise.name
+                exercise = filledExercise
                 val isMainLift = exercise.name.trim().lowercase() in
                     setOf("back squat", "bench press", "deadlift", "overhead press")
-                val why = if (substituted) {
+                val why = if (capSwapped) {
+                    "Your dumbbell cannot load the ${entry.exerciseName} near failure, so the " +
+                        "${exercise.name} takes over: the same pattern, harder to move - Lopez 2021"
+                } else if (substituted) {
                     "Your equipment has no ${entry.exerciseName}, so the ${exercise.name} takes " +
                         "over: closest match in movement pattern and muscles - Kikuchi 2017; Calatayud 2015"
                 } else if (template.focus == TrainingFocus.STRENGTH && isMainLift) {
@@ -358,8 +368,9 @@ object ProgramTemplates {
                 }
                 entry.copy(
                     exerciseName = exercise.name,
-                    targetWeightKg = load?.first,
-                    loadNote = load?.second,
+                    reps = load?.reps ?: entry.reps,
+                    targetWeightKg = load?.kg,
+                    loadNote = load?.note,
                     why = why,
                 )
             }

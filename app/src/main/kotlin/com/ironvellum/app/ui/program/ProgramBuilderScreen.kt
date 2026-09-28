@@ -43,7 +43,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.ProgramAnswers
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
-import com.ironvellum.app.domain.EquipmentAccess
+import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.MuscleArea
@@ -121,7 +121,7 @@ class ProgramBuilderViewModel(
     // generated plan survives rotation the same way the editor's does.
     val focus = MutableStateFlow(TrainingFocus.GENERAL)
     val tier = MutableStateFlow(VolumeLevel.LOW)
-    val equipment = MutableStateFlow(EquipmentAccess.FULL_GYM)
+    val equipment = MutableStateFlow(Equipment.FULL_GYM)
     val daysPerWeek = MutableStateFlow(4)
     val split = MutableStateFlow(TrainingSplit.UPPER_LOWER)
     val priorities = MutableStateFlow<Set<MuscleArea>>(emptySet())
@@ -591,15 +591,7 @@ fun ProgramBuilderScreen(
         }
 
         QuestionPanel("WHAT YOU HAVE ACCESS TO") {
-            InkSegmented(
-                options = listOf(
-                    EquipmentAccess.BODYWEIGHT to "No gear",
-                    EquipmentAccess.HOME_WEIGHTS to "Home gym",
-                    EquipmentAccess.FULL_GYM to "Full gym",
-                ),
-                selected = equipment,
-                onPick = { viewModel.equipment.value = it },
-            )
+            GearPicker(equipment = equipment, onChange = { viewModel.equipment.value = it })
         }
 
         if (mode != "template") {

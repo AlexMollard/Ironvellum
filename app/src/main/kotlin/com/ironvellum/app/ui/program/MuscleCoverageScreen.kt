@@ -34,6 +34,7 @@ import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
+import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
@@ -171,7 +172,8 @@ fun MuscleCoverageScreen(
     val volume = remember(presets) { ProgramRules.weeklyVolume(presets) }
     val target = ProgramRules.weeklySetTarget(ui.tier, ui.focus)
     val tracked = ProgramRules.TRACKED.sortedBy { volume[it] ?: 0.0 }
-    val underCount = tracked.count { coverageLevel(volume[it] ?: 0.0, target).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE } }
+    val helpers = ProgramRules.HELPERS.sortedBy { volume[it] ?: 0.0 }
+    val underCount = coverageGaps(volume, target).size
     val empty = if (view == CoverageView.PLANNED) !ui.hasAnyPreset else !ui.hasLoggedWeek
     val unattributed = if (view == CoverageView.PLANNED) ui.unattributedPlannedSets else ui.unattributedLoggedSets
 
@@ -250,93 +252,20 @@ fun MuscleCoverageScreen(
         Spacer(Modifier.height(12.dp))
 
         SectionHeader("Sets per muscle")
-        tracked.forEach { muscle ->
-            val sets = volume[muscle] ?: 0.0
-            val level = coverageLevel(sets, target)
-            val verdict = when (level) {
-                CoverageLevel.NONE -> "UNTRAINED"
-                CoverageLevel.UNDER -> "UNDER"
-                CoverageLevel.IN_RANGE -> "IN RANGE"
-                CoverageLevel.OVER -> "OVER"
-            }
-            val colour = when (level) {
-                CoverageLevel.IN_RANGE -> IronvellumColors.SystemGreen
-                CoverageLevel.OVER -> IronvellumColors.SovereignGold
-                else -> IronvellumColors.DangerRed
-            }
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    muscle.label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.Ink,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    "${trimSets(sets)} / ${trimSets(target.start)}-${trimSets(target.endInclusive)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    verdict,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = colour,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-            }
-        }
+        tracked.forEach { muscle -> MuscleRow(muscle, volume[muscle] ?: 0.0, target) }
 
-        // Never judged against a range, but still flagged when nothing
-        // trains them: without this list a lifter reads the grey forearms
-        // and lower back on the map as "missing".
+        // Judged against a floor, not the range: see ProgramRules.HELPERS.
         Spacer(Modifier.height(12.dp))
-        SectionHeader("No target of their own")
+        SectionHeader("Helper muscles")
         Text(
-            "Your other lifts work these - presses the front delts, pulls and hangs the forearms, " +
-                "hinges the lower back - so they get no weekly target, only a flag when nothing trains them.",
+            "Your other lifts do most of this work - presses the front delts, every grip the forearms, " +
+                "hinges the lower back, squats the adductors. No study sets a dose for them, so they " +
+                "need a floor of ${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week, not a range.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
-        UNJUDGED.forEach { muscle ->
-            val sets = volume[muscle] ?: 0.0
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    muscle.label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.Ink,
-                    modifier = Modifier.weight(1f),
-                )
-                Text(
-                    trimSets(sets),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    if (sets > 0.0) "WORKED" else "UNTRAINED",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = if (sets > 0.0) IronvellumColors.InkMuted else IronvellumColors.DangerRed,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-            }
-        }
+        helpers.forEach { muscle -> MuscleRow(muscle, volume[muscle] ?: 0.0, ProgramRules.HELPER_RANGE) }
 
         if (underCount > 0) {
             Spacer(Modifier.height(12.dp))
@@ -353,6 +282,56 @@ fun MuscleCoverageScreen(
             )
         }
         Spacer(Modifier.height(20.dp))
+    }
+}
+
+/** One muscle's sets against its range; an open-ended floor reads "3+". */
+@Composable
+private fun MuscleRow(muscle: Muscle, sets: Double, range: ClosedFloatingPointRange<Double>) {
+    val level = coverageLevel(sets, range)
+    val verdict = when (level) {
+        CoverageLevel.NONE -> "UNTRAINED"
+        CoverageLevel.UNDER -> "UNDER"
+        CoverageLevel.IN_RANGE -> "IN RANGE"
+        CoverageLevel.OVER -> "OVER"
+    }
+    val colour = when (level) {
+        CoverageLevel.IN_RANGE -> IronvellumColors.SystemGreen
+        CoverageLevel.OVER -> IronvellumColors.SovereignGold
+        else -> IronvellumColors.DangerRed
+    }
+    val bound = if (range.endInclusive == Double.MAX_VALUE) {
+        "${trimSets(range.start)}+"
+    } else {
+        "${trimSets(range.start)}-${trimSets(range.endInclusive)}"
+    }
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            muscle.label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.Ink,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            "${trimSets(sets)} / $bound",
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            verdict,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = colour,
+            letterSpacing = IronvellumTracking.InlineLabel,
+        )
     }
 }
 

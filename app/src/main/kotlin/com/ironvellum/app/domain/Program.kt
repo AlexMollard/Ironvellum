@@ -7,8 +7,40 @@ package com.ironvellum.app.domain
  * ([Evidence]) behind every number it uses.
  */
 
-/** Where the load comes from. Mirrors the exercise picker's facets. */
-enum class EquipmentAccess { BODYWEIGHT, HOME_WEIGHTS, FULL_GYM }
+/**
+ * One piece of gear the lifter owns, one toggle each: coarse levels hid the
+ * real answer ("pull-up bar but no rings, parallettes, a 24 kg dumbbell").
+ * Machines and cables are never toggles - they only come with a full gym.
+ */
+enum class Gear(val label: String) {
+    PULL_UP_BAR("Pull-up bar"),
+    DIP_BARS("Dip bars"),
+    PARALLETTES("Parallettes"),
+    RINGS("Rings"),
+    DUMBBELLS("Dumbbells"),
+    BARBELL("Barbell & rack"),
+    BENCH("Bench"),
+    AB_WHEEL("Ab wheel"),
+}
+
+/**
+ * What the lifter can train with. [fullGym] means everything, machines and
+ * cables included, with no dumbbell cap. [dumbbellMaxKg] is the per-dumbbell
+ * ceiling; null means no cap (full gym, or never answered). [dumbbellPair]
+ * is false when the lifter owns a single dumbbell, which rules out the
+ * two-dumbbell presses and flys.
+ */
+data class Equipment(
+    val fullGym: Boolean,
+    val gear: Set<Gear> = emptySet(),
+    val dumbbellMaxKg: Double? = null,
+    val dumbbellPair: Boolean = true,
+) {
+    companion object {
+        val FULL_GYM = Equipment(fullGym = true, gear = Gear.entries.toSet())
+        val NOTHING = Equipment(fullGym = false)
+    }
+}
 
 /** What the lifter is training for; decides rep ranges, rest and slot mix. */
 enum class TrainingFocus { STRENGTH, MUSCLE, SKILL, GENERAL }
@@ -146,7 +178,7 @@ data class RoutinePlan(val presets: List<PlannedPreset>)
 data class ProgramRequest(
     val focus: TrainingFocus,
     val volume: VolumeLevel,
-    val equipment: EquipmentAccess,
+    val equipment: Equipment,
     /** Week mode only; clamped to 1..6. */
     val daysPerWeek: Int = 3,
     val priorities: Set<MuscleArea> = emptySet(),

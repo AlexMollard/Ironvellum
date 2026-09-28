@@ -42,7 +42,7 @@ class ProgramGeneratorTest {
             MovementDifficulty.loadFactor(name) < MovementDifficulty.FREE_WEIGHT_LOAD
 
     private fun allPlans(): List<RoutinePlan> =
-        EquipmentAccess.entries.flatMap { eq ->
+        listOf(Equipment.NOTHING, Equipment(fullGym = false, gear = Gear.entries.toSet()), Equipment.FULL_GYM).flatMap { eq ->
             TrainingFocus.entries.map { focus ->
                 ProgramGenerator.week(
                     ProgramRequest(focus, VolumeLevel.STANDARD, eq, daysPerWeek = 4),
@@ -52,7 +52,7 @@ class ProgramGeneratorTest {
             }
         } + (2..6).map { days ->
             ProgramGenerator.week(
-                ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.HIGH, EquipmentAccess.FULL_GYM, days),
+                ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.HIGH, Equipment.FULL_GYM, days),
                 catalogue,
                 strength,
             )
@@ -70,7 +70,7 @@ class ProgramGeneratorTest {
         // budget they cannot all reach 12 sets. The plan must stay finishable
         // and say which muscles land short, rather than silently padding.
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM,
             daysPerWeek = 3, priorities = setOf(MuscleArea.ARMS),
         )
         val plan = ProgramGenerator.week(request, catalogue, strength)
@@ -108,7 +108,7 @@ class ProgramGeneratorTest {
         // of 12; a plan that shows UNDER there without saying so here reads
         // as a generator bug rather than an honest capacity limit.
         for (tier in VolumeLevel.entries) {
-            for (equipment in EquipmentAccess.entries) {
+            for (equipment in listOf(Equipment.NOTHING, Equipment(fullGym = false, gear = Gear.entries.toSet()), Equipment.FULL_GYM)) {
                 for ((split, days) in TrainingSplit.OPTIONS) {
                     val plan = ProgramGenerator.week(
                         ProgramRequest(TrainingFocus.MUSCLE, tier, equipment, days, split = split), catalogue, strength,
@@ -133,7 +133,7 @@ class ProgramGeneratorTest {
         // rest 90 s where compounds rest 150 s. A flat 24-set cap left five
         // upper muscles at 10.5-11 sets while the lower days ended early.
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM, 4,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4,
         )
         val plan = ProgramGenerator.week(request, catalogue, strength)
         plan.presets.forEach { preset ->
@@ -148,7 +148,7 @@ class ProgramGeneratorTest {
     @Test
     fun `push days carry no pulling and pull days carry no pressing`() {
         val plan = ProgramGenerator.week(
-            ProgramRequest(TrainingFocus.MUSCLE, VolumeLevel.HIGH, EquipmentAccess.FULL_GYM, 6),
+            ProgramRequest(TrainingFocus.MUSCLE, VolumeLevel.HIGH, Equipment.FULL_GYM, 6),
             catalogue, strength,
         )
         val forbidden = mapOf("Push" to MuscleGroup.PULL, "Pull" to MuscleGroup.PUSH)
@@ -166,7 +166,7 @@ class ProgramGeneratorTest {
     @Test
     fun `intermediate muscle five days with an arms priority lands every tracked muscle in range`() {
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM,
             daysPerWeek = 5, priorities = setOf(MuscleArea.ARMS),
         )
         val plan = ProgramGenerator.week(request, catalogue, strength)
@@ -286,7 +286,7 @@ class ProgramGeneratorTest {
     @Test
     fun `improve raises sets on a covered muscle the week leaves short and stays idempotent`() {
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM,
         )
         val lower = PlannedPreset("Lower", "", 2, listOf(
             PlannedEntry("Back Squat", 3, 8, null),
@@ -321,7 +321,7 @@ class ProgramGeneratorTest {
     @Test
     fun `beginner strength at home practises the main lifts full body`() {
         val request = ProgramRequest(
-            TrainingFocus.STRENGTH, VolumeLevel.LOW, EquipmentAccess.HOME_WEIGHTS,
+            TrainingFocus.STRENGTH, VolumeLevel.LOW, Equipment(fullGym = false, gear = Gear.entries.toSet()),
             daysPerWeek = 3,
         )
         val plan = ProgramGenerator.week(request, catalogue, strength)
@@ -368,7 +368,7 @@ class ProgramGeneratorTest {
     @Test
     fun `auto session builds around the most under-served tracked muscles`() {
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM,
         )
         // A week that serves chest in full and everything else partly,
         // except hamstrings (nearly untrained) and calves (untrained).
@@ -419,7 +419,7 @@ class ProgramGeneratorTest {
         // 12. Measuring a per-session share against the weekly volume called
         // that week complete and built nothing ("cannot fill this workout").
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM, 4,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4,
         )
         val week = ProgramGenerator.week(request, catalogue, strength).presets
         val before = ProgramRules.weeklyVolume(week)
@@ -441,7 +441,7 @@ class ProgramGeneratorTest {
     @Test
     fun `auto session builds nothing when the week already meets every target`() {
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.LOW, EquipmentAccess.FULL_GYM, 5,
+            TrainingFocus.MUSCLE, VolumeLevel.LOW, Equipment.FULL_GYM, 5,
         )
         // The generated week twice over: every tracked muscle past target.
         val once = ProgramGenerator.week(request, catalogue, strength).presets
@@ -461,12 +461,12 @@ class ProgramGeneratorTest {
     fun `bodyweight plans never prescribe a loaded movement and never run empty`() {
         for (days in 2..6) for (focus in TrainingFocus.entries) {
             val plan = ProgramGenerator.week(
-                ProgramRequest(focus, VolumeLevel.STANDARD, EquipmentAccess.BODYWEIGHT, days),
+                ProgramRequest(focus, VolumeLevel.STANDARD, Equipment.NOTHING, days),
                 catalogue, strength,
             )
             val names = entriesOf(plan).map { it.exerciseName }
             assertTrue("plan empty for $focus/$days", names.isNotEmpty())
-            names.forEach { assertFalse("loaded $it in a BODYWEIGHT plan", byName(it).isWeighted) }
+            names.forEach { assertFalse("loaded $it in a no-gear plan", byName(it).isWeighted) }
         }
     }
 
@@ -474,12 +474,12 @@ class ProgramGeneratorTest {
     fun `home weights plans never prescribe a machine`() {
         for (days in 2..6) for (focus in TrainingFocus.entries) {
             val plan = ProgramGenerator.week(
-                ProgramRequest(focus, VolumeLevel.LOW, EquipmentAccess.HOME_WEIGHTS, days),
+                ProgramRequest(focus, VolumeLevel.LOW, Equipment(fullGym = false, gear = Gear.entries.toSet()), days),
                 catalogue, strength,
             )
             val names = entriesOf(plan).map { it.exerciseName }
             assertTrue("plan empty for $focus/$days", names.isNotEmpty())
-            names.forEach { assertFalse("machine $it in a HOME_WEIGHTS plan", isMachine(it)) }
+            names.forEach { assertFalse("machine $it in a gear-set plan", isMachine(it)) }
         }
     }
 
@@ -509,7 +509,7 @@ class ProgramGeneratorTest {
     fun `day count matches the request and days never collide`() {
         for ((split, days) in TrainingSplit.OPTIONS) {
             val plan = ProgramGenerator.week(
-                ProgramRequest(TrainingFocus.MUSCLE, VolumeLevel.HIGH, EquipmentAccess.FULL_GYM, days, split = split),
+                ProgramRequest(TrainingFocus.MUSCLE, VolumeLevel.HIGH, Equipment.FULL_GYM, days, split = split),
                 catalogue, strength,
             )
             assertEquals(days, plan.presets.size)
@@ -524,7 +524,7 @@ class ProgramGeneratorTest {
     fun `push pull legs on three days builds one of each and says what it trades`() {
         val plan = ProgramGenerator.week(
             ProgramRequest(
-                TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM, 3,
+                TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 3,
                 split = TrainingSplit.PUSH_PULL_LEGS,
             ),
             catalogue, strength,
@@ -534,7 +534,7 @@ class ProgramGeneratorTest {
         assertTrue(plan.presets.first().note.contains("once a week"))
         // The default 3-day split is still full body, and it carries no such note.
         val fullBody = ProgramGenerator.week(
-            ProgramRequest(TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM, 3),
+            ProgramRequest(TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 3),
             catalogue, strength,
         )
         assertTrue(fullBody.presets.all { it.name.startsWith("Full Body") })
@@ -547,14 +547,14 @@ class ProgramGeneratorTest {
         // rests mid-week (Thursday) instead.
         for (days in 2..5) {
             val plan = ProgramGenerator.week(
-                ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM, days),
+                ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.STANDARD, Equipment.FULL_GYM, days),
                 catalogue, strength,
             )
             val scheduled = plan.presets.mapNotNull { it.scheduledDay }
             assertFalse("day 7 scheduled in a $days-day week", 7 in scheduled)
         }
         val six = ProgramGenerator.week(
-            ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM, 6),
+            ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.STANDARD, Equipment.FULL_GYM, 6),
             catalogue, strength,
         )
         val scheduled = six.presets.mapNotNull { it.scheduledDay }
@@ -610,17 +610,17 @@ class ProgramGeneratorTest {
         // muscles must not appear at two implement fits in one session
         // ("Bodyweight Squat beside Back Squat"). Unrelated isolation work
         // that merely shares the pattern bucket may differ.
-        val fit = { name: String, equipment: EquipmentAccess ->
+        val fit = { name: String, equipment: Equipment ->
             val e = byName(name)
             when {
-                equipment == EquipmentAccess.BODYWEIGHT -> 0
+                equipment == Equipment.NOTHING -> 0
                 !e.isWeighted -> 2
                 MovementDifficulty.loadFactor(name) < MovementDifficulty.FREE_WEIGHT_LOAD ||
                     name.trim().lowercase().startsWith("assisted") -> 1
                 else -> 0
             }
         }
-        for (equipment in EquipmentAccess.entries) for (focus in TrainingFocus.entries) {
+        for (equipment in listOf(Equipment.NOTHING, Equipment(fullGym = false, gear = Gear.entries.toSet()), Equipment.FULL_GYM)) for (focus in TrainingFocus.entries) {
             val plan = ProgramGenerator.week(
                 ProgramRequest(focus, VolumeLevel.HIGH, equipment, 6),
                 catalogue, strength,
@@ -648,27 +648,27 @@ class ProgramGeneratorTest {
 
     @Test
     fun `a slot the catalogue cannot fill shrinks the plan honestly`() {
-        // Only pressing movement is a pin-stack machine: BODYWEIGHT must drop
+        // Only pressing movement is a pin-stack machine: no gear must drop
         // the slots rather than prescribe it.
         val fixture = listOf(
             Exercise(name = "Machine Chest Press", muscleGroup = MuscleGroup.PUSH, isWeighted = true),
-            Exercise(name = "Inverted Row", muscleGroup = MuscleGroup.PULL, isWeighted = false),
+            Exercise(name = "Door Sheet Row", muscleGroup = MuscleGroup.PULL, isWeighted = false),
             Exercise(name = "Glute Bridge", muscleGroup = MuscleGroup.LEGS, isWeighted = false),
             Exercise(name = "Hanging Knee Raise", muscleGroup = MuscleGroup.CORE, isWeighted = false),
         )
         val plan = ProgramGenerator.week(
-            ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.LOW, EquipmentAccess.BODYWEIGHT, 4),
+            ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.LOW, Equipment.NOTHING, 4),
             fixture, StrengthProfile(emptyMap()),
         )
         val names = entriesOf(plan).map { it.exerciseName }
         assertFalse("machine slipped into a BODYWEIGHT plan", "Machine Chest Press" in names)
-        assertTrue("plan shrank to nothing", "Inverted Row" in names)
+        assertTrue("plan shrank to nothing", "Door Sheet Row" in names)
     }
 
     @Test
     fun `stretch-biased movements win the isolation slots`() {
         val plan = ProgramGenerator.week(
-            ProgramRequest(TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM, 4),
+            ProgramRequest(TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4),
             catalogue, strength,
         )
         val entries = entriesOf(plan)
@@ -686,7 +686,7 @@ class ProgramGeneratorTest {
     fun `prioritised muscles get more volume than unprioritised ones`() {
         val prioritised = ProgramGenerator.week(
             ProgramRequest(
-                TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM, 4,
+                TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4,
                 priorities = setOf(MuscleArea.SHOULDERS),
             ),
             catalogue, strength,
@@ -702,8 +702,11 @@ class ProgramGeneratorTest {
 
     @Test
     fun `skill plans draw compounds from the skill tree at accessible tiers`() {
+        // A calisthenics kit: with no gear at all the only horizontal pull
+        // is the catalogue's door sheet row, which the tree does not own.
+        val kit = Equipment(fullGym = false, gear = setOf(Gear.PULL_UP_BAR, Gear.RINGS, Gear.PARALLETTES, Gear.DIP_BARS))
         val plan = ProgramGenerator.week(
-            ProgramRequest(TrainingFocus.SKILL, VolumeLevel.STANDARD, EquipmentAccess.BODYWEIGHT, 6),
+            ProgramRequest(TrainingFocus.SKILL, VolumeLevel.STANDARD, kit, 6),
             catalogue, strength,
         )
         val compounds = entriesOf(plan)
@@ -722,7 +725,7 @@ class ProgramGeneratorTest {
     @Test
     fun `generator is deterministic`() {
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM, 4,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4,
             priorities = setOf(MuscleArea.ARMS),
         )
         val a = ProgramGenerator.week(request, catalogue, strength)
@@ -735,7 +738,7 @@ class ProgramGeneratorTest {
     @Test
     fun `improve moves reps into range swaps to the long-length twin adds calves and passes unknowns through`() {
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM,
         )
         val sissy = PlannedEntry("Spanish Squat", 3, 12, null, modifiers = "tempo", why = "CSV import")
         val legs = PlannedPreset(
@@ -802,7 +805,7 @@ class ProgramGeneratorTest {
     @Test
     fun `improve never swaps a strength main lift and is idempotent there too`() {
         val request = ProgramRequest(
-            TrainingFocus.STRENGTH, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM,
+            TrainingFocus.STRENGTH, VolumeLevel.STANDARD, Equipment.FULL_GYM,
         )
         val push = PlannedPreset(
             "Push", "", 1,
@@ -843,7 +846,7 @@ class ProgramGeneratorTest {
     @Test
     fun `improve removes duplicates beyond need`() {
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM,
         )
         val upper = PlannedPreset(
             "Upper", "", 1,
@@ -880,7 +883,7 @@ class ProgramGeneratorTest {
         // and a lateral raise (leg isolation read as "upper" scope) and cut the
         // seated calf raise beside a 5-set standing one, dropping calves under.
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM, 4,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4,
         )
         val week = ProgramGenerator.week(request, catalogue, strength).presets
         val lower = week.first { it.name == "Lower A" }
@@ -907,7 +910,7 @@ class ProgramGeneratorTest {
     @Test
     fun `single session kinds respect the requested role`() {
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, EquipmentAccess.FULL_GYM,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM,
         )
         val lower = ProgramGenerator.session(
             request, SessionKind.LOWER, 5, emptyList(), catalogue, strength,
@@ -922,5 +925,179 @@ class ProgramGeneratorTest {
         assertTrue("lower session did not open with a lower-body pattern", first in setOf(
             MovementPattern.SQUAT, MovementPattern.HINGE,
         ))
+    }
+
+    // ----------------------------------------------------- gear toggles
+
+    /** The owner's real kit: a bar, parallettes, one 24 kg dumbbell. */
+    private val ownerKit = Equipment(
+        fullGym = false,
+        gear = setOf(Gear.PULL_UP_BAR, Gear.PARALLETTES, Gear.DUMBBELLS),
+        dumbbellMaxKg = 24.0,
+        dumbbellPair = false,
+    )
+
+    private val benchRequiring =
+        setOf("Bench Press", "Incline Bench Press", "Close-Grip Bench Press",
+            "Dumbbell Bench Press", "Incline Dumbbell Press", "Dumbbell Fly")
+
+    private val pairOnlyDumbbell = setOf("Dumbbell Bench Press", "Incline Dumbbell Press", "Dumbbell Fly")
+
+    @Test
+    fun `generated weeks lift every helper muscle to its floor or name it`() {
+        val kits = listOf(Equipment.FULL_GYM, Equipment.NOTHING, ownerKit)
+        for (kit in kits) for ((split, days) in TrainingSplit.OPTIONS) for (focus in TrainingFocus.entries) {
+            val plan = ProgramGenerator.week(
+                ProgramRequest(focus, VolumeLevel.STANDARD, kit, daysPerWeek = days, split = split),
+                catalogue, strength,
+            )
+            val volume = volumeOf(plan)
+            val notes = plan.presets.joinToString(" ") { it.note }.lowercase()
+            for (helper in ProgramRules.HELPERS) {
+                val sets = volume[helper] ?: 0.0
+                assertTrue(
+                    "${helper.label} at $sets sets, under the floor and unnamed ($kit/$split$days/$focus)",
+                    sets >= ProgramRules.HELPER_FLOOR_SETS - 1e-9 || helper.label.lowercase() in notes,
+                )
+            }
+        }
+    }
+
+    /** A name the owner's kit cannot express, per the gear brief. */
+    private fun forbiddenForOwnerKit(name: String): Boolean {
+        val lower = name.lowercase()
+        return "inverted row" in lower || "australian" in lower || Regex("\\bring\\b").containsMatchIn(lower) ||
+            ("dip" in lower && lower != "bench dip") || "barbell" in lower ||
+            name in benchRequiring || name in pairOnlyDumbbell || isMachine(name)
+    }
+
+    @Test
+    fun `the owner kit never prescribes gear the lifter does not have`() {
+        for ((split, days) in TrainingSplit.OPTIONS) {
+            for (focus in TrainingFocus.entries) {
+                for (volume in VolumeLevel.entries) {
+                    val plan = ProgramGenerator.week(
+                        ProgramRequest(focus, volume, ownerKit, daysPerWeek = days, split = split),
+                        catalogue, strength,
+                    )
+                    assertTrue("empty plan for $split/$focus/$volume", plan.presets.isNotEmpty())
+                    entriesOf(plan).forEach { entry ->
+                        assertFalse(
+                            "forbidden ${entry.exerciseName} for the owner kit ($split/$focus/$volume)",
+                            forbiddenForOwnerKit(entry.exerciseName),
+                        )
+                    }
+                }
+            }
+        }
+        for (template in ProgramTemplates.ALL) {
+            for (volume in VolumeLevel.entries) {
+                val plan = ProgramTemplates.build(template, volume, ownerKit, catalogue, strength)
+                assertTrue("empty template build ${template.id}/$volume", plan.presets.isNotEmpty())
+                plan.presets.flatMap { it.entries }.forEach { entry ->
+                    assertFalse(
+                        "forbidden ${entry.exerciseName} in ${template.id} for the owner kit",
+                        forbiddenForOwnerKit(entry.exerciseName),
+                    )
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `nothing gear excludes bar moves and every loaded movement`() {
+        for (days in 2..6) for (focus in TrainingFocus.entries) {
+            val plan = ProgramGenerator.week(
+                ProgramRequest(focus, VolumeLevel.STANDARD, Equipment.NOTHING, days),
+                catalogue, strength,
+            )
+            val names = entriesOf(plan).map { it.exerciseName }
+            assertTrue("plan empty for $focus/$days", names.isNotEmpty())
+            names.forEach { name ->
+                assertFalse("loaded $name with no gear", byName(name).isWeighted)
+                val lower = name.lowercase()
+                assertFalse(
+                    "bar move $name with no gear",
+                    "pull-up" in lower || "chin-up" in lower || "hang" in lower ||
+                        "hanging" in lower || "toes-to-bar" in lower || "muscle-up" in lower ||
+                        "dip" in lower && lower != "bench dip",
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `every weighted generator-eligible movement has an explicit gear row`() {
+        val names = TrainingFocus.entries
+            .flatMap { ProgramGenerator.eligible(catalogue, Equipment.FULL_GYM, it) }
+            .filter { it.isWeighted }
+            .map { it.name }
+            .toSet()
+        assertTrue(names.isNotEmpty())
+        names.forEach { name ->
+            assertTrue(
+                "$name is weighted, generator-eligible and has no GearRequirements row",
+                isMachine(name) || GearRequirements.hasEntry(name),
+            )
+        }
+    }
+
+    @Test
+    fun `dumbbell cap raises reps before hitting twenty`() {
+        // Dumbbell Row 30 x 10 -> e1RM 40; prescribed 26.7 kg at 8 reps over a
+        // 24 kg cap, and the e1RM supports 18 reps at 2 RIR on 24 kg.
+        val row = byName("Dumbbell Row")
+        val profile = ProgramRules.strengthProfile(listOf(LoggedLift("Dumbbell Row", 30.0, 10)))
+        val fill = ProgramGenerator.fillLoad(
+            row, profile, reps = 8, rir = 2,
+            equipment = ownerKit.copy(dumbbellPair = true),
+        )
+        assertNotNull(fill)
+        assertEquals(24.0, fill!!.kg, 0.001)
+        assertTrue("reps not raised to the e1RM-supported count: ${fill.reps}", fill.reps in 15..20)
+        assertTrue(fill.reps > 8)
+        assertTrue(fill.note!!.contains("Lopez 2021"))
+        assertFalse(fill.overCap)
+    }
+
+    @Test
+    fun `a single dumbbell rules out the pair-only moves`() {
+        // A bench is owned, so the only thing between the lifter and a
+        // dumbbell bench press is the second dumbbell.
+        val pair = ownerKit.copy(gear = ownerKit.gear + Gear.BENCH, dumbbellPair = true)
+        val single = pair.copy(dumbbellPair = false)
+        val withPair = ProgramGenerator.eligible(catalogue, pair, TrainingFocus.MUSCLE).map { it.name }
+        val withOne = ProgramGenerator.eligible(catalogue, single, TrainingFocus.MUSCLE).map { it.name }
+        assertTrue("fixture broken: a pair and a bench cannot press", pairOnlyDumbbell.all { it in withPair })
+        pairOnlyDumbbell.forEach { assertFalse("pair-only $it with one dumbbell", it in withOne) }
+        assertTrue("one-arm work lost with one dumbbell", "Dumbbell Row" in withOne)
+    }
+
+    @Test
+    fun `an over-cap goblet squat becomes a bulgarian split squat`() {
+        // Goblet Squat loads estimated off the logged Back Squat dwarf the 24
+        // kg dumbbell and cannot reach failure inside 20 reps on it, so the
+        // harder variant takes the movement over.
+        val pool = ProgramGenerator.eligible(catalogue, ownerKit, TrainingFocus.MUSCLE)
+        val goblet = byName("Goblet Squat")
+        val (chosen, fill) = ProgramGenerator.fillWithCap(
+            goblet, pool, strength, reps = 8, rir = 2, equipment = ownerKit,
+        )
+        assertEquals("Bulgarian Split Squat", chosen.name)
+        assertNotNull(fill)
+        assertTrue(fill!!.kg <= 48.0)
+    }
+
+    @Test
+    fun `a movement with no harder variant keeps the cap at twenty reps and says so`() {
+        val profile = ProgramRules.strengthProfile(listOf(LoggedLift("Dumbbell Row", 40.0, 5)))
+        val fill = ProgramGenerator.fillLoad(
+            byName("Dumbbell Row"), profile, reps = 8, rir = 2, equipment = ownerKit,
+        )
+        assertNotNull(fill)
+        assertEquals(24.0, fill!!.kg, 0.001)
+        assertEquals(20, fill.reps)
+        assertTrue(fill.overCap)
+        assertTrue(fill.note!!.contains("harder variant"))
     }
 }

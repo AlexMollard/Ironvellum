@@ -61,7 +61,7 @@ import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Seed
 import com.ironvellum.app.domain.BodyLimits
-import com.ironvellum.app.domain.EquipmentAccess
+import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
@@ -81,6 +81,8 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.ironvellumRepository
+import com.ironvellum.app.ui.program.EquipmentSaver
+import com.ironvellum.app.ui.program.GearPicker
 import com.ironvellum.app.ui.program.ProposedDay
 import com.ironvellum.app.ui.program.SplitPicker
 import com.ironvellum.app.ui.program.splitCaption
@@ -164,7 +166,7 @@ class OnboardingViewModel(
     private data class PlanKey(
         val daysPerWeek: Int,
         val split: TrainingSplit,
-        val equipment: EquipmentAccess,
+        val equipment: Equipment,
         val focus: TrainingFocus,
         val tier: VolumeLevel,
         val sex: Sex,
@@ -198,7 +200,7 @@ class OnboardingViewModel(
     fun ensurePlan(
         daysPerWeek: Int,
         split: TrainingSplit,
-        equipment: EquipmentAccess,
+        equipment: Equipment,
         focus: TrainingFocus,
         tier: VolumeLevel,
         sex: Sex,
@@ -256,7 +258,7 @@ class OnboardingViewModel(
     fun acceptRoutine(
         tier: VolumeLevel,
         focus: TrainingFocus,
-        equipment: EquipmentAccess,
+        equipment: Equipment,
         daysPerWeek: Int,
         split: TrainingSplit,
     ) {
@@ -350,7 +352,7 @@ fun OnboardingScreen(
     // Step 2 answers.
     var daysPerWeek by rememberSaveable { mutableIntStateOf(3) }
     var split by rememberSaveable { mutableStateOf(TrainingSplit.FULL_BODY) }
-    var equipment by rememberSaveable { mutableStateOf(EquipmentAccess.BODYWEIGHT) }
+    var equipment by rememberSaveable(stateSaver = EquipmentSaver) { mutableStateOf(Equipment.NOTHING) }
     var focus by rememberSaveable { mutableStateOf(TrainingFocus.GENERAL) }
     var tier by rememberSaveable { mutableStateOf(VolumeLevel.LOW) }
 
@@ -737,8 +739,8 @@ private fun TrainingStep(
     split: TrainingSplit,
     daysPerWeek: Int,
     onSplit: (TrainingSplit, Int) -> Unit,
-    equipment: EquipmentAccess,
-    onEquipment: (EquipmentAccess) -> Unit,
+    equipment: Equipment,
+    onEquipment: (Equipment) -> Unit,
     focus: TrainingFocus,
     onFocus: (TrainingFocus) -> Unit,
     tier: VolumeLevel,
@@ -779,28 +781,7 @@ private fun TrainingStep(
         InkPanel(Modifier.fillMaxWidth()) {
             FieldLabel("WHAT YOU HAVE ACCESS TO")
             Spacer(Modifier.height(8.dp))
-            InkSegmented(
-                options = listOf(
-                    EquipmentAccess.BODYWEIGHT to "No gear",
-                    EquipmentAccess.HOME_WEIGHTS to "Home gym",
-                    EquipmentAccess.FULL_GYM to "Full gym",
-                ),
-                selected = equipment,
-                onPick = onEquipment,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                when (equipment) {
-                    EquipmentAccess.BODYWEIGHT ->
-                        "Calisthenics: pull-up bars, rings and the floor."
-                    EquipmentAccess.HOME_WEIGHTS ->
-                        "A bar or some dumbbells at home. Loaded work, room to grow."
-                    EquipmentAccess.FULL_GYM ->
-                        "Barbells, machines and cables. The whole catalogue opens up."
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
+            GearPicker(equipment = equipment, onChange = onEquipment)
         }
         InkPanel(Modifier.fillMaxWidth()) {
             FieldLabel("WHAT YOU ARE CHASING")
@@ -864,7 +845,7 @@ private fun ProposalStep(
     viewModel: OnboardingViewModel,
     daysPerWeek: Int,
     split: TrainingSplit,
-    equipment: EquipmentAccess,
+    equipment: Equipment,
     focus: TrainingFocus,
     tier: VolumeLevel,
     sex: Sex,

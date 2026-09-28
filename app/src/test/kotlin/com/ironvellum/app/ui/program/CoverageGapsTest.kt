@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui.program
 
 import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.PlannedEntry
+import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -8,8 +10,9 @@ import org.junit.Test
 
 /**
  * The Train card's "N SHORT OR MISSING" and the coverage screen's flags: a
- * tracked muscle counts when under its range, an unjudged one (forearms,
- * lower back, front delts, adductors) only when nothing trains it at all.
+ * major muscle counts when under its range or untrained, a helper (front
+ * delts, forearms, lower back, adductors) when under its floor - and never
+ * for being over it, because a helper has no ceiling.
  */
 class CoverageGapsTest {
 
@@ -19,23 +22,24 @@ class CoverageGapsTest {
         Muscle.entries.associateWith { sets }.toMutableMap()
 
     @Test
-    fun `an unjudged muscle with no sets is a gap, with any sets it is not`() {
+    fun `a helper under its floor is a gap, at the floor it is not`() {
         val volume = everyMuscleAt(8.0)
-        volume.remove(Muscle.LOWER_BACK)
-        volume[Muscle.FOREARMS] = 0.5
-        assertEquals(listOf(Muscle.LOWER_BACK), coverageGaps(volume, target))
+        volume[Muscle.LOWER_BACK] = ProgramRules.HELPER_FLOOR_SETS - 0.5
+        volume[Muscle.ADDUCTORS] = ProgramRules.HELPER_FLOOR_SETS
+        volume.remove(Muscle.FOREARMS)
+        assertEquals(setOf(Muscle.LOWER_BACK, Muscle.FOREARMS), coverageGaps(volume, target).toSet())
     }
 
     @Test
-    fun `an unjudged muscle is never judged against the range`() {
-        // Far over the top of the range is not a gap: there is no target to exceed.
+    fun `a helper is never over - it has a floor and no ceiling`() {
         val volume = everyMuscleAt(8.0)
         volume[Muscle.FRONT_DELTS] = 30.0
         assertTrue(coverageGaps(volume, target).isEmpty())
+        assertEquals(CoverageLevel.IN_RANGE, coverageLevel(30.0, rangeFor(Muscle.FRONT_DELTS, target)))
     }
 
     @Test
-    fun `tracked muscles count when under the range or untrained`() {
+    fun `major muscles count when under the range or untrained`() {
         val volume = everyMuscleAt(8.0)
         volume[Muscle.QUADS] = 4.0
         volume.remove(Muscle.CALVES)
@@ -44,13 +48,8 @@ class CoverageGapsTest {
     }
 
     @Test
-    fun `a pull-up week no longer reads as forearms untrained`() {
-        val week = listOf(
-            com.ironvellum.app.domain.PlannedPreset(
-                "Pull", "", 1,
-                listOf(com.ironvellum.app.domain.PlannedEntry("Pull-up", 5, 5, null)),
-            ),
-        )
+    fun `a pull-up week credits the forearms`() {
+        val week = listOf(PlannedPreset("Pull", "", 1, listOf(PlannedEntry("Pull-up", 5, 5, null))))
         assertTrue((ProgramRules.weeklyVolume(week)[Muscle.FOREARMS] ?: 0.0) > 0.0)
     }
 }

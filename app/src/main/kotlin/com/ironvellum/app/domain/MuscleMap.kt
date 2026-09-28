@@ -159,6 +159,17 @@ object MuscleMap {
             muscles = mapOf(Muscle.GLUTES to 1.0, Muscle.HAMSTRINGS to 0.5),
             pattern = MovementPattern.HINGE, compound = false, stretchBias = false,
         ))
+        // Direct work for two helper muscles no bodyweight week reached:
+        // the erectors lift the torso here (prone, or over a couch edge),
+        // and the Cossack squat lengthens the adductors under load.
+        put("back extension", ExerciseProfile(
+            muscles = mapOf(Muscle.LOWER_BACK to 1.0, Muscle.GLUTES to 0.5, Muscle.HAMSTRINGS to 0.5),
+            pattern = MovementPattern.HINGE, compound = false, stretchBias = false,
+        ))
+        put("cossack squat", ExerciseProfile(
+            muscles = mapOf(Muscle.ADDUCTORS to 1.0, Muscle.QUADS to 0.5, Muscle.GLUTES to 0.5),
+            pattern = MovementPattern.LUNGE, compound = true, stretchBias = true,
+        ))
         put("deadlift", ExerciseProfile(
             muscles = mapOf(
                 Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 1.0, Muscle.LOWER_BACK to 1.0,

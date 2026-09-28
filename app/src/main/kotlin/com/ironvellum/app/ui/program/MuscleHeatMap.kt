@@ -85,31 +85,23 @@ private class Region(val muscle: Muscle, vararg points: Pair<Float, Float>) {
     val points: List<Pair<Float, Float>> = points.toList()
 }
 
-/** Muscles drawn but never judged against a range (see [untrackedFill]). */
-val UNJUDGED: List<Muscle> = Muscle.entries - ProgramRules.TRACKED.toSet()
+/** Every muscle the map judges: the ranged majors, then the floored helpers. */
+val JUDGED: List<Muscle> = ProgramRules.TRACKED + ProgramRules.HELPERS
 
 /**
- * Every muscle the week leaves short: tracked ones under their range or
- * untrained, plus unjudged ones no set touches at all. The unjudged have no
- * range to fall under, but a week that never works the lower back or
- * forearms is still a gap worth flagging.
+ * The range a muscle is judged against: the goal's weekly range for the
+ * majors, the helper floor with no ceiling for the four helpers (see
+ * ProgramRules.HELPERS) - so a pressing-heavy week is never "over" on the
+ * front delts, but a week that leaves the lower back at 1 set is under.
  */
+fun rangeFor(muscle: Muscle, target: ClosedFloatingPointRange<Double>): ClosedFloatingPointRange<Double> =
+    if (muscle in ProgramRules.HELPERS) ProgramRules.HELPER_RANGE else target
+
+/** Every judged muscle the week leaves under its range or untrained. */
 fun coverageGaps(volume: Map<Muscle, Double>, target: ClosedFloatingPointRange<Double>): List<Muscle> =
-    ProgramRules.TRACKED.filter {
-        coverageLevel(volume[it] ?: 0.0, target).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE }
-    } + UNJUDGED.filter { (volume[it] ?: 0.0) <= 0.0 }
-
-/**
- * Muscles drawn but not judged: ProgramRules does not track them (front
- * delts ride on every press, forearms, adductors and lower back ride along
- * as indirect work), so a worked one takes a dim green - trained, no verdict
- * - instead of a range colour that would call pressing-heavy weeks "over" on
- * the front delts. A neutral grey here was indistinguishable from NONE on
- * device, so worked forearms read as "missing". With no sets at all the
- * muscle IS missing, and takes NONE's fill.
- */
-private fun untrackedFill(volume: Double): Color =
-    if (volume > 0.0) IronvellumColors.SystemGreen.copy(alpha = 0.65f) else regionFill(0.0, 1.0..1.0)
+    JUDGED.filter {
+        coverageLevel(volume[it] ?: 0.0, rangeFor(it, target)).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE }
+    }
 
 private val FRONT = listOf(
     Region(Muscle.FRONT_DELTS, 0.072f to 0.132f, 0.118f to 0.140f, 0.136f to 0.170f, 0.128f to 0.205f, 0.103f to 0.196f, 0.088f to 0.165f),
@@ -224,10 +216,8 @@ private fun DrawScope.drawFigure(
     }
     drawPath(body, IronvellumColors.VaultHigh)
 
-    val tracked = ProgramRules.TRACKED.toSet()
     regions.forEach { region ->
-        val sets = volume[region.muscle] ?: 0.0
-        val fill = if (region.muscle in tracked) regionFill(sets, target) else untrackedFill(sets)
+        val fill = regionFill(volume[region.muscle] ?: 0.0, rangeFor(region.muscle, target))
         for (side in listOf(1f, -1f)) {
             val path = Path()
             smoothClosed(path, region.points.map { (x, y) -> at(x * side, y) })
@@ -281,16 +271,12 @@ private fun smoothClosed(path: Path, points: List<Offset>) {
     path.close()
 }
 
-/**
- * Screen-reader summary over the TRACKED muscles only - the untracked ones
- * are drawn but never judged, so announcing them "untrained" would be false.
- */
+/** Screen-reader summary over every judged muscle, each against its own range. */
 private fun coverageSummary(volume: Map<Muscle, Double>, target: ClosedFloatingPointRange<Double>): String {
-    val byLevel = ProgramRules.TRACKED.groupBy { coverageLevel(volume[it] ?: 0.0, target) }
+    val byLevel = JUDGED.groupBy { coverageLevel(volume[it] ?: 0.0, rangeFor(it, target)) }
     fun names(muscles: List<Muscle>) = muscles.joinToString { it.label.lowercase() }
     val parts = buildList {
-        (byLevel[CoverageLevel.NONE].orEmpty() + UNJUDGED.filter { (volume[it] ?: 0.0) <= 0.0 })
-            .takeIf { it.isNotEmpty() }?.let { add("${names(it)} untrained") }
+        byLevel[CoverageLevel.NONE]?.let { add("${names(it)} untrained") }
         byLevel[CoverageLevel.UNDER]?.let { add("${names(it)} under target") }
         byLevel[CoverageLevel.IN_RANGE]?.let { add("${names(it)} in range") }
         byLevel[CoverageLevel.OVER]?.let { add("${names(it)} over target") }

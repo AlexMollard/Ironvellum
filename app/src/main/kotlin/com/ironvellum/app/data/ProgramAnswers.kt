@@ -2,7 +2,8 @@ package com.ironvellum.app.data
 
 import android.content.Context
 import androidx.core.content.edit
-import com.ironvellum.app.domain.EquipmentAccess
+import com.ironvellum.app.domain.Equipment
+import com.ironvellum.app.domain.Gear
 import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingSplit
@@ -20,7 +21,7 @@ import kotlinx.coroutines.flow.asStateFlow
 data class ProgramAnswers(
     val volume: VolumeLevel,
     val focus: TrainingFocus,
-    val equipment: EquipmentAccess,
+    val equipment: Equipment,
     val daysPerWeek: Int,
     val priorities: Set<MuscleArea>,
     val split: TrainingSplit,
@@ -30,6 +31,9 @@ data class ProgramAnswers(
  * Process-wide store over SharedPreferences ("program_answers"). Enum names
  * travel as strings; anything missing, unknown or corrupt makes the whole
  * answer read back null - a stale hand-edited value must never crash a read.
+ * The old single "equipment" key (BODYWEIGHT / HOME_WEIGHTS / FULL_GYM) is
+ * deliberately unread: it cannot express per-item gear, so an old value
+ * reads as "no answers yet" and the builder falls back to its defaults.
  * The StateFlow mirrors the latest get/save so view models observe changes
  * without re-reading prefs, the same way OnboardingViewModel keeps its
  * dismissed flag.
@@ -40,7 +44,10 @@ object ProgramAnswersStore {
     private const val KEY_VOLUME = "volume"
     private const val KEY_SPLIT = "split"
     private const val KEY_FOCUS = "focus"
-    private const val KEY_EQUIPMENT = "equipment"
+    private const val KEY_FULL_GYM = "fullGym"
+    private const val KEY_GEAR = "gear"
+    private const val KEY_DUMBBELL_MAX = "dumbbellMaxKg"
+    private const val KEY_DUMBBELL_PAIR = "dumbbellPair"
     private const val KEY_DAYS = "daysPerWeek"
     private const val KEY_PRIORITIES = "priorities"
 
@@ -55,7 +62,17 @@ object ProgramAnswersStore {
             val volume = prefs.getString(KEY_VOLUME, null)?.let { VolumeLevel.valueOf(it) }
             val split = prefs.getString(KEY_SPLIT, null)?.let { TrainingSplit.valueOf(it) }
             val focus = prefs.getString(KEY_FOCUS, null)?.let { TrainingFocus.valueOf(it) }
-            val equipment = prefs.getString(KEY_EQUIPMENT, null)?.let { EquipmentAccess.valueOf(it) }
+            val fullGym =
+                if (prefs.contains(KEY_FULL_GYM)) prefs.getBoolean(KEY_FULL_GYM, false) else null
+            val gear = prefs.getString(KEY_GEAR, null)
+                ?.split(",")
+                ?.map { it.trim() }
+                ?.filter { it.isNotEmpty() }
+                ?.map { Gear.valueOf(it) }
+                ?.toSet()
+            val dumbbellMaxKg = prefs.getString(KEY_DUMBBELL_MAX, null)?.toDoubleOrNull()
+            val dumbbellPair =
+                if (prefs.contains(KEY_DUMBBELL_PAIR)) prefs.getBoolean(KEY_DUMBBELL_PAIR, true) else null
             val days = prefs.getInt(KEY_DAYS, -1)
             val priorities = prefs.getString(KEY_PRIORITIES, null)
                 ?.split(",")
@@ -64,9 +81,15 @@ object ProgramAnswersStore {
                 ?.map { MuscleArea.valueOf(it) }
                 ?.toSet()
                 ?: emptySet()
-            if (volume == null || split == null || focus == null || equipment == null || days !in split.dayOptions) {
+            if (volume == null || split == null || focus == null || fullGym == null || days !in split.dayOptions) {
                 null
             } else {
+                val equipment = Equipment(
+                    fullGym = fullGym,
+                    gear = gear ?: emptySet(),
+                    dumbbellMaxKg = dumbbellMaxKg,
+                    dumbbellPair = dumbbellPair ?: true,
+                )
                 ProgramAnswers(volume, focus, equipment, days, priorities, split)
             }
         }.getOrNull()
@@ -79,7 +102,11 @@ object ProgramAnswersStore {
             putString(KEY_VOLUME, answers.volume.name)
             putString(KEY_SPLIT, answers.split.name)
             putString(KEY_FOCUS, answers.focus.name)
-            putString(KEY_EQUIPMENT, answers.equipment.name)
+            putBoolean(KEY_FULL_GYM, answers.equipment.fullGym)
+            putString(KEY_GEAR, answers.equipment.gear.joinToString(",") { it.name })
+            answers.equipment.dumbbellMaxKg?.let { putString(KEY_DUMBBELL_MAX, it.toString()) }
+                ?: remove(KEY_DUMBBELL_MAX)
+            putBoolean(KEY_DUMBBELL_PAIR, answers.equipment.dumbbellPair)
             putInt(KEY_DAYS, answers.daysPerWeek)
             putString(KEY_PRIORITIES, answers.priorities.joinToString(",") { it.name })
         }

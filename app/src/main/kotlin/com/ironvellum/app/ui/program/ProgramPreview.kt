@@ -20,6 +20,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,6 +31,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.domain.Equipment
+import com.ironvellum.app.domain.Gear
 import com.ironvellum.app.domain.Improvement
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.PlannedEntry
@@ -270,16 +273,21 @@ fun WeeklyVolumePanel(
             letterSpacing = IronvellumTracking.InlineLabel,
         )
         Spacer(Modifier.height(8.dp))
-        ProgramRules.TRACKED.forEach { muscle ->
+        JUDGED.forEach { muscle ->
             val sets = volume[muscle] ?: 0.0
+            // Helpers are judged against their floor with no ceiling.
+            val range = rangeFor(muscle, target)
+            val open = range.endInclusive == Double.MAX_VALUE
+            val bound = if (open) "${trim1(range.start)}+" else "${trim1(range.start)}-${trim1(range.endInclusive)}"
+            val spoken = if (open) "at least ${trim1(range.start)}" else "${trim1(range.start)} to ${trim1(range.endInclusive)}"
             val verdict = when {
-                sets < target.start -> "UNDER"
-                sets > target.endInclusive -> "OVER"
+                sets < range.start -> "UNDER"
+                sets > range.endInclusive -> "OVER"
                 else -> "IN RANGE"
             }
             val colour = when {
-                sets < target.start -> IronvellumColors.SovereignGold
-                sets > target.endInclusive -> IronvellumColors.SovereignGold
+                sets < range.start -> IronvellumColors.SovereignGold
+                sets > range.endInclusive -> IronvellumColors.SovereignGold
                 else -> IronvellumColors.SystemGreen
             }
             Row(
@@ -290,7 +298,7 @@ fun WeeklyVolumePanel(
                     // verdict, instead of three swipes through bare fragments.
                     .semantics {
                         contentDescription =
-                            "${muscle.label}: ${trim1(sets)} sets weekly, $verdict, target ${trim1(target.start)} to ${trim1(target.endInclusive)}"
+                            "${muscle.label}: ${trim1(sets)} sets weekly, $verdict, target $spoken"
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -304,7 +312,7 @@ fun WeeklyVolumePanel(
                         .clearAndSetSemantics {},
                 )
                 Text(
-                    "${trim1(sets)} / ${trim1(target.start)}-${trim1(target.endInclusive)}",
+                    "${trim1(sets)} / $bound",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -544,5 +552,155 @@ internal fun PickCell(
             textAlign = TextAlign.Center,
             color = if (selected) IronvellumColors.SovereignGold else MaterialTheme.colorScheme.onSurfaceVariant,
         )
+    }
+}
+
+/** Default per-dumbbell ceiling asked about when the toggle goes on. */
+private const val DEFAULT_DUMBBELL_KG = 24.0
+
+/** Stepper bounds for the dumbbell max, in 1 kg steps. */
+private const val MIN_DUMBBELL_KG = 1.0
+private const val MAX_DUMBBELL_KG = 80.0
+
+/**
+ * Saves [Equipment] into instance state: a data class with a set is not
+ * bundle-saveable on its own, and losing the answer to a config change reads
+ * as the app forgetting what you own.
+ */
+val EquipmentSaver = listSaver<Equipment, Any>(
+    save = {
+        listOf(
+            it.fullGym,
+            it.gear.map { gear -> gear.name },
+            it.dumbbellMaxKg ?: -1.0,
+            it.dumbbellPair,
+        )
+    },
+    restore = { saved ->
+        @Suppress("UNCHECKED_CAST")
+        Equipment(
+            fullGym = saved[0] as Boolean,
+            gear = (saved[1] as List<String>).map(Gear::valueOf).toSet(),
+            dumbbellMaxKg = (saved[2] as Double).takeIf { kg -> kg >= 0.0 },
+            dumbbellPair = saved[3] as Boolean,
+        )
+    },
+)
+
+/**
+ * The gear question, shared by onboarding and the builder so the two can
+ * never drift: two preset cells (Full gym / Nothing) over a toggle grid of
+ * the eight gear items. A toggle tap clears the full-gym answer and flips
+ * that one item - the owner's real kit is "pull-up bar but no rings", which
+ * no coarse level could say. With dumbbells on, a sub-row asks one or a pair
+ * and steps the per-dumbbell max in 1 kg, because the load cap the generator
+ * applies is only honest if the number is the lifter's own.
+ */
+@Composable
+internal fun GearPicker(
+    equipment: Equipment,
+    onChange: (Equipment) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+            PickCell(
+                label = "Full gym",
+                selected = equipment.fullGym,
+                modifier = Modifier.weight(1f),
+                description = "Full gym: every machine and cable",
+                onClick = { onChange(Equipment.FULL_GYM) },
+            )
+            PickCell(
+                label = "Nothing",
+                selected = !equipment.fullGym && equipment.gear.isEmpty(),
+                modifier = Modifier.weight(1f),
+                description = "Nothing: floor work only",
+                onClick = { onChange(Equipment.NOTHING) },
+            )
+        }
+        Gear.entries.chunked(2).forEach { chunk ->
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                chunk.forEach { gear ->
+                    val on = gear in equipment.gear
+                    PickCell(
+                        label = gear.label,
+                        selected = on,
+                        modifier = Modifier.weight(1f),
+                        description = "${gear.label}, ${if (on) "on" else "off"}",
+                        onClick = {
+                            val gearSet = if (on) equipment.gear - gear else equipment.gear + gear
+                            // First dumbbell tap sets the max so the stepper has a number to edit.
+                            val maxKg = equipment.dumbbellMaxKg
+                                ?: if (gear == Gear.DUMBBELLS && !on) DEFAULT_DUMBBELL_KG else null
+                            onChange(Equipment(false, gearSet, maxKg, equipment.dumbbellPair))
+                        },
+                    )
+                }
+            }
+        }
+        if (!equipment.fullGym && Gear.DUMBBELLS in equipment.gear) {
+            val maxKg = equipment.dumbbellMaxKg ?: DEFAULT_DUMBBELL_KG
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                PickCell(
+                    label = "One",
+                    selected = !equipment.dumbbellPair,
+                    modifier = Modifier.weight(1f),
+                    description = "One dumbbell",
+                    onClick = { onChange(equipment.copy(dumbbellPair = false)) },
+                )
+                PickCell(
+                    label = "Pair",
+                    selected = equipment.dumbbellPair,
+                    modifier = Modifier.weight(1f),
+                    description = "A pair of dumbbells",
+                    onClick = { onChange(equipment.copy(dumbbellPair = true)) },
+                )
+                TapPad(
+                    label = "−",
+                    description = "Lower dumbbell max, currently up to ${maxKg.toInt()} kg",
+                    onClick = {
+                        onChange(equipment.copy(dumbbellMaxKg = (maxKg - 1.0).coerceAtLeast(MIN_DUMBBELL_KG)))
+                    },
+                )
+                Text(
+                    "Up to ${maxKg.toInt()} kg",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.SovereignGold,
+                )
+                TapPad(
+                    label = "+",
+                    description = "Raise dumbbell max, currently up to ${maxKg.toInt()} kg",
+                    onClick = {
+                        onChange(equipment.copy(dumbbellMaxKg = (maxKg + 1.0).coerceAtMost(MAX_DUMBBELL_KG)))
+                    },
+                )
+            }
+        }
+        Text(
+            gearCaption(equipment),
+            style = MaterialTheme.typography.labelSmall,
+            color = IronvellumColors.InkMuted,
+        )
+    }
+}
+
+/** What the current answer opens up, in plain words. */
+private fun gearCaption(equipment: Equipment): String = when {
+    equipment.fullGym -> "Barbells, machines and cables: the whole catalogue opens up."
+    equipment.gear.isEmpty() -> "Floor work only: push-ups, single-leg squats and core, no gear."
+    else -> {
+        val owned = equipment.gear.joinToString(", ") { it.label.lowercase() }
+        val pair = if (Gear.DUMBBELLS in equipment.gear) {
+            val max = equipment.dumbbellMaxKg?.toInt() ?: DEFAULT_DUMBBELL_KG.toInt()
+            val count = if (equipment.dumbbellPair) "a pair of" else "one"
+            ", $count dumbbell${if (equipment.dumbbellPair) "s" else ""} up to $max kg"
+        } else {
+            ""
+        }
+        "Your $owned$pair open those movements; the rest stays floor work."
     }
 }

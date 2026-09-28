@@ -29,13 +29,15 @@ Features:
   app proposes an editable week built from the real catalogue. No routine is
   imposed on you.
 - Evidence-based program builder: full body, upper/lower and push/pull/legs
-  templates for strength or muscle, fitted to your weekly volume; a generated
+  templates for strength or muscle, fitted to your weekly volume and the gear
+  you own, from a full gym to a pull-up bar and one dumbbell; a generated
   week or single session; or an improved version of a preset you already have,
   shown before and after. Every movement explains why it was picked, citing
   2020-2026 research.
 - Weekly muscle coverage: a body map of the sets each muscle gets, planned or
-  from the last seven days, flagging any muscle group nothing trains.
-- 214 movements: barbell, dumbbell, cable, plate-loaded, selectorised, smith,
+  from the last seven days, with a floor for the helper muscles your other
+  lifts mostly train.
+- 234 movements: barbell, dumbbell, cable, plate-loaded, selectorised, smith,
   assisted, bodyweight, plus cardio, sport, climbing, water and mobility.
 - 106-technique skill tree: fourteen lines, each rung gated on the one before
   it and carrying a written claim standard.
