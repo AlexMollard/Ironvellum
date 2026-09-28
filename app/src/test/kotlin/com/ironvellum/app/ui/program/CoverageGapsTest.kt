@@ -4,6 +4,8 @@ import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.TrainingFocus
+import com.ironvellum.app.domain.VolumeLevel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -17,7 +19,7 @@ import org.junit.Test
  */
 class CoverageGapsTest {
 
-    private val target = 5.0..15.0
+    private val target = CoverageGoal(VolumeLevel.STANDARD, TrainingFocus.STRENGTH)
 
     private fun everyMuscleAt(sets: Double): MutableMap<Muscle, Double> =
         Muscle.entries.associateWith { sets }.toMutableMap()

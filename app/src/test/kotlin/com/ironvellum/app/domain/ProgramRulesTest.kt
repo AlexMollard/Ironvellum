@@ -23,6 +23,22 @@ class ProgramRulesTest {
     }
 
     @Test
+    fun `a prioritised muscle on a strength week is judged up to the growth range top`() {
+        val back = MuscleArea.BACK.muscles
+        // Strength flattens at 15 sets (Pelland 2026), size keeps coming: a
+        // prioritised lat is not "over" until the muscle range's top.
+        assertEquals(5.0..18.0, ProgramRules.judgedRange(Muscle.LATS, VolumeLevel.STANDARD, TrainingFocus.STRENGTH, back))
+        assertEquals(5.0..22.0, ProgramRules.judgedRange(Muscle.LATS, VolumeLevel.HIGH, TrainingFocus.STRENGTH, back))
+        // Unprioritised muscles, and a muscle-focus week, keep their own range.
+        assertEquals(5.0..15.0, ProgramRules.judgedRange(Muscle.QUADS, VolumeLevel.STANDARD, TrainingFocus.STRENGTH, back))
+        assertEquals(12.0..18.0, ProgramRules.judgedRange(Muscle.LATS, VolumeLevel.STANDARD, TrainingFocus.MUSCLE, back))
+        // A LOW muscle top (12) never lowers the strength ceiling.
+        assertEquals(5.0..15.0, ProgramRules.judgedRange(Muscle.LATS, VolumeLevel.LOW, TrainingFocus.STRENGTH, back))
+        // Helpers keep their floor, prioritised or not.
+        assertEquals(ProgramRules.HELPER_RANGE, ProgramRules.judgedRange(Muscle.TRAPS, VolumeLevel.STANDARD, TrainingFocus.STRENGTH, back))
+    }
+
+    @Test
     fun `tracked muscles are the major set and front delts are absent`() {
         // Every press already serves the front delts (Lanza 2024); a target
         // of their own would just over-press people.

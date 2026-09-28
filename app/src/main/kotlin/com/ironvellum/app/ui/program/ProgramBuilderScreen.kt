@@ -740,7 +740,7 @@ fun ProgramBuilderScreen(
                     val noun = if (others.size == 1) "preset" else "presets"
                     Caption("Weekly volume includes your ${others.size} other $noun.")
                 }
-                WeeklyVolumePanel(week, tier, focus)
+                WeeklyVolumePanel(week, tier, focus, priorities)
             }
         } else {
             val current = plan
@@ -772,7 +772,7 @@ fun ProgramBuilderScreen(
                 val volumePresets =
                     if (mode == "session") current.presets + presets.map { it.toPlanned() }
                     else current.presets
-                WeeklyVolumePanel(volumePresets, tier, focus)
+                WeeklyVolumePanel(volumePresets, tier, focus, priorities)
                 if (mode == "session" && presets.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
                     val noun = if (presets.size == 1) "preset" else "presets"

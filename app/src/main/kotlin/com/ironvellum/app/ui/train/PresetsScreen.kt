@@ -58,6 +58,7 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.program.BodyHeatMap
+import com.ironvellum.app.ui.program.CoverageGoal
 import com.ironvellum.app.ui.program.coverageGaps
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.ironvellumRepository
@@ -82,6 +83,7 @@ data class TrainUi(
     val plannedPresets: List<PlannedPreset> = emptyList(),
     val tier: VolumeLevel = VolumeLevel.LOW,
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
+    val priorities: Set<com.ironvellum.app.domain.Muscle> = emptySet(),
 )
 
 class PresetsViewModel(
@@ -120,6 +122,7 @@ class PresetsViewModel(
                 TrainingMode.STRENGTH -> TrainingFocus.STRENGTH
                 else -> TrainingFocus.MUSCLE
             },
+            priorities = savedAnswers?.priorities.orEmpty().flatMap { it.muscles }.toSet(),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrainUi())
 
@@ -442,8 +445,8 @@ private fun WeeklyCoverageCard(
     modifier: Modifier = Modifier,
 ) {
     val volume = remember(ui.plannedPresets) { ProgramRules.weeklyVolume(ui.plannedPresets) }
-    val target = ProgramRules.weeklySetTarget(ui.tier, ui.focus)
-    val gaps = coverageGaps(volume, target).size
+    val goal = CoverageGoal(ui.tier, ui.focus, ui.priorities)
+    val gaps = coverageGaps(volume, goal).size
     InkPanel(
         modifier
             .clickable(
@@ -486,7 +489,7 @@ private fun WeeklyCoverageCard(
         } else {
             BodyHeatMap(
                 volume = volume,
-                target = target,
+                goal = goal,
                 modifier = Modifier.fillMaxWidth(),
                 figureHeight = 190.dp,
             )

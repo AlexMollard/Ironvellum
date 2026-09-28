@@ -87,6 +87,27 @@ object ProgramRules {
     /** The helpers' "range" for coverage verdicts: the floor, and no top. */
     val HELPER_RANGE: ClosedFloatingPointRange<Double> = HELPER_FLOOR_SETS..Double.MAX_VALUE
 
+    /**
+     * The range [muscle]'s weekly sets are judged against on the coverage
+     * map. Helpers get their floor. A strength or skill week is judged 5-15,
+     * where strength gains flatten (Pelland 2026) - but a muscle the lifter
+     * [prioritised][priorities] keeps growing past that, so its ceiling is
+     * the muscle-growth range's top at the same volume level: sixteen sets of
+     * lats on a V-taper week is the point, not an overshoot. The floor and
+     * the generator's targets are unchanged.
+     */
+    fun judgedRange(
+        muscle: Muscle,
+        volume: VolumeLevel,
+        focus: TrainingFocus,
+        priorities: Set<Muscle> = emptySet(),
+    ): ClosedFloatingPointRange<Double> {
+        if (muscle in HELPERS) return HELPER_RANGE
+        val target = weeklySetTarget(volume, focus)
+        if (muscle !in priorities) return target
+        return target.start..maxOf(target.endInclusive, weeklySetTarget(volume, TrainingFocus.MUSCLE).endInclusive)
+    }
+
     // ------------------------------------------------------------- fractions
 
     /**

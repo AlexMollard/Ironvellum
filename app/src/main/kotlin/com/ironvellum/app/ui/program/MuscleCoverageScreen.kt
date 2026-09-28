@@ -75,6 +75,8 @@ data class CoverageUi(
     val unattributedPlannedSets: Int = 0,
     val tier: VolumeLevel = VolumeLevel.LOW,
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
+    /** Muscles of the areas she prioritised, whose ceiling rises (ProgramRules.judgedRange). */
+    val priorities: Set<Muscle> = emptySet(),
     val hasAnyPreset: Boolean = false,
     val hasLoggedWeek: Boolean = false,
 )
@@ -151,6 +153,7 @@ class MuscleCoverageViewModel(
                 TrainingMode.STRENGTH -> TrainingFocus.STRENGTH
                 else -> TrainingFocus.MUSCLE
             },
+            priorities = savedAnswers?.priorities.orEmpty().flatMap { it.muscles }.toSet(),
             hasAnyPreset = presets.isNotEmpty(),
             hasLoggedWeek = loggedSets.isNotEmpty(),
         )
@@ -172,10 +175,11 @@ fun MuscleCoverageScreen(
 
     val presets = if (view == CoverageView.PLANNED) ui.plannedPresets else ui.loggedPresets
     val volume = remember(presets) { ProgramRules.weeklyVolume(presets) }
-    val target = ProgramRules.weeklySetTarget(ui.tier, ui.focus)
+    val goal = CoverageGoal(ui.tier, ui.focus, ui.priorities)
+    val target = goal.target
     val tracked = ProgramRules.TRACKED.sortedBy { volume[it] ?: 0.0 }
     val helpers = ProgramRules.HELPERS.sortedBy { volume[it] ?: 0.0 }
-    val underCount = coverageGaps(volume, target).size
+    val underCount = coverageGaps(volume, goal).size
     val empty = if (view == CoverageView.PLANNED) !ui.hasAnyPreset else !ui.hasLoggedWeek
     val unattributed = if (view == CoverageView.PLANNED) ui.unattributedPlannedSets else ui.unattributedLoggedSets
 
@@ -233,7 +237,7 @@ fun MuscleCoverageScreen(
         InkPanel(Modifier.fillMaxWidth()) {
             BodyHeatMap(
                 volume = volume,
-                target = target,
+                goal = goal,
                 modifier = Modifier.fillMaxWidth(),
                 figureHeight = 380.dp,
             )
@@ -254,7 +258,7 @@ fun MuscleCoverageScreen(
         Spacer(Modifier.height(12.dp))
 
         SectionHeader("Sets per muscle")
-        tracked.forEach { muscle -> MuscleRow(muscle, volume[muscle] ?: 0.0, target) }
+        tracked.forEach { muscle -> MuscleRow(muscle, volume[muscle] ?: 0.0, goal) }
 
         // Judged against a floor, not the range: see ProgramRules.HELPERS.
         Spacer(Modifier.height(12.dp))
@@ -266,7 +270,7 @@ fun MuscleCoverageScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
-        helpers.forEach { muscle -> MuscleRow(muscle, volume[muscle] ?: 0.0, target) }
+        helpers.forEach { muscle -> MuscleRow(muscle, volume[muscle] ?: 0.0, goal) }
 
         if (underCount > 0) {
             Spacer(Modifier.height(12.dp))
@@ -288,9 +292,9 @@ fun MuscleCoverageScreen(
 
 /** One muscle's sets against its own range; a helper's open-ended floor reads "3+". */
 @Composable
-private fun MuscleRow(muscle: Muscle, sets: Double, target: ClosedFloatingPointRange<Double>) {
-    val range = rangeFor(muscle, target)
-    val level = levelOf(muscle, sets, target)
+private fun MuscleRow(muscle: Muscle, sets: Double, goal: CoverageGoal) {
+    val range = rangeFor(muscle, goal)
+    val level = levelOf(muscle, sets, goal)
     val verdict = when (level) {
         CoverageLevel.NONE -> "UNTRAINED"
         CoverageLevel.UNDER -> "UNDER"

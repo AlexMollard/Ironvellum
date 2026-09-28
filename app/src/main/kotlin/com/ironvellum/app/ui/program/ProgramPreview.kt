@@ -35,6 +35,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.Gear
@@ -260,9 +261,10 @@ fun WeeklyVolumePanel(
     presets: List<PlannedPreset>,
     tier: VolumeLevel,
     focus: TrainingFocus,
+    priorities: Set<MuscleArea> = emptySet(),
 ) {
     val volume = ProgramRules.weeklyVolume(presets)
-    val target = ProgramRules.weeklySetTarget(tier, focus)
+    val goal = CoverageGoal(tier, focus, priorities.flatMap { it.muscles }.toSet())
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "WEEKLY VOLUME - SETS PER MUSCLE",
@@ -275,11 +277,11 @@ fun WeeklyVolumePanel(
         JUDGED.forEach { muscle ->
             val sets = volume[muscle] ?: 0.0
             // Helpers are judged against their floor with no ceiling.
-            val range = rangeFor(muscle, target)
+            val range = rangeFor(muscle, goal)
             val open = range.endInclusive == Double.MAX_VALUE
             val bound = if (open) "${trim1(range.start)}+" else "${trim1(range.start)}-${trim1(range.endInclusive)}"
             val spoken = if (open) "at least ${trim1(range.start)}" else "${trim1(range.start)} to ${trim1(range.endInclusive)}"
-            val verdict = when (levelOf(muscle, sets, target)) {
+            val verdict = when (levelOf(muscle, sets, goal)) {
                 CoverageLevel.LIGHT -> "LIGHT"
                 CoverageLevel.NONE, CoverageLevel.UNDER -> "UNDER"
                 CoverageLevel.OVER -> "OVER"

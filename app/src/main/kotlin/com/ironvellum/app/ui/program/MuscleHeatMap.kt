@@ -31,6 +31,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.TrainingFocus
+import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -93,17 +95,26 @@ private class Region(val muscle: Muscle, vararg points: Pair<Float, Float>) {
 val JUDGED: List<Muscle> = ProgramRules.TRACKED + ProgramRules.HELPERS
 
 /**
- * The range a muscle is judged against: the goal's weekly range for the
- * majors, the helper floor with no ceiling for the helpers (see
- * ProgramRules.HELPERS) - so a pressing-heavy week is never "over" on the
- * front delts.
+ * What a week is judged against: the goal's volume level and focus, and the
+ * muscles the lifter prioritised (whose ceiling rises - see
+ * [ProgramRules.judgedRange]).
  */
-fun rangeFor(muscle: Muscle, target: ClosedFloatingPointRange<Double>): ClosedFloatingPointRange<Double> =
-    if (muscle in ProgramRules.HELPERS) ProgramRules.HELPER_RANGE else target
+data class CoverageGoal(
+    val volume: VolumeLevel,
+    val focus: TrainingFocus,
+    val priorities: Set<Muscle> = emptySet(),
+) {
+    /** The unraised weekly range, for captions. */
+    val target: ClosedFloatingPointRange<Double> get() = ProgramRules.weeklySetTarget(volume, focus)
+}
+
+/** The range [muscle] is judged against under [goal]: see [ProgramRules.judgedRange]. */
+fun rangeFor(muscle: Muscle, goal: CoverageGoal): ClosedFloatingPointRange<Double> =
+    ProgramRules.judgedRange(muscle, goal.volume, goal.focus, goal.priorities)
 
 /** [muscle]'s verdict at [volume]: a helper below its floor, trained or not, is LIGHT. */
-fun levelOf(muscle: Muscle, volume: Double, target: ClosedFloatingPointRange<Double>): CoverageLevel {
-    val range = rangeFor(muscle, target)
+fun levelOf(muscle: Muscle, volume: Double, goal: CoverageGoal): CoverageLevel {
+    val range = rangeFor(muscle, goal)
     return if (muscle in ProgramRules.HELPERS && volume < range.start) {
         CoverageLevel.LIGHT
     } else {
@@ -112,9 +123,9 @@ fun levelOf(muscle: Muscle, volume: Double, target: ClosedFloatingPointRange<Dou
 }
 
 /** Every major muscle the week leaves under its range or untrained. Helpers are never gaps. */
-fun coverageGaps(volume: Map<Muscle, Double>, target: ClosedFloatingPointRange<Double>): List<Muscle> =
+fun coverageGaps(volume: Map<Muscle, Double>, goal: CoverageGoal): List<Muscle> =
     JUDGED.filter {
-        levelOf(it, volume[it] ?: 0.0, target).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE }
+        levelOf(it, volume[it] ?: 0.0, goal).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE }
     }
 
 private val FRONT = listOf(
@@ -264,7 +275,7 @@ private val HALF_OUTLINE = listOf(
 
 /**
  * Front and back figures side by side in ONE Canvas of fixed [figureHeight],
- * each tracked muscle filled by its weekly coverage against [target], plus
+ * each tracked muscle filled by its weekly coverage against [goal], plus
  * labels and a legend. One Canvas with an explicit height is deliberate: the
  * previous version gave each figure a RowScope weight inside a Column, which
  * Compose ignored, so the first figure took the whole card and the second
@@ -273,11 +284,11 @@ private val HALF_OUTLINE = listOf(
 @Composable
 fun BodyHeatMap(
     volume: Map<Muscle, Double>,
-    target: ClosedFloatingPointRange<Double>,
+    goal: CoverageGoal,
     modifier: Modifier = Modifier,
     figureHeight: Dp = 320.dp,
 ) {
-    val description = coverageSummary(volume, target)
+    val description = coverageSummary(volume, goal)
     Column(modifier.semantics { contentDescription = description }) {
         Canvas(
             Modifier
@@ -287,8 +298,8 @@ fun BodyHeatMap(
         ) {
             val h = size.height
             val halfWidth = size.width / 2f
-            drawFigure(FRONT, Offset(halfWidth * 0.5f, 0f), h, volume, target, seed = 11)
-            drawFigure(BACK, Offset(halfWidth * 1.5f, 0f), h, volume, target, seed = 23)
+            drawFigure(FRONT, Offset(halfWidth * 0.5f, 0f), h, volume, goal, seed = 11)
+            drawFigure(BACK, Offset(halfWidth * 1.5f, 0f), h, volume, goal, seed = 23)
         }
         Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
             FigureLabel("FRONT", Modifier.weight(1f))
@@ -303,7 +314,7 @@ private fun DrawScope.drawFigure(
     origin: Offset,
     height: Float,
     volume: Map<Muscle, Double>,
-    target: ClosedFloatingPointRange<Double>,
+    goal: CoverageGoal,
     seed: Int,
 ) {
     fun at(x: Float, y: Float) = Offset(origin.x + x * height, origin.y + y * height)
@@ -318,7 +329,7 @@ private fun DrawScope.drawFigure(
 
     regions.forEach { region ->
         val sets = volume[region.muscle] ?: 0.0
-        val fill = regionFill(levelOf(region.muscle, sets, target), sets, rangeFor(region.muscle, target))
+        val fill = regionFill(levelOf(region.muscle, sets, goal), sets, rangeFor(region.muscle, goal))
         for (side in listOf(1f, -1f)) {
             val path = Path()
             smoothClosed(path, region.points.map { (x, y) -> at(x * side, y) })
@@ -363,8 +374,8 @@ private fun smoothClosed(path: Path, points: List<Offset>) {
 }
 
 /** Screen-reader summary over every judged muscle, each against its own range. */
-private fun coverageSummary(volume: Map<Muscle, Double>, target: ClosedFloatingPointRange<Double>): String {
-    val byLevel = JUDGED.groupBy { levelOf(it, volume[it] ?: 0.0, target) }
+private fun coverageSummary(volume: Map<Muscle, Double>, goal: CoverageGoal): String {
+    val byLevel = JUDGED.groupBy { levelOf(it, volume[it] ?: 0.0, goal) }
     fun names(muscles: List<Muscle>) = muscles.joinToString { it.label.lowercase() }
     val parts = buildList {
         byLevel[CoverageLevel.NONE]?.let { add("${names(it)} untrained") }
