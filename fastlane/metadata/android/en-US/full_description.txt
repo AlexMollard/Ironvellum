@@ -25,13 +25,14 @@ training.
 
 Features:
 
-- Guided first run: answer your training age, days, equipment and goal, and the
+- Guided first run: pick your split, weekly volume, equipment and goal, and the
   app proposes an editable week built from the real catalogue. No routine is
   imposed on you.
-- Evidence-based program builder: beginner, intermediate and advanced templates
-  for strength or muscle, a generated week or single session, or an improved
-  version of a preset you already have, shown before and after. Every movement
-  explains why it was picked, citing 2020-2026 research.
+- Evidence-based program builder: full body, upper/lower and push/pull/legs
+  templates for strength or muscle, fitted to your weekly volume; a generated
+  week or single session; or an improved version of a preset you already have,
+  shown before and after. Every movement explains why it was picked, citing
+  2020-2026 research.
 - Weekly muscle coverage: a body map of the sets each muscle gets, planned or
   from the last seven days.
 - 214 movements: barbell, dumbbell, cable, plate-loaded, selectorised, smith,

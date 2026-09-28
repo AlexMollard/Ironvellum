@@ -30,7 +30,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
-import com.ironvellum.app.domain.ExperienceTier
+import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
@@ -72,7 +72,7 @@ data class CoverageUi(
     val unattributedLoggedSets: Int = 0,
     /** Preset sets with no profile (planned view honesty count). */
     val unattributedPlannedSets: Int = 0,
-    val tier: ExperienceTier = ExperienceTier.BEGINNER,
+    val tier: VolumeLevel = VolumeLevel.LEAN,
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
     val hasAnyPreset: Boolean = false,
     val hasLoggedWeek: Boolean = false,
@@ -91,8 +91,8 @@ class MuscleCoverageViewModel(
     /** Tier is derived from history, so it is a one-shot read, not a flow. */
     private val tierFlow = flow {
         emit(
-            savedAnswers?.tier
-                ?: ProgramRules.suggestTier(repo.firstSessionEpochDay(), LocalDate.now().toEpochDay()),
+            savedAnswers?.volume
+                ?: ProgramRules.suggestVolume(repo.firstSessionEpochDay(), LocalDate.now().toEpochDay()),
         )
     }
 
@@ -312,7 +312,7 @@ fun MuscleCoverageScreen(
     }
 }
 
-private fun tierLabel(tier: ExperienceTier): String = tier.label.lowercase()
+private fun tierLabel(tier: VolumeLevel): String = "${tier.label.lowercase()} volume"
 
 private fun focusLabel(focus: TrainingFocus): String = when (focus) {
     TrainingFocus.STRENGTH -> "strength"

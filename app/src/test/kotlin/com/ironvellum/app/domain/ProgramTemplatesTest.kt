@@ -8,9 +8,10 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The six hand-authored templates against the REAL seed catalogue: entries
- * must exist, MUSCLE weekly volume must sit inside its tier range for every
- * tracked muscle, STRENGTH templates must practise the big lifts often
+ * The hand-authored templates against the REAL seed catalogue: entries must
+ * exist, MUSCLE weekly volume must sit inside the authored level's range for
+ * every tracked muscle, every volume level must stay finishable and name
+ * what it leaves short, STRENGTH templates must practise the big lifts often
  * enough, and adaptation must respect the equipment.
  */
 class ProgramTemplatesTest {
@@ -37,13 +38,39 @@ class ProgramTemplatesTest {
         ProgramRules.weeklyVolume(plan.presets)
 
     @Test
-    fun `there are exactly six templates, one per tier and goal`() {
-        assertEquals(6, ProgramTemplates.ALL.size)
-        for (tier in ExperienceTier.entries) for (focus in listOf(TrainingFocus.STRENGTH, TrainingFocus.MUSCLE)) {
-            assertNotNull(
-                "no template for $tier/$focus",
-                ProgramTemplates.ALL.firstOrNull { it.tier == tier && it.focus == focus },
-            )
+    fun `every template at every volume stays finishable and names any muscle it leaves short`() {
+        for (template in ProgramTemplates.ALL) for (volume in VolumeLevel.entries) {
+            val plan = ProgramTemplates.build(template, volume, EquipmentAccess.FULL_GYM, catalogue, emptyStrength)
+            plan.presets.forEach { built ->
+                val seconds = ProgramRules.sessionSeconds(built.entries, template.focus)
+                assertTrue(
+                    "${template.id} at $volume: ${built.name} runs ${seconds / 60} min",
+                    seconds <= ProgramRules.SESSION_BUDGET_SECONDS,
+                )
+            }
+            if (template.focus != TrainingFocus.MUSCLE) continue
+            val floor = ProgramRules.weeklySetTarget(volume, TrainingFocus.MUSCLE).start
+            val volumeMap = volumeOf(plan)
+            val note = plan.presets.first().note
+            ProgramRules.TRACKED.filter { (volumeMap[it] ?: 0.0) < floor }.forEach { muscle ->
+                assertTrue(
+                    "${template.id} at $volume: ${muscle.label} at ${volumeMap[muscle]} not in note: $note",
+                    muscle.label.lowercase() in note,
+                )
+            }
+        }
+    }
+
+    @Test
+    fun `the chosen volume moves a muscle template's weekly dose`() {
+        for (template in ProgramTemplates.ALL.filter { it.focus == TrainingFocus.MUSCLE }) {
+            val total = { volume: VolumeLevel ->
+                ProgramTemplates.build(template, volume, EquipmentAccess.FULL_GYM, catalogue, emptyStrength)
+                    .presets.sumOf { day -> day.entries.sumOf { it.sets } }
+            }
+            val lean = total(VolumeLevel.LEAN)
+            val high = total(VolumeLevel.HIGH)
+            assertTrue("${template.id}: lean $lean sets not below high $high", lean < high)
         }
     }
 
@@ -70,8 +97,8 @@ class ProgramTemplatesTest {
     @Test
     fun `muscle templates put every tracked muscle inside its tier range`() {
         for (template in ProgramTemplates.ALL.filter { it.focus == TrainingFocus.MUSCLE }) {
-            val plan = ProgramTemplates.build(template, EquipmentAccess.FULL_GYM, catalogue, emptyStrength)
-            val range = ProgramRules.weeklySetTarget(template.tier, TrainingFocus.MUSCLE)
+            val plan = ProgramTemplates.build(template, template.authoredVolume, EquipmentAccess.FULL_GYM, catalogue, emptyStrength)
+            val range = ProgramRules.weeklySetTarget(template.authoredVolume, TrainingFocus.MUSCLE)
             val volume = volumeOf(plan)
             for (muscle in ProgramRules.TRACKED) {
                 val sets = volume[muscle] ?: 0.0
@@ -107,7 +134,7 @@ class ProgramTemplatesTest {
     @Test
     fun `home weights adaptation never prescribes a machine`() {
         for (template in ProgramTemplates.ALL) {
-            val plan = ProgramTemplates.build(template, EquipmentAccess.HOME_WEIGHTS, catalogue, emptyStrength)
+            val plan = ProgramTemplates.build(template, template.authoredVolume, EquipmentAccess.HOME_WEIGHTS, catalogue, emptyStrength)
             assertTrue("plan empty for ${template.id}", plan.presets.isNotEmpty())
             plan.presets.flatMap { it.entries }.forEach { entry ->
                 assertFalse(
@@ -121,7 +148,7 @@ class ProgramTemplatesTest {
     @Test
     fun `bodyweight adaptation never prescribes a loaded movement`() {
         for (template in ProgramTemplates.ALL) {
-            val plan = ProgramTemplates.build(template, EquipmentAccess.BODYWEIGHT, catalogue, emptyStrength)
+            val plan = ProgramTemplates.build(template, template.authoredVolume, EquipmentAccess.BODYWEIGHT, catalogue, emptyStrength)
             assertTrue("plan empty for ${template.id}", plan.presets.isNotEmpty())
             plan.presets.flatMap { it.entries }.forEach { entry ->
                 assertFalse(
@@ -134,11 +161,11 @@ class ProgramTemplatesTest {
 
     @Test
     fun `adaptation substitutes within the same movement pattern`() {
-        val template = ProgramTemplates.ALL.first { it.id == "intermediate_muscle" }
+        val template = ProgramTemplates.ALL.first { it.id == "upper_lower_muscle" }
         val originalPatterns = template.days.flatMap { day ->
             day.entries.mapNotNull { MuscleMap.profile(it.exerciseName)?.pattern }
         }.toSet()
-        val plan = ProgramTemplates.build(template, EquipmentAccess.BODYWEIGHT, catalogue, emptyStrength)
+        val plan = ProgramTemplates.build(template, template.authoredVolume, EquipmentAccess.BODYWEIGHT, catalogue, emptyStrength)
         plan.presets.flatMap { it.entries }.forEach { entry ->
             val pattern = MuscleMap.profile(entry.exerciseName)?.pattern
             assertTrue(
@@ -155,8 +182,8 @@ class ProgramTemplatesTest {
     fun `build fills loads from the strength profile and labels them`() {
         // Bench Press 75 kg x 10 -> e1RM 100 kg (Epley, rep term capped at 12).
         val strength = ProgramRules.strengthProfile(listOf(LoggedLift("Bench Press", 75.0, 10)))
-        val template = ProgramTemplates.ALL.first { it.id == "intermediate_muscle" }
-        val plan = ProgramTemplates.build(template, EquipmentAccess.FULL_GYM, catalogue, strength)
+        val template = ProgramTemplates.ALL.first { it.id == "upper_lower_muscle" }
+        val plan = ProgramTemplates.build(template, template.authoredVolume, EquipmentAccess.FULL_GYM, catalogue, strength)
         val bench = plan.presets.flatMap { it.entries }.first { it.exerciseName == "Bench Press" }
         assertNotNull("bench press left unloaded with an e1RM on file", bench.targetWeightKg)
         assertTrue(bench.loadNote!!.contains("e1RM"))
@@ -164,8 +191,8 @@ class ProgramTemplatesTest {
 
     @Test
     fun `strength template mains argue specificity and days carry rest guidance`() {
-        val template = ProgramTemplates.ALL.first { it.id == "beginner_strength" }
-        val plan = ProgramTemplates.build(template, EquipmentAccess.FULL_GYM, catalogue, emptyStrength)
+        val template = ProgramTemplates.ALL.first { it.id == "full_body_strength" }
+        val plan = ProgramTemplates.build(template, template.authoredVolume, EquipmentAccess.FULL_GYM, catalogue, emptyStrength)
         plan.presets.flatMap { it.entries }.forEach { entry ->
             val isMain = entry.exerciseName in setOf("Back Squat", "Bench Press", "Deadlift", "Overhead Press")
             if (isMain) {

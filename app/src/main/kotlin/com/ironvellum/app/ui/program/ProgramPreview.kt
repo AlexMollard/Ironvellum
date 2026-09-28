@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,6 +27,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Improvement
@@ -34,8 +37,9 @@ import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.PlanChange
 import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRules
-import com.ironvellum.app.domain.ExperienceTier
+import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.TrainingFocus
+import com.ironvellum.app.domain.TrainingSplit
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -252,7 +256,7 @@ fun TapPad(
 @Composable
 fun WeeklyVolumePanel(
     presets: List<PlannedPreset>,
-    tier: ExperienceTier,
+    tier: VolumeLevel,
     focus: TrainingFocus,
 ) {
     val volume = ProgramRules.weeklyVolume(presets)
@@ -449,5 +453,96 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
                 )
             }
         }
+    }
+}
+
+/**
+ * The split question: every split and day count the generator offers
+ * ([TrainingSplit.OPTIONS]), two per row. One pick sets both, so no invalid
+ * pairing (upper/lower on three days) can be asked for.
+ */
+@Composable
+internal fun SplitPicker(
+    split: TrainingSplit,
+    days: Int,
+    onPick: (TrainingSplit, Int) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        TrainingSplit.OPTIONS.chunked(2).forEach { chunk ->
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
+                chunk.forEach { (option, count) ->
+                    PickCell(
+                        label = "${option.label}\n$count days",
+                        selected = option == split && count == days,
+                        modifier = Modifier.weight(1f),
+                        description = "${option.label}, $count days a week",
+                        onClick = { onPick(option, count) },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** What the picked split does with the week, in one line. */
+internal fun splitCaption(split: TrainingSplit, days: Int): String = when (split) {
+    TrainingSplit.FULL_BODY ->
+        "Every muscle, every session. The fewest days, so each one runs longest."
+    TrainingSplit.UPPER_LOWER ->
+        "Upper body, lower body, twice each: every muscle trained twice a week."
+    TrainingSplit.PUSH_PULL_LEGS -> if (days == 3) {
+        "Each muscle once a week. Weekly sets drive growth, not frequency (Pelland 2026), " +
+            "but strength practice drops to once a week (Grgic 2018)."
+    } else {
+        "Push, pull and legs twice over: short, focused sessions, every muscle twice a week."
+    }
+    TrainingSplit.UPPER_LOWER_PPL ->
+        "Push, pull and legs, then upper and lower: every muscle twice in five days."
+}
+
+/**
+ * The volume question's caption: the weekly range the level buys for this
+ * goal, and who it usually suits. Strength ranges do not move with the level
+ * (the strength curve saturates early - Pelland 2026), and the caption says so.
+ */
+internal fun volumeCaption(volume: VolumeLevel, focus: TrainingFocus): String {
+    val range = ProgramRules.weeklySetTarget(volume, focus)
+    val sets = "${range.start.toInt()}-${range.endInclusive.toInt()} sets per muscle a week"
+    if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL) {
+        return "$sets at every level: strength needs less volume. Higher levels add movements per session."
+    }
+    return when (volume) {
+        VolumeLevel.LEAN -> "$sets. Plenty in a first year, or when time is short."
+        VolumeLevel.STANDARD -> "$sets. The usual dose after a year or so of steady training."
+        VolumeLevel.HIGH -> "$sets. For years of training: more sets still help, by less each time."
+    }
+}
+
+/** One of the small drawn pick cells, in the preset editor's own style. */
+@Composable
+internal fun PickCell(
+    label: String,
+    selected: Boolean,
+    modifier: Modifier = Modifier,
+    description: String? = null,
+    onClick: () -> Unit,
+) {
+    val shape = MaterialTheme.shapes.small
+    OutlinedButton(
+        shape = shape,
+        onClick = onClick,
+        // The unscheduled option is drawn as "—", which a screen reader
+        // announces as a dash. Say what it means (same rule as the editor).
+        modifier = modifier.then(
+            if (description != null) Modifier.semantics { contentDescription = description } else Modifier,
+        ),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center,
+            color = if (selected) IronvellumColors.SovereignGold else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }

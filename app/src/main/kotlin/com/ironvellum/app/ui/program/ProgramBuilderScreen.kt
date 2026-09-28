@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -30,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -46,7 +44,7 @@ import com.ironvellum.app.data.ProgramAnswers
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.EquipmentAccess
-import com.ironvellum.app.domain.ExperienceTier
+import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.PlannedEntry
@@ -63,6 +61,7 @@ import com.ironvellum.app.domain.StrengthProfile
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.WorkoutPreset
+import com.ironvellum.app.domain.TrainingSplit
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -121,9 +120,10 @@ class ProgramBuilderViewModel(
     // Answers. The screen renders them; the view model owns them so the
     // generated plan survives rotation the same way the editor's does.
     val focus = MutableStateFlow(TrainingFocus.GENERAL)
-    val tier = MutableStateFlow(ExperienceTier.BEGINNER)
+    val tier = MutableStateFlow(VolumeLevel.LEAN)
     val equipment = MutableStateFlow(EquipmentAccess.FULL_GYM)
     val daysPerWeek = MutableStateFlow(4)
+    val split = MutableStateFlow(TrainingSplit.UPPER_LOWER)
     val priorities = MutableStateFlow<Set<MuscleArea>>(emptySet())
     val sessionKind = MutableStateFlow(SessionKind.AUTO)
     val sessionDay = MutableStateFlow<Int?>(1)
@@ -157,13 +157,13 @@ class ProgramBuilderViewModel(
     init {
         // Her last generator answers come first: the Weekly Coverage bug was
         // exactly this screen guessing from history and the profile mode
-        // while she had just answered INTERMEDIATE / MUSCLE. Applying a saved
-        // answer counts as a deliberate choice, so the suggestTier /
+        // while she had just answered STANDARD / MUSCLE. Applying a saved
+        // answer counts as a deliberate choice, so the suggestVolume /
         // trainingMode fallbacks must not override it.
         ProgramAnswersStore.get(appContext)?.let { saved ->
             if (!tierTouched) {
                 tierTouched = true
-                tier.value = saved.tier
+                tier.value = saved.volume
             }
             if (!focusTouched) {
                 focusTouched = true
@@ -171,6 +171,7 @@ class ProgramBuilderViewModel(
             }
             equipment.value = saved.equipment
             daysPerWeek.value = saved.daysPerWeek
+            split.value = saved.split
             priorities.value = saved.priorities
         }
         // Templates exist only for strength and hypertrophy; a saved or
@@ -190,7 +191,7 @@ class ProgramBuilderViewModel(
             // The suggestion lands once, from real history; after she touches
             // the control it is hers, and a later load cannot re-suggest.
             if (!tierTouched) {
-                tier.value = ProgramRules.suggestTier(
+                tier.value = ProgramRules.suggestVolume(
                     _firstSessionEpochDay.value,
                     LocalDate.now().toEpochDay(),
                 )
@@ -198,7 +199,7 @@ class ProgramBuilderViewModel(
         }
     }
 
-    fun setTier(value: ExperienceTier) {
+    fun setTier(value: VolumeLevel) {
         tierTouched = true
         tier.value = value
     }
@@ -215,12 +216,18 @@ class ProgramBuilderViewModel(
 
     private fun request(): ProgramRequest = ProgramRequest(
         focus = focus.value,
-        tier = tier.value,
+        volume = tier.value,
         equipment = equipment.value,
         daysPerWeek = daysPerWeek.value,
         priorities = priorities.value,
         sex = sex.value,
+        split = split.value,
     )
+
+    fun setSplit(value: TrainingSplit, days: Int) {
+        split.value = value
+        daysPerWeek.value = days
+    }
 
     private fun planned(existing: List<WorkoutPreset>): List<PlannedPreset> = existing.map { it.toPlanned() }
 
@@ -241,7 +248,7 @@ class ProgramBuilderViewModel(
                     val templates = matchingTemplates()
                     val chosen = templates.firstOrNull { it.id == selectedTemplateId.value } ?: templates.firstOrNull()
                     selectedTemplateId.value = chosen?.id
-                    chosen?.let { ProgramTemplates.build(it, equipment.value, cat, _strength.value) }
+                    chosen?.let { ProgramTemplates.build(it, tier.value, equipment.value, cat, _strength.value) }
                 }
                 "session" -> {
                     val week = planned(presets.value)
@@ -292,9 +299,9 @@ class ProgramBuilderViewModel(
         )
     }
 
-    /** Templates for the chosen tier and goal - the six hand-authored programs. */
+    /** Every hand-authored template for the goal, whatever its split: picking one picks the split. */
     fun matchingTemplates(): List<ProgramTemplate> =
-        ProgramTemplates.ALL.filter { it.tier == tier.value && it.focus == focus.value }
+        ProgramTemplates.ALL.filter { it.focus == focus.value }.sortedBy { it.days.size }
 
     /** Edits made on the previewed days. */
     fun replacePlan(plan: RoutinePlan) {
@@ -329,11 +336,11 @@ class ProgramBuilderViewModel(
     // Actions. Every one reports failure on screen; silence is the bug.
 
     /** Remembered whenever generator output is applied; Weekly Coverage and
-     *  the next builder visit read the SAME tier and goal she answered with. */
+     *  the next builder visit read the SAME volume and goal she answered with. */
     private fun rememberAnswers() {
         ProgramAnswersStore.save(
             appContext,
-            ProgramAnswers(tier.value, focus.value, equipment.value, daysPerWeek.value, priorities.value),
+            ProgramAnswers(tier.value, focus.value, equipment.value, daysPerWeek.value, priorities.value, split.value),
         )
     }
 
@@ -457,6 +464,7 @@ fun ProgramBuilderScreen(
     val tier by viewModel.tier.collectAsStateWithLifecycle()
     val equipment by viewModel.equipment.collectAsStateWithLifecycle()
     val daysPerWeek by viewModel.daysPerWeek.collectAsStateWithLifecycle()
+    val split by viewModel.split.collectAsStateWithLifecycle()
     val priorities by viewModel.priorities.collectAsStateWithLifecycle()
     val sessionKind by viewModel.sessionKind.collectAsStateWithLifecycle()
     val sessionDay by viewModel.sessionDay.collectAsStateWithLifecycle()
@@ -482,7 +490,7 @@ fun ProgramBuilderScreen(
 
     // Any answer change rebuilds; the tier suggestion has settled by the time
     // the catalogue is non-empty, so this cannot thrash.
-    LaunchedEffect(mode, catalogue, presets, focus, tier, equipment, daysPerWeek, priorities, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
+    LaunchedEffect(mode, catalogue, presets, focus, tier, equipment, daysPerWeek, split, priorities, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
         viewModel.generate()
     }
 
@@ -560,14 +568,26 @@ fun ProgramBuilderScreen(
             )
         }
 
-        QuestionPanel("TRAINING AGE") {
+        // The split is the headline choice; templates carry their own, so
+        // there it is picked by picking the template below.
+        if (mode == "week") {
+            QuestionPanel("HOW YOU SPLIT THE WEEK") {
+                SplitPicker(split = split, days = daysPerWeek, onPick = viewModel::setSplit)
+                Spacer(Modifier.height(8.dp))
+                Caption(splitCaption(split, daysPerWeek))
+            }
+        }
+
+        QuestionPanel("WEEKLY VOLUME") {
             InkSegmented(
-                options = ExperienceTier.entries.map { it to it.label },
+                options = VolumeLevel.entries.map { it to it.label },
                 selected = tier,
                 onPick = viewModel::setTier,
             )
             Spacer(Modifier.height(8.dp))
-            Caption(tierCaption(hasHistory, historyYears))
+            Caption(volumeCaption(tier, focus))
+            Spacer(Modifier.height(4.dp))
+            Caption(volumeSuggestion(hasHistory, historyYears))
         }
 
         QuestionPanel("WHAT YOU HAVE ACCESS TO") {
@@ -580,18 +600,6 @@ fun ProgramBuilderScreen(
                 selected = equipment,
                 onPick = { viewModel.equipment.value = it },
             )
-        }
-
-        // Templates fix their own days and doses, so these two questions
-        // compose nothing in template mode and are hidden there.
-        if (mode == "week") {
-            QuestionPanel("DAYS PER WEEK") {
-                InkSegmented(
-                    options = (1..6).map { it to it.toString() },
-                    selected = daysPerWeek,
-                    onPick = { viewModel.daysPerWeek.value = it },
-                )
-            }
         }
 
         if (mode != "template") {
@@ -648,7 +656,7 @@ fun ProgramBuilderScreen(
             SectionHeader("Templates")
             val templates = viewModel.matchingTemplates()
             if (templates.isEmpty()) {
-                Caption("No hand-authored template sits on this tier and goal - generate a week instead.")
+                Caption("No hand-authored template for this goal - generate a week instead.")
             }
             templates.forEach { template ->
                 val selected = template.id == templateId
@@ -668,7 +676,7 @@ fun ProgramBuilderScreen(
                             color = if (selected) IronvellumColors.SovereignGold else IronvellumColors.Ink,
                         )
                         Text(
-                            "${template.days.size} days/week",
+                            "${template.split.label.uppercase()} · ${template.days.size} DAYS",
                             style = MaterialTheme.typography.labelSmall,
                             fontFamily = ChakraPetch,
                             color = IronvellumColors.InkMuted,
@@ -682,7 +690,7 @@ fun ProgramBuilderScreen(
                     )
                 }
             }
-            Caption("Written for a full gym; adapted to what you have.")
+            Caption("Written for a full gym; adapted to what you have. Sets follow your weekly volume.")
         }
 
         if (mode == "improve") {
@@ -871,14 +879,14 @@ fun ProgramBuilderScreen(
     }
 }
 
-private fun tierCaption(hasHistory: Boolean, years: Double?): String {
+private fun volumeSuggestion(hasHistory: Boolean, years: Double?): String {
     // The caption names where the suggestion came from; a lifter with no
     // history must not be told she has "1.4 years of logged sessions".
     val logged = years?.let { "${trimYears(it)} year${if (it == 1.0) "" else "s"}" }
     return when {
         // Selection-independent on purpose: a saved answer can preselect
-        // Intermediate, and "starts at beginner volume" then contradicted it.
-        !hasHistory -> "No logged sessions yet to suggest a level from - pick where you honestly are."
+        // Standard, and "starts lean" would then contradict it.
+        !hasHistory -> "No logged sessions yet to suggest a level from - pick the dose you can recover from."
         else -> "Suggested from $logged of logged sessions."
     }
 }
@@ -950,33 +958,5 @@ private fun MuscleAreaChips(
                 if (chunk.size < 3) repeat(3 - chunk.size) { Spacer(Modifier.weight(1f)) }
             }
         }
-    }
-}
-
-/** One of the small drawn day/kind cells, in the preset editor's own style. */
-@Composable
-private fun PickCell(
-    label: String,
-    selected: Boolean,
-    modifier: Modifier = Modifier,
-    description: String? = null,
-    onClick: () -> Unit,
-) {
-    val shape = MaterialTheme.shapes.small
-    OutlinedButton(
-        shape = shape,
-        onClick = onClick,
-        // The unscheduled option is drawn as "—", which a screen reader
-        // announces as a dash. Say what it means (same rule as the editor).
-        modifier = modifier.then(
-            if (description != null) Modifier.semantics { contentDescription = description } else Modifier,
-        ),
-        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            color = if (selected) IronvellumColors.SovereignGold else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
     }
 }

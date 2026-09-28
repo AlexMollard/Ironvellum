@@ -45,7 +45,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
-import com.ironvellum.app.domain.ExperienceTier
+import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.PlannedPreset
@@ -81,7 +81,7 @@ data class TrainUi(
     val history: List<Pair<com.ironvellum.app.domain.WorkoutSession, List<com.ironvellum.app.domain.SessionSet>>> = emptyList(),
     /** Scheduled presets (or all of them), in planned form, for the coverage card. */
     val plannedPresets: List<PlannedPreset> = emptyList(),
-    val tier: ExperienceTier = ExperienceTier.BEGINNER,
+    val tier: VolumeLevel = VolumeLevel.LEAN,
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
 )
 
@@ -98,8 +98,8 @@ class PresetsViewModel(
     /** Training age is derived once, not per emission; it only grows. */
     private val tierFlow = flow {
         emit(
-            savedAnswers?.tier
-                ?: ProgramRules.suggestTier(repo.firstSessionEpochDay(), LocalDate.now().toEpochDay()),
+            savedAnswers?.volume
+                ?: ProgramRules.suggestVolume(repo.firstSessionEpochDay(), LocalDate.now().toEpochDay()),
         )
     }
 

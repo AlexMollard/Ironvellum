@@ -14,14 +14,46 @@ enum class EquipmentAccess { BODYWEIGHT, HOME_WEIGHTS, FULL_GYM }
 enum class TrainingFocus { STRENGTH, MUSCLE, SKILL, GENERAL }
 
 /**
- * Training age, the axis the volume evidence is tiered on (see
- * ProgramRules): beginner under a year, intermediate one to three years,
- * advanced beyond that.
+ * How much weekly work the plan prescribes. The volume evidence is tiered on
+ * training age (see ProgramRules.weeklySetTarget: under a year LEAN, one to
+ * three years STANDARD, beyond that HIGH), so the app suggests the level from
+ * logged history - but it is the lifter's dose to pick, not a rank. It also
+ * sets reps in reserve, movements per session and bodyweight progressions.
  */
-enum class ExperienceTier(val label: String) {
-    BEGINNER("Beginner"),
-    INTERMEDIATE("Intermediate"),
-    ADVANCED("Advanced"),
+enum class VolumeLevel(val label: String) {
+    LEAN("Lean"),
+    STANDARD("Standard"),
+    HIGH("High"),
+}
+
+/**
+ * How the week is divided - the headline choice of the builder. With weekly
+ * volume equated the split barely changes growth (Pelland 2026; Schoenfeld
+ * 2019), so it is a scheduling preference, and each split offers only the
+ * day counts it fits.
+ */
+enum class TrainingSplit(val label: String, val dayOptions: List<Int>) {
+    FULL_BODY("Full body", listOf(1, 2, 3)),
+    UPPER_LOWER("Upper / lower", listOf(4)),
+    PUSH_PULL_LEGS("Push / pull / legs", listOf(3, 6)),
+    UPPER_LOWER_PPL("Upper / lower + PPL", listOf(5)),
+    ;
+
+    companion object {
+        /** The conventional split for a day count: what a request without a split gets. */
+        fun forDays(days: Int): TrainingSplit = when (days.coerceIn(1, 6)) {
+            1, 2, 3 -> FULL_BODY
+            4 -> UPPER_LOWER
+            5 -> UPPER_LOWER_PPL
+            else -> PUSH_PULL_LEGS
+        }
+
+        /** Every split and day count the pickers offer, in display order. */
+        val OPTIONS: List<Pair<TrainingSplit, Int>> = listOf(
+            FULL_BODY to 2, FULL_BODY to 3, PUSH_PULL_LEGS to 3,
+            UPPER_LOWER to 4, UPPER_LOWER_PPL to 5, PUSH_PULL_LEGS to 6,
+        )
+    }
 }
 
 /**
@@ -113,12 +145,14 @@ data class RoutinePlan(val presets: List<PlannedPreset>)
 /** The answers a generated program is built from. */
 data class ProgramRequest(
     val focus: TrainingFocus,
-    val tier: ExperienceTier,
+    val volume: VolumeLevel,
     val equipment: EquipmentAccess,
     /** Week mode only; clamped to 1..6. */
     val daysPerWeek: Int = 3,
     val priorities: Set<MuscleArea> = emptySet(),
     val sex: Sex = Sex.MALE,
+    /** Week mode only. A day count the split does not fit falls back to [TrainingSplit.forDays]. */
+    val split: TrainingSplit = TrainingSplit.forDays(daysPerWeek),
 )
 
 /**
@@ -142,10 +176,14 @@ data class Improvement(
     val changes: List<PlanChange>,
 )
 
-/** A hand-authored program, one per tier and goal, written for a full gym. */
+/**
+ * A hand-authored program, written for a full gym at [authoredVolume] and
+ * scaled to the lifter's chosen volume on build.
+ */
 data class ProgramTemplate(
     val id: String,
-    val tier: ExperienceTier,
+    val split: TrainingSplit,
+    val authoredVolume: VolumeLevel,
     val focus: TrainingFocus,
     val name: String,
     val summary: String,

@@ -61,21 +61,27 @@ object ProgramGenerator {
         Role.LEGS_DAY -> "Legs"
     }
 
-    /** ISO weekday plus role, per requested day count - the RoutineBuilder table. */
-    private val SPLITS: Map<Int, List<Pair<Int, Role>>> = mapOf(
-        1 to listOf(1 to Role.FULL_BODY),
-        2 to listOf(1 to Role.FULL_BODY, 4 to Role.FULL_BODY),
-        3 to listOf(1 to Role.FULL_BODY, 3 to Role.FULL_BODY, 5 to Role.FULL_BODY),
-        4 to listOf(1 to Role.UPPER, 2 to Role.LOWER, 4 to Role.UPPER, 5 to Role.LOWER),
-        5 to listOf(
+    /** ISO weekday plus role for a split and day count the split fits. */
+    private fun layout(split: TrainingSplit, days: Int): List<Pair<Int, Role>> = when (split) {
+        TrainingSplit.FULL_BODY -> when (days) {
+            1 -> listOf(1 to Role.FULL_BODY)
+            2 -> listOf(1 to Role.FULL_BODY, 4 to Role.FULL_BODY)
+            else -> listOf(1 to Role.FULL_BODY, 3 to Role.FULL_BODY, 5 to Role.FULL_BODY)
+        }
+        TrainingSplit.UPPER_LOWER -> listOf(1 to Role.UPPER, 2 to Role.LOWER, 4 to Role.UPPER, 5 to Role.LOWER)
+        TrainingSplit.PUSH_PULL_LEGS -> if (days == 3) {
+            listOf(1 to Role.PUSH_DAY, 3 to Role.PULL_DAY, 5 to Role.LEGS_DAY)
+        } else {
+            listOf(
+                1 to Role.PUSH_DAY, 2 to Role.PULL_DAY, 3 to Role.LEGS_DAY,
+                5 to Role.PUSH_DAY, 6 to Role.PULL_DAY, 7 to Role.LEGS_DAY,
+            )
+        }
+        TrainingSplit.UPPER_LOWER_PPL -> listOf(
             1 to Role.PUSH_DAY, 2 to Role.PULL_DAY, 4 to Role.LEGS_DAY,
             5 to Role.UPPER, 6 to Role.LOWER,
-        ),
-        6 to listOf(
-            1 to Role.PUSH_DAY, 2 to Role.PULL_DAY, 3 to Role.LEGS_DAY,
-            5 to Role.PUSH_DAY, 6 to Role.PULL_DAY, 7 to Role.LEGS_DAY,
-        ),
-    )
+        )
+    }
 
     /**
      * Backbone patterns per session role, in prescription order. Full-body
@@ -213,10 +219,10 @@ object ProgramGenerator {
         val strength: StrengthProfile,
         val cap: Int,
     ) {
-        val tier get() = request.tier
+        val volume get() = request.volume
         val focus get() = request.focus
         val priorityMuscles: Set<Muscle> = request.priorities.flatMap { it.muscles }.toSet()
-        val targetRange = ProgramRules.weeklySetTarget(request.tier, request.focus)
+        val targetRange = ProgramRules.weeklySetTarget(request.volume, request.focus)
 
         /** Priorities are pushed to the TOP of the tier range, the rest to the bottom. */
         fun targetFor(muscle: Muscle): Double =
@@ -298,7 +304,7 @@ object ProgramGenerator {
                 // the easiest-to-learn variant still wins for them.
                 .thenBy {
                     val tier = MovementDifficulty.tier(it.name)
-                    if (it.isWeighted) tier else kotlin.math.abs(tier - desiredBodyweightTier(ctx.tier))
+                    if (it.isWeighted) tier else kotlin.math.abs(tier - desiredBodyweightTier(ctx.volume))
                 }
                 .thenBy { it.name },
         )
@@ -330,7 +336,7 @@ object ProgramGenerator {
     ): PlannedEntry {
         val profile = profileOf(exercise)
         val reps = prescriptionReps(ctx, profile)
-        val load = fillLoad(exercise, ctx.strength, reps, ProgramRules.targetRir(ctx.tier, ctx.focus))
+        val load = fillLoad(exercise, ctx.strength, reps, ProgramRules.targetRir(ctx.volume, ctx.focus))
         val fit = fitScore(exercise, ctx.request.equipment)
         session.fits[exercise.name] = fit
         session.names += exercise.name
@@ -357,10 +363,10 @@ object ProgramGenerator {
     }
 
     /** Skill-tree tier a bodyweight movement should sit at for each training age. */
-    private fun desiredBodyweightTier(tier: ExperienceTier): Int = when (tier) {
-        ExperienceTier.BEGINNER -> 2
-        ExperienceTier.INTERMEDIATE -> 3
-        ExperienceTier.ADVANCED -> 4
+    private fun desiredBodyweightTier(tier: VolumeLevel): Int = when (tier) {
+        VolumeLevel.LEAN -> 2
+        VolumeLevel.STANDARD -> 3
+        VolumeLevel.HIGH -> 4
     }
 
     /** Sets for a deficit fill: cover the remaining deficit, clamped to 2-5. */
@@ -394,10 +400,11 @@ object ProgramGenerator {
 
     fun week(request: ProgramRequest, catalogue: List<Exercise>, strength: StrengthProfile): RoutinePlan {
         val days = request.daysPerWeek.coerceIn(1, 6)
+        val split = request.split.takeIf { days in it.dayOptions } ?: TrainingSplit.forDays(days)
         val pool = eligible(catalogue, request.equipment, request.focus)
         if (pool.isEmpty()) return RoutinePlan(emptyList())
-        val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.tier))
-        val sessions = (SPLITS[days] ?: SPLITS.getValue(2)).map { (day, role) -> Draft(day, role) }
+        val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.volume))
+        val sessions = layout(split, days).map { (day, role) -> Draft(day, role) }
 
         // Phase 1: multi-joint backbone per pattern slot. STRENGTH and
         // GENERAL lead their main-lift patterns with the lift itself
@@ -448,22 +455,18 @@ object ProgramGenerator {
         // Phase 2: close each tracked muscle's weekly fractional deficit.
         val capacityLimited = fillDeficits(ctx, sessions) { muscle -> ctx.targetFor(muscle) }
 
-        // Honest capacity line: when the chosen days cannot fit the tier's
+        // Honest capacity line: when the chosen days cannot fit the level's
         // weekly range inside the session time budget, name the muscles that
         // land short and by how much. The old line quoted the single lowest
         // muscle as "about N sets per muscle", which read as if the whole week
         // were that thin.
         val volume = weeklyVolumeOf(sessions)
-        val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < ctx.targetRange.start - 1e-9 }
-        val capacityNote = if (capacityLimited && short.isNotEmpty()) {
-            val low = short.minOf { volume[it] ?: 0.0 }
-            " Heads-up: $days days leave ${joinWithAnd(short.map { it.label.lowercase() })} short of the " +
-                "${ctx.tier.label.lowercase()} range (${ctx.targetRange.start.toInt()}-" +
-                "${ctx.targetRange.endInclusive.toInt()} sets a week; the lowest sits at ${setsPhrase(low)}). " +
-                "Add a day to reach it."
+        val capacityNote = if (capacityLimited) {
+            shortfallNote(volume, ctx.volume, ctx.targetRange, "$days days leave", "Add a day to reach it.")
         } else {
             ""
         }
+        val frequencyNote = if (split == TrainingSplit.PUSH_PULL_LEGS && days == 3) ONCE_A_WEEK_NOTE else ""
 
         val roleSeen = mutableMapOf<Role, Int>()
 
@@ -476,8 +479,8 @@ object ProgramGenerator {
                     val ordinal = 'A' + roleSeen.merge(session.role!!, 1, Int::plus)!! - 1
                     PlannedPreset(
                         name = "${roleLabel(session.role)} $ordinal",
-                        note = presetNote(ctx.tier, ctx.focus).let { base ->
-                            base + (if (session.day == sessions.mapNotNull { d -> d.day }.minOrNull()) capacityNote else "")
+                        note = presetNote(ctx.volume, ctx.focus).let { base ->
+                            base + (if (session.day == sessions.mapNotNull { d -> d.day }.minOrNull()) capacityNote + frequencyNote else "")
                         },
                         scheduledDay = session.day,
                         entries = session.entries.toList(),
@@ -485,6 +488,32 @@ object ProgramGenerator {
                 },
         )
     }
+
+    /**
+     * " Heads-up: [lead] X and Y short of the standard range (...)." naming
+     * every tracked muscle under the floor - the same test the coverage map
+     * uses to call a muscle UNDER - or "" when none is.
+     */
+    internal fun shortfallNote(
+        volume: Map<Muscle, Double>,
+        level: VolumeLevel,
+        range: ClosedFloatingPointRange<Double>,
+        lead: String,
+        advice: String,
+    ): String {
+        val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < range.start - 1e-9 }
+        if (short.isEmpty()) return ""
+        val low = short.minOf { volume[it] ?: 0.0 }
+        return " Heads-up: $lead ${joinWithAnd(short.map { it.label.lowercase() })} short of the " +
+            "${level.label.lowercase()} range (${range.start.toInt()}-${range.endInclusive.toInt()} " +
+            "sets a week; the lowest sits at ${setsPhrase(low)}). $advice"
+    }
+
+    /** Push/pull/legs on three days: allowed, and honest about what it trades. */
+    internal const val ONCE_A_WEEK_NOTE =
+        " Push/pull/legs on three days trains each muscle once a week. Weekly sets drive growth, " +
+            "not frequency (Pelland 2026), but one session carries each muscle's whole week and " +
+            "strength practice drops to once a week (Grgic 2018). Six days trains everything twice."
 
     /** Deadlift and press practice scales with the room the week has. */
     private fun mainTargetCount(days: Int): Int = if (days >= 5) 2 else 1
@@ -885,7 +914,7 @@ object ProgramGenerator {
     ): PlannedPreset? {
         val pool = eligible(catalogue, request.equipment, request.focus)
         if (pool.isEmpty()) return null
-        val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.tier))
+        val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.volume))
         val existing = ProgramRules.weeklyVolume(existingWeek)
         val draft = Draft(scheduledDay, roleOf(kind))
 
@@ -938,7 +967,7 @@ object ProgramGenerator {
         if (draft.entries.isEmpty()) return null
         return PlannedPreset(
             name = draft.role?.let { roleLabel(it) } ?: "Session",
-            note = presetNote(ctx.tier, ctx.focus),
+            note = presetNote(ctx.volume, ctx.focus),
             scheduledDay = scheduledDay,
             entries = draft.entries.toList(),
         )
@@ -1047,12 +1076,12 @@ object ProgramGenerator {
         strength: StrengthProfile,
     ): Improvement {
         val pool = eligible(catalogue, request.equipment, request.focus)
-        val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.tier))
+        val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.volume))
         val changes = mutableListOf<PlanChange>()
         val result = mutableListOf<PlannedEntry>()
         // First entry per (dominant muscle, pattern) -> its prescribed sets.
         val dominantSeen = mutableMapOf<Pair<Muscle, MovementPattern>, Int>()
-        val rir = ProgramRules.targetRir(request.tier, request.focus)
+        val rir = ProgramRules.targetRir(request.volume, request.focus)
 
         for (entry in target.entries) {
             val profile = MuscleMap.profile(entry.exerciseName)
@@ -1240,7 +1269,7 @@ object ProgramGenerator {
      * The one-line rest and RIR guidance every generated preset carries in
      * its note - the UI shows it under the session name.
      */
-    internal fun presetNote(tier: ExperienceTier, focus: TrainingFocus): String {
+    internal fun presetNote(tier: VolumeLevel, focus: TrainingFocus): String {
         val rir = ProgramRules.targetRir(tier, focus)
         return if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.GENERAL) {
             "Rest 3-5 min on the main lifts (Schoenfeld 2016; Grgic 2018), " +

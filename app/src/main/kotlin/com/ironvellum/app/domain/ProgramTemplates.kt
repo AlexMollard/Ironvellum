@@ -1,22 +1,24 @@
 package com.ironvellum.app.domain
 
 /**
- * Six hand-authored programs - {beginner, intermediate, advanced} x
- * {strength, muscle} - written for a full gym and adapted on [build] to
- * HOME_WEIGHTS and BODYWEIGHT by substituting each disallowed movement with
- * the allowed movement of the closest [MuscleMap] profile and the same
- * pattern (a strength main lift becomes the closest pattern equivalent, and
- * its `why` says so). The weekly fractional volume of each MUSCLE template
- * sits inside its tier's target range for every tracked muscle
- * ([ProgramRules.weeklySetTarget], Pelland 2026 / Schoenfeld 2017), and every
+ * Six hand-authored programs, keyed by split and goal - full body, upper/
+ * lower and push/pull/legs for muscle; full body, upper/lower and a
+ * heavy/light week for strength - written for a full gym and adapted on
+ * [build] to HOME_WEIGHTS and BODYWEIGHT by substituting each disallowed
+ * movement with the allowed movement of the closest [MuscleMap] profile and
+ * the same pattern (a strength main lift becomes the closest pattern
+ * equivalent, and its `why` says so). At its authored volume the weekly
+ * fractional volume of each MUSCLE template sits inside that level's target
+ * range for every tracked muscle ([ProgramRules.weeklySetTarget], Pelland
+ * 2026 / Schoenfeld 2017); [build] scales it to the lifter's level. Every
  * STRENGTH template practises the squat and the bench at least twice a week
  * and the deadlift at least once (Grgic 2018).
  *
- * Beginner blocks run a small pool with a linear-progression note (ACSM 2009,
- * Moesgaard 2022: novices progress on load, not on variety). Advanced
- * strength templates vary intensity across the week - heavy and light days -
- * because periodised intensity beats constant training for strength and
- * changes nothing for hypertrophy (Williams 2017, Moesgaard 2022).
+ * The full-body strength block runs a small pool with a linear-progression
+ * note (ACSM 2009, Moesgaard 2022: novices progress on load, not on
+ * variety). The heavy/light week varies intensity across the week because
+ * periodised intensity beats constant training for strength and changes
+ * nothing for hypertrophy (Williams 2017, Moesgaard 2022).
  *
  * Loads are filled on [build] from the lifter's own e1RMs
  * ([ProgramGenerator.fillLoad]); nothing is invented, so a new lifter gets
@@ -33,25 +35,26 @@ object ProgramTemplates {
 
     val ALL: List<ProgramTemplate> = listOf(
         ProgramTemplate(
-            id = "beginner_strength",
-            tier = ExperienceTier.BEGINNER,
+            id = "full_body_strength",
+            split = TrainingSplit.FULL_BODY,
+            authoredVolume = VolumeLevel.LEAN,
             focus = TrainingFocus.STRENGTH,
-            name = "First Barbell",
-            summary = "Three full-body days on five lifts. Learn the lifts, " +
-                "add a little weight every session - linear progression is " +
-                "all a first year needs (ACSM 2009).",
+            name = "Full-Body Barbell",
+            summary = "Three full-body days on five lifts. Add a little weight " +
+                "every session for as long as it keeps working - linear " +
+                "progression (ACSM 2009).",
             days = listOf(
-                day("First Barbell A", 1, listOf(
+                day("Full Body A", 1, listOf(
                     entry("Back Squat", 3, 5),
                     entry("Bench Press", 3, 5),
                     entry("Barbell Row", 3, 5),
                 )),
-                day("First Barbell B", 3, listOf(
+                day("Full Body B", 3, listOf(
                     entry("Deadlift", 3, 5),
                     entry("Overhead Press", 3, 5),
                     entry("Lat Pulldown", 3, 8),
                 )),
-                day("First Barbell C", 5, listOf(
+                day("Full Body C", 5, listOf(
                     entry("Back Squat", 3, 5),
                     entry("Bench Press", 3, 5),
                     entry("Romanian Deadlift", 3, 5),
@@ -59,16 +62,16 @@ object ProgramTemplates {
             ),
         ),
         ProgramTemplate(
-            id = "beginner_muscle",
-            tier = ExperienceTier.BEGINNER,
+            id = "full_body_muscle",
+            split = TrainingSplit.FULL_BODY,
+            authoredVolume = VolumeLevel.LEAN,
             focus = TrainingFocus.MUSCLE,
-            name = "First Engine",
-            summary = "Three full-body days, 8-12 hard sets per muscle a " +
-                "week - the low end of the dose-response curve is all a " +
-                "novelty-driven first year needs (Pelland 2026; ACSM 2009). " +
-                "Add load or reps every week.",
+            name = "Full-Body Size",
+            summary = "Three full-body days: every muscle trained each session, " +
+                "compounds first, stretch-biased accessories after. Sets " +
+                "follow your volume (Pelland 2026). Add load or reps every week.",
             days = listOf(
-                day("First Engine A", 1, listOf(
+                day("Full Body A", 1, listOf(
                     entry("Back Squat", 3, 8),
                     entry("Bench Press", 3, 8),
                     entry("Lat Pulldown", 3, 10),
@@ -78,7 +81,7 @@ object ProgramTemplates {
                     entry("Hanging Leg Raise", 3, 10),
                     entry("Lateral Raise", 3, 12),
                 )),
-                day("First Engine B", 3, listOf(
+                day("Full Body B", 3, listOf(
                     entry("Bench Press", 3, 8),
                     entry("Barbell Row", 3, 10),
                     entry("Goblet Squat", 2, 12),
@@ -90,7 +93,7 @@ object ProgramTemplates {
                     entry("Hanging Knee Raise", 3, 10),
                     entry("Lateral Raise", 3, 12),
                 )),
-                day("First Engine C", 5, listOf(
+                day("Full Body C", 5, listOf(
                     entry("Back Squat", 3, 8),
                     entry("Dumbbell Fly", 3, 12),
                     entry("Lat Pulldown", 3, 10),
@@ -103,10 +106,11 @@ object ProgramTemplates {
             ),
         ),
         ProgramTemplate(
-            id = "intermediate_strength",
-            tier = ExperienceTier.INTERMEDIATE,
+            id = "upper_lower_strength",
+            split = TrainingSplit.UPPER_LOWER,
+            authoredVolume = VolumeLevel.STANDARD,
             focus = TrainingFocus.STRENGTH,
-            name = "Four-Day Strength",
+            name = "Upper/Lower Strength",
             summary = "Upper/lower twice a week on the big lifts. Squat and " +
                 "bench are practiced twice a week - strength tracks practice " +
                 "frequency (Grgic 2018; Pelland 2026).",
@@ -134,13 +138,14 @@ object ProgramTemplates {
             ),
         ),
         ProgramTemplate(
-            id = "intermediate_muscle",
-            tier = ExperienceTier.INTERMEDIATE,
+            id = "upper_lower_muscle",
+            split = TrainingSplit.UPPER_LOWER,
+            authoredVolume = VolumeLevel.STANDARD,
             focus = TrainingFocus.MUSCLE,
-            name = "Four-Day Size",
-            summary = "Upper/lower twice a week, 12-18 fractional sets per " +
-                "muscle, every session led by a compound and finished with " +
-                "stretch-biased accessories (Pelland 2026; Maeo 2021).",
+            name = "Upper/Lower Size",
+            summary = "Upper/lower twice a week, every session led by a " +
+                "compound and finished with stretch-biased accessories. Sets " +
+                "follow your volume (Pelland 2026; Maeo 2021).",
             days = listOf(
                 day("Upper A", 1, listOf(
                     entry("Bench Press", 4, 8),
@@ -151,7 +156,6 @@ object ProgramTemplates {
                     entry("Seated Cable Row", 3, 10),
                     entry("Lateral Raise", 4, 12),
                     entry("Triceps Pushdown", 3, 12),
-                    entry("Ab Wheel Rollout", 3, 10),
                 )),
                 day("Lower A", 2, listOf(
                     entry("Back Squat", 4, 8),
@@ -160,6 +164,7 @@ object ProgramTemplates {
                     entry("Seated Leg Curl", 3, 12),
                     entry("Standing Calf Raise", 6, 12),
                     entry("Hanging Leg Raise", 3, 10),
+                    entry("Ab Wheel Rollout", 3, 10),
                 )),
                 day("Upper B", 4, listOf(
                     entry("Overhead Press", 4, 8),
@@ -167,12 +172,10 @@ object ProgramTemplates {
                     entry("Dumbbell Bench Press", 3, 10),
                     entry("Pendlay Row", 3, 8),
                     entry("Cable Fly", 3, 12),
-                    entry("Pec Deck", 3, 12),
                     entry("Lateral Raise", 4, 12),
                     entry("Face Pull", 4, 12),
                     entry("Overhead Cable Extension", 3, 12),
                     entry("Cable Curl", 4, 12),
-                    entry("Ab Wheel Rollout", 3, 10),
                 )),
                 day("Lower B", 5, listOf(
                     entry("Deadlift", 3, 5),
@@ -181,14 +184,16 @@ object ProgramTemplates {
                     entry("Seated Leg Curl", 3, 12),
                     entry("Standing Calf Raise", 6, 12),
                     entry("Hanging Knee Raise", 3, 10),
+                    entry("Ab Wheel Rollout", 3, 10),
                 )),
             ),
         ),
         ProgramTemplate(
-            id = "advanced_strength",
-            tier = ExperienceTier.ADVANCED,
+            id = "heavy_light_strength",
+            split = TrainingSplit.UPPER_LOWER,
+            authoredVolume = VolumeLevel.HIGH,
             focus = TrainingFocus.STRENGTH,
-            name = "Five-Day Strength",
+            name = "Heavy/Light Strength",
             summary = "Heavy and light days across the week - periodised " +
                 "intensity buys a small real strength edge over constant " +
                 "training (Williams 2017; Moesgaard 2022). Squat and bench " +
@@ -222,14 +227,14 @@ object ProgramTemplates {
             ),
         ),
         ProgramTemplate(
-            id = "advanced_muscle",
-            tier = ExperienceTier.ADVANCED,
+            id = "ppl_muscle",
+            split = TrainingSplit.PUSH_PULL_LEGS,
+            authoredVolume = VolumeLevel.HIGH,
             focus = TrainingFocus.MUSCLE,
-            name = "Six-Day Size",
-            summary = "Push/pull/legs twice over, 15-22 fractional sets per " +
-                "muscle at the recovery-capped top of the curve (Pelland " +
-                "2026). Every hamstring and calf slot loads the stretch - " +
-                "long muscle lengths win (Maeo 2021; Kassiano 2023).",
+            name = "Push/Pull/Legs Size",
+            summary = "Push/pull/legs twice over. Sets follow your volume " +
+                "(Pelland 2026). Every hamstring and calf slot loads the " +
+                "stretch - long muscle lengths win (Maeo 2021; Kassiano 2023).",
             days = listOf(
                 day("Push A", 1, listOf(
                     entry("Bench Press", 4, 8),
@@ -287,26 +292,35 @@ object ProgramTemplates {
         ),
     )
 
-    fun byId(id: String): ProgramTemplate? = ALL.firstOrNull { it.id == id }
-
     // ------------------------------------------------------------------ build
 
     /**
-     * Adapts a template to the lifter's equipment and fills loads from the
-     * strength profile. A movement the equipment cannot express becomes the
-     * allowed movement with the closest MuscleMap profile and the same
-     * pattern - substitution is legitimate for hypertrophy (Kikuchi 2017,
+     * Adapts a template to the lifter's equipment and volume and fills loads
+     * from the strength profile. A movement the equipment cannot express
+     * becomes the allowed movement with the closest MuscleMap profile and the
+     * same pattern - substitution is legitimate for hypertrophy (Kikuchi 2017,
      * Calatayud 2015, Plotkin 2023) and the entry's `why` says when it
      * happened. A day left with no entries is dropped honestly.
+     *
+     * Sets scale by the ratio of the chosen level's weekly range to the one
+     * the template was written at (midpoints; STRENGTH ranges are equal, so
+     * strength templates keep their sets). Scaling up never pushes a day
+     * past the session time budget or its own authored length, whichever is
+     * longer, and any muscle left under the chosen floor is named in the
+     * first day's note.
      */
     fun build(
         template: ProgramTemplate,
+        volume: VolumeLevel,
         equipment: EquipmentAccess,
         catalogue: List<Exercise>,
         strength: StrengthProfile,
     ): RoutinePlan {
         val pool = ProgramGenerator.eligible(catalogue, equipment, template.focus)
-        val rir = ProgramRules.targetRir(template.tier, template.focus)
+        val rir = ProgramRules.targetRir(volume, template.focus)
+        val chosenRange = ProgramRules.weeklySetTarget(volume, template.focus)
+        val factor = midpoint(chosenRange) /
+            midpoint(ProgramRules.weeklySetTarget(template.authoredVolume, template.focus))
         val presets = template.days.mapNotNull { day ->
             // Two gym movements must not collapse onto one substitute in the
             // same day (bench and incline press both becoming "Push-up").
@@ -351,10 +365,140 @@ object ProgramTemplates {
             }
             if (entries.isEmpty()) return@mapNotNull null
             // Same rest/RIR guidance the generator writes, matched to the
-            // template's goal and tier; the summary stays on the template.
-            day.copy(entries = entries, note = ProgramGenerator.presetNote(template.tier, template.focus))
+            // template's goal and volume; the summary stays on the template.
+            val scaled = day.copy(
+                entries = entries.map { entry ->
+                    entry.copy(sets = kotlin.math.round(entry.sets * factor).toInt().coerceIn(2, maxOf(5, entry.sets)))
+                },
+                note = ProgramGenerator.presetNote(volume, template.focus),
+            )
+            scaled to entries.map { maxOf(5, it.sets) }
         }
-        return RoutinePlan(presets)
+        val fitted = fitToRange(presets.map { it.first }, presets.map { it.second }, template.focus, chosenRange)
+        val shortfall = ProgramGenerator.shortfallNote(
+            ProgramRules.weeklyVolume(fitted), volume, chosenRange,
+            "this program leaves", "Generate a week to fill them.",
+        )
+        return RoutinePlan(
+            fitted.mapIndexed { i, day -> if (i == 0) day.copy(note = day.note + shortfall) else day },
+        )
+    }
+
+    private fun midpoint(range: ClosedFloatingPointRange<Double>) = (range.start + range.endInclusive) / 2.0
+
+    /** Upper bound on repair steps; each moves one set, so it only bounds a bug. */
+    private const val MAX_FIT_STEPS = 300
+
+    /**
+     * Repairs a scaled week the way the generator builds one, one set at a
+     * time: every day is trimmed to the session time budget (taking sets
+     * from whatever keeps the most spare volume), then - for MUSCLE templates
+     * - muscles under the floor gain sets on their most direct movement where
+     * a day has time, and muscles over the top of the range give sets back
+     * where that leaves every muscle at its floor. [caps] bounds each entry
+     * (5, or its authored count when higher). Uniform scaling alone rounded
+     * 2- and 3-set entries away and left hamstrings at 11 of 12; the authored
+     * upper/lower days ran 90 minutes.
+     */
+    private fun fitToRange(
+        days: List<PlannedPreset>,
+        caps: List<List<Int>>,
+        focus: TrainingFocus,
+        range: ClosedFloatingPointRange<Double>,
+    ): List<PlannedPreset> {
+        val work = days.map { it.entries.toMutableList() }
+        val budget = ProgramRules.SESSION_BUDGET_SECONDS
+        fun week() = ProgramRules.weeklyVolume(work.map { PlannedPreset("", "", null, it) })
+        fun share(e: PlannedEntry, m: Muscle) = MuscleMap.profile(e.exerciseName)?.muscles?.get(m) ?: 0.0
+        fun seconds(d: Int) = ProgramRules.sessionSeconds(work[d], focus)
+        fun setCost(e: PlannedEntry) =
+            ProgramRules.setSeconds(focus, MuscleMap.profile(e.exerciseName)?.compound ?: true)
+        fun mains(e: PlannedEntry) = ProgramRules.TRACKED.filter { share(e, it) >= 0.5 }
+        // Spare volume a one-set cut leaves on the entry's most-strained muscle.
+        fun surplusAfterCut(e: PlannedEntry, vol: Map<Muscle, Double>): Double =
+            mains(e).minOfOrNull { (vol[it] ?: 0.0) - share(e, it) - range.start } ?: Double.MAX_VALUE
+        fun change(d: Int, i: Int, delta: Int) {
+            work[d][i] = work[d][i].copy(sets = work[d][i].sets + delta)
+        }
+
+        for (d in work.indices) {
+            while (seconds(d) > budget) {
+                val vol = week()
+                val i = work[d].indices.filter { work[d][it].sets > 2 }
+                    .maxWithOrNull(compareBy({ surplusAfterCut(work[d][it], vol) }, { work[d][it].sets }))
+                    ?: break
+                change(d, i, -1)
+            }
+        }
+        if (focus != TrainingFocus.MUSCLE) return days.mapIndexed { d, day -> day.copy(entries = work[d]) }
+
+        val stuckLow = mutableSetOf<Muscle>()
+        var steps = 0
+        while (steps++ < MAX_FIT_STEPS) {
+            val vol = week()
+            val muscle = ProgramRules.TRACKED
+                .filter { it !in stuckLow && (vol[it] ?: 0.0) < range.start - 1e-9 }
+                .minByOrNull { vol[it] ?: 0.0 } ?: break
+            fun growable(d: Int, i: Int): Boolean {
+                val e = work[d][i]
+                return share(e, muscle) >= 0.5 && e.sets < caps[d][i] &&
+                    ProgramRules.TRACKED.none { (vol[it] ?: 0.0) + share(e, it) > range.endInclusive + 1e-9 }
+            }
+            val all = work.indices.flatMap { d -> work[d].indices.map { d to it } }
+            val pick = all
+                .filter { (d, i) -> growable(d, i) && seconds(d) + setCost(work[d][i]) <= budget }
+                .maxWithOrNull(
+                    compareBy<Pair<Int, Int>>({ (d, i) -> share(work[d][i], muscle) })
+                        .thenByDescending { (d, i) -> work[d][i].sets }
+                        .thenByDescending { (d, _) -> seconds(d) },
+                )
+            if (pick != null) {
+                change(pick.first, pick.second, 1)
+                continue
+            }
+            // No day has time: trade a set from a movement whose muscles all
+            // stay at their floor after the cut, on the same day, for one set
+            // of the short muscle. Deficits only ever shrink, so this settles.
+            val swap = all.filter { (d, i) -> growable(d, i) }
+                .sortedByDescending { (d, i) -> share(work[d][i], muscle) }
+                .firstNotNullOfOrNull { (d, i) ->
+                    work[d].indices
+                        .filter { j ->
+                            val cut = work[d][j]
+                            j != i && cut.sets > 2 && share(cut, muscle) == 0.0 &&
+                                surplusAfterCut(cut, vol) >= -1e-9 &&
+                                seconds(d) - setCost(cut) + setCost(work[d][i]) <= budget
+                        }
+                        .maxByOrNull { surplusAfterCut(work[d][it], vol) }
+                        ?.let { j -> Triple(d, i, j) }
+                }
+            if (swap == null) {
+                stuckLow += muscle
+            } else {
+                change(swap.first, swap.third, -1)
+                change(swap.first, swap.second, 1)
+            }
+        }
+
+        val stuckHigh = mutableSetOf<Muscle>()
+        steps = 0
+        while (steps++ < MAX_FIT_STEPS) {
+            val vol = week()
+            val muscle = ProgramRules.TRACKED
+                .filter { it !in stuckHigh && (vol[it] ?: 0.0) > range.endInclusive + 1e-9 }
+                .maxByOrNull { vol[it] ?: 0.0 } ?: break
+            val pick = work.indices.flatMap { d -> work[d].indices.map { d to it } }
+                .filter { (d, i) ->
+                    val e = work[d][i]
+                    share(e, muscle) >= 0.5 && e.sets > 2 && surplusAfterCut(e, vol) >= -1e-9
+                }
+                .maxWithOrNull(
+                    compareBy<Pair<Int, Int>>({ (d, i) -> share(work[d][i], muscle) })
+                        .thenBy { (d, i) -> work[d][i].sets },
+                )
+            if (pick == null) stuckHigh += muscle else change(pick.first, pick.second, -1)
+        }
+        return days.mapIndexed { d, day -> day.copy(entries = work[d]) }
     }
 
     /**

@@ -18,19 +18,19 @@ object ProgramRules {
     // ---------------------------------------------------------------- volume
 
     /**
-     * Fractional weekly hard sets per muscle, per tier and goal
-     * (beginner 8-12, intermediate 12-18, advanced 15-22; strength focus
-     * 5-15 mostly direct on the practised lift because the strength dose
-     * saturates early - Pelland 2026, Ralston 2017). Tiering by training age
-     * follows ACSM 2009 / Moesgaard 2022 (novices progress on low volume;
-     * periodisation adds little for hypertrophy).
+     * Fractional weekly hard sets per muscle, per volume level and goal
+     * (lean 8-12, standard 12-18, high 15-22; strength focus 5-15 mostly
+     * direct on the practised lift because the strength dose saturates early
+     * - Pelland 2026, Ralston 2017). The levels come from the evidence's
+     * training-age tiers (ACSM 2009 / Moesgaard 2022: novices progress on low
+     * volume; periodisation adds little for hypertrophy).
      */
-    fun weeklySetTarget(tier: ExperienceTier, focus: TrainingFocus): ClosedFloatingPointRange<Double> {
+    fun weeklySetTarget(tier: VolumeLevel, focus: TrainingFocus): ClosedFloatingPointRange<Double> {
         if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL) return 5.0..15.0
         return when (tier) {
-            ExperienceTier.BEGINNER -> 8.0..12.0
-            ExperienceTier.INTERMEDIATE -> 12.0..18.0
-            ExperienceTier.ADVANCED -> 15.0..22.0
+            VolumeLevel.LEAN -> 8.0..12.0
+            VolumeLevel.STANDARD -> 12.0..18.0
+            VolumeLevel.HIGH -> 15.0..22.0
         }
     }
 
@@ -79,18 +79,18 @@ object ProgramRules {
     // ------------------------------------------------------------------ tier
 
     /**
-     * Training age to tier: under a year beginner, one to three years
-     * intermediate, beyond that advanced (ACSM 2009 tiering; boundaries are
+     * Training age to a suggested level: under a year lean, one to three
+     * years standard, beyond that high (ACSM 2009 tiering; boundaries are
      * convention anchored on the diminishing-returns curves). No history
-     * means beginner - a new lifter must never start on an advanced dose.
+     * means lean - a new lifter must never be offered a high dose by default.
      */
-    fun suggestTier(firstSessionEpochDay: Long?, todayEpochDay: Long): ExperienceTier {
-        if (firstSessionEpochDay == null) return ExperienceTier.BEGINNER
+    fun suggestVolume(firstSessionEpochDay: Long?, todayEpochDay: Long): VolumeLevel {
+        if (firstSessionEpochDay == null) return VolumeLevel.LEAN
         val days = (todayEpochDay - firstSessionEpochDay).coerceAtLeast(0)
         return when {
-            days < 365 -> ExperienceTier.BEGINNER
-            days < 1095 -> ExperienceTier.INTERMEDIATE
-            else -> ExperienceTier.ADVANCED
+            days < 365 -> VolumeLevel.LEAN
+            days < 1095 -> VolumeLevel.STANDARD
+            else -> VolumeLevel.HIGH
         }
     }
 
@@ -272,8 +272,8 @@ object ProgramRules {
      * failure); beginners get the conservative end (ACSM 2009: never program
      * failure for novices).
      */
-    fun targetRir(tier: ExperienceTier, focus: TrainingFocus): Int = when {
-        focus == TrainingFocus.MUSCLE && tier == ExperienceTier.BEGINNER -> 3
+    fun targetRir(tier: VolumeLevel, focus: TrainingFocus): Int = when {
+        focus == TrainingFocus.MUSCLE && tier == VolumeLevel.LEAN -> 3
         focus == TrainingFocus.MUSCLE -> 2
         else -> 2
     }
@@ -288,14 +288,14 @@ object ProgramRules {
         else -> 5
     }
 
-    /** Per-session exercise cap by tier: 6 beginner, 8 intermediate, 9
-     * advanced. Practical scheduling heuristic - the evidence brief lists no
+    /** Per-session exercise cap by volume level: 6 lean, 8 standard, 9
+     * high. Practical scheduling heuristic - the evidence brief lists no
      * verified per-session ceiling; it exists so a generated session stays
      * finishable in roughly an hour. */
-    fun sessionCap(tier: ExperienceTier): Int = when (tier) {
-        ExperienceTier.BEGINNER -> 6
-        ExperienceTier.INTERMEDIATE -> 8
-        ExperienceTier.ADVANCED -> 9
+    fun sessionCap(tier: VolumeLevel): Int = when (tier) {
+        VolumeLevel.LEAN -> 6
+        VolumeLevel.STANDARD -> 8
+        VolumeLevel.HIGH -> 9
     }
 
     /**

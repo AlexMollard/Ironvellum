@@ -65,7 +65,7 @@ import com.ironvellum.app.domain.EquipmentAccess
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
-import com.ironvellum.app.domain.ExperienceTier
+import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRequest
 import com.ironvellum.app.domain.StrengthProfile
@@ -73,6 +73,7 @@ import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
+import com.ironvellum.app.domain.TrainingSplit
 import com.ironvellum.app.ui.components.CrestMark
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.InkSegmented
@@ -81,6 +82,9 @@ import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.program.ProposedDay
+import com.ironvellum.app.ui.program.SplitPicker
+import com.ironvellum.app.ui.program.splitCaption
+import com.ironvellum.app.ui.program.volumeCaption
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -159,9 +163,10 @@ class OnboardingViewModel(
 
     private data class PlanKey(
         val daysPerWeek: Int,
+        val split: TrainingSplit,
         val equipment: EquipmentAccess,
         val focus: TrainingFocus,
-        val tier: ExperienceTier,
+        val tier: VolumeLevel,
         val sex: Sex,
     )
 
@@ -192,14 +197,15 @@ class OnboardingViewModel(
      */
     fun ensurePlan(
         daysPerWeek: Int,
+        split: TrainingSplit,
         equipment: EquipmentAccess,
         focus: TrainingFocus,
-        tier: ExperienceTier,
+        tier: VolumeLevel,
         sex: Sex,
         catalogue: List<Exercise>,
         force: Boolean = false,
     ) {
-        val key = PlanKey(daysPerWeek, equipment, focus, tier, sex)
+        val key = PlanKey(daysPerWeek, split, equipment, focus, tier, sex)
         if (force || _plan.value == null || _isStarter.value || planKey != key) {
             // RoutineBuilder is gone: one generator everywhere, and the first
             // run now uses the same evidence-backed engine as Train ->
@@ -208,10 +214,11 @@ class OnboardingViewModel(
             _plan.value = ProgramGenerator.week(
                 ProgramRequest(
                     focus = focus,
-                    tier = tier,
+                    volume = tier,
                     equipment = equipment,
                     daysPerWeek = daysPerWeek,
                     sex = sex,
+                    split = split,
                 ),
                 catalogue,
                 StrengthProfile(),
@@ -246,7 +253,13 @@ class OnboardingViewModel(
      * the next builder visit read them back) and the progression mode follows
      * the goal, so a hypertrophy plan never runs on the strength engine.
      */
-    fun acceptRoutine(tier: ExperienceTier, focus: TrainingFocus, equipment: EquipmentAccess, daysPerWeek: Int) {
+    fun acceptRoutine(
+        tier: VolumeLevel,
+        focus: TrainingFocus,
+        equipment: EquipmentAccess,
+        daysPerWeek: Int,
+        split: TrainingSplit,
+    ) {
         val plan = _plan.value ?: return
         val generated = !_isStarter.value
         viewModelScope.launch {
@@ -255,7 +268,7 @@ class OnboardingViewModel(
                 if (generated) {
                     ProgramAnswersStore.save(
                         appContext,
-                        ProgramAnswers(tier, focus, equipment, daysPerWeek, emptySet()),
+                        ProgramAnswers(tier, focus, equipment, daysPerWeek, emptySet(), split),
                     )
                     when (focus) {
                         TrainingFocus.STRENGTH -> repo.setTrainingMode(TrainingMode.STRENGTH)
@@ -336,9 +349,10 @@ fun OnboardingScreen(
 
     // Step 2 answers.
     var daysPerWeek by rememberSaveable { mutableIntStateOf(3) }
+    var split by rememberSaveable { mutableStateOf(TrainingSplit.FULL_BODY) }
     var equipment by rememberSaveable { mutableStateOf(EquipmentAccess.BODYWEIGHT) }
     var focus by rememberSaveable { mutableStateOf(TrainingFocus.GENERAL) }
-    var tier by rememberSaveable { mutableStateOf(ExperienceTier.BEGINNER) }
+    var tier by rememberSaveable { mutableStateOf(VolumeLevel.LEAN) }
 
     val applyError by viewModel.applyError.collectAsStateWithLifecycle()
     val plan by viewModel.plan.collectAsStateWithLifecycle()
@@ -417,8 +431,9 @@ fun OnboardingScreen(
                         onWeight = { weightInput = it },
                     )
                     1 -> TrainingStep(
+                        split = split,
                         daysPerWeek = daysPerWeek,
-                        onDays = { daysPerWeek = it },
+                        onSplit = { s, d -> split = s; daysPerWeek = d },
                         equipment = equipment,
                         onEquipment = { equipment = it },
                         focus = focus,
@@ -429,6 +444,7 @@ fun OnboardingScreen(
                     else -> ProposalStep(
                         viewModel = viewModel,
                         daysPerWeek = daysPerWeek,
+                        split = split,
                         equipment = equipment,
                         focus = focus,
                         tier = tier,
@@ -452,7 +468,7 @@ fun OnboardingScreen(
                 onBack = { step -= 1 },
                 onForward = { step = 2 },
                 onAccept = {
-                    viewModel.acceptRoutine(tier, focus, equipment, daysPerWeek)
+                    viewModel.acceptRoutine(tier, focus, equipment, daysPerWeek, split)
                 },
             )
         }
@@ -713,19 +729,20 @@ private fun ProfileStep(
 /**
  * Step 2 - how you train. Plain language on every control: a stranger does
  * not know what SKILL means, and an enum name is never user-facing text.
- * Three small panels instead of one dense card, so each question reads on
- * its own.
+ * One small panel per question, so each reads on its own. The split leads:
+ * it is the choice lifters think in; volume is the dose on top of it.
  */
 @Composable
 private fun TrainingStep(
+    split: TrainingSplit,
     daysPerWeek: Int,
-    onDays: (Int) -> Unit,
+    onSplit: (TrainingSplit, Int) -> Unit,
     equipment: EquipmentAccess,
     onEquipment: (EquipmentAccess) -> Unit,
     focus: TrainingFocus,
     onFocus: (TrainingFocus) -> Unit,
-    tier: ExperienceTier,
-    onTier: (ExperienceTier) -> Unit,
+    tier: VolumeLevel,
+    onTier: (VolumeLevel) -> Unit,
 ) {
     Column(
         Modifier
@@ -734,36 +751,29 @@ private fun TrainingStep(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         InkPanel(Modifier.fillMaxWidth()) {
-            FieldLabel("TRAINING AGE - HOW LONG HAVE YOU LIFTED")
+            FieldLabel("HOW YOU SPLIT THE WEEK - BE HONEST, IT IS BUILT TO FIT")
             Spacer(Modifier.height(8.dp))
-            InkSegmented(
-                options = ExperienceTier.entries.map { it to it.label },
-                selected = tier,
-                onPick = onTier,
-            )
+            SplitPicker(split = split, days = daysPerWeek, onPick = onSplit)
             Spacer(Modifier.height(8.dp))
-            // The volume evidence is tiered on training age, so this one answer
-            // sets how much work the week prescribes; the builder explains why.
             Text(
-                when (tier) {
-                    ExperienceTier.BEGINNER ->
-                        "Under about a year. Beginners grow on less volume - the week starts lean."
-                    ExperienceTier.INTERMEDIATE ->
-                        "One to three years. More sets per muscle to keep progressing."
-                    ExperienceTier.ADVANCED ->
-                        "Beyond three years. The highest volumes the evidence supports."
-                },
+                splitCaption(split, daysPerWeek),
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
         }
         InkPanel(Modifier.fillMaxWidth()) {
-            FieldLabel("DAYS PER WEEK - BE HONEST, THE WEEK IS BUILT TO FIT")
+            FieldLabel("WEEKLY VOLUME")
             Spacer(Modifier.height(8.dp))
             InkSegmented(
-                options = (2..6).map { it to it.toString() },
-                selected = daysPerWeek,
-                onPick = onDays,
+                options = VolumeLevel.entries.map { it to it.label },
+                selected = tier,
+                onPick = onTier,
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                volumeCaption(tier, focus),
+                style = MaterialTheme.typography.labelSmall,
+                color = IronvellumColors.InkMuted,
             )
         }
         InkPanel(Modifier.fillMaxWidth()) {
@@ -853,9 +863,10 @@ private fun FieldLabel(text: String) {
 private fun ProposalStep(
     viewModel: OnboardingViewModel,
     daysPerWeek: Int,
+    split: TrainingSplit,
     equipment: EquipmentAccess,
     focus: TrainingFocus,
-    tier: ExperienceTier,
+    tier: VolumeLevel,
     sex: Sex,
 ) {
     val catalogue by viewModel.catalogue.collectAsStateWithLifecycle()
@@ -865,9 +876,9 @@ private fun ProposalStep(
     // Rebuild only when an upstream choice actually changed (the guard lives
     // in the view model). Waiting for a non-empty catalogue means the first
     // generation is never run against a half-loaded Room list.
-    LaunchedEffect(daysPerWeek, equipment, focus, tier, sex, catalogue) {
+    LaunchedEffect(daysPerWeek, split, equipment, focus, tier, sex, catalogue) {
         if (catalogue.isNotEmpty()) {
-            viewModel.ensurePlan(daysPerWeek, equipment, focus, tier, sex, catalogue)
+            viewModel.ensurePlan(daysPerWeek, split, equipment, focus, tier, sex, catalogue)
         }
     }
 
@@ -950,7 +961,7 @@ private fun ProposalStep(
                 label = "Build from my answers instead",
                 onClick = {
                     if (catalogue.isNotEmpty()) {
-                        viewModel.ensurePlan(daysPerWeek, equipment, focus, tier, sex, catalogue, force = true)
+                        viewModel.ensurePlan(daysPerWeek, split, equipment, focus, tier, sex, catalogue, force = true)
                     }
                 },
                 quiet = true,

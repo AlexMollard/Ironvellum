@@ -15,11 +15,11 @@ class ProgramRulesTest {
     @Test
     fun `weekly set targets follow the evidence tiers`() {
         fun bounds(r: ClosedFloatingPointRange<Double>) = Pair(r.start, r.endInclusive)
-        assertEquals(Pair(8.0, 12.0), bounds(ProgramRules.weeklySetTarget(ExperienceTier.BEGINNER, TrainingFocus.MUSCLE)))
-        assertEquals(Pair(12.0, 18.0), bounds(ProgramRules.weeklySetTarget(ExperienceTier.INTERMEDIATE, TrainingFocus.MUSCLE)))
-        assertEquals(Pair(15.0, 22.0), bounds(ProgramRules.weeklySetTarget(ExperienceTier.ADVANCED, TrainingFocus.MUSCLE)))
+        assertEquals(Pair(8.0, 12.0), bounds(ProgramRules.weeklySetTarget(VolumeLevel.LEAN, TrainingFocus.MUSCLE)))
+        assertEquals(Pair(12.0, 18.0), bounds(ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.MUSCLE)))
+        assertEquals(Pair(15.0, 22.0), bounds(ProgramRules.weeklySetTarget(VolumeLevel.HIGH, TrainingFocus.MUSCLE)))
         // Strength saturates early (Pelland 2026; Ralston 2017): 5-15 direct.
-        assertEquals(Pair(5.0, 15.0), bounds(ProgramRules.weeklySetTarget(ExperienceTier.ADVANCED, TrainingFocus.STRENGTH)))
+        assertEquals(Pair(5.0, 15.0), bounds(ProgramRules.weeklySetTarget(VolumeLevel.HIGH, TrainingFocus.STRENGTH)))
     }
 
     @Test
@@ -53,11 +53,11 @@ class ProgramRulesTest {
 
     @Test
     fun `suggest tier boundaries sit at 365 and 1095 days`() {
-        assertEquals(ExperienceTier.BEGINNER, ProgramRules.suggestTier(null, 1000L))
-        assertEquals(ExperienceTier.BEGINNER, ProgramRules.suggestTier(0L, 364L))
-        assertEquals(ExperienceTier.INTERMEDIATE, ProgramRules.suggestTier(0L, 365L))
-        assertEquals(ExperienceTier.INTERMEDIATE, ProgramRules.suggestTier(0L, 1094L))
-        assertEquals(ExperienceTier.ADVANCED, ProgramRules.suggestTier(0L, 1095L))
+        assertEquals(VolumeLevel.LEAN, ProgramRules.suggestVolume(null, 1000L))
+        assertEquals(VolumeLevel.LEAN, ProgramRules.suggestVolume(0L, 364L))
+        assertEquals(VolumeLevel.STANDARD, ProgramRules.suggestVolume(0L, 365L))
+        assertEquals(VolumeLevel.STANDARD, ProgramRules.suggestVolume(0L, 1094L))
+        assertEquals(VolumeLevel.HIGH, ProgramRules.suggestVolume(0L, 1095L))
     }
 
     // -------------------------------------------------------------- loads
