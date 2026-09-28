@@ -103,27 +103,27 @@ fun coverageGaps(volume: Map<Muscle, Double>, target: ClosedFloatingPointRange<D
     }
 
 private val FRONT = listOf(
-    Region(Muscle.FRONT_DELTS, 0.072f to 0.132f, 0.118f to 0.140f, 0.136f to 0.170f, 0.128f to 0.205f, 0.103f to 0.196f, 0.088f to 0.165f),
-    Region(Muscle.SIDE_DELTS, 0.120f to 0.140f, 0.146f to 0.158f, 0.158f to 0.196f, 0.148f to 0.228f, 0.133f to 0.207f, 0.138f to 0.172f),
-    Region(Muscle.CHEST, 0.012f to 0.150f, 0.070f to 0.141f, 0.100f to 0.156f, 0.108f to 0.180f, 0.096f to 0.206f, 0.060f to 0.224f, 0.012f to 0.226f),
-    Region(Muscle.BICEPS, 0.116f to 0.228f, 0.148f to 0.232f, 0.156f to 0.280f, 0.146f to 0.322f, 0.122f to 0.318f, 0.112f to 0.272f),
-    Region(Muscle.FOREARMS, 0.121f to 0.338f, 0.160f to 0.338f, 0.166f to 0.395f, 0.154f to 0.448f, 0.131f to 0.448f, 0.121f to 0.392f),
-    Region(Muscle.ABS, 0.012f to 0.256f, 0.058f to 0.254f, 0.066f to 0.330f, 0.060f to 0.430f, 0.012f to 0.455f),
-    Region(Muscle.QUADS, 0.034f to 0.520f, 0.098f to 0.490f, 0.110f to 0.560f, 0.102f to 0.640f, 0.083f to 0.690f, 0.050f to 0.690f, 0.040f to 0.618f),
-    Region(Muscle.ADDUCTORS, 0.008f to 0.500f, 0.030f to 0.518f, 0.038f to 0.615f, 0.027f to 0.640f, 0.010f to 0.560f),
-    Region(Muscle.CALVES, 0.084f to 0.730f, 0.098f to 0.790f, 0.086f to 0.868f, 0.060f to 0.868f, 0.050f to 0.800f, 0.060f to 0.742f),
+    Region(Muscle.FRONT_DELTS, 0.112f to 0.146f, 0.121f to 0.153f, 0.129f to 0.161f, 0.132f to 0.168f, 0.134f to 0.176f, 0.135f to 0.183f, 0.133f to 0.191f, 0.130f to 0.198f, 0.125f to 0.206f, 0.120f to 0.206f, 0.114f to 0.198f, 0.110f to 0.191f, 0.108f to 0.183f, 0.106f to 0.176f, 0.106f to 0.168f, 0.106f to 0.161f, 0.108f to 0.153f, 0.110f to 0.146f),
+    Region(Muscle.SIDE_DELTS, 0.133f to 0.150f, 0.148f to 0.159f, 0.155f to 0.167f, 0.160f to 0.175f, 0.164f to 0.184f, 0.163f to 0.193f, 0.161f to 0.201f, 0.158f to 0.209f, 0.155f to 0.218f, 0.152f to 0.218f, 0.147f to 0.209f, 0.145f to 0.201f, 0.144f to 0.193f, 0.143f to 0.184f, 0.140f to 0.175f, 0.138f to 0.167f, 0.137f to 0.159f, 0.131f to 0.150f),
+    Region(Muscle.CHEST, 0.010f to 0.152f, 0.060f to 0.145f, 0.098f to 0.152f, 0.106f to 0.176f, 0.098f to 0.206f, 0.060f to 0.226f, 0.010f to 0.228f),
+    Region(Muscle.BICEPS, 0.143f to 0.222f, 0.154f to 0.236f, 0.161f to 0.249f, 0.165f to 0.263f, 0.167f to 0.276f, 0.164f to 0.289f, 0.160f to 0.303f, 0.153f to 0.317f, 0.143f to 0.330f, 0.135f to 0.330f, 0.127f to 0.317f, 0.123f to 0.303f, 0.120f to 0.289f, 0.118f to 0.276f, 0.117f to 0.263f, 0.119f to 0.249f, 0.124f to 0.236f, 0.134f to 0.222f),
+    Region(Muscle.FOREARMS, 0.144f to 0.340f, 0.161f to 0.353f, 0.167f to 0.367f, 0.166f to 0.380f, 0.164f to 0.393f, 0.161f to 0.406f, 0.157f to 0.419f, 0.152f to 0.433f, 0.146f to 0.446f, 0.139f to 0.446f, 0.134f to 0.433f, 0.129f to 0.419f, 0.126f to 0.406f, 0.125f to 0.393f, 0.124f to 0.380f, 0.124f to 0.367f, 0.126f to 0.353f, 0.137f to 0.340f),
+    Region(Muscle.ABS, 0.010f to 0.242f, 0.052f to 0.242f, 0.060f to 0.300f, 0.060f to 0.380f, 0.052f to 0.448f, 0.010f to 0.462f),
+    Region(Muscle.QUADS, 0.077f to 0.488f, 0.100f to 0.514f, 0.110f to 0.539f, 0.112f to 0.565f, 0.109f to 0.591f, 0.103f to 0.617f, 0.096f to 0.642f, 0.086f to 0.668f, 0.076f to 0.694f, 0.070f to 0.694f, 0.065f to 0.668f, 0.062f to 0.642f, 0.058f to 0.617f, 0.056f to 0.591f, 0.054f to 0.565f, 0.050f to 0.539f, 0.051f to 0.514f, 0.065f to 0.488f),
+    Region(Muscle.ADDUCTORS, 0.025f to 0.515f, 0.039f to 0.532f, 0.046f to 0.549f, 0.049f to 0.566f, 0.049f to 0.583f, 0.048f to 0.599f, 0.047f to 0.616f, 0.045f to 0.633f, 0.043f to 0.650f, 0.040f to 0.650f, 0.036f to 0.633f, 0.032f to 0.616f, 0.029f to 0.599f, 0.027f to 0.583f, 0.025f to 0.566f, 0.020f to 0.549f, 0.016f to 0.532f, 0.020f to 0.515f),
+    Region(Muscle.CALVES, 0.069f to 0.722f, 0.086f to 0.742f, 0.094f to 0.761f, 0.095f to 0.781f, 0.091f to 0.801f, 0.086f to 0.821f, 0.078f to 0.841f, 0.070f to 0.860f, 0.059f to 0.880f, 0.053f to 0.880f, 0.048f to 0.860f, 0.043f to 0.841f, 0.039f to 0.821f, 0.036f to 0.801f, 0.035f to 0.781f, 0.037f to 0.761f, 0.044f to 0.742f, 0.060f to 0.722f),
 )
 
 private val BACK = listOf(
-    Region(Muscle.UPPER_BACK, 0.012f to 0.112f, 0.042f to 0.112f, 0.100f to 0.138f, 0.098f to 0.168f, 0.058f to 0.228f, 0.012f to 0.268f),
-    Region(Muscle.REAR_DELTS, 0.102f to 0.140f, 0.136f to 0.150f, 0.155f to 0.190f, 0.142f to 0.218f, 0.112f to 0.192f),
-    Region(Muscle.LATS, 0.020f to 0.272f, 0.062f to 0.232f, 0.100f to 0.192f, 0.110f to 0.240f, 0.100f to 0.318f, 0.070f to 0.378f, 0.030f to 0.362f),
-    Region(Muscle.TRICEPS, 0.116f to 0.220f, 0.150f to 0.222f, 0.160f to 0.270f, 0.150f to 0.320f, 0.125f to 0.320f, 0.113f to 0.262f),
-    Region(Muscle.FOREARMS, 0.121f to 0.338f, 0.160f to 0.338f, 0.166f to 0.395f, 0.154f to 0.448f, 0.131f to 0.448f, 0.121f to 0.392f),
-    Region(Muscle.LOWER_BACK, 0.012f to 0.370f, 0.034f to 0.376f, 0.070f to 0.392f, 0.074f to 0.448f, 0.012f to 0.460f),
-    Region(Muscle.GLUTES, 0.008f to 0.470f, 0.080f to 0.462f, 0.104f to 0.492f, 0.108f to 0.556f, 0.070f to 0.580f, 0.010f to 0.572f),
-    Region(Muscle.HAMSTRINGS, 0.020f to 0.592f, 0.070f to 0.590f, 0.108f to 0.582f, 0.100f to 0.660f, 0.084f to 0.700f, 0.042f to 0.700f, 0.026f to 0.650f),
-    Region(Muscle.CALVES, 0.036f to 0.730f, 0.090f to 0.730f, 0.098f to 0.790f, 0.085f to 0.870f, 0.055f to 0.880f, 0.036f to 0.800f),
+    Region(Muscle.UPPER_BACK, 0.010f to 0.126f, 0.046f to 0.126f, 0.100f to 0.142f, 0.098f to 0.168f, 0.058f to 0.226f, 0.010f to 0.268f),
+    Region(Muscle.REAR_DELTS, 0.125f to 0.148f, 0.143f to 0.157f, 0.154f to 0.165f, 0.159f to 0.174f, 0.163f to 0.183f, 0.162f to 0.192f, 0.158f to 0.201f, 0.153f to 0.209f, 0.147f to 0.218f, 0.139f to 0.218f, 0.131f to 0.209f, 0.126f to 0.201f, 0.123f to 0.192f, 0.121f to 0.183f, 0.119f to 0.174f, 0.120f to 0.165f, 0.121f to 0.157f, 0.121f to 0.148f),
+    Region(Muscle.LATS, 0.020f to 0.272f, 0.062f to 0.232f, 0.105f to 0.236f, 0.107f to 0.262f, 0.104f to 0.292f, 0.098f to 0.326f, 0.092f to 0.360f, 0.070f to 0.382f, 0.030f to 0.366f),
+    Region(Muscle.TRICEPS, 0.142f to 0.218f, 0.156f to 0.233f, 0.163f to 0.247f, 0.166f to 0.262f, 0.166f to 0.276f, 0.163f to 0.290f, 0.158f to 0.305f, 0.152f to 0.320f, 0.143f to 0.334f, 0.136f to 0.334f, 0.128f to 0.320f, 0.124f to 0.305f, 0.121f to 0.290f, 0.118f to 0.276f, 0.116f to 0.262f, 0.117f to 0.247f, 0.122f to 0.233f, 0.133f to 0.218f),
+    Region(Muscle.FOREARMS, 0.144f to 0.340f, 0.161f to 0.353f, 0.167f to 0.367f, 0.166f to 0.380f, 0.164f to 0.393f, 0.161f to 0.406f, 0.157f to 0.419f, 0.152f to 0.433f, 0.146f to 0.446f, 0.139f to 0.446f, 0.134f to 0.433f, 0.129f to 0.419f, 0.126f to 0.406f, 0.125f to 0.393f, 0.124f to 0.380f, 0.124f to 0.367f, 0.126f to 0.353f, 0.137f to 0.340f),
+    Region(Muscle.LOWER_BACK, 0.010f to 0.376f, 0.036f to 0.380f, 0.066f to 0.398f, 0.068f to 0.446f, 0.010f to 0.456f),
+    Region(Muscle.GLUTES, 0.006f to 0.468f, 0.099f to 0.462f, 0.103f to 0.480f, 0.108f to 0.505f, 0.111f to 0.535f, 0.112f to 0.565f, 0.070f to 0.584f, 0.030f to 0.578f, 0.019f to 0.535f, 0.008f to 0.505f),
+    Region(Muscle.HAMSTRINGS, 0.076f to 0.592f, 0.093f to 0.605f, 0.101f to 0.619f, 0.103f to 0.632f, 0.101f to 0.646f, 0.096f to 0.659f, 0.089f to 0.673f, 0.080f to 0.686f, 0.069f to 0.700f, 0.060f to 0.700f, 0.049f to 0.686f, 0.041f to 0.673f, 0.036f to 0.659f, 0.033f to 0.646f, 0.032f to 0.632f, 0.035f to 0.619f, 0.044f to 0.605f, 0.062f to 0.592f),
+    Region(Muscle.CALVES, 0.069f to 0.720f, 0.088f to 0.740f, 0.097f to 0.761f, 0.096f to 0.781f, 0.093f to 0.802f, 0.087f to 0.823f, 0.079f to 0.843f, 0.070f to 0.863f, 0.059f to 0.884f, 0.052f to 0.884f, 0.047f to 0.863f, 0.042f to 0.843f, 0.038f to 0.823f, 0.035f to 0.802f, 0.033f to 0.781f, 0.034f to 0.761f, 0.042f to 0.740f, 0.059f to 0.720f),
 )
 
 /**
@@ -138,21 +138,23 @@ private val BACK = listOf(
  * use), so the thumb sits on the outside of each hand.
  */
 private val HALF_OUTLINE = listOf(
-    0.000f to 0.004f, // crown
-    0.027f to 0.010f,
-    0.042f to 0.028f,
-    0.046f to 0.052f,
-    0.044f to 0.074f,
-    0.040f to 0.088f, // jaw angle
-    0.032f to 0.099f,
-    0.024f to 0.103f, // chin
-    0.031f to 0.106f, // neck
-    0.044f to 0.108f, // traps rise into the neck
-    0.062f to 0.113f,
-    0.084f to 0.121f,
-    0.106f to 0.131f, // traps meet the shoulder
-    0.132f to 0.141f,
-    0.156f to 0.158f,
+    0.000f to 0.000f, // crown
+    0.026f to 0.004f,
+    0.042f to 0.016f,
+    0.050f to 0.034f,
+    0.052f to 0.054f, // temple
+    0.055f to 0.062f, // ear
+    0.054f to 0.074f,
+    0.050f to 0.080f,
+    0.047f to 0.092f, // cheek
+    0.042f to 0.104f, // jaw angle
+    0.037f to 0.113f, // neck
+    0.050f to 0.121f, // traps rise into the neck
+    0.068f to 0.127f,
+    0.090f to 0.133f,
+    0.110f to 0.139f, // traps meet the shoulder
+    0.134f to 0.145f,
+    0.157f to 0.160f,
     0.168f to 0.184f, // deltoid cap
     0.167f to 0.210f,
     0.170f to 0.240f,
