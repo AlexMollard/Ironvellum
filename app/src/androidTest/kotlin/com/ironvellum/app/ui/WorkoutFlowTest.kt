@@ -106,6 +106,10 @@ class WorkoutFlowTest {
      * the seven have a seeded program.
      */
     private fun selectATrainingDay() {
+        // Decide only once the day card has loaded. Sampled on the first
+        // frame, a rest day had not rendered yet, so the walk was skipped and
+        // the test then waited for a quest that never came.
+        awaitAnyText { it == "REST DAY" || isQuestCta(it) }
         if (allText().none { it == "REST DAY" }) return
         val rail = listOf("M", "T", "W", "T", "F", "S", "S")
         for (index in rail.indices) {
@@ -151,9 +155,7 @@ class WorkoutFlowTest {
         selectATrainingDay()
         // The quest card arrives after seeding, so poll for the CTA rather
         // than sampling the tree once on the first frame.
-        val cta = awaitAnyText { label ->
-            label == "ACCEPT QUEST" || label == "START WORKOUT" || label.startsWith("RESUME")
-        }
+        val cta = awaitAnyText(predicate = ::isQuestCta)
         compose.onAllNodesWithText(cta).onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
         settle()
@@ -199,6 +201,9 @@ class WorkoutFlowTest {
             ?: error("the session screen must show the conquered count")
         return line.substringBefore('/').trim().toInt()
     }
+
+    private fun isQuestCta(label: String): Boolean =
+        label == "ACCEPT QUEST" || label == "START WORKOUT" || label.startsWith("RESUME")
 
     /** Polls until some string matches, and returns it. */
     private fun awaitAnyText(attempts: Int = 60, predicate: (String) -> Boolean): String {
