@@ -12,7 +12,9 @@ import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.MainActivity
+import com.ironvellum.app.IronvellumApp
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -40,6 +42,12 @@ class AccessibilityChecksTest {
     fun takeTheClock() {
         // Onboarding gates the whole app until a profile height exists.
         TestProfile.ensureSetUp()
+        // The sweep measures Dead Hang's LOG AN ATTEMPT form and its load
+        // stepper, which only render while the technique is unmastered. A claim
+        // left by an earlier test or a pre-installed profile hid them and the
+        // sweep failed to reach ADD LOAD. Same reset SkillPracticeFlowTest uses.
+        (InstrumentationRegistry.getInstrumentation().targetContext.applicationContext as IronvellumApp)
+            .database.openHelper.writableDatabase.execSQL("DELETE FROM skill_practices")
         // The ink treatment animates forever, so Compose never idles.
         compose.mainClock.autoAdvance = false
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
