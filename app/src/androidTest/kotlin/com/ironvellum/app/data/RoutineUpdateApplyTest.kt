@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.db.PresetEntity
 import com.ironvellum.app.data.db.PresetEntryEntity
+import com.ironvellum.app.domain.RoutineUpdate
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -15,7 +16,8 @@ import org.junit.runner.RunWith
 
 /**
  * Finishing a preset session offers to bring the preset in line with what was
- * done; accepting writes only the accepted entries, and never the log.
+ * done; accepting writes only the accepted fields of the accepted entries,
+ * and never the log.
  */
 @RunWith(AndroidJUnit4::class)
 class RoutineUpdateApplyTest {
@@ -39,7 +41,7 @@ class RoutineUpdateApplyTest {
     }
 
     @Test
-    fun acceptedRowsUpdateThePresetAndNothingElse() = runBlocking {
+    fun acceptedFieldsUpdateThePresetAndNothingElse() = runBlocking {
         val (a, b, c) = db.exerciseDao().observeAll().first()
             .filter { it.metric == "REPS" && it.category.isEmpty() }
             .take(3)
@@ -54,8 +56,8 @@ class RoutineUpdateApplyTest {
         )
         val sessionId = repo.startSessionFromPreset(presetId)
         val prefilled = db.sessionDao().setsFor(sessionId)
-        // A: four of six sets, 5,5,5,3 at the planned load.
-        prefilled.filter { it.exerciseId == a }.sortedBy { it.setIndex }.take(4).zip(listOf(5, 5, 5, 3)).forEach { (set, reps) ->
+        // A: four of six sets, 6,6,6,4 at the planned load: sets and reps move.
+        prefilled.filter { it.exerciseId == a }.sortedBy { it.setIndex }.take(4).zip(listOf(6, 6, 6, 4)).forEach { (set, reps) ->
             repo.updateSet(set.id, reps, 15.2, done = true)
         }
         // B: all three, 10,9,7.
@@ -71,25 +73,23 @@ class RoutineUpdateApplyTest {
         val offer = repo.routineUpdateFor(sessionId)!!
         assertEquals(presetId, offer.presetId)
         assertEquals(listOf(a, b), offer.changes.map { it.before.exerciseId })
+        val changeA = offer.changes.first { it.before.exerciseId == a }
+        assertEquals(listOf(RoutineUpdate.Field.SETS, RoutineUpdate.Field.REPS), changeA.fields)
 
         val loggedBefore = db.sessionDao().setsFor(sessionId)
         val entriesBefore = db.presetDao().presetWithEntries(presetId)!!.entries.associateBy { it.exerciseId }
-        // The lifter accepts A's row and turns B's off.
-        repo.applyRoutineUpdate(presetId, offer.changes.filter { it.before.exerciseId == a })
+        // The lifter ticks only A's reps and turns B off entirely.
+        repo.applyRoutineUpdate(presetId, listOfNotNull(changeA.only(setOf(RoutineUpdate.Field.REPS))))
 
         val entries = db.presetDao().presetWithEntries(presetId)!!.entries.associateBy { it.exerciseId }
-        assertEquals(entriesBefore.getValue(a).copy(targetSets = 4, targetReps = 5, targetWeightKg = 15.2), entries.getValue(a))
+        assertEquals(entriesBefore.getValue(a).copy(targetReps = 6), entries.getValue(a))
         assertEquals(entriesBefore.getValue(b), entries.getValue(b))
         assertEquals(entriesBefore.getValue(c), entries.getValue(c))
         assertEquals(loggedBefore, db.sessionDao().setsFor(sessionId))
 
-        // The next start takes the new set count; the load and reps come from
-        // Progression, which repeats 5 at 15.2 because the last set missed 5.
+        // The set count was not accepted: the next start still plans six.
         val next = repo.startSessionFromPreset(presetId)
-        val nextA = db.sessionDao().setsFor(next).filter { it.exerciseId == a }
-        assertEquals(4, nextA.size)
-        assertEquals(List(4) { 5 }, nextA.map { it.reps })
-        assertEquals(List(4) { 15.2 }, nextA.map { it.weightKg })
+        assertEquals(6, db.sessionDao().setsFor(next).count { it.exerciseId == a })
     }
 
     private companion object {

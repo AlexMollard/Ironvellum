@@ -102,4 +102,26 @@ class RoutineUpdateTest {
         val change = RoutineUpdate.propose(listOf(heavy, run, backoff), sets, metricOf).single()
         assertEquals(backoff.copy(targetSets = 2), change.after)
     }
+
+    @Test
+    fun `each field is accepted on its own and a set drop starts unticked`() {
+        val pull = entry(10, 1, 0, sets = 6, reps = 5, kg = 15.0)
+        val short = List(4) { set(1, 0, 6, 17.5) }
+        val change = RoutineUpdate.propose(listOf(pull), short, metricOf).single()
+        val sets = RoutineUpdate.Field.SETS
+        val reps = RoutineUpdate.Field.REPS
+        val load = RoutineUpdate.Field.LOAD
+        assertEquals(listOf(sets, reps, load), change.fields)
+        // A short day must not shrink the plan unless the lifter says so.
+        assertEquals(setOf(reps, load), RoutineUpdate.defaultAccepted(change))
+        // Narrowed to reps: sets and load keep their plan.
+        assertEquals(pull.copy(targetReps = 6), change.only(setOf(reps))!!.after)
+        assertEquals(pull, change.only(setOf(reps))!!.before)
+        assertEquals(null, change.only(emptySet()))
+        // Accepting a field the change does not move is no change at all.
+        assertEquals(null, change.only(setOf(RoutineUpdate.Field.MODIFIERS)))
+        // More sets than planned is ticked like everything else.
+        val long = RoutineUpdate.propose(listOf(pull), List(7) { set(1, 0, 5, 15.0) }, metricOf).single()
+        assertEquals(setOf(sets), RoutineUpdate.defaultAccepted(long))
+    }
 }

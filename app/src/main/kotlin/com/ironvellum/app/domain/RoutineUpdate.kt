@@ -7,8 +7,53 @@ package com.ironvellum.app.domain
  */
 object RoutineUpdate {
 
-    /** One preset entry as planned, and as the finished session suggests; [isHold] when targetReps is seconds. */
-    data class Change(val before: PresetEntry, val after: PresetEntry, val isHold: Boolean = false)
+    /** The parts of a preset entry a finished session can move; the lifter accepts each on its own. */
+    enum class Field { SETS, REPS, LOAD, MODIFIERS }
+
+    /**
+     * One preset entry as planned, and as the finished session suggests; [isHold]
+     * when targetReps is seconds. [fields] lists what differs, each readable as
+     * before/after on the two entries.
+     */
+    data class Change(val before: PresetEntry, val after: PresetEntry, val isHold: Boolean = false) {
+        val fields: List<Field>
+            get() = Field.entries.filter { field ->
+                when (field) {
+                    Field.SETS -> before.targetSets != after.targetSets
+                    Field.REPS -> before.targetReps != after.targetReps
+                    Field.LOAD -> before.targetWeightKg != after.targetWeightKg
+                    Field.MODIFIERS -> before.modifiers != after.modifiers
+                }
+            }
+
+        /** Whether the session did fewer sets than planned. */
+        val dropsSets: Boolean get() = after.targetSets < before.targetSets
+
+        /**
+         * This change narrowed to [accepted]: every other field keeps its
+         * planned value, so applying it writes only what the lifter ticked.
+         * Null when nothing it moves was accepted.
+         */
+        fun only(accepted: Set<Field>): Change? {
+            val kept = fields.filter { it in accepted }.toSet()
+            if (kept.isEmpty()) return null
+            return copy(
+                after = before.copy(
+                    targetSets = if (Field.SETS in kept) after.targetSets else before.targetSets,
+                    targetReps = if (Field.REPS in kept) after.targetReps else before.targetReps,
+                    targetWeightKg = if (Field.LOAD in kept) after.targetWeightKg else before.targetWeightKg,
+                    modifiers = if (Field.MODIFIERS in kept) after.modifiers else before.modifiers,
+                ),
+            )
+        }
+    }
+
+    /**
+     * The fields ticked before the lifter touches anything: all of them, except
+     * a drop in set count - one short day must not shrink the plan by accident.
+     */
+    fun defaultAccepted(change: Change): Set<Field> =
+        change.fields.filterNot { it == Field.SETS && change.dropsSets }.toSet()
 
     /**
      * Changes for the entries whose done sets differ from their plan, in

@@ -1008,7 +1008,8 @@ class Repository(
 
     /**
      * Writes the accepted changes into the preset in one transaction. Only the
-     * listed entries are touched, and on each only the fields the change moves;
+     * listed entries are touched, and on each only the fields the change moves
+     * (narrow a change to the lifter's ticks with [RoutineUpdate.Change.only]);
      * an entry since deleted or moved to another preset is skipped. Logged
      * sessions are never touched.
      */

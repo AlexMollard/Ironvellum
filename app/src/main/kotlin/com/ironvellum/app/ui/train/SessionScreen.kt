@@ -28,7 +28,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import com.ironvellum.app.WorkoutSessionService
-import com.ironvellum.app.ui.theme.InkCircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -46,7 +45,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.onFocusChanged
@@ -190,14 +195,32 @@ class SessionViewModel(
         SessionClock.pace(history).secondsPerSet(session?.presetId)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /** How far the finish has got: celebrate first, then ask about the routine, then leave. */
+    enum class Finish { VICTORY, AWARDS, ROUTINE }
+
     /**
-     * The offer to bring the preset in line with what was just done. Held here,
-     * not in the screen, so a rotation keeps it; the session is completed
-     * before it is ever computed, so losing it loses nothing but the offer.
+     * The completion result and the finish stage. Held here, not in the
+     * screen, so a rotation keeps the victory; the session is completed and
+     * paid before either is set.
+     */
+    private val _completion = MutableStateFlow<Repository.CompletionResult?>(null)
+    val completion: StateFlow<Repository.CompletionResult?> = _completion
+    private val _finish = MutableStateFlow(Finish.VICTORY)
+    val finish: StateFlow<Finish> = _finish
+
+    fun advanceFinish(to: Finish) {
+        _finish.value = to
+    }
+
+    /**
+     * The offer to bring the preset in line with what was just done, asked
+     * once the celebrations are over. Computed after the session is
+     * completed, so losing it loses nothing but the offer.
      */
     private val _routineUpdate = MutableStateFlow<Repository.RoutineUpdateOffer?>(null)
     val routineUpdate: StateFlow<Repository.RoutineUpdateOffer?> = _routineUpdate
 
+    /** Writes [accepted], each already narrowed to the fields the lifter ticked. */
     fun applyRoutineUpdate(accepted: List<RoutineUpdate.Change>) {
         val offer = _routineUpdate.value ?: return
         _routineUpdate.value = null
@@ -274,7 +297,7 @@ class SessionViewModel(
 
     private var completing = false
 
-    fun complete(onResult: (Repository.CompletionResult) -> Unit) {
+    fun complete() {
         // One completion per session, whatever the button does. The repository
         // already refuses a second one (a `check` inside the transaction, and
         // two concurrent callers pay exactly once — DoubleCompletionTest), but
@@ -293,7 +316,7 @@ class SessionViewModel(
                     // Asked after the XP is banked: the answer can never
                     // change what the session paid.
                     _routineUpdate.value = runCatching { repo.routineUpdateFor(sessionId) }.getOrNull()
-                    onResult(it)
+                    _completion.value = it
                 }
                 .onFailure { completing = false }
         }
@@ -352,7 +375,8 @@ fun SessionScreen(
     val focus by viewModel.focus.collectAsStateWithLifecycle()
     val pace by viewModel.pace.collectAsStateWithLifecycle()
     val routineUpdate by viewModel.routineUpdate.collectAsStateWithLifecycle()
-    var completion by remember { mutableStateOf<Repository.CompletionResult?>(null) }
+    val completion by viewModel.completion.collectAsStateWithLifecycle()
+    val finish by viewModel.finish.collectAsStateWithLifecycle()
     var confirmAbandon by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
     var editModifiersFor by remember { mutableStateOf<Long?>(null) }
@@ -381,7 +405,7 @@ fun SessionScreen(
     if (session == null) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
             Spacer(Modifier.height(20.dp))
-            Text("Summoning session…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            Text("Summoning the trial…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
         return
     }
@@ -494,7 +518,12 @@ fun SessionScreen(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text(first.exerciseName, style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            first.exerciseName,
+                            style = MaterialTheme.typography.titleMedium,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                         // Only real modifiers get a line. "tap to set modifiers"
                         // printed under every movement that had none, beside the
                         // slider glyph in this same header that does exactly that.
@@ -522,19 +551,18 @@ fun SessionScreen(
                             softWrap = false,
                         )
                     }
-                    // Reorder controls: the ends are disabled, not inert, so the
-                    // lifter can see the boundary of the ordering.
-                    IconButton(
-                        onClick = { viewModel.moveExercise(first.exercisePosition, up = true) },
-                        enabled = blockIdx > 0,
-                    ) {
-                        Icon(Icons.Outlined.KeyboardArrowUp, contentDescription = "Move exercise up", tint = IronvellumColors.InkMuted)
+                    // Reorder controls only where a move is possible: disabled
+                    // arrows at the ends cost the name ~48dp each at 360dp and
+                    // wrapped "Dumbbell Shoulder Press" onto three lines.
+                    if (blockIdx > 0) {
+                        IconButton(onClick = { viewModel.moveExercise(first.exercisePosition, up = true) }) {
+                            Icon(Icons.Outlined.KeyboardArrowUp, contentDescription = "Move exercise up", tint = IronvellumColors.InkMuted)
+                        }
                     }
-                    IconButton(
-                        onClick = { viewModel.moveExercise(first.exercisePosition, up = false) },
-                        enabled = blockIdx < exerciseBlocks.lastIndex,
-                    ) {
-                        Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Move exercise down", tint = IronvellumColors.InkMuted)
+                    if (blockIdx < exerciseBlocks.lastIndex) {
+                        IconButton(onClick = { viewModel.moveExercise(first.exercisePosition, up = false) }) {
+                            Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Move exercise down", tint = IronvellumColors.InkMuted)
+                        }
                     }
                     IconButton(onClick = { editModifiersFor = exerciseId }) {
                         Icon(Icons.Outlined.Tune, contentDescription = "Edit modifiers", tint = IronvellumColors.InkMuted)
@@ -602,7 +630,7 @@ fun SessionScreen(
 
         Spacer(Modifier.height(10.dp))
         Text(
-            "+ add a one-off exercise",
+            "+ Add a one-off exercise",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
@@ -618,7 +646,7 @@ fun SessionScreen(
         IronvellumButton(
             label = "Claim Victory",
             gold = true,
-            onClick = { viewModel.complete { completion = it } },
+            onClick = { viewModel.complete() },
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(24.dp))
@@ -629,17 +657,24 @@ fun SessionScreen(
             // Material's dialog container is a 28dp rounded rect - the most
             // obviously stock surface in the app. Give it the ink shape.
             shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmAbandon = false },
             title = { Text("Abandon this trial?") },
-            text = { Text("Unfinished sessions grant no XP and are erased from the record.") },
+            text = { Text("Unfinished trials grant no XP and are erased from the record.") },
+            // Staying is the filled action; abandoning is the quiet one, so a
+            // reflex tap on the bright button never erases the trial.
             confirmButton = {
-                TextButton(onClick = {
-                    confirmAbandon = false
-                    viewModel.abandon(onExit)
-                }) { Text("Abandon", color = IronvellumColors.DangerRed) }
+                IronvellumButton(
+                    "Abandon",
+                    quiet = true,
+                    onClick = {
+                        confirmAbandon = false
+                        viewModel.abandon(onExit)
+                    },
+                )
             },
             dismissButton = {
-                TextButton(onClick = { confirmAbandon = false }) { Text("Keep fighting") }
+                IronvellumButton("Keep going", onClick = { confirmAbandon = false })
             },
         )
     }
@@ -648,7 +683,7 @@ fun SessionScreen(
         val initial = target.weightKg?.let { loadText(it) }.orEmpty()
         var field by remember(target.id) { mutableStateOf(TextFieldValue(initial, TextRange(0, initial.length))) }
         val parsed = parseLoadKg(field.text)
-        // This set and every later set of the movement not yet ticked off:
+        // This set and every later set of the exercise not yet ticked off:
         // a working weight usually holds for the rest of the exercise.
         val following = ui.sets.filter {
             it.exerciseId == target.exerciseId && it.setIndex >= target.setIndex && (it.id == target.id || !it.done)
@@ -662,8 +697,28 @@ fun SessionScreen(
         }
         AlertDialog(
             shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            // No Cancel: back and an outside tap already dismiss, and a third
+            // button wrapped the row into a ragged stack at 360dp.
             onDismissRequest = { editLoadFor = null },
-            title = { Text("${target.exerciseName} - set ${target.setIndex + 1}") },
+            title = {
+                Column {
+                    Text(
+                        target.exerciseName,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = IronvellumColors.Ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    Text(
+                        "SET ${target.setIndex + 1}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        letterSpacing = 2.sp,
+                    )
+                }
+            },
             text = {
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
@@ -671,7 +726,7 @@ fun SessionScreen(
                     onValueChange = { field = it.copy(text = it.text.take(LOAD_INPUT_MAX_CHARS)) },
                     singleLine = true,
                     label = { Text("Load (kg)") },
-                    placeholder = { Text("Blank or 0 for bodyweight") },
+                    placeholder = { Text("Leave blank for bodyweight") },
                     isError = parsed.isFailure,
                     supportingText = if (parsed.isFailure) {
                         { Text("Enter 0 to ${MAX_LOAD_KG.toInt()} kg.") }
@@ -684,17 +739,22 @@ fun SessionScreen(
                 )
             },
             confirmButton = {
-                Row {
-                    if (following.size > 1) {
-                        TextButton(enabled = parsed.isSuccess, onClick = { apply(following) }) {
-                            Text("Sets ${target.setIndex + 1}-${following.maxOf { it.setIndex } + 1}")
-                        }
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    val many = following.size > 1
+                    IronvellumButton(
+                        "This set",
+                        quiet = many,
+                        enabled = parsed.isSuccess,
+                        onClick = { apply(listOf(target)) },
+                    )
+                    if (many) {
+                        IronvellumButton(
+                            "All ${following.size} sets",
+                            enabled = parsed.isSuccess,
+                            onClick = { apply(following) },
+                        )
                     }
-                    TextButton(enabled = parsed.isSuccess, onClick = { apply(listOf(target)) }) { Text("This set") }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { editLoadFor = null }) { Text("Cancel") }
             },
         )
     }
@@ -740,88 +800,91 @@ fun SessionScreen(
         )
     }
 
-    var awards by remember { mutableStateOf<List<Achievement>>(emptyList()) }
-
     var shareText by remember { mutableStateOf<String?>(null) }
 
-    routineUpdate?.let { offer ->
-        // A rotation loses the victory result but not this offer; with the
-        // result gone, answering is the way out of the finished session.
-        RoutineUpdateDialog(
-            offer = offer,
-            onUpdate = { accepted ->
-                viewModel.applyRoutineUpdate(accepted)
-                if (completion == null) onExit()
-            },
-            onKeep = {
-                viewModel.keepPlan()
-                if (completion == null) onExit()
-            },
-        )
-    }
-
-    // The routine question first, then the victory: one dialog at a time.
-    completion?.takeIf { routineUpdate == null }?.let { result ->
-        VictoryOverlay(
-            result = result,
-            onShare = {
-                shareText = WorkoutShare.format(
-                    // The session row in the flow may not have refreshed yet;
-                    // the completion result carries the authoritative figures.
-                    session.copy(
-                        completedAtMs = session.completedAtMs ?: System.currentTimeMillis(),
-                        xpAwarded = result.xpAwarded,
-                        strengthScore = result.strengthScore,
-                    ),
-                    ui.sets,
-                    exercises.associateBy { it.id },
-                )
-            },
-            onContinue = {
-                awards = buildList {
-                    if (result.levelAfter > result.levelBefore) {
-                        add(
-                            Achievement(
-                                banner = "LEVEL UP",
-                                tagline = "STRENGTH RANK",
-                                name = "Level ${result.levelAfter}",
-                                subtitle = "${result.totalXp} XP TOTAL",
-                                accent = IronvellumColors.SystemGreen,
-                            ),
-                        )
-                    }
-                    if (result.classAfter != result.classBefore) {
-                        add(
-                            Achievement(
-                                banner = "CLASS UNLOCKED",
-                                tagline = "PROMOTION",
-                                name = result.classAfter,
-                                subtitle = "FROM ${result.classBefore.uppercase()}",
-                            ),
-                        )
-                    }
-                    result.newTitles.forEach { title ->
-                        add(
-                            Achievement(
-                                banner = "TITLE EARNED",
-                                name = title.name,
-                                subtitle = title.describeFor(sex).uppercase(),
-                            ),
-                        )
-                    }
+    // Celebrate first, then ask about the routine, then leave. The stage lives
+    // in the view model, so a rotation resumes where the lifter was; the
+    // session is already completed and paid, whatever the answer.
+    completion?.let { result ->
+        val awards = remember(result, sex) { awardsFor(result, sex) }
+        when (finish) {
+            SessionViewModel.Finish.VICTORY -> VictoryOverlay(
+                result = result,
+                onShare = {
+                    shareText = WorkoutShare.format(
+                        // The session row in the flow may not have refreshed yet;
+                        // the completion result carries the authoritative figures.
+                        session.copy(
+                            completedAtMs = session.completedAtMs ?: System.currentTimeMillis(),
+                            xpAwarded = result.xpAwarded,
+                            strengthScore = result.strengthScore,
+                        ),
+                        ui.sets,
+                        exercises.associateBy { it.id },
+                    )
+                },
+                onContinue = {
+                    viewModel.advanceFinish(
+                        if (awards.isEmpty()) SessionViewModel.Finish.ROUTINE else SessionViewModel.Finish.AWARDS,
+                    )
+                },
+            )
+            SessionViewModel.Finish.AWARDS -> AchievementOverlay(
+                items = awards,
+                onDone = { viewModel.advanceFinish(SessionViewModel.Finish.ROUTINE) },
+            )
+            SessionViewModel.Finish.ROUTINE -> {
+                val offer = routineUpdate
+                if (offer != null) {
+                    RoutineUpdateDialog(
+                        offer = offer,
+                        onUpdate = viewModel::applyRoutineUpdate,
+                        onKeep = viewModel::keepPlan,
+                    )
+                } else {
+                    // Answered, or nothing to ask: the finished session is done.
+                    LaunchedEffect(result) { onExit() }
                 }
-                completion = null
-                if (awards.isEmpty()) onExit()
-            },
-        )
-    }
-
-    if (awards.isNotEmpty()) {
-        AchievementOverlay(items = awards, onDone = { awards = emptyList(); onExit() })
+            }
+        }
     }
 
     shareText?.let { text ->
         ShareCardDialog(text = text, onDismiss = { shareText = null })
+    }
+}
+
+/** One page per honour the completion earned, shown after the victory. */
+private fun awardsFor(result: Repository.CompletionResult, sex: Sex): List<Achievement> = buildList {
+    if (result.levelAfter > result.levelBefore) {
+        add(
+            Achievement(
+                banner = "LEVEL UP",
+                tagline = "STRENGTH RANK",
+                name = "Level ${result.levelAfter}",
+                subtitle = "${result.totalXp} XP TOTAL",
+                accent = IronvellumColors.SystemGreen,
+            ),
+        )
+    }
+    if (result.classAfter != result.classBefore) {
+        add(
+            Achievement(
+                banner = "CLASS UNLOCKED",
+                tagline = "PROMOTION",
+                name = result.classAfter,
+                subtitle = "FROM ${result.classBefore.uppercase()}",
+            ),
+        )
+    }
+    result.newTitles.forEach { title ->
+        add(
+            Achievement(
+                banner = "TITLE EARNED",
+                name = title.name,
+                subtitle = title.describeFor(sex).uppercase(),
+            ),
+        )
     }
 }
 
@@ -904,7 +967,7 @@ private fun VictoryOverlay(
                         color = Color.White,
                     )
                     Text(
-                        "\u23F1 ${result.durationMinutes} min  ·  total ${result.totalXp} XP",
+                        "\u23F1 ${result.durationMinutes} min · total ${result.totalXp} XP",
                         style = MaterialTheme.typography.labelMedium,
                         color = IronvellumColors.InkMuted,
                     )
@@ -1094,6 +1157,7 @@ private fun SetRow(
                 if (showColumnLabels) ColumnLabel("LOAD")
                 Stepper(
                     value = formatKg(weightKg),
+                    what = "load",
                     onMinus = { onChange(reps, stepDownKg(weightKg), done) },
                     onPlus = { onChange(reps, stepUpKg(weightKg), done) },
                     onValueClick = onLoadTap,
@@ -1108,6 +1172,7 @@ private fun SetRow(
                 val step = if (isHold) HOLD_STEP_SECONDS else 1
                 Stepper(
                     value = if (isHold) "${reps}s" else reps.toString(),
+                    what = if (isHold) "seconds" else "reps",
                     onMinus = { onChange((reps - step).coerceAtLeast(0), weightKg, done) },
                     onPlus = { onChange(reps + step, weightKg, done) },
                     dimmed = done,
@@ -1123,6 +1188,7 @@ private fun SetRow(
                         if (showColumnLabels) ColumnLabel("LOAD")
                         Stepper(
                             value = formatKg(weightKg),
+                            what = "load",
                             onMinus = { onActivityChange(reps, durationSec, distanceM, grade, stepDownKg(weightKg), done) },
                             onPlus = { onActivityChange(reps, durationSec, distanceM, grade, stepUpKg(weightKg), done) },
                             onValueClick = onLoadTap,
@@ -1136,6 +1202,7 @@ private fun SetRow(
                     val minutes = (durationSec ?: 0) / 60
                     Stepper(
                         value = minutes.toString(),
+                        what = "minutes",
                         onMinus = {
                             onActivityChange(reps, (minutes - DURATION_STEP_MINUTES).coerceAtLeast(0) * 60, distanceM, grade, weightKg, done)
                         },
@@ -1155,6 +1222,7 @@ private fun SetRow(
                     val km = (distanceM ?: 0.0) / 1000.0
                     Stepper(
                         value = formatBodyValue(km),
+                        what = "distance",
                         onMinus = {
                             onActivityChange(reps, durationSec, ((km - DISTANCE_STEP_KM).coerceAtLeast(0.0)) * 1000.0, grade, weightKg, done)
                         },
@@ -1170,6 +1238,7 @@ private fun SetRow(
                     val minutes = (durationSec ?: 0) / 60
                     Stepper(
                         value = minutes.toString(),
+                        what = "minutes",
                         onMinus = {
                             onActivityChange(reps, (minutes - DURATION_STEP_MINUTES).coerceAtLeast(0) * 60, distanceM, grade, weightKg, done)
                         },
@@ -1189,6 +1258,7 @@ private fun SetRow(
                     if (showColumnLabels) ColumnLabel("ATTEMPTS")
                     Stepper(
                         value = reps.toString(),
+                        what = "attempts",
                         onMinus = { onActivityChange((reps - 1).coerceAtLeast(0), durationSec, distanceM, grade, weightKg, done) },
                         onPlus = { onActivityChange(reps + 1, durationSec, distanceM, grade, weightKg, done) },
                         dimmed = done,
@@ -1230,8 +1300,10 @@ private fun SetRow(
             }
         }
         // Fixed-height delta line under the steppers: always allocated, so
-        // live digit changes never reflow the row mid-set.
-        val delta = bodyweight?.takeIf { scoresStrength }?.let { bw ->
+        // ticking a set never reflows the row. Only a DONE set speaks: under
+        // an undone one the figure is still a plan, and a fresh session read
+        // "NEW PR" under every one of its seventeen sets.
+        val delta = bodyweight?.takeIf { scoresStrength && done }?.let { bw ->
             SetRecords.delta(records, exerciseName, setIndex, reps, weightKg, bw, isHold = isHold)
         }
         SetDeltaBadge(delta, displaySetNo = setIndex + 1)
@@ -1344,9 +1416,18 @@ internal fun parseLoadKg(text: String): Result<Double> {
 private fun loadText(kg: Double): String =
     if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
 
+/**
+ * A ± stepper. The drawn frame stays [STEPPER_FRAME_HEIGHT] tall; the box
+ * around it is [STEPPER_HIT_HEIGHT] of touch target, which the set row's 48dp
+ * tick already reserves, so the row grows no taller. Each ± zone takes half
+ * the width (the figure's own tap target, when there is one, sits on top of
+ * the middle and wins there).
+ */
 @Composable
 private fun Stepper(
     value: String,
+    /** What the figure is, for the ± announcements: "Decrease load". */
+    what: String,
     onMinus: () -> Unit,
     onPlus: () -> Unit,
     dimmed: Boolean = false,
@@ -1354,52 +1435,76 @@ private fun Stepper(
     onValueClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
-    Row(
-        modifier
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(IronvellumColors.Abyss)
-            .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-            .padding(horizontal = 2.dp, vertical = 2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        StepIcon("−", onMinus)
-        Text(
-            value,
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = if (dimmed) IronvellumColors.InkMuted else IronvellumColors.Ink,
-            modifier = if (onValueClick != null) {
-                Modifier
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable(onClickLabel = "Type a load", onClick = onValueClick)
-                    .padding(horizontal = 6.dp, vertical = 4.dp)
-            } else {
-                Modifier
-            },
+    Box(modifier.height(STEPPER_HIT_HEIGHT), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(STEPPER_FRAME_HEIGHT)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(IronvellumColors.Abyss)
+                .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp),
         )
-        StepIcon("+", onPlus)
+        Row(Modifier.fillMaxSize()) {
+            StepZone("−", "Decrease $what", onMinus, Alignment.CenterStart, Modifier.weight(1f))
+            StepZone("+", "Increase $what", onPlus, Alignment.CenterEnd, Modifier.weight(1f))
+        }
+        val figure = @Composable {
+            Text(
+                value,
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = if (dimmed) IronvellumColors.InkMuted else IronvellumColors.Ink,
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
+        if (onValueClick != null) {
+            Box(
+                Modifier
+                    .fillMaxHeight()
+                    .clickable(onClickLabel = "Type a load", role = Role.Button, onClick = onValueClick)
+                    .padding(horizontal = 4.dp),
+                contentAlignment = Alignment.Center,
+            ) { figure() }
+        } else {
+            figure()
+        }
     }
 }
 
+/** Half a stepper: the whole 44dp-tall half is the target, the glyph sits at the frame's edge. */
 @Composable
-private fun StepIcon(symbol: String, onClick: () -> Unit) {
-    Text(
-        symbol,
-        style = MaterialTheme.typography.titleMedium,
-        fontFamily = ChakraPetch,
-        color = IronvellumColors.SystemGreen,
-        modifier = Modifier
-            .clip(InkCircleShape(7))
+private fun StepZone(symbol: String, description: String, onClick: () -> Unit, glyphAt: Alignment, modifier: Modifier) {
+    Box(
+        modifier
+            .fillMaxHeight()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
+                role = Role.Button,
                 onClick = onClick,
             )
-            .padding(horizontal = 10.dp, vertical = 2.dp),
-    )
+            .semantics { contentDescription = description },
+        contentAlignment = glyphAt,
+    ) {
+        Text(
+            symbol,
+            style = MaterialTheme.typography.titleMedium,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.SystemGreen,
+            modifier = Modifier
+                .clearAndSetSemantics {}
+                .padding(horizontal = 12.dp),
+        )
+    }
 }
+
+/** The drawn stepper frame: what the old 2dp-padded glyph row measured. */
+private val STEPPER_FRAME_HEIGHT = 30.dp
+
+/** The stepper's touch height; the set row's 48dp tick box already reserves it. */
+private val STEPPER_HIT_HEIGHT = 44.dp
 
 
 private const val TITLE_CAP = 80
@@ -1611,7 +1716,7 @@ private fun ModifierPickerDialog(
         text = {
             Column {
                 Text(
-                    "Applies to every set of this movement.",
+                    "Applies to every set of this exercise.",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -1657,18 +1762,30 @@ private fun ModifierPickerDialog(
             }
         },
         confirmButton = { IronvellumButton("Save", onClick = { onConfirm(picked) }) },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        dismissButton = { IronvellumButton("Cancel", quiet = true, onClick = onDismiss) },
     )
 }
 
-/** "6x5 @ 15.2kg", or "3x30s @ BW" for a hold. */
-private fun planFigure(entry: com.ironvellum.app.domain.PresetEntry, isHold: Boolean): String =
-    "${entry.targetSets}x${entry.targetReps}${if (isHold) "s" else ""} @ ${formatKg(entry.targetWeightKg)}"
+/** A field's label and its "before → after" figures, as the update dialog lists them. */
+private fun fieldLine(change: RoutineUpdate.Change, field: RoutineUpdate.Field): Pair<String, String> {
+    val (before, after) = change
+    val unit = if (change.isHold) "s" else ""
+    return when (field) {
+        RoutineUpdate.Field.SETS -> "Sets" to "${before.targetSets} → ${after.targetSets}"
+        RoutineUpdate.Field.REPS ->
+            (if (change.isHold) "Hold" else "Reps") to "${before.targetReps}$unit → ${after.targetReps}$unit"
+        RoutineUpdate.Field.LOAD -> "Load" to "${formatKg(before.targetWeightKg)} → ${formatKg(after.targetWeightKg)}"
+        RoutineUpdate.Field.MODIFIERS ->
+            "Modifiers" to "${before.modifiers.ifBlank { "None" }} → ${after.modifiers.ifBlank { "None" }}"
+    }
+}
 
 /**
- * Offers to bring the preset in line with the session just finished: one
- * toggle per changed entry, all on. The session is already completed and paid
- * when this shows; dismissing it keeps the plan.
+ * Offers to bring the preset in line with the session just finished, one
+ * toggle per changed field so the lifter can take the reps and leave the
+ * sets. Every field starts ticked except a drop in set count
+ * ([RoutineUpdate.defaultAccepted]). The session is already completed and
+ * paid when this shows; dismissing it keeps the plan.
  */
 @Composable
 private fun RoutineUpdateDialog(
@@ -1676,65 +1793,127 @@ private fun RoutineUpdateDialog(
     onUpdate: (List<RoutineUpdate.Change>) -> Unit,
     onKeep: () -> Unit,
 ) {
-    var picked by remember(offer) { mutableStateOf(offer.changes.toSet()) }
+    var ticked by remember(offer) {
+        mutableStateOf(offer.changes.associateWith { RoutineUpdate.defaultAccepted(it) })
+    }
     AlertDialog(
         shape = MaterialTheme.shapes.medium,
         onDismissRequest = onKeep,
         containerColor = Color(0xFF0D1110),
-        title = { Text("Update ${offer.presetName} to match today?") },
+        title = {
+            Column {
+                Text(
+                    offer.presetName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = IronvellumColors.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    "Update to match today?",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
+        },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
                 offer.changes.forEach { change ->
-                    val on = change in picked
-                    val shape = MaterialTheme.shapes.extraSmall
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 6.dp)
-                            .background(
+                    Text(
+                        change.before.exerciseName,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = IronvellumColors.Ink,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 6.dp, bottom = 4.dp),
+                    )
+                    change.fields.forEach { field ->
+                        val accepted = ticked[change].orEmpty()
+                        val on = field in accepted
+                        val (label, figures) = fieldLine(change, field)
+                        val shape = MaterialTheme.shapes.extraSmall
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 4.dp)
+                                .background(
+                                    if (on) {
+                                        Brush.verticalGradient(listOf(Color(0xFF2C7A5A), Color(0xFF1B4D3A)))
+                                    } else {
+                                        Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
+                                    },
+                                    shape,
+                                )
+                                .inkBorder(if (on) IronvellumColors.SystemGreen else IronvellumColors.Rune, shape, 1.dp)
+                                .toggleable(value = on, role = Role.Checkbox) {
+                                    ticked = ticked + (change to if (on) accepted - field else accepted + field)
+                                }
+                                .heightIn(min = 44.dp)
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            // The set rows' own tick box: an empty slot read as
+                            // a label, not something to tick.
+                            Box(
+                                Modifier
+                                    .size(22.dp)
+                                    .background(
+                                        if (on) IronvellumColors.SystemGreen.copy(alpha = 0.18f) else Color.Transparent,
+                                        MaterialTheme.shapes.extraSmall,
+                                    )
+                                    .inkBorder(
+                                        if (on) IronvellumColors.SystemGreen else IronvellumColors.Bracket,
+                                        MaterialTheme.shapes.extraSmall,
+                                        1.5.dp,
+                                    ),
+                                contentAlignment = Alignment.Center,
+                            ) {
                                 if (on) {
-                                    Brush.verticalGradient(listOf(Color(0xFF2C7A5A), Color(0xFF1B4D3A)))
-                                } else {
-                                    Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
-                                },
-                                shape,
-                            )
-                            .inkBorder(if (on) IronvellumColors.SystemGreen else IronvellumColors.Rune, shape, 1.dp)
-                            .toggleable(value = on, role = Role.Checkbox) {
-                                picked = if (on) picked - change else picked + change
+                                    Text(
+                                        "\u2713",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontFamily = ChakraPetch,
+                                        color = IronvellumColors.SystemGreen,
+                                    )
+                                }
                             }
-                            .padding(horizontal = 10.dp, vertical = 8.dp),
-                    ) {
-                        Text(
-                            change.before.exerciseName,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
-                        )
-                        Text(
-                            "${planFigure(change.before, change.isHold)} → ${planFigure(change.after, change.isHold)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
-                        )
-                        if (change.after.modifiers != change.before.modifiers) {
+                            Spacer(Modifier.width(12.dp))
                             Text(
-                                "${change.before.modifiers.ifBlank { "No modifiers" }} → ${change.after.modifiers.ifBlank { "none" }}",
+                                label.uppercase(),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = IronvellumColors.InkMuted,
+                                fontFamily = ChakraPetch,
+                                letterSpacing = 1.sp,
+                                color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                                modifier = Modifier.width(76.dp),
+                            )
+                            Text(
+                                figures,
+                                style = MaterialTheme.typography.labelMedium,
+                                fontFamily = ChakraPetch,
+                                color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f),
                             )
                         }
                     }
                 }
             }
         },
+        // Stacked full width on purpose: side by side the two labels wrapped
+        // into a ragged pair at 360dp.
         confirmButton = {
-            // Preset order, whatever order the toggles were flipped in.
-            IronvellumButton(
-                "Update routine",
-                enabled = picked.isNotEmpty(),
-                onClick = { onUpdate(offer.changes.filter { it in picked }) },
-            )
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                // Preset order, whatever order the toggles were flipped in.
+                val narrowed = offer.changes.mapNotNull { it.only(ticked[it].orEmpty()) }
+                IronvellumButton(
+                    "Update routine",
+                    enabled = narrowed.isNotEmpty(),
+                    onClick = { onUpdate(narrowed) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                IronvellumButton("Keep plan", quiet = true, onClick = onKeep, modifier = Modifier.fillMaxWidth())
+            }
         },
-        dismissButton = { TextButton(onClick = onKeep) { Text("Keep plan") } },
     )
 }

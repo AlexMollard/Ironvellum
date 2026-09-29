@@ -33,7 +33,7 @@ import org.junit.runner.RunWith
  * Everything here polls rather than sampling the tree once, and that is not
  * belt-and-braces: the dashboard seeds its catalogue asynchronously, so the
  * quest button does not exist on the first frame, and the session assembles off
- * the main thread behind a "Summoning session…" placeholder. Reading once
+ * the main thread behind a "Summoning the trial…" placeholder. Reading once
  * reports an empty screen and looks exactly like a missing feature — several
  * failures during this test's development were that, not real defects.
  */
@@ -79,7 +79,7 @@ class WorkoutFlowTest {
 
     /**
      * Polls for a string while feeding frames AND giving the real work time to
-     * land. The session is assembled off the main thread ("Summoning session…"
+     * land. The session is assembled off the main thread ("Summoning the trial…"
      * is the placeholder), so frames alone never reveal it: the clock is held,
      * but the database is not.
      */
@@ -141,7 +141,7 @@ class WorkoutFlowTest {
         val xpBefore = xpFromHeader()
 
         // The quest CTA depends on state: "Accept Quest" on a fresh day,
-        // "Start Session" on a non-scheduled day.
+        // "Start Workout" on a non-scheduled day.
         // IronvellumButton uppercases every label.
         //
         // The seeded programs cover four weekdays, so on the others Today shows
@@ -152,7 +152,7 @@ class WorkoutFlowTest {
         // The quest card arrives after seeding, so poll for the CTA rather
         // than sampling the tree once on the first frame.
         val cta = awaitAnyText { label ->
-            label == "ACCEPT QUEST" || label == "START SESSION" || label.startsWith("RESUME")
+            label == "ACCEPT QUEST" || label == "START WORKOUT" || label.startsWith("RESUME")
         }
         compose.onAllNodesWithText(cta).onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
@@ -213,14 +213,14 @@ class WorkoutFlowTest {
     /**
      * Clicks through every celebration overlay until the dashboard is back.
      * Each overlay's advance button reads "Continue", or "Next (1/3)" while
-     * more award pages remain. A session that differs from its preset also
+     * more award pages remain. A session that differs from its preset then
      * offers a routine update; this test keeps the plan so the seeded preset
      * stays as later tests expect it.
      */
     private fun drainCelebrations(rounds: Int = 12) {
         repeat(rounds) {
             if (allText().any { it.endsWith("XP") && it.contains('/') }) return
-            val advance = allText().firstOrNull { it == "CONTINUE" || it.startsWith("NEXT (") || it == "Keep plan" }
+            val advance = allText().firstOrNull { it == "CONTINUE" || it.startsWith("NEXT (") || it == "KEEP PLAN" }
             if (advance != null) {
                 compose.onAllNodesWithText(advance).onFirst()
                     .performSemanticsAction(SemanticsActions.OnClick)
