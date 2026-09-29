@@ -117,7 +117,7 @@ class PresetsViewModel(
         // the whole board when nothing is scheduled.
         val routine = presets.filter { it.scheduledDay != null }.ifEmpty { presets }
         TrainUi(
-            presets = presets,
+            presets = weekOrder(presets),
             history = history,
             plannedPresets = routine.map { it.toPlanned() },
             tier = tier,
@@ -139,6 +139,13 @@ class PresetsViewModel(
         viewModelScope.launch { onStarted(repo.startFreeformSession("Quick Workout")) }
     }
 }
+
+/**
+ * The board in week order: Mon..Sun by scheduled day, unscheduled workouts
+ * last. Stable, so ties keep the incoming (by-name) order.
+ */
+internal fun weekOrder(presets: List<WorkoutPreset>): List<WorkoutPreset> =
+    presets.sortedBy { it.scheduledDay ?: Int.MAX_VALUE }
 
 private val DAY_LABELS = mapOf(1 to "MON", 2 to "TUE", 3 to "WED", 4 to "THU", 5 to "FRI", 6 to "SAT", 7 to "SUN")
 

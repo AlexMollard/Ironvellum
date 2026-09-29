@@ -355,7 +355,7 @@ fun SkillJournal(
                             )
                             Text(
                                 formatDate(entry.practicedAtMs, "HH:mm") +
-                                    (def?.let { "  ·  ${it.line}  ·  ${Skills.tierLabel(it.tier)}" } ?: ""),
+                                    (def?.let { " · ${it.line} · ${Skills.tierLabel(it.tier)}" } ?: ""),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = IronvellumColors.InkMuted,
                                 maxLines = 1,
@@ -364,7 +364,7 @@ fun SkillJournal(
                         Text(
                             when {
                                 entry.claimed -> "MASTERED"
-                                entry.weightKg != null -> "${entry.value}${def?.unit ?: ""} @${entry.weightKg}kg"
+                                entry.weightKg != null -> "${entry.value}${def?.unit ?: ""} @${formatLoad(entry.weightKg)}kg"
                                 else -> "${entry.value}${def?.unit ?: ""}"
                             },
                             style = MaterialTheme.typography.labelMedium,

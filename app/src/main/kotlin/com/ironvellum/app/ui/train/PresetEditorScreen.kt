@@ -1,35 +1,38 @@
 package com.ironvellum.app.ui.train
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import androidx.compose.ui.text.style.TextOverflow
+import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.compose.ui.graphics.Color
 import com.ironvellum.app.ui.components.ExercisePickerPanel
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -38,7 +41,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -86,6 +91,10 @@ class PresetEditorViewModel(
     private val _ui = MutableStateFlow(EditorUi(presetId = presetId))
     val ui: StateFlow<EditorUi> = _ui.asStateFlow()
 
+    /** The workout as loaded; back with anything different asks before discarding. */
+    private val _baseline = MutableStateFlow(EditorUi(presetId = presetId))
+    val baseline: StateFlow<EditorUi> = _baseline.asStateFlow()
+
     // Most-recent-first ids from completed sessions; the picker preserves the order.
     private val _recentExerciseIds = MutableStateFlow<List<Long>>(emptyList())
     val recentExerciseIds: StateFlow<List<Long>> = _recentExerciseIds.asStateFlow()
@@ -120,6 +129,7 @@ class PresetEditorViewModel(
             } else {
                 EditorUi(exercises = exercises)
             }
+            _baseline.value = loaded
             _ui.value = loaded
         }
     }
@@ -136,11 +146,8 @@ class PresetEditorViewModel(
         _ui.value = _ui.value.copy(scheduledDay = value)
     }
 
-    fun addEntry() {
-        val first = _ui.value.exercises.firstOrNull() ?: return
-        _ui.value = _ui.value.copy(
-            entries = _ui.value.entries + EditorEntry(first.id, first.name, sets = "3", reps = "10", weight = "", modifiers = ""),
-        )
+    fun addEntry(exercise: Exercise) {
+        _ui.value = _ui.value.copy(entries = _ui.value.entries + newEntry(exercise))
     }
 
     fun removeEntry(index: Int) {
@@ -198,6 +205,24 @@ class PresetEditorViewModel(
     }
 }
 
+/**
+ * A freshly picked exercise's row. Sets × reps defaults only suit REPS work:
+ * other metrics keep the target fields empty, as a metric switch does.
+ */
+internal fun newEntry(exercise: Exercise): EditorEntry =
+    if (exercise.metric == ExerciseMetric.REPS) {
+        EditorEntry(exercise.id, exercise.name, sets = "3", reps = "10", weight = "", modifiers = "")
+    } else {
+        EditorEntry(exercise.id, exercise.name, sets = "3", reps = "", weight = "", modifiers = "")
+    }
+
+/** Whether [current] differs from the workout as loaded in anything the lifter edits. */
+internal fun editorChanged(baseline: EditorUi, current: EditorUi): Boolean =
+    baseline.name != current.name ||
+        baseline.note != current.note ||
+        baseline.scheduledDay != current.scheduledDay ||
+        baseline.entries != current.entries
+
 private fun formatWeight(kg: Double): String =
     if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
 
@@ -217,7 +242,14 @@ fun PresetEditorScreen(
         ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val baseline by viewModel.baseline.collectAsStateWithLifecycle()
     val recentExerciseIds by viewModel.recentExerciseIds.collectAsStateWithLifecycle()
+    var adding by remember { mutableStateOf(false) }
+    var confirmDiscard by remember { mutableStateOf(false) }
+
+    // Back used to drop every edit without a word; with anything changed it
+    // asks first.
+    BackHandler(enabled = editorChanged(baseline, ui)) { confirmDiscard = true }
 
     Column(
         Modifier
@@ -293,26 +325,29 @@ fun PresetEditorScreen(
                 onMove = { viewModel.moveEntry(index, it) },
             )
         }
-        TextButton(onClick = viewModel::addEntry, enabled = ui.exercises.isNotEmpty()) {
-            Text("+ Add exercise")
-        }
+        // Opens the picker: appending the catalogue's first row put an
+        // Assault Bike in the workout, a machine most lifters do not have.
+        IronvellumButton(
+            label = "+ Add exercise",
+            onClick = { adding = true },
+            enabled = ui.exercises.isNotEmpty(),
+            quiet = true,
+        )
 
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(
-                // Material's button shape is a stadium; the theme's is drawn.
-                shape = MaterialTheme.shapes.small,
+            IronvellumButton(
+                label = "Save Workout",
                 onClick = { viewModel.save(onDone) },
                 enabled = ui.name.isNotBlank() && ui.entries.isNotEmpty(),
                 modifier = Modifier.weight(1f),
-            ) {
-                Text("Save Workout")
-            }
+            )
             if (ui.presetId != null) {
                 // Delete used to fire on the first tap; a new user prodding the
                 // button lost the whole training day. Arm first, name the cost.
                 var armedDelete by remember { mutableStateOf(false) }
-                OutlinedButton(
+                IronvellumButton(
+                    label = if (armedDelete) "Confirm delete" else "Delete",
                     onClick = {
                         if (armedDelete) {
                             viewModel.delete(onDone)
@@ -320,17 +355,72 @@ fun PresetEditorScreen(
                             armedDelete = true
                         }
                     },
-                    shape = MaterialTheme.shapes.small,
-                ) {
-                    Text(
-                        if (armedDelete) "Tap again to delete" else "Delete",
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
+                    quiet = true,
+                )
             }
         }
         Spacer(Modifier.height(24.dp))
     }
+
+    if (adding) {
+        ExercisePickerDialog(
+            exercises = ui.exercises,
+            recentIds = recentExerciseIds,
+            onPick = { exercise ->
+                viewModel.addEntry(exercise)
+                adding = false
+            },
+            onDismiss = { adding = false },
+        )
+    }
+
+    if (confirmDiscard) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text("Discard changes?") },
+            text = { Text("Unsaved edits to this workout will be lost.") },
+            confirmButton = {
+                IronvellumButton(
+                    label = "Discard",
+                    onClick = {
+                        confirmDiscard = false
+                        onDone()
+                    },
+                )
+            },
+            dismissButton = {
+                IronvellumButton(label = "Keep editing", onClick = { confirmDiscard = false }, quiet = true)
+            },
+        )
+    }
+}
+
+/** The exercise picker in the ink dialog, for both adding a row and swapping one. */
+@Composable
+private fun ExercisePickerDialog(
+    exercises: List<Exercise>,
+    recentIds: List<Long>,
+    onPick: (Exercise) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        // Material's dialog container is a 28dp rounded rect - the most
+        // obviously stock surface in the app. Give it the ink shape.
+        shape = MaterialTheme.shapes.medium,
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF0D1110),
+        text = {
+            ExercisePickerPanel(
+                exercises = exercises,
+                recentIds = recentIds,
+                onPick = onPick,
+                onDismiss = onDismiss,
+            )
+        },
+        confirmButton = {},
+    )
 }
 
 @Composable
@@ -352,63 +442,55 @@ private fun EntryRow(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Box {
-                OutlinedButton(onClick = { expanded = true }, shape = MaterialTheme.shapes.small) {
-                    Text(entry.exerciseName.ifBlank { "Pick exercise" })
+            // The name yields, the controls do not: a long name ("Dumbbell
+            // Shoulder Press") pushed the remove button off the card and
+            // squashed the arrows.
+            Box(Modifier.weight(1f)) {
+                OutlinedButton(
+                    onClick = { expanded = true },
+                    shape = MaterialTheme.shapes.small,
+                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        entry.exerciseName.ifBlank { "Pick exercise" },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
                 }
                 if (expanded) {
-                    AlertDialog(
-                        // Material's dialog container is a 28dp rounded rect - the most
-                        // obviously stock surface in the app. Give it the ink shape.
-                        shape = MaterialTheme.shapes.medium,
-                        onDismissRequest = { expanded = false },
-                        containerColor = Color(0xFF0D1110),
-                        title = {},
-                        text = {
-                            ExercisePickerPanel(
-                                exercises = exercises,
-                                recentIds = recentIds,
-                                onPick = { exercise ->
-                                    // A metric switch invalidates the old targets (10 reps ≠ 40 min).
-                                    val defaults = if (exercise.metric == ExerciseMetric.REPS) {
-                                        entry
-                                    } else {
-                                        entry.copy(reps = "", weight = "")
-                                    }
-                                    onEntry(defaults.copy(exerciseId = exercise.id, exerciseName = exercise.name))
-                                    expanded = false
-                                },
-                                onDismiss = { expanded = false },
-                            )
+                    ExercisePickerDialog(
+                        exercises = exercises,
+                        recentIds = recentIds,
+                        onPick = { exercise ->
+                            // A metric switch invalidates the old targets (10 reps ≠ 40 min).
+                            val defaults = if (exercise.metric == ExerciseMetric.REPS) {
+                                entry
+                            } else {
+                                entry.copy(reps = "", weight = "")
+                            }
+                            onEntry(defaults.copy(exerciseId = exercise.id, exerciseName = exercise.name))
+                            expanded = false
                         },
-                        confirmButton = {},
+                        onDismiss = { expanded = false },
                     )
                 }
             }
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        "▲",
-                        color = if (isFirst) IronvellumColors.Rune else IronvellumColors.SystemGreen,
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .clickable(enabled = !isFirst) { onMove(-1) }
-                            .padding(horizontal = 10.dp, vertical = 1.dp),
-                    )
-                    Text(
-                        "▼",
-                        color = if (isLast) IronvellumColors.Rune else IronvellumColors.SystemGreen,
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .clickable(enabled = !isLast) { onMove(1) }
-                            .padding(horizontal = 10.dp, vertical = 1.dp),
-                    )
-                }
-                IconButton(onClick = onRemove) {
-                    Icon(Icons.Outlined.Close, contentDescription = "Remove exercise")
-                }
+            Spacer(Modifier.width(4.dp))
+            RowControl("▲", "Move up", enabled = !isFirst) { onMove(-1) }
+            RowControl("▼", "Move down", enabled = !isLast) { onMove(1) }
+            Box(
+                Modifier
+                    .size(44.dp)
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .clickable(onClickLabel = "Remove exercise", onClick = onRemove)
+                    .semantics {
+                        contentDescription = "Remove exercise"
+                        role = Role.Button
+                    },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(Icons.Outlined.Close, contentDescription = null)
             }
         }
 
@@ -423,14 +505,14 @@ private fun EntryRow(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
                     NumberField("Reps", entry.reps, Modifier.weight(1f)) { onEntry(entry.copy(reps = it)) }
-                    NumberField("Kg (opt.)", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
+                    NumberField("kg", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
                 }
             }
             ExerciseMetric.HOLD -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
                     NumberField("Seconds", entry.reps, Modifier.weight(1f)) { onEntry(entry.copy(reps = it)) }
-                    NumberField("Kg (opt.)", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
+                    NumberField("kg", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
                 }
             }
             ExerciseMetric.DURATION -> {
@@ -468,6 +550,28 @@ private fun EntryRow(
     }
 }
 
+/** One fixed 44dp reorder control; the glyph alone read to TalkBack as a triangle. */
+@Composable
+private fun RowControl(glyph: String, description: String, enabled: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(44.dp)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .clickable(enabled = enabled, onClickLabel = description, onClick = onClick)
+            .semantics {
+                contentDescription = description
+                role = Role.Button
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            glyph,
+            color = if (enabled) IronvellumColors.SystemGreen else IronvellumColors.Rune,
+            style = MaterialTheme.typography.labelMedium,
+        )
+    }
+}
+
 @Composable
 private fun NumberField(
     label: String,
@@ -479,7 +583,8 @@ private fun NumberField(
         shape = MaterialTheme.shapes.small,
         value = value,
         onValueChange = { input -> onValueChange(input.filter { it.isDigit() || it == '.' }.take(7)) },
-        label = { Text(label) },
+        // One line: a wrapped label made its field taller than its neighbours.
+        label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         modifier = modifier,

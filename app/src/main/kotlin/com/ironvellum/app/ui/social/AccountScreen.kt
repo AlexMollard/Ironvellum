@@ -91,7 +91,6 @@ import com.ironvellum.app.domain.Titles
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import androidx.compose.material3.TextButton
 
 /** One honest snapshot of the account state: which panel to show and why. */
 data class AccountUi(
@@ -810,14 +809,12 @@ private fun SignedInPanels(
                     enabled = !ui.busy,
                     modifier = Modifier.weight(1f),
                 )
-                TextButton(onClick = { confirmRestore = false }, enabled = !ui.busy) {
-                    Text(
-                        "KEEP MINE",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                    )
-                }
+                IronvellumButton(
+                    label = "Keep mine",
+                    onClick = { confirmRestore = false },
+                    enabled = !ui.busy,
+                    quiet = true,
+                )
             }
         } else {
             NavChip(
@@ -912,24 +909,20 @@ private fun SignedInPanels(
                 enabled = !ui.busy,
                 modifier = Modifier.weight(1f),
             )
-            TextButton(onClick = { confirmDelete = false }, enabled = !ui.busy) {
-                Text(
-                    "KEEP IT",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
-        }
-    } else {
-        TextButton(onClick = { confirmDelete = true }, enabled = !ui.busy) {
-            Text(
-                "ERASE MY CLOUD DATA",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.DangerRed,
+            IronvellumButton(
+                label = "Keep it",
+                onClick = { confirmDelete = false },
+                enabled = !ui.busy,
+                quiet = true,
             )
         }
+    } else {
+        IronvellumButton(
+            label = "Erase my cloud data",
+            onClick = { confirmDelete = true },
+            enabled = !ui.busy,
+            quiet = true,
+        )
     }
     ui.error?.let {
         Spacer(Modifier.height(8.dp))

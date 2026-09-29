@@ -11,8 +11,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.graphics.Color
+import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -80,6 +83,10 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
 
     private val _claim = MutableStateFlow<SkillClaimResult?>(null)
     val claim: StateFlow<SkillClaimResult?> = _claim.asStateFlow()
+
+    /** Why the last unclaim was refused; null when nothing to show. */
+    private val _unclaimRefusal = MutableStateFlow<String?>(null)
+    val unclaimRefusal: StateFlow<String?> = _unclaimRefusal.asStateFlow()
 
     val ui: StateFlow<TitlesUi> = combine(
         repo.observeUnlockedTitles(),
@@ -165,12 +172,30 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }
 
     fun unclaim(skillName: String) {
-        viewModelScope.launchGuarded("unclaim skill") { repo.unclaimSkill(skillName) }
+        viewModelScope.launchGuarded("unclaim skill") {
+            try {
+                repo.unclaimSkill(skillName)
+            } catch (refused: IllegalStateException) {
+                _unclaimRefusal.value = unclaimRefusalCopy(refused)
+                throw refused
+            }
+        }
+    }
+    fun dismissUnclaimRefusal() {
+        _unclaimRefusal.value = null
     }
     fun dismissClaim() {
         _claim.value = null
     }
 }
+
+/**
+ * The lifter-facing text for a refused unclaim: the repository's own sentence
+ * ("<skill> paid N XP but only M XP is left - it stays claimed"), with its
+ * clause dash set as the em dash the rest of the app's copy uses.
+ */
+internal fun unclaimRefusalCopy(refused: IllegalStateException): String =
+    refused.message?.replace(" - ", " — ") ?: "This technique stays claimed."
 
 @Composable
 fun TitlesScreen(
@@ -202,6 +227,22 @@ fun TitlesScreen(
                 onDismiss = { openSkill = null },
             )
         }
+    }
+
+    // Unclaim refused (the XP it paid is already spent): say so rather than
+    // leave the confirm row sitting there with nothing happening.
+    val unclaimRefusal by viewModel.unclaimRefusal.collectAsStateWithLifecycle()
+    unclaimRefusal?.let { message ->
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = viewModel::dismissUnclaimRefusal,
+            title = { Text("Still claimed") },
+            text = { Text(message) },
+            confirmButton = {
+                IronvellumButton(label = "OK", onClick = viewModel::dismissUnclaimRefusal, quiet = true)
+            },
+        )
     }
 
     // The deeds board owns a LazyColumn so a growing catalogue stays lazy, and

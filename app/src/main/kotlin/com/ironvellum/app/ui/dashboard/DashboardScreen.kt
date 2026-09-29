@@ -123,6 +123,8 @@ class DashboardUi(
     val presets: List<WorkoutPreset> = emptyList(),
     val streak: Int = 0,
     val stepsToday: Int = 0,
+    /** When Health Connect was last read; the step count is only as fresh as this. */
+    val stepsSyncedAtMs: Long? = null,
     /** Weekdays (ISO 1-7) with a completed session in the current Monday-week. */
     val completedWeekdays: Set<Int> = emptySet(),
     /** The focus the quest estimate is timed at. */
@@ -155,6 +157,7 @@ class DashboardViewModel(
         repo.observeHistory(),
         repo.observeHealthDays(),
         selectedDay,
+        repo.observeHealthSyncedAt(),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         val profile = values[0] as PlayerProfile?
@@ -189,6 +192,7 @@ class DashboardViewModel(
                 today,
             ),
             stepsToday = healthDays.firstOrNull { it.date == today }?.steps ?: 0,
+            stepsSyncedAtMs = values[7] as Long?,
             focus = SessionClock.focusFor(savedFocus, profile?.trainingMode),
             pace = SessionClock.pace(history),
             completedWeekdays = doneDates
@@ -223,6 +227,17 @@ class DashboardViewModel(
 }
 
 private val DAY_LABELS = linkedMapOf(1 to "MON", 2 to "TUE", 3 to "WED", 4 to "THU", 5 to "FRI", 6 to "SAT", 7 to "SUN")
+
+/**
+ * "as of 14:05" for a sync today, "as of Sep 28" for an older one: Health
+ * Connect trails the phone's own count, so the figure carries its age.
+ */
+internal fun stepsAsOfCaption(syncedAtMs: Long?, today: LocalDate, zone: ZoneId = ZoneId.systemDefault()): String? {
+    if (syncedAtMs == null) return null
+    val at = Instant.ofEpochMilli(syncedAtMs).atZone(zone)
+    val pattern = if (at.toLocalDate() == today) "HH:mm" else "MMM d"
+    return "as of " + at.format(java.time.format.DateTimeFormatter.ofPattern(pattern, java.util.Locale.US))
+}
 
 /**
  * Pitch of one manifest row, measured on device: 12sp of label between 3dp of
@@ -470,6 +485,7 @@ fun DashboardScreen(
                             else IronvellumColors.EmeraldBright,
                             fraction = (ui.stepsToday.toFloat() / STEP_GOAL).coerceIn(0f, 1f),
                         )
+                        StepsAsOf(ui.stepsSyncedAtMs, today)
                         GaugeStat(
                             label = "STREAK",
                             value = if (ui.streak > 0) "${ui.streak}d" else "—",
@@ -483,11 +499,14 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                 ) {
-                    StepGauge(
-                        steps = ui.stepsToday,
-                        goal = STEP_GOAL,
-                        modifier = Modifier.size(104.dp),
-                    )
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        StepGauge(
+                            steps = ui.stepsToday,
+                            goal = STEP_GOAL,
+                            modifier = Modifier.size(104.dp),
+                        )
+                        StepsAsOf(ui.stepsSyncedAtMs, today)
+                    }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         GaugeStat(
                             label = "STREAK",
@@ -608,37 +627,27 @@ fun DashboardScreen(
                 else -> IronvellumColors.Rune
             },
         ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            // The day and the plan line each get a line: side by side, the
+            // plan's time estimate was the part that fell off ("~31…").
+            Text(
+                if (isTodaySelected) "TODAY · ${DAY_LABELS[selectedDay].orEmpty()}"
+                else DAY_LABELS[selectedDay].orEmpty(),
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = if (isTodaySelected) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                letterSpacing = IronvellumTracking.SectionHeader,
+                maxLines = 1,
+            )
+            if (selectedPreset != null) {
                 Text(
-                    if (isTodaySelected) "TODAY · ${DAY_LABELS[selectedDay].orEmpty()}"
-                    else DAY_LABELS[selectedDay].orEmpty(),
+                    SessionClock.planLine(selectedPreset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(selectedPreset.id)),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
-                    color = if (isTodaySelected) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.SectionHeader,
-                    // Unweighted, these two collided into each other at a large
-                    // font scale instead of yielding. The day keeps what it
-                    // needs; the tally gives way, since it repeats what the
-                    // manifest below already shows.
+                    color = IronvellumColors.InkMuted,
+                    letterSpacing = IronvellumTracking.InlineLabel,
                     maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
-                if (selectedPreset != null) {
-                    Text(
-                        SessionClock.planLine(selectedPreset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(selectedPreset.id)),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 8.dp).weight(1f, fill = false),
-                        textAlign = TextAlign.End,
-                    )
-                }
             }
             if (selectedPreset != null) {
                 if (questDoneToday) {
@@ -663,6 +672,7 @@ fun DashboardScreen(
                                 style = MaterialTheme.typography.bodySmall,
                                 color = IronvellumColors.InkMuted,
                                 maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                         Text(
@@ -1011,6 +1021,20 @@ private fun StepGauge(steps: Int, goal: Int, modifier: Modifier = Modifier) {
             )
         }
     }
+}
+
+/** The steps' age under the count; nothing until Health Connect has been read. */
+@Composable
+private fun StepsAsOf(syncedAtMs: Long?, today: LocalDate) {
+    val caption = stepsAsOfCaption(syncedAtMs, today) ?: return
+    Text(
+        caption,
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = ChakraPetch,
+        color = IronvellumColors.InkMuted,
+        fontSize = 9.sp,
+        maxLines = 1,
+    )
 }
 
 /** Counter row with its own hairline meter, so the cluster reads as instruments. */

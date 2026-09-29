@@ -131,7 +131,7 @@ fun ImportReviewOverlay(
                 Spacer(Modifier.height(14.dp))
                 InkPanel(Modifier.fillMaxWidth()) {
                     Text(
-                        "WERE THESE WEIGHTS IN KG OR LB?",
+                        "WEIGHT UNIT",
                         style = MaterialTheme.typography.labelMedium,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.SystemGreen,
@@ -139,8 +139,8 @@ fun ImportReviewOverlay(
                     Spacer(Modifier.height(8.dp))
                     InkSegmented<CsvWorkoutReader.WeightUnit>(
                         options = listOf(
-                            CsvWorkoutReader.WeightUnit.KG to "KG",
-                            CsvWorkoutReader.WeightUnit.LB to "LB",
+                            CsvWorkoutReader.WeightUnit.KG to "kg",
+                            CsvWorkoutReader.WeightUnit.LB to "lb",
                         ),
                         selected = ui.selectedUnit ?: CsvWorkoutReader.WeightUnit.KG,
                         onPick = onUnitPick,

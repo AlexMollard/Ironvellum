@@ -45,6 +45,7 @@ import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.components.plural
 import java.util.Locale
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
@@ -296,7 +297,7 @@ internal fun LifterScreen(
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "This lifter has no sessions you may read — either none are logged, " +
+                    "This lifter has no workouts you may read — either none are logged, " +
                         "or their visibility does not include you.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
@@ -360,7 +361,7 @@ internal fun LifterScreen(
                         TrendChart(strSeries, IronvellumColors.SystemGreen)
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "${strSeries.size} sessions on the line · best ${strSeries.max().toInt()}",
+                            "${strSeries.size} ${plural(strSeries.size, "workout", "workouts")} on the line · best ${strSeries.max().toInt()}",
                             style = MaterialTheme.typography.labelSmall,
                             fontFamily = ChakraPetch,
                             color = IronvellumColors.InkMuted,
@@ -409,7 +410,9 @@ internal fun LifterScreen(
                     )
                 }
 
-                SectionHeader("Recent sessions")
+                SectionHeader("Recent workouts")
+                // Bounded at the source: CloudSync.friendSessions fetches at
+                // most 20 rows, so this plain Column never composes more.
                 ui.sessions.forEach { session ->
                     InkPanel(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                         Row(

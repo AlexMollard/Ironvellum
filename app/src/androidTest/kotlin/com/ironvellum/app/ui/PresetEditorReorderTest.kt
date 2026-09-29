@@ -37,8 +37,8 @@ class PresetEditorReorderTest {
         val repo = Repository(db)
         repo.ensureSeeded()
         vm = withContext(Dispatchers.Main) { PresetEditorViewModel(repo, presetId = null) }
-        // The editor needs its catalogue loaded before addEntry() has anything
-        // to add; it loads asynchronously.
+        // The editor needs its catalogue loaded before there is an exercise to
+        // add; it loads asynchronously.
         // Await the state itself rather than sleeping: the catalogue loads in
         // the ViewModel's init, so a fixed delay is a race either way. Under
         // runTest this would also be virtual time and never wait at all.
@@ -57,8 +57,9 @@ class PresetEditorReorderTest {
     @Test
     fun reorderingSwapsNeighboursAndIgnoresStaleRows() = runBlocking {
         withContext(Dispatchers.Main) {
-            vm.addEntry()
-            vm.addEntry()
+            val first = vm.ui.value.exercises.first()
+            vm.addEntry(first)
+            vm.addEntry(first)
             // Distinguish the two rows, since addEntry seeds both from the same
             // catalogue head: without this a swap is unobservable.
             vm.updateEntry(0, vm.ui.value.entries[0].copy(reps = "FIRST"))

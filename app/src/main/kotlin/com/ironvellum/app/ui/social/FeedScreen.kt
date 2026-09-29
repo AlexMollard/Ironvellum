@@ -11,6 +11,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -736,10 +739,13 @@ private fun FeedCard(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
                     modifier = Modifier
+                        // 44dp hit area around a compact chip: the visual stays small.
+                        .heightIn(min = 44.dp)
+                        .clickable(role = Role.Button) { onToggleLike(entry) }
+                        .wrapContentHeight()
                         .clip(MaterialTheme.shapes.extraSmall)
                         .background(IronvellumColors.Abyss)
                         .inkBorder(if (entry.likedByMe) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-                        .clickable { onToggleLike(entry) }
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                 ) {
                     Icon(
@@ -778,12 +784,14 @@ private fun FeedCard(
                             maxLines = 1,
                             softWrap = false,
                             modifier = Modifier
+                                .heightIn(min = 44.dp)
                                 .clip(MaterialTheme.shapes.extraSmall)
-                                .clickable {
+                                .clickable(role = Role.Button) {
                                     showLikers = true
                                     onShowLikers(entry.sessionId)
                                 }
-                                .padding(horizontal = 8.dp, vertical = 6.dp),
+                                .wrapContentHeight()
+                                .padding(horizontal = 8.dp),
                         )
                     }
                     entry.completedAtMs?.let { ms ->
@@ -916,10 +924,13 @@ private fun AllyChip(ally: AllyState, onAddAlly: () -> Unit) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
+            // 44dp hit area around a compact chip: the visual stays small.
+            .heightIn(min = 44.dp)
+            .clickable(enabled = ally == AllyState.None, role = Role.Button) { onAddAlly() }
+            .wrapContentHeight()
             .clip(MaterialTheme.shapes.extraSmall)
             .background(IronvellumColors.Abyss)
             .inkBorder(if (ally == AllyState.None) IronvellumColors.Emerald else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-            .clickable(enabled = ally == AllyState.None) { onAddAlly() }
             .padding(horizontal = 8.dp, vertical = 4.dp),
     ) {
         Icon(
@@ -1174,9 +1185,10 @@ private fun RefreshLink(onClick: () -> Unit, label: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
+            .heightIn(min = 44.dp)
             .clip(MaterialTheme.shapes.extraSmall)
-            .clickable { onClick() }
-            .padding(vertical = 4.dp, horizontal = 2.dp),
+            .clickable(role = Role.Button) { onClick() }
+            .padding(horizontal = 2.dp),
     ) {
         Icon(
             Icons.Outlined.Refresh,

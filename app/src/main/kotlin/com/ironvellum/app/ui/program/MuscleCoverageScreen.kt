@@ -226,6 +226,15 @@ fun MuscleCoverageScreen(
         }
         Spacer(Modifier.height(12.dp))
 
+        // The switch comes first: drawn after the empty check, an empty LAST
+        // 7 DAYS view hid it and the lifter could not get back to PLANNED.
+        InkSegmented(
+            options = CoverageView.entries.map { it to it.label },
+            selected = view,
+            onPick = { view = it },
+        )
+        Spacer(Modifier.height(12.dp))
+
         if (empty) {
             InkPanel(Modifier.fillMaxWidth()) {
                 Text(
@@ -241,13 +250,6 @@ fun MuscleCoverageScreen(
             Spacer(Modifier.height(20.dp))
             return@Column
         }
-
-        InkSegmented(
-            options = CoverageView.entries.map { it to it.label },
-            selected = view,
-            onPick = { view = it },
-        )
-        Spacer(Modifier.height(12.dp))
 
         InkPanel(Modifier.fillMaxWidth()) {
             BodyHeatMap(
@@ -310,7 +312,7 @@ fun MuscleCoverageScreen(
         SectionHeader("Helper muscles")
         Text(
             "Mostly trained by your other exercises. Under " +
-                "${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week reads light, not short.",
+                "${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week reads light; none at all is a gap.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

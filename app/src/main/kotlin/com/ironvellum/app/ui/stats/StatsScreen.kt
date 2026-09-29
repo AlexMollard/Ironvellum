@@ -27,7 +27,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -243,9 +242,11 @@ fun StatsScreen(
                         onClick = if (latest == null) null else ({ drill = "BMI" }),
                     ) {
                         MetricLabel("BMI")
+                        // Paired with FFMI's caption so the two cards stay level.
+                        MetricCaption("body mass index")
                         val bmi = latest?.let { BodyStats.bmi(it.weightKg, it.heightCm) }
                         MetricValue(
-                            bmi?.toString() ?: "—",
+                            bmi?.let { formatBodyValue(it) } ?: "—",
                             bmi?.let { BodyStats.bmiCategory(it) }
                                 ?: "set height in Settings",
                         )
@@ -266,13 +267,14 @@ fun StatsScreen(
                         onClick = if (latest == null) null else ({ drill = "FFMI" }),
                     ) {
                         MetricLabel("FFMI")
+                        MetricCaption("fat-free mass index")
                         val ffmi = latest?.let { s -> s.bodyFatPct?.let { BodyStats.ffmi(s.weightKg, s.heightCm, it) } }
                         MetricValue(
-                            ffmi?.toString() ?: "—",
+                            ffmi?.let { formatBodyValue(it) } ?: "—",
                             // ffmi is also null when height is unset — a lifter
                             // who already logs body fat must not be told to log it.
                             ffmi?.let { BodyStats.ffmiCategory(it) }
-                                ?: if ((latest?.heightCm ?: 0.0) <= 0.0) "Set your height once in SETTINGS" else "log body fat %",
+                                ?: if ((latest?.heightCm ?: 0.0) <= 0.0) "set height in Settings" else "log body fat %",
                         )
                         Spacer(Modifier.height(6.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -322,7 +324,7 @@ fun StatsScreen(
                     // MetricValueBig stands in until a trend exists.
                     if (bmis.size >= 2) {
                         TrendChart(bmis, IronvellumColors.SystemGreen, fromZero = false)
-                        ChartCaption("Latest ${bmis.last()} — ${BodyStats.bmiCategory(bmis.last())}")
+                        ChartCaption("Latest ${formatBodyValue(bmis.last())} — ${BodyStats.bmiCategory(bmis.last())}")
                     } else {
                         // Muted dash placeholder, same treatment as the empty
                         // measurement tiles.
@@ -393,7 +395,7 @@ fun StatsScreen(
                                         // 0.0 is the heightless sentinel, never a real height.
                                         if (stat.heightCm > 0.0) append(" · ${formatBodyValue(stat.heightCm)} cm")
                                         stat.bodyFatPct?.let { append(" · ${formatBodyValue(it)}% bf") }
-                                        bmi?.let { append(" · BMI $it") }
+                                        bmi?.let { append(" · BMI ${formatBodyValue(it)}") }
                                     },
                                     style = MaterialTheme.typography.labelSmall,
                                     color = IronvellumColors.SystemGreen,
@@ -414,8 +416,8 @@ fun StatsScreen(
                                     modifier = Modifier
                                         .clip(MaterialTheme.shapes.extraSmall)
                                         .clickable { armed = false }
-                                        .heightIn(min = 24.dp)
-                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                        .heightIn(min = 44.dp)
+                                        .padding(horizontal = 10.dp)
                                         .wrapContentHeight(),
                                 )
                                 Text(
@@ -430,8 +432,8 @@ fun StatsScreen(
                                             armed = false
                                             viewModel.deleteStat(stat.id)
                                         }
-                                        .heightIn(min = 24.dp)
-                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                        .heightIn(min = 44.dp)
+                                        .padding(horizontal = 10.dp)
                                         .wrapContentHeight(),
                                 )
                             }
@@ -521,41 +523,52 @@ fun StatsScreen(
                         color = IronvellumColors.InkMuted,
                         letterSpacing = IronvellumTracking.SectionHeader,
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "←",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = IronvellumColors.SystemGreen,
-                            modifier = Modifier
+                }
+                // Month navigation gets its own row: beside the heading at
+                // 360dp the month name wrapped and pushed → off-screen.
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        "←",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = IronvellumColors.SystemGreen,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .clickable { month = month.minusMonths(1) }
+                            // "←" is announced as a character, which tells a
+                            // screen-reader user nothing about what it does.
+                            .semantics { contentDescription = "Previous month" }
+                            .size(44.dp)
+                            .wrapContentHeight(),
+                    )
+                    Text(
+                        "${month.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${month.year}",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = IronvellumColors.Ink,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                        modifier = Modifier.weight(1f),
+                    )
+                    // Unbounded, the arrow paged into empty future months
+                    // forever; the calendar stops at the current month.
+                    val canAdvance = month < YearMonth.now()
+                    Text(
+                        "→",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (canAdvance) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                        textAlign = TextAlign.Center,
+                        modifier = (if (canAdvance) {
+                            Modifier
                                 .clip(MaterialTheme.shapes.extraSmall)
-                                .clickable { month = month.minusMonths(1) }
-                                // "←" is announced as a character, which tells a
-                                // screen-reader user nothing about what it does.
-                                .semantics { contentDescription = "Previous month" }
-                                .padding(horizontal = 10.dp, vertical = 2.dp),
-                        )
-                        Text(
-                            "${month.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${month.year}",
-                            style = MaterialTheme.typography.titleSmall,
-                            color = IronvellumColors.Ink,
-                        )
-                        // Unbounded, the arrow paged into empty future months
-                        // forever; the calendar stops at the current month.
-                        val canAdvance = month < YearMonth.now()
-                        Text(
-                            "→",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = if (canAdvance) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
-                            modifier = (if (canAdvance) {
-                                Modifier
-                                    .clip(MaterialTheme.shapes.extraSmall)
-                                    .clickable { month = month.plusMonths(1) }
-                                    .semantics { contentDescription = "Next month" }
-                            } else {
-                                Modifier.semantics { contentDescription = "Next month — already at the current month" }
-                            }).padding(horizontal = 10.dp, vertical = 2.dp),
-                        )
-                    }
+                                .clickable { month = month.plusMonths(1) }
+                                .semantics { contentDescription = "Next month" }
+                        } else {
+                            Modifier.semantics { contentDescription = "Next month — already at the current month" }
+                        }).size(44.dp).wrapContentHeight(),
+                    )
                 }
                 Spacer(Modifier.height(10.dp))
                 CalendarGrid(month, ui.completedDates, ui.scheduledDays)
@@ -568,6 +581,7 @@ fun StatsScreen(
                 sessions = ui.sessions,
                 sessionSets = ui.sessionSets,
                 exercises = ui.exercises,
+                onOpenSettings = onOpenSettings,
             )
         }
     }
@@ -649,6 +663,7 @@ private fun StatDrillDialog(
         // Material's dialog container is a 28dp rounded rect - the most
         // obviously stock surface in the app. Give it the ink shape.
         shape = MaterialTheme.shapes.medium,
+        containerColor = Color(0xFF0D1110),
         onDismissRequest = onDismiss,
         title = {
             Column {
@@ -674,7 +689,7 @@ private fun StatDrillDialog(
                     )
                 } else {
                     Text(
-                        current.toString(),
+                        formatBodyValue(current),
                         style = MaterialTheme.typography.displaySmall,
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
@@ -706,7 +721,7 @@ private fun StatDrillDialog(
                 }
             }
         },
-        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        confirmButton = { IronvellumButton(label = "Close", onClick = onDismiss, quiet = true) },
     )
 }
 
@@ -756,6 +771,12 @@ private fun MetricValue(value: String, hint: String) {
     Text(hint, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
 }
 
+/** A plain-words gloss under an abbreviated metric name. */
+@Composable
+private fun MetricCaption(text: String) {
+    Text(text, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+}
+
 @Composable
 private fun MetricValueBig(value: String, unit: String) {
     Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -778,6 +799,14 @@ private fun ChartCaption(text: String) {
 
 private val WEEKDAYS = listOf("M", "T", "W", "T", "F", "S", "S")
 
+/**
+ * First date the calendar marks a scheduled weekday: the lifter's first
+ * workout, or today before there is one. The routine only exists from then
+ * on, so earlier dots claimed plans for dates before the app was in use.
+ */
+internal fun calendarScheduleStart(completedDates: Set<LocalDate>, today: LocalDate): LocalDate =
+    completedDates.minOrNull()?.coerceAtMost(today) ?: today
+
 @Composable
 private fun CalendarGrid(
     month: YearMonth,
@@ -785,6 +814,7 @@ private fun CalendarGrid(
     scheduledDays: Set<Int>,
 ) {
     val today = LocalDate.now()
+    val scheduleStart = remember(completedDates, today) { calendarScheduleStart(completedDates, today) }
     val firstDay = month.atDay(1)
     val leadingBlanks = firstDay.dayOfWeek.value - 1
     val cells: List<LocalDate?> = List(leadingBlanks) { null } +
@@ -813,7 +843,7 @@ private fun CalendarGrid(
                             Spacer(Modifier.height(36.dp))
                         } else {
                             val completed = date in completedDates
-                            val scheduled = date.dayOfWeek.value in scheduledDays
+                            val scheduled = date >= scheduleStart && date.dayOfWeek.value in scheduledDays
                             val isToday = date == today
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Box(
@@ -966,18 +996,15 @@ private fun AddStatDialog(
                         modifier = Modifier
                             .clip(MaterialTheme.shapes.extraSmall)
                             .clickable(onClick = onOpenSettings)
-                            .heightIn(min = 24.dp)
-                            .padding(vertical = 4.dp),
+                            .heightIn(min = 44.dp)
+                            .wrapContentHeight(),
                     )
                 }
-                TextButton(onClick = { showEstimator = !showEstimator }) {
-                    Text(
-                        if (showEstimator) "HIDE ESTIMATOR" else "ESTIMATE FOR ME",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                    )
-                }
+                IronvellumButton(
+                    label = if (showEstimator) "Hide estimator" else "Estimate for me",
+                    onClick = { showEstimator = !showEstimator },
+                    quiet = true,
+                )
                 if (showEstimator) {
                     // US Navy circumference method, pre-filled from the latest
                     // measurements the lifter already logged.
@@ -1021,7 +1048,8 @@ private fun AddStatDialog(
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
                         )
-                        TextButton(
+                        IronvellumButton(
+                            label = "Use",
                             enabled = estimate != null,
                             onClick = {
                                 estimate?.let {
@@ -1029,14 +1057,15 @@ private fun AddStatDialog(
                                     showEstimator = false
                                 }
                             },
-                        ) { Text("USE") }
+                            quiet = true,
+                        )
                     }
                 }
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    TextButton(onClick = onDismiss, modifier = Modifier.weight(1f)) { Text("Cancel") }
+                    IronvellumButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f), quiet = true)
                     IronvellumButton(
                         label = "LOG IT",
                         onClick = { onConfirm(weight.value.toDoubleOrNull() ?: 0.0, bfValue) },
@@ -1068,6 +1097,7 @@ private fun ActivityTab(
     sessions: List<WorkoutSession>,
     sessionSets: Map<Long, List<SessionSet>>,
     exercises: Map<Long, Exercise>,
+    onOpenSettings: () -> Unit,
 ) {
     Column(
         Modifier
@@ -1085,6 +1115,8 @@ private fun ActivityTab(
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
+                Spacer(Modifier.height(10.dp))
+                IronvellumButton(label = "Open Settings", onClick = onOpenSettings, quiet = true)
             }
             Spacer(Modifier.height(24.dp))
             return
@@ -1284,7 +1316,7 @@ private fun EnergySection(
         }
 
         Spacer(Modifier.height(10.dp))
-        MetricLabel("DAILY BURN — LAST 14 DAYS")
+        MetricLabel("DAILY BURN · LAST 14 DAYS")
         // A null estimate is "not estimable" (usually just a missing
         // bodyweight), not 0 kcal — plotting zeros drew confident zero-burn
         // days. TrendChart cannot draw gaps, so only estimable days are

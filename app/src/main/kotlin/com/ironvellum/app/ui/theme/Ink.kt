@@ -55,9 +55,11 @@ import kotlin.random.Random
  * surface without restarting the activity.
  *
  * The flag is mirrored from the stored profile at startup; see IronvellumTheme.
+ * It starts on, matching the profile default, so the first frame before the
+ * profile loads is not drawn in the plain look.
  */
 object InkStyle {
-    var enabled by mutableStateOf(false)
+    var enabled by mutableStateOf(true)
 }
 
 /** Segments per edge. Too few reads as a polygon; too many smooths back into a straight line. */

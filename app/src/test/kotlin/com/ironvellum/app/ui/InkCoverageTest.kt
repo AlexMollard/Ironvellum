@@ -80,9 +80,12 @@ class InkCoverageTest {
     fun `material components that ignore the theme pass an explicit shape`() {
         // Each of these carries its own *Defaults shape and silently ignores
         // MaterialTheme.shapes — the class that hid five separate regressions.
+        // TextButton joined after three dialogs and the account screen sat a
+        // stock pill beside an IronvellumButton; the ink answer is
+        // IronvellumButton(quiet = true), not a shaped TextButton.
         val components = listOf(
             "AlertDialog", "OutlinedTextField", "TextField", "OutlinedButton",
-            "Button", "ExtendedFloatingActionButton", "FloatingActionButton", "Card",
+            "Button", "TextButton", "ExtendedFloatingActionButton", "FloatingActionButton", "Card",
         )
         val missing = mutableListOf<String>()
         for (file in sources) {

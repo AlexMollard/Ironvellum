@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.BasicTextField
@@ -53,29 +55,28 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 /**
  * One picker for every place an exercise is chosen: search, group filters,
  * grouped rows, skill tiers marked. Replaces the two raw scrolling lists.
+ * [title] is null where the host screen already names the task, and
+ * [onDismiss] null where the host has its own way back.
  */
 @Composable
 fun ExercisePickerPanel(
     exercises: List<Exercise>,
     recentIds: List<Long>,
     onPick: (Exercise) -> Unit,
-    onDismiss: () -> Unit,
+    onDismiss: (() -> Unit)?,
     modifier: Modifier = Modifier,
+    title: String? = "SELECT EXERCISE",
 ) {
     var query by remember { mutableStateOf("") }
     var group by remember { mutableStateOf<MuscleGroup?>(null) }
     var category by remember { mutableStateOf<String?>(null) }
     var equipment by remember { mutableStateOf<EquipmentFacet?>(null) }
 
-    // Every whitespace-separated token must match somewhere in the name, so
-    // "ext leg" finds Leg Extension regardless of word order. A single
-    // contains() on the whole string made "pulldown lat" find nothing.
-    val tokens = query.trim().split(WHITESPACE).filter { it.isNotEmpty() }
     val filtered = exercises
         .filter { group == null || it.muscleGroup == group }
         .filter { category == null || it.category == category }
         .filter { equipment == null || equipmentFacet(it) == equipment }
-        .filter { tokens.all { token -> it.name.contains(token, ignoreCase = true) } }
+        .filter { matchesSearch(it.name, query) }
         .sortedWith(compareBy({ it.muscleGroup.ordinal }, { it.name }))
     // Grouped for display; a search term filters every group, so only non-empty groups appear.
     val grouped = activityCategoryOrder(exercises)
@@ -96,24 +97,50 @@ fun ExercisePickerPanel(
     }
 
     Column(modifier.fillMaxWidth()) {
+        // CLOSE sits in the header, not under the list: in a dialog the list
+        // took every pixel below it and the button was laid out but never drawn.
         Row(
             Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "SELECT EXERCISE",
+                title.orEmpty(),
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 color = IronvellumColors.SovereignGold,
                 letterSpacing = 3.sp,
+                modifier = Modifier.weight(1f),
             )
             Text(
                 "${filtered.size}",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
+            if (onDismiss != null) {
+                Box(
+                    Modifier
+                        .padding(start = 8.dp)
+                        .heightIn(min = 44.dp)
+                        .widthIn(min = 44.dp)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .clickable(onClickLabel = "Close", onClick = onDismiss)
+                        .semantics {
+                            contentDescription = "Close"
+                            role = Role.Button
+                        },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        "CLOSE",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        letterSpacing = 3.sp,
+                        modifier = Modifier.padding(horizontal = 8.dp),
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.height(10.dp))
@@ -232,19 +259,6 @@ fun ExercisePickerPanel(
                 modifier = Modifier.padding(vertical = 12.dp),
             )
         }
-
-        Spacer(Modifier.height(6.dp))
-        Text(
-            "CLOSE",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = 3.sp,
-            modifier = Modifier
-                .align(Alignment.End)
-                .clickable { onDismiss() }
-                .padding(8.dp),
-        )
     }
 }
 
@@ -275,6 +289,24 @@ private fun PickerSectionHeader(label: String) {
 }
 
 private val WHITESPACE = Regex("\\s+")
+
+/**
+ * Every whitespace-separated token of [query] must start a word of [name],
+ * in any order: "ext leg" finds Leg Extension, "chin" finds Chin-up. A bare
+ * substring match made "chin" find every Machine row too.
+ */
+internal fun matchesSearch(name: String, query: String): Boolean =
+    query.trim().split(WHITESPACE).filter { it.isNotEmpty() }.all { token -> startsWord(name, token) }
+
+private fun startsWord(name: String, token: String): Boolean {
+    var from = 0
+    while (true) {
+        val at = name.indexOf(token, from, ignoreCase = true)
+        if (at < 0) return false
+        if (at == 0 || !name[at - 1].isLetterOrDigit()) return true
+        from = at + 1
+    }
+}
 
 /**
  * Where the load comes from, derived from data the catalogue already carries:

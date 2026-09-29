@@ -41,8 +41,10 @@ import com.ironvellum.app.ui.theme.inkStroke
 
 /**
  * Verdict for one muscle against the tier/focus weekly-set range. LIGHT is a
- * helper below its floor: shown, never a gap - the floor is a convention, and
- * a lifter chasing a goal should not be told to pad the week to meet it.
+ * helper trained but below its floor: shown, never a gap - the floor is a
+ * convention, and a lifter chasing a goal should not be told to pad the week
+ * to meet it. A helper at zero is NONE like any muscle: a whole group left
+ * untrained is a gap, not a convention.
  */
 enum class CoverageLevel { NONE, UNDER, LIGHT, IN_RANGE, OVER }
 
@@ -112,17 +114,23 @@ data class CoverageGoal(
 fun rangeFor(muscle: Muscle, goal: CoverageGoal): ClosedFloatingPointRange<Double> =
     ProgramRules.judgedRange(muscle, goal.volume, goal.focus, goal.priorities)
 
-/** [muscle]'s verdict at [volume]: a helper below its floor, trained or not, is LIGHT. */
+/**
+ * [muscle]'s verdict at [volume]. Zero sets is NONE for every muscle; a
+ * helper trained but below its floor is LIGHT.
+ */
 fun levelOf(muscle: Muscle, volume: Double, goal: CoverageGoal): CoverageLevel {
     val range = rangeFor(muscle, goal)
-    return if (muscle in ProgramRules.HELPERS && volume < range.start) {
+    return if (muscle in ProgramRules.HELPERS && volume > 0.0 && volume < range.start) {
         CoverageLevel.LIGHT
     } else {
         coverageLevel(volume, range)
     }
 }
 
-/** Every major muscle the week leaves under its range or untrained. Helpers are never gaps. */
+/**
+ * Every judged muscle the week leaves untrained, plus every major muscle
+ * under its range. A trained helper below its floor (LIGHT) is not a gap.
+ */
 fun coverageGaps(volume: Map<Muscle, Double>, goal: CoverageGoal): List<Muscle> =
     JUDGED.filter {
         levelOf(it, volume[it] ?: 0.0, goal).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE }
@@ -345,7 +353,10 @@ fun ExerciseMuscleMap(
     modifier: Modifier = Modifier,
     figureHeight: Dp = 220.dp,
 ) {
-    Column(modifier) {
+    // A Canvas says nothing to TalkBack: speak what the fill shows, as
+    // BodyHeatMap does, in place of the figure labels and legend.
+    val description = exerciseMuscleSummary(shares)
+    Column(modifier.clearAndSetSemantics { contentDescription = description }) {
         Canvas(
             Modifier
                 .fillMaxWidth()

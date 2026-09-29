@@ -43,6 +43,9 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -221,7 +224,7 @@ fun IdleScreen(
             // Brief empty frame while the flows warm up; never fake numbers.
             InkPanel {
                 Text(
-                    "The figures are assembling...",
+                    "The figures are assembling…",
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
                     style = MaterialTheme.typography.bodyMedium,
@@ -249,6 +252,7 @@ fun IdleScreen(
             )
             RelicVault(relics = relics)
             away?.let { AwayWindow(it) }
+            Spacer(Modifier.height(12.dp))
             CapWindow()
         }
 
@@ -315,15 +319,20 @@ private fun DrawWindow(rolls: Int, onInscribe: () -> Unit) {
                     letterSpacing = IronvellumTracking.InlineLabel,
                     color = if (rolls > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                 )
-                Spacer(Modifier.width(8.dp))
-                Icon(
-                    Icons.Outlined.Info,
-                    contentDescription = if (oddsOpen) "Hide drop rates" else "Show drop rates",
-                    tint = if (oddsOpen) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                    modifier = Modifier
-                        .size(18.dp)
-                        .clickable { oddsOpen = !oddsOpen },
-                )
+                Spacer(Modifier.width(2.dp))
+                Box(
+                    Modifier
+                        .size(44.dp)
+                        .clickable(role = Role.Button) { oddsOpen = !oddsOpen },
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        Icons.Outlined.Info,
+                        contentDescription = if (oddsOpen) "Hide drop rates" else "Show drop rates",
+                        tint = if (oddsOpen) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
             }
             if (oddsOpen) {
                 OddsTable()
@@ -817,15 +826,15 @@ private fun formatAway(ms: Long): String {
 @Composable
 private fun CapWindow() {
     InkPanel(accent = IronvellumColors.Bracket) {
+        // Unbounded and short: at maxLines = 3 the last clause — the cap
+        // itself — was the part the ellipsis cut on a 360dp phone.
         Text(
-            "The figures hold full strength for ${Idle.FULL_RATE_HOURS.toInt()} hours, " +
-                "then tire over the next ${Idle.TAPER_WINDOW_HOURS.toInt()} and labour on at a tenth. " +
-                "One absence never pays more than ${(Idle.MAX_EFFECTIVE_HOURS / 24).toInt()} full days of work.",
+            "Figures work at full strength for ${Idle.FULL_RATE_HOURS.toInt()} hours, then taper over " +
+                "${Idle.TAPER_WINDOW_HOURS.toInt()} to a tenth. One absence pays at most " +
+                "${(Idle.MAX_EFFECTIVE_HOURS / 24).toInt()} days.",
             style = MaterialTheme.typography.bodyMedium,
             color = IronvellumColors.InkMuted,
             textAlign = TextAlign.Start,
-            maxLines = 3,
-            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -961,14 +970,24 @@ private fun RelicVault(relics: List<RelicHolding>) {
                 )
             }
             if (relics.isEmpty()) {
-                Image(
-                    painter = painterResource(R.drawable.art_empty_muster),
-                    contentDescription = null,
-                    modifier = Modifier
+                // The art carries faint edge strokes from its source canvas;
+                // drawn larger and clipped to the seal's square, they fall
+                // outside the window instead of reading as a stray rule.
+                Box(
+                    Modifier
                         .align(Alignment.CenterHorizontally)
                         .size(132.dp)
-                        .alpha(0.55f),
-                )
+                        .clipToBounds(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.art_empty_muster),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .requiredSize(190.dp)
+                            .alpha(0.55f),
+                    )
+                }
                 Spacer(Modifier.height(10.dp))
                 Text(
                     "Nothing inscribed yet.",

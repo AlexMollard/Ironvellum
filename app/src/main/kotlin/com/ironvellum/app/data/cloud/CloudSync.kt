@@ -174,7 +174,7 @@ class CloudSync(
                 pending.forEach { (session, sets) ->
                     val cloudId = cloudIds[session.id]
                     if (cloudId == null) {
-                        problems += "Session \"${session.label}\" could not be matched on the cloud"
+                        problems += "Workout \"${session.label}\" could not be matched on the cloud"
                         return@forEach
                     }
                     // A skipped set must hold the watermark back: retrying a

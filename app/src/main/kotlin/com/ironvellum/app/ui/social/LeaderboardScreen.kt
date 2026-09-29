@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -565,10 +569,13 @@ private fun MetricChips(selected: BoardMetric, onPick: (BoardMetric) -> Unit) {
                 fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                 color = if (active) IronvellumColors.Abyss else IronvellumColors.InkMuted,
                 modifier = Modifier
+                    // 44dp hit area around a compact pill: the visual stays small.
+                    .heightIn(min = 44.dp)
+                    .selectable(selected = active, role = Role.Tab) { onPick(candidate) }
+                    .wrapContentHeight()
                     .clip(MaterialTheme.shapes.small)
                     .background(if (active) IronvellumColors.SovereignGold else Color(0xFF141A18))
                     .inkBorder(if (active) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
-                    .clickable { onPick(candidate) }
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
@@ -847,9 +854,10 @@ private fun RefreshLink(onClick: () -> Unit, label: String) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),
         modifier = Modifier
+            .heightIn(min = 44.dp)
             .clip(MaterialTheme.shapes.extraSmall)
-            .clickable { onClick() }
-            .padding(vertical = 4.dp, horizontal = 2.dp),
+            .clickable(role = Role.Button) { onClick() }
+            .padding(horizontal = 2.dp),
     ) {
         Icon(
             Icons.Outlined.Refresh,
@@ -887,10 +895,13 @@ private fun BoardSelector(selected: Board, onPick: (Board) -> Unit) {
                 fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
                 color = if (active) IronvellumColors.Abyss else IronvellumColors.InkMuted,
                 modifier = Modifier
+                    // 44dp hit area around a compact pill: the visual stays small.
+                    .heightIn(min = 44.dp)
+                    .selectable(selected = active, role = Role.Tab) { onPick(candidate) }
+                    .wrapContentHeight()
                     .clip(MaterialTheme.shapes.small)
                     .background(if (active) IronvellumColors.SovereignGold else Color(0xFF141A18))
                     .inkBorder(if (active) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
-                    .clickable { onPick(candidate) }
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }

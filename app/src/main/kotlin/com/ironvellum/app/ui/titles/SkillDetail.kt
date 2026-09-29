@@ -33,6 +33,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -42,6 +44,7 @@ import androidx.compose.ui.unit.sp
 import com.ironvellum.app.data.SkillTrainingEvidence
 import com.ironvellum.app.domain.SkillClaimResult
 import com.ironvellum.app.domain.SkillPractice
+import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -99,7 +102,7 @@ fun SkillDetailDialog(
         title = {
             Column {
                 Text(
-                    "TIER ${Skills.tierLabel(skill.tier)}  ·  ${skill.line.uppercase()}",
+                    "TIER ${Skills.tierLabel(skill.tier)} · ${skill.line.uppercase()}",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.SystemGreen,
@@ -263,14 +266,14 @@ fun SkillDetailDialog(
                 if (mastered) {
                     if (confirmUnclaim) {
                         Text(
-                            "Give the title back? The ${skill.xp} XP is removed too.",
+                            "Give the technique back? The ${skill.xp} XP is removed too.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.DangerRed,
                         )
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             IronvellumButton("Unclaim", onClick = onUnclaim, modifier = Modifier.fillMaxWidth(0.5f))
-                            IronvellumButton("Keep it", onClick = { confirmUnclaim = false })
+                            IronvellumButton("Keep it", onClick = { confirmUnclaim = false }, quiet = true)
                         }
                     } else {
                         Text(
@@ -287,7 +290,8 @@ fun SkillDetailDialog(
                             color = IronvellumColors.InkMuted,
                             modifier = Modifier
                                 .clickable { confirmUnclaim = true }
-                                .padding(vertical = 4.dp),
+                                .heightIn(min = 44.dp)
+                                .wrapContentHeight(),
                         )
                     }
                 } else if (unlocked) {
@@ -464,8 +468,9 @@ private fun DetailBlock(label: String, body: String, color: Color) {
 private fun attemptStep(skill: Skills.SkillDef): Int =
     if (skill.metric == Skills.Metric.SECONDS) 5 else 1
 
-private fun formatLoad(kg: Double): String =
-    if (kg % 1.0 == 0.0) kg.toLong().toString() else kg.toString()
+/** Plate-stepped load: whole kilograms drop the ".0"; anything else keeps its decimals. */
+internal fun formatLoad(kg: Double): String =
+    if (kg % 1.0 == 0.0) kg.toLong().toString() else formatBodyValue(kg)
 
 /** Preset attempts around the standard, so common values are one tap away. */
 private fun quickValues(skill: Skills.SkillDef): List<Int> {

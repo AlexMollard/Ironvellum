@@ -11,6 +11,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Muscle
@@ -29,7 +31,10 @@ fun ExerciseMuscles(
     modifier: Modifier = Modifier,
     figureHeight: Dp = 200.dp,
 ) {
-    Column(modifier) {
+    // One spoken summary for the figure, its legend and the lines under it,
+    // which otherwise read the same muscles twice.
+    val description = exerciseMuscleSummary(shares)
+    Column(modifier.clearAndSetSemantics { contentDescription = description }) {
         ExerciseMuscleMap(shares, Modifier.fillMaxWidth(), figureHeight)
         Spacer(Modifier.height(10.dp))
         MuscleLine(ShareLevel.MAIN, musclesAt(shares, ShareLevel.MAIN))
@@ -43,6 +48,20 @@ fun ExerciseMuscles(
  */
 fun musclesAt(shares: Map<Muscle, Double>, level: ShareLevel): List<Muscle> =
     shares.filter { (_, share) -> share > 0.0 && shareLevel(share) == level }.keys.toList()
+
+/**
+ * What a screen reader hears for one exercise's figure, in the MAIN / ASSIST
+ * words the legend uses: "Main: Lats, Biceps. Assists: Rear delts."
+ */
+fun exerciseMuscleSummary(shares: Map<Muscle, Double>): String {
+    val main = musclesAt(shares, ShareLevel.MAIN)
+    val assist = musclesAt(shares, ShareLevel.ASSIST)
+    if (main.isEmpty() && assist.isEmpty()) return "No muscle data for this exercise."
+    return buildList {
+        if (main.isNotEmpty()) add("Main: " + main.joinToString(", ") { it.label } + ".")
+        if (assist.isNotEmpty()) add("Assists: " + assist.joinToString(", ") { it.label } + ".")
+    }.joinToString(" ")
+}
 
 @Composable
 private fun MuscleLine(level: ShareLevel, muscles: List<Muscle>) {

@@ -13,9 +13,10 @@ import org.junit.Test
 /**
  * The Train card's "N SHORT OR MISSING" and the coverage screen's flags: a
  * major muscle counts when under its range or untrained. A helper (front
- * delts, forearms, the rotator cuff and the rest) below its floor reads
- * LIGHT and is never a gap - the floor is a convention, and a lifter's goal
- * outranks it - and it is never over, because a helper has no ceiling.
+ * delts, forearms, the rotator cuff and the rest) trained but below its
+ * floor reads LIGHT and is never a gap - the floor is a convention, and a
+ * lifter's goal outranks it - and it is never over, because a helper has no
+ * ceiling. A helper at zero sets is untrained like any muscle, and a gap.
  */
 class CoverageGapsTest {
 
@@ -25,17 +26,28 @@ class CoverageGapsTest {
         Muscle.entries.associateWith { sets }.toMutableMap()
 
     @Test
-    fun `a helper under its floor reads light and is never a gap`() {
+    fun `a trained helper under its floor reads light and is never a gap`() {
         val volume = everyMuscleAt(8.0)
         volume[Muscle.LOWER_BACK] = ProgramRules.HELPER_FLOOR_SETS - 0.5
-        volume.remove(Muscle.ROTATOR_CUFF)
+        volume[Muscle.ROTATOR_CUFF] = 0.5
         volume[Muscle.QUADS] = 4.0
         assertEquals(listOf(Muscle.QUADS), coverageGaps(volume, target))
         assertEquals(CoverageLevel.LIGHT, levelOf(Muscle.LOWER_BACK, 2.5, target))
-        assertEquals(CoverageLevel.LIGHT, levelOf(Muscle.ROTATOR_CUFF, 0.0, target))
+        assertEquals(CoverageLevel.LIGHT, levelOf(Muscle.ROTATOR_CUFF, 0.5, target))
         assertEquals(CoverageLevel.IN_RANGE, levelOf(Muscle.LOWER_BACK, ProgramRules.HELPER_FLOOR_SETS, target))
         // A major muscle short of its range is still under, never light.
         assertEquals(CoverageLevel.UNDER, levelOf(Muscle.QUADS, 4.0, target))
+    }
+
+    @Test
+    fun `an untrained helper reads none and is a gap`() {
+        // Tibialis and abductors at zero read LIGHT while the Train card said
+        // ALL COVERED: a whole muscle group with no work is a gap.
+        val volume = everyMuscleAt(8.0)
+        volume.remove(Muscle.TIBIALIS)
+        volume[Muscle.ABDUCTORS] = 0.0
+        assertEquals(CoverageLevel.NONE, levelOf(Muscle.TIBIALIS, 0.0, target))
+        assertEquals(setOf(Muscle.TIBIALIS, Muscle.ABDUCTORS), coverageGaps(volume, target).toSet())
     }
 
     @Test

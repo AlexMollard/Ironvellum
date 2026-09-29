@@ -11,4 +11,13 @@
     -->
     <exclude domain="file" path="db-snapshots" />
     <exclude domain="file" path="crash" />
+    <!--
+      App state that only makes sense beside the database above. Restored
+      without it, "onboarding" (dismissed) and "program_answers" skip first run
+      into an empty app, and "reminders" shows a toggle that is on while no
+      work is scheduled and notification permission is gone.
+    -->
+    <exclude domain="sharedpref" path="onboarding.xml" />
+    <exclude domain="sharedpref" path="program_answers.xml" />
+    <exclude domain="sharedpref" path="reminders.xml" />
 </full-backup-content>

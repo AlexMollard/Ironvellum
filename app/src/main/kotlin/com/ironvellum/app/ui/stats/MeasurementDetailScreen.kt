@@ -309,8 +309,8 @@ fun MeasurementDetailScreen(
                                     modifier = Modifier
                                         .clip(MaterialTheme.shapes.extraSmall)
                                         .clickable { armed = false }
-                                        .heightIn(min = 24.dp)
-                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                        .heightIn(min = 44.dp)
+                                        .padding(horizontal = 10.dp)
                                         .wrapContentHeight(),
                                 )
                                 Text(
@@ -325,8 +325,8 @@ fun MeasurementDetailScreen(
                                             armed = false
                                             viewModel.delete(entry.id)
                                         }
-                                        .heightIn(min = 24.dp)
-                                        .padding(horizontal = 10.dp, vertical = 4.dp)
+                                        .heightIn(min = 44.dp)
+                                        .padding(horizontal = 10.dp)
                                         .wrapContentHeight(),
                                 )
                             }

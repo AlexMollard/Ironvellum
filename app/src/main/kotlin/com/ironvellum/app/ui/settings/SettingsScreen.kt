@@ -23,7 +23,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -41,6 +40,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.HealthConnectFeatures
 import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
@@ -73,6 +74,7 @@ import com.ironvellum.app.domain.HealthDay
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.InkSegmented
@@ -113,6 +115,26 @@ private val HEALTH_PERMISSIONS = setOf(
     HealthPermission.getReadPermission(SleepSessionRecord::class),
     HealthPermission.getReadPermission(RestingHeartRateRecord::class),
 )
+
+/**
+ * What the Connect button asks for: the data reads, plus background reading
+ * where this Health Connect build supports it so the daily worker can sync
+ * while the app is closed. Kept out of [HEALTH_PERMISSIONS] on purpose: that
+ * set is the "is anything connected" check, and a declined background grant
+ * must not make a working foreground sync report "not connected".
+ */
+private fun healthPermissionRequest(context: Context): Set<String> {
+    val background = runCatching {
+        HealthConnectClient.getOrCreate(context).features.getFeatureStatus(
+            HealthConnectFeatures.FEATURE_READ_HEALTH_DATA_IN_BACKGROUND,
+        ) == HealthConnectFeatures.FEATURE_STATUS_AVAILABLE
+    }.getOrDefault(false)
+    return if (background) {
+        HEALTH_PERMISSIONS + HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND
+    } else {
+        HEALTH_PERMISSIONS
+    }
+}
 
 data class SyncUi(
     val available: Boolean = true,
@@ -503,7 +525,7 @@ class SettingsViewModel(
                     syncing = false,
                     available = true,
                     message = "Health Connect returned an implausible weight " +
-                        "(${snapshot.weightKg} kg); not imported.",
+                        "(${formatBodyValue(snapshot.weightKg)} kg); not imported.",
                 )
                 return@launch
             }
@@ -647,6 +669,7 @@ fun SettingsScreen(
     if (confirmCloudSwitch) {
         AlertDialog(
             shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmCloudSwitch = false },
             title = { Text("Use this backend?") },
             text = {
@@ -655,16 +678,16 @@ fun SettingsScreen(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                IronvellumButton(label = "Switch", onClick = {
                     confirmCloudSwitch = false
                     viewModel.switchBackend(cloudUrl, cloudKey)
                     cloudFieldsShown = false
                     cloudUrl = ""
                     cloudKey = ""
-                }) { Text("Switch") }
+                })
             },
             dismissButton = {
-                TextButton(onClick = { confirmCloudSwitch = false }) { Text("Stay") }
+                IronvellumButton(label = "Stay", onClick = { confirmCloudSwitch = false }, quiet = true)
             },
         )
     }
@@ -672,6 +695,7 @@ fun SettingsScreen(
     if (confirmSharedSwitch) {
         AlertDialog(
             shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmSharedSwitch = false },
             title = { Text("Return to the shared cloud?") },
             text = {
@@ -680,13 +704,13 @@ fun SettingsScreen(
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
+                IronvellumButton(label = "Switch", onClick = {
                     confirmSharedSwitch = false
                     viewModel.useSharedCloud()
-                }) { Text("Switch") }
+                })
             },
             dismissButton = {
-                TextButton(onClick = { confirmSharedSwitch = false }) { Text("Stay") }
+                IronvellumButton(label = "Stay", onClick = { confirmSharedSwitch = false }, quiet = true)
             },
         )
     }
@@ -714,19 +738,20 @@ fun SettingsScreen(
             // Material's dialog container is a 28dp rounded rect - the most
             // obviously stock surface in the app. Give it the ink shape.
             shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmImport = false },
             title = { Text("Restore this archive?") },
             text = {
                 Text("Replaces your routine, workout log, readings, titles and skill logs on this device. This cannot be undone.")
             },
             confirmButton = {
-                TextButton(onClick = {
+                IronvellumButton(label = "Restore", onClick = {
                     confirmImport = false
                     importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
-                }) { Text("Restore", color = IronvellumColors.DangerRed) }
+                })
             },
             dismissButton = {
-                TextButton(onClick = { confirmImport = false }) { Text("Keep local data") }
+                IronvellumButton(label = "Keep local data", onClick = { confirmImport = false }, quiet = true)
             },
         )
     }
@@ -829,7 +854,13 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(10.dp))
             InkSegmented(
-                options = TrainingMode.entries.map { it to it.name },
+                options = TrainingMode.entries.map { mode ->
+                    // The generator's goal control words, so one concept has one name.
+                    mode to when (mode) {
+                        TrainingMode.STRENGTH -> "Power"
+                        TrainingMode.HYPERTROPHY -> "Muscle"
+                    }
+                },
                 selected = profile?.trainingMode ?: TrainingMode.STRENGTH,
                 onPick = { viewModel.setMode(it) },
             )
@@ -859,7 +890,7 @@ fun SettingsScreen(
                 letterSpacing = IronvellumTracking.SectionHeader,
             )
             Spacer(Modifier.height(10.dp))
-            val inkOn = profile?.inkStyle ?: false
+            val inkOn = profile?.inkStyle ?: true
             InkSegmented(
                 options = listOf(true to "INK", false to "CLEAN"),
                 selected = inkOn,
@@ -881,7 +912,7 @@ fun SettingsScreen(
 
         InkPanel(Modifier.fillMaxWidth()) {
             Text(
-                "SAMSUNG HEALTH",
+                "HEALTH CONNECT",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -901,7 +932,7 @@ fun SettingsScreen(
                     label = "Connect & Sync",
                     onClick = {
                         if (sync.available) {
-                            permissionLauncher.launch(HEALTH_PERMISSIONS)
+                            permissionLauncher.launch(healthPermissionRequest(context))
                         } else {
                             viewModel.syncFromHealth()
                         }
@@ -916,8 +947,8 @@ fun SettingsScreen(
                         // Samsung Health batches its pushes: without the "as of"
                         // the count just looks wrong against the phone's tally.
                         snapshot.stepsAsOfMs?.let { append(" (as of ${formatDate(it, "HH:mm")})") }
-                        snapshot.weightKg?.let { append("  ·  $it kg") }
-                        snapshot.bodyFatPct?.let { append("  ·  $it% bf") }
+                        snapshot.weightKg?.let { append(" · ${formatBodyValue(it)} kg") }
+                        snapshot.bodyFatPct?.let { append(" · ${formatBodyValue(it)}% bf") }
                     },
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,

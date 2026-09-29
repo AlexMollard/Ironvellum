@@ -157,12 +157,15 @@ fun ExerciseExplorerScreen(
 
         val selectedExercise = ui.selected
         if (selectedExercise == null) {
+            // The screen's own header names it and BACK leaves it, so the
+            // panel drops its SELECT EXERCISE title and CLOSE.
             InkPanel(Modifier.fillMaxWidth()) {
                 ExercisePickerPanel(
                     exercises = ui.exercises,
                     recentIds = recentExerciseIds,
                     onPick = viewModel::pick,
-                    onDismiss = onBack,
+                    onDismiss = null,
+                    title = null,
                 )
             }
         } else {
