@@ -100,12 +100,17 @@ class AccountRepository {
                 buildJsonObject { put("name", name) },
             ).data.trim() == "true"
             if (!free) throw NameTakenException()
-            client.auth.signUpWith(Email) {
+            val user = client.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
                 data = buildJsonObject { put("display_name", name) }
             }
             if (client.auth.currentSessionOrNull() == null) {
+                // With email confirmation on, an address that is already
+                // registered gets a fake success (a user with no identities)
+                // so the server never reveals which emails have accounts.
+                // Nothing was created and no email was sent.
+                if (user?.identities?.isEmpty() == true) throw EmailTakenException()
                 SignUpOutcome.ConfirmEmail
             } else {
                 SignUpOutcome.SignedIn(
@@ -114,7 +119,7 @@ class AccountRepository {
                 )
             }
         }.recoverCatching { error ->
-            if (error is NameTakenException) throw error
+            if (error is NameTakenException || error is EmailTakenException) throw error
             throw IllegalStateException(Cloud.explain(error))
         }
     }
@@ -338,3 +343,8 @@ internal fun requireAccount(account: AccountRepository): Result<Account> {
 
 /** The display name was taken before sign-up; shown to the lifter as is. */
 private class NameTakenException : IllegalStateException("That display name is taken — pick another")
+
+/** A repeat sign-up of a registered email; shown to the lifter as is. */
+private class EmailTakenException : IllegalStateException(
+    "That email already has an account — sign in, or use Forgot password?",
+)
