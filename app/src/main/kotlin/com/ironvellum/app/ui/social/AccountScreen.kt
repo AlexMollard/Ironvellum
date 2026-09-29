@@ -1,6 +1,5 @@
 package com.ironvellum.app.ui.social
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +23,7 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.IconButton
@@ -45,15 +45,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.draw.alpha
+import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,15 +75,9 @@ import com.ironvellum.app.data.cloud.SyncOutcome
 import com.ironvellum.app.data.cloud.SignUpOutcome
 import com.ironvellum.app.data.cloud.isUnclaimedHandle
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.NavChip
-import androidx.compose.material.icons.outlined.CloudUpload
-import androidx.compose.material.icons.outlined.CloudDownload
-import java.text.DateFormat
-import java.util.Date
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.InkPanel
-import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -93,6 +86,7 @@ import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.Xp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -307,24 +301,6 @@ class AccountViewModel(
     }
 
     /**
-     * Re-uploads every completed session, ignoring what the device believes
-     * the cloud already holds. The ordinary sync skips anything whose
-     * fingerprint matches, which is right until the server loses rows - then
-     * the match is a lie and only this can repair it.
-     */
-    fun reuploadEverything() {
-        viewModelScope.launch {
-            setBusy(true)
-            _ui.value = _ui.value.copy(error = null)
-            cloudSync.forgetPushedState()
-            cloudSync.push()
-                .onSuccess { _ui.value = _ui.value.copy(lastSync = it) }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
-            setBusy(false)
-        }
-    }
-
-    /**
      * Uploads the whole archive to the lifter's own cloud row. The archive
      * omits private notes — the device promise holds even in a full backup.
      */
@@ -426,6 +402,8 @@ fun AccountScreen(
     // No-op default keeps existing call sites compiling; the parent wires the
     // real lifter route in IronvellumNav.kt.
     onOpenLifter: (userId: String, displayName: String) -> Unit = { _, _ -> },
+    // Same no-op default reasoning; SocialScreen wires the ACCOUNT route.
+    onOpenAccount: () -> Unit = {},
     viewModel: AccountViewModel = viewModel(
         factory = viewModelFactory {
             initializer { AccountViewModel(ironvellumAccount(), ironvellumCloudSync()) }
@@ -473,21 +451,15 @@ fun AccountScreen(
                 SignedInPanels(
                     ui = ui,
                     onOpenLifter = onOpenLifter,
-                    onSignOut = viewModel::signOut,
-                    onDeleteCloudData = viewModel::deleteCloudData,
-                    onVisibility = viewModel::setVisibility,
-                    onSync = viewModel::syncNow,
-                    onReupload = viewModel::reuploadEverything,
-                    onBackup = viewModel::backUpNow,
-                    onRestore = viewModel::restoreFromCloud,
+                    onOpenAccount = onOpenAccount,
                     onAccept = viewModel::acceptFriend,
-                    onRequest = viewModel::requestFriend,
+                    onDecline = viewModel::removeFriend,
                     onRemoveAlly = viewModel::removeFriend,
-                    onUnblock = viewModel::unblock,
+                    onRequest = viewModel::requestFriend,
                     onClaim = viewModel::claimName,
                     onSkipClaim = viewModel::skipClaim,
                 )
-                // Clears the bottom nav bar: 28.dp left SEVER THE LINK half
+                // Clears the bottom nav bar: 28.dp left the last ally row half
                 // hidden behind it at the end of the scroll.
                 Spacer(Modifier.height(120.dp))
             }
@@ -796,242 +768,28 @@ private fun PasswordField(
  * flavour renders nothing — the proprietary credential libraries are absent).
  */
 
-
+/**
+ * The ALLIES tab: social only. Account settings live behind the gear on the
+ * profile header (AccountSettingsScreen) - this tab used to carry sync,
+ * backup, privacy notes and sign-out between the lifter and their allies.
+ */
 @Composable
 private fun SignedInPanels(
     ui: AccountUi,
     onOpenLifter: (userId: String, displayName: String) -> Unit,
-    onSignOut: () -> Unit,
-    onDeleteCloudData: () -> Unit,
-    onVisibility: (String) -> Unit,
-    onSync: () -> Unit,
-    onReupload: () -> Unit,
-    onBackup: () -> Unit,
-    onRestore: () -> Unit,
+    onOpenAccount: () -> Unit,
     onAccept: (String) -> Unit,
+    onDecline: (String) -> Unit,
     onRemoveAlly: (String) -> Unit,
-    onUnblock: (String) -> Unit,
     onRequest: (String) -> Unit,
     onClaim: (String) -> Unit,
     onSkipClaim: () -> Unit,
 ) {
     val acct = ui.account ?: return
 
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
-        Text(
-            acct.displayName,
-            style = MaterialTheme.typography.headlineMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.Ink,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        // Email styled as a house tag rather than plain grey mono.
-        Text(
-            acct.email,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.Emerald,
-            letterSpacing = IronvellumTracking.InlineLabel,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        // The email and the VISIBILITY label collided without this: adjacent
-        // label-sized lines with no gap read as one overlapping block.
-        Spacer(Modifier.height(18.dp))
-        // Selected state reuses the hub tab pill treatment (green gradient
-        // fill, bright border, dark ink) so it reads at a glance instead of
-        // relying on text colour alone.
-        Text(
-            "VISIBILITY",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(
-                "public" to Icons.Outlined.Public,
-                "friends" to Icons.Outlined.Group,
-                "private" to Icons.Outlined.Lock,
-            ).forEach { (value, icon) ->
-                val selected = acct.visibility == value
-                val shape = MaterialTheme.shapes.small
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    modifier = Modifier
-                        .weight(1f)
-                        .background(
-                            if (selected) {
-                                Brush.verticalGradient(
-                                    listOf(IronvellumColors.SystemGreen, IronvellumColors.Emerald),
-                                )
-                            } else {
-                                Brush.verticalGradient(listOf(IronvellumColors.Vault, IronvellumColors.Abyss))
-                            },
-                            shape,
-                        )
-                        .inkBorder(if (selected) IronvellumColors.EmeraldBright else IronvellumColors.Rune, shape, 1.dp)
-                        .clickable { onVisibility(value) }
-                        .padding(vertical = 10.dp),
-                ) {
-                    Icon(
-                        icon,
-                        contentDescription = value,
-                        tint = if (selected) IronvellumColors.Abyss else IronvellumColors.InkMuted,
-                    )
-                    Text(
-                        value.uppercase(),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Normal,
-                        color = if (selected) IronvellumColors.Abyss else IronvellumColors.InkMuted,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            when (acct.visibility) {
-                "public" -> "Every lifter on the board can read your workouts."
-                "friends" -> "Only lifters on your friend list can read your workouts."
-                else -> "No one but you can read your workouts."
-            },
-            style = MaterialTheme.typography.labelSmall,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(14.dp))
-        IronvellumButton(label = "Sync Now", onClick = onSync, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
-        Spacer(Modifier.height(8.dp))
-        // Sync Now skips a session whose fingerprint matches the watermark.
-        // After the cloud loses rows that match is false, and this is the only
-        // way back.
-        NavChip(
-            label = "RE-UPLOAD EVERYTHING",
-            icon = Icons.Outlined.CloudUpload,
-            onClick = onReupload,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        ui.lastSync?.let { outcome ->
-            Spacer(Modifier.height(8.dp))
-            Text(
-                buildString {
-                    append("Pushed ${outcome.sessions} ${plural(outcome.sessions, "workout", "workouts")} · ")
-                    append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
-                    append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
-                    if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
-                },
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = if (outcome.problems.isEmpty()) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
-            )
-            outcome.problems.forEach { problem ->
-                Text(
-                    "· $problem",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
-        }
-        Spacer(Modifier.height(14.dp))
-        Text(
-            "BACKUP",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(6.dp))
-        // Freshness must be visible without tapping anything: a lifter has to
-        // be able to tell at a glance whether they are actually protected.
-        Text(
-            ui.lastBackup?.let {
-                "Last backup: " + DateFormat.getDateTimeInstance().format(Date(it.atMs)) +
-                    " · " + formatBytes(it.bytes)
-            } ?: "No cloud backup yet — tap BACK UP NOW to protect your training.",
-            style = MaterialTheme.typography.labelSmall,
-            color = if (ui.lastBackup != null) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
-        )
-        Spacer(Modifier.height(8.dp))
-        IronvellumButton(label = "Back Up Now", onClick = onBackup, enabled = !ui.busy, modifier = Modifier.fillMaxWidth())
-        // Next to the button that failed. The shared error slot lives below
-        // the allies list, several screens down, so a refused backup read as
-        // a button that simply did nothing.
-        ui.backupError?.let {
-            Spacer(Modifier.height(6.dp))
-            Text(
-                it,
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.DangerRed,
-            )
-        }
-        Spacer(Modifier.height(6.dp))
-        // The archive is the one cloud copy that must honour the device
-        // promise from SessionScreen: the private note never leaves the phone.
-        PrivacyRow(Icons.Outlined.Lock, IronvellumColors.SovereignGold, "Cloud backups never include your private notes — those stay on this device.")
-        Spacer(Modifier.height(8.dp))
-        // Same inline-confirm treatment as DELETE MY CLOUD ACCOUNT below: the
-        // destructive step names exactly what it replaces before it runs.
-        var confirmRestore by remember { mutableStateOf(false) }
-        if (confirmRestore) {
-            Text(
-                "This replaces EVERYTHING logged on this phone — workouts, " +
-                    "titles, skills, stats and measurements — with the cloud " +
-                    "archive. Anything not in that archive is lost for good.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.DangerRed,
-            )
-            Spacer(Modifier.height(8.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                IronvellumButton(
-                    label = "Replace my data",
-                    onClick = {
-                        confirmRestore = false
-                        onRestore()
-                    },
-                    enabled = !ui.busy,
-                    modifier = Modifier.weight(1f),
-                )
-                IronvellumButton(
-                    label = "Keep mine",
-                    onClick = { confirmRestore = false },
-                    enabled = !ui.busy,
-                    quiet = true,
-                )
-            }
-        } else {
-            NavChip(
-                label = "RESTORE FROM CLOUD",
-                icon = Icons.Outlined.CloudDownload,
-                onClick = { confirmRestore = true },
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        ui.lastRestore?.let { outcome ->
-            Spacer(Modifier.height(8.dp))
-            Text(
-                buildString {
-                    append("Restored ${outcome.sessions} ${plural(outcome.sessions, "workout", "workouts")} · ")
-                    append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
-                    append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
-                    if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
-                },
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = if (outcome.problems.isEmpty()) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
-            )
-        }
-        Spacer(Modifier.height(14.dp))
-        PrivacyRow(Icons.Outlined.Lock, IronvellumColors.SovereignGold, "Body measurements — weight, height, body fat — never leave this device.")
-        Spacer(Modifier.height(6.dp))
-        PrivacyRow(Icons.Outlined.Public, IronvellumColors.Emerald, "Visibility decides who may read your workouts.")
-    }
+    ProfileHeader(acct = acct, onOpenAccount = onOpenAccount)
     // One-time claim prompt: visible after sign-in, but the surface around it
-    // stays fully usable — skip hides it for the session, nothing nags twice.
+    // stays fully usable - skip hides it for the session, nothing nags twice.
     if (isUnclaimedHandle(acct.displayName) && !ui.claimSkipped) {
         Spacer(Modifier.height(14.dp))
         ClaimNamePanel(
@@ -1043,108 +801,95 @@ private fun SignedInPanels(
         )
     }
 
-    SectionHeader("Allies")
-    FriendsPanel(
-        ui = ui,
-        onOpenLifter = onOpenLifter,
-        onAccept = onAccept,
-        onRequest = onRequest,
-        onRemoveAlly = onRemoveAlly,
-    )
-
-    SectionHeader("Blocked")
-    BlockedPanel(blocked = ui.blocked, onUnblock = onUnblock)
-
     Spacer(Modifier.height(14.dp))
-    IronvellumButton(
-        label = "Sever the link",
-        onClick = onSignOut,
-        enabled = !ui.busy,
-        gold = true,
-        modifier = Modifier.fillMaxWidth(),
-    )
-
-    // Withdrawing the data has to be reachable from inside the app: a store
-    // listing that reads health data must offer deletion, and until now the
-    // only way out was to ask someone with database access.
-    Spacer(Modifier.height(20.dp))
-    var confirmDelete by remember { mutableStateOf(false) }
-    Text(
-        "DELETE CLOUD ACCOUNT",
-        style = MaterialTheme.typography.labelMedium,
-        fontFamily = ChakraPetch,
-        letterSpacing = IronvellumTracking.InlineLabel,
-        color = IronvellumColors.DangerRed,
-    )
-    Spacer(Modifier.height(6.dp))
-    Text(
-        if (confirmDelete) {
-            "This deletes your account, lifter, synced workouts, titles, allies " +
-                "and cloud backup for good, and signs you out. Training on this " +
-                "phone stays on this phone."
-        } else {
-            "Deletes your cloud account and everything synced. Your on-device training is untouched."
-        },
-        style = MaterialTheme.typography.bodySmall,
-        color = IronvellumColors.InkMuted,
-    )
-    Spacer(Modifier.height(8.dp))
-    if (confirmDelete) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            IronvellumButton(
-                label = "Delete account",
-                onClick = {
-                    confirmDelete = false
-                    onDeleteCloudData()
-                },
-                enabled = !ui.busy,
-                modifier = Modifier.weight(1f),
-            )
-            IronvellumButton(
-                label = "Keep it",
-                onClick = { confirmDelete = false },
-                enabled = !ui.busy,
-                quiet = true,
-            )
-        }
-    } else {
-        IronvellumButton(
-            label = "Delete my cloud account",
-            onClick = { confirmDelete = true },
-            enabled = !ui.busy,
-            quiet = true,
-        )
-    }
+    AddAllyPanel(loading = ui.friendsLoading, onRequest = onRequest)
+    // Right under the input: a refused invite (unknown name, rate limit) is
+    // the usual error here, and at the bottom of the list it went unseen.
     ui.error?.let {
         Spacer(Modifier.height(8.dp))
-        Text(
-            it,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.DangerRed,
-        )
+        SocialErrorBanner(it)
     }
+
+    val incoming = ui.friends.filter { it.incoming && !it.accepted }
+    val accepted = ui.friends.filter { it.accepted }
+    if (incoming.isNotEmpty()) {
+        SectionHeader("Requests")
+        RequestsPanel(incoming = incoming, onAccept = onAccept, onDecline = onDecline)
+    }
+
+    SectionHeader(if (accepted.isEmpty()) "Allies" else "Allies · ${accepted.size}")
+    AlliesPanel(
+        accepted = accepted,
+        empty = incoming.isEmpty() && accepted.isEmpty() && !ui.friendsLoading,
+        onOpenLifter = onOpenLifter,
+        onRemoveAlly = onRemoveAlly,
+    )
 }
 
-/** Bytes to a short human label for the backup-freshness line. */
-private fun formatBytes(bytes: Int): String =
-    if (bytes < 1024) "$bytes B" else "%.1f KB".format(bytes / 1024f)
-
-/** One icon-led privacy fact, house-styled for scanning. */
+/**
+ * The lifter's own card: crest, name, level and worn title from local state
+ * (the profile is on this phone, no cloud read), the visibility they publish
+ * at, and the gear to the account screen.
+ */
 @Composable
-private fun PrivacyRow(icon: ImageVector, tint: Color, text: String) {
+private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
+    val app = LocalContext.current.applicationContext as IronvellumApp
+    val profile by remember(app) { app.repository.observeProfile() }
+        .collectAsStateWithLifecycle(initialValue = null)
+    val titleId = profile?.currentTitleId
+
+    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+        IdentityRow(
+            displayName = acct.displayName,
+            userId = acct.userId,
+            wornTitle = titleId?.let { Titles.byId(it)?.name },
+            level = profile?.let { Xp.progress(it.totalXp).level },
+            size = IdentitySize.Standard,
+            isMe = true,
+            titleId = titleId,
+            trailing = {
+                IconButton(onClick = onOpenAccount, modifier = Modifier.size(48.dp)) {
+                    Icon(
+                        Icons.Outlined.Settings,
+                        contentDescription = "Account settings",
+                        tint = IronvellumColors.InkMuted,
+                    )
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(6.dp))
+        VisibilityChip(acct.visibility)
+    }
+}
+
+/** Read-only: changing visibility is an account setting, one gear tap away. */
+@Composable
+private fun VisibilityChip(visibility: String) {
+    val (icon, label) = when (visibility) {
+        "public" -> Icons.Outlined.Public to "Public"
+        "friends" -> Icons.Outlined.Group to "Allies only"
+        else -> Icons.Outlined.Lock to "Private"
+    }
+    val shape = MaterialTheme.shapes.small
     Row(
+        Modifier
+            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
+            .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = tint)
+        Icon(icon, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(14.dp))
         Text(
-            text,
+            label,
             style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
+            letterSpacing = IronvellumTracking.InlineLabel,
         )
     }
 }
+
 
 /**
  * One-time "CLAIM YOUR NAME" prompt for Google users still carrying their
@@ -1215,18 +960,13 @@ private fun ClaimNamePanel(
             enabled = valid && !busy,
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.height(6.dp))
-        Text(
-            "KEEP HUNT#### — SKIP",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.InlineLabel,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(enabled = !busy) { onSkip() }
-                .padding(vertical = 6.dp),
-            textAlign = TextAlign.Center,
+        Spacer(Modifier.height(8.dp))
+        IronvellumButton(
+            label = "Skip for now",
+            onClick = onSkip,
+            enabled = !busy,
+            quiet = true,
+            modifier = Modifier.fillMaxWidth(),
         )
         error?.let {
             Spacer(Modifier.height(6.dp))
@@ -1240,44 +980,50 @@ private fun ClaimNamePanel(
     }
 }
 
+/** Compact invite-by-name row; invites reach lifters by their exact name. */
 @Composable
-private fun FriendsPanel(
-    ui: AccountUi,
-    onOpenLifter: (userId: String, displayName: String) -> Unit,
-    onAccept: (String) -> Unit,
-    onRequest: (String) -> Unit,
-    onRemoveAlly: (String) -> Unit,
-) {
+private fun AddAllyPanel(loading: Boolean, onRequest: (String) -> Unit) {
     var friendName by remember { mutableStateOf("") }
-    var confirmRemove by remember { mutableStateOf<FriendRow?>(null) }
-
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
-        val incoming = ui.friends.filter { it.incoming && !it.accepted }
-        val accepted = ui.friends.filter { it.accepted }
-
-        if (incoming.isEmpty() && accepted.isEmpty() && !ui.friendsLoading) {
-            Image(
-                painter = painterResource(R.drawable.art_empty_allies),
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .size(140.dp)
-                    .alpha(0.55f),
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            OutlinedTextField(
+                shape = MaterialTheme.shapes.small,
+                value = friendName,
+                onValueChange = { friendName = it.take(24) },
+                label = { Text("Add an ally by name") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                modifier = Modifier.weight(1f),
             )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "No allies yet. Solo is how every lifter starts — invite one by name below.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
+            IronvellumButton(
+                label = "Invite",
+                onClick = {
+                    onRequest(friendName.trim())
+                    friendName = ""
+                },
+                enabled = friendName.trim().length >= 2 && !loading,
             )
-            Spacer(Modifier.height(10.dp))
         }
+    }
+}
 
-        incoming.forEach { pending ->
+/** Incoming requests. Decline is the same delete as removing an ally: the row goes either way. */
+@Composable
+private fun RequestsPanel(
+    incoming: List<FriendRow>,
+    onAccept: (String) -> Unit,
+    onDecline: (String) -> Unit,
+) {
+    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
+        incoming.forEachIndexed { index, pending ->
+            if (index > 0) Spacer(Modifier.height(10.dp))
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -1294,13 +1040,42 @@ private fun FriendsPanel(
                         color = IronvellumColors.SovereignGold,
                     )
                 }
+                RowAction("DECLINE", IronvellumColors.InkMuted) { onDecline(pending.userId) }
                 IronvellumButton(label = "Accept", onClick = { onAccept(pending.userId) })
             }
-            Spacer(Modifier.height(10.dp))
+        }
+    }
+}
+
+@Composable
+private fun AlliesPanel(
+    accepted: List<FriendRow>,
+    empty: Boolean,
+    onOpenLifter: (userId: String, displayName: String) -> Unit,
+    onRemoveAlly: (String) -> Unit,
+) {
+    var confirmRemove by remember { mutableStateOf<FriendRow?>(null) }
+
+    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
+        if (empty) {
+            Image(
+                painter = painterResource(R.drawable.art_empty_allies),
+                contentDescription = null,
+                modifier = Modifier
+                    .align(Alignment.CenterHorizontally)
+                    .size(110.dp)
+                    .alpha(0.55f),
+            )
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "No allies yet. Invite one by name above.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
         }
 
-        // Allies look like lifters everywhere else — IdentityRow, tappable.
-        // Title and level now ride along on the friends read, so an ally's crest
+        // Allies look like lifters everywhere else - IdentityRow, tappable.
+        // Title and level ride along on the friends read, so an ally's crest
         // shows its rarity here exactly as it does on the board and the feed.
         accepted.forEach { friend ->
             IdentityRow(
@@ -1317,45 +1092,6 @@ private fun FriendsPanel(
                     .padding(vertical = 4.dp),
             )
         }
-
-        if (accepted.isNotEmpty()) {
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "${accepted.size} all${if (accepted.size == 1) "y" else "ies"} linked",
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-
-        Spacer(Modifier.height(12.dp))
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            OutlinedTextField(
-                shape = MaterialTheme.shapes.small,
-                value = friendName,
-                onValueChange = { friendName = it.take(24) },
-                label = { Text("Ally's lifter name") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                modifier = Modifier.weight(1f),
-            )
-            IronvellumButton(
-                label = "Invite",
-                onClick = {
-                    onRequest(friendName.trim())
-                    friendName = ""
-                },
-                enabled = friendName.trim().length >= 2 && !ui.friendsLoading,
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            if (ui.friendsLoading) "Consulting the roster…" else "Invites reach lifters by their exact name.",
-            style = MaterialTheme.typography.labelSmall,
-            color = IronvellumColors.InkMuted,
-        )
     }
 
     confirmRemove?.let { friend ->
@@ -1375,41 +1111,6 @@ private fun FriendsPanel(
                 IronvellumButton(label = "Keep", onClick = { confirmRemove = null }, quiet = true)
             },
         )
-    }
-}
-
-/**
- * Lifters this account blocked, with the way back. The name comes from the
- * block row itself: a blocked profile is unreadable, so it cannot be looked up.
- */
-@Composable
-private fun BlockedPanel(blocked: List<BlockedLifter>, onUnblock: (String) -> Unit) {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
-        if (blocked.isEmpty()) {
-            Text(
-                "Nobody blocked. Block a lifter from their page.",
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-        blocked.forEach { lifter ->
-            Row(
-                Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                Text(
-                    lifter.displayName.ifBlank { "Hidden lifter" },
-                    style = MaterialTheme.typography.titleSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.Ink,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                IronvellumButton(label = "Unblock", onClick = { onUnblock(lifter.userId) }, quiet = true)
-            }
-        }
     }
 }
 

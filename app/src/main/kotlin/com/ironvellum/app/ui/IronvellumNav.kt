@@ -60,6 +60,7 @@ import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.dashboard.DashboardScreen
 import com.ironvellum.app.ui.settings.SettingsScreen
 import com.ironvellum.app.ui.settings.SupportScreen
+import com.ironvellum.app.ui.social.AccountSettingsScreen
 import com.ironvellum.app.ui.social.SocialScreen
 import com.ironvellum.app.ui.social.LifterScreen
 import com.ironvellum.app.ui.social.CommentsScreen
@@ -96,6 +97,7 @@ object Routes {
     const val SETTINGS = "settings"
     const val SUPPORT = "support"
     const val SOCIAL = "social"
+    const val ACCOUNT = "account"
     const val WORKOUT_LOG = "workout_log"
     const val MUSCLE_COVERAGE = "muscle_coverage"
     const val WORKOUT_DETAIL = "workout/{sessionId}"
@@ -464,7 +466,11 @@ fun IronvellumRoot() {
                         onOpenComments = { sessionId, ownerId, headline ->
                             navController.navigate(Routes.comments(sessionId, ownerId, headline))
                         },
+                        onOpenAccount = { navController.navigate(Routes.ACCOUNT) },
                     )
+                }
+                composable(Routes.ACCOUNT) {
+                    AccountSettingsScreen(onBack = { navController.popBackStack() })
                 }
                 composable(Routes.WORKOUT_LOG) {
                     WorkoutLogScreen(

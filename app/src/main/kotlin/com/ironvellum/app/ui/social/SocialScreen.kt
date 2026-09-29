@@ -43,6 +43,7 @@ private enum class GuildTab(val label: String) {
 fun SocialScreen(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onOpenComments: (sessionId: String, ownerId: String, headline: String) -> Unit,
+    onOpenAccount: () -> Unit,
 ) {
     val app = LocalContext.current.applicationContext as IronvellumApp
     val account by app.accountRepository.account.collectAsStateWithLifecycle()
@@ -105,6 +106,7 @@ fun SocialScreen(
             GuildTab.ALLIES -> AccountScreen(
                 onBack = { tab = GuildTab.FEED },
                 onOpenLifter = onOpenLifter,
+                onOpenAccount = onOpenAccount,
             )
         }
     }

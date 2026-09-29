@@ -517,12 +517,27 @@ class CloudSync(
                         filter { isIn("id", counterpartIds) }
                     }.decodeList<ProfileNameDto>().associateBy { it.id }
                 }
+                // An allies-only requester's profile stays unreadable until we
+                // accept, which showed every request as "Hidden lifter". The
+                // inbox (a definer RPC) already carries their name, and names
+                // are public anyway (find_hunter), so borrow it from there.
+                val requesterNames = if (rows.any { !it.accepted && it.addresseeId == me.userId && profiles[it.requesterId] == null }) {
+                    runCatching {
+                        client.postgrest.rpc(RPC_MY_INBOX).decodeList<InboxRowDto>()
+                            .filter { it.kind == "request" }
+                            .associate { it.actorId to it.actorName }
+                    }.getOrDefault(emptyMap())
+                } else {
+                    emptyMap()
+                }
                 rows.map { row ->
                     val other = if (row.requesterId == me.userId) row.addresseeId else row.requesterId
                     val profile = profiles[other]
                     FriendRow(
                         userId = other,
-                        displayName = profile?.displayName ?: "Hidden lifter",
+                        displayName = profile?.displayName
+                            ?: requesterNames[other]?.takeIf { it.isNotBlank() }
+                            ?: "Hidden lifter",
                         accepted = row.accepted,
                         // Incoming = they asked us and it is not accepted yet.
                         incoming = row.addresseeId == me.userId && !row.accepted,
