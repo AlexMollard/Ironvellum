@@ -1419,8 +1419,10 @@ object ProgramGenerator {
      *  - missing loads are filled from the strength profile;
      *  - a preset over [ProgramRules.exerciseCap] loses the entries the week
      *    misses least ([capTrimIndex]), each reported as REMOVED.
-     * Movements without a MuscleMap profile (user-created, CSV imports) are
-     * passed through untouched. With [ProgramRequest.compoundOnly] each of
+     * Movements without a MuscleMap profile (user-created, CSV imports) and
+     * holds are passed through untouched: a hold's figure is seconds, so no
+     * rep range, swap or set top-up applies to it, but its profile still
+     * counts toward the week's coverage. With [ProgramRequest.compoundOnly] each of
      * the lifter's own isolation entries becomes its closest compound or
      * skill stand-in ([compoundStandIn]) or is removed - unless removing
      * would empty the session, in which case they stay. Idempotent by
@@ -1465,8 +1467,8 @@ object ProgramGenerator {
         for ((index, entry) in target.entries.withIndex()) {
             // Modifiers count: a deficit push-up is already long-length work.
             val profile = MuscleMap.profile(entry)
-            if (profile == null) {
-                // Unknown movement: kept, untouched, modifiers intact.
+            if (profile == null || MovementDifficulty.isHoldSet(null, entry.exerciseName, entry.modifiers)) {
+                // Unknown movement or a hold: kept, untouched, modifiers intact.
                 result += entry
                 continue
             }
@@ -1651,7 +1653,8 @@ object ProgramGenerator {
                 if ((week[muscle] ?: 0.0) >= ctx.targetRange.start) break
                 val index = result.indices.filter { i ->
                     val profile = MuscleMap.profile(result[i]) ?: return@filter false
-                    (profile.muscles[muscle] ?: 0.0) >= 0.5 && result[i].sets < 5 &&
+                    !MovementDifficulty.isHoldSet(null, result[i].exerciseName, result[i].modifiers) &&
+                        (profile.muscles[muscle] ?: 0.0) >= 0.5 && result[i].sets < 5 &&
                         ProgramRules.sessionSeconds(result, request.focus) +
                         ProgramRules.setSeconds(request.focus, profile.compound) <=
                         ProgramRules.SESSION_BUDGET_SECONDS &&

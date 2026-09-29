@@ -57,10 +57,12 @@ object MuscleMap {
 
     /**
      * Case-insensitive lookup. Returns null for anything the generator never
-     * prescribes a profile for: activities, most holds, milestone rows, and
-     * any user-created movement - improve() passes those through untouched.
-     * The few holds profiled here (L-sit, Side Plank) only count toward the
-     * coverage of a lifter's own presets; the generator never doses a hold.
+     * prescribes a profile for: activities, balance and mobility holds,
+     * milestone rows, and any user-created movement - improve() passes those
+     * through untouched. The holds profiled here (L-sit, Side Plank, the
+     * lever and planche lines) only count toward the coverage of a lifter's
+     * own presets and logs; the generator never doses a hold, and improve()
+     * leaves a hold entry as the lifter wrote it.
      */
     fun profile(exerciseName: String): ExerciseProfile? = profiles[key(exerciseName)]
 
@@ -266,13 +268,6 @@ object MuscleMap {
             ),
             pattern = MovementPattern.CORE, compound = false, stretchBias = true,
         ))
-        put("l-sit", ExerciseProfile(
-            muscles = mapOf(
-                Muscle.ABS to 1.0, Muscle.HIP_FLEXORS to 1.0, Muscle.FOREARMS to 0.5,
-                Muscle.QUADS to 0.5,
-            ),
-            pattern = MovementPattern.CORE, compound = false, stretchBias = false,
-        ))
         put("dragon flag", ExerciseProfile(
             muscles = mapOf(
                 Muscle.ABS to 1.0, Muscle.LATS to 0.5, Muscle.OBLIQUES to 0.5,
@@ -285,6 +280,53 @@ object MuscleMap {
             muscles = mapOf(Muscle.OBLIQUES to 1.0, Muscle.ABS to 0.5, Muscle.ABDUCTORS to 0.5),
             pattern = MovementPattern.CORE, compound = false, stretchBias = false,
         ))
+        // ---- Skill-tree strength holds ----
+        // A hold set counts as ONE set, however many seconds it lasts. The
+        // coverage dose is hard sets (Pelland 2026), and a rep set is not
+        // scaled by its reps either: a 3-rep and a 12-rep set both count 1
+        // (Lopez 2021 found low and high loads grew muscle alike). The
+        // project's hold conversion, MovementDifficulty.SECONDS_PER_REP_EQUIVALENT,
+        // prices EFFORT for XP and the strength score; applied here it would
+        // turn a near-maximal 10 s tuck lever into a fifth of a set while a
+        // 3-rep pull-up set counted whole.
+        put("l-sit", lSit())
+        // Wider or higher legs load the same compression harder.
+        put("straddle l-sit", lSit())
+        put("v-sit", lSit())
+        // The lever and planche lines. No longitudinal trial measured growth
+        // from any of them, so every share is movement anatomy on the 1.0 /
+        // 0.5 scale, and a helper is listed only where its joint action is
+        // plain - the conservative reading. Every step of a line shares one
+        // profile: a longer lever loads the same muscles harder, as a
+        // weighted pull-up is still a pull-up. Not stretch biased: the
+        // lengthened-position trials were all dynamic, none held a position.
+        // Compound: shoulder, trunk and hip are braced together, which also
+        // keeps the compound rest these holds were timed with while
+        // unprofiled.
+        // Feet on the floor carry part of the body: a submaximal front
+        // lever shape, so nothing earns more than the helper share.
+        put("front row hold", ExerciseProfile(
+            muscles = mapOf(
+                Muscle.LATS to 0.5, Muscle.RHOMBOIDS to 0.5, Muscle.REAR_DELTS to 0.5,
+                Muscle.FOREARMS to 0.5,
+            ),
+            pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = false,
+        ))
+        put("tuck front lever", frontLever())
+        put("advanced tuck front lever", frontLever())
+        put("one-leg front lever", frontLever())
+        put("straddle front lever", frontLever())
+        put("front lever", frontLever())
+        put("one-arm front lever", frontLever())
+        put("tuck back lever", backLever())
+        put("advanced tuck back lever", backLever())
+        put("straddle back lever", backLever())
+        put("back lever", backLever())
+        put("tuck planche", planche())
+        put("advanced tuck planche", planche())
+        put("one-leg planche", planche())
+        put("straddle planche", planche())
+        put("full planche", planche())
         // ---- Gym floor: barbell ----
         // stretchBias false: the press loads the triceps with the shoulder
         // neutral, the short-length condition Maeo 2022 compared overhead work
@@ -561,6 +603,63 @@ object MuscleMap {
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
         ))
     }
+
+    /** L-sit holds: the hip flexors lift the legs while the abs curl the pelvis. */
+    private fun lSit() = ExerciseProfile(
+        muscles = mapOf(
+            Muscle.ABS to 1.0, Muscle.HIP_FLEXORS to 1.0, Muscle.FOREARMS to 0.5,
+            Muscle.QUADS to 0.5,
+        ),
+        pattern = MovementPattern.CORE, compound = false, stretchBias = false,
+    )
+
+    /**
+     * Front levers: a straight-arm shoulder extension held against the whole
+     * body, so the lats lead. The rear delts and the triceps' long head
+     * extend the shoulder beside them; the rhomboids and traps pin the blade
+     * back and down; the abs hold the body flat; the grip and the cuff hold
+     * the load as in every bar pull. No biceps or brachialis: the elbow is
+     * locked, not flexing.
+     */
+    private fun frontLever() = ExerciseProfile(
+        muscles = mapOf(
+            Muscle.LATS to 1.0, Muscle.REAR_DELTS to 0.5, Muscle.RHOMBOIDS to 0.5,
+            Muscle.TRAPS to 0.5, Muscle.TRICEPS to 0.5, Muscle.ABS to 0.5,
+            Muscle.FOREARMS to 0.5, Muscle.ROTATOR_CUFF to 0.5,
+        ),
+        pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = false,
+    )
+
+    /**
+     * Back levers: the arm is held behind the body and the flexors and
+     * adductors stop it going further - the dip's bottom position with
+     * straight arms. No muscle is shown to lead, so all share the helper
+     * 0.5 (conservative): the costal chest drawing the arm to the hips, the
+     * front delts and the biceps' long head flexing the shoulder, the lats
+     * adducting it, and the grip.
+     */
+    private fun backLever() = ExerciseProfile(
+        muscles = mapOf(
+            Muscle.LOWER_CHEST to 0.5, Muscle.FRONT_DELTS to 0.5, Muscle.BICEPS to 0.5,
+            Muscle.LATS to 0.5, Muscle.FOREARMS to 0.5,
+        ),
+        pattern = MovementPattern.HORIZONTAL_PUSH, compound = true, stretchBias = false,
+    )
+
+    /**
+     * Planches: a straight-arm shoulder flexion hold leaning past the hands,
+     * so the front delts lead. The clavicular chest and the biceps' long
+     * head flex the shoulder beside them, the serratus holds the blade
+     * protracted, the abs hold the body flat. No triceps share (conservative):
+     * the elbow is locked, not extending.
+     */
+    private fun planche() = ExerciseProfile(
+        muscles = mapOf(
+            Muscle.FRONT_DELTS to 1.0, Muscle.UPPER_CHEST to 0.5, Muscle.SERRATUS to 0.5,
+            Muscle.BICEPS to 0.5, Muscle.ABS to 0.5,
+        ),
+        pattern = MovementPattern.HORIZONTAL_PUSH, compound = true, stretchBias = false,
+    )
 
     private fun coreHanging() = ExerciseProfile(
         muscles = mapOf(

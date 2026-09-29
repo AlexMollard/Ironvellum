@@ -210,4 +210,39 @@ class MuscleMapTest {
         val week = listOf(PlannedPreset("Pull", "", 3, listOf(PlannedEntry("Archer Pull-up", 4, 6, null))))
         assertEquals(2.0, ProgramRules.weeklyVolume(week)[Muscle.REAR_DELTS] ?: 0.0, 1e-9)
     }
+
+    @Test
+    fun `every lever and planche hold has a profile`() {
+        // Unprofiled, a lifter's lever and planche sets credited nothing on
+        // weekly coverage. Frog Stand is balance practice with the knees on
+        // the elbows, unprofiled like Crow Pose.
+        val exempt = setOf("Frog Stand")
+        val holds = Skills.ALL
+            .filter { it.line == "Lever" || it.line == "Planche" || "Lever" in it.name }
+            .filter { it.metric == Skills.Metric.SECONDS && it.name !in exempt }
+        assertTrue("fixture broken: ${holds.map { it.name }}", holds.size >= 15)
+        val missing = holds.filter { MuscleMap.profile(it.name) == null }.map { it.name }
+        assertTrue("lever/planche holds with no profile: $missing", missing.isEmpty())
+    }
+
+    @Test
+    fun `the owner's tuck lever and tuck planche count toward weekly coverage`() {
+        // His week: Tuck Front Lever 4x10s on pull day, Tuck Planche 3x10s
+        // on push day. A hold set counts as one set, whatever its seconds.
+        val week = listOf(
+            PlannedPreset("Pull", "", 1, listOf(PlannedEntry("Tuck Front Lever", 4, 10, null))),
+            PlannedPreset("Push", "", 5, listOf(PlannedEntry("Tuck Planche", 3, 10, null))),
+        )
+        val volume = ProgramRules.weeklyVolume(week)
+        assertEquals(4.0, volume[Muscle.LATS] ?: 0.0, 1e-9)
+        assertEquals(2.0, volume[Muscle.REAR_DELTS] ?: 0.0, 1e-9)
+        assertEquals(3.0, volume[Muscle.FRONT_DELTS] ?: 0.0, 1e-9)
+        val chest = listOf(Muscle.UPPER_CHEST, Muscle.MID_CHEST, Muscle.LOWER_CHEST).sumOf { volume[it] ?: 0.0 }
+        assertTrue("tuck planche credits no chest: $volume", chest > 0.0)
+        // The pull hold never reaches the pushing muscles, nor the reverse.
+        assertEquals(Muscle.LATS, dominant("Tuck Front Lever"))
+        assertEquals(Muscle.FRONT_DELTS, dominant("Tuck Planche"))
+        assertEquals(0.0, MuscleMap.profile("Tuck Front Lever")!!.muscles[Muscle.FRONT_DELTS] ?: 0.0, 1e-9)
+        assertEquals(0.0, MuscleMap.profile("Tuck Planche")!!.muscles[Muscle.LATS] ?: 0.0, 1e-9)
+    }
 }

@@ -1553,6 +1553,29 @@ class ProgramGeneratorTest {
     }
 
     @Test
+    fun `improve leaves the lifter's holds exactly as written`() {
+        // A hold's figure is seconds: a rep range, a long-length swap or a
+        // set top-up would turn the owner's 4x10s tuck lever into pull-ups
+        // or a 5 s hold. Its profile still counts for the rest of the day.
+        val lever = PlannedEntry("Tuck Front Lever", 4, 10, null)
+        val planche = PlannedEntry("Tuck Planche", 3, 10, null)
+        val pull = PlannedPreset(
+            "Pull", "", 1,
+            listOf(PlannedEntry("Pull-up", 5, 5, 10.0, modifiers = "weighted"), lever, PlannedEntry("Door Sheet Row", 4, 10, null)),
+        )
+        val push = PlannedPreset("Push", "", 5, listOf(PlannedEntry("Handstand Push-up", 4, 6, null), planche))
+        val request = ownerRequest.copy(compoundOnly = false)
+        for ((preset, hold) in listOf(pull to lever, push to planche)) {
+            val improvement = ProgramGenerator.improve(preset, emptyList(), request, catalogue, strength)
+            assertTrue("${hold.exerciseName} was changed: ${improvement.after.entries}", hold in improvement.after.entries)
+            assertTrue(
+                "a change names ${hold.exerciseName}: ${improvement.changes}",
+                improvement.changes.none { it.exerciseName == hold.exerciseName },
+            )
+        }
+    }
+
+    @Test
     fun `compound and skill only pulls with bodyweight and skill-tree movements where the kit allows both`() {
         // The kit holds a dumbbell row and a door sheet row, a chin-up and a
         // pull-up: the calisthenics lifter's switch must take the bodyweight
