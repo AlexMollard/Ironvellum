@@ -192,4 +192,22 @@ class MuscleMapTest {
         assertEquals(MuscleMap.profile("bench press"), MuscleMap.profile("  BENCH PRESS "))
         assertEquals(MuscleMap.profile("Bench Press"), MuscleMap.profile(" Bench Press "))
     }
+
+    @Test
+    fun `archer and l-sit pull-ups credit the back and shoulder helpers a pull-up does`() {
+        // A weekly coverage of archer or L-sit pull-ups read rear delts, traps
+        // and cuff as untrained while the same sets of plain pull-ups did not.
+        val pullUp = MuscleMap.profile("Pull-up")!!.muscles
+        for (variant in listOf("Archer Pull-up", "L-sit Pull-up")) {
+            val muscles = MuscleMap.profile(variant)!!.muscles
+            for (muscle in listOf(Muscle.LATS, Muscle.RHOMBOIDS, Muscle.REAR_DELTS, Muscle.TRAPS, Muscle.ROTATOR_CUFF)) {
+                assertEquals("$variant $muscle", pullUp[muscle] ?: 0.0, muscles[muscle] ?: 0.0, 1e-9)
+            }
+        }
+        val lSit = MuscleMap.profile("L-sit Pull-up")!!.muscles
+        assertEquals(0.5, lSit[Muscle.ABS] ?: 0.0, 1e-9)
+        assertEquals(0.5, lSit[Muscle.HIP_FLEXORS] ?: 0.0, 1e-9)
+        val week = listOf(PlannedPreset("Pull", "", 3, listOf(PlannedEntry("Archer Pull-up", 4, 6, null))))
+        assertEquals(2.0, ProgramRules.weeklyVolume(week)[Muscle.REAR_DELTS] ?: 0.0, 1e-9)
+    }
 }

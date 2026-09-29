@@ -346,6 +346,18 @@ object ProgramRules {
         VolumeLevel.HIGH -> 9
     }
 
+    /** The lifter's own movements-per-workout ceiling: 5 by default, 3 to 8 allowed. */
+    const val DEFAULT_MAX_EXERCISES = 5
+    val MAX_EXERCISES_RANGE = 3..8
+
+    /**
+     * Movements one session may hold: the volume level's [sessionCap], or
+     * the lifter's own [maxExercises] when that is lower (clamped to
+     * [MAX_EXERCISES_RANGE]). Every generator and template path reads this.
+     */
+    fun exerciseCap(tier: VolumeLevel, maxExercises: Int): Int =
+        minOf(sessionCap(tier), maxExercises.coerceIn(MAX_EXERCISES_RANGE))
+
     /**
      * Time under load for one working set, added to the prescribed rest to
      * give the clock time a set costs. 8-12 reps at a controlled tempo.

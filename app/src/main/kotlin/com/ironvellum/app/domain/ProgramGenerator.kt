@@ -185,6 +185,22 @@ object ProgramGenerator {
             exercise.name.trim().lowercase() !in MovementDifficulty.catalogueOnlyKeys
 
     /**
+     * Compound & skill only is the calisthenics lifter's switch, so among
+     * candidates that already tie on stretch, share and compound it ranks
+     * bodyweight skill-tree movements (2), then other bodyweight movements
+     * (1), ahead of loaded ones (0): a Door Sheet Row over a Dumbbell Row, a
+     * Pull-up over a Chin-up. A bodyweight movement more than one tier under
+     * the lifter's training age is not a comparable stand-in (a bodyweight
+     * squat against a loaded one), so it scores 0 and the loaded movement
+     * keeps the slot. Off unless [ProgramRequest.compoundOnly].
+     */
+    private fun calisthenicsRank(ctx: Ctx, exercise: Exercise): Int {
+        if (!ctx.request.compoundOnly || exercise.isWeighted) return 0
+        if (MovementDifficulty.tier(exercise.name) < desiredBodyweightTier(ctx.volume) - 1) return 0
+        return if (isSkillTree(exercise)) 2 else 1
+    }
+
+    /**
      * The pool the generator may prescribe from: lifting rows with a REPS
      * metric under the equipment, never the milestone rows, and only
      * movements a [MuscleMap] profile exists for - an unprofiled movement
@@ -249,7 +265,8 @@ object ProgramGenerator {
      * first (specificity), then the accessible skill progression (SKILL),
      * then the long-length movement (Wolf 2025 and the lengthened-position
      * trials), the bigger contribution to the requested muscle, the
-     * compound, the better equipment fit, the lower tier, then the name.
+     * compound, bodyweight and skill-tree work under compound & skill only
+     * ([calisthenicsRank]), the better equipment fit, the lower tier, then the name.
      * [exclude] names movements a fallback slot must not reuse (mains whose
      * practice target for the week is already met).
      *
@@ -302,6 +319,7 @@ object ProgramGenerator {
                     if (muscle != null) (profileOf(it).muscles[muscle] ?: 0.0) else 0.0
                 }
                 .thenByDescending { if (profileOf(it).compound) 1 else 0 }
+                .thenByDescending { calisthenicsRank(ctx, it) }
                 .thenBy { fitScore(it, ctx.request.equipment) }
                 // Between equal candidates, prefer the one that does not pile
                 // lower-back fatigue on top (RDL over Good Morning): a
@@ -538,7 +556,7 @@ object ProgramGenerator {
         val split = request.split.takeIf { days in it.dayOptions } ?: TrainingSplit.forDays(days)
         val pool = eligible(catalogue, request.equipment, request.focus, request.compoundOnly)
         if (pool.isEmpty()) return RoutinePlan(emptyList())
-        val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.volume))
+        val ctx = Ctx(request, pool, strength, ProgramRules.exerciseCap(request.volume, request.maxExercises))
         val sessions = layout(split, days).map { (day, role) -> Draft(day, role) }
 
         // Phase 1: multi-joint backbone per pattern slot. STRENGTH and
@@ -554,6 +572,7 @@ object ProgramGenerator {
             val role = session.role ?: continue
             val fullBodyIndex = sessions.filter { it.role == Role.FULL_BODY }.indexOf(session)
             for (pattern in backboneSlots(ctx, role, fullBodyIndex.takeIf { it >= 0 && sessions.size > 1 })) {
+                if (session.entries.size >= ctx.cap) break
                 val mainName = MAIN_LIFTS[pattern]
                 var handled = false
                 if (mainName != null && wantsMainLift(ctx, pattern)) {
@@ -794,6 +813,7 @@ object ProgramGenerator {
             .maxWithOrNull(
                 compareBy(
                     { if (profileOf(it).compound) 1 else 0 },
+                    { calisthenicsRank(ctx, it) },
                     { -fitScore(it, ctx.request.equipment) },
                     { -MovementDifficulty.tier(it.name) },
                     { it.name },
@@ -1014,6 +1034,59 @@ object ProgramGenerator {
     }
 
     /**
+     * Weekly sets under the floor of [range] that losing [entry] would cost
+     * the tracked muscles, given the week's volume with it still in
+     * ([weekVolume]). Zero when every muscle it trains stays at its floor
+     * without it. [absorbers] are the entries that could regrow the loss:
+     * spare sets (up to 5) on a direct movement for the muscle count against
+     * the loss unless the movement would push another tracked muscle past
+     * the top of [range] - the same limit the repair passes grow within.
+     */
+    internal fun capTrimCost(
+        entry: PlannedEntry,
+        weekVolume: Map<Muscle, Double>,
+        range: ClosedFloatingPointRange<Double>,
+        absorbers: List<PlannedEntry> = emptyList(),
+    ): Double {
+        val profile = MuscleMap.profile(entry) ?: return 0.0
+        fun without(muscle: Muscle) = (weekVolume[muscle] ?: 0.0) - entry.sets * (profile.muscles[muscle] ?: 0.0)
+        return ProgramRules.TRACKED.sumOf { muscle ->
+            val share = profile.muscles[muscle] ?: 0.0
+            val lost = maxOf(0.0, range.start - without(muscle)) - maxOf(0.0, range.start - (weekVolume[muscle] ?: 0.0))
+            val spare = if (lost <= 0.0) 0.0 else absorbers.sumOf { other ->
+                val direct = MuscleMap.profile(other)?.muscles ?: emptyMap()
+                val clear = direct.all { (m, s) ->
+                    m == muscle || m !in ProgramRules.TRACKED || without(m) + s <= range.endInclusive + 1e-9
+                }
+                if ((direct[muscle] ?: 0.0) >= 0.5 && clear) (5 - other.sets).coerceAtLeast(0) * direct.getValue(muscle) else 0.0
+            }
+            if (share <= 0.0) 0.0 else maxOf(0.0, lost - spare)
+        }
+    }
+
+    /**
+     * The entry a session over its exercise cap gives up first: the one whose
+     * loss leaves the week's tracked muscles least further under the floor
+     * of [range] once [capTrimCost] lets the rest of the session regrow it
+     * (weekly sets drive growth - Pelland 2026). Never index 0, the
+     * session's primary compound or skill. Ties drop single-joint and core
+     * work before compounds, then the later entry. Null when only the first
+     * entry is left.
+     */
+    internal fun capTrimIndex(
+        entries: List<PlannedEntry>,
+        weekVolume: Map<Muscle, Double>,
+        range: ClosedFloatingPointRange<Double>,
+    ): Int? =
+        (1 until entries.size).minWithOrNull(
+            compareBy<Int> { i ->
+                capTrimCost(entries[i], weekVolume, range, entries.filterIndexed { j, _ -> j != i })
+            }
+                .thenBy { if (MuscleMap.profile(entries[it])?.compound == false) 0 else 1 }
+                .thenByDescending { it },
+        )
+
+    /**
      * Hard ceiling: no step may push any tracked muscle past the top of its
      * range (or its own target, where a single-session target sits higher).
      * Wasted collateral BELOW that ceiling is steered by [growOnce]'s
@@ -1129,7 +1202,7 @@ object ProgramGenerator {
     ): PlannedPreset? {
         val pool = eligible(catalogue, request.equipment, request.focus, request.compoundOnly)
         if (pool.isEmpty()) return null
-        val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.volume))
+        val ctx = Ctx(request, pool, strength, ProgramRules.exerciseCap(request.volume, request.maxExercises))
         val existing = ProgramRules.weeklyVolume(existingWeek)
         val draft = Draft(scheduledDay, roleOf(kind))
 
@@ -1343,7 +1416,9 @@ object ProgramGenerator {
      *    are removed;
      *  - tracked muscles this session's role trains, which the whole week
      *    leaves under the tier minimum, gain one movement each;
-     *  - missing loads are filled from the strength profile.
+     *  - missing loads are filled from the strength profile;
+     *  - a preset over [ProgramRules.exerciseCap] loses the entries the week
+     *    misses least ([capTrimIndex]), each reported as REMOVED.
      * Movements without a MuscleMap profile (user-created, CSV imports) are
      * passed through untouched. With [ProgramRequest.compoundOnly] each of
      * the lifter's own isolation entries becomes its closest compound or
@@ -1359,7 +1434,7 @@ object ProgramGenerator {
         strength: StrengthProfile,
     ): Improvement {
         val pool = eligible(catalogue, request.equipment, request.focus, request.compoundOnly)
-        val ctx = Ctx(request, pool, strength, ProgramRules.sessionCap(request.volume))
+        val ctx = Ctx(request, pool, strength, ProgramRules.exerciseCap(request.volume, request.maxExercises))
         val changes = mutableListOf<PlanChange>()
         val result = mutableListOf<PlannedEntry>()
         // First entry per (dominant muscle, pattern) -> its prescribed sets.
@@ -1504,6 +1579,25 @@ object ProgramGenerator {
             result += entry.copy(
                 exerciseName = name, sets = sets, reps = reps,
                 targetWeightKg = load, loadNote = loadNote,
+            )
+        }
+
+        // The cap the lifter asked for: a preset over it gives up, one at a
+        // time, the entry the week misses least, each with its reason line.
+        while (result.size > ctx.cap) {
+            val week = ProgramRules.weeklyVolume(restOfWeek + listOf(target.copy(entries = result)))
+            val drop = capTrimIndex(result, week, ctx.targetRange) ?: break
+            val cost = capTrimCost(result[drop], week, ctx.targetRange)
+            val gone = result.removeAt(drop)
+            // Its swap, rep or load lines described an entry that is gone.
+            changes.removeAll { it.kind != PlanChange.Kind.REMOVED && it.exerciseName == gone.exerciseName }
+            changes += PlanChange(
+                PlanChange.Kind.REMOVED, gone.exerciseName,
+                if (cost < 1e-9) {
+                    "Removed: over your ${ctx.cap}-movement cap, and your week already covers its muscles - Pelland 2026"
+                } else {
+                    "Removed: over your ${ctx.cap}-movement cap, and it added the least to muscles still short - Pelland 2026"
+                },
             )
         }
 

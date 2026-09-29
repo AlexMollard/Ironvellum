@@ -310,6 +310,12 @@ object ProgramTemplates {
      * past the session time budget or its own authored length, whichever is
      * longer, and any muscle left under the chosen floor is named in the
      * first day's note.
+     *
+     * A day with more movements than the lifter's [maxExercises] (clamped to
+     * [ProgramRules.MAX_EXERCISES_RANGE]) gives up, one at a time, the entry
+     * whose loss leaves the fewest tracked sets short once the repair
+     * pass has regrown what it can - never its first, the day's primary
+     * lift. The day's note says it was trimmed.
      */
     fun build(
         template: ProgramTemplate,
@@ -318,6 +324,7 @@ object ProgramTemplates {
         catalogue: List<Exercise>,
         strength: StrengthProfile,
         compoundOnly: Boolean = false,
+        maxExercises: Int = ProgramRules.DEFAULT_MAX_EXERCISES,
     ): RoutinePlan {
         val pool = ProgramGenerator.eligible(catalogue, equipment, template.focus, compoundOnly)
         val rir = ProgramRules.targetRir(volume, template.focus)
@@ -398,7 +405,47 @@ object ProgramTemplates {
             )
             scaled to entries.map { maxOf(5, it.sets) }
         }
-        val fitted = fitToRange(presets.map { it.first }, presets.map { it.second }, template.focus, chosenRange)
+        val cap = maxExercises.coerceIn(ProgramRules.MAX_EXERCISES_RANGE)
+        val work = presets.map { (day, caps) -> day.entries.toMutableList() to caps.toMutableList() }
+        val trimmed = mutableSetOf<Int>()
+        // Tracked sets the week still lacks under the floor once the repair
+        // pass below has regrown what it can: the loss a trim really costs.
+        fun shortAfterRepair(days: List<Pair<List<PlannedEntry>, List<Int>>>): Double {
+            val repaired = fitToRange(days.map { PlannedPreset("", "", null, it.first) }, days.map { it.second }, template.focus, chosenRange)
+            val vol = ProgramRules.weeklyVolume(repaired)
+            return ProgramRules.TRACKED.sumOf { maxOf(0.0, chosenRange.start - (vol[it] ?: 0.0)) }
+        }
+        for ((d, day) in work.withIndex()) {
+            val (entries, caps) = day
+            while (entries.size > cap) {
+                val week = ProgramRules.weeklyVolume(work.map { PlannedPreset("", "", null, it.first) })
+                val short = (1 until entries.size).associateWith { i ->
+                    shortAfterRepair(
+                        work.mapIndexed { o, (e, c) ->
+                            if (o == d) e.filterIndexed { j, _ -> j != i } to c.filterIndexed { j, _ -> j != i } else e to c
+                        },
+                    )
+                }
+                // Never the first entry, the day's primary lift; ties go to
+                // the smaller unrepaired loss, then single-joint work, then later.
+                val drop = (1 until entries.size).minWithOrNull(
+                    compareBy<Int> { short.getValue(it) }
+                        .thenBy { ProgramGenerator.capTrimCost(entries[it], week, chosenRange) }
+                        .thenBy { if (MuscleMap.profile(entries[it])?.compound == false) 0 else 1 }
+                        .thenByDescending { it },
+                ) ?: break
+                entries.removeAt(drop)
+                caps.removeAt(drop)
+                trimmed += d
+            }
+        }
+        val capped = presets.mapIndexed { d, (day, _) ->
+            day.copy(
+                entries = work[d].first,
+                note = if (d in trimmed) day.note + " Trimmed to your $cap-movement cap." else day.note,
+            )
+        }
+        val fitted = fitToRange(capped, work.map { it.second }, template.focus, chosenRange)
         val shortfall = ProgramGenerator.shortfallNote(
             ProgramRules.weeklyVolume(fitted), chosenRange,
             "this program leaves", "Generate a week to fill them.",

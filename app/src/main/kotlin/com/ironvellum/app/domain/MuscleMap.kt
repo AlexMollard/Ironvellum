@@ -128,7 +128,7 @@ object MuscleMap {
         // elbow whatever the grip, where the biceps depends on supination.
         put("pull-up", verticalPull())
         put("chin-up", verticalPull())
-        put("archer pull-up", verticalPull(rearDelts = false))
+        put("archer pull-up", verticalPull())
         put("inverted row", row())
         put("door sheet row", row())
         put("wrist curl", ExerciseProfile(
@@ -483,13 +483,11 @@ object MuscleMap {
             pattern = MovementPattern.VERTICAL_PULL, compound = false, stretchBias = true,
         ))
         put("australian pull-up", row())
-        put("l-sit pull-up", ExerciseProfile(
-            muscles = mapOf(
-                Muscle.LATS to 1.0, Muscle.RHOMBOIDS to 0.5, Muscle.BICEPS to 0.5, Muscle.ABS to 0.5,
-                Muscle.HIP_FLEXORS to 0.5, Muscle.BRACHIALIS to 0.5, Muscle.FOREARMS to 0.5,
-            ),
-            pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = true,
-        ))
+        // A pull-up held in an L: the pull-up's own credits plus the trunk
+        // and hip flexors that hold the legs up.
+        put("l-sit pull-up", verticalPull().let { pull ->
+            pull.copy(muscles = pull.muscles + mapOf(Muscle.ABS to 0.5, Muscle.HIP_FLEXORS to 0.5))
+        })
         put("one-arm negative", verticalPull(rearDelts = false))
         put("one-arm pull-up", verticalPull(rearDelts = false))
         // Hands up, feet down: the body angle of a decline press.
@@ -649,7 +647,7 @@ object MuscleMap {
         pattern = MovementPattern.VERTICAL_PUSH, compound = true, stretchBias = true,
     )
 
-    /** Pull-ups, chin-ups and pulldowns. The one-arm and archer work has no rear-delt share. */
+    /** Pull-ups, chin-ups, pulldowns and their archer / L-sit variants. The one-arm work has no rear-delt share. */
     private fun verticalPull(rearDelts: Boolean = true) = ExerciseProfile(
         muscles = buildMap {
             put(Muscle.LATS, 1.0)

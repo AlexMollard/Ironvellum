@@ -127,6 +127,7 @@ class ProgramBuilderViewModel(
     val split = MutableStateFlow(TrainingSplit.UPPER_LOWER)
     val priorities = MutableStateFlow<Set<MuscleArea>>(emptySet())
     val compoundOnly = MutableStateFlow(false)
+    val maxExercises = MutableStateFlow(ProgramRules.DEFAULT_MAX_EXERCISES)
     val sessionKind = MutableStateFlow(SessionKind.AUTO)
     val sessionDay = MutableStateFlow<Int?>(1)
     val selectedTemplateId = MutableStateFlow<String?>(null)
@@ -176,6 +177,7 @@ class ProgramBuilderViewModel(
             split.value = saved.split
             priorities.value = saved.priorities
             compoundOnly.value = saved.compoundOnly
+            maxExercises.value = saved.maxExercises
         }
         // Templates exist only for strength and hypertrophy; a saved or
         // default Skills / All-round goal would match no template.
@@ -226,6 +228,7 @@ class ProgramBuilderViewModel(
         sex = sex.value,
         split = split.value,
         compoundOnly = compoundOnly.value,
+        maxExercises = maxExercises.value,
     )
 
     fun setSplit(value: TrainingSplit, days: Int) {
@@ -253,7 +256,9 @@ class ProgramBuilderViewModel(
                     val chosen = templates.firstOrNull { it.id == selectedTemplateId.value } ?: templates.firstOrNull()
                     selectedTemplateId.value = chosen?.id
                     chosen?.let {
-                        ProgramTemplates.build(it, tier.value, equipment.value, cat, _strength.value, compoundOnly.value)
+                        ProgramTemplates.build(
+                            it, tier.value, equipment.value, cat, _strength.value, compoundOnly.value, maxExercises.value,
+                        )
                     }
                 }
                 "session" -> {
@@ -356,7 +361,7 @@ class ProgramBuilderViewModel(
             appContext,
             ProgramAnswers(
                 tier.value, focus.value, equipment.value, daysPerWeek.value, priorities.value, split.value,
-                compoundOnly.value,
+                compoundOnly.value, maxExercises.value,
             ),
         )
     }
@@ -484,6 +489,7 @@ fun ProgramBuilderScreen(
     val split by viewModel.split.collectAsStateWithLifecycle()
     val priorities by viewModel.priorities.collectAsStateWithLifecycle()
     val compoundOnly by viewModel.compoundOnly.collectAsStateWithLifecycle()
+    val maxExercises by viewModel.maxExercises.collectAsStateWithLifecycle()
     val sessionKind by viewModel.sessionKind.collectAsStateWithLifecycle()
     val sessionDay by viewModel.sessionDay.collectAsStateWithLifecycle()
     val templateId by viewModel.selectedTemplateId.collectAsStateWithLifecycle()
@@ -508,7 +514,7 @@ fun ProgramBuilderScreen(
 
     // Any answer change rebuilds; the tier suggestion has settled by the time
     // the catalogue is non-empty, so this cannot thrash.
-    LaunchedEffect(mode, catalogue, presets, focus, tier, equipment, daysPerWeek, split, priorities, compoundOnly, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
+    LaunchedEffect(mode, catalogue, presets, focus, tier, equipment, daysPerWeek, split, priorities, compoundOnly, maxExercises, sessionKind, sessionDay, templateId, selectedPresetId, sex) {
         viewModel.generate()
     }
 
@@ -623,6 +629,42 @@ fun ProgramBuilderScreen(
             )
             Spacer(Modifier.height(8.dp))
             Caption("No curls, raises, calf, bridge or machine isolation work.")
+            Spacer(Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text(
+                    "Max exercises per workout",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.weight(1f),
+                )
+                TapPad(
+                    label = "−",
+                    description = "Fewer exercises per workout, currently $maxExercises",
+                    onClick = {
+                        viewModel.maxExercises.value =
+                            (maxExercises - 1).coerceAtLeast(ProgramRules.MAX_EXERCISES_RANGE.first)
+                    },
+                )
+                Text(
+                    maxExercises.toString(),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.SovereignGold,
+                )
+                TapPad(
+                    label = "+",
+                    description = "More exercises per workout, currently $maxExercises",
+                    onClick = {
+                        viewModel.maxExercises.value =
+                            (maxExercises + 1).coerceAtMost(ProgramRules.MAX_EXERCISES_RANGE.last)
+                    },
+                )
+            }
         }
 
         if (mode != "template") {

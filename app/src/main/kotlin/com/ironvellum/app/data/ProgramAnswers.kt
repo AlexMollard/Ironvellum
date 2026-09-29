@@ -5,6 +5,7 @@ import androidx.core.content.edit
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Gear
 import com.ironvellum.app.domain.MuscleArea
+import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingSplit
 import com.ironvellum.app.domain.VolumeLevel
@@ -27,6 +28,8 @@ data class ProgramAnswers(
     val split: TrainingSplit,
     /** Compound & skill only: the generator never picks isolation work. */
     val compoundOnly: Boolean = false,
+    /** Most movements per workout, 3..8. */
+    val maxExercises: Int = ProgramRules.DEFAULT_MAX_EXERCISES,
 )
 
 /**
@@ -53,6 +56,7 @@ object ProgramAnswersStore {
     private const val KEY_DAYS = "daysPerWeek"
     private const val KEY_PRIORITIES = "priorities"
     private const val KEY_COMPOUND_ONLY = "compoundOnly"
+    private const val KEY_MAX_EXERCISES = "maxExercises"
 
     private val _answers = MutableStateFlow<ProgramAnswers?>(null)
 
@@ -86,6 +90,10 @@ object ProgramAnswersStore {
                 ?: emptySet()
             // Absent on answers saved before the toggle existed: off.
             val compoundOnly = prefs.getBoolean(KEY_COMPOUND_ONLY, false)
+            // Absent before the setting existed: the default; a hand-edited
+            // value outside the range clamps rather than voiding the answers.
+            val maxExercises = prefs.getInt(KEY_MAX_EXERCISES, ProgramRules.DEFAULT_MAX_EXERCISES)
+                .coerceIn(ProgramRules.MAX_EXERCISES_RANGE)
             if (volume == null || split == null || focus == null || fullGym == null || days !in split.dayOptions) {
                 null
             } else {
@@ -95,7 +103,7 @@ object ProgramAnswersStore {
                     dumbbellMaxKg = dumbbellMaxKg,
                     dumbbellPair = dumbbellPair ?: true,
                 )
-                ProgramAnswers(volume, focus, equipment, days, priorities, split, compoundOnly)
+                ProgramAnswers(volume, focus, equipment, days, priorities, split, compoundOnly, maxExercises)
             }
         }.getOrNull()
         _answers.value = parsed
@@ -115,6 +123,7 @@ object ProgramAnswersStore {
             putInt(KEY_DAYS, answers.daysPerWeek)
             putString(KEY_PRIORITIES, answers.priorities.joinToString(",") { it.name })
             putBoolean(KEY_COMPOUND_ONLY, answers.compoundOnly)
+            putInt(KEY_MAX_EXERCISES, answers.maxExercises.coerceIn(ProgramRules.MAX_EXERCISES_RANGE))
         }
         _answers.value = answers
     }

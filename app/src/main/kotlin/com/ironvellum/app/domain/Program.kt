@@ -207,6 +207,12 @@ data class ProgramRequest(
     val split: TrainingSplit = TrainingSplit.forDays(daysPerWeek),
     /** Compound & skill only: no [MovementDifficulty.isIsolation] movement is ever selected. */
     val compoundOnly: Boolean = false,
+    /**
+     * Most movements one workout may hold (3..8, clamped). Every session,
+     * improve pass and template day stays at or under
+     * [ProgramRules.exerciseCap] of this and the volume level.
+     */
+    val maxExercises: Int = ProgramRules.DEFAULT_MAX_EXERCISES,
 )
 
 /**

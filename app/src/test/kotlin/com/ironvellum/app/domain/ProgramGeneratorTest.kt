@@ -82,9 +82,10 @@ class ProgramGeneratorTest {
         // Three full-body days share twelve muscles; inside the session time
         // budget they cannot all reach 12 sets. The plan must stay finishable
         // and say which muscles land short, rather than silently padding.
+        // Volume reach, not the cap: the roomiest movement cap a lifter can pick.
         val request = ProgramRequest(
             TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM,
-            daysPerWeek = 3, priorities = setOf(MuscleArea.ARMS),
+            daysPerWeek = 3, priorities = setOf(MuscleArea.ARMS), maxExercises = 8,
         )
         val plan = ProgramGenerator.week(request, catalogue, strength)
         assertEquals(listOf(1, 3, 5), plan.presets.map { it.scheduledDay })
@@ -145,8 +146,9 @@ class ProgramGeneratorTest {
         // The session limit is clock time, not a set count: isolation sets
         // rest 90 s where compounds rest 150 s. A flat 24-set cap left five
         // upper muscles at 10.5-11 sets while the lower days ended early.
+        // Volume reach, not the cap: the roomiest movement cap a lifter can pick.
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4, maxExercises = 8,
         )
         val plan = ProgramGenerator.week(request, catalogue, strength)
         plan.presets.forEach { preset ->
@@ -178,9 +180,10 @@ class ProgramGeneratorTest {
 
     @Test
     fun `intermediate muscle five days with an arms priority lands every tracked muscle in range`() {
+        // Volume reach, not the cap: the roomiest movement cap a lifter can pick.
         val request = ProgramRequest(
             TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM,
-            daysPerWeek = 5, priorities = setOf(MuscleArea.ARMS),
+            daysPerWeek = 5, priorities = setOf(MuscleArea.ARMS), maxExercises = 8,
         )
         val plan = ProgramGenerator.week(request, catalogue, strength)
         assertEquals(5, plan.presets.size)
@@ -453,8 +456,9 @@ class ProgramGeneratorTest {
 
     @Test
     fun `auto session builds nothing when the week already meets every target`() {
+        // Volume reach, not the cap: the roomiest movement cap a lifter can pick.
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.LOW, Equipment.FULL_GYM, 5,
+            TrainingFocus.MUSCLE, VolumeLevel.LOW, Equipment.FULL_GYM, 5, maxExercises = 8,
         )
         // The generated week twice over: every tracked muscle past target.
         val once = ProgramGenerator.week(request, catalogue, strength).presets
@@ -895,8 +899,9 @@ class ProgramGeneratorTest {
         // Found on device: improving the generated Lower A added a bench press
         // and a lateral raise (leg isolation read as "upper" scope) and cut the
         // seated calf raise beside a 5-set standing one, dropping calves under.
+        // Volume reach, not the cap: the roomiest movement cap a lifter can pick.
         val request = ProgramRequest(
-            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4,
+            TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 4, maxExercises = 8,
         )
         val week = ProgramGenerator.week(request, catalogue, strength).presets
         val lower = week.first { it.name == "Lower A" }
@@ -1019,8 +1024,11 @@ class ProgramGeneratorTest {
         // Six sessions leave the time the helper floors need: none may be
         // left short, whatever the gear.
         for (kit in listOf(Equipment.NOTHING, ownerKit, Equipment.FULL_GYM)) for (focus in TrainingFocus.entries) {
+            // Volume reach, not the cap: the roomiest movement cap a lifter can pick.
             val plan = ProgramGenerator.week(
-                ProgramRequest(focus, VolumeLevel.STANDARD, kit, daysPerWeek = 6, split = TrainingSplit.PUSH_PULL_LEGS),
+                ProgramRequest(
+                    focus, VolumeLevel.STANDARD, kit, daysPerWeek = 6, split = TrainingSplit.PUSH_PULL_LEGS, maxExercises = 8,
+                ),
                 catalogue, strength,
             )
             val volume = volumeOf(plan)
@@ -1433,5 +1441,145 @@ class ProgramGeneratorTest {
             "fixture broken: template carries no isolation",
             built.presets.flatMap { it.entries }.any { MovementDifficulty.isIsolation(it.exerciseName) },
         )
+    }
+
+    // ------------------------------------------------- movements per workout
+
+    /** The owner's kit with the ab wheel he also owns. */
+    private val ownerKitWithWheel = ownerKit.copy(gear = ownerKit.gear + Gear.AB_WHEEL)
+
+    /** The owner's own answers: a calisthenics push/pull/legs week built around the pull-up. */
+    private val ownerRequest = ProgramRequest(
+        TrainingFocus.STRENGTH, VolumeLevel.STANDARD, ownerKitWithWheel, 3,
+        priorities = setOf(MuscleArea.BACK, MuscleArea.SHOULDERS),
+        split = TrainingSplit.PUSH_PULL_LEGS, compoundOnly = true, maxExercises = 5,
+    )
+
+    @Test
+    fun `the owner's week never puts more than five movements in a workout`() {
+        val plan = ProgramGenerator.week(ownerRequest, catalogue, strength)
+        assertEquals(3, plan.presets.size)
+        plan.presets.forEach { preset ->
+            assertTrue(
+                "${preset.name} holds ${preset.entries.size}: ${preset.entries.map { it.exerciseName }}",
+                preset.entries.size <= 5,
+            )
+        }
+    }
+
+    @Test
+    fun `no generated workout exceeds the lifter's movement cap`() {
+        val kits = listOf(Equipment.NOTHING, ownerKitWithWheel, Equipment(fullGym = false, gear = Gear.entries.toSet()), Equipment.FULL_GYM)
+        // Eight movements, none redundant with another, so only the cap trims it.
+        val crowded = PlannedPreset(
+            "Crowded", "", 2,
+            listOf(
+                PlannedEntry("Pull-up", 4, 5, null), PlannedEntry("Push-up", 3, 10, null),
+                PlannedEntry("Pike Push-up", 3, 8, null), PlannedEntry("Door Sheet Row", 3, 10, null),
+                PlannedEntry("Bulgarian Split Squat", 3, 8, null), PlannedEntry("Romanian Deadlift", 3, 8, null),
+                PlannedEntry("Hanging Leg Raise", 3, 10, null), PlannedEntry("Bicep Curl", 3, 12, null),
+            ),
+        )
+        for (cap in listOf(3, 5)) for (kit in kits) for (focus in TrainingFocus.entries) {
+            for (volume in VolumeLevel.entries) for ((split, days) in TrainingSplit.OPTIONS) {
+                val request = ProgramRequest(
+                    focus, volume, kit, days, priorities = setOf(MuscleArea.BACK), split = split, maxExercises = cap,
+                )
+                ProgramGenerator.week(request, catalogue, strength).presets.forEach { preset ->
+                    assertTrue(
+                        "week $cap/$kit/$focus/$volume/$split$days ${preset.name}: ${preset.entries.size}",
+                        preset.entries.size <= cap,
+                    )
+                }
+            }
+            val request = ProgramRequest(focus, VolumeLevel.HIGH, kit, maxExercises = cap)
+            for (kind in SessionKind.entries) {
+                val preset = ProgramGenerator.session(request, kind, 1, emptyList(), catalogue, strength) ?: continue
+                assertTrue("session $cap/$kit/$focus/$kind: ${preset.entries.size}", preset.entries.size <= cap)
+            }
+            val improved = ProgramGenerator.improve(crowded, emptyList(), request, catalogue, strength).after
+            assertTrue("improve $cap/$kit/$focus: ${improved.entries.size}", improved.entries.size <= cap)
+        }
+        for (cap in listOf(3, 5)) for (kit in kits) for (template in ProgramTemplates.ALL) {
+            for (volume in VolumeLevel.entries) {
+                val plan = ProgramTemplates.build(template, volume, kit, catalogue, strength, maxExercises = cap)
+                plan.presets.forEach { day ->
+                    assertTrue(
+                        "template ${template.id}/$volume/$kit cap $cap ${day.name}: ${day.entries.size}",
+                        day.entries.size <= cap,
+                    )
+                    // The day's lead lift survives the trim (full gym: nothing is substituted).
+                    if (kit == Equipment.FULL_GYM) {
+                        assertEquals(
+                            "template ${template.id} ${day.name} lost its lead under cap $cap",
+                            template.days.first { it.name == day.name }.entries.first().exerciseName,
+                            day.entries.first().exerciseName,
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `improve trims a preset over the cap and says what it removed`() {
+        val preset = PlannedPreset(
+            "Full", "", 1,
+            listOf(
+                PlannedEntry("Pull-up", 4, 5, null), PlannedEntry("Handstand Push-up", 3, 5, null),
+                PlannedEntry("Push-up", 3, 5, null), PlannedEntry("Door Sheet Row", 3, 5, null),
+                PlannedEntry("Pistol Squat", 3, 5, null), PlannedEntry("Romanian Deadlift", 3, 5, null),
+                PlannedEntry("Hanging Leg Raise", 3, 10, null),
+            ),
+        )
+        val request = ownerRequest.copy(compoundOnly = false)
+        val improvement = ProgramGenerator.improve(preset, emptyList(), request, catalogue, strength)
+        val after = improvement.after.entries.map { it.exerciseName }
+        assertEquals("kept $after", 5, after.size)
+        assertEquals("the lead lift was trimmed: $after", "Pull-up", after.first())
+        val removed = improvement.changes.filter { it.kind == PlanChange.Kind.REMOVED && "5-movement cap" in it.detail }
+        assertEquals("cap removals ${improvement.changes}", 2, removed.size)
+        removed.forEach { change ->
+            assertFalse("${change.exerciseName} reported removed but kept", change.exerciseName in after)
+            assertTrue("${change.exerciseName} was never in the preset", preset.entries.any { it.exerciseName == change.exerciseName })
+        }
+        // Its own output is already inside the cap: a second pass trims nothing.
+        val again = ProgramGenerator.improve(improvement.after, emptyList(), request, catalogue, strength)
+        assertTrue(again.changes.none { it.kind == PlanChange.Kind.REMOVED })
+        // A roomier cap keeps all seven.
+        val roomy = ProgramGenerator.improve(preset, emptyList(), request.copy(maxExercises = 8), catalogue, strength)
+        assertTrue(roomy.changes.none { it.kind == PlanChange.Kind.REMOVED })
+        assertTrue(roomy.after.entries.size >= 7)
+    }
+
+    @Test
+    fun `compound and skill only pulls with bodyweight and skill-tree movements where the kit allows both`() {
+        // The kit holds a dumbbell row and a door sheet row, a chin-up and a
+        // pull-up: the calisthenics lifter's switch must take the bodyweight
+        // row and the skill-tree pull-up.
+        val pool = ProgramGenerator.eligible(catalogue, ownerKitWithWheel, TrainingFocus.STRENGTH, compoundOnly = true)
+            .map { it.name }
+        listOf("Dumbbell Row", "Door Sheet Row", "Chin-up", "Pull-up", "Ab Wheel Rollout").forEach {
+            assertTrue("fixture broken: $it not eligible", it in pool)
+        }
+        val plan = ProgramGenerator.week(ownerRequest, catalogue, strength)
+        val pullDay = plan.presets.first { it.name.startsWith("Pull") }
+        val pulls = pullDay.entries.filter {
+            MuscleMap.profile(it.exerciseName)?.pattern in setOf(MovementPattern.VERTICAL_PULL, MovementPattern.HORIZONTAL_PULL)
+        }
+        val names = pullDay.entries.map { it.exerciseName }
+        assertTrue("no row on the pull day: $names", pulls.any { MuscleMap.profile(it.exerciseName)!!.pattern == MovementPattern.HORIZONTAL_PULL })
+        pulls.forEach { entry ->
+            assertFalse("loaded ${entry.exerciseName} on the pull day: $names", byName(entry.exerciseName).isWeighted)
+            if (MuscleMap.profile(entry.exerciseName)!!.pattern == MovementPattern.VERTICAL_PULL) {
+                assertTrue(
+                    "${entry.exerciseName} is not a skill-tree pull: $names",
+                    Skills.ALL.any { it.name.equals(entry.exerciseName, ignoreCase = true) },
+                )
+            }
+        }
+        // Where no bodyweight compound serves the muscle, the loaded one stays.
+        val legs = plan.presets.first { it.name.startsWith("Legs") }.entries.map { it.exerciseName }
+        assertTrue("the hinge lost its only compound: $legs", "Romanian Deadlift" in legs)
     }
 }

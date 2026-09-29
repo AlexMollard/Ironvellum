@@ -96,8 +96,13 @@ class ProgramTemplatesTest {
 
     @Test
     fun `muscle templates put every tracked muscle inside its tier range`() {
+        // The authored dose, at the roomiest movement cap a lifter can pick;
+        // tighter caps are covered by the shortfall-note test above.
         for (template in ProgramTemplates.ALL.filter { it.focus == TrainingFocus.MUSCLE }) {
-            val plan = ProgramTemplates.build(template, template.authoredVolume, Equipment.FULL_GYM, catalogue, emptyStrength)
+            val plan = ProgramTemplates.build(
+                template, template.authoredVolume, Equipment.FULL_GYM, catalogue, emptyStrength,
+                maxExercises = ProgramRules.MAX_EXERCISES_RANGE.last,
+            )
             val range = ProgramRules.weeklySetTarget(template.authoredVolume, TrainingFocus.MUSCLE)
             val volume = volumeOf(plan)
             for (muscle in ProgramRules.TRACKED) {
