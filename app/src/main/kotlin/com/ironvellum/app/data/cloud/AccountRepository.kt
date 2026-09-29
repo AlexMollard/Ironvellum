@@ -3,6 +3,7 @@ package com.ironvellum.app.data.cloud
 import com.ironvellum.app.data.cloud.Cloud.failure
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
+import io.github.jan.supabase.auth.OtpType
 import io.github.jan.supabase.auth.providers.Google
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.providers.builtin.IDToken
@@ -127,6 +128,34 @@ class AccountRepository {
             }
             loadSignedInAccount(email)
                 ?: throw IllegalStateException("Signed in, but your profile could not be loaded — try again")
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /**
+     * Emails a one-time recovery code. The project's Reset Password template
+     * must print `{{ .Token }}`: the app takes the code, not the link, so no
+     * deep-link setup is needed. An unknown address succeeds too — the server
+     * never says which emails have accounts.
+     */
+    suspend fun sendPasswordReset(email: String): Result<Unit> {
+        val client = requireClient().getOrElse { return failure(it) }
+        return runCatching {
+            client.auth.resetPasswordForEmail(email, redirectUrl = null)
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /** The emailed code signs the lifter in; the new password is then set on that session. */
+    suspend fun resetPassword(email: String, code: String, newPassword: String): Result<Account> {
+        val client = requireClient().getOrElse { return failure(it) }
+        return runCatching {
+            client.auth.verifyEmailOtp(type = OtpType.Email.RECOVERY, email = email, token = code)
+            client.auth.updateUser { password = newPassword }
+            loadSignedInAccount(email)
+                ?: throw IllegalStateException("Password changed, but your profile could not be loaded — sign in again")
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }

@@ -106,6 +106,8 @@ data class AccountUi(
     val error: String? = null,
     /** Sign-up succeeded but the server wants the email confirmed first. */
     val notice: String? = null,
+    /** The address the last reset code went to; the form then asks for it. */
+    val resetCodeSentTo: String? = null,
     val lastSync: SyncOutcome? = null,
     val friends: List<FriendRow> = emptyList(),
     val friendsLoading: Boolean = false,
@@ -194,6 +196,33 @@ class AccountViewModel(
         }
     }
 
+
+    fun sendResetCode(email: String) {
+        viewModelScope.launch {
+            setBusy(true)
+            _ui.value = _ui.value.copy(error = null, notice = null)
+            accountRepo.sendPasswordReset(email)
+                .onSuccess {
+                    _ui.value = _ui.value.copy(
+                        resetCodeSentTo = email,
+                        notice = "If $email has an account, a code is on its way.",
+                    )
+                }
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+            setBusy(false)
+        }
+    }
+
+    fun resetPassword(email: String, code: String, newPassword: String) {
+        viewModelScope.launch {
+            setBusy(true)
+            _ui.value = _ui.value.copy(error = null, notice = null)
+            accountRepo.resetPassword(email, code, newPassword)
+                .onSuccess { _ui.value = _ui.value.copy(resetCodeSentTo = null) }
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+            setBusy(false)
+        }
+    }
 
     /** Google sign-in: the credential layer already exchanged the ID token; hand it and the raw nonce to the repository. */
     fun signInWithGoogle(idToken: String, rawNonce: String) {
@@ -488,6 +517,9 @@ fun AccountScreen(
                 onGoogleSignIn = viewModel::signInWithGoogle,
                 onSignIn = viewModel::signIn,
                 onSignUp = viewModel::signUp,
+                resetCodeSentTo = ui.resetCodeSentTo,
+                onSendResetCode = viewModel::sendResetCode,
+                onResetPassword = viewModel::resetPassword,
             )
         }
 
@@ -560,13 +592,17 @@ private fun AuthPanels(
     onGoogleSignIn: (String, String) -> Unit,
     onSignIn: (String, String) -> Unit,
     onSignUp: (String, String, String) -> Unit,
+    resetCodeSentTo: String?,
+    onSendResetCode: (String) -> Unit,
+    onResetPassword: (email: String, code: String, newPassword: String) -> Unit,
 ) {
     var mode by remember { mutableStateOf(AuthMode.SIGN_IN) }
 
-    // Segmented auth-mode switch: the shared inked picker.
+    // Segmented auth-mode switch: the shared inked picker. Password reset is
+    // reached from SIGN IN, so it keeps that segment lit.
     InkSegmented(
-        options = AuthMode.entries.map { it to if (it == AuthMode.SIGN_IN) "SIGN IN" else "SIGN UP" },
-        selected = mode,
+        options = listOf(AuthMode.SIGN_IN to "SIGN IN", AuthMode.SIGN_UP to "SIGN UP"),
+        selected = if (mode == AuthMode.RESET) AuthMode.SIGN_IN else mode,
         onPick = { mode = it },
     )
 
@@ -575,14 +611,22 @@ private fun AuthPanels(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var displayName by remember { mutableStateOf("") }
+    var code by remember { mutableStateOf("") }
 
     val emailValid = android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()
     val passwordValid = password.length >= 6
     val nameValid = displayName.trim().length in 2..24
-    val canSubmit = emailValid && passwordValid && (mode == AuthMode.SIGN_IN || nameValid) && !busy
+    // Tied to the address it went to: editing the email starts over.
+    val codeSent = mode == AuthMode.RESET && resetCodeSentTo != null && resetCodeSentTo == email
+    val codeValid = code.length in 6..10
+    val canSubmit = !busy && emailValid && when (mode) {
+        AuthMode.SIGN_IN -> passwordValid
+        AuthMode.SIGN_UP -> passwordValid && nameValid
+        AuthMode.RESET -> !codeSent || (codeValid && passwordValid)
+    }
 
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
-        if (googleEnabled) GoogleSignInButton(onToken = onGoogleSignIn)
+        if (googleEnabled && mode != AuthMode.RESET) GoogleSignInButton(onToken = onGoogleSignIn)
         OutlinedTextField(
             shape = MaterialTheme.shapes.small,
             value = email,
@@ -592,17 +636,31 @@ private fun AuthPanels(
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.height(10.dp))
-        OutlinedTextField(
-            shape = MaterialTheme.shapes.small,
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Password") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            visualTransformation = PasswordVisualTransformation(),
-            modifier = Modifier.fillMaxWidth(),
-        )
+        if (codeSent) {
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                shape = MaterialTheme.shapes.small,
+                value = code,
+                onValueChange = { typed -> code = typed.filter { it.isDigit() }.take(10) },
+                label = { Text("Code from email") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+        if (mode != AuthMode.RESET || codeSent) {
+            Spacer(Modifier.height(10.dp))
+            OutlinedTextField(
+                shape = MaterialTheme.shapes.small,
+                value = password,
+                onValueChange = { password = it },
+                label = { Text(if (mode == AuthMode.RESET) "New password" else "Password") },
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                visualTransformation = PasswordVisualTransformation(),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         if (mode == AuthMode.SIGN_UP) {
             Spacer(Modifier.height(10.dp))
             OutlinedTextField(
@@ -617,14 +675,31 @@ private fun AuthPanels(
         }
         Spacer(Modifier.height(14.dp))
         IronvellumButton(
-            label = if (mode == AuthMode.SIGN_IN) "Sign in" else "Create account",
+            label = when (mode) {
+                AuthMode.SIGN_IN -> "Sign in"
+                AuthMode.SIGN_UP -> "Create account"
+                AuthMode.RESET -> if (codeSent) "Set new password" else "Email me a code"
+            },
             onClick = {
-                if (mode == AuthMode.SIGN_IN) onSignIn(email, password)
-                else onSignUp(email, password, displayName.trim())
+                when (mode) {
+                    AuthMode.SIGN_IN -> onSignIn(email, password)
+                    AuthMode.SIGN_UP -> onSignUp(email, password, displayName.trim())
+                    AuthMode.RESET ->
+                        if (codeSent) onResetPassword(email, code, password) else onSendResetCode(email)
+                }
             },
             enabled = canSubmit,
             modifier = Modifier.fillMaxWidth(),
         )
+        if (mode != AuthMode.SIGN_UP) {
+            Spacer(Modifier.height(8.dp))
+            IronvellumButton(
+                label = if (mode == AuthMode.SIGN_IN) "Forgot password?" else "Back to sign in",
+                onClick = { mode = if (mode == AuthMode.SIGN_IN) AuthMode.RESET else AuthMode.SIGN_IN },
+                quiet = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
         Spacer(Modifier.height(8.dp))
         Text(
             when {
@@ -632,6 +707,7 @@ private fun AuthPanels(
                 password.isNotEmpty() && !passwordValid -> "Password needs at least 6 characters."
                 mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid ->
                     "Display name needs 2–24 characters."
+                mode == AuthMode.RESET && !codeSent -> "We'll email you a code to set a new password."
                 else -> "Measurements stay on this device; workouts, XP and titles sync."
             },
             style = MaterialTheme.typography.labelSmall,
@@ -649,7 +725,11 @@ private fun AuthPanels(
         error?.let {
             Spacer(Modifier.height(8.dp))
             Text(
-                "${if (mode == AuthMode.SIGN_IN) "Sign-in" else "Sign-up"} failed: $it",
+                "${when (mode) {
+                    AuthMode.SIGN_IN -> "Sign-in"
+                    AuthMode.SIGN_UP -> "Sign-up"
+                    AuthMode.RESET -> "Reset"
+                }} failed: $it",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.DangerRed,
@@ -1283,4 +1363,4 @@ private fun BlockedPanel(blocked: List<BlockedLifter>, onUnblock: (String) -> Un
     }
 }
 
-private enum class AuthMode { SIGN_IN, SIGN_UP }
+private enum class AuthMode { SIGN_IN, SIGN_UP, RESET }
