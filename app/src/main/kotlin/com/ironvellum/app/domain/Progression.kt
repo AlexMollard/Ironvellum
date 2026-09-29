@@ -99,7 +99,6 @@ object Progression {
         val rest = restSeconds(mode)
         val weight = lastWeightKg
         val step = weightStepKg.coerceAtLeast(0.5)
-        val stepLabel = if (step % 1.0 == 0.0) step.toInt().toString() else step.toString()
 
         if (setsDone <= 0 || lastReps == null) {
             return Recommendation(weight, targetReps, "First attempt — hit $targetReps reps every set", rest)
@@ -124,22 +123,31 @@ object Progression {
                 rest,
             )
         }
+        // Bodyweight work progresses in reps. Adding a step to a null load
+        // turned a cleared 5×6 push-up into "2.5 kg × 3": a vest or belt the
+        // lifter may not own, prescribed on a lift they never loaded.
+        if (weight == null || weight <= 0.0) {
+            val nextReps = lastReps + REP_STEP
+            return Recommendation(weight, nextReps, "Target cleared — climb to $nextReps reps", rest)
+        }
+        val loaded = nextLoad(weight, step)
+        val addedLabel = kgLabel(loaded - weight)
         return when (mode) {
             TrainingMode.STRENGTH -> {
                 val nextReps = band.first
                 Recommendation(
-                    (weight ?: 0.0) + step,
+                    loaded,
                     nextReps,
-                    "Target cleared — add $stepLabel kg, drop to $nextReps reps",
+                    "Target cleared — add $addedLabel kg, drop to $nextReps reps",
                     rest,
                 )
             }
             TrainingMode.HYPERTROPHY ->
                 if (lastReps >= band.last) {
                     Recommendation(
-                        (weight ?: 0.0) + step,
+                        loaded,
                         targetReps,
-                        "Rep ceiling reached — add $stepLabel kg, back to $targetReps reps",
+                        "Rep ceiling reached — add $addedLabel kg, back to $targetReps reps",
                         rest,
                     )
                 } else {
@@ -147,6 +155,24 @@ object Progression {
                     Recommendation(weight, nextReps, "Same load — climb to $nextReps reps", rest)
                 }
         }
+    }
+
+    /**
+     * The next load a lifter can actually pick up: one step on, then down onto
+     * the 2.5 kg grid dumbbells and plate pairs come in (the step's own grid
+     * when it is finer). 16 kg + 2.5 kg is 18.5 kg, which no rack holds; this
+     * gives 17.5 kg. Always at least one grid point above the current load.
+     */
+    private fun nextLoad(weightKg: Double, step: Double): Double {
+        val grid = minOf(step, WEIGHT_STEP_KG)
+        val snapped = Math.floor((weightKg + step) / grid + 1e-9) * grid
+        val oneUp = (Math.floor(weightKg / grid + 1e-9) + 1) * grid
+        return maxOf(snapped, oneUp)
+    }
+
+    private fun kgLabel(kg: Double): String {
+        val rounded = Math.round(kg * 100) / 100.0
+        return if (rounded % 1.0 == 0.0) rounded.toInt().toString() else rounded.toString()
     }
 
     /** Keeps deloaded loads on the bar's real increments. */

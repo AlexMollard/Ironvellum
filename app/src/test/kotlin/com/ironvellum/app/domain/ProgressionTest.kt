@@ -63,12 +63,34 @@ class ProgressionTest {
 
     @Test
     fun `leg movements take the five kilo step`() {
-        val sets = List(4) { Progression.Attempt(24.0, 6) }
+        val sets = List(4) { Progression.Attempt(25.0, 6) }
         val rec = Progression.fromSets(
             TrainingMode.STRENGTH, targetReps = 6, minSets = 4, sets,
             muscleGroup = "LEGS", exerciseName = "Weighted Pistol Squat",
         )
-        assertEquals(29.0, rec.weightKg!!, 0.0001)
+        assertEquals(30.0, rec.weightKg!!, 0.0001)
+    }
+
+    @Test
+    fun `bodyweight work climbs reps instead of taking on load`() {
+        val sets = List(5) { Progression.Attempt(null, 6) }
+        val strength = Progression.fromSets(TrainingMode.STRENGTH, targetReps = 5, minSets = 5, sets)
+        assertEquals(null, strength.weightKg)
+        assertEquals(8, strength.reps)
+        val hypertrophy = Progression.fromSets(TrainingMode.HYPERTROPHY, targetReps = 5, minSets = 5, List(5) { Progression.Attempt(null, 9) })
+        assertEquals(null, hypertrophy.weightKg)
+        assertEquals(11, hypertrophy.reps)
+    }
+
+    @Test
+    fun `an off-grid load steps onto a weight a rack actually holds`() {
+        val sets = List(3) { Progression.Attempt(16.0, 5) }
+        val rec = Progression.fromSets(
+            TrainingMode.STRENGTH, targetReps = 5, minSets = 3, sets,
+            muscleGroup = "PUSH", exerciseName = "Dumbbell Shoulder Press",
+        )
+        assertEquals(17.5, rec.weightKg!!, 0.0001)
+        assertEquals("Target cleared — add 1.5 kg, drop to 3 reps", rec.reason)
     }
 
     @Test
