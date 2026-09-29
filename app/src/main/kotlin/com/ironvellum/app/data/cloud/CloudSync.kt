@@ -95,7 +95,13 @@ class CloudSync(
             // Push only what changed since the last successful sync: a new
             // session differs from "never pushed", an edited one from its old
             // fingerprint — so edits re-push without any updated-at column.
-            val watermark = repo.pushWatermark()
+            //
+            // The watermark is the device's claim about what the SERVER holds,
+            // and the server can lose rows without the device hearing of it: a
+            // project reset, a new account on this phone, a manual delete. So
+            // it only counts for sessions the server still has; the rest push.
+            val onServer = serverLocalIds(client, me.userId)
+            val watermark = repo.pushWatermark().filterKeys { it in onServer }
             val pending = pendingForPush(completed, watermark)
             val level = Xp.progress(profile.totalXp).level
             // Same rule as Today and the deeds: rest days are rest, so the
@@ -107,19 +113,16 @@ class CloudSync(
             val lifetimeStrength = history.sumOf { (session, _) -> session.strengthScore.toLong() }
 
             val problems = mutableListOf<String>()
-            // Identity columns only. The aggregates are no longer ours to
-            // state: `authenticated` holds UPDATE/INSERT on
-            // (display_name, visibility, current_title_id) and nothing else,
-            // so naming level or total_xp here would be refused outright.
-            client.postgrest.from("profiles").upsert(
-                ProfileIdentityDto(
-                    id = me.userId,
-                    displayName = me.displayName,
-                    visibility = me.visibility,
-                    currentTitleId = profile.currentTitleId,
-                ),
+            // The worn title is the only profile column push owns. The name
+            // and visibility have their own flows, and the row itself is made
+            // by the server at sign-up: clients hold no INSERT on profiles, so
+            // the upsert this used to be was refused and no workout synced.
+            client.postgrest.from("profiles").update(
+                {
+                    set("current_title_id", profile.currentTitleId)
+                },
             ) {
-                onConflict = "id"
+                filter { eq("id", me.userId) }
             }
 
             // The ranked numbers now go through push_aggregates(), because the
@@ -294,6 +297,26 @@ class CloudSync(
     }
 
     /**
+     * Every local id the server holds for this lifter, paged: PostgREST caps
+     * a response at 1000 rows by default, so one select would silently drop
+     * the rest and re-push them forever.
+     */
+    private suspend fun serverLocalIds(client: io.github.jan.supabase.SupabaseClient, userId: String): Set<Long> {
+        val ids = HashSet<Long>()
+        var from = 0L
+        while (true) {
+            val page = client.postgrest.from("sessions").select(Columns.raw("id, local_id")) {
+                filter { eq("user_id", userId) }
+                order("local_id", Order.ASCENDING)
+                range(from, from + SERVER_ID_PAGE - 1)
+            }.decodeList<SessionIdDto>()
+            page.mapTo(ids) { it.localId }
+            if (page.size < SERVER_ID_PAGE) return ids
+            from += SERVER_ID_PAGE
+        }
+    }
+
+    /**
      * One row of `cloud_archives` per lifter, holding the whole save as JSON.
      * A backup is [Repository.exportArchive]'s JSON uploaded whole; a restore
      * is that JSON handed to [Repository.importArchive] — the two primitives
@@ -346,7 +369,7 @@ class CloudSync(
                 filter { eq("user_id", me.userId) }
                 order("updated_at", Order.DESCENDING)
                 limit(1)
-            }.decodeList<ArchiveDto>().firstOrNull()?.let {
+            }.decodeList<ArchiveStatusDto>().firstOrNull()?.let {
                 BackupInfo(
                     atMs = it.updatedAt?.let { at -> Instant.parse(at).toEpochMilli() }
                         ?: System.currentTimeMillis(),
@@ -1134,6 +1157,9 @@ class CloudSync(
 
         /** The server's per-workout comment ceiling: a thread fetch is always whole. */
         private const val COMMENTS_PER_WORKOUT = 200L
+
+        /** PostgREST's default max-rows: one page of the server id sweep. */
+        private const val SERVER_ID_PAGE = 1000L
 
         /**
          * The sessions a push must upload: changed-since-last-push, and never

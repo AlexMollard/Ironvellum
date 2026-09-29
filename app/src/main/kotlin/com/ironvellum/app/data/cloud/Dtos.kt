@@ -133,19 +133,6 @@ data class FriendshipDto(
  * Carries the worn title and level too: the select is already `*`, so an ally's
  * crest can show its rarity without a second request.
  */
-/**
- * The only profile columns a lifter may write since 0011. The ranked
- * aggregates are derived server-side by push_aggregates(), so naming them in
- * an upsert would be refused at the column privilege.
- */
-@Serializable
-data class ProfileIdentityDto(
-    @SerialName("id") val id: String,
-    @SerialName("display_name") val displayName: String,
-    @SerialName("visibility") val visibility: String,
-    @SerialName("current_title_id") val currentTitleId: String? = null,
-)
-
 @Serializable
 data class ProfileNameDto(
     @SerialName("id") val id: String,
@@ -570,6 +557,17 @@ data class ArchiveDto(
     @SerialName("archive") val archive: String,
     @SerialName("size_bytes") val sizeBytes: Int,
     // Decode-only: the server default fills it; the client never sends it.
+    @SerialName("updated_at") val updatedAt: String? = null,
+)
+
+/**
+ * The backup-status read: two columns only, so the archive text is never
+ * downloaded. Decoding that select as [ArchiveDto] threw on the missing
+ * user_id/archive and the account screen showed a generic failure.
+ */
+@Serializable
+data class ArchiveStatusDto(
+    @SerialName("size_bytes") val sizeBytes: Int,
     @SerialName("updated_at") val updatedAt: String? = null,
 )
 
