@@ -46,6 +46,7 @@ import com.ironvellum.app.domain.SkillClaimResult
 import com.ironvellum.app.domain.SkillPractice
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -149,7 +150,7 @@ fun SkillDetailDialog(
                         letterSpacing = 1.sp,
                     )
                     Text(
-                        "${entries.count { !it.claimed }} attempts",
+                        entries.count { !it.claimed }.let { n -> "$n ${plural(n, "attempt", "attempts")}" },
                         style = MaterialTheme.typography.labelMedium,
                         color = IronvellumColors.InkMuted,
                     )

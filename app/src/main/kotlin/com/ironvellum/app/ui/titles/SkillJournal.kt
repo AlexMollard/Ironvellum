@@ -31,6 +31,7 @@ import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.theme.inkHairline
@@ -250,7 +251,7 @@ fun SkillJournal(
                     Column(Modifier.weight(1f)) {
                         Text(name, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
                         Text(
-                            "$count attempts · best $best${def?.unit ?: ""}",
+                            "$count ${plural(count, "attempt", "attempts")} · best $best${def?.unit ?: ""}",
                             style = MaterialTheme.typography.labelSmall,
                             color = IronvellumColors.InkMuted,
                         )
