@@ -12,11 +12,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -24,8 +26,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.TrendingUp
 import androidx.compose.material.icons.outlined.AutoAwesome
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.Favorite
-import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.LocalFireDepartment
+import androidx.compose.material.icons.outlined.MilitaryTech
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material.icons.outlined.Refresh
@@ -51,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.res.painterResource
@@ -71,6 +75,7 @@ import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.FeedEntry
 import com.ironvellum.app.data.cloud.FriendRow
 import com.ironvellum.app.data.cloud.Liker
+import com.ironvellum.app.data.cloud.Reaction
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
@@ -117,8 +122,8 @@ data class FeedUi(
     val likers: Map<String, List<Liker>> = emptyMap(),
     val likersErrors: Map<String, String> = emptyMap(),
     val likersLoadingSessionId: String? = null,
-    /** Per-card like failures; keyed by sessionId so the message sits on the tapped card. */
-    val likeErrors: Map<String, String> = emptyMap(),
+    /** Per-card reaction failures; keyed by sessionId so the message sits on the tapped card. */
+    val reactionErrors: Map<String, String> = emptyMap(),
 )
 
 class FeedViewModel(
@@ -140,8 +145,8 @@ class FeedViewModel(
     /** Oldest completedAtMs seen — the cursor for the next page. */
     private var oldestMs: Long? = null
 
-    /** Sessions with a like/unlike call in flight; blocks the double-tap re-fire that drifts the count. */
-    private val likeCallsInFlight = mutableSetOf<String>()
+    /** Workouts with a reaction call in flight; blocks the double-tap re-fire that drifts the count. */
+    private val reactionCallsInFlight = mutableSetOf<String>()
 
     private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
 
@@ -190,41 +195,42 @@ class FeedViewModel(
         }
     }
 
-    /** Optimistic like toggle: the count flips now, the network call reconciles. */
-    fun toggleLike(entry: FeedEntry) {
-        // One wire call per session at a time: a rapid double-tap before
-        // recomposition would pass the same stale entry twice and drift the
-        // optimistic count by two for a single like.
-        if (entry.sessionId in likeCallsInFlight) return
-        likeCallsInFlight += entry.sessionId
-        // Decide the toggle from current state, not the possibly-stale entry copy.
-        val wasLiked = _ui.value.entries.firstOrNull { it.sessionId == entry.sessionId }?.likedByMe ?: entry.likedByMe
-        _ui.value = _ui.value.copy(likeErrors = _ui.value.likeErrors - entry.sessionId)
-        applyLike(entry.sessionId, !wasLiked)
+    /**
+     * Optimistic reaction: chip and counts move now, the network call
+     * reconciles. [reaction] null removes the lifter's reaction.
+     */
+    fun react(entry: FeedEntry, reaction: Reaction?) {
+        // One wire call per workout at a time: a second pick before the first
+        // answers would compute its delta from a state that may still roll
+        // back, drifting the total by one for a single reaction.
+        if (entry.sessionId in reactionCallsInFlight) return
+        // Decide from current state, not the possibly-stale entry copy.
+        val before = _ui.value.entries.firstOrNull { it.sessionId == entry.sessionId } ?: entry
+        if (before.myReaction == reaction) return
+        reactionCallsInFlight += entry.sessionId
+        _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors - entry.sessionId)
+        replaceEntry(entry.sessionId) { it.withReaction(reaction) }
         viewModelScope.launch {
-            val call = if (wasLiked) cloudSync.unlike(entry.sessionId) else cloudSync.like(entry.sessionId)
-            call.onFailure {
-                // Roll back so a refused write never leaves a phantom heart, and
-                // tell the lifter — a silent rollback reads as a dead button.
-                applyLike(entry.sessionId, wasLiked)
-                _ui.value = _ui.value.copy(likeErrors = _ui.value.likeErrors + (entry.sessionId to it.reason()))
+            cloudSync.react(entry.sessionId, reaction).onFailure {
+                // Roll back so a refused write never leaves a phantom reaction,
+                // and tell the lifter — a silent rollback reads as a dead button.
+                replaceEntry(entry.sessionId) { current ->
+                    current.copy(
+                        likedByMe = before.likedByMe,
+                        likeCount = before.likeCount,
+                        reactions = before.reactions,
+                        myReaction = before.myReaction,
+                    )
+                }
+                _ui.value = _ui.value.copy(reactionErrors = _ui.value.reactionErrors + (entry.sessionId to it.reason()))
             }
-            likeCallsInFlight -= entry.sessionId
+            reactionCallsInFlight -= entry.sessionId
         }
     }
 
-    private fun applyLike(sessionId: String, liked: Boolean) {
+    private fun replaceEntry(sessionId: String, change: (FeedEntry) -> FeedEntry) {
         _ui.value = _ui.value.copy(
-            entries = _ui.value.entries.map { current ->
-                if (current.sessionId != sessionId) {
-                    current
-                } else {
-                    current.copy(
-                        likedByMe = liked,
-                        likeCount = (current.likeCount + if (liked) 1 else -1).coerceAtLeast(0),
-                    )
-                }
-            },
+            entries = _ui.value.entries.map { if (it.sessionId == sessionId) change(it) else it },
         )
     }
 
@@ -317,6 +323,7 @@ class FeedViewModel(
 fun FeedScreen(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onSignIn: () -> Unit,
+    onOpenComments: (sessionId: String, ownerId: String, headline: String) -> Unit,
     viewModel: FeedViewModel = viewModel(
         factory = viewModelFactory {
             initializer { FeedViewModel(ironvellumCloudSync(), ironvellumAccount(), ironvellumRepository()) }
@@ -357,8 +364,8 @@ fun FeedScreen(
 
         val err = ui.error
         when {
-            !cloudConfigured -> NotConfigured()
-            !ui.signedIn -> NotSignedIn(onSignIn)
+            !cloudConfigured -> SocialOfflinePanel()
+            !ui.signedIn -> SocialSignInPanel(onSignIn)
             ui.loading && ui.entries.isEmpty() -> LoadingPanel()
             ui.entries.isEmpty() && err != null -> ErrorPanel(err, onRetry = { viewModel.load(force = true) })
             ui.entries.isEmpty() -> EmptyFeed(onRefresh = { viewModel.load(force = true) })
@@ -366,11 +373,11 @@ fun FeedScreen(
                 // A failed refresh must not hide behind yesterday's rows: the
                 // banner rides above the list, rows stay in place.
                 if (ui.error != null) {
-                    InlineErrorBanner("The newest fetch failed — these workouts are the last synced board: ${ui.error}")
+                    SocialErrorBanner("The newest fetch failed — these workouts are the last synced board: ${ui.error}")
                     Spacer(Modifier.height(10.dp))
                 }
                 ui.allyError?.let {
-                    InlineErrorBanner("Ally request failed: $it")
+                    SocialErrorBanner("Ally request failed: $it")
                     Spacer(Modifier.height(10.dp))
                 }
                 Feed(
@@ -380,7 +387,8 @@ fun FeedScreen(
                     onRefresh = { viewModel.load(force = true) },
                     onLoadMore = viewModel::loadMore,
                     onOpenLifter = onOpenLifter,
-                    onToggleLike = viewModel::toggleLike,
+                    onReact = viewModel::react,
+                    onOpenComments = { entry -> onOpenComments(entry.sessionId, entry.userId, entry.headline()) },
                     onShowLikers = viewModel::loadLikers,
                     onAddAlly = viewModel::addAlly,
                     equippedFrame = equippedFrame,
@@ -391,8 +399,9 @@ fun FeedScreen(
     }
 }
 
+/** Shared with the inbox: one wording for "no backend" across the social tabs. */
 @Composable
-private fun NotConfigured() {
+internal fun SocialOfflinePanel() {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
         Text(
             "FEED OFFLINE",
@@ -412,10 +421,14 @@ private fun NotConfigured() {
 }
 
 @Composable
-private fun NotSignedIn(onSignIn: () -> Unit) {
+internal fun SocialSignInPanel(
+    onSignIn: () -> Unit,
+    title: String = "SIGN IN TO WATCH THE FRONTLINE",
+    body: String = "Sign in to see your allies' training.",
+) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
         Text(
-            "SIGN IN TO WATCH THE FRONTLINE",
+            title,
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -424,7 +437,7 @@ private fun NotSignedIn(onSignIn: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Sign in to see your allies' training.",
+            body,
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -472,13 +485,16 @@ private fun EmptyFeed(onRefresh: () -> Unit) {
             color = IronvellumColors.InkMuted,
         )
         Spacer(Modifier.height(10.dp))
-        RefreshLink(onClick = onRefresh, label = "Check again")
+        SocialRefreshLink(onClick = onRefresh, label = "Check again")
     }
 }
 
-/** Compact failure note over stale rows — never a dialog, never displacing the list. */
+/**
+ * Compact failure note over stale rows — never a dialog, never displacing the
+ * list. Shared with the inbox and comments so a refusal reads the same everywhere.
+ */
 @Composable
-private fun InlineErrorBanner(message: String) {
+internal fun SocialErrorBanner(message: String) {
     val shape = MaterialTheme.shapes.small
     Box(
         Modifier
@@ -514,7 +530,7 @@ private fun ErrorPanel(reason: String, onRetry: () -> Unit) {
             color = IronvellumColors.InkMuted,
         )
         Spacer(Modifier.height(10.dp))
-        RefreshLink(onClick = onRetry, label = "Try again")
+        SocialRefreshLink(onClick = onRetry, label = "Try again")
     }
 }
 @OptIn(ExperimentalMaterial3Api::class)
@@ -524,7 +540,8 @@ private fun Feed(
     onRefresh: () -> Unit,
     onLoadMore: () -> Unit,
     onOpenLifter: (String, String) -> Unit,
-    onToggleLike: (FeedEntry) -> Unit,
+    onReact: (FeedEntry, Reaction?) -> Unit,
+    onOpenComments: (FeedEntry) -> Unit,
     onShowLikers: (String) -> Unit,
     onAddAlly: (String) -> Unit,
     onRetryLikers: (String) -> Unit,
@@ -590,8 +607,9 @@ private fun Feed(
                 likers = ui.likers[entry.sessionId],
                 likersError = ui.likersErrors[entry.sessionId],
                 onOpenLifter = onOpenLifter,
-                onToggleLike = onToggleLike,
-                likeError = ui.likeErrors[entry.sessionId],
+                onReact = onReact,
+                onOpenComments = onOpenComments,
+                reactionError = ui.reactionErrors[entry.sessionId],
                 onRetryLikers = onRetryLikers,
                 onLikersClosed = onLikersClosed,
                 onShowLikers = onShowLikers,
@@ -659,9 +677,10 @@ private fun FeedCard(
     ally: AllyState,
     likers: List<Liker>?,
     likersError: String?,
-    likeError: String?,
+    reactionError: String?,
     onOpenLifter: (String, String) -> Unit,
-    onToggleLike: (FeedEntry) -> Unit,
+    onReact: (FeedEntry, Reaction?) -> Unit,
+    onOpenComments: (FeedEntry) -> Unit,
     onShowLikers: (String) -> Unit,
     onAddAlly: (String) -> Unit,
     onRetryLikers: (String) -> Unit,
@@ -669,6 +688,9 @@ private fun FeedCard(
 ) {
     val accent = if (isMe) IronvellumColors.SovereignGold else IronvellumColors.Emerald
     var showLikers by remember { mutableStateOf(false) }
+    // The picker opens inline under the action row rather than as a popup:
+    // a menu anchored to a 44dp chip covered the stat strip it reacts to.
+    var picking by remember { mutableStateOf(false) }
     InkPanel(Modifier.fillMaxWidth(), accent = accent) {
         Column {
             // Identity header carries only the LV chip, so the worn title keeps a
@@ -728,93 +750,85 @@ private fun FeedCard(
             Spacer(Modifier.height(10.dp))
             StatStrip(entry)
 
-            Spacer(Modifier.height(8.dp))
+            // The stamp has its own line: the action row now carries reaction,
+            // comment and ally controls, and a stamp beside all three pushed the
+            // ally chip off a 360dp card. relativeTime already falls back to the
+            // date for anything older than yesterday, so stamp() prints it once.
+            entry.completedAtMs?.let { ms ->
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    stamp(ms),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+
+            Spacer(Modifier.height(4.dp))
             Row(
                 Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Like toggle: optimistic count, heart reflects likedByMe instantly.
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier
-                        // 44dp hit area around a compact chip: the visual stays small.
-                        .heightIn(min = 44.dp)
-                        .clickable(role = Role.Button) { onToggleLike(entry) }
-                        .wrapContentHeight()
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .background(IronvellumColors.Abyss)
-                        .inkBorder(if (entry.likedByMe) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                ) {
-                    Icon(
-                        if (entry.likedByMe) Icons.Outlined.Favorite else Icons.Outlined.FavoriteBorder,
-                        contentDescription = if (entry.likedByMe) "Liked" else "Like",
-                        tint = if (entry.likedByMe) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                        modifier = Modifier.size(16.dp),
-                    )
+                // Optimistic: the chip shows the lifter's own reaction the
+                // moment it is picked; the VM reconciles or rolls back.
+                CountChip(
+                    icon = (entry.myReaction ?: Reaction.SALUTE).glyph(),
+                    iconDescription = entry.myReaction?.let { "Your reaction: ${it.displayName()}" } ?: "React",
+                    count = entry.likeCount,
+                    lit = entry.myReaction != null || picking,
+                    onClick = { picking = !picking },
+                )
+                CountChip(
+                    icon = Icons.Outlined.ChatBubbleOutline,
+                    iconDescription = "Comments",
+                    count = entry.commentCount,
+                    lit = false,
+                    onClick = { onOpenComments(entry) },
+                )
+                Spacer(Modifier.weight(1f))
+                if (!isMe) {
+                    AllyChip(ally) { onAddAlly(entry.userId) }
+                } else {
+                    // Owner-only: who reacted is theirs to read.
                     Text(
-                        "${entry.likeCount}",
+                        "WHO CHEERED",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.SemiBold,
-                        color = if (entry.likedByMe) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+                        color = IronvellumColors.EmeraldBright,
+                        letterSpacing = IronvellumTracking.InlineLabel,
                         maxLines = 1,
                         softWrap = false,
+                        modifier = Modifier
+                            .heightIn(min = 44.dp)
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .clickable(role = Role.Button) {
+                                showLikers = true
+                                onShowLikers(entry.sessionId)
+                            }
+                            .wrapContentHeight()
+                            .padding(horizontal = 8.dp),
                     )
                 }
-                if (!isMe) {
-                    Spacer(Modifier.width(8.dp))
-                    AllyChip(ally) { onAddAlly(entry.userId) }
-                }
-                // Owner-only: the count's story is theirs to read. Non-owners
-                // get no likers list. Timestamp rides the same row, right-aligned.
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (isMe) {
-                        Text(
-                            "WHO CHEERED",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.EmeraldBright,
-                            letterSpacing = IronvellumTracking.InlineLabel,
-                            maxLines = 1,
-                            softWrap = false,
-                            modifier = Modifier
-                                .heightIn(min = 44.dp)
-                                .clip(MaterialTheme.shapes.extraSmall)
-                                .clickable(role = Role.Button) {
-                                    showLikers = true
-                                    onShowLikers(entry.sessionId)
-                                }
-                                .wrapContentHeight()
-                                .padding(horizontal = 8.dp),
-                        )
-                    }
-                    entry.completedAtMs?.let { ms ->
-                        // relativeTime already falls back to the date for
-                        // anything older than yesterday, so printing both
-                        // rendered "Sept 11 · Sept 11 · 14:53".
-                        Text(
-                            stamp(ms),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.InkMuted,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                    }
-                }
+            }
+            if (picking) {
+                ReactionPicker(
+                    current = entry.myReaction,
+                    counts = entry.reactions,
+                    onPick = { reaction ->
+                        picking = false
+                        onReact(entry, reaction)
+                    },
+                )
             }
             // Reserved-height failure line: the space exists whether or not a
-            // like failed, so surfacing the message never reflows the card.
+            // reaction failed, so surfacing the message never reflows the card.
             Box(Modifier.fillMaxWidth().height(18.dp)) {
-                if (likeError != null) {
+                if (reactionError != null) {
                     Text(
-                        "The Ledger refused your cheer",
+                        "Reaction not saved: $reactionError",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.DangerRed,
@@ -876,6 +890,14 @@ private fun FeedCard(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            liker.reaction?.let { reaction ->
+                                Icon(
+                                    reaction.glyph(),
+                                    contentDescription = reaction.displayName(),
+                                    tint = IronvellumColors.SovereignGold,
+                                    modifier = Modifier.padding(end = 8.dp).size(16.dp),
+                                )
+                            }
                             Text(
                                 liker.displayName,
                                 style = MaterialTheme.typography.labelMedium,
@@ -949,6 +971,141 @@ private fun AllyChip(ally: AllyState, onAddAlly: () -> Unit) {
             softWrap = false,
         )
     }
+}
+
+/**
+ * Icon + count chip for the card's action row. 44dp hit area around a compact
+ * visual; [lit] turns the edge and ink gold for "yours" or "open".
+ */
+@Composable
+private fun CountChip(
+    icon: ImageVector,
+    iconDescription: String,
+    count: Int,
+    lit: Boolean,
+    onClick: () -> Unit,
+) {
+    val tint = if (lit) IronvellumColors.SovereignGold else IronvellumColors.InkMuted
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier
+            .heightIn(min = 44.dp)
+            .clickable(role = Role.Button) { onClick() }
+            .wrapContentHeight()
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(IronvellumColors.Abyss)
+            .inkBorder(if (lit) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+    ) {
+        Icon(icon, contentDescription = iconDescription, tint = tint, modifier = Modifier.size(16.dp))
+        Text(
+            "$count",
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.SemiBold,
+            color = if (lit) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
+}
+
+/**
+ * The three reactions plus REMOVE once one is set. Tapping the lifter's
+ * current reaction again is a no-op rather than a removal: a toggle hidden in
+ * the selected chip deleted reactions people meant to confirm.
+ */
+@Composable
+private fun ReactionPicker(current: Reaction?, counts: Map<Reaction, Int>, onPick: (Reaction?) -> Unit) {
+    FlowRow(
+        Modifier.fillMaxWidth().padding(top = 6.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Reaction.entries.forEach { reaction ->
+            val on = reaction == current
+            val count = counts[reaction] ?: 0
+            PickerChip(
+                label = if (count > 0) "${reaction.displayName().uppercase()} $count" else reaction.displayName().uppercase(),
+                icon = reaction.glyph(),
+                on = on,
+                onClick = { onPick(reaction) },
+            )
+        }
+        if (current != null) {
+            PickerChip(label = "REMOVE", icon = null, on = false, onClick = { onPick(null) })
+        }
+    }
+}
+
+@Composable
+private fun PickerChip(label: String, icon: ImageVector?, on: Boolean, onClick: () -> Unit) {
+    val tint = if (on) IronvellumColors.SovereignGold else IronvellumColors.Ink
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier
+            .heightIn(min = 44.dp)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .background(if (on) IronvellumColors.Vault else IronvellumColors.Abyss)
+            .inkBorder(if (on) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
+            .clickable(role = Role.Button) { onClick() }
+            .semantics { selected = on }
+            .padding(horizontal = 12.dp),
+    ) {
+        if (icon != null) {
+            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(16.dp))
+        }
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.SemiBold,
+            color = tint,
+            letterSpacing = IronvellumTracking.InlineLabel,
+            maxLines = 1,
+            softWrap = false,
+        )
+    }
+}
+
+/** One glyph per reaction, shared by the feed, the likers list and the inbox. */
+internal fun Reaction.glyph(): ImageVector = when (this) {
+    Reaction.SALUTE -> Icons.Outlined.MilitaryTech
+    Reaction.IRON -> Icons.Outlined.FitnessCenter
+    Reaction.FLAME -> Icons.Outlined.LocalFireDepartment
+}
+
+internal fun Reaction.displayName(): String = when (this) {
+    Reaction.SALUTE -> "Salute"
+    Reaction.IRON -> "Iron"
+    Reaction.FLAME -> "Flame"
+}
+
+/** What a workout is called on the comments screen and in the inbox. */
+internal fun FeedEntry.headline(): String = title.ifBlank { label }.ifBlank { "Workout" }
+
+/**
+ * The entry as it reads once [next] replaces the lifter's reaction. like_count
+ * stays the total of every kind, so it moves only when a reaction appears or
+ * disappears — switching kind moves the per-kind counts, never the total.
+ */
+private fun FeedEntry.withReaction(next: Reaction?): FeedEntry {
+    val previous = myReaction
+    val counts = reactions.toMutableMap()
+    if (previous != null) {
+        val left = (counts[previous] ?: 0) - 1
+        if (left > 0) counts[previous] = left else counts.remove(previous)
+    }
+    if (next != null) counts[next] = (counts[next] ?: 0) + 1
+    val delta = (if (next != null) 1 else 0) - (if (previous != null) 1 else 0)
+    return copy(
+        myReaction = next,
+        likedByMe = next != null,
+        reactions = counts,
+        likeCount = (likeCount + delta).coerceAtLeast(0),
+    )
 }
 
 /** Icon + short-value stat strip — the card's spine, not a footnote. */
@@ -1151,9 +1308,10 @@ private fun Stat(
 
 /**
  * Human-fresh timestamp: minutes under the hour, hours today, "yesterday",
- * then an absolute date via the shared formatter.
+ * then an absolute date via the shared formatter. Shared with the comments
+ * and inbox rows so every social surface dates things the same way.
  */
-private fun relativeTime(ms: Long): String {
+internal fun relativeTime(ms: Long): String {
     val now = java.time.LocalDateTime.now()
     val then = Instant.ofEpochMilli(ms).atZone(ZoneId.systemDefault()).toLocalDateTime()
     val minutes = ChronoUnit.MINUTES.between(then, now)
@@ -1180,7 +1338,7 @@ private fun stamp(ms: Long): String {
 }
 
 @Composable
-private fun RefreshLink(onClick: () -> Unit, label: String) {
+internal fun SocialRefreshLink(onClick: () -> Unit, label: String) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(4.dp),

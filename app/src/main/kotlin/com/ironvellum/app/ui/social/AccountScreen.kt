@@ -31,6 +31,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,6 +68,7 @@ import com.ironvellum.app.data.cloud.Account
 import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.CloudSync
+import com.ironvellum.app.data.cloud.BlockedLifter
 import com.ironvellum.app.data.cloud.FriendRow
 import com.ironvellum.app.data.cloud.SyncOutcome
 import com.ironvellum.app.data.cloud.isUnclaimedHandle
@@ -119,6 +121,8 @@ data class AccountUi(
      * BACK UP NOW looked like a button that did nothing at all.
      */
     val backupError: String? = null,
+    /** Lifters this account blocked; blocked_name is kept server-side because their profile turns unreadable. */
+    val blocked: List<BlockedLifter> = emptyList(),
 )
 
 class AccountViewModel(
@@ -144,6 +148,7 @@ class AccountViewModel(
                 _ui.value = _ui.value.copy(account = acct)
                 if (acct != null) {
                     refreshFriends()
+                    refreshBlocked()
                     // The panel must show backup freshness the moment it
                     // appears, not only after a first manual backup.
                     refreshBackup()
@@ -201,7 +206,7 @@ class AccountViewModel(
                 // severed the session — clearing on failure left the user
                 // signed in behind a friends-less, signed-out-looking UI.
                 .onSuccess {
-                    _ui.value = _ui.value.copy(lastSync = null, friends = emptyList())
+                    _ui.value = _ui.value.copy(lastSync = null, friends = emptyList(), blocked = emptyList())
                 }
             setBusy(false)
         }
@@ -220,7 +225,7 @@ class AccountViewModel(
                 // anything.
                 .onSuccess {
                     cloudSync.forgetPushedState()
-                    _ui.value = _ui.value.copy(lastSync = null, friends = emptyList())
+                    _ui.value = _ui.value.copy(lastSync = null, friends = emptyList(), blocked = emptyList())
                 }
             setBusy(false)
         }
@@ -345,6 +350,33 @@ class AccountViewModel(
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
         }
     }
+
+    /** Ends an alliance; the row leaves the list only once the server confirms. */
+    fun removeFriend(userId: String) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(error = null)
+            cloudSync.removeFriend(userId)
+                .onSuccess { _ui.value = _ui.value.copy(friends = _ui.value.friends.filter { it.userId != userId }) }
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+        }
+    }
+
+    fun refreshBlocked(force: Boolean = false) {
+        viewModelScope.launch {
+            cloudSync.blocked(force = force)
+                .onSuccess { _ui.value = _ui.value.copy(blocked = it) }
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+        }
+    }
+
+    fun unblock(userId: String) {
+        viewModelScope.launch {
+            _ui.value = _ui.value.copy(error = null)
+            cloudSync.unblock(userId)
+                .onSuccess { _ui.value = _ui.value.copy(blocked = _ui.value.blocked.filter { it.userId != userId }) }
+                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+        }
+    }
 }
 
 @Composable
@@ -373,7 +405,10 @@ fun AccountScreen(
         val pullState = rememberPullToRefreshState()
         PullToRefreshBox(
             isRefreshing = ui.friendsLoading,
-            onRefresh = viewModel::refreshFriends,
+            onRefresh = {
+                viewModel.refreshFriends()
+                viewModel.refreshBlocked(force = true)
+            },
             state = pullState,
             modifier = Modifier.fillMaxSize(),
             indicator = {
@@ -406,6 +441,8 @@ fun AccountScreen(
                     onRestore = viewModel::restoreFromCloud,
                     onAccept = viewModel::acceptFriend,
                     onRequest = viewModel::requestFriend,
+                    onRemoveAlly = viewModel::removeFriend,
+                    onUnblock = viewModel::unblock,
                     onClaim = viewModel::claimName,
                     onSkipClaim = viewModel::skipClaim,
                 )
@@ -624,6 +661,8 @@ private fun SignedInPanels(
     onBackup: () -> Unit,
     onRestore: () -> Unit,
     onAccept: (String) -> Unit,
+    onRemoveAlly: (String) -> Unit,
+    onUnblock: (String) -> Unit,
     onRequest: (String) -> Unit,
     onClaim: (String) -> Unit,
     onSkipClaim: () -> Unit,
@@ -862,7 +901,11 @@ private fun SignedInPanels(
         onOpenLifter = onOpenLifter,
         onAccept = onAccept,
         onRequest = onRequest,
+        onRemoveAlly = onRemoveAlly,
     )
+
+    SectionHeader("Blocked")
+    BlockedPanel(blocked = ui.blocked, onUnblock = onUnblock)
 
     Spacer(Modifier.height(14.dp))
     IronvellumButton(
@@ -1055,8 +1098,10 @@ private fun FriendsPanel(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onAccept: (String) -> Unit,
     onRequest: (String) -> Unit,
+    onRemoveAlly: (String) -> Unit,
 ) {
     var friendName by remember { mutableStateOf("") }
+    var confirmRemove by remember { mutableStateOf<FriendRow?>(null) }
 
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
         val incoming = ui.friends.filter { it.incoming && !it.accepted }
@@ -1118,6 +1163,7 @@ private fun FriendsPanel(
                 titleId = friend.currentTitleId,
                 size = IdentitySize.Compact,
                 onClick = { onOpenLifter(friend.userId, friend.displayName) },
+                trailing = { RowAction("REMOVE", IronvellumColors.InkMuted) { confirmRemove = friend } },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
@@ -1162,6 +1208,60 @@ private fun FriendsPanel(
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
         )
+    }
+
+    confirmRemove?.let { friend ->
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = { confirmRemove = null },
+            title = { Text("Remove ${friend.displayName} as an ally?") },
+            text = { Text("Their allies-only workouts leave your feed. Either of you can send a new request later.") },
+            confirmButton = {
+                IronvellumButton(label = "Remove", onClick = {
+                    confirmRemove = null
+                    onRemoveAlly(friend.userId)
+                })
+            },
+            dismissButton = {
+                IronvellumButton(label = "Keep", onClick = { confirmRemove = null }, quiet = true)
+            },
+        )
+    }
+}
+
+/**
+ * Lifters this account blocked, with the way back. The name comes from the
+ * block row itself: a blocked profile is unreadable, so it cannot be looked up.
+ */
+@Composable
+private fun BlockedPanel(blocked: List<BlockedLifter>, onUnblock: (String) -> Unit) {
+    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
+        if (blocked.isEmpty()) {
+            Text(
+                "Nobody blocked. Block a lifter from their page.",
+                style = MaterialTheme.typography.labelSmall,
+                color = IronvellumColors.InkMuted,
+            )
+        }
+        blocked.forEach { lifter ->
+            Row(
+                Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Text(
+                    lifter.displayName.ifBlank { "Hidden lifter" },
+                    style = MaterialTheme.typography.titleSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                IronvellumButton(label = "Unblock", onClick = { onUnblock(lifter.userId) }, quiet = true)
+            }
+        }
     }
 }
 

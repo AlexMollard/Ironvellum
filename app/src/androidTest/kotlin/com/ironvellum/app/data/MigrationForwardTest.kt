@@ -416,4 +416,83 @@ class MigrationForwardTest {
         }
         db.close()
     }
+
+    /**
+     * Schema 29 -> 30 adds the per-workout cloud audience to `sessions`.
+     *
+     * Two real workouts (one app-logged, one CSV-imported) with their sets are
+     * written at 29. Both must come through with every field they had and gain
+     * only `audience = 'profile'` — what every workout meant before the column
+     * existed, so nobody's sharing changes on upgrade. A migration that
+     * recreated `sessions` would still validate against the exported schema;
+     * the counts and sums are what catch it.
+     */
+    @Test
+    fun upgradeTo30AddsTheAudienceWithoutLosingTheTraining() = runTest {
+        helper.createDatabase(dbName, 29).use { old ->
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, " +
+                    "xpAwarded, strengthScore, title, note, privateNote, imported) " +
+                    "VALUES (91, NULL, 'Heavy Pull', 1700000000000, 1700003600000, 240, 512, 'Top set', '', 'sore left elbow', 0)",
+            )
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, " +
+                    "xpAwarded, strengthScore, title, note, privateNote, imported) " +
+                    "VALUES (92, NULL, 'Legs', 1690000000000, 1690003600000, 150, 300, '', '', '', 1)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade) " +
+                    "VALUES (5001, 91, 7, 0, 1, 6, 42.5, '', 1, NULL, NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade) " +
+                    "VALUES (5002, 91, 7, 0, 2, 5, 45.0, '', 1, NULL, NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade) " +
+                    "VALUES (5003, 92, 9, 0, 1, 8, 60.0, '', 1, NULL, NULL, NULL)",
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            dbName,
+            IronvellumDatabase.VERSION,
+            true,
+            *IronvellumDatabase.MIGRATIONS,
+        )
+
+        db.query(
+            "SELECT label, xpAwarded, strengthScore, title, privateNote, imported, audience " +
+                "FROM sessions WHERE id = 91",
+        ).use { c ->
+            assertTrue("the logged workout must survive the upgrade", c.moveToFirst())
+            assertEquals("Heavy Pull", c.getString(0))
+            assertEquals(240L, c.getLong(1))
+            assertEquals(512L, c.getLong(2))
+            assertEquals("Top set", c.getString(3))
+            assertEquals("sore left elbow", c.getString(4))
+            assertEquals(0, c.getInt(5))
+            assertEquals("profile", c.getString(6))
+        }
+        db.query("SELECT COUNT(*), SUM(xpAwarded), SUM(imported) FROM sessions").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("both workouts must survive", 2, c.getInt(0))
+            assertEquals(390, c.getInt(1))
+            assertEquals("the imported flag must survive", 1, c.getInt(2))
+        }
+        db.query("SELECT COUNT(*) FROM sessions WHERE audience = 'profile'").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("every existing workout keeps following the profile", 2, c.getInt(0))
+        }
+        db.query("SELECT COUNT(*), SUM(reps), MAX(weightKg) FROM set_logs").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("all three logged sets must survive", 3, c.getInt(0))
+            assertEquals(19, c.getInt(1))
+            assertEquals(60.0, c.getDouble(2), 0.001)
+        }
+        db.close()
+    }
 }

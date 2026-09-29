@@ -48,4 +48,14 @@ object WireLimits {
      * about it. Guarded by WireNamesMatchSchemaTest like the field limits.
      */
     const val ARCHIVE_MAX_BYTES = 8_388_608
+
+    /**
+     * `session_comments.body`: 1..280 after trim. The client trims and refuses
+     * blank or longer text itself, so the lifter reads why instead of an
+     * opaque 23514 from the check.
+     */
+    const val COMMENT_MAX = 280
+
+    /** `reports.note`: `char_length(note) <= 280`. */
+    const val REPORT_NOTE_MAX = 280
 }

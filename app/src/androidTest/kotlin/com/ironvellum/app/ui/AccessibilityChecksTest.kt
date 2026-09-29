@@ -398,6 +398,7 @@ class AccessibilityChecksTest {
         val TAB_ROWS = listOf(
             "Codex" to listOf("DEEDS", "SKILL TREE", "JOURNAL"),
             "Stats" to listOf("BODY", "TRAINING", "DAILY"),
+            "Allies" to listOf("FEED", "INBOX", "BOARD", "ALLIES"),
         )
         const val FRAME_BUDGET_MS = 1_200L
         const val MIN_TARGET_DP = 48f

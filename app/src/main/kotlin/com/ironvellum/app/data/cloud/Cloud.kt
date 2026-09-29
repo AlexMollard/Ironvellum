@@ -24,7 +24,7 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 
 /** The schema literal the newest migration writes into [Cloud.NEEDED_SCHEMA_VERSION]. */
-const val NEEDED_SCHEMA_VERSION = 17
+const val NEEDED_SCHEMA_VERSION = 18
 
 /**
  * The backend the app currently talks to. [isDefault] distinguishes the
@@ -260,6 +260,11 @@ object Cloud {
             "23505" -> "That name is already taken by another lifter"
             "42501" -> "The cloud refused this — you are not allowed to change that record"
             "23514" -> "The cloud rejected this value as out of range"
+            // raise exception in our own triggers (rate limits, blocked
+            // requests): the message is written for the lifter in the
+            // migration, so it is shown as is — "try again" would send them
+            // straight back into the same limit.
+            "P0001" -> error.error.ifBlank { "The cloud refused this request — try again" }
             // Written for the board's migration 0008, but these codes
             // mean "that table, column or function is not there" for ANY
             // feature — it named the wrong one the moment cloud_archives

@@ -71,6 +71,12 @@ data class SessionEntity(
      * feed push — it still reaches the cloud inside the full-archive backup.
      */
     val imported: Boolean = false,
+    /**
+     * SessionAudience.wire: 'profile', 'friends' or 'private'. Existing rows
+     * get 'profile' from MIGRATION_29_30 — the behaviour every workout had
+     * before the column existed.
+     */
+    val audience: String = "profile",
 )
 
 @Entity(

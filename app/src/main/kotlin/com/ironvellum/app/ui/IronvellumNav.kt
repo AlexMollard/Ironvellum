@@ -62,6 +62,10 @@ import com.ironvellum.app.ui.settings.SettingsScreen
 import com.ironvellum.app.ui.settings.SupportScreen
 import com.ironvellum.app.ui.social.SocialScreen
 import com.ironvellum.app.ui.social.LifterScreen
+import com.ironvellum.app.ui.social.CommentsScreen
+import com.ironvellum.app.ui.theme.InkCircleShape
+import androidx.compose.foundation.layout.size
+import kotlinx.coroutines.flow.first
 import com.ironvellum.app.ui.train.WorkoutLogScreen
 import com.ironvellum.app.ui.train.WorkoutDetailScreen
 import com.ironvellum.app.domain.MeasurementSite
@@ -96,6 +100,7 @@ object Routes {
     const val MUSCLE_COVERAGE = "muscle_coverage"
     const val WORKOUT_DETAIL = "workout/{sessionId}"
     const val LIFTER = "hunter/{userId}?name={name}"
+    const val COMMENTS = "comments/{sessionId}?owner={ownerId}&headline={headline}"
     const val MEASUREMENT = "measurement/{site}"
     const val PRESET_EDITOR = "preset_editor?presetId={presetId}"
     const val SESSION = "session/{sessionId}"
@@ -120,6 +125,10 @@ object Routes {
 
     fun lifter(userId: String, name: String): String =
         "hunter/${Uri.encode(userId)}?name=${Uri.encode(name)}"
+
+    /** Same encoding rule as [lifter]: a workout title can hold '&', '?' and spaces. */
+    fun comments(sessionId: String, ownerId: String, headline: String): String =
+        "comments/${Uri.encode(sessionId)}?owner=${Uri.encode(ownerId)}&headline=${Uri.encode(headline)}"
 }
 
 private data class BottomDestination(val route: String, val label: String, val icon: ImageVector)
@@ -143,6 +152,9 @@ fun IronvellumRoot() {
                     } },
     )
     val needsSetup by onboardingViewModel.needsSetup.collectAsStateWithLifecycle()
+    // Drives the dot on the Allies slot; CloudSync keeps it at 0 when signed out.
+    val ironvellumApp = appContext.applicationContext as com.ironvellum.app.IronvellumApp
+    val inboxUnread by ironvellumApp.cloudSync.inboxUnread.collectAsStateWithLifecycle()
 
     val destinations = listOf(
         BottomDestination(Routes.DASHBOARD, "Today", Icons.Outlined.Home),
@@ -180,6 +192,13 @@ fun IronvellumRoot() {
             lifecycle.withStarted {
                 if (navController.currentDestination?.route != Routes.SESSION) navController.navigate(Routes.session(id))
             }
+        }
+        // One inbox read per launch once an account is live, so the Allies dot
+        // is right before the tab is ever opened. The app restores the account
+        // asynchronously, so wait for it rather than reading it once.
+        androidx.compose.runtime.LaunchedEffect(Unit) {
+            ironvellumApp.accountRepository.account.first { it != null }
+            ironvellumApp.cloudSync.inbox()
         }
         Scaffold(
             containerColor = Color.Transparent,
@@ -266,11 +285,31 @@ fun IronvellumRoot() {
                                     .padding(vertical = 8.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
-                                Icon(
-                                    destination.icon,
-                                    contentDescription = destination.label,
-                                    tint = if (selected) IronvellumColors.Emerald else IronvellumColors.InkMuted,
-                                )
+                                // The dot is the whole signal, so the slot's
+                                // description carries the count for a screen
+                                // reader; with nothing unread it stays plain
+                                // "Allies", which is how tests find the tab.
+                                val unreadHere = destination.route == Routes.SOCIAL && inboxUnread > 0
+                                Box {
+                                    Icon(
+                                        destination.icon,
+                                        contentDescription = if (unreadHere) {
+                                            "${destination.label}, $inboxUnread unread"
+                                        } else {
+                                            destination.label
+                                        },
+                                        tint = if (selected) IronvellumColors.Emerald else IronvellumColors.InkMuted,
+                                    )
+                                    if (unreadHere) {
+                                        Box(
+                                            Modifier
+                                                .align(Alignment.TopEnd)
+                                                .size(8.dp)
+                                                .clip(InkCircleShape(7))
+                                                .background(IronvellumColors.SovereignGold),
+                                        )
+                                    }
+                                }
                                 Text(
                                     destination.label,
                                     style = MaterialTheme.typography.labelMedium,
@@ -422,6 +461,9 @@ fun IronvellumRoot() {
                         onOpenLifter = { userId, name ->
                             navController.navigate(Routes.lifter(userId, name))
                         },
+                        onOpenComments = { sessionId, ownerId, headline ->
+                            navController.navigate(Routes.comments(sessionId, ownerId, headline))
+                        },
                     )
                 }
                 composable(Routes.WORKOUT_LOG) {
@@ -450,6 +492,22 @@ fun IronvellumRoot() {
                         userId = entry.arguments?.getString("userId").orEmpty(),
                         displayName = entry.arguments?.getString("name").orEmpty(),
                         onBack = { navController.popBackStack() },
+                    )
+                }
+                composable(
+                    Routes.COMMENTS,
+                    arguments = listOf(
+                        navArgument("sessionId") { type = NavType.StringType },
+                        navArgument("ownerId") { type = NavType.StringType; defaultValue = "" },
+                        navArgument("headline") { type = NavType.StringType; defaultValue = "" },
+                    ),
+                ) { entry ->
+                    CommentsScreen(
+                        sessionId = entry.arguments?.getString("sessionId").orEmpty(),
+                        ownerId = entry.arguments?.getString("ownerId").orEmpty(),
+                        headline = entry.arguments?.getString("headline").orEmpty(),
+                        onBack = { navController.popBackStack() },
+                        onOpenLifter = { userId, name -> navController.navigate(Routes.lifter(userId, name)) },
                     )
                 }
             }

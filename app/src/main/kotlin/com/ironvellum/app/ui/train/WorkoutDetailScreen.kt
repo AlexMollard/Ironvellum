@@ -49,8 +49,12 @@ import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.EnergyConfidence
 import com.ironvellum.app.domain.EnergyEstimate
 import com.ironvellum.app.domain.WorkoutSession
+import androidx.lifecycle.ViewModelProvider
+import com.ironvellum.app.data.cloud.CloudSyncWorker
+import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.ShareCardDialog
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
@@ -68,6 +72,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class WorkoutDetailUi(
     val session: WorkoutSession? = null,
@@ -80,7 +85,11 @@ data class WorkoutDetailUi(
     val exercises: Map<Long, Exercise> = emptyMap(),
 )
 
-class WorkoutDetailViewModel(repo: Repository, private val sessionId: Long) : ViewModel() {
+class WorkoutDetailViewModel(
+    private val repo: Repository,
+    private val sessionId: Long,
+    private val appContext: android.content.Context,
+) : ViewModel() {
     // The log source of truth is the history stream: a session absent from it
     // is genuinely not viewable, so the screen renders "not found" honestly.
     val ui: StateFlow<WorkoutDetailUi> = combine(
@@ -104,6 +113,19 @@ class WorkoutDetailViewModel(repo: Repository, private val sessionId: Long) : Vi
             exercises = byId,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutDetailUi())
+
+    /**
+     * Written locally, then pushed at once: a lifter who hides a workout
+     * expects it gone from allies' feeds now, not after the daily sync. The
+     * history stream re-emits with the new value, so the picker settles from
+     * the database rather than from a local guess.
+     */
+    fun setAudience(audience: SessionAudience) {
+        viewModelScope.launch {
+            repo.setSessionAudience(sessionId, audience)
+            CloudSyncWorker.pushNow(appContext)
+        }
+    }
 }
 
 /**
@@ -116,7 +138,13 @@ fun WorkoutDetailScreen(
     onBack: () -> Unit,
     viewModel: WorkoutDetailViewModel = viewModel(
         factory = viewModelFactory {
-            initializer { WorkoutDetailViewModel(ironvellumRepository(), sessionId) }
+            initializer {
+                WorkoutDetailViewModel(
+                    ironvellumRepository(),
+                    sessionId,
+                    this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY]!!.applicationContext,
+                )
+            }
         },
     ),
 ) {
@@ -202,6 +230,7 @@ fun WorkoutDetailScreen(
                 // number without its basis asks for blind trust.
                 var showBasis by remember { mutableStateOf(false) }
                 DetailHeader(session, ui.energy, showBasis) { showBasis = !showBasis }
+                AudiencePicker(session.audience, viewModel::setAudience)
                 if (session.note.isNotBlank()) {
                     SectionHeader("FIELD NOTE · SHARED")
                     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
@@ -248,6 +277,36 @@ fun WorkoutDetailScreen(
     shareText?.let { text ->
         ShareCardDialog(text = text, onDismiss = { shareText = null })
     }
+}
+
+/**
+ * Who may see this one workout in the cloud. The stricter of this and the
+ * profile visibility wins, so PROFILE is "whatever my profile says".
+ * "PROFILE", not "PROFILE SETTING": a third of a 360dp row clipped the longer
+ * label mid-word, and the line below names the setting it follows.
+ */
+@Composable
+private fun AudiencePicker(audience: SessionAudience, onPick: (SessionAudience) -> Unit) {
+    SectionHeader("Who sees this workout")
+    InkSegmented(
+        options = listOf(
+            SessionAudience.PROFILE to "PROFILE",
+            SessionAudience.FRIENDS to "ALLIES",
+            SessionAudience.PRIVATE to "ONLY ME",
+        ),
+        selected = audience,
+        onPick = onPick,
+    )
+    Spacer(Modifier.height(6.dp))
+    Text(
+        when (audience) {
+            SessionAudience.PROFILE -> "Follows your profile visibility on the ALLIES tab."
+            SessionAudience.FRIENDS -> "Only allies see it, even on a public profile."
+            SessionAudience.PRIVATE -> "Only you see it."
+        },
+        style = MaterialTheme.typography.labelSmall,
+        color = IronvellumColors.InkMuted,
+    )
 }
 
 @Composable

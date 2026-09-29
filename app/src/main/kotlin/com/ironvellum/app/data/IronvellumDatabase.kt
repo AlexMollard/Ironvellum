@@ -73,7 +73,18 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 29
+        const val VERSION = 30
+
+        /**
+         * Per-workout cloud audience. 'profile' (follow the profile's
+         * visibility) is what every existing workout already meant, so the
+         * default changes nobody's sharing on upgrade.
+         */
+        private val MIGRATION_29_30 = object : Migration(29, 30) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sessions ADD COLUMN audience TEXT NOT NULL DEFAULT 'profile'")
+            }
+        }
 
         /**
          * Marks sessions merged in from a Strong/Hevy CSV import. Existing
@@ -409,6 +420,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_26_27,
             MIGRATION_27_28,
             MIGRATION_28_29,
+            MIGRATION_29_30,
         )
 
         const val NAME = "ironvellum.db"

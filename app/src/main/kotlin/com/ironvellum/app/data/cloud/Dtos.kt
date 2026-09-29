@@ -4,8 +4,11 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
+import java.time.Instant
 
 /*
  * Wire types for the Supabase REST API. Every @SerialName must match the
@@ -73,6 +76,8 @@ data class SessionDto(
     // device-only private note has no column and is never sent.
     @SerialName("title") val title: String = "",
     @SerialName("note") val note: String = "",
+    // SessionAudience.wire. The server check is the same three values.
+    @SerialName("audience") val audience: String = "profile",
 )
 
 @Serializable
@@ -194,6 +199,11 @@ data class FeedEntry(
     val movementCount: Int,
     /** Session duration in seconds; null when a timestamp is missing. */
     val durationSec: Int?,
+    val commentCount: Int = 0,
+    /** Reaction kind -> count; kinds this build does not know are left out. [likeCount] is the total. */
+    val reactions: Map<Reaction, Int> = emptyMap(),
+    /** The caller's own reaction; null when none (or one this build does not know). */
+    val myReaction: Reaction? = null,
 )
 
 @Serializable
@@ -225,7 +235,51 @@ data class FeedEntryDto(
     @SerialName("distance_m") val distanceM: Double? = null,
     @SerialName("hardest_grade") val hardestGrade: String? = null,
     @SerialName("movement_count") val movementCount: Int = 0,
-)
+    // 0018 columns, all defaulted so a view from before 1.4 still decodes.
+    @SerialName("comment_count") val commentCount: Int = 0,
+    // jsonb kind -> count. Kept as a raw object and filtered in
+    // reactionCounts(): a typed Map<Reaction, Int> would throw on the first
+    // kind a newer server adds and blank the whole feed page.
+    @SerialName("reactions") val reactions: JsonObject? = null,
+    @SerialName("my_reaction") val myReaction: String? = null,
+) {
+    /** Known kinds with a positive count; anything else is skipped, never thrown. */
+    internal fun reactionCounts(): Map<Reaction, Int> = buildMap {
+        reactions?.forEach { (kind, count) ->
+            val reaction = Reaction.fromWire(kind) ?: return@forEach
+            val n = (count as? JsonPrimitive)?.intOrNull ?: return@forEach
+            if (n > 0) put(reaction, n)
+        }
+    }
+
+    internal fun toFeedEntry() = FeedEntry(
+        sessionId = sessionId,
+        userId = userId,
+        displayName = displayName,
+        level = level,
+        title = title,
+        note = note,
+        label = label,
+        completedAtMs = completedAt?.let { Instant.parse(it).toEpochMilli() },
+        xpAwarded = xpAwarded,
+        strengthScore = strengthScore,
+        setsDone = setsDone,
+        repsDone = repsDone.toInt(),
+        heldSeconds = heldSeconds.toInt(),
+        currentTitleId = currentTitleId,
+        likeCount = likeCount,
+        likedByMe = likedByMe,
+        topMovements = topMovements,
+        bestSet = bestSet,
+        distanceM = distanceM,
+        hardestGrade = hardestGrade,
+        movementCount = movementCount,
+        durationSec = durationSec,
+        commentCount = commentCount,
+        reactions = reactionCounts(),
+        myReaction = Reaction.fromWire(myReaction),
+    )
+}
 
 @Serializable
 data class SetCountRow(
@@ -254,17 +308,20 @@ data class FriendRow(
     val currentTitleId: String? = null,
 )
 
-/** One lifter who liked a session, newest like first. */
+/** One lifter who reacted to a session, newest first. */
 data class Liker(
     val userId: String,
     val displayName: String,
     val likedAtMs: Long,
+    /** Null for a kind this build does not know. */
+    val reaction: Reaction? = null,
 )
 
 @Serializable
 data class SessionLikeDto(
     @SerialName("session_id") val sessionId: String,
     @SerialName("user_id") val userId: String,
+    @SerialName("kind") val kind: String,
 )
 
 /** Decode-only shape for the profiles embed on session_likes. */
@@ -272,12 +329,217 @@ data class SessionLikeDto(
 data class LikerRowDto(
     @SerialName("user_id") val userId: String,
     @SerialName("created_at") val createdAt: String,
+    @SerialName("kind") val kind: String? = null,
     @SerialName("profiles") val profile: LikerProfileDto? = null,
 )
 
 @Serializable
 data class LikerProfileDto(
     @SerialName("display_name") val displayName: String,
+)
+
+/** `session_likes.kind`. One reaction per lifter per workout; [wire] is the column value. */
+enum class Reaction(val wire: String) {
+    SALUTE("salute"),
+    IRON("iron"),
+    FLAME("flame"),
+    ;
+
+    companion object {
+        // Null, never a throw: a kind added by a later server must not crash
+        // (or blank the feed of) a lifter still on this build.
+        fun fromWire(value: String?): Reaction? = entries.firstOrNull { it.wire == value }
+    }
+}
+
+/** `reports.reason`. */
+enum class ReportReason(val wire: String) {
+    SPAM("spam"),
+    ABUSE("abuse"),
+    CHEATING("cheating"),
+    OTHER("other"),
+}
+
+/** One comment on a workout, as the thread shows it. */
+data class Comment(
+    val id: String,
+    val sessionId: String,
+    val userId: String,
+    val authorName: String,
+    val body: String,
+    val createdAtMs: Long,
+)
+
+/** A `session_comments` row as read back; author_name and created_at are set by trigger. */
+@Serializable
+data class CommentDto(
+    @SerialName("id") val id: String,
+    @SerialName("session_id") val sessionId: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("author_name") val authorName: String = "",
+    @SerialName("body") val body: String,
+    @SerialName("created_at") val createdAt: String,
+) {
+    internal fun toComment() = Comment(
+        id = id,
+        sessionId = sessionId,
+        userId = userId,
+        authorName = authorName.ifBlank { "Hidden lifter" },
+        body = body,
+        createdAtMs = Instant.parse(createdAt).toEpochMilli(),
+    )
+}
+
+/** Insert shape: only what the client may state; the trigger fills the rest. */
+@Serializable
+data class CommentInsertDto(
+    @SerialName("session_id") val sessionId: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("body") val body: String,
+)
+
+/** Read-back of a comment delete: the ids that were actually removed. */
+@Serializable
+data class CommentIdDto(
+    @SerialName("id") val id: String,
+)
+
+sealed interface InboxItem {
+    val occurredAtMs: Long
+    val actorId: String
+    val actorName: String
+
+    data class FriendRequest(
+        override val occurredAtMs: Long,
+        override val actorId: String,
+        override val actorName: String,
+    ) : InboxItem
+
+    data class RequestAccepted(
+        override val occurredAtMs: Long,
+        override val actorId: String,
+        override val actorName: String,
+    ) : InboxItem
+
+    data class NewComment(
+        override val occurredAtMs: Long,
+        override val actorId: String,
+        override val actorName: String,
+        val sessionId: String,
+        val sessionHeadline: String,
+        val commentId: String,
+        val body: String,
+    ) : InboxItem
+
+    data class NewReaction(
+        override val occurredAtMs: Long,
+        override val actorId: String,
+        override val actorName: String,
+        val sessionId: String,
+        val sessionHeadline: String,
+        val reaction: Reaction,
+    ) : InboxItem
+}
+
+data class Inbox(val items: List<InboxItem>, val seenAtMs: Long?) {
+    val unread: Int get() = items.count { seenAtMs == null || it.occurredAtMs > seenAtMs }
+}
+
+/** One row returned by `my_inbox()`. */
+@Serializable
+data class InboxRowDto(
+    @SerialName("kind") val kind: String,
+    @SerialName("occurred_at") val occurredAt: String,
+    @SerialName("actor_id") val actorId: String,
+    @SerialName("actor_name") val actorName: String? = null,
+    @SerialName("session_id") val sessionId: String? = null,
+    @SerialName("session_headline") val sessionHeadline: String? = null,
+    @SerialName("comment_id") val commentId: String? = null,
+    @SerialName("body") val body: String? = null,
+    @SerialName("reaction") val reaction: String? = null,
+) {
+    /**
+     * Null for a row this build cannot show: an unknown kind or reaction
+     * from a newer server, or a comment/reaction missing its workout. One
+     * such row is dropped; it must not fail the whole inbox.
+     */
+    internal fun toInboxItem(): InboxItem? {
+        val at = Instant.parse(occurredAt).toEpochMilli()
+        val name = actorName?.takeIf { it.isNotBlank() } ?: "Hidden lifter"
+        return when (kind) {
+            "request" -> InboxItem.FriendRequest(at, actorId, name)
+            "accepted" -> InboxItem.RequestAccepted(at, actorId, name)
+            "comment" -> InboxItem.NewComment(
+                occurredAtMs = at,
+                actorId = actorId,
+                actorName = name,
+                sessionId = sessionId ?: return null,
+                sessionHeadline = sessionHeadline.orEmpty(),
+                commentId = commentId ?: return null,
+                body = body.orEmpty(),
+            )
+            "reaction" -> InboxItem.NewReaction(
+                occurredAtMs = at,
+                actorId = actorId,
+                actorName = name,
+                sessionId = sessionId ?: return null,
+                sessionHeadline = sessionHeadline.orEmpty(),
+                reaction = Reaction.fromWire(reaction) ?: return null,
+            )
+            else -> null
+        }
+    }
+}
+
+/** `inbox_seen`: when the lifter last opened the inbox (server time). */
+@Serializable
+data class InboxSeenDto(
+    @SerialName("user_id") val userId: String? = null,
+    @SerialName("seen_at") val seenAt: String,
+)
+
+data class BlockedLifter(val userId: String, val displayName: String)
+
+/** A `blocks` row as the BLOCKED list reads it. blocked_name is filled by trigger: a blocked profile becomes unreadable. */
+@Serializable
+data class BlockDto(
+    @SerialName("blocked_id") val blockedId: String,
+    @SerialName("blocked_name") val blockedName: String? = null,
+)
+
+/** A `mutes` row as read back; same shape as [BlockDto]. */
+@Serializable
+data class MuteDto(
+    @SerialName("muted_id") val mutedId: String,
+    @SerialName("muted_name") val mutedName: String? = null,
+)
+
+/*
+ * Insert shapes: identity only. A read shape's null name default, sent by an
+ * encoder that writes defaults, would land on the trigger-filled `not null`
+ * name column.
+ */
+@Serializable
+data class BlockInsertDto(
+    @SerialName("blocker_id") val blockerId: String,
+    @SerialName("blocked_id") val blockedId: String,
+)
+
+@Serializable
+data class MuteInsertDto(
+    @SerialName("muter_id") val muterId: String,
+    @SerialName("muted_id") val mutedId: String,
+)
+
+/** Insert-only: no client can read `reports` back. */
+@Serializable
+data class ReportDto(
+    @SerialName("reporter_id") val reporterId: String,
+    @SerialName("target_user_id") val targetUserId: String,
+    @SerialName("session_id") val sessionId: String? = null,
+    @SerialName("comment_id") val commentId: String? = null,
+    @SerialName("reason") val reason: String,
+    @SerialName("note") val note: String,
 )
 
 data class FriendSession(
@@ -339,6 +601,8 @@ data class FindHunterArgs(
 /** RPC names, declared once so the guard test and the call sites cannot drift. */
 const val RPC_PUSH_AGGREGATES = "push_aggregates"
 const val RPC_FIND_HUNTER = "find_hunter"
+const val RPC_MY_INBOX = "my_inbox"
+const val RPC_MARK_INBOX_SEEN = "mark_inbox_seen"
 
 /**
  * Encodes a typed RPC argument shape into the JsonObject the pinned

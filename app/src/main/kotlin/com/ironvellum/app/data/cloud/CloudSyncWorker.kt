@@ -39,6 +39,11 @@ class CloudSyncWorker(context: Context, params: WorkerParameters) :
                     if (outcome.problems.isNotEmpty()) {
                         Log.w(TAG, "Cloud push finished with problems: ${outcome.problems.joinToString("; ")}")
                     }
+                    // Keeps the Allies dot honest for a lifter who has not
+                    // opened the app: without this the unread count only moved
+                    // when the inbox screen itself was visited. Best effort —
+                    // a refused inbox must not turn a good push into a retry.
+                    runCatching { app.cloudSync.inbox(force = true) }
                     Result.success()
                 },
                 // transient network errors are worth one retry, then let the

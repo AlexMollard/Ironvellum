@@ -80,6 +80,9 @@ interface SessionDao {
     @Query("UPDATE sessions SET privateNote = :privateNote WHERE id = :id")
     suspend fun setPrivateNote(id: Long, privateNote: String)
 
+    @Query("UPDATE sessions SET audience = :audience WHERE id = :id")
+    suspend fun setAudience(id: Long, audience: String)
+
     @Query("SELECT * FROM sessions WHERE id = :id")
     suspend fun byId(id: Long): SessionEntity?
 

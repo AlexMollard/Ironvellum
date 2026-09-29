@@ -134,6 +134,8 @@ object ExportReader {
         // Absent in archives written before the CSV import existed, and absent
         // from every app-logged session's row: default false, never fail.
         imported = o.bool("imported") ?: false,
+        // Absent from archives before 1.4 and for every PROFILE workout.
+        audience = SessionAudience.fromWire(o.str("audience")),
     ) to (o.arr("sets") ?: emptyList()).map { s ->
         val set = s as Obj
         SessionSet(

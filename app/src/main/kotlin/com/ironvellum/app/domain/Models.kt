@@ -89,7 +89,30 @@ data class WorkoutSession(
     val privateNote: String = "",
     /** Merged in from a Strong/Hevy CSV import; excluded from the feed push. */
     val imported: Boolean = false,
+    /** Who may see this workout in the cloud; the stricter of this and the profile visibility wins. */
+    val audience: SessionAudience = SessionAudience.PROFILE,
 )
+
+/**
+ * Per-workout cloud audience. [wire] is the `sessions.audience` value in both
+ * Room and Supabase (check in 'profile','friends','private').
+ */
+enum class SessionAudience(val wire: String) {
+    PROFILE("profile"),
+    FRIENDS("friends"),
+    PRIVATE("private"),
+    ;
+
+    companion object {
+        // Never a throw: an archive or row written by a newer build must still
+        // load. Missing means PROFILE, which is what every workout meant before
+        // the column existed. An UNKNOWN value fails closed to PRIVATE: a newer
+        // build's stricter audience read as PROFILE would be re-pushed wider
+        // than the lifter chose.
+        fun fromWire(value: String?): SessionAudience =
+            if (value == null) PROFILE else entries.firstOrNull { it.wire == value } ?: PRIVATE
+    }
+}
 
 data class StatEntry(
     val id: Long = 0,

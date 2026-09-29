@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -26,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -40,8 +43,10 @@ import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.FriendRow
 import com.ironvellum.app.data.cloud.FriendSession
+import com.ironvellum.app.data.cloud.ReportReason
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.formatDate
@@ -77,6 +82,15 @@ internal data class LifterUi(
     val wornTitle: String? = null,
     /** The raw title id behind [wornTitle]; feeds the avatar crest's rarity palette. */
     val wornTitleId: String? = null,
+    /** Null while unknown: the mute button stays hidden rather than guessing. */
+    val muted: Boolean? = null,
+    /** One lifter action (remove, mute, block, report) in flight at a time. */
+    val actionBusy: Boolean = false,
+    /** A refused action, verbatim — rate limits read as the server wrote them. */
+    val actionError: String? = null,
+    val notice: String? = null,
+    /** A block landed: neither side can see the other any more, so the screen leaves. */
+    val blocked: Boolean = false,
 )
 
 internal class LifterViewModel(
@@ -146,6 +160,9 @@ internal class LifterViewModel(
                 wornTitleId = titleId,
             )
         }
+        // Unknown on failure: a guessed "not muted" would offer MUTE to someone
+        // already muted, and the second insert reads as a broken button.
+        cloud.mutedIds().onSuccess { ids -> _ui.value = _ui.value.copy(muted = userId in ids) }
     }
 
     /** Send the ally request; the button settles from server truth once it lands. */
@@ -178,6 +195,39 @@ internal class LifterViewModel(
                 }
         }
     }
+
+    fun removeAlly(userId: String) = act {
+        cloud.removeFriend(userId).onSuccess {
+            _ui.value = _ui.value.copy(allyState = AllyState.None, notice = "No longer allies.")
+        }
+    }
+
+    fun setMuted(userId: String, mute: Boolean) = act {
+        (if (mute) cloud.mute(userId) else cloud.unmute(userId)).onSuccess {
+            _ui.value = _ui.value.copy(muted = mute, notice = if (mute) "Muted." else "Unmuted.")
+        }
+    }
+
+    fun block(userId: String) = act {
+        cloud.block(userId).onSuccess { _ui.value = _ui.value.copy(blocked = true) }
+    }
+
+    fun report(userId: String, reason: ReportReason, note: String) = act {
+        cloud.report(targetUserId = userId, reason = reason, note = note).onSuccess {
+            _ui.value = _ui.value.copy(notice = "Report sent — thanks.")
+        }
+    }
+
+    private fun act(call: suspend () -> Result<Unit>) {
+        if (_ui.value.actionBusy) return
+        _ui.value = _ui.value.copy(actionBusy = true, actionError = null, notice = null)
+        viewModelScope.launch {
+            call().onFailure {
+                _ui.value = _ui.value.copy(actionError = it.message ?: it::class.simpleName ?: "Unknown failure")
+            }
+            _ui.value = _ui.value.copy(actionBusy = false)
+        }
+    }
 }
 
 /** One lifter's shared training, reached from the feed or the leaderboard. */
@@ -194,6 +244,12 @@ internal fun LifterScreen(
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     LaunchedEffect(userId) { viewModel.load(userId) }
     val isMe = ui.myUserId == userId
+    // A block ends visibility both ways, so this record has nothing left to show.
+    LaunchedEffect(ui.blocked) { if (ui.blocked) onBack() }
+    var confirmRemove by remember { mutableStateOf(false) }
+    var confirmBlock by remember { mutableStateOf(false) }
+    var reporting by remember { mutableStateOf(false) }
+    val name = displayName.ifBlank { "this lifter" }
 
     Column(
         Modifier
@@ -462,7 +518,107 @@ internal fun LifterScreen(
             }
         }
 
+        // Last, after the record: these are rare, heavy actions, and at the top
+        // they crowded out the training the screen exists to show.
+        if (ui.myUserId != null && !isMe) {
+            SectionHeader("Manage lifter")
+            InkPanel(Modifier.fillMaxWidth()) {
+                FlowRow(
+                    Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    if (ui.allyState == AllyState.Ally) {
+                        IronvellumButton(label = "Remove ally", onClick = { confirmRemove = true }, enabled = !ui.actionBusy, quiet = true)
+                    }
+                    ui.muted?.let { muted ->
+                        IronvellumButton(
+                            label = if (muted) "Unmute" else "Mute",
+                            onClick = { viewModel.setMuted(userId, !muted) },
+                            enabled = !ui.actionBusy,
+                            quiet = true,
+                        )
+                    }
+                    IronvellumButton(label = "Block", onClick = { confirmBlock = true }, enabled = !ui.actionBusy, quiet = true)
+                    IronvellumButton(label = "Report", onClick = { reporting = true }, enabled = !ui.actionBusy, quiet = true)
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Mute hides their workouts, comments and reactions from you. They aren't told.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                )
+                ui.notice?.let {
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.EmeraldBright,
+                    )
+                }
+                ui.actionError?.let {
+                    Spacer(Modifier.height(6.dp))
+                    InlineErrorBanner(it)
+                }
+            }
+        }
+
         Spacer(Modifier.height(20.dp))
+    }
+
+    if (confirmRemove) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = { confirmRemove = false },
+            title = { Text("Remove $name as an ally?") },
+            text = { Text("Their allies-only workouts leave your feed. Either of you can send a new request later.") },
+            confirmButton = {
+                IronvellumButton(label = "Remove", onClick = {
+                    confirmRemove = false
+                    viewModel.removeAlly(userId)
+                })
+            },
+            dismissButton = {
+                IronvellumButton(label = "Keep", onClick = { confirmRemove = false }, quiet = true)
+            },
+        )
+    }
+
+    if (confirmBlock) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = { confirmBlock = false },
+            title = { Text("Block $name?") },
+            text = {
+                Text(
+                    "You and $name will no longer see each other's workouts, comments or reactions, " +
+                        "any alliance ends, and neither of you can send an ally request. Unblock any time under ALLIES.",
+                )
+            },
+            confirmButton = {
+                IronvellumButton(label = "Block", onClick = {
+                    confirmBlock = false
+                    viewModel.block(userId)
+                })
+            },
+            dismissButton = {
+                IronvellumButton(label = "Cancel", onClick = { confirmBlock = false }, quiet = true)
+            },
+        )
+    }
+
+    if (reporting) {
+        ReportDialog(
+            lifterName = displayName,
+            onDismiss = { reporting = false },
+            onSend = { reason, note ->
+                reporting = false
+                viewModel.report(userId, reason, note)
+            },
+        )
     }
 }
 

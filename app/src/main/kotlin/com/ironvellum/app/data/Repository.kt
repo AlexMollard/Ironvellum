@@ -74,6 +74,7 @@ import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.UnlockedTitle
 import com.ironvellum.app.domain.WorkoutPreset
+import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.Relics
@@ -1122,6 +1123,14 @@ class Repository(
         sessionDao.setPrivateNote(sessionId, privateNote.take(WireLimits.PRIVATE_NOTE_MAX))
     }
 
+    /**
+     * Changes the workout's row only; the push fingerprint includes the
+     * audience, so the next push re-uploads this workout with it.
+     */
+    suspend fun setSessionAudience(sessionId: Long, audience: SessionAudience) {
+        sessionDao.setAudience(sessionId, audience.wire)
+    }
+
     private fun SessionEntity.toDomain() = WorkoutSession(
         id = id,
         presetId = presetId,
@@ -1134,6 +1143,7 @@ class Repository(
         note = note,
         privateNote = privateNote,
         imported = imported,
+        audience = SessionAudience.fromWire(audience),
     )
 
     // ---------------------------------------------------------------- stats
@@ -1888,6 +1898,7 @@ class Repository(
                             note = session.note,
                             privateNote = session.privateNote.take(WireLimits.PRIVATE_NOTE_MAX),
                             imported = session.imported,
+                            audience = session.audience.wire,
                         ),
                     )
                     restoredSets += sessionDao.insertSets(

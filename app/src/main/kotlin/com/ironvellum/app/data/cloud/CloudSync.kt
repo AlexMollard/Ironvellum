@@ -7,6 +7,7 @@ import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.domain.SessionAudience
 import io.github.jan.supabase.postgrest.exception.PostgrestRestException
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.from
@@ -19,7 +20,16 @@ import java.util.Objects
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -44,6 +54,25 @@ class CloudSync(
     // Read cache + single-flight for the social reads. See CloudReadCache.
     private val cache = CloudReadCache()
     // Push watermark lives in Room (`sync_state`), read per push below.
+
+    private val _inboxUnread = MutableStateFlow(0)
+
+    /**
+     * Unread inbox items for the Allies nav dot. Kept current by [inbox] and
+     * [markInboxSeen]; 0 when signed out or never fetched.
+     */
+    val inboxUnread: StateFlow<Int> = _inboxUnread.asStateFlow()
+
+    init {
+        // Any account change (sign-out, delete, switch, backend swap) zeroes
+        // the count: the next lifter on this phone must not see the previous
+        // one's dot. CloudSync lives as long as the app, so does this scope.
+        CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
+            account.account.map { it?.userId }.distinctUntilChanged().collect {
+                _inboxUnread.value = 0
+            }
+        }
+    }
 
     /**
      * Forgets the push watermark so the next [push] re-uploads everything.
@@ -144,6 +173,7 @@ class CloudSync(
                     strengthScore = session.strengthScore,
                     title = session.title,
                     note = session.note,
+                    audience = session.audience.wire,
                 )
             }
             if (sessionDtos.isNotEmpty()) {
@@ -619,8 +649,8 @@ class CloudSync(
      * TTL 20s on the FIRST page only: the feed is browsed by scrolling back
      * and forth, and a screen re-entry or tab switch within 20s should not
      * re-download 50 rows. Older pages are not cached — they are append-only
-     * per scroll position and each is requested once anyway. Like taps are
-     * recorded as an overlay applied to every handed-out page, so older
+     * per scroll position and each is requested once anyway. Reaction taps
+     * are recorded as an overlay applied to every handed-out page, so older
      * (paged) entries reflect the optimistic state too, not just page one.
      */
     suspend fun feed(
@@ -637,35 +667,10 @@ class CloudSync(
                 }
                 order("completed_at", Order.DESCENDING)
                 limit(limit.toLong())
-            }.decodeList<FeedEntryDto>().map { dto ->
-                FeedEntry(
-                    sessionId = dto.sessionId,
-                    userId = dto.userId,
-                    displayName = dto.displayName,
-                    level = dto.level,
-                    title = dto.title,
-                    note = dto.note,
-                    label = dto.label,
-                    completedAtMs = dto.completedAt?.let { Instant.parse(it).toEpochMilli() },
-                    xpAwarded = dto.xpAwarded,
-                    strengthScore = dto.strengthScore,
-                    setsDone = dto.setsDone,
-                    repsDone = dto.repsDone.toInt(),
-                    heldSeconds = dto.heldSeconds.toInt(),
-                    currentTitleId = dto.currentTitleId,
-                    likeCount = dto.likeCount,
-                    likedByMe = dto.likedByMe,
-                    topMovements = dto.topMovements,
-                    bestSet = dto.bestSet,
-                    distanceM = dto.distanceM,
-                    hardestGrade = dto.hardestGrade,
-                    movementCount = dto.movementCount,
-                    durationSec = dto.durationSec,
-                )
-            }.let { fresh ->
+            }.decodeList<FeedEntryDto>().map { it.toFeedEntry() }.let { fresh ->
                 // The server's own values are the truth: drop any overlay
                 // entry it already reflects before the page is cached.
-                cache.reconcileLikes(fresh)
+                cache.reconcileReactions(fresh)
                 fresh
             }
         }
@@ -680,52 +685,43 @@ class CloudSync(
                 )
             } else {
                 fetch()
-            }.let { cache.applyLikes(it) }
+            }.let { cache.applyReactions(it) }
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
     }
 
-    /** Idempotent: a double tap is a no-op, never an error. */
-    suspend fun like(sessionId: String): Result<Unit> {
+    /**
+     * Sets (or with null, removes) the caller's one reaction to a workout.
+     * Idempotent: repeating the current state is a no-op, never an error.
+     */
+    suspend fun react(sessionId: String, reaction: Reaction?): Result<Unit> {
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         return runCatching {
-            client.postgrest.from("session_likes").upsert(
-                SessionLikeDto(sessionId = sessionId, userId = me.userId),
-            ) {
-                // DO NOTHING, not merge-duplicates. session_likes deliberately
-                // has no UPDATE policy, so a like can never be re-pointed at
-                // another row - which also means an upsert that takes the
-                // conflict path is REFUSED by RLS. Re-liking a session the
-                // cached feed still shows as unliked raised "the cloud refused
-                // this" rather than doing nothing.
-                onConflict = "session_id,user_id"
-                ignoreDuplicates = true
+            if (reaction == null) {
+                client.postgrest.from("session_likes").delete {
+                    filter {
+                        eq("session_id", sessionId)
+                        eq("user_id", me.userId)
+                    }
+                }
+            } else {
+                client.postgrest.from("session_likes").upsert(
+                    SessionLikeDto(sessionId = sessionId, userId = me.userId, kind = reaction.wire),
+                ) {
+                    // Merge, not DO NOTHING: since 0018 an update policy lets
+                    // the row's owner change `kind`, and switching salute to
+                    // flame IS the conflict path. ignoreDuplicates would keep
+                    // the old kind and report success.
+                    onConflict = "session_id,user_id"
+                }
             }
             // Optimistic: record the overlay the feed applies at hand-out —
             // this also covers older paged entries, which are never cached.
-            cache.recordLike(sessionId, liked = true)
-            // The owner's "WHO CHEERED" dialog must show the fresh cheer,
-            // not a 30s-old cached list.
-            cache.invalidate("${CloudReadCache.KEY_LIKERS}:$sessionId")
-            Unit
-        }.recoverCatching { error ->
-            throw IllegalStateException(Cloud.explain(error))
-        }
-    }
-
-    suspend fun unlike(sessionId: String): Result<Unit> {
-        val me = requireAccount(account).getOrElse { return failure(it) }
-        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
-        return runCatching {
-            client.postgrest.from("session_likes").delete {
-                filter {
-                    eq("session_id", sessionId)
-                    eq("user_id", me.userId)
-                }
-            }
-            cache.recordLike(sessionId, liked = false)
+            cache.recordReaction(sessionId, reaction)
+            // The owner's reactions dialog must show the fresh one, not a
+            // 30s-old cached list.
             cache.invalidate("${CloudReadCache.KEY_LIKERS}:$sessionId")
             Unit
         }.recoverCatching { error ->
@@ -734,13 +730,13 @@ class CloudSync(
     }
 
     /**
-     * Who liked a session, newest first. One PostgREST embed
+     * Who reacted to a session, newest first. One PostgREST embed
      * (session_likes -> profiles) so the owner sees names without a second
      * round trip. An RLS refusal is a visibility answer, worded as such.
      *
-     * TTL 30s, same reasoning as [friends]: likes arrive only when someone
-     * acts, and our own like/unlike invalidates the key immediately, so a
-     * just-added cheer is visible the moment the owner opens the dialog
+     * TTL 30s, same reasoning as [friends]: reactions arrive only when
+     * someone acts, and our own [react] invalidates the key immediately, so a
+     * just-added reaction is visible the moment the owner opens the dialog
      * while repeated dialog opens inside 30s share one request.
      */
     suspend fun likers(sessionId: String): Result<List<Liker>> {
@@ -753,7 +749,7 @@ class CloudSync(
                 userId = account.account.value?.userId,
             ) {
                 client.postgrest.from("session_likes").select(
-                    Columns.raw("user_id, created_at, profiles(display_name)"),
+                    Columns.raw("user_id, kind, created_at, profiles(display_name)"),
                 ) {
                     filter { eq("session_id", sessionId) }
                     order("created_at", Order.DESCENDING)
@@ -765,15 +761,362 @@ class CloudSync(
                         userId = row.userId,
                         displayName = row.profile?.displayName ?: "Hidden lifter",
                         likedAtMs = Instant.parse(row.createdAt).toEpochMilli(),
+                        reaction = Reaction.fromWire(row.kind),
                     )
                 }
             }
         }.recoverCatching { error ->
             if (error is PostgrestRestException && error.code == "42501") {
-                throw IllegalStateException("These likes are not visible to you")
+                throw IllegalStateException("These reactions are not visible to you")
             }
             throw IllegalStateException(Cloud.explain(error))
         }
+    }
+
+    /**
+     * A workout's comments, oldest first, capped at the server's per-workout
+     * limit so the thread is always whole.
+     *
+     * TTL 15s: a thread is read while people are talking in it, so it must
+     * catch up quickly, but re-entering it inside a few seconds should not
+     * re-download it. Our own add/delete invalidate the key at once.
+     */
+    suspend fun comments(sessionId: String, force: Boolean = false): Result<List<Comment>> {
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            cache.getOrFetch(
+                key = "${CloudReadCache.KEY_COMMENTS}:$sessionId",
+                ttlMs = 15_000,
+                force = force,
+                userId = account.account.value?.userId,
+            ) {
+                client.postgrest.from("session_comments").select(
+                    Columns.raw(COMMENT_COLUMNS),
+                ) {
+                    filter { eq("session_id", sessionId) }
+                    order("created_at", Order.ASCENDING)
+                    limit(COMMENTS_PER_WORKOUT)
+                }.decodeList<CommentDto>().map { it.toComment() }
+            }
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    suspend fun addComment(sessionId: String, body: String): Result<Comment> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        val text = body.trim()
+        // Refused here so the lifter reads why; the server check would
+        // answer the same text with an opaque 23514.
+        if (text.isEmpty()) {
+            return Result.failure(IllegalStateException("Write something first"))
+        }
+        if (text.length > WireLimits.COMMENT_MAX) {
+            return Result.failure(
+                IllegalStateException("Comments are at most ${WireLimits.COMMENT_MAX} characters"),
+            )
+        }
+        return runCatching {
+            // Read back so the thread shows the server's author_name and
+            // created_at (set by trigger) rather than a local guess.
+            client.postgrest.from("session_comments").insert(
+                CommentInsertDto(sessionId = sessionId, userId = me.userId, body = text),
+            ) {
+                select(Columns.raw(COMMENT_COLUMNS))
+            }.decodeSingle<CommentDto>().toComment()
+        }.onSuccess {
+            cache.invalidate("${CloudReadCache.KEY_COMMENTS}:$sessionId")
+            // The card's comment count lives on the cached first page.
+            cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    suspend fun deleteComment(commentId: String): Result<Unit> {
+        requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            // RLS turns a delete it refuses into "0 rows", not an error, so
+            // ask for the rows back: otherwise a refused delete would report
+            // success and the comment would reappear on the next refresh.
+            val deleted = client.postgrest.from("session_comments").delete {
+                filter { eq("id", commentId) }
+                select(Columns.raw("id"))
+            }.decodeList<CommentIdDto>()
+            if (deleted.isEmpty()) {
+                throw IllegalStateException("That comment is already gone or not yours to remove")
+            }
+        }.onSuccess {
+            // The session id is not known here; threads are cheap to refetch.
+            cache.invalidatePrefix("${CloudReadCache.KEY_COMMENTS}:")
+            cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
+            cache.invalidate(CloudReadCache.KEY_INBOX)
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /**
+     * The caller's inbox: ally requests, accepted requests, and comments and
+     * reactions on their workouts, newest first. Derived on the server by
+     * my_inbox(), never stored, so it cannot grow with time.
+     *
+     * TTL 30s, like [friends]: new items only arrive when someone acts, and
+     * the daily push refreshes the unread count in the background anyway.
+     */
+    suspend fun inbox(force: Boolean = false): Result<Inbox> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            cache.getOrFetch(
+                key = CloudReadCache.KEY_INBOX,
+                ttlMs = 30_000,
+                force = force,
+                userId = me.userId,
+            ) {
+                val items = client.postgrest.rpc(RPC_MY_INBOX)
+                    .decodeList<InboxRowDto>()
+                    .mapNotNull { it.toInboxItem() }
+                val seenAt = client.postgrest.from("inbox_seen").select(Columns.raw("seen_at")) {
+                    filter { eq("user_id", me.userId) }
+                }.decodeList<InboxSeenDto>().firstOrNull()?.let { Instant.parse(it.seenAt).toEpochMilli() }
+                Inbox(items = items, seenAtMs = seenAt)
+            }
+        }.onSuccess { inbox ->
+            // A fetch that outlived its account must not light the next
+            // lifter's dot.
+            if (account.account.value?.userId == me.userId) _inboxUnread.value = inbox.unread
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    suspend fun markInboxSeen(): Result<Unit> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            // Server time, not ours: seen_at is compared with server-stamped
+            // occurred_at, and a phone clock running behind would leave items
+            // unread forever.
+            client.postgrest.rpc(RPC_MARK_INBOX_SEEN)
+            Unit
+        }.onSuccess {
+            cache.invalidate(CloudReadCache.KEY_INBOX)
+            if (account.account.value?.userId == me.userId) _inboxUnread.value = 0
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /**
+     * Ends an alliance, or withdraws/declines a pending request: the
+     * friendships row is deleted whichever side created it. Nothing to
+     * delete is success — the pair is already apart.
+     */
+    suspend fun removeFriend(userId: String): Result<Unit> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            client.postgrest.from("friendships").delete {
+                filter {
+                    or {
+                        and {
+                            eq("requester_id", me.userId)
+                            eq("addressee_id", userId)
+                        }
+                        and {
+                            eq("requester_id", userId)
+                            eq("addressee_id", me.userId)
+                        }
+                    }
+                }
+            }
+            Unit
+        }.onSuccess {
+            // Friends-only workouts of theirs leave our feed with the alliance.
+            cache.invalidate(CloudReadCache.KEY_FRIENDS)
+            cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /** TTL 30s; our own block/unblock invalidate it at once. */
+    suspend fun blocked(force: Boolean = false): Result<List<BlockedLifter>> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            cache.getOrFetch(
+                key = CloudReadCache.KEY_BLOCKED,
+                ttlMs = 30_000,
+                force = force,
+                userId = me.userId,
+            ) {
+                client.postgrest.from("blocks").select(Columns.raw("blocked_id, blocked_name")) {
+                    filter { eq("blocker_id", me.userId) }
+                    order("created_at", Order.DESCENDING)
+                }.decodeList<BlockDto>().map {
+                    BlockedLifter(
+                        userId = it.blockedId,
+                        displayName = it.blockedName?.takeIf { name -> name.isNotBlank() } ?: "Hidden lifter",
+                    )
+                }
+            }
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /** Blocking also ends any alliance (server trigger). Already blocked is success. */
+    suspend fun block(userId: String): Result<Unit> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        if (userId == me.userId) {
+            return Result.failure(IllegalStateException("You can’t block yourself"))
+        }
+        return runCatching {
+            client.postgrest.from("blocks").insert(BlockInsertDto(blockerId = me.userId, blockedId = userId))
+            Unit
+        }.recoverCatching { error ->
+            if (error !is PostgrestRestException || error.code != "23505") {
+                throw IllegalStateException(Cloud.explain(error))
+            }
+        }.onSuccess {
+            // The trigger deleted the friendship and RLS now hides their
+            // workouts, comments and inbox items: every cached answer that
+            // could still show them is stale.
+            invalidateSocialReads()
+            cache.invalidate(CloudReadCache.KEY_BLOCKED)
+        }
+    }
+
+    suspend fun unblock(userId: String): Result<Unit> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            client.postgrest.from("blocks").delete {
+                filter {
+                    eq("blocker_id", me.userId)
+                    eq("blocked_id", userId)
+                }
+            }
+            Unit
+        }.onSuccess {
+            invalidateSocialReads()
+            cache.invalidate(CloudReadCache.KEY_BLOCKED)
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /** Ids of the lifters the caller muted. TTL 30s; mute/unmute invalidate it. */
+    suspend fun mutedIds(force: Boolean = false): Result<Set<String>> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            cache.getOrFetch(
+                key = CloudReadCache.KEY_MUTED,
+                ttlMs = 30_000,
+                force = force,
+                userId = me.userId,
+            ) {
+                client.postgrest.from("mutes").select(Columns.raw("muted_id")) {
+                    filter { eq("muter_id", me.userId) }
+                }.decodeList<MuteDto>().map { it.mutedId }.toSet()
+            }
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /** The muted lifter is not told. Already muted is success. */
+    suspend fun mute(userId: String): Result<Unit> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        if (userId == me.userId) {
+            return Result.failure(IllegalStateException("You can’t mute yourself"))
+        }
+        return runCatching {
+            client.postgrest.from("mutes").insert(MuteInsertDto(muterId = me.userId, mutedId = userId))
+            Unit
+        }.recoverCatching { error ->
+            if (error !is PostgrestRestException || error.code != "23505") {
+                throw IllegalStateException(Cloud.explain(error))
+            }
+        }.onSuccess {
+            // The feed view and my_inbox() now drop them server-side.
+            invalidateSocialReads()
+            cache.invalidate(CloudReadCache.KEY_MUTED)
+        }
+    }
+
+    suspend fun unmute(userId: String): Result<Unit> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            client.postgrest.from("mutes").delete {
+                filter {
+                    eq("muter_id", me.userId)
+                    eq("muted_id", userId)
+                }
+            }
+            Unit
+        }.onSuccess {
+            invalidateSocialReads()
+            cache.invalidate(CloudReadCache.KEY_MUTED)
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /**
+     * Files a report for the owner to review in the Supabase dashboard.
+     * Write-only: no client can read reports back, so nothing is selected.
+     */
+    suspend fun report(
+        targetUserId: String,
+        reason: ReportReason,
+        note: String,
+        sessionId: String? = null,
+        commentId: String? = null,
+    ): Result<Unit> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        if (targetUserId == me.userId) {
+            return Result.failure(IllegalStateException("You can’t report yourself"))
+        }
+        val text = note.trim()
+        if (text.length > WireLimits.REPORT_NOTE_MAX) {
+            return Result.failure(
+                IllegalStateException("Keep the note to ${WireLimits.REPORT_NOTE_MAX} characters"),
+            )
+        }
+        return runCatching {
+            client.postgrest.from("reports").insert(
+                ReportDto(
+                    reporterId = me.userId,
+                    targetUserId = targetUserId,
+                    sessionId = sessionId,
+                    commentId = commentId,
+                    reason = reason.wire,
+                    note = text,
+                ),
+            )
+            Unit
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /** Everything a block, mute or unfriend can change the answer of. */
+    private suspend fun invalidateSocialReads() {
+        cache.invalidate(CloudReadCache.KEY_FRIENDS)
+        cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
+        cache.invalidate(CloudReadCache.KEY_INBOX)
+        cache.invalidatePrefix("${CloudReadCache.KEY_COMMENTS}:")
+        cache.invalidatePrefix("${CloudReadCache.KEY_LIKERS}:")
     }
 
     private fun completedDates(completed: List<com.ironvellum.app.domain.WorkoutSession>): Set<LocalDate> =
@@ -786,6 +1129,12 @@ class CloudSync(
     // Internal (not private) so the instrumented push-selection test can call
     // pendingForPush; the fingerprint itself stays private.
     internal companion object {
+        /** `session_comments` columns the thread reads; one list for select and read-back. */
+        private const val COMMENT_COLUMNS = "id, session_id, user_id, author_name, body, created_at"
+
+        /** The server's per-workout comment ceiling: a thread fetch is always whole. */
+        private const val COMMENTS_PER_WORKOUT = 200L
+
         /**
          * The sessions a push must upload: changed-since-last-push, and never
          * CSV-imported. Imported history reaches the cloud only inside the
@@ -808,22 +1157,34 @@ class CloudSync(
          * uploads, sets included. Equality with the stored watermark means
          * "the cloud already holds exactly this", so the session is skipped.
          */
-        internal fun pushFingerprint(session: WorkoutSession, sets: List<SessionSet>): Int = Objects.hash(
-            session.label,
-            session.title,
-            session.note,
-            session.completedAtMs,
-            session.xpAwarded,
-            session.strengthScore,
-            sets.map { set ->
-                // Every field the push uploads must be here, or an edit that only
-                // changes a hold's seconds matches the watermark and never syncs.
-                listOf(
-                    set.exerciseName, set.setIndex, set.reps, set.weightKg, set.modifiers, set.done,
-                    set.durationSec, set.distanceM, set.grade,
-                )
-            },
-        )
+        internal fun pushFingerprint(session: WorkoutSession, sets: List<SessionSet>): Int {
+            val fields = arrayOf<Any?>(
+                session.label,
+                session.title,
+                session.note,
+                session.completedAtMs,
+                session.xpAwarded,
+                session.strengthScore,
+                sets.map { set ->
+                    // Every field the push uploads must be here, or an edit that only
+                    // changes a hold's seconds matches the watermark and never syncs.
+                    listOf(
+                        set.exerciseName, set.setIndex, set.reps, set.weightKg, set.modifiers, set.done,
+                        set.durationSec, set.distanceM, set.grade,
+                    )
+                },
+            )
+            // The audience joins the hash only when it is not the default:
+            // appending it unconditionally would change every stored
+            // fingerprint and re-upload the whole history once after the
+            // update. The wire string, never the enum — Enum.hashCode is an
+            // identity hash and would differ on every process start.
+            return if (session.audience == SessionAudience.PROFILE) {
+                Objects.hash(*fields)
+            } else {
+                Objects.hash(*fields, session.audience.wire)
+            }
+        }
     }
 }
 
@@ -844,6 +1205,10 @@ private class CloudReadCache {
         const val KEY_FRIENDS = "friends"
         const val KEY_FEED_FIRST_PAGE = "feed:first"
         const val KEY_LIKERS = "likers"
+        const val KEY_COMMENTS = "comments"
+        const val KEY_INBOX = "inbox"
+        const val KEY_BLOCKED = "blocked"
+        const val KEY_MUTED = "muted"
     }
 
     private class Entry(val value: Any?, val expiresAtMs: Long)
@@ -866,9 +1231,9 @@ private class CloudReadCache {
         val mine: CompletableDeferred<Any?> = lock.withLock {
             if (ownerUserId != userId) {
                 // Account changed (sign-in/sign-out/switch): wipe everything.
-                // The like overlay is user-scoped optimism too — a switched
-                // account must not inherit the previous one's taps.
-                likeOverlay.clear()
+                // The reaction overlay is user-scoped optimism too — a
+                // switched account must not inherit the previous one's taps.
+                reactionOverlay.clear()
                 slots.clear()
                 ownerUserId = userId
             }
@@ -921,49 +1286,60 @@ private class CloudReadCache {
         lock.withLock { slots.remove(key) }
     }
 
-    // sessionId -> (count delta, likedByMe): the optimistic like state for
-    // feed entries the cache does not hold — older paged pages are never
-    // cached, so the overlay is the only way their taps show immediately.
-    private val likeOverlay = HashMap<String, Pair<Int, Boolean>>()
-
-    suspend fun recordLike(sessionId: String, liked: Boolean) {
-        lock.withLock {
-            val current = likeOverlay[sessionId]
-            val delta = when {
-                // Toggling back to the server's last-seen state cancels out.
-                current == null -> if (liked) 1 else -1
-                current.second == liked -> current.first
-                liked -> current.first + 1
-                else -> current.first - 1
-            }
-            likeOverlay[sessionId] = delta to liked
-        }
+    /** Drops every slot whose key starts with [prefix] (e.g. all comment threads). */
+    suspend fun invalidatePrefix(prefix: String) {
+        lock.withLock { slots.keys.removeAll { it.startsWith(prefix) } }
     }
 
+    // sessionId -> the caller's reaction as last set on this device (null =
+    // removed): the optimistic state for feed entries the cache does not
+    // hold — older paged pages are never cached, so the overlay is the only
+    // way their taps show immediately. It stores the TARGET, not a count
+    // delta, and the counts are re-derived from each page's server values at
+    // hand-out, so repeated taps can never drift the total.
+    private val reactionOverlay = HashMap<String, Reaction?>()
+
+    suspend fun recordReaction(sessionId: String, reaction: Reaction?) {
+        lock.withLock { reactionOverlay[sessionId] = reaction }
+    }
+
+    private fun reflects(entry: FeedEntry, target: Reaction?): Boolean =
+        entry.myReaction == target && entry.likedByMe == (target != null)
+
     /** Drop overlay entries a fresh page already reflects: the server caught up. */
-    suspend fun reconcileLikes(entries: List<FeedEntry>) {
+    suspend fun reconcileReactions(entries: List<FeedEntry>) {
         lock.withLock {
             entries.forEach { entry ->
-                val overlay = likeOverlay[entry.sessionId] ?: return@forEach
-                if (entry.likedByMe == overlay.second) likeOverlay.remove(entry.sessionId)
+                if (!reactionOverlay.containsKey(entry.sessionId)) return@forEach
+                if (reflects(entry, reactionOverlay[entry.sessionId])) reactionOverlay.remove(entry.sessionId)
             }
         }
     }
 
     /** Apply the overlay at hand-out so paged entries mirror the taps too. */
-    suspend fun applyLikes(entries: List<FeedEntry>): List<FeedEntry> {
+    suspend fun applyReactions(entries: List<FeedEntry>): List<FeedEntry> {
         lock.withLock {
-            if (likeOverlay.isEmpty()) return entries
+            if (reactionOverlay.isEmpty()) return entries
             return entries.map { entry ->
-                val overlay = likeOverlay[entry.sessionId]
-                if (overlay == null || entry.likedByMe == overlay.second) {
-                    entry
-                } else {
-                    entry.copy(
-                        likedByMe = overlay.second,
-                        likeCount = (entry.likeCount + overlay.first).coerceAtLeast(0),
-                    )
+                if (!reactionOverlay.containsKey(entry.sessionId)) return@map entry
+                val target = reactionOverlay[entry.sessionId]
+                if (reflects(entry, target)) return@map entry
+                // Take the server's own reaction out, put the target in.
+                // likedByMe with an unknown myReaction (a kind this build does
+                // not know) still counts toward the total it is removed from.
+                val reactions = entry.reactions.toMutableMap()
+                entry.myReaction?.let { old ->
+                    val left = (reactions[old] ?: 0) - 1
+                    if (left > 0) reactions[old] = left else reactions.remove(old)
                 }
+                target?.let { reactions[it] = (reactions[it] ?: 0) + 1 }
+                val total = entry.likeCount - (if (entry.likedByMe) 1 else 0) + (if (target != null) 1 else 0)
+                entry.copy(
+                    likedByMe = target != null,
+                    myReaction = target,
+                    reactions = reactions,
+                    likeCount = total.coerceAtLeast(0),
+                )
             }
         }
     }

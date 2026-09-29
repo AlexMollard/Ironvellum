@@ -247,6 +247,12 @@ object ExportWriter {
             if (session.imported) {
                 append(",\"imported\":true")
             }
+            // Same rule: only a non-default audience is written, so a restore
+            // keeps a workout the lifter made private private, and older
+            // archives (no key) read back as PROFILE.
+            if (session.audience != SessionAudience.PROFILE) {
+                append(",\"audience\":").appendEscaped(session.audience.wire)
+            }
             append(",\"sets\":[")
             sets.forEachIndexed { ti, set ->
                 if (ti > 0) append(",")

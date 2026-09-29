@@ -52,4 +52,34 @@ class CloudWireDtosTest {
         assertEquals("Pull-up", dto.exerciseName)
         assertEquals(2, dto.setIndex)
     }
+
+    @Test
+    fun `a reaction kind this build does not know is skipped, never thrown`() {
+        // Failure mode: a later server adds a kind. A typed map or a strict
+        // valueOf would throw inside decodeList and blank the whole feed page
+        // for every lifter still on this build.
+        val row = """{"session_id": "s1", "user_id": "u1", "display_name": "Kaida",
+            "level": 7, "title": "", "note": "", "label": "Pull",
+            "completed_at": "2026-09-29T07:45:00Z", "xp_awarded": 90,
+            "strength_score": 40, "sets_done": 5, "reps_done": 30,
+            "like_count": 6, "liked_by_me": true, "comment_count": 2,
+            "reactions": {"salute": 3, "iron": 1, "thunder": 2},
+            "my_reaction": "thunder"}"""
+        val entry = json.decodeFromString<FeedEntryDto>(row).toFeedEntry()
+        assertEquals(mapOf(Reaction.SALUTE to 3, Reaction.IRON to 1), entry.reactions)
+        assertNull(entry.myReaction)
+        // The total is the server's, unknown kinds included.
+        assertEquals(6, entry.likeCount)
+        assertEquals(2, entry.commentCount)
+        assertNull(Reaction.fromWire(null))
+        assertEquals(Reaction.FLAME, Reaction.fromWire("flame"))
+
+        // A view from before 0018 has none of the new columns at all.
+        val old = json.decodeFromString<FeedEntryDto>(
+            row.substringBefore(""", "comment_count"""") + "}",
+        ).toFeedEntry()
+        assertEquals(0, old.commentCount)
+        assertEquals(emptyMap<Reaction, Int>(), old.reactions)
+        assertNull(old.myReaction)
+    }
 }
