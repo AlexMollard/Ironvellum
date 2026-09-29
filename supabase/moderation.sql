@@ -1,0 +1,62 @@
+-- supabase/moderation.sql
+-- The owner's moderation queries for Ironvellum's social features (1.4).
+--
+-- NEVER RUN THIS AS A MIGRATION. It is not in supabase/migrations on purpose:
+-- every statement below is a one-off action on one row, chosen by a person.
+-- Open the Supabase dashboard -> SQL editor, paste ONE block, fill in the ids,
+-- and run it. The SQL editor runs as the service role, which is the only role
+-- that can read `reports`; nothing in the app can.
+--
+-- Everything is commented out so an accidental "run all" does nothing.
+
+-- ------------------------------------------------------------ open reports
+-- Newest first, with both names. excerpt is the comment body or the workout
+-- title and note as they were when reported, so it survives a delete.
+--
+-- select r.id,
+--        r.created_at,
+--        r.reason,
+--        rp.display_name as reporter,
+--        tp.display_name as target,
+--        r.target_user_id,
+--        r.session_id,
+--        r.comment_id,
+--        r.note,
+--        r.excerpt,
+--        (select count(*) from reports x where x.target_user_id = r.target_user_id) as reports_on_target
+-- from reports r
+-- left join profiles rp on rp.id = r.reporter_id
+-- left join profiles tp on tp.id = r.target_user_id
+-- where r.status = 'open'
+-- order by r.created_at desc;
+
+-- ------------------------------------------------------------ close a report
+-- 'actioned' when something was removed, 'dismissed' when nothing was wrong.
+--
+-- update reports set status = 'actioned'   -- or 'dismissed'
+-- where id = '00000000-0000-0000-0000-000000000000';
+
+-- ------------------------------------------------------------ delete a comment
+-- Look at it first; the report keeps its excerpt after the delete
+-- (reports.comment_id is set null).
+--
+-- select id, session_id, user_id, author_name, body, created_at
+-- from session_comments where id = '00000000-0000-0000-0000-000000000000';
+--
+-- delete from session_comments where id = '00000000-0000-0000-0000-000000000000';
+--
+-- Every comment by one lifter, when the whole account is not going:
+-- delete from session_comments where user_id = '00000000-0000-0000-0000-000000000000';
+
+-- ------------------------------------------------------------ delete an account
+-- Irreversible. Deleting the auth identity cascades to the profile and every
+-- row keyed on it (workouts, sets, reactions, comments, blocks, mutes, inbox,
+-- cloud archive, and the reports filed by or about them), exactly like the
+-- lifter's own "erase cloud account". Run the open-reports query above first
+-- and keep its output if the record of what happened matters: the reports
+-- about them go with the account.
+--
+-- select id, email, created_at from auth.users
+-- where id = '00000000-0000-0000-0000-000000000000';
+--
+-- delete from auth.users where id = '00000000-0000-0000-0000-000000000000';
