@@ -85,6 +85,7 @@ import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.isStrength
+import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Sex
@@ -107,12 +108,15 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.IronvellumColors
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
 import androidx.compose.runtime.produceState
 import androidx.lifecycle.Lifecycle
@@ -177,6 +181,36 @@ class SessionViewModel(
     val focus: StateFlow<TrainingFocus> = repo.observeProfile()
         .map { SessionClock.focusFor(savedFocus, it?.trainingMode) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SessionClock.focusFor(savedFocus, null))
+
+    /**
+     * The lifter's own seconds per set for this session: this preset's pace,
+     * else his overall pace, else null (the rule-based figure).
+     */
+    val pace: StateFlow<Int?> = combine(repo.observeHistory(), repo.observeSession(sessionId)) { history, session ->
+        SessionClock.pace(history).secondsPerSet(session?.presetId)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /**
+     * The offer to bring the preset in line with what was just done. Held here,
+     * not in the screen, so a rotation keeps it; the session is completed
+     * before it is ever computed, so losing it loses nothing but the offer.
+     */
+    private val _routineUpdate = MutableStateFlow<Repository.RoutineUpdateOffer?>(null)
+    val routineUpdate: StateFlow<Repository.RoutineUpdateOffer?> = _routineUpdate
+
+    fun applyRoutineUpdate(accepted: List<RoutineUpdate.Change>) {
+        val offer = _routineUpdate.value ?: return
+        _routineUpdate.value = null
+        if (accepted.isEmpty()) return
+        // The screen may leave straight after; the write must not die with it.
+        viewModelScope.launchGuarded("update routine") {
+            withContext(NonCancellable) { repo.applyRoutineUpdate(offer.presetId, accepted) }
+        }
+    }
+
+    fun keepPlan() {
+        _routineUpdate.value = null
+    }
 
     fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) {
         viewModelScope.launch { repo.updateSet(setId, reps, weightKg, done) }
@@ -256,6 +290,9 @@ class SessionViewModel(
                     // Completion is the moment a daily user's work becomes
                     // feed/leaderboard-visible; don't wait for a manual push.
                     CloudSyncWorker.pushNow(appContext)
+                    // Asked after the XP is banked: the answer can never
+                    // change what the session paid.
+                    _routineUpdate.value = runCatching { repo.routineUpdateFor(sessionId) }.getOrNull()
                     onResult(it)
                 }
                 .onFailure { completing = false }
@@ -313,6 +350,8 @@ fun SessionScreen(
     val bodyweight by viewModel.bodyweight.collectAsStateWithLifecycle()
     val sex by viewModel.sex.collectAsStateWithLifecycle()
     val focus by viewModel.focus.collectAsStateWithLifecycle()
+    val pace by viewModel.pace.collectAsStateWithLifecycle()
+    val routineUpdate by viewModel.routineUpdate.collectAsStateWithLifecycle()
     var completion by remember { mutableStateOf<Repository.CompletionResult?>(null) }
     var confirmAbandon by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
@@ -408,11 +447,11 @@ fun SessionScreen(
             SessionElapsed(session.startedAtMs)
         }
         if (ui.sets.isNotEmpty()) {
-            val estimate = remember(ui.sets, exercises, focus) {
+            val estimate = remember(ui.sets, exercises, focus, pace) {
                 val metrics = exercises.associate { it.id to it.metric }
                 SessionClock.estimateLine(
-                    SessionClock.totalSeconds(ui.sets, { metrics[it] }, focus),
-                    SessionClock.remainingSeconds(ui.sets, { metrics[it] }, focus),
+                    SessionClock.totalSeconds(ui.sets, { metrics[it] }, focus, pace),
+                    SessionClock.remainingSeconds(ui.sets, { metrics[it] }, focus, pace),
                 )
             }
             Text(
@@ -705,7 +744,24 @@ fun SessionScreen(
 
     var shareText by remember { mutableStateOf<String?>(null) }
 
-    completion?.let { result ->
+    routineUpdate?.let { offer ->
+        // A rotation loses the victory result but not this offer; with the
+        // result gone, answering is the way out of the finished session.
+        RoutineUpdateDialog(
+            offer = offer,
+            onUpdate = { accepted ->
+                viewModel.applyRoutineUpdate(accepted)
+                if (completion == null) onExit()
+            },
+            onKeep = {
+                viewModel.keepPlan()
+                if (completion == null) onExit()
+            },
+        )
+    }
+
+    // The routine question first, then the victory: one dialog at a time.
+    completion?.takeIf { routineUpdate == null }?.let { result ->
         VictoryOverlay(
             result = result,
             onShare = {
@@ -1602,5 +1658,83 @@ private fun ModifierPickerDialog(
         },
         confirmButton = { IronvellumButton("Save", onClick = { onConfirm(picked) }) },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
+}
+
+/** "6x5 @ 15.2kg", or "3x30s @ BW" for a hold. */
+private fun planFigure(entry: com.ironvellum.app.domain.PresetEntry, isHold: Boolean): String =
+    "${entry.targetSets}x${entry.targetReps}${if (isHold) "s" else ""} @ ${formatKg(entry.targetWeightKg)}"
+
+/**
+ * Offers to bring the preset in line with the session just finished: one
+ * toggle per changed entry, all on. The session is already completed and paid
+ * when this shows; dismissing it keeps the plan.
+ */
+@Composable
+private fun RoutineUpdateDialog(
+    offer: Repository.RoutineUpdateOffer,
+    onUpdate: (List<RoutineUpdate.Change>) -> Unit,
+    onKeep: () -> Unit,
+) {
+    var picked by remember(offer) { mutableStateOf(offer.changes.toSet()) }
+    AlertDialog(
+        shape = MaterialTheme.shapes.medium,
+        onDismissRequest = onKeep,
+        containerColor = Color(0xFF0D1110),
+        title = { Text("Update ${offer.presetName} to match today?") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                offer.changes.forEach { change ->
+                    val on = change in picked
+                    val shape = MaterialTheme.shapes.extraSmall
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp)
+                            .background(
+                                if (on) {
+                                    Brush.verticalGradient(listOf(Color(0xFF2C7A5A), Color(0xFF1B4D3A)))
+                                } else {
+                                    Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
+                                },
+                                shape,
+                            )
+                            .inkBorder(if (on) IronvellumColors.SystemGreen else IronvellumColors.Rune, shape, 1.dp)
+                            .toggleable(value = on, role = Role.Checkbox) {
+                                picked = if (on) picked - change else picked + change
+                            }
+                            .padding(horizontal = 10.dp, vertical = 8.dp),
+                    ) {
+                        Text(
+                            change.before.exerciseName,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                        )
+                        Text(
+                            "${planFigure(change.before, change.isHold)} → ${planFigure(change.after, change.isHold)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                        )
+                        if (change.after.modifiers != change.before.modifiers) {
+                            Text(
+                                "${change.before.modifiers.ifBlank { "No modifiers" }} → ${change.after.modifiers.ifBlank { "none" }}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = IronvellumColors.InkMuted,
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            // Preset order, whatever order the toggles were flipped in.
+            IronvellumButton(
+                "Update routine",
+                enabled = picked.isNotEmpty(),
+                onClick = { onUpdate(offer.changes.filter { it in picked }) },
+            )
+        },
+        dismissButton = { TextButton(onClick = onKeep) { Text("Keep plan") } },
     )
 }

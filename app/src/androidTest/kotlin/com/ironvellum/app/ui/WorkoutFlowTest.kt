@@ -213,12 +213,14 @@ class WorkoutFlowTest {
     /**
      * Clicks through every celebration overlay until the dashboard is back.
      * Each overlay's advance button reads "Continue", or "Next (1/3)" while
-     * more award pages remain.
+     * more award pages remain. A session that differs from its preset also
+     * offers a routine update; this test keeps the plan so the seeded preset
+     * stays as later tests expect it.
      */
     private fun drainCelebrations(rounds: Int = 12) {
         repeat(rounds) {
             if (allText().any { it.endsWith("XP") && it.contains('/') }) return
-            val advance = allText().firstOrNull { it == "CONTINUE" || it.startsWith("NEXT (") }
+            val advance = allText().firstOrNull { it == "CONTINUE" || it.startsWith("NEXT (") || it == "Keep plan" }
             if (advance != null) {
                 compose.onAllNodesWithText(advance).onFirst()
                     .performSemanticsAction(SemanticsActions.OnClick)

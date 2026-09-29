@@ -60,6 +60,7 @@ import com.ironvellum.app.domain.Progression
 import com.ironvellum.app.domain.Reward
 import com.ironvellum.app.domain.RollResult
 import com.ironvellum.app.domain.RoutinePlan
+import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SkillClaimResult
@@ -955,6 +956,76 @@ class Repository(
             questBonus = questBonus,
             durationMinutes = durationMinutes,
         )
+    }
+
+    /** The preset a finished session came from, and the entries that session would change. */
+    data class RoutineUpdateOffer(
+        val presetId: Long,
+        val presetName: String,
+        val changes: List<RoutineUpdate.Change>,
+    )
+
+    /**
+     * What updating the session's preset to match it would change, or null:
+     * the session is not completed, came from no preset, its preset is gone,
+     * or what was done matches the plan. Read-only; see [applyRoutineUpdate].
+     */
+    suspend fun routineUpdateFor(sessionId: Long): RoutineUpdateOffer? {
+        val session = sessionDao.byId(sessionId)?.takeIf { it.completedAtMs != null } ?: return null
+        val pw = session.presetId?.let { presetDao.presetWithEntries(it) } ?: return null
+        val catalogue = exerciseDao.observeAll().first().associateBy { it.id }
+        val entries = pw.entries.sortedBy { it.position }.map { e ->
+            PresetEntry(
+                id = e.id,
+                exerciseId = e.exerciseId,
+                exerciseName = catalogue[e.exerciseId]?.name ?: "Unknown",
+                targetSets = e.targetSets,
+                targetReps = e.targetReps,
+                targetWeightKg = e.targetWeightKg,
+                modifiers = e.modifiers,
+                position = e.position,
+            )
+        }
+        val sets = sessionDao.setsFor(sessionId).map { s ->
+            SessionSet(
+                id = s.id,
+                exerciseId = s.exerciseId,
+                exerciseName = catalogue[s.exerciseId]?.name ?: "Unknown",
+                exercisePosition = s.exercisePosition,
+                setIndex = s.setIndex,
+                reps = s.reps,
+                weightKg = s.weightKg,
+                modifiers = s.modifiers,
+                done = s.done,
+                durationSec = s.durationSec,
+            )
+        }
+        val changes = RoutineUpdate.propose(entries, sets) { id ->
+            catalogue[id]?.metric?.let { runCatching { ExerciseMetric.valueOf(it) }.getOrNull() }
+        }
+        return changes.takeIf { it.isNotEmpty() }?.let { RoutineUpdateOffer(pw.preset.id, pw.preset.name, it) }
+    }
+
+    /**
+     * Writes the accepted changes into the preset in one transaction. Only the
+     * listed entries are touched, and on each only the fields the change moves;
+     * an entry since deleted or moved to another preset is skipped. Logged
+     * sessions are never touched.
+     */
+    suspend fun applyRoutineUpdate(presetId: Long, accepted: List<RoutineUpdate.Change>) = db.withTransaction {
+        val current = presetDao.presetWithEntries(presetId)?.entries?.associateBy { it.id } ?: return@withTransaction
+        accepted.forEach { change ->
+            val row = current[change.before.id] ?: return@forEach
+            val (before, after) = change
+            presetDao.updateEntry(
+                row.copy(
+                    targetSets = if (after.targetSets != before.targetSets) after.targetSets else row.targetSets,
+                    targetReps = if (after.targetReps != before.targetReps) after.targetReps else row.targetReps,
+                    targetWeightKg = if (after.targetWeightKg != before.targetWeightKg) after.targetWeightKg else row.targetWeightKg,
+                    modifiers = if (after.modifiers != before.modifiers) after.modifiers else row.modifiers,
+                ),
+            )
+        }
     }
 
     fun observeRecentSessions(limit: Int = 5): Flow<List<WorkoutSession>> =

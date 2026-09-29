@@ -95,4 +95,86 @@ class SessionClockTest {
         assertEquals(TrainingFocus.MUSCLE, SessionClock.focusFor(null, TrainingMode.HYPERTROPHY))
         assertEquals(TrainingFocus.MUSCLE, SessionClock.focusFor(null, null))
     }
+
+    /** A finished session [seconds] long with [done] ticked sets (plus one skipped). */
+    private fun logged(
+        startMs: Long,
+        seconds: Long,
+        done: Int,
+        presetId: Long? = null,
+        imported: Boolean = false,
+        completed: Boolean = true,
+    ): Pair<WorkoutSession, List<SessionSet>> =
+        WorkoutSession(
+            presetId = presetId,
+            label = "Pull",
+            startedAtMs = startMs,
+            completedAtMs = if (completed) startMs + seconds * 1000 else null,
+            imported = imported,
+        ) to (List(done) { deadlift(done = true) } + deadlift())
+
+    @Test
+    fun `pace is the median seconds per done set, and times the plan`() {
+        // The owner's own days: Push 11 sets in 48.6 min, Pull 17 in 66.8 min.
+        val history = listOf(
+            logged(startMs = 3_000_000_000, seconds = 2916, done = 11),
+            logged(startMs = 2_000_000_000, seconds = 4008, done = 17),
+            logged(startMs = 1_000_000_000, seconds = 3000, done = 12),
+        )
+        assertEquals(250, SessionClock.medianPace(history))
+        // An even count takes the mean of the middle pair.
+        assertEquals((235 + 265) / 2, SessionClock.medianPace(history.take(2)))
+        val day = listOf(PlannedEntry(exerciseName = "Deadlift", sets = 18, reps = 5, targetWeightKg = null))
+        assertEquals("1 MOVES · 18 SETS · ~75 MIN", SessionClock.planLine(day, TrainingFocus.STRENGTH, 250))
+    }
+
+    @Test
+    fun `sessions that say nothing about pace are dropped, and one is not enough`() {
+        val usable = logged(startMs = 5_000_000_000, seconds = 2400, done = 10)
+        val noise = listOf(
+            logged(startMs = 4_000_000_000, seconds = 12 * 3600, done = 10), // left open overnight
+            logged(startMs = 3_000_000_000, seconds = 300, done = 10), // ticked off after the fact
+            logged(startMs = 2_000_000_000, seconds = 1000, done = 5, imported = true),
+            logged(startMs = 1_000_000_000, seconds = 1000, done = 5, completed = false),
+            logged(startMs = 500_000_000, seconds = 1000, done = 0),
+        )
+        assertEquals(null, SessionClock.medianPace(listOf(usable) + noise))
+        val second = logged(startMs = 100_000_000, seconds = 2000, done = 10)
+        assertEquals((240 + 200) / 2, SessionClock.medianPace(listOf(usable) + noise + second))
+    }
+
+    @Test
+    fun `only the newest sessions set the pace`() {
+        val recent = List(SessionClock.PACE_WINDOW) { logged(startMs = 10_000_000_000 - it * 1000L, seconds = 2000, done = 10) }
+        val older = List(SessionClock.PACE_WINDOW + 1) { logged(startMs = 1_000_000_000 - it * 1000L, seconds = 5000, done = 10) }
+        assertEquals(200, SessionClock.medianPace(older + recent))
+    }
+
+    @Test
+    fun `a preset's own pace outranks the lifter's, which outranks the rules`() {
+        val history = listOf(
+            logged(startMs = 6_000_000_000, seconds = 3000, done = 10, presetId = 1),
+            logged(startMs = 5_000_000_000, seconds = 3000, done = 10, presetId = 1),
+            logged(startMs = 4_000_000_000, seconds = 1200, done = 10, presetId = 2),
+            logged(startMs = 3_000_000_000, seconds = 1500, done = 10),
+        )
+        val pace = SessionClock.pace(history)
+        // Preset 1: two sessions at 300 s/set.
+        assertEquals(300, pace.secondsPerSet(1))
+        // Preset 2 has one session: the lifter's median over all four (300, 300, 120, 150).
+        assertEquals(225, pace.secondsPerSet(2))
+        assertEquals(225, pace.secondsPerSet(null))
+        // No history: null, and the estimate falls back to the rule figure.
+        assertEquals(null, SessionClock.pace(emptyList()).secondsPerSet(1))
+        val sets = listOf(deadlift(done = true), deadlift(), curl())
+        assertEquals(340 + 130, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.STRENGTH, null))
+        assertEquals(2 * 225, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.STRENGTH, 225))
+        assertEquals(3 * 225, SessionClock.totalSeconds(sets, metricOf, TrainingFocus.STRENGTH, 225))
+    }
+
+    @Test
+    fun `with a measured pace a hold costs its seconds plus the lifter's rest`() {
+        // 225 s a set is 40 s of work and 185 s of rest.
+        assertEquals(185 + 60, SessionClock.setSeconds(hold(60), ExerciseMetric.HOLD, TrainingFocus.STRENGTH, 225))
+    }
 }

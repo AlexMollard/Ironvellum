@@ -126,6 +126,8 @@ class DashboardUi(
     val completedWeekdays: Set<Int> = emptySet(),
     /** The focus the quest estimate is timed at. */
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
+    /** The lifter's own seconds per set; times the quest estimate. */
+    val pace: SessionClock.Pace = SessionClock.Pace(),
 )
 
 class DashboardViewModel(
@@ -187,6 +189,7 @@ class DashboardViewModel(
             ),
             stepsToday = healthDays.firstOrNull { it.date == today }?.steps ?: 0,
             focus = SessionClock.focusFor(savedFocus, profile?.trainingMode),
+            pace = SessionClock.pace(history),
             completedWeekdays = doneDates
                 .filter { !it.isBefore(today.with(java.time.DayOfWeek.MONDAY)) }
                 .map { it.dayOfWeek.value }
@@ -624,7 +627,7 @@ fun DashboardScreen(
                 )
                 if (selectedPreset != null) {
                     Text(
-                        SessionClock.planLine(selectedPreset.toPlanned().entries, ui.focus),
+                        SessionClock.planLine(selectedPreset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(selectedPreset.id)),
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,

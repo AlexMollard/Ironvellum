@@ -84,6 +84,8 @@ data class TrainUi(
     val tier: VolumeLevel = VolumeLevel.LOW,
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
     val priorities: Set<com.ironvellum.app.domain.Muscle> = emptySet(),
+    /** The lifter's own seconds per set; times the card estimates. */
+    val pace: SessionClock.Pace = SessionClock.Pace(),
 )
 
 class PresetsViewModel(
@@ -120,6 +122,7 @@ class PresetsViewModel(
             tier = tier,
             focus = SessionClock.focusFor(savedAnswers?.focus, profile?.trainingMode),
             priorities = savedAnswers?.priorities.orEmpty().flatMap { it.muscles }.toSet(),
+            pace = SessionClock.pace(history),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrainUi())
 
@@ -241,7 +244,7 @@ fun PresetsScreen(
                         Text(preset.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                     Text(
-                        SessionClock.planLine(preset.toPlanned().entries, ui.focus),
+                        SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id)),
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,

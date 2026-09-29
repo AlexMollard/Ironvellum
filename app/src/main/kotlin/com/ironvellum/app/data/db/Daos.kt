@@ -52,6 +52,9 @@ interface PresetDao {
     @Insert
     suspend fun insertEntries(entries: List<PresetEntryEntity>)
 
+    @Update
+    suspend fun updateEntry(entry: PresetEntryEntity)
+
     @Query("DELETE FROM preset_entries WHERE presetId = :presetId")
     suspend fun clearEntries(presetId: Long)
     /** Import is a full restore: presets go, their entries follow by cascade. */
