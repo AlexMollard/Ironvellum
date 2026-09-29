@@ -1,4 +1,4 @@
-An Android training tracker that scores what you actually lift. Log a session,
+An Android training tracker that scores what you actually lift. Log a workout,
 get a number that means something.
 
 Most trackers add up kilograms. That rewards being heavy and rewards machines
@@ -7,8 +7,8 @@ away from the training that earned it.
 
 Ironvellum scores a set by what it costs you:
 
-- Body-scaled: a rep is worth reps x (bodyweight + added) / bodyweight^0.67,
-  the standard allometric exponent, so a lighter athlete is not permanently
+- Body-scaled: a rep is worth reps × (bodyweight + added) / bodyweight^0.67,
+  the standard allometric exponent, so a lighter lifter is not permanently
   outranked for being light.
 - Priced per implement: a marked kilogram is not the same load on every
   machine. A 45 degree sled transmits 0.70, a smith bar 0.90, a pinned stack
@@ -26,29 +26,36 @@ training.
 Features:
 
 - Guided first run: pick your split, weekly volume, equipment and goal, and the
-  app proposes an editable week built from the real catalogue. No routine is
+  app proposes an editable routine built from the real catalogue. No routine is
   imposed on you.
 - Evidence-based program builder: full body, upper/lower and push/pull/legs
   templates for strength or muscle, fitted to your weekly volume and the gear
   you own, from a full gym to a pull-up bar and one dumbbell; a generated
-  week or single session; or an improved version of a preset you already have,
-  shown before and after. Every movement explains why it was picked, citing
-  2020-2026 research.
+  routine or single workout; or an improved version of a workout you already
+  have, shown before and after. Cap the exercises per workout (5 by default)
+  or keep to compound and skill work only. Every exercise explains why it was
+  picked, citing 2020-2026 research.
 - Weekly muscle coverage: a body map of the sets each muscle gets, planned or
   from the last seven days, with a floor for the helper muscles your other
-  lifts mostly train.
-- 241 movements: barbell, dumbbell, cable, plate-loaded, selectorised, smith,
+  exercises mostly train. Lever and planche holds count. Each muscle's sets
+  break down by exercise, and every exercise shows the muscles it works, on
+  the live workout screen too.
+- Live workouts: type a set's exact load, watch a running workout timer, and
+  continue a workout you left. Time estimates learn your pace from the
+  workouts you log. After a workout, pick which changes go back into your
+  routine.
+- 241 exercises: barbell, dumbbell, cable, plate-loaded, selectorised, smith,
   assisted, bodyweight, plus cardio, sport, climbing, water and mobility.
 - 106-technique skill tree: fourteen lines, each rung gated on the one before
   it and carrying a written claim standard.
 - 105 deeds: level, volume, streak, strength and activity milestones, with
   progress you can watch rather than a surprise.
 - Progressive overload: strength and hypertrophy schools with their own rep
-  bands, per-movement load steps and a stall rule that deloads instead of
-  repeating a failed session.
+  bands, per-exercise load steps and a stall rule that deloads instead of
+  repeating a failed workout.
 - Measurements and health: weight, body fat, BMI and FFMI over time; optional
   Health Connect read for steps, distance, energy and sleep.
-- Shareable sessions: a plain text card shaped after Wordle, no link and no
+- Shareable workouts: a plain text card shaped after Wordle, no link and no
   image, that states only what you did.
 - Optional cloud: sign in to back up training and see a feed and leaderboard.
   Body measurements and health data never leave the device. Delete your cloud

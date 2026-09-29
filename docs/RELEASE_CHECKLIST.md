@@ -1,8 +1,8 @@
 # Ironvellum release checklist
 
 Ordered steps to ship `com.ironvellum.app` to Google Play. Execute top to bottom.
-Written 2026-09-15. Verification commands assume repo root `D:\Ironvellum` on
-Windows: `.\gradlew.bat <task>`.
+Written 2026-09-15. Verification commands run from the repo root on Windows:
+`.\gradlew.bat <task>`.
 
 ## 1. Signing key
 
@@ -21,7 +21,7 @@ Windows: `.\gradlew.bat <task>`.
    ironvellum.key.alias=ironvellum
    ironvellum.key.password=...
    ```
-4. Add the three backend keys to `local.properties` (gitignored). They become
+3. Add the three backend keys to `local.properties` (gitignored). They become
    BuildConfig fields `SUPABASE_URL`, `SUPABASE_KEY`, `GOOGLE_WEB_CLIENT_ID`:
    ```
    supabase.url=https://<project>.supabase.co
@@ -31,8 +31,8 @@ Windows: `.\gradlew.bat <task>`.
    Debug builds work with these blank (cloud degrades gracefully,
    `Cloud.configured == false`), but a RELEASE build without them ships an app
    whose social features can never sign in — treat them as mandatory for the
-   release build and confirm the values are non-blank before step 3.
-5. Verify configuration succeeds even without keys:
+   release build and confirm the values are non-blank before section 3.
+4. Verify configuration succeeds even without keys:
    `.\gradlew.bat :app:assembleFossRelease` (with keys: check
    `app/build/outputs/apk/foss/release/` is signed; without: unsigned APK is fine
    for CI).
@@ -48,7 +48,7 @@ Run all three; all must pass before anything is uploaded:
 
 ```
 .\gradlew.bat :app:testFossDebugUnitTest
-.\gradlew.bat :app:lintFossRelease        # baseline: 0 errors / 31 warnings
+.\gradlew.bat :app:lintFossRelease        # baseline: 0 errors / 26 warnings
 .\gradlew.bat :app:assembleFossRelease
 ```
 

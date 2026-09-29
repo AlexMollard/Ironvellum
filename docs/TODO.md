@@ -18,7 +18,6 @@ open-work list.
 | 5 | Hosted privacy-policy URL | Play requires a URL, not an in-app document | Content exists in `PRIVACY.md` |
 | 6 | Play health-data declaration | All seven Health Connect permissions need the form; none are in the heightened-scrutiny family | Mapping in `docs/PLAY_DATA_SAFETY.md` |
 | 7 | OAuth consent screen out of **Testing** | In Testing, only listed test users can sign in | Also needs the release keystore SHA-1 |
-| 8 | `versionCode` bump per upload | Currently `1`; a reused value is rejected | Sequence in the release checklist |
 
 ## Open decisions (deliberately not taken here)
 

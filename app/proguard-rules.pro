@@ -1,4 +1,4 @@
-# Monarch R8 keep rules. The heavy lifting is already done by consumer rules
+# Ironvellum R8 keep rules. The heavy lifting is already done by consumer rules
 # each library ships inside its own artifact (verified in the Gradle cache):
 #   - kotlinx.serialization: META-INF/proguard/kotlinx-serialization-common.pro
 #     in kotlinx-serialization-core-jvm (matches any @Serializable class,
