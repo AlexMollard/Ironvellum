@@ -177,4 +177,27 @@ class SessionClockTest {
         // 225 s a set is 40 s of work and 185 s of rest.
         assertEquals(185 + 60, SessionClock.setSeconds(hold(60), ExerciseMetric.HOLD, TrainingFocus.STRENGTH, 225))
     }
+
+    @Test
+    fun `a timed activity costs its duration plus rest, not a pace set`() {
+        val run = SessionSet(exerciseId = 4, exerciseName = "Running", setIndex = 0, reps = 0, durationSec = 2700)
+        val rest = ProgramRules.restSeconds(TrainingFocus.MUSCLE, MuscleMap.profile("Running")?.compound ?: true)
+        assertEquals(rest + 2700, SessionClock.setSeconds(run, ExerciseMetric.DURATION, TrainingFocus.MUSCLE))
+        val row = run.copy(distanceM = 5000.0, durationSec = 1500)
+        assertEquals(185 + 1500, SessionClock.setSeconds(row, ExerciseMetric.DISTANCE_TIME, TrainingFocus.MUSCLE, 225))
+        // No duration logged yet: nothing to price but the pace.
+        assertEquals(225, SessionClock.setSeconds(run.copy(durationSec = null), ExerciseMetric.DURATION, TrainingFocus.MUSCLE, 225))
+    }
+
+    @Test
+    fun `the plan line prices a hold entry as its seconds plus rest`() {
+        val hang = listOf(PlannedEntry(exerciseName = "Plank", sets = 3, reps = 60, targetWeightKg = null))
+        // Pace 225 s: rest 185 + 60 s held = 245 s a set, 735 s → 13 min (not 3 × 225 = 675 s → 12).
+        assertEquals(
+            "1 EXERCISE · 3 SETS · ~13 MIN",
+            SessionClock.planLine(hang, TrainingFocus.MUSCLE, 225) { ExerciseMetric.HOLD },
+        )
+        // Without a metric the name rule still recognises the hold.
+        assertEquals("1 EXERCISE · 3 SETS · ~13 MIN", SessionClock.planLine(hang, TrainingFocus.MUSCLE, 225))
+    }
 }

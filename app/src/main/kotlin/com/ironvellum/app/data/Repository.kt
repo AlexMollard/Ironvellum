@@ -179,6 +179,11 @@ class Repository(
             }
         }
 
+    private val _healthSyncedAtMs = MutableStateFlow<Long?>(null)
+
+    /** When Health Connect last returned any days this process, or null if it has not. */
+    fun observeHealthSyncedAt(): StateFlow<Long?> = _healthSyncedAtMs
+
     /**
      * Pull the last [days] days from Health Connect into the local cache.
      * Reports days actually written plus any metric that could not be read, so
@@ -209,6 +214,7 @@ class Repository(
             )
         }
         importBodyReadings(read.bodyReadings)
+        if (read.days.isNotEmpty()) _healthSyncedAtMs.value = System.currentTimeMillis()
         return read
     }
 
@@ -800,6 +806,19 @@ class Repository(
     }
 
     /**
+     * Drops every set of one exercise from a live session: the deliberate way
+     * to take a movement (a one-off added by mistake) back out. Completed
+     * sessions are immutable, as in [removeSet].
+     */
+    suspend fun removeSessionExercise(sessionId: Long, exerciseId: Long): Boolean = db.withTransaction {
+        val session = sessionDao.byId(sessionId) ?: return@withTransaction false
+        if (session.completedAtMs != null) return@withTransaction false
+        val sets = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId }
+        sets.forEach { sessionDao.deleteSet(it.id) }
+        sets.isNotEmpty()
+    }
+
+    /**
      * Modifiers describe the movement, so editing them applies to every set of
      * that exercise — including ones already ticked off, which is the point:
      * you realise mid-session that you were working at a deficit all along.
@@ -865,6 +884,7 @@ class Repository(
                 )
             },
             latestBodyweight,
+            doneSetCount = doneSets.size,
         )
         val activityXp = activitySets.sumOf { set ->
             val metric = metricOf(set.exerciseId)
@@ -1307,7 +1327,7 @@ class Repository(
     suspend fun setTrainingMode(mode: TrainingMode) = profileDao.setTrainingMode(mode.name)
 
     /** Hand-drawn chrome on or off; mirrored into InkStyle so draw code can read it. */
-    fun observeInkStyle(): Flow<Boolean> = profileDao.observe().map { it?.inkStyle ?: false }
+    fun observeInkStyle(): Flow<Boolean> = profileDao.observe().map { it?.inkStyle ?: true }
 
     suspend fun setInkStyle(on: Boolean) = profileDao.setInkStyle(on)
 
@@ -1532,11 +1552,12 @@ class Repository(
 
     /**
      * Undo an accidental claim: removes mastery and takes the XP back. The
-     * subtraction is clamped at the stored total — `addXp(-xp)` on a profile
-     * that had spent nothing could drive totalXp negative, which Xp.progress
-     * only hides on screen while the row stayed wrong. Rolls and titles the
-     * claim already granted are deliberately kept: a title once earned is not
-     * taken back.
+     * subtraction is always exactly [SkillDef.xp], what a reclaim re-adds, so
+     * unclaim/reclaim can never mint XP. A ledger already below that figure
+     * (spent down by a deleted workout) cannot pay it back, so the unclaim is
+     * refused rather than clamped: a clamped refund followed by a full reclaim
+     * was an XP farm. Rolls and titles the claim already granted are
+     * deliberately kept: a title once earned is not taken back.
      */
     suspend fun unclaimSkill(skillName: String) = db.withTransaction {
         val def = Skills.forName(skillName) ?: error("Unknown skill $skillName")
@@ -1550,9 +1571,12 @@ class Repository(
         check(dependents.isEmpty()) {
             "$skillName is still required by ${dependents.joinToString()} - unclaim those first"
         }
-        skillPracticeDao.deleteClaims(skillName)
         val total = profileDao.get()?.totalXp ?: 0L
-        profileDao.addXp(-minOf(def.xp.toLong(), total))
+        check(total >= def.xp) {
+            "$skillName paid ${def.xp} XP but only $total XP is left - it stays claimed"
+        }
+        skillPracticeDao.deleteClaims(skillName)
+        profileDao.addXp(-def.xp.toLong())
     }
 
     /**
@@ -1572,8 +1596,7 @@ class Repository(
         check(session.completedAtMs != null) {
             "Session $sessionId is still live - abandon it instead"
         }
-        // Clamped both ways so a ledger since spent down cannot go negative -
-        // the same rule unclaimSkill uses.
+        // Clamped so a ledger since spent down cannot go negative.
         val total = profileDao.get()?.totalXp ?: 0L
         profileDao.addXp(-minOf(session.xpAwarded.toLong(), total))
         val lifetime = profileDao.get()?.lifetimeStrength ?: 0L
@@ -1777,7 +1800,7 @@ class Repository(
                         trainingMode = archive.trainingMode.name,
                         heightCm = archive.heightCm ?: local?.heightCm,
                         sex = archive.sex ?: local?.sex ?: "MALE",
-                        inkStyle = archive.inkStyle ?: local?.inkStyle ?: false,
+                        inkStyle = archive.inkStyle ?: local?.inkStyle ?: true,
                     ),
                 )
 
@@ -2145,6 +2168,7 @@ class Repository(
                     )
                 },
                 latestBodyweight,
+                doneSetCount = doneSets.size,
             )
             val activityXp = activitySets.sumOf { set ->
                 val metric = metricOf(set.exerciseId)

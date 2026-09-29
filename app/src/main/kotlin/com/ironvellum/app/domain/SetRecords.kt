@@ -25,7 +25,7 @@ object SetRecords {
         val score: Double,          // the attempt's own score
         val deltaScore: Double,     // score - record.score (0.0 when no record)
         val deltaFraction: Double,  // deltaScore / record.score (0.0 when no record)
-        val isRecord: Boolean,      // attempt beats (or first-ever equals) the record
+        val isRecord: Boolean,      // attempt beats a real record AND this workout's earlier sets
     )
 
     /**
@@ -63,18 +63,14 @@ object SetRecords {
                     val bodyweight = bodyweightAt(session.startedAtMs)
                     val hold = MovementDifficulty.isHoldSet(metricOf(set), set.exerciseName, set.modifiers)
                     val figure = if (hold) (set.durationSec ?: set.reps) else set.reps
-                    val score = if (hold) {
-                        StrengthIndex.holdScore(set.exerciseName, figure, set.weightKg, bodyweight)
-                    } else {
-                        StrengthIndex.repScore(set.exerciseName, figure, set.weightKg, bodyweight)
-                    }
+                    val setScore = score(set.exerciseName, figure, set.weightKg, bodyweight, hold)
                     val key = set.exerciseName.lowercase().trim() to set.setIndex
                     val existing = best[key]
-                    if (existing == null || score > existing.score) {
+                    if (existing == null || setScore > existing.score) {
                         best[key] = Record(
                             exerciseName = set.exerciseName,
                             setIndex = set.setIndex,
-                            score = score,
+                            score = setScore,
                             reps = figure,
                             weightKg = set.weightKg,
                             achievedAtMs = session.startedAtMs,
@@ -98,9 +94,26 @@ object SetRecords {
         }
     }
 
+    /** One set's strength score: a hold on its seconds, anything else on its reps. */
+    fun score(exerciseName: String, figure: Int, weightKg: Double?, bodyweightKg: Double, isHold: Boolean): Double =
+        if (isHold) {
+            StrengthIndex.holdScore(exerciseName, figure, weightKg, bodyweightKg)
+        } else {
+            StrengthIndex.repScore(exerciseName, figure, weightKg, bodyweightKg)
+        }
+
     // delta keeps a CONCRETE bodyweightKg on purpose: a live attempt happens
     // now, so today's reading is the correct value — records() is the only
     // time-aware side. Do not "tidy" this into a lookup.
+    /**
+     * How one attempt compares with the record at its set position.
+     *
+     * [Delta.isRecord] is strict: there must BE a prior record to beat (a
+     * first-ever set is history starting, not a PR), and the attempt must beat
+     * both that record and [bestEarlierThisWorkout], the best score of the
+     * exercise's earlier done sets in this same workout. Without the second
+     * bar a repeat of set 2 as set 3 read NEW PR twice.
+     */
     fun delta(
         records: Map<Pair<String, Int>, Record>,
         exerciseName: String,
@@ -110,24 +123,21 @@ object SetRecords {
         bodyweightKg: Double,
         /** True when [reps] is really seconds held. */
         isHold: Boolean = false,
+        bestEarlierThisWorkout: Double? = null,
     ): Delta {
-        val score = if (isHold) {
-            StrengthIndex.holdScore(exerciseName, reps, weightKg, bodyweightKg)
-        } else {
-            StrengthIndex.repScore(exerciseName, reps, weightKg, bodyweightKg)
-        }
+        val attempt = score(exerciseName, reps, weightKg, bodyweightKg, isHold)
         val record = records[exerciseName.lowercase().trim() to setIndex]
-            ?: return Delta(record = null, score = score, deltaScore = 0.0, deltaFraction = 0.0, isRecord = true)
-        val deltaScore = score - record.score
+            ?: return Delta(record = null, score = attempt, deltaScore = 0.0, deltaFraction = 0.0, isRecord = false)
+        val deltaScore = attempt - record.score
         // Record score can be 0.0 (e.g. bodyweight unknown at record time);
         // dividing would produce NaN, so a zero record pins the fraction at 0.
         val deltaFraction = if (record.score == 0.0) 0.0 else deltaScore / record.score
         return Delta(
             record = record,
-            score = score,
+            score = attempt,
             deltaScore = deltaScore,
             deltaFraction = deltaFraction,
-            isRecord = deltaScore > 0.0,
+            isRecord = deltaScore > 0.0 && attempt > (bestEarlierThisWorkout ?: Double.NEGATIVE_INFINITY),
         )
     }
 }

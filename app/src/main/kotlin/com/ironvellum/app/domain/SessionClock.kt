@@ -84,19 +84,21 @@ object SessionClock {
      * Clock time one session set costs. With a measured [paceSeconds] a
      * counted set costs exactly that. A hold costs its own seconds plus the
      * rest after it - the lifter's rest (his pace less [ProgramRules.SET_WORK_SECONDS])
-     * when measured, the prescribed rest otherwise. Unprofiled movements count
-     * as compounds, as [ProgramRules.sessionSeconds] does.
+     * when measured, the prescribed rest otherwise. A timed activity (a run, a
+     * row) costs its logged duration plus that same rest: a 45-minute run is
+     * not one pace set. Unprofiled movements count as compounds, as
+     * [ProgramRules.sessionSeconds] does.
      */
     fun setSeconds(set: SessionSet, metric: ExerciseMetric?, focus: TrainingFocus, paceSeconds: Int? = null): Int {
         val compound = MuscleMap.profile(set.exerciseName)?.compound ?: true
-        return if (MovementDifficulty.isHoldSet(metric, set.exerciseName, set.modifiers)) {
-            val rest = paceSeconds?.let { (it - ProgramRules.SET_WORK_SECONDS).coerceAtLeast(0) }
-                ?: ProgramRules.restSeconds(focus, compound)
-            // An archive from before HOLD existed keeps the seconds in reps.
-            rest + (set.durationSec ?: set.reps).coerceAtLeast(0)
-        } else {
-            paceSeconds ?: ProgramRules.setSeconds(focus, compound)
-        }
+        val timedActivity = (metric == ExerciseMetric.DURATION || metric == ExerciseMetric.DISTANCE_TIME) &&
+            (set.durationSec ?: 0) > 0
+        val hold = MovementDifficulty.isHoldSet(metric, set.exerciseName, set.modifiers)
+        if (!hold && !timedActivity) return paceSeconds ?: ProgramRules.setSeconds(focus, compound)
+        val rest = paceSeconds?.let { (it - ProgramRules.SET_WORK_SECONDS).coerceAtLeast(0) }
+            ?: ProgramRules.restSeconds(focus, compound)
+        // An archive from before HOLD existed keeps a hold's seconds in reps.
+        return rest + (set.durationSec ?: set.reps).coerceAtLeast(0)
     }
 
     /** Estimated clock time of every set in the session, done or not. */
@@ -123,10 +125,29 @@ object SessionClock {
         if (remainingSeconds <= 0) "EST ${minutes(totalSeconds)} MIN"
         else "EST ${minutes(totalSeconds)} MIN · ~${minutes(remainingSeconds)} LEFT"
 
-    /** "5 EXERCISES · 20 SETS · ~55 MIN" for a preset before it starts; [paceSeconds] as in [setSeconds]. */
-    fun planLine(entries: List<PlannedEntry>, focus: TrainingFocus, paceSeconds: Int? = null): String {
+    /**
+     * "5 EXERCISES · 20 SETS · ~55 MIN" for a preset before it starts; [paceSeconds] as in [setSeconds].
+     * Each entry is priced by [setSeconds], so a hold entry (its seconds kept in
+     * [PlannedEntry.reps]) costs its seconds plus rest, not a pace set.
+     * [metricOf] names an entry's catalogue metric; unknown falls back to the name rule.
+     */
+    fun planLine(
+        entries: List<PlannedEntry>,
+        focus: TrainingFocus,
+        paceSeconds: Int? = null,
+        metricOf: (PlannedEntry) -> ExerciseMetric? = { null },
+    ): String {
         val sets = entries.sumOf { it.sets }
-        val seconds = paceSeconds?.let { sets * it } ?: ProgramRules.sessionSeconds(entries, focus)
+        val seconds = entries.sumOf { entry ->
+            val set = SessionSet(
+                exerciseId = 0,
+                exerciseName = entry.exerciseName,
+                setIndex = 0,
+                reps = entry.reps,
+                modifiers = entry.modifiers,
+            )
+            entry.sets * setSeconds(set, metricOf(entry), focus, paceSeconds)
+        }
         val exercises = if (entries.size == 1) "EXERCISE" else "EXERCISES"
         val setWord = if (sets == 1) "SET" else "SETS"
         return "${entries.size} $exercises · $sets $setWord · ~${minutes(seconds)} MIN"

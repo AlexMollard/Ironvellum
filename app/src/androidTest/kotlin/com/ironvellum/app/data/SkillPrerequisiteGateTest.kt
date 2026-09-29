@@ -155,6 +155,26 @@ class SkillPrerequisiteGateTest {
         assertEquals(0L, db.profileDao().get()!!.totalXp)
     }
 
+    /**
+     * The clamped-refund farm: with the ledger spent below the skill's XP (a
+     * deleted workout clamps its own refund), an unclaim that took back only
+     * what was left let every reclaim mint the difference. The unclaim must
+     * refuse instead, leaving the claim and the ledger untouched.
+     */
+    @Test
+    fun unclaimingWithLessXpThanTheSkillPaidIsRefused() = runBlocking {
+        repo.claimSkill(root.name)
+        db.profileDao().addXp(-(root.xp - 10).toLong())
+        assertEquals(10L, db.profileDao().get()!!.totalXp)
+
+        val refused = runCatching { repo.unclaimSkill(root.name) }
+        assertTrue("an unclaim that cannot repay in full must be refused", refused.isFailure)
+        assertEquals("the refusal must leave the ledger alone", 10L, db.profileDao().get()!!.totalXp)
+        assertTrue(
+            "the refusal must leave the claim standing",
+            db.skillPracticeDao().claim(root.name) != null,
+        )
+    }
 
     private companion object {
         const val TEST_DB = "skill_prerequisite_gate_test.db"

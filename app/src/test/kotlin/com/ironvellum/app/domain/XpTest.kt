@@ -331,8 +331,21 @@ class XpTest {
     }
 
     @Test
-    fun `finishing with nothing logged still pays only the completion bonus`() {
-        assertEquals(Xp.COMPLETION_BONUS, Xp.award(emptyList(), bodyweight))
+    fun `finishing with nothing done pays no completion bonus`() {
+        assertEquals(0, Xp.award(emptyList(), bodyweight))
+        assertEquals(0, Xp.award(emptyList(), bodyweight, doneSetCount = 0))
+    }
+
+    @Test
+    fun `an activity-only workout still earns the completion bonus`() {
+        // No lifting sets, but a done run: the bonus is for finishing real work.
+        assertEquals(Xp.COMPLETION_BONUS, Xp.award(emptyList(), bodyweight, doneSetCount = 1))
+    }
+
+    @Test
+    fun `a done lifting set pays its XP plus the completion bonus`() {
+        val set = Xp.SetEffort("Push-up", reps = 10)
+        assertEquals(Xp.setXp(set, bodyweight) + Xp.COMPLETION_BONUS, Xp.award(listOf(set), bodyweight))
     }
 
     // ---------------------------------------------------------------- levels

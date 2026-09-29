@@ -60,7 +60,7 @@ class SetRecordsTest {
         val records = SetRecords.records(history, bwAt)
         assertNull("done=false sets must not count", records["pull-up" to 1])
         val delta = SetRecords.delta(records, "pull-up", setIndex = 1, reps = 1, weightKg = null, bodyweightKg = bw)
-        assertTrue(delta.isRecord)
+        assertFalse("nothing on record, so nothing to beat", delta.isRecord)
         assertNull(delta.record)
     }
 
@@ -73,18 +73,44 @@ class SetRecordsTest {
         assertNull(records["pull-up" to 1])
         // The session being logged is not the record it is judged against.
         val delta = SetRecords.delta(records, "pull-up", setIndex = 1, reps = 10, weightKg = null, bodyweightKg = bw)
-        assertTrue(delta.isRecord)
+        assertFalse(delta.isRecord)
         assertNull(delta.record)
     }
 
     @Test
-    fun firstEverAttemptAtSetPositionIsARecordWithNullRecord() {
+    fun firstEverAttemptAtSetPositionIsNotAPrItStartsTheRecord() {
         val delta = SetRecords.delta(emptyMap(), "Deadlift", setIndex = 3, reps = 5, weightKg = 100.0, bodyweightKg = bw)
         assertNull(delta.record)
         assertEquals(0.0, delta.deltaScore, 1e-9)
         assertEquals(0.0, delta.deltaFraction, 1e-9)
-        assertTrue(delta.isRecord)
+        assertFalse("a first-ever set has no prior record to beat", delta.isRecord)
         assertTrue(delta.score > 0.0)
+    }
+
+    @Test
+    fun aSetThatOnlyMatchesAnEarlierSetOfThisWorkoutIsNotAPr() {
+        // Set 2 and set 3 each have a weak history; today set 2 did 10 at +12.5.
+        val history = listOf(
+            session(1, 1_000) to listOf(
+                set(setIndex = 2, reps = 6, weightKg = 12.5),
+                set(setIndex = 3, reps = 6, weightKg = 12.5),
+            ),
+        )
+        val records = SetRecords.records(history, bwAt)
+        val set2Today = SetRecords.score("Pull-up", 10, 12.5, bw, isHold = false)
+        val set2 = SetRecords.delta(records, "Pull-up", setIndex = 2, reps = 10, weightKg = 12.5, bodyweightKg = bw)
+        assertTrue("set 2 beats its record and nothing came before it today", set2.isRecord)
+        val repeat = SetRecords.delta(
+            records, "Pull-up", setIndex = 3, reps = 10, weightKg = 12.5, bodyweightKg = bw,
+            bestEarlierThisWorkout = set2Today,
+        )
+        assertTrue("the repeat still beats its own set-3 record", repeat.deltaScore > 0.0)
+        assertFalse("a repeat of set 2 must not be a second PR", repeat.isRecord)
+        val better = SetRecords.delta(
+            records, "Pull-up", setIndex = 3, reps = 11, weightKg = 12.5, bodyweightKg = bw,
+            bestEarlierThisWorkout = set2Today,
+        )
+        assertTrue("beating both history and set 2 is a PR", better.isRecord)
     }
 
     @Test

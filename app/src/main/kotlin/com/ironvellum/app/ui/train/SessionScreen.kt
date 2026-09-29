@@ -1,5 +1,16 @@
 package com.ironvellum.app.ui.train
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.TextUnit
+import androidx.core.content.ContextCompat
 import android.content.Context
 import androidx.compose.animation.core.Animatable
 import androidx.compose.foundation.Canvas
@@ -276,6 +287,11 @@ class SessionViewModel(
         viewModelScope.launch { repo.removeSet(setId) }
     }
 
+    /** Drops a whole exercise from the live trial: the ✕ on a block's only set. */
+    fun removeExercise(exerciseId: Long) {
+        viewModelScope.launchGuarded("remove exercise") { repo.removeSessionExercise(sessionId, exerciseId) }
+    }
+
     fun setModifiers(exerciseId: Long, modifiers: String) {
         viewModelScope.launch { repo.setExerciseModifiers(sessionId, exerciseId, modifiers) }
     }
@@ -299,7 +315,14 @@ class SessionViewModel(
         viewModelScope.launchGuarded("move exercise") { repo.moveSessionExercise(sessionId, exercisePosition, up) }
     }
 
-    private var completing = false
+    /**
+     * True from the Claim Victory tap until the completion result lands (or
+     * the claim fails). The session row reads completed a beat before the
+     * result arrives; without this the screen would take that for a trial
+     * finished in an earlier process and leave before the victory.
+     */
+    private val _claiming = MutableStateFlow(false)
+    val claiming: StateFlow<Boolean> = _claiming
 
     fun complete() {
         // One completion per session, whatever the button does. The repository
@@ -309,8 +332,8 @@ class SessionViewModel(
         // landing before the victory overlay replaces the button would take the
         // exception straight into viewModelScope. So the second tap is dropped
         // here, and a genuine failure is surfaced rather than crashing.
-        if (completing) return
-        completing = true
+        if (_claiming.value) return
+        _claiming.value = true
         viewModelScope.launch {
             runCatching { repo.completeSession(sessionId) }
                 .onSuccess {
@@ -322,7 +345,7 @@ class SessionViewModel(
                     _routineUpdate.value = runCatching { repo.routineUpdateFor(sessionId) }.getOrNull()
                     _completion.value = it
                 }
-                .onFailure { completing = false }
+                .onFailure { _claiming.value = false }
         }
     }
 
@@ -381,6 +404,7 @@ fun SessionScreen(
     val routineUpdate by viewModel.routineUpdate.collectAsStateWithLifecycle()
     val completion by viewModel.completion.collectAsStateWithLifecycle()
     val finish by viewModel.finish.collectAsStateWithLifecycle()
+    val claiming by viewModel.claiming.collectAsStateWithLifecycle()
     var confirmAbandon by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
     var editModifiersFor by remember { mutableStateOf<Long?>(null) }
@@ -401,9 +425,27 @@ fun SessionScreen(
     // The lock-screen companion. The service watches the database and stops
     // itself when the session completes or is abandoned - the screen only
     // has to announce that the session is the live one.
-    val screenContext = androidx.compose.ui.platform.LocalContext.current
-    androidx.compose.runtime.LaunchedEffect(sessionId) {
+    val screenContext = LocalContext.current
+    // Android 13+ posts nothing without POST_NOTIFICATIONS, and before this
+    // only the reminder toggle asked for it, so most lifters never saw the
+    // trial notification. Asked ONCE, the first time a trial opens; a refusal
+    // is final here (Settings can still grant it), so there is no nagging.
+    val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        // Re-announce so the service posts now, not at the next ticked set.
+        if (granted) WorkoutSessionService.start(screenContext, sessionId)
+    }
+    LaunchedEffect(sessionId) {
         WorkoutSessionService.start(screenContext, sessionId)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(screenContext, Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            val prefs = screenContext.getSharedPreferences(TRIAL_PREFS, Context.MODE_PRIVATE)
+            if (!prefs.getBoolean(KEY_ASKED_NOTIFICATIONS, false)) {
+                prefs.edit().putBoolean(KEY_ASKED_NOTIFICATIONS, true).apply()
+                askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
     }
 
     val session = ui.session
@@ -412,6 +454,18 @@ fun SessionScreen(
             Spacer(Modifier.height(20.dp))
             Text("Summoning the trial…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
+        return
+    }
+
+    // Claimed in an earlier process (killed mid-victory): the XP is banked and
+    // the live trial must not come back with a Claim Victory that can only
+    // fail. This claim's own result is still on its way while [claiming].
+    if (session.completedAtMs != null && completion == null && !claiming) {
+        Column(Modifier.fillMaxSize().padding(16.dp)) {
+            Spacer(Modifier.height(20.dp))
+            Text("Trial already claimed.", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+        }
+        LaunchedEffect(session.id) { onExit() }
         return
     }
 
@@ -517,14 +571,14 @@ fun SessionScreen(
             }
             Spacer(Modifier.height(14.dp))
             InkPanel(Modifier.fillMaxWidth()) {
+                // Modifiers change the profile: a deficit push-up credits the
+                // chest at stretch, so the muscles read from both.
+                val shares = MuscleMap.profile(first.exerciseName, first.modifiers)?.muscles
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    // Modifiers change the profile: a deficit push-up credits the
-                    // chest at stretch, so the muscles read from both.
-                    val shares = MuscleMap.profile(first.exerciseName, first.modifiers)?.muscles
                     Column(
                         Modifier
                             .weight(1f)
@@ -544,18 +598,6 @@ fun SessionScreen(
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        shares?.let { musclesAt(it, ShareLevel.MAIN) }?.takeIf { it.isNotEmpty() }?.let { main ->
-                            Text(
-                                main.joinToString(" · ") { it.label.uppercase() },
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = ChakraPetch,
-                                color = IronvellumColors.InkMuted,
-                                letterSpacing = IronvellumTracking.InlineLabel,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.padding(top = 2.dp),
-                            )
-                        }
                         // Only real modifiers get a line. "tap to set modifiers"
                         // printed under every movement that had none, beside the
                         // slider glyph in this same header that does exactly that.
@@ -569,19 +611,6 @@ fun SessionScreen(
                                     .padding(vertical = 2.dp),
                             )
                         }
-                    }
-                    if (groupStrength != null && groupStrength > 0) {
-                        // Labelled, not a gold bolt beside a bare number: the
-                        // bolt read as XP, which this is not — it is the
-                        // body-scaled strength score for the movement.
-                        Text(
-                            "$groupStrength STR",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.SovereignGold,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
                     }
                     // Reorder controls only where a move is possible: disabled
                     // arrows at the ends cost the name ~48dp each at 360dp and
@@ -614,6 +643,54 @@ fun SessionScreen(
                         Icon(Icons.Filled.Add, contentDescription = "Add set", tint = IronvellumColors.SystemGreen)
                     }
                 }
+                // The muscles and the STR figure get their own full-width line
+                // under the header: beside the name they cut "Single-leg…" to
+                // "Sin/gl…", and inside the name's column the four header
+                // icons still squeezed "RHOMBOIDS" to "RHOM…".
+                val mainMuscles = shares?.let { musclesAt(it, ShareLevel.MAIN) }?.takeIf { it.isNotEmpty() }
+                val showStrength = groupStrength != null && groupStrength > 0
+                if (mainMuscles != null || showStrength) {
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .then(
+                                if (shares != null) {
+                                    Modifier.clickable(onClickLabel = "Show muscles for ${first.exerciseName}") {
+                                        musclesFor = exerciseId
+                                    }
+                                } else {
+                                    Modifier
+                                },
+                            )
+                            .padding(bottom = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            mainMuscles?.joinToString(" · ") { it.label.uppercase() }.orEmpty(),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            color = IronvellumColors.InkMuted,
+                            letterSpacing = IronvellumTracking.InlineLabel,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (showStrength) {
+                            // Labelled, not a gold bolt beside a bare number: the
+                            // bolt read as XP, which this is not — it is the
+                            // body-scaled strength score for the movement.
+                            Text(
+                                "$groupStrength STR",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontFamily = ChakraPetch,
+                                color = IronvellumColors.SovereignGold,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                        }
+                    }
+                }
                 sets.sortedBy { it.setIndex }.forEachIndexed { position, set ->
                     SetRow(
                         label = "${set.setIndex + 1}",
@@ -638,9 +715,28 @@ fun SessionScreen(
                         // every row printed the same two words 36 times in an
                         // 18-set session, on top of identical steppers.
                         showColumnLabels = position == 0,
+                        // A PR must also beat this exercise's earlier done sets
+                        // today, or a repeat of set 2 as set 3 reads NEW PR twice.
+                        bestEarlierThisWorkout = bodyweight?.takeIf { blockMetric.isStrength }?.let { bw ->
+                            sets.filter { it.done && it.setIndex < set.setIndex }.maxOfOrNull { earlier ->
+                                SetRecords.score(
+                                    earlier.exerciseName,
+                                    if (isHoldBlock) (earlier.durationSec ?: 0) else earlier.reps,
+                                    earlier.weightKg,
+                                    bw,
+                                    isHoldBlock,
+                                )
+                            }
+                        },
                         onLoadTap = { editLoadFor = set },
-                        // the final set stays: drop the exercise instead of emptying it
-                        onRemove = if (sets.size > 1) ({ viewModel.removeSet(set.id) }) else null,
+                        // Removing a block's only set removes the exercise; the
+                        // ✕ is the same everywhere, so a one-off added by
+                        // mistake can be taken back out.
+                        onRemove = if (sets.size > 1) {
+                            { viewModel.removeSet(set.id) }
+                        } else {
+                            { viewModel.removeExercise(exerciseId) }
+                        },
                         onChange = { value, w, d ->
                             if (isHoldBlock) {
                                 viewModel.updateHoldSet(set.id, value, w, d)
@@ -675,12 +771,25 @@ fun SessionScreen(
         SessionNotesEditor(session = session, viewModel = viewModel)
 
         Spacer(Modifier.height(16.dp))
+        // Nothing ticked is nothing to claim: finishing an empty trial is an
+        // abandon, and it must never mint the completion bonus.
+        val anyDone = doneCount > 0
         IronvellumButton(
             label = "Claim Victory",
             gold = true,
+            enabled = anyDone,
             onClick = { viewModel.complete() },
             modifier = Modifier.fillMaxWidth(),
         )
+        if (!anyDone) {
+            Text(
+                "Tick a set to claim victory",
+                style = MaterialTheme.typography.labelSmall,
+                color = IronvellumColors.InkMuted,
+                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                textAlign = TextAlign.Center,
+            )
+        }
         Spacer(Modifier.height(24.dp))
     }
 
@@ -1110,11 +1219,12 @@ private fun SetRow(
     distanceM: Double? = null,
     grade: String = "",
     /**
-     * False for activity work. Records exclude it, so without this the badge
-     * read "NEW PR" on every climbing set forever: no stored record means
-     * [SetRecords.delta] reports the first one.
+     * False for activity work: its figure is not strength, so it never gets a
+     * PR line at all.
      */
     scoresStrength: Boolean = true,
+    /** Best score of this exercise's earlier done sets today; a PR must beat it too. */
+    bestEarlierThisWorkout: Double? = null,
     showColumnLabels: Boolean = true,
     onRemove: (() -> Unit)? = null,
     onChange: (Int, Double?, Boolean) -> Unit,
@@ -1211,7 +1321,9 @@ private fun SetRow(
             modifier = Modifier.padding(end = 2.dp),
         )
         if (metric.isStrength) {
-            Column(Modifier.weight(1f)) {
+            // LOAD gets the wider share: "102.5kg" is the longest figure in the
+            // row and was drawn over its own − and + at 360dp.
+            Column(Modifier.weight(1.25f)) {
                 if (showColumnLabels) ColumnLabel("LOAD")
                 Stepper(
                     value = formatKg(weightKg),
@@ -1362,7 +1474,11 @@ private fun SetRow(
         // an undone one the figure is still a plan, and a fresh session read
         // "NEW PR" under every one of its seventeen sets.
         val delta = bodyweight?.takeIf { scoresStrength && done }?.let { bw ->
-            SetRecords.delta(records, exerciseName, setIndex, reps, weightKg, bw, isHold = isHold)
+            SetRecords.delta(
+                records, exerciseName, setIndex, reps, weightKg, bw,
+                isHold = isHold,
+                bestEarlierThisWorkout = bestEarlierThisWorkout,
+            )
         }
         SetDeltaBadge(delta, displaySetNo = setIndex + 1)
     }
@@ -1506,10 +1622,24 @@ private fun Stepper(
             StepZone("−", "Decrease $what", onMinus, Alignment.CenterStart, Modifier.weight(1f))
             StepZone("+", "Increase $what", onPlus, Alignment.CenterEnd, Modifier.weight(1f))
         }
+        // A load's "kg" drops to a small suffix and a five-character figure
+        // ("102.5") steps down a size, so the figure fits between the − and +
+        // glyphs of a 360dp row instead of being drawn over them.
+        val unitAt = if (value.length > 2 && value.endsWith("kg")) value.length - 2 else value.length
+        val number = value.substring(0, unitAt)
+        val unit = value.substring(unitAt)
         val figure = @Composable {
             Text(
-                value,
+                buildAnnotatedString {
+                    append(number)
+                    if (unit.isNotEmpty()) {
+                        withStyle(SpanStyle(fontSize = 9.sp, fontWeight = FontWeight.Normal)) { append(unit) }
+                    }
+                },
                 style = MaterialTheme.typography.labelLarge,
+                fontSize = if (number.length >= 5) 12.sp else TextUnit.Unspecified,
+                // The theme's label tracking pushed "12.5kg" into the glyphs.
+                letterSpacing = if (number.length >= 4) 0.5.sp else TextUnit.Unspecified,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 color = if (dimmed) IronvellumColors.InkMuted else IronvellumColors.Ink,
@@ -1553,7 +1683,7 @@ private fun StepZone(symbol: String, description: String, onClick: () -> Unit, g
             color = IronvellumColors.SystemGreen,
             modifier = Modifier
                 .clearAndSetSemantics {}
-                .padding(horizontal = 12.dp),
+                .padding(horizontal = 9.dp),
         )
     }
 }
@@ -1566,6 +1696,10 @@ private val STEPPER_HIT_HEIGHT = 44.dp
 
 
 private const val TITLE_CAP = 80
+
+/** Where the one-time trial notification ask is remembered. */
+private const val TRIAL_PREFS = "trial"
+private const val KEY_ASKED_NOTIFICATIONS = "asked_post_notifications"
 private const val PUBLIC_NOTE_CAP = 500
 
 

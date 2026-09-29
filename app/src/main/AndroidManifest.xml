@@ -8,11 +8,16 @@
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
-    <!-- Only the optional daily reminder posts notifications; off until the
-         lifter enables it in Settings, and the runtime grant is requested there. -->
+    <!-- Lets the Health Connect read run from a background worker, not only
+         while the app is open; requested from Settings. -->
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
+    <!-- Two things post notifications: the live trial's ongoing notification
+         (the grant is asked once, when the first trial starts) and the
+         optional daily reminder (asked when it is enabled in Settings). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- The mid-workout notification runs as a special-use foreground service:
          it mirrors the live session the lifter has open. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
     <!--

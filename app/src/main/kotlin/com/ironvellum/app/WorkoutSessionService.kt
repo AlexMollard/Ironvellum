@@ -7,6 +7,8 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -15,6 +17,7 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.SessionSet
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.combine
@@ -58,6 +61,13 @@ class WorkoutSessionService : Service() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private lateinit var repo: Repository
 
+    /**
+     * The one live collector. A second start (another trial opened while this
+     * one still ran) must replace it: a stale collector for the old trial would
+     * see that trial end and stopSelf() the new trial's notification.
+     */
+    private var watcher: Job? = null
+
     override fun onCreate() {
         super.onCreate()
         ensureChannel(this)
@@ -65,32 +75,39 @@ class WorkoutSessionService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        watcher?.cancel()
+        watcher = null
         val sessionId = intent?.getLongExtra(EXTRA_SESSION_ID, -1L) ?: -1L
         if (sessionId <= 0L) {
             stopSelf()
             return START_NOT_STICKY
         }
         // API 34+ requires the manifest type to be restated here, or the
-        // notification silently never reaches the shade.
+        // notification silently never reaches the shade. The constant only
+        // exists from 34 (UPSIDE_DOWN_CAKE); below it the manifest type is enough.
         androidx.core.app.ServiceCompat.startForeground(
             this,
             NOTIFICATION_ID,
-            buildNotification(emptyList()),
-            android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE,
+            buildNotification(emptyList(), startedAtMs = null),
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            } else {
+                0
+            },
         )
 
-        scope.launch {
+        watcher = scope.launch {
             combine(
                 repo.observeSessionSets(sessionId),
-                repo.observeRecentSessions(5),
-            ) { sets, recent -> sets to recent.firstOrNull { it.id == sessionId } }
+                repo.observeSession(sessionId),
+            ) { sets, session -> sets to session }
                 .collect { (sets, session) ->
                     // Completed or abandoned: the notification has no reason to live.
                     if (session == null || session.completedAtMs != null) {
                         stopSelf()
                         return@collect
                     }
-                    post(buildNotification(sets))
+                    post(buildNotification(sets, session.startedAtMs))
                 }
         }
         return START_NOT_STICKY
@@ -103,12 +120,17 @@ class WorkoutSessionService : Service() {
         manager.notify(NOTIFICATION_ID, notification)
     }
 
-    private fun buildNotification(sets: List<SessionSet>): Notification {
+    /**
+     * Clock-app style: the chronometer counts up from the trial's start, the
+     * title is the exercise the lifter is on, the text the set in hand, and
+     * the sub-text the progress, so the collapsed row carries all three.
+     */
+    private fun buildNotification(sets: List<SessionSet>, startedAtMs: Long?): Notification {
         val done = sets.count { it.done }
         val total = sets.size
         val next = sets.firstOrNull { !it.done }
         // The exercise the lifter is on now, not the first one of the day.
-        val label = (next ?: sets.firstOrNull())?.exerciseName?.uppercase() ?: "WARMING UP"
+        val title = (next ?: sets.firstOrNull())?.exerciseName ?: "Trial"
         val body = when {
             total == 0 -> "Loading the trial…"
             next == null -> "Every set conquered. Claim Victory."
@@ -121,6 +143,7 @@ class WorkoutSessionService : Service() {
                 next.weightKg?.takeIf { it > 0.0 }?.let { append(" · ${formatLoad(it)}") }
             }
         }
+        val setWord = if (total == 1) "set" else "sets"
         val intent = packageManager.getLaunchIntentForPackage(packageName)
         val pending = intent?.let {
             PendingIntent.getActivity(
@@ -128,17 +151,20 @@ class WorkoutSessionService : Service() {
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
         }
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_reminder)
-            .setContentTitle("TRIAL · $label")
+            .setContentTitle(title)
             .setContentText(body)
-            .setSubText("$done / $total sets")
+            .setSubText("TRIAL · $done / $total $setWord")
             .setProgress(total.coerceAtLeast(1), done, total == 0)
             .setOngoing(true)
             .setOnlyAlertOnce(true)
             .setSilent(true)
             .setContentIntent(pending)
-            .build()
+        if (startedAtMs != null) {
+            builder.setWhen(startedAtMs).setShowWhen(true).setUsesChronometer(true)
+        }
+        return builder.build()
     }
 
     private fun formatLoad(kg: Double): String =

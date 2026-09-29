@@ -137,9 +137,17 @@ object Xp {
         return BASE_PER_SET + (PER_EFFORT_UNIT * units).roundToInt()
     }
 
-    /** XP for the lifting half of a session: every completed set, plus the bonus for finishing. */
-    fun award(sets: List<SetEffort>, bodyweightKg: Double?): Int =
-        sets.sumOf { setXp(it, bodyweightKg) } + COMPLETION_BONUS
+    /**
+     * XP for the lifting half of a session: every completed set, plus the
+     * bonus for finishing. [doneSetCount] counts every done set in the
+     * session, activities included, so a run-only workout still earns the
+     * bonus; a workout with nothing done earns nothing, or Claim Victory on an
+     * empty trial (and every empty imported session) would mint XP.
+     */
+    fun award(sets: List<SetEffort>, bodyweightKg: Double?, doneSetCount: Int = sets.size): Int {
+        val lifted = sets.sumOf { setXp(it, bodyweightKg) }
+        return if (doneSetCount > 0) lifted + COMPLETION_BONUS else lifted
+    }
 
     fun xpForNextLevel(level: Int): Long = 100L * level
 
