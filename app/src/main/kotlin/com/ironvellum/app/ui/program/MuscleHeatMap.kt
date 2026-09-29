@@ -129,38 +129,38 @@ fun coverageGaps(volume: Map<Muscle, Double>, goal: CoverageGoal): List<Muscle> 
     }
 
 private val FRONT = listOf(
-    Region(Muscle.TRAPS, 0.042f to 0.122f, 0.066f to 0.129f, 0.093f to 0.136f, 0.102f to 0.141f, 0.074f to 0.143f, 0.050f to 0.138f, 0.040f to 0.130f),
-    Region(Muscle.FRONT_DELTS, 0.112f to 0.146f, 0.121f to 0.153f, 0.129f to 0.161f, 0.132f to 0.168f, 0.134f to 0.176f, 0.135f to 0.183f, 0.133f to 0.191f, 0.130f to 0.198f, 0.125f to 0.206f, 0.120f to 0.206f, 0.114f to 0.198f, 0.110f to 0.191f, 0.108f to 0.183f, 0.106f to 0.176f, 0.106f to 0.168f, 0.106f to 0.161f, 0.108f to 0.153f, 0.110f to 0.146f),
-    Region(Muscle.SIDE_DELTS, 0.133f to 0.150f, 0.148f to 0.159f, 0.155f to 0.167f, 0.160f to 0.175f, 0.164f to 0.184f, 0.163f to 0.193f, 0.161f to 0.201f, 0.158f to 0.209f, 0.155f to 0.218f, 0.152f to 0.218f, 0.147f to 0.209f, 0.145f to 0.201f, 0.144f to 0.193f, 0.143f to 0.184f, 0.140f to 0.175f, 0.138f to 0.167f, 0.137f to 0.159f, 0.131f to 0.150f),
-    Region(Muscle.UPPER_CHEST, 0.010f to 0.151f, 0.056f to 0.144f, 0.094f to 0.152f, 0.106f to 0.169f, 0.098f to 0.172f, 0.058f to 0.167f, 0.010f to 0.169f),
-    Region(Muscle.MID_CHEST, 0.010f to 0.174f, 0.060f to 0.172f, 0.100f to 0.177f, 0.107f to 0.182f, 0.098f to 0.189f, 0.056f to 0.201f, 0.010f to 0.204f),
-    Region(Muscle.LOWER_CHEST, 0.010f to 0.209f, 0.056f to 0.206f, 0.098f to 0.194f, 0.101f to 0.200f, 0.088f to 0.214f, 0.058f to 0.226f, 0.010f to 0.229f),
-    Region(Muscle.SERRATUS, 0.090f to 0.218f, 0.104f to 0.230f, 0.105f to 0.258f, 0.098f to 0.284f, 0.084f to 0.278f, 0.078f to 0.244f),
-    Region(Muscle.BICEPS, 0.132f to 0.222f, 0.140f to 0.234f, 0.144f to 0.246f, 0.147f to 0.258f, 0.149f to 0.270f, 0.148f to 0.282f, 0.146f to 0.294f, 0.142f to 0.306f, 0.135f to 0.318f, 0.130f to 0.318f, 0.125f to 0.306f, 0.121f to 0.294f, 0.119f to 0.282f, 0.117f to 0.270f, 0.117f to 0.258f, 0.118f to 0.246f, 0.120f to 0.234f, 0.126f to 0.222f),
-    Region(Muscle.BRACHIALIS, 0.162f to 0.258f, 0.165f to 0.268f, 0.166f to 0.278f, 0.166f to 0.288f, 0.165f to 0.298f, 0.164f to 0.308f, 0.162f to 0.318f, 0.160f to 0.328f, 0.158f to 0.338f, 0.156f to 0.338f, 0.153f to 0.328f, 0.153f to 0.318f, 0.153f to 0.308f, 0.154f to 0.298f, 0.155f to 0.288f, 0.156f to 0.278f, 0.157f to 0.268f, 0.159f to 0.258f),
-    Region(Muscle.FOREARMS, 0.144f to 0.340f, 0.161f to 0.353f, 0.167f to 0.367f, 0.166f to 0.380f, 0.164f to 0.393f, 0.161f to 0.406f, 0.157f to 0.419f, 0.152f to 0.433f, 0.146f to 0.446f, 0.139f to 0.446f, 0.134f to 0.433f, 0.129f to 0.419f, 0.126f to 0.406f, 0.125f to 0.393f, 0.124f to 0.380f, 0.124f to 0.367f, 0.126f to 0.353f, 0.137f to 0.340f),
-    Region(Muscle.ABS, 0.010f to 0.242f, 0.052f to 0.242f, 0.060f to 0.300f, 0.060f to 0.380f, 0.052f to 0.448f, 0.010f to 0.462f),
-    Region(Muscle.OBLIQUES, 0.070f to 0.296f, 0.101f to 0.300f, 0.096f to 0.330f, 0.090f to 0.370f, 0.089f to 0.405f, 0.094f to 0.438f, 0.080f to 0.452f, 0.068f to 0.420f, 0.066f to 0.360f),
-    Region(Muscle.HIP_FLEXORS, 0.028f to 0.466f, 0.062f to 0.464f, 0.076f to 0.474f, 0.060f to 0.488f, 0.034f to 0.488f),
-    Region(Muscle.QUADS, 0.077f to 0.488f, 0.100f to 0.514f, 0.110f to 0.539f, 0.112f to 0.565f, 0.109f to 0.591f, 0.103f to 0.617f, 0.096f to 0.642f, 0.086f to 0.668f, 0.076f to 0.694f, 0.070f to 0.694f, 0.065f to 0.668f, 0.062f to 0.642f, 0.058f to 0.617f, 0.056f to 0.591f, 0.054f to 0.565f, 0.050f to 0.539f, 0.051f to 0.514f, 0.065f to 0.488f),
-    Region(Muscle.ADDUCTORS, 0.025f to 0.515f, 0.039f to 0.532f, 0.046f to 0.549f, 0.049f to 0.566f, 0.049f to 0.583f, 0.048f to 0.599f, 0.047f to 0.616f, 0.045f to 0.633f, 0.043f to 0.650f, 0.040f to 0.650f, 0.036f to 0.633f, 0.032f to 0.616f, 0.029f to 0.599f, 0.027f to 0.583f, 0.025f to 0.566f, 0.020f to 0.549f, 0.016f to 0.532f, 0.020f to 0.515f),
-    Region(Muscle.TIBIALIS, 0.086f to 0.730f, 0.093f to 0.747f, 0.097f to 0.765f, 0.097f to 0.782f, 0.095f to 0.800f, 0.091f to 0.818f, 0.086f to 0.835f, 0.081f to 0.853f, 0.075f to 0.870f, 0.072f to 0.870f, 0.074f to 0.853f, 0.075f to 0.835f, 0.077f to 0.818f, 0.077f to 0.800f, 0.078f to 0.782f, 0.079f to 0.765f, 0.079f to 0.747f, 0.083f to 0.730f),
-    Region(Muscle.CALVES, 0.055f to 0.722f, 0.063f to 0.742f, 0.068f to 0.761f, 0.067f to 0.781f, 0.065f to 0.801f, 0.062f to 0.821f, 0.059f to 0.841f, 0.054f to 0.860f, 0.049f to 0.880f, 0.046f to 0.880f, 0.043f to 0.860f, 0.040f to 0.841f, 0.038f to 0.821f, 0.035f to 0.801f, 0.035f to 0.781f, 0.037f to 0.761f, 0.041f to 0.742f, 0.050f to 0.722f),
+    Region(Muscle.TRAPS, 0.029f to 0.145f, 0.058f to 0.150f, 0.088f to 0.155f, 0.099f to 0.159f, 0.064f to 0.164f, 0.036f to 0.162f, 0.025f to 0.155f),
+    Region(Muscle.FRONT_DELTS, 0.103f to 0.157f, 0.111f to 0.158f, 0.118f to 0.165f, 0.120f to 0.172f, 0.121f to 0.179f, 0.124f to 0.186f, 0.123f to 0.195f, 0.118f to 0.201f, 0.113f to 0.210f, 0.108f to 0.210f, 0.101f to 0.203f, 0.098f to 0.192f, 0.097f to 0.185f, 0.095f to 0.180f, 0.094f to 0.174f, 0.092f to 0.165f, 0.097f to 0.159f, 0.101f to 0.157f),
+    Region(Muscle.SIDE_DELTS, 0.119f to 0.160f, 0.133f to 0.165f, 0.141f to 0.173f, 0.146f to 0.175f, 0.148f to 0.188f, 0.152f to 0.200f, 0.147f to 0.209f, 0.146f to 0.222f, 0.143f to 0.234f, 0.138f to 0.234f, 0.131f to 0.224f, 0.128f to 0.215f, 0.126f to 0.203f, 0.125f to 0.188f, 0.124f to 0.182f, 0.121f to 0.173f, 0.122f to 0.167f, 0.116f to 0.160f),
+    Region(Muscle.UPPER_CHEST, 0.009f to 0.169f, 0.051f to 0.163f, 0.084f to 0.166f, 0.094f to 0.178f, 0.087f to 0.181f, 0.051f to 0.179f, 0.009f to 0.181f),
+    Region(Muscle.MID_CHEST, 0.006f to 0.182f, 0.053f to 0.180f, 0.089f to 0.182f, 0.095f to 0.186f, 0.093f to 0.191f, 0.049f to 0.204f, 0.008f to 0.208f),
+    Region(Muscle.LOWER_CHEST, 0.007f to 0.209f, 0.052f to 0.205f, 0.095f to 0.192f, 0.097f to 0.199f, 0.086f to 0.214f, 0.054f to 0.229f, 0.005f to 0.232f),
+    Region(Muscle.SERRATUS, 0.076f to 0.216f, 0.090f to 0.228f, 0.095f to 0.258f, 0.078f to 0.288f, 0.066f to 0.280f, 0.066f to 0.243f),
+    Region(Muscle.BICEPS, 0.119f to 0.213f, 0.129f to 0.222f, 0.135f to 0.236f, 0.143f to 0.250f, 0.143f to 0.272f, 0.143f to 0.287f, 0.144f to 0.305f, 0.139f to 0.318f, 0.131f to 0.331f, 0.126f to 0.333f, 0.118f to 0.326f, 0.113f to 0.306f, 0.111f to 0.287f, 0.103f to 0.272f, 0.103f to 0.256f, 0.095f to 0.239f, 0.103f to 0.228f, 0.112f to 0.213f),
+    Region(Muscle.BRACHIALIS, 0.150f to 0.238f, 0.155f to 0.251f, 0.158f to 0.264f, 0.158f to 0.277f, 0.158f to 0.290f, 0.158f to 0.303f, 0.155f to 0.316f, 0.153f to 0.329f, 0.150f to 0.342f, 0.149f to 0.342f, 0.145f to 0.329f, 0.145f to 0.316f, 0.145f to 0.303f, 0.145f to 0.290f, 0.145f to 0.277f, 0.145f to 0.264f, 0.146f to 0.251f, 0.145f to 0.238f),
+    Region(Muscle.FOREARMS, 0.135f to 0.338f, 0.154f to 0.351f, 0.159f to 0.372f, 0.158f to 0.389f, 0.157f to 0.405f, 0.157f to 0.425f, 0.150f to 0.443f, 0.144f to 0.465f, 0.135f to 0.482f, 0.126f to 0.482f, 0.121f to 0.463f, 0.115f to 0.445f, 0.110f to 0.425f, 0.111f to 0.405f, 0.112f to 0.388f, 0.113f to 0.369f, 0.115f to 0.347f, 0.128f to 0.338f),
+    Region(Muscle.ABS, 0.007f to 0.236f, 0.047f to 0.238f, 0.051f to 0.292f, 0.050f to 0.381f, 0.042f to 0.454f, 0.006f to 0.469f),
+    Region(Muscle.OBLIQUES, 0.055f to 0.288f, 0.087f to 0.293f, 0.082f to 0.329f, 0.077f to 0.377f, 0.075f to 0.419f, 0.079f to 0.459f, 0.065f to 0.475f, 0.054f to 0.437f, 0.051f to 0.365f),
+    Region(Muscle.HIP_FLEXORS, 0.019f to 0.466f, 0.047f to 0.464f, 0.062f to 0.474f, 0.047f to 0.488f, 0.020f to 0.493f),
+    Region(Muscle.QUADS, 0.065f to 0.483f, 0.091f to 0.496f, 0.096f to 0.537f, 0.098f to 0.564f, 0.096f to 0.591f, 0.093f to 0.620f, 0.089f to 0.655f, 0.078f to 0.678f, 0.069f to 0.703f, 0.063f to 0.705f, 0.058f to 0.682f, 0.053f to 0.656f, 0.048f to 0.625f, 0.048f to 0.591f, 0.047f to 0.562f, 0.043f to 0.535f, 0.043f to 0.508f, 0.055f to 0.485f),
+    Region(Muscle.ADDUCTORS, 0.015f to 0.484f, 0.032f to 0.507f, 0.042f to 0.534f, 0.044f to 0.558f, 0.045f to 0.581f, 0.046f to 0.606f, 0.045f to 0.636f, 0.044f to 0.662f, 0.039f to 0.685f, 0.035f to 0.685f, 0.030f to 0.664f, 0.024f to 0.635f, 0.022f to 0.603f, 0.020f to 0.581f, 0.015f to 0.554f, 0.011f to 0.532f, 0.005f to 0.509f, 0.009f to 0.486f),
+    Region(Muscle.TIBIALIS, 0.075f to 0.705f, 0.084f to 0.730f, 0.089f to 0.757f, 0.090f to 0.778f, 0.087f to 0.804f, 0.085f to 0.832f, 0.077f to 0.861f, 0.071f to 0.884f, 0.063f to 0.905f, 0.058f to 0.913f, 0.061f to 0.890f, 0.062f to 0.863f, 0.063f to 0.836f, 0.065f to 0.804f, 0.066f to 0.776f, 0.068f to 0.755f, 0.066f to 0.726f, 0.071f to 0.705f),
+    Region(Muscle.CALVES, 0.051f to 0.681f, 0.061f to 0.709f, 0.067f to 0.746f, 0.065f to 0.775f, 0.063f to 0.801f, 0.062f to 0.832f, 0.060f to 0.866f, 0.051f to 0.895f, 0.045f to 0.921f, 0.040f to 0.921f, 0.035f to 0.895f, 0.032f to 0.864f, 0.027f to 0.836f, 0.028f to 0.801f, 0.028f to 0.775f, 0.029f to 0.744f, 0.032f to 0.709f, 0.045f to 0.683f),
 )
 
 private val BACK = listOf(
-    Region(Muscle.TRAPS, 0.010f to 0.118f, 0.040f to 0.122f, 0.070f to 0.132f, 0.100f to 0.142f, 0.092f to 0.150f, 0.060f to 0.152f, 0.026f to 0.168f, 0.017f to 0.230f, 0.013f to 0.290f, 0.008f to 0.305f),
-    Region(Muscle.RHOMBOIDS, 0.026f to 0.176f, 0.048f to 0.162f, 0.066f to 0.176f, 0.066f to 0.214f, 0.044f to 0.240f, 0.026f to 0.236f),
-    Region(Muscle.ROTATOR_CUFF, 0.068f to 0.160f, 0.096f to 0.152f, 0.110f to 0.160f, 0.106f to 0.196f, 0.078f to 0.214f, 0.068f to 0.198f),
-    Region(Muscle.REAR_DELTS, 0.125f to 0.148f, 0.143f to 0.157f, 0.154f to 0.165f, 0.159f to 0.174f, 0.163f to 0.183f, 0.162f to 0.192f, 0.158f to 0.201f, 0.153f to 0.209f, 0.147f to 0.218f, 0.139f to 0.218f, 0.131f to 0.209f, 0.126f to 0.201f, 0.123f to 0.192f, 0.121f to 0.183f, 0.119f to 0.174f, 0.120f to 0.165f, 0.121f to 0.157f, 0.121f to 0.148f),
-    Region(Muscle.LATS, 0.020f to 0.272f, 0.062f to 0.232f, 0.105f to 0.236f, 0.107f to 0.262f, 0.104f to 0.292f, 0.098f to 0.326f, 0.092f to 0.360f, 0.070f to 0.382f, 0.030f to 0.366f),
-    Region(Muscle.TRICEPS, 0.142f to 0.218f, 0.156f to 0.233f, 0.163f to 0.247f, 0.166f to 0.262f, 0.166f to 0.276f, 0.163f to 0.290f, 0.158f to 0.305f, 0.152f to 0.320f, 0.143f to 0.334f, 0.136f to 0.334f, 0.128f to 0.320f, 0.124f to 0.305f, 0.121f to 0.290f, 0.118f to 0.276f, 0.116f to 0.262f, 0.117f to 0.247f, 0.122f to 0.233f, 0.133f to 0.218f),
-    Region(Muscle.FOREARMS, 0.144f to 0.340f, 0.161f to 0.353f, 0.167f to 0.367f, 0.166f to 0.380f, 0.164f to 0.393f, 0.161f to 0.406f, 0.157f to 0.419f, 0.152f to 0.433f, 0.146f to 0.446f, 0.139f to 0.446f, 0.134f to 0.433f, 0.129f to 0.419f, 0.126f to 0.406f, 0.125f to 0.393f, 0.124f to 0.380f, 0.124f to 0.367f, 0.126f to 0.353f, 0.137f to 0.340f),
-    Region(Muscle.LOWER_BACK, 0.010f to 0.376f, 0.036f to 0.380f, 0.066f to 0.398f, 0.068f to 0.446f, 0.010f to 0.456f),
-    Region(Muscle.ABDUCTORS, 0.054f to 0.466f, 0.092f to 0.458f, 0.100f to 0.470f, 0.103f to 0.484f, 0.080f to 0.488f, 0.054f to 0.484f),
-    Region(Muscle.GLUTES, 0.006f to 0.468f, 0.099f to 0.502f, 0.103f to 0.502f, 0.108f to 0.505f, 0.111f to 0.535f, 0.112f to 0.565f, 0.070f to 0.584f, 0.030f to 0.578f, 0.019f to 0.535f, 0.008f to 0.505f),
-    Region(Muscle.HAMSTRINGS, 0.076f to 0.592f, 0.093f to 0.605f, 0.101f to 0.619f, 0.103f to 0.632f, 0.101f to 0.646f, 0.096f to 0.659f, 0.089f to 0.673f, 0.080f to 0.686f, 0.069f to 0.700f, 0.060f to 0.700f, 0.049f to 0.686f, 0.041f to 0.673f, 0.036f to 0.659f, 0.033f to 0.646f, 0.032f to 0.632f, 0.035f to 0.619f, 0.044f to 0.605f, 0.062f to 0.592f),
-    Region(Muscle.CALVES, 0.069f to 0.720f, 0.088f to 0.740f, 0.097f to 0.761f, 0.096f to 0.781f, 0.093f to 0.802f, 0.087f to 0.823f, 0.079f to 0.843f, 0.070f to 0.863f, 0.059f to 0.884f, 0.052f to 0.884f, 0.047f to 0.863f, 0.042f to 0.843f, 0.038f to 0.823f, 0.035f to 0.802f, 0.033f to 0.781f, 0.034f to 0.761f, 0.042f to 0.740f, 0.059f to 0.720f),
+    Region(Muscle.TRAPS, 0.010f to 0.140f, 0.038f to 0.144f, 0.065f to 0.151f, 0.091f to 0.157f, 0.082f to 0.163f, 0.054f to 0.167f, 0.023f to 0.178f, 0.015f to 0.230f, 0.010f to 0.290f, 0.006f to 0.305f),
+    Region(Muscle.RHOMBOIDS, 0.023f to 0.181f, 0.043f to 0.173f, 0.058f to 0.181f, 0.057f to 0.214f, 0.039f to 0.243f, 0.017f to 0.248f),
+    Region(Muscle.ROTATOR_CUFF, 0.060f to 0.170f, 0.092f to 0.159f, 0.106f to 0.166f, 0.101f to 0.202f, 0.068f to 0.231f, 0.059f to 0.204f),
+    Region(Muscle.REAR_DELTS, 0.113f to 0.159f, 0.128f to 0.165f, 0.138f to 0.171f, 0.143f to 0.174f, 0.146f to 0.183f, 0.146f to 0.192f, 0.143f to 0.201f, 0.138f to 0.209f, 0.133f to 0.218f, 0.125f to 0.218f, 0.117f to 0.209f, 0.111f to 0.201f, 0.109f to 0.192f, 0.107f to 0.185f, 0.106f to 0.178f, 0.107f to 0.172f, 0.108f to 0.166f, 0.109f to 0.159f),
+    Region(Muscle.LATS, 0.014f to 0.271f, 0.054f to 0.229f, 0.095f to 0.229f, 0.091f to 0.253f, 0.087f to 0.291f, 0.081f to 0.329f, 0.077f to 0.370f, 0.057f to 0.385f, 0.022f to 0.369f),
+    Region(Muscle.TRICEPS, 0.128f to 0.218f, 0.142f to 0.233f, 0.149f to 0.247f, 0.152f to 0.262f, 0.154f to 0.276f, 0.152f to 0.290f, 0.148f to 0.305f, 0.143f to 0.320f, 0.135f to 0.334f, 0.128f to 0.334f, 0.121f to 0.320f, 0.117f to 0.305f, 0.113f to 0.290f, 0.109f to 0.276f, 0.108f to 0.262f, 0.105f to 0.247f, 0.107f to 0.233f, 0.119f to 0.218f),
+    Region(Muscle.FOREARMS, 0.135f to 0.340f, 0.156f to 0.342f, 0.159f to 0.364f, 0.158f to 0.378f, 0.159f to 0.393f, 0.156f to 0.411f, 0.153f to 0.433f, 0.144f to 0.449f, 0.135f to 0.462f, 0.126f to 0.462f, 0.120f to 0.449f, 0.112f to 0.433f, 0.111f to 0.411f, 0.113f to 0.393f, 0.113f to 0.378f, 0.113f to 0.360f, 0.114f to 0.338f, 0.129f to 0.340f),
+    Region(Muscle.LOWER_BACK, 0.006f to 0.371f, 0.029f to 0.376f, 0.058f to 0.396f, 0.056f to 0.455f, 0.006f to 0.467f),
+    Region(Muscle.ABDUCTORS, 0.039f to 0.459f, 0.079f to 0.440f, 0.082f to 0.464f, 0.087f to 0.483f, 0.065f to 0.488f, 0.040f to 0.483f),
+    Region(Muscle.GLUTES, 0.005f to 0.468f, 0.082f to 0.503f, 0.089f to 0.499f, 0.092f to 0.505f, 0.096f to 0.537f, 0.098f to 0.571f, 0.060f to 0.590f, 0.025f to 0.585f, 0.013f to 0.538f, 0.007f to 0.506f),
+    Region(Muscle.HAMSTRINGS, 0.065f to 0.593f, 0.088f to 0.593f, 0.095f to 0.616f, 0.091f to 0.635f, 0.089f to 0.650f, 0.087f to 0.665f, 0.083f to 0.686f, 0.073f to 0.698f, 0.061f to 0.709f, 0.053f to 0.707f, 0.038f to 0.701f, 0.031f to 0.684f, 0.028f to 0.665f, 0.027f to 0.650f, 0.026f to 0.635f, 0.025f to 0.617f, 0.037f to 0.605f, 0.054f to 0.593f),
+    Region(Muscle.CALVES, 0.061f to 0.716f, 0.083f to 0.729f, 0.088f to 0.760f, 0.090f to 0.781f, 0.086f to 0.804f, 0.084f to 0.830f, 0.075f to 0.857f, 0.065f to 0.885f, 0.054f to 0.908f, 0.045f to 0.908f, 0.039f to 0.885f, 0.032f to 0.863f, 0.028f to 0.832f, 0.028f to 0.804f, 0.028f to 0.782f, 0.029f to 0.760f, 0.033f to 0.723f, 0.052f to 0.716f),
 )
 
 /** Every muscle the figure can colour, front or back. */
@@ -168,14 +168,18 @@ internal val DRAWN: Set<Muscle> = (FRONT + BACK).map { it.muscle }.toSet()
 
 /**
  * Right half of the silhouette, crown to crotch, in figure space: a muscular
- * male build, because the map is a lifter's. Traps rise in a curve into a
- * short neck, delts cap the shoulder, lats flare into a narrow waist over
+ * male build, because the map is a lifter's. A straight neck column drops
+ * from the jaw before the traps curve out of it (with the traps starting at
+ * the jaw, the smoothing swallowed the neck), delts cap the shoulder, lats flare into a narrow waist over
  * straight hips, thighs and calves swell; the jaw is square and the pec
  * regions are flat plates. A hip flare and round pecs read as a mixed
  * physique on device. Head, hands and feet belong to the one outline - a
  * head circle on a flat shoulder line, wedge hands and triangle feet read as
  * a mannequin. Palms face forward (the anatomical position muscle charts
- * use), so the thumb sits on the outside of each hand.
+ * use), so the thumb sits on the outside of each hand. The arms hang clear
+ * of the lats and the waist sits well inside the shoulders: arms glued to the
+ * torso over a straight-sided trunk read as one wide block, "fat" to a
+ * first-time viewer.
  */
 private val HALF_OUTLINE = listOf(
     0.000f to 0.000f, // crown
@@ -186,90 +190,93 @@ private val HALF_OUTLINE = listOf(
     0.055f to 0.062f, // ear
     0.054f to 0.074f,
     0.050f to 0.080f,
-    0.047f to 0.092f, // cheek
-    0.042f to 0.104f, // jaw angle
-    0.037f to 0.113f, // neck
-    0.050f to 0.121f, // traps rise into the neck
-    0.068f to 0.127f,
-    0.090f to 0.133f,
-    0.110f to 0.139f, // traps meet the shoulder
-    0.134f to 0.145f,
-    0.157f to 0.160f,
-    0.168f to 0.184f, // deltoid cap
-    0.167f to 0.210f,
-    0.170f to 0.240f,
-    0.172f to 0.275f, // upper arm
-    0.168f to 0.312f,
-    0.165f to 0.333f, // elbow, outer
-    0.172f to 0.360f, // forearm swell
-    0.171f to 0.398f,
-    0.168f to 0.428f,
-    0.164f to 0.452f, // wrist, outer
-    0.166f to 0.466f,
-    0.172f to 0.478f,
-    0.179f to 0.494f,
-    0.181f to 0.505f, // thumb tip
-    0.176f to 0.509f,
-    0.170f to 0.498f, // thumb crotch
-    0.169f to 0.512f,
-    0.169f to 0.545f,
-    0.165f to 0.552f, // index finger
-    0.161f to 0.549f,
-    0.160f to 0.523f,
-    0.158f to 0.556f,
-    0.153f to 0.561f, // middle finger
-    0.148f to 0.558f,
-    0.148f to 0.525f,
-    0.146f to 0.554f,
-    0.141f to 0.558f, // ring finger
-    0.137f to 0.555f,
-    0.137f to 0.523f,
-    0.135f to 0.546f,
-    0.131f to 0.550f, // little finger
-    0.127f to 0.546f,
-    0.124f to 0.515f, // heel of the hand
-    0.121f to 0.472f,
-    0.121f to 0.452f, // wrist, inner
-    0.117f to 0.420f,
-    0.118f to 0.400f,
-    0.119f to 0.365f, // forearm, inner
-    0.113f to 0.332f, // elbow, inner
-    0.114f to 0.290f,
-    0.108f to 0.228f, // armpit
-    0.113f to 0.250f, // lat flare
-    0.109f to 0.290f,
-    0.102f to 0.330f,
-    0.096f to 0.370f,
-    0.095f to 0.405f, // waist
-    0.100f to 0.440f,
-    0.106f to 0.470f, // hip
-    0.116f to 0.520f, // thigh sweep
-    0.117f to 0.580f,
-    0.108f to 0.640f,
-    0.094f to 0.700f, // knee, outer
-    0.096f to 0.722f,
-    0.103f to 0.768f, // calf, outer
-    0.099f to 0.812f,
-    0.088f to 0.860f,
-    0.074f to 0.900f,
-    0.064f to 0.922f, // ankle, outer
-    0.069f to 0.938f,
-    0.077f to 0.960f,
-    0.083f to 0.978f, // little toe
-    0.082f to 0.988f,
-    0.072f to 0.993f,
-    0.058f to 0.996f,
-    0.044f to 0.997f, // toe line
-    0.032f to 0.994f,
-    0.026f to 0.986f, // big toe
-    0.025f to 0.966f, // arch
-    0.029f to 0.942f,
-    0.034f to 0.922f, // ankle, inner
-    0.030f to 0.860f,
-    0.027f to 0.790f, // calf, inner
-    0.034f to 0.700f, // knee, inner
-    0.030f to 0.676f,
-    0.020f to 0.560f, // thigh, inner
+    0.049f to 0.089f, // cheek
+    0.046f to 0.098f, // jaw angle
+    0.036f to 0.107f,
+    0.031f to 0.118f, // neck
+    0.031f to 0.130f,
+    0.037f to 0.140f,
+    0.050f to 0.146f, // traps rise into the neck
+    0.067f to 0.150f,
+    0.087f to 0.153f,
+    0.106f to 0.156f, // traps meet the shoulder
+    0.125f to 0.160f,
+    0.142f to 0.167f,
+    0.151f to 0.184f, // deltoid cap
+    0.152f to 0.210f,
+    0.156f to 0.240f,
+    0.159f to 0.275f, // upper arm
+    0.158f to 0.312f,
+    0.155f to 0.333f, // elbow, outer
+    0.161f to 0.360f, // forearm swell
+    0.160f to 0.398f,
+    0.157f to 0.428f,
+    0.153f to 0.452f, // wrist, outer
+    0.155f to 0.466f,
+    0.161f to 0.478f,
+    0.168f to 0.494f,
+    0.170f to 0.505f, // thumb tip
+    0.165f to 0.509f,
+    0.159f to 0.498f, // thumb crotch
+    0.158f to 0.512f,
+    0.158f to 0.545f,
+    0.154f to 0.552f, // index finger
+    0.150f to 0.549f,
+    0.149f to 0.523f,
+    0.147f to 0.556f,
+    0.142f to 0.561f, // middle finger
+    0.137f to 0.558f,
+    0.137f to 0.525f,
+    0.135f to 0.554f,
+    0.130f to 0.558f, // ring finger
+    0.126f to 0.555f,
+    0.126f to 0.523f,
+    0.124f to 0.546f,
+    0.120f to 0.550f, // little finger
+    0.116f to 0.546f,
+    0.113f to 0.515f, // heel of the hand
+    0.110f to 0.472f,
+    0.110f to 0.452f, // wrist, inner
+    0.108f to 0.420f,
+    0.110f to 0.400f,
+    0.112f to 0.365f, // forearm, inner
+    0.107f to 0.332f, // elbow, inner
+    0.107f to 0.290f,
+    0.094f to 0.228f, // armpit
+    0.095f to 0.250f, // lat flare
+    0.088f to 0.290f,
+    0.082f to 0.330f,
+    0.078f to 0.370f,
+    0.077f to 0.405f, // waist
+    0.080f to 0.440f,
+    0.084f to 0.470f, // hip
+    0.098f to 0.520f, // thigh sweep
+    0.100f to 0.580f,
+    0.093f to 0.640f,
+    0.082f to 0.700f, // knee, outer
+    0.084f to 0.722f,
+    0.092f to 0.768f, // calf, outer
+    0.089f to 0.812f,
+    0.079f to 0.860f,
+    0.067f to 0.900f,
+    0.058f to 0.922f, // ankle, outer
+    0.062f to 0.938f,
+    0.070f to 0.960f,
+    0.076f to 0.978f, // little toe
+    0.075f to 0.988f,
+    0.065f to 0.993f,
+    0.051f to 0.996f,
+    0.037f to 0.997f, // toe line
+    0.030f to 0.994f,
+    0.025f to 0.986f, // big toe
+    0.024f to 0.966f, // arch
+    0.028f to 0.942f,
+    0.032f to 0.922f, // ankle, inner
+    0.028f to 0.860f,
+    0.025f to 0.790f, // calf, inner
+    0.031f to 0.700f, // knee, inner
+    0.027f to 0.676f,
+    0.018f to 0.560f, // thigh, inner
     0.000f to 0.505f, // crotch
 )
 
