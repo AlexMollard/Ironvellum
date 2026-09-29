@@ -70,7 +70,8 @@ class NavigationReachabilityTest {
         open("Train", "TRAINING GROUNDS")
         open("Stats", "STATUS WINDOW")
         open("Codex", "SKILL TREE")
-        open("Allies", "THE FRONTLINE")
+        // Signed out (the test profile is), Allies is the account screen alone.
+        open("Allies", "Cloud link for lifters")
 
         // The Garrison left the nav bar for Today's footer.
         open("Today", "STEPS")

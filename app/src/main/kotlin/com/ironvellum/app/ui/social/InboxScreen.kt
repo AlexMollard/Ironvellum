@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -42,7 +41,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.cloud.AccountRepository
-import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.InboxItem
 import com.ironvellum.app.ui.components.InkPanel
@@ -156,27 +154,19 @@ internal class InboxViewModel(
 internal fun InboxScreen(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onOpenComments: (sessionId: String, ownerId: String, headline: String) -> Unit,
-    onSignIn: () -> Unit,
     viewModel: InboxViewModel = viewModel(
         factory = viewModelFactory { initializer { InboxViewModel(ironvellumCloudSync(), ironvellumAccount()) } },
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    val cloudConfigured = Cloud.config.collectAsStateWithLifecycle().value != null
     // Every visit to the tab reads the inbox and clears the nav dot.
-    LaunchedEffect(ui.signedIn, cloudConfigured) {
-        if (ui.signedIn && cloudConfigured) viewModel.open()
+    LaunchedEffect(ui.signedIn) {
+        if (ui.signedIn) viewModel.open()
     }
 
     Column(Modifier.fillMaxSize()) {
         val err = ui.error
         when {
-            !cloudConfigured -> SocialOfflinePanel()
-            !ui.signedIn -> SocialSignInPanel(
-                onSignIn,
-                title = "SIGN IN FOR YOUR INBOX",
-                body = "Ally requests, comments and reactions land here.",
-            )
             !ui.loaded -> InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
                 Text(
                     "Reading your inbox…",

@@ -100,8 +100,8 @@ import kotlinx.coroutines.launch
 
 /** Snapshot of the public board: state, entries, paging cursor, and refresh state. */
 data class FeedUi(
-    // Snapshot for ViewModel logic; the SCREEN collects Cloud.config so a
-    // backend switch redraws here without a restart.
+    // Snapshot for ViewModel logic; SocialScreen collects Cloud.config so a
+    // backend switch redraws without a restart.
     val configured: Boolean = Cloud.config.value != null,
     val signedIn: Boolean = false,
     val myUserId: String? = null,
@@ -322,7 +322,6 @@ class FeedViewModel(
 @Composable
 fun FeedScreen(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
-    onSignIn: () -> Unit,
     onOpenComments: (sessionId: String, ownerId: String, headline: String) -> Unit,
     viewModel: FeedViewModel = viewModel(
         factory = viewModelFactory {
@@ -331,41 +330,13 @@ fun FeedScreen(
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    // The backend can change at runtime (Settings → CLOUD); collecting the
-    // flow here redraws the feed without an app restart.
-    val cloudConfigured = Cloud.config.collectAsStateWithLifecycle().value != null
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-    ) {
-        Spacer(Modifier.height(20.dp))
-        Text(
-            "THE FRONTLINE",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.ScreenTitle,
-        )
-        // A subtitle only when it counts something. Every other case had a
-        // panel below saying the same thing in a whole sentence, so the line
-        // above it was decoration.
-        if (cloudConfigured && ui.signedIn && ui.entries.isNotEmpty()) {
-            Text(
-                "${ui.entries.size} ${if (ui.entries.size == 1) "workout" else "workouts"} witnessed",
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-
+    // SocialScreen owns the margins, the top gap and the signed-out screen, so
+    // every tab starts its content at the same spot under the pills.
+    Column(Modifier.fillMaxSize()) {
         val err = ui.error
         when {
-            !cloudConfigured -> SocialOfflinePanel()
-            !ui.signedIn -> SocialSignInPanel(onSignIn)
             ui.loading && ui.entries.isEmpty() -> LoadingPanel()
             ui.entries.isEmpty() && err != null -> ErrorPanel(err, onRetry = { viewModel.load(force = true) })
             ui.entries.isEmpty() -> EmptyFeed(onRefresh = { viewModel.load(force = true) })
@@ -396,53 +367,6 @@ fun FeedScreen(
             }
         }
         Spacer(Modifier.height(28.dp))
-    }
-}
-
-/** Shared with the inbox: one wording for "no backend" across the social tabs. */
-@Composable
-internal fun SocialOfflinePanel() {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
-        Text(
-            "FEED OFFLINE",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.DangerRed,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "No Supabase endpoint is configured on this device, so the frontline is silent. Everything you log locally still counts.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-    }
-}
-
-@Composable
-internal fun SocialSignInPanel(
-    onSignIn: () -> Unit,
-    title: String = "SIGN IN TO WATCH THE FRONTLINE",
-    body: String = "Sign in to see your allies' training.",
-) {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
-        Text(
-            title,
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            body,
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(12.dp))
-        IronvellumButton("Sign in", onClick = onSignIn, modifier = Modifier.fillMaxWidth())
     }
 }
 

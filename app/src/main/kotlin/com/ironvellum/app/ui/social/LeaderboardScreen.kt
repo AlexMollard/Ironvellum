@@ -74,8 +74,8 @@ import kotlinx.coroutines.launch
 
 /** Full snapshot of the leader board state: config, session, and data state. */
 data class LeaderboardUi(
-    // Snapshot for ViewModel logic; the SCREEN collects Cloud.config so a
-    // backend switch redraws here without a restart.
+    // Snapshot for ViewModel logic; SocialScreen collects Cloud.config so a
+    // backend switch redraws without a restart.
     val configured: Boolean = Cloud.config.value != null,
     val signedIn: Boolean = false,
     val myUserId: String? = null,
@@ -235,43 +235,18 @@ fun LeaderboardScreen(
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    // The backend can change at runtime (Settings → CLOUD); collecting the
-    // flow here redraws the board without an app restart.
-    val cloudConfigured = Cloud.config.collectAsStateWithLifecycle().value != null
     val muster by viewModel.muster.collectAsStateWithLifecycle()
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     var board by remember { mutableStateOf(Board.Training) }
 
+    // SocialScreen owns the margins, the top gap and the signed-out screen, so
+    // every tab starts its content at the same spot under the pills.
     Column(
         Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
+            .verticalScroll(rememberScrollState()),
     ) {
-        Spacer(Modifier.height(20.dp))
-        Text(
-            "RANKING",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.ScreenTitle,
-        )
-        // Only a count when there is something counted: "The board awaits" was
-        // a second empty-state line above a panel that explains the emptiness.
-        if (ui.rows.isNotEmpty()) {
-            Text(
-                "${ui.rows.size} " + plural(ui.rows.size, "lifter ranked", "lifters ranked"),
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-
         when {
-            !cloudConfigured -> NotConfigured()
-            !ui.signedIn && ui.loading -> LoadingPanel()
-            !ui.signedIn -> NotSignedIn()
             ui.loading && ui.rows.isEmpty() && board == Board.Training -> LoadingPanel()
             ui.rows.isEmpty() && ui.error == null && board == Board.Training -> EmptyBoard(onRefresh = viewModel::load)
             ui.rows.isEmpty() && ui.error != null && board == Board.Training -> ErrorPanel(onRefresh = viewModel::load)
@@ -330,48 +305,6 @@ fun LeaderboardScreen(
         }
 
         Spacer(Modifier.height(28.dp))
-    }
-}
-
-@Composable
-private fun NotConfigured() {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
-        Text(
-            "RANKING OFFLINE",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.DangerRed,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "No cloud server is set up on this device, so there is no board. The rest of Ironvellum still works.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-    }
-}
-
-@Composable
-private fun NotSignedIn() {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
-        Text(
-            "SIGN IN TO ENTER THE BOARD",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            // Was three lines saying who is ranked, where to go, and what to do
-            // there. One instruction is the whole message.
-            "Sign in on the ALLIES tab to claim your rank.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
     }
 }
 
