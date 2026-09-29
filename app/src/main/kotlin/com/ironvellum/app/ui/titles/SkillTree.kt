@@ -40,14 +40,19 @@ private val NodeDot = 12.dp
 private data class Row(
     val skill: Skills.SkillDef,
     val depth: Int,
-    /** Ancestor rail columns that still have rows pending below this one. */
-    val openRails: Set<Int>,
+    /**
+     * Ancestor rail columns that still have rows pending below this one, each
+     * to the children the rail still has to reach below this row. A rail is
+     * the path to those children, so it takes the colour of the best of them.
+     */
+    val openRails: Map<Int, List<String>>,
     /** Column this row's line arrives from; null for a chain root. */
     val fromDepth: Int?,
     val isLastChild: Boolean,
-    /** True when a line must continue downward out of this row's dot. */
-    val continuesBelow: Boolean,
-    val branches: Int,
+    /** Siblings after this one, still reached through the parent's rail. */
+    val laterSiblings: List<String>,
+    /** This skill's own children, reached through the line below its dot. */
+    val children: List<String>,
 )
 
 /**
@@ -68,9 +73,10 @@ private fun rows(line: String): List<Row> {
     fun walk(
         skill: Skills.SkillDef,
         depth: Int,
-        openRails: Set<Int>,
+        openRails: Map<Int, List<String>>,
         fromDepth: Int?,
         isLast: Boolean,
+        laterSiblings: List<String>,
     ) {
         val kids = childrenOf[skill.name].orEmpty().sortedBy { it.tier }
         // a lone successor stays in this column; a fork steps right
@@ -81,27 +87,47 @@ private fun rows(line: String): List<Row> {
             openRails = openRails,
             fromDepth = fromDepth,
             isLastChild = isLast,
-            continuesBelow = kids.isNotEmpty(),
-            branches = kids.size,
+            laterSiblings = laterSiblings,
+            children = kids.map { it.name },
         )
-        val nextOpen = if (kids.size > 1) openRails + depth else openRails
         kids.forEachIndexed { i, kid ->
-            val lastKid = i == kids.lastIndex
-            walk(
-                kid,
-                childDepth,
-                if (lastKid) nextOpen - depth else nextOpen,
-                depth,
-                lastKid,
-            )
+            val later = kids.drop(i + 1).map { it.name }
+            // a fork's rail stays open through each child's subtree until the
+            // last child, carrying the children still below
+            val rails = if (kids.size > 1 && later.isNotEmpty()) openRails + (depth to later) else openRails - depth
+            walk(kid, childDepth, rails, depth, i == kids.lastIndex, later)
         }
     }
 
     roots.forEachIndexed { i, root ->
-        walk(root, 0, emptySet(), null, i == roots.lastIndex)
+        walk(root, 0, emptyMap(), null, i == roots.lastIndex, emptyList())
     }
     return out
 }
+
+/**
+ * The colour of a stretch of rail, from the skills it leads to: gold when it
+ * reaches a mastered skill (a mastered skill's prerequisite is mastered too,
+ * so the whole stretch joins mastered to mastered), green when it reaches
+ * skills that are open, and ink when everything below it is still locked.
+ */
+private fun railColor(leadsTo: List<String>, mastered: Set<String>): Color = when {
+    leadsTo.any { it in mastered } -> IronvellumColors.SovereignGold.copy(alpha = 0.85f)
+    leadsTo.any { name -> Skills.forName(name)?.let { Skills.unlocked(it, mastered) } == true } ->
+        IronvellumColors.SystemGreen.copy(alpha = 0.85f)
+    else -> IronvellumColors.Rune
+}
+
+/** Every colour one row paints, resolved from the mastered set. */
+private data class RailPaint(
+    val passing: Map<Int, Color>,
+    /** The parent's rail from the top of this row down to this row's branch. */
+    val intoRow: Color,
+    /** The parent's rail from this row's branch on to later siblings. */
+    val pastRow: Color,
+    /** The line out of this row's dot toward its children. */
+    val below: Color,
+)
 
 @Composable
 fun SkillTreeGraph(
@@ -118,6 +144,12 @@ fun SkillTreeGraph(
                 row = row,
                 mastered = row.skill.name in mastered,
                 unlocked = Skills.unlocked(row.skill, mastered),
+                paint = RailPaint(
+                    passing = row.openRails.mapValues { (_, below) -> railColor(below, mastered) },
+                    intoRow = railColor(listOf(row.skill.name) + row.laterSiblings, mastered),
+                    pastRow = railColor(row.laterSiblings, mastered),
+                    below = railColor(row.children, mastered),
+                ),
                 onClick = { onSelect(row.skill.name) },
             )
         }
@@ -129,6 +161,7 @@ private fun SkillRow(
     row: Row,
     mastered: Boolean,
     unlocked: Boolean,
+    paint: RailPaint,
     onClick: () -> Unit,
 ) {
     val accent = when {
@@ -156,16 +189,17 @@ private fun SkillRow(
                 val dotX = row.depth * rail + rail / 2f
                 val color = accent.copy(alpha = 0.85f)
 
-                // ancestor rails passing straight through this row
-                row.openRails.forEach { d ->
+                // ancestor rails passing straight through this row; the
+                // parent's own column is drawn by the drop-in below
+                row.openRails.forEach { (d, _) ->
                     val x = d * rail + rail / 2f
-                    if (x != dotX) {
+                    if (x != dotX && d != row.fromDepth) {
                         // Ancestor rail: brushed, and never tapered - it runs
                         // through the row rather than starting or ending in it.
                         inkStroke(
                             Offset(x, 0f),
                             Offset(x, size.height),
-                            IronvellumColors.Rune,
+                            paint.passing.getValue(d),
                             stroke,
                             seed = d * 17,
                             taperEnds = false,
@@ -179,23 +213,19 @@ private fun SkillRow(
                         inkStroke(Offset(dotX, 0f), Offset(dotX, mid), color, stroke, seed = row.depth * 7, taperEnds = false)
                     } else {
                         val parentX = from * rail + rail / 2f
-                        // parent's column drops in, continuing past this row
-                        // when more siblings follow
-                        inkStroke(
-                            Offset(parentX, 0f),
-                            Offset(parentX, if (row.isLastChild) mid else size.height),
-                            color,
-                            stroke,
-                            seed = from * 11,
-                            taperEnds = false,
-                        )
+                        // parent's column drops in to this row's branch, then
+                        // carries on past it when more siblings follow
+                        inkStroke(Offset(parentX, 0f), Offset(parentX, mid), paint.intoRow, stroke, seed = from * 11, taperEnds = false)
+                        if (!row.isLastChild) {
+                            inkStroke(Offset(parentX, mid), Offset(parentX, size.height), paint.pastRow, stroke, seed = from * 13, taperEnds = false)
+                        }
                         inkStroke(Offset(parentX, mid), Offset(dotX, mid), color, stroke, seed = from * 5, taperEnds = false)
                     }
                 }
 
                 // hand the line to the row below
-                if (row.continuesBelow) {
-                    inkStroke(Offset(dotX, mid), Offset(dotX, size.height), color, stroke, seed = row.depth * 3, taperEnds = false)
+                if (row.children.isNotEmpty()) {
+                    inkStroke(Offset(dotX, mid), Offset(dotX, size.height), paint.below, stroke, seed = row.depth * 3, taperEnds = false)
                 }
             }
             Box(
@@ -268,9 +298,9 @@ private fun SkillRow(
                     color = accent,
                     letterSpacing = 1.sp,
                 )
-                if (row.branches > 1) {
+                if (row.children.size > 1) {
                     Text(
-                        "${row.branches} paths",
+                        "${row.children.size} paths",
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 8.sp,
                         color = IronvellumColors.InkMuted,
