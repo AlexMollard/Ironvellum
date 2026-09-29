@@ -305,8 +305,12 @@ fun BodyHeatMap(
         ) {
             val h = size.height
             val halfWidth = size.width / 2f
-            drawFigure(FRONT, Offset(halfWidth * 0.5f, 0f), h, volume, goal, seed = 11)
-            drawFigure(BACK, Offset(halfWidth * 1.5f, 0f), h, volume, goal, seed = 23)
+            val fill = { muscle: Muscle ->
+                val sets = volume[muscle] ?: 0.0
+                regionFill(levelOf(muscle, sets, goal), sets, rangeFor(muscle, goal))
+            }
+            drawFigure(FRONT, Offset(halfWidth * 0.5f, 0f), h, fill, seed = 11)
+            drawFigure(BACK, Offset(halfWidth * 1.5f, 0f), h, fill, seed = 23)
         }
         Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
             FigureLabel("FRONT", Modifier.weight(1f))
@@ -316,12 +320,65 @@ fun BodyHeatMap(
     }
 }
 
+/** How much of a muscle one exercise works, in the words the figure's legend uses. */
+enum class ShareLevel(val label: String) { MAIN("MAIN"), ASSIST("ASSIST") }
+
+/**
+ * MuscleMap shares are 1.0 direct and 0.5 indirect, with 0.7 and 0.3 only
+ * where a trial measured them; 0.7 reads as main work, 0.3 as assisting.
+ */
+fun shareLevel(share: Double): ShareLevel = if (share >= 0.7) ShareLevel.MAIN else ShareLevel.ASSIST
+
+private fun shareFill(share: Double?): Color = when {
+    share == null || share <= 0.0 -> IronvellumColors.Bracket.copy(alpha = 0.55f)
+    shareLevel(share) == ShareLevel.MAIN -> IronvellumColors.Emerald.copy(alpha = 0.9f)
+    else -> IronvellumColors.Emerald.copy(alpha = 0.4f)
+}
+
+/**
+ * The same front and back figure, filled by what ONE exercise works: bright
+ * where it is main work, faint where it assists, bare where it does nothing.
+ */
+@Composable
+fun ExerciseMuscleMap(
+    shares: Map<Muscle, Double>,
+    modifier: Modifier = Modifier,
+    figureHeight: Dp = 220.dp,
+) {
+    Column(modifier) {
+        Canvas(
+            Modifier
+                .fillMaxWidth()
+                .height(figureHeight)
+                .clearAndSetSemantics {},
+        ) {
+            val h = size.height
+            val halfWidth = size.width / 2f
+            val fill = { muscle: Muscle -> shareFill(shares[muscle]) }
+            drawFigure(FRONT, Offset(halfWidth * 0.5f, 0f), h, fill, seed = 11)
+            drawFigure(BACK, Offset(halfWidth * 1.5f, 0f), h, fill, seed = 23)
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+            FigureLabel("FRONT", Modifier.weight(1f))
+            FigureLabel("BACK", Modifier.weight(1f))
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            listOf(1.0 to "MAIN", 0.5 to "ASSIST", null to "NOT WORKED").forEach { (share, label) ->
+                LegendKey(shareFill(share), label)
+            }
+        }
+    }
+}
+
 private fun DrawScope.drawFigure(
     regions: List<Region>,
     origin: Offset,
     height: Float,
-    volume: Map<Muscle, Double>,
-    goal: CoverageGoal,
+    fill: (Muscle) -> Color,
     seed: Int,
 ) {
     fun at(x: Float, y: Float) = Offset(origin.x + x * height, origin.y + y * height)
@@ -335,8 +392,7 @@ private fun DrawScope.drawFigure(
     drawPath(body, IronvellumColors.VaultHigh)
 
     regions.forEach { region ->
-        val sets = volume[region.muscle] ?: 0.0
-        val fill = regionFill(levelOf(region.muscle, sets, goal), sets, rangeFor(region.muscle, goal))
+        val fill = fill(region.muscle)
         for (side in listOf(1f, -1f)) {
             val path = Path()
             smoothClosed(path, region.points.map { (x, y) -> at(x * side, y) })
@@ -421,23 +477,28 @@ private fun Legend(modifier: Modifier = Modifier) {
             CoverageLevel.IN_RANGE to "IN RANGE",
             CoverageLevel.OVER to "OVER",
         ).forEach { (level, label) ->
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(
-                    Modifier
-                        .size(10.dp)
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .background(levelColor(level).copy(alpha = 0.9f))
-                        .inkBorder(IronvellumColors.InkMuted, MaterialTheme.shapes.extraSmall, 1.dp),
-                )
-                Spacer(Modifier.width(4.dp))
-                Text(
-                    label,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-            }
+            LegendKey(levelColor(level).copy(alpha = 0.9f), label)
         }
+    }
+}
+
+@Composable
+private fun LegendKey(colour: Color, label: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Box(
+            Modifier
+                .size(10.dp)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(colour)
+                .inkBorder(IronvellumColors.InkMuted, MaterialTheme.shapes.extraSmall, 1.dp),
+        )
+        Spacer(Modifier.width(4.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+            letterSpacing = IronvellumTracking.InlineLabel,
+        )
     }
 }

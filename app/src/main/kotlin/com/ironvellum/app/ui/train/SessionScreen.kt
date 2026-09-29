@@ -130,6 +130,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.TrainingFocus
+import com.ironvellum.app.domain.MuscleMap
+import com.ironvellum.app.ui.program.ExerciseMuscles
+import com.ironvellum.app.ui.program.ShareLevel
+import com.ironvellum.app.ui.program.musclesAt
 
 data class SessionUi(
     val session: WorkoutSession? = null,
@@ -380,6 +384,7 @@ fun SessionScreen(
     var confirmAbandon by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
     var editModifiersFor by remember { mutableStateOf<Long?>(null) }
+    var musclesFor by remember { mutableStateOf<Long?>(null) }
     var editLoadFor by remember { mutableStateOf<SessionSet?>(null) }
 
     // One route per metric, each passing the set's current values for the
@@ -517,13 +522,40 @@ fun SessionScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(Modifier.weight(1f)) {
+                    // Modifiers change the profile: a deficit push-up credits the
+                    // chest at stretch, so the muscles read from both.
+                    val shares = MuscleMap.profile(first.exerciseName, first.modifiers)?.muscles
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .then(
+                                if (shares != null) {
+                                    Modifier.clickable(onClickLabel = "Show muscles for ${first.exerciseName}") {
+                                        musclesFor = exerciseId
+                                    }
+                                } else {
+                                    Modifier
+                                },
+                            ),
+                    ) {
                         Text(
                             first.exerciseName,
                             style = MaterialTheme.typography.titleMedium,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
+                        shares?.let { musclesAt(it, ShareLevel.MAIN) }?.takeIf { it.isNotEmpty() }?.let { main ->
+                            Text(
+                                main.joinToString(" · ") { it.label.uppercase() },
+                                style = MaterialTheme.typography.labelSmall,
+                                fontFamily = ChakraPetch,
+                                color = IronvellumColors.InkMuted,
+                                letterSpacing = IronvellumTracking.InlineLabel,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.padding(top = 2.dp),
+                            )
+                        }
                         // Only real modifiers get a line. "tap to set modifiers"
                         // printed under every movement that had none, beside the
                         // slider glyph in this same header that does exactly that.
@@ -775,6 +807,32 @@ fun SessionScreen(
             },
             onDismiss = { editModifiersFor = null },
         )
+    }
+
+    musclesFor?.let { exerciseId ->
+        val current = ui.sets.firstOrNull { it.exerciseId == exerciseId }
+        val shares = current?.let { MuscleMap.profile(it.exerciseName, it.modifiers)?.muscles }
+        // The block can vanish under an open dialog (last set deleted); then
+        // there is nothing to show and the dialog simply does not draw.
+        if (current != null && shares != null) {
+            AlertDialog(
+                shape = MaterialTheme.shapes.medium,
+                containerColor = Color(0xFF0D1110),
+                onDismissRequest = { musclesFor = null },
+                title = {
+                    Text(
+                        current.exerciseName,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                },
+                text = { ExerciseMuscles(shares, Modifier.fillMaxWidth(), figureHeight = 240.dp) },
+                confirmButton = {
+                    IronvellumButton(label = "Close", onClick = { musclesFor = null }, quiet = true)
+                },
+            )
+        }
     }
 
     if (showExercisePicker) {

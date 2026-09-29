@@ -126,6 +126,40 @@ object ProgramRules {
         return volume
     }
 
+    /**
+     * One exercise's part in a muscle's [weeklyVolume]: its sets in the week
+     * times its [share] of that muscle. The same exercise with the same
+     * modifiers on several days is one credit; different modifiers are
+     * separate credits because their profiles differ.
+     */
+    data class MuscleCredit(
+        val exerciseName: String,
+        val modifiers: String,
+        val sets: Int,
+        val share: Double,
+    ) {
+        val credited: Double get() = sets * share
+    }
+
+    /**
+     * [weeklyVolume] broken down by exercise: for each muscle, the credits
+     * that add up to its total, largest first.
+     */
+    fun muscleCredits(presets: List<PlannedPreset>): Map<Muscle, List<MuscleCredit>> {
+        val setsByEntry = linkedMapOf<Pair<String, String>, Int>()
+        for (preset in presets) for (entry in preset.entries) {
+            setsByEntry.merge(entry.exerciseName to entry.modifiers, entry.sets, Int::plus)
+        }
+        val credits = mutableMapOf<Muscle, MutableList<MuscleCredit>>()
+        for ((key, sets) in setsByEntry) {
+            val profile = MuscleMap.profile(key.first, key.second) ?: continue
+            for ((muscle, share) in profile.muscles) {
+                if (share > 0.0) credits.getOrPut(muscle) { mutableListOf() } += MuscleCredit(key.first, key.second, sets, share)
+            }
+        }
+        return credits.mapValues { (_, list) -> list.sortedByDescending { it.credited } }
+    }
+
     // ------------------------------------------------------------------ tier
 
     /**

@@ -23,6 +23,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -175,6 +179,17 @@ fun MuscleCoverageScreen(
 
     val presets = if (view == CoverageView.PLANNED) ui.plannedPresets else ui.loggedPresets
     val volume = remember(presets) { ProgramRules.weeklyVolume(presets) }
+    val credits = remember(presets) { ProgramRules.muscleCredits(presets) }
+    // Each exercise once, in routine order, keyed with its modifiers because
+    // a deficit push-up works the chest differently from a flat one.
+    val exercisesInView = remember(presets) {
+        presets.flatMap { it.entries }
+            .map { it.exerciseName to it.modifiers }
+            .distinct()
+            .mapNotNull { (name, modifiers) -> MuscleMap.profile(name, modifiers)?.let { Triple(name, modifiers, it.muscles) } }
+    }
+    var openMuscle by rememberSaveable { mutableStateOf<Muscle?>(null) }
+    var openExercise by rememberSaveable { mutableStateOf<String?>(null) }
     val goal = CoverageGoal(ui.tier, ui.focus, ui.priorities)
     val target = goal.target
     val tracked = ProgramRules.TRACKED.sortedBy { volume[it] ?: 0.0 }
@@ -257,8 +272,38 @@ fun MuscleCoverageScreen(
         }
         Spacer(Modifier.height(12.dp))
 
+        SectionHeader("What each exercise trains")
+        Text(
+            "Tap an exercise to see every muscle it works.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        exercisesInView.forEach { (name, modifiers, shares) ->
+            val key = "$name|$modifiers"
+            ExerciseRow(
+                name = name,
+                modifiers = modifiers,
+                shares = shares,
+                open = openExercise == key,
+                onToggle = { openExercise = if (openExercise == key) null else key },
+            )
+        }
+
+        Spacer(Modifier.height(12.dp))
         SectionHeader("Sets per muscle")
-        tracked.forEach { muscle -> MuscleRow(muscle, volume[muscle] ?: 0.0, goal) }
+        Text(
+            "Tap a muscle to see which exercises train it.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(4.dp))
+        tracked.forEach { muscle ->
+            MuscleRow(
+                muscle, volume[muscle] ?: 0.0, goal, credits[muscle].orEmpty(),
+                open = openMuscle == muscle,
+                onToggle = { openMuscle = if (openMuscle == muscle) null else muscle },
+            )
+        }
 
         // Judged against a floor, not the range: see ProgramRules.HELPERS.
         Spacer(Modifier.height(12.dp))
@@ -270,7 +315,13 @@ fun MuscleCoverageScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
-        helpers.forEach { muscle -> MuscleRow(muscle, volume[muscle] ?: 0.0, goal) }
+        helpers.forEach { muscle ->
+            MuscleRow(
+                muscle, volume[muscle] ?: 0.0, goal, credits[muscle].orEmpty(),
+                open = openMuscle == muscle,
+                onToggle = { openMuscle = if (openMuscle == muscle) null else muscle },
+            )
+        }
 
         if (underCount > 0) {
             Spacer(Modifier.height(12.dp))
@@ -290,9 +341,21 @@ fun MuscleCoverageScreen(
     }
 }
 
-/** One muscle's sets against its own range; a helper's open-ended floor reads "3+". */
+/**
+ * One muscle's sets against its own range; a helper's open-ended floor reads
+ * "3+". Tapped open, it lists the exercises behind the number: each one's
+ * sets times its share, main work counting in full and assisting work partly,
+ * so the lines add up to the total above them.
+ */
 @Composable
-private fun MuscleRow(muscle: Muscle, sets: Double, goal: CoverageGoal) {
+private fun MuscleRow(
+    muscle: Muscle,
+    sets: Double,
+    goal: CoverageGoal,
+    credits: List<ProgramRules.MuscleCredit>,
+    open: Boolean,
+    onToggle: () -> Unit,
+) {
     val range = rangeFor(muscle, goal)
     val level = levelOf(muscle, sets, goal)
     val verdict = when (level) {
@@ -316,7 +379,11 @@ private fun MuscleRow(muscle: Muscle, sets: Double, goal: CoverageGoal) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp),
+            .heightIn(min = 44.dp)
+            .clickable(
+                onClickLabel = if (open) "Hide what trains ${muscle.label}" else "Show what trains ${muscle.label}",
+                onClick = onToggle,
+            ),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Text(
@@ -340,6 +407,113 @@ private fun MuscleRow(muscle: Muscle, sets: Double, goal: CoverageGoal) {
             color = colour,
             letterSpacing = IronvellumTracking.InlineLabel,
         )
+    }
+    if (open) {
+        Column(Modifier.fillMaxWidth().padding(start = 12.dp, bottom = 8.dp)) {
+            if (credits.isEmpty()) {
+                Text(
+                    "Nothing in this view trains it.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
+            credits.forEach { credit ->
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            credit.exerciseName,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.Ink,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        if (credit.modifiers.isNotBlank()) {
+                            Text(
+                                credit.modifiers.split(",").joinToString(" · ") { it.trim() },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = IronvellumColors.InkMuted,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                    }
+                    Text(
+                        shareLevel(credit.share).label,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = if (shareLevel(credit.share) == ShareLevel.MAIN) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                    )
+                    Text(
+                        "${credit.sets}×${trimSets(credit.share)} = ${trimSets(credit.credited)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        textAlign = TextAlign.End,
+                        modifier = Modifier.width(96.dp),
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * One exercise in the view and its main muscles; tapped open, the figure and
+ * the full MAIN / ASSIST lists from [ExerciseMuscles].
+ */
+@Composable
+private fun ExerciseRow(
+    name: String,
+    modifiers: String,
+    shares: Map<Muscle, Double>,
+    open: Boolean,
+    onToggle: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .clickable(
+                onClickLabel = if (open) "Hide muscles for $name" else "Show muscles for $name",
+                onClick = onToggle,
+            ),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = IronvellumColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (modifiers.isNotBlank()) {
+                Text(
+                    modifiers.split(",").joinToString(" · ") { it.trim() },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        Spacer(Modifier.width(8.dp))
+        Text(
+            musclesAt(shares, ShareLevel.MAIN).joinToString(" · ") { it.label },
+            style = MaterialTheme.typography.labelSmall,
+            color = IronvellumColors.SystemGreen,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f),
+        )
+    }
+    if (open) {
+        ExerciseMuscles(shares, Modifier.fillMaxWidth().padding(bottom = 10.dp))
     }
 }
 

@@ -65,6 +65,37 @@ class ProgramRulesTest {
         assertEquals(4.0, volume[Muscle.HAMSTRINGS]!!, 1e-9)
     }
 
+    @Test
+    fun `muscle credits name each exercise once and add up to the weekly volume`() {
+        val week = listOf(
+            PlannedPreset("Push A", "", 1, listOf(
+                PlannedEntry("Bench Press", 3, 8, null),
+                PlannedEntry("Push-up", 3, 12, null, modifiers = "Elevated"),
+            )),
+            PlannedPreset("Push B", "", 4, listOf(
+                PlannedEntry("Bench Press", 2, 8, null),
+                PlannedEntry("Push-up", 2, 12, null),
+                PlannedEntry("Unprofiled Mystery Lift", 5, 5, null),
+            )),
+        )
+        val volume = ProgramRules.weeklyVolume(week)
+        val credits = ProgramRules.muscleCredits(week)
+        // The breakdown is what the lifter reads under a muscle's total: it
+        // must say the same number, muscle by muscle.
+        assertEquals(volume.keys, credits.keys)
+        volume.forEach { (muscle, sets) ->
+            assertEquals(muscle.name, sets, credits.getValue(muscle).sumOf { it.credited }, 1e-9)
+        }
+        // Bench on two days is one line of 5 sets; the feet-up push-up is its
+        // own line, because it works the upper chest in full.
+        val upper = credits.getValue(Muscle.UPPER_CHEST)
+        assertEquals(ProgramRules.MuscleCredit("Bench Press", "", 5, 0.5), upper.single { it.exerciseName == "Bench Press" })
+        assertEquals(1.0, upper.single { it.modifiers == "Elevated" }.share, 1e-9)
+        assertEquals(0.5, upper.single { it.exerciseName == "Push-up" && it.modifiers == "" }.share, 1e-9)
+        // Largest contribution first.
+        assertEquals(upper.sortedByDescending { it.credited }, upper)
+    }
+
     // --------------------------------------------------------------- tier
 
     @Test
