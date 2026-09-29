@@ -101,5 +101,8 @@ internal fun GoogleSignInButton(onToken: (idToken: String, rawNonce: String) -> 
                 color = IronvellumColors.DangerRed,
             )
         }
+        // Owned here, not by the form: the foss button renders nothing, and a
+        // gap left for it opened the sign-in panel with dead space.
+        Spacer(Modifier.height(14.dp))
     }
 }

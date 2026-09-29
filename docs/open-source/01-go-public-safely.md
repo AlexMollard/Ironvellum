@@ -3,28 +3,28 @@
 **Goal:** the repository can be made public without exposing a live security
 hole, a secret, or unlicensed third-party work.
 
-**Done when:** 0009 is live, the history sweep below comes back clean, a
+**Done when:** the hosted project runs the baseline schema, the history sweep below comes back clean, a
 `LICENSE` and `NOTICE` exist, and the owner has flipped the repository to
 public.
 
 ## 1. Close the live exposure first (OWNER)
 
-`supabase/migrations/0009_backend_hardening.sql` is not applied
-(`docs/TODO.md` #1). Until it is, anyone holding the publishable key can
+Until the hosted project is on `supabase/migrations/0001_baseline.sql`
+(`docs/TODO.md` #1), anyone holding the publishable key can
 enumerate the accepted-friendship graph through `is_friend`, including for
 lifters set to `private`. The key ships inside every APK, and a public repo
 makes it trivial to find.
 
-1. Prove the migration chain still holds: `python3 tools/gate.py --backend`.
-2. Apply `0008`, `0009`, `0010`, `0014` and `0015` in the Supabase SQL
-   editor, in order. All are idempotent. `0015` is the one that actually
-   closes the hole: Supabase grants functions to `anon` directly, so
-   `0009`'s `revoke ... from public` alone left `is_friend` callable.
-3. **Do not** apply `0011` on its own. It revokes the direct profile writes
-   the current build still makes, so it goes out together with the next app
-   release (`docs/RELEASE_CHECKLIST.md` §4).
-4. Apply `0013_cloud_archives.sql`. Without it, BACKUP fails.
-5. Confirm it landed with a real user's token rather than trusting the editor.
+1. Prove the schema still holds: `python3 tools/gate.py --backend`.
+2. In the Supabase SQL editor run `supabase/reset.sql`, then
+   `supabase/migrations/0001_baseline.sql`. The baseline is what actually
+   closes the hole: Supabase grants functions to `anon` directly, so every
+   revoke in it names `anon` and `authenticated`, not only `public`.
+3. **Do not** apply it ahead of the app build that no longer inserts its own
+   profile row. The baseline revokes the direct profile writes (the ranked
+   columns and the insert), so it goes out together with that release
+   (`docs/RELEASE_CHECKLIST.md` §4).
+4. Confirm it landed with a real user's token rather than trusting the editor.
    The editor runs the whole script as one transaction, so one failure rolls
    back everything before it. See skill `supabase-applied-state-from-device-jwt`.
 

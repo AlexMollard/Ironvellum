@@ -11,6 +11,14 @@ import io.github.jan.supabase.postgrest.postgrest
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+
+/** How an email sign-up ended: signed in now, or waiting on the confirmation link. */
+sealed interface SignUpOutcome {
+    data class SignedIn(val account: Account) : SignUpOutcome
+    data object ConfirmEmail : SignUpOutcome
+}
 
 data class Account(
     val userId: String,
@@ -71,59 +79,43 @@ class AccountRepository {
         }
     }
 
-    suspend fun signUp(email: String, password: String, displayName: String): Result<Account> {
+    /**
+     * The server creates the profiles row from the sign-up metadata
+     * (`handle_new_user` in the baseline schema): with email confirmation on
+     * there is no session yet, and a client-side insert ran as anon and was
+     * refused.
+     */
+    suspend fun signUp(email: String, password: String, displayName: String): Result<SignUpOutcome> {
         val name = displayName.trim()
         if (name.length < WireLimits.DISPLAY_NAME_MIN || name.length > WireLimits.DISPLAY_NAME_MAX) {
             return Result.failure(IllegalStateException("Display name must be 2 to 24 characters"))
         }
         val client = requireClient().getOrElse { return failure(it) }
         return runCatching {
-            val user = client.auth.signUpWith(Email) {
+            // Asked first: on a taken name the server quietly seeds a
+            // Lifter#### handle instead of failing the sign-up.
+            val free = client.postgrest.rpc(
+                RPC_DISPLAY_NAME_AVAILABLE,
+                buildJsonObject { put("name", name) },
+            ).data.trim() == "true"
+            if (!free) throw NameTakenException()
+            client.auth.signUpWith(Email) {
                 this.email = email
                 this.password = password
-            } ?: throw IllegalStateException("Sign-up returned no user")
-            // The auth user exists but the profiles row does not; RLS only
-            // lets us insert our own id. A taken name fails with 23505 here.
-            client.postgrest.from("profiles").insert(ProfileDto(id = user.id, displayName = name))
-            Account(
-                userId = user.id,
-                email = user.email ?: email,
-                displayName = name,
-                visibility = "friends",
-            ).also { _account.value = it }
-        }.recoverCatching { error ->
-            // The unique index on lower(display_name) fires after the auth
-            // user was already created, so the retry is a plain sign-in.
-            if (error is io.github.jan.supabase.postgrest.exception.PostgrestRestException &&
-                error.code == "23505"
-            ) {
-                try {
-                    signIn(email, password).getOrThrow()
-                } catch (missing: ProfileMissingException) {
-                    // Re-attempt the row for the signed-in user; a failing
-                    // repair is translated, never shown as raw SDK text.
-                    try {
-                        repairProfileForCurrentUser(name)
-                    } catch (repair: Exception) {
-                        throw IllegalStateException(Cloud.explain(repair))
-                    }
-                    loadSignedInAccount(email)
-                        ?: throw IllegalStateException(
-                            "Your sigil is on the Ledger, but the lifter record could not be restored — try signing in again",
-                        )
-                }
-            } else {
-                throw IllegalStateException(Cloud.explain(error))
+                data = buildJsonObject { put("display_name", name) }
             }
+            if (client.auth.currentSessionOrNull() == null) {
+                SignUpOutcome.ConfirmEmail
+            } else {
+                SignUpOutcome.SignedIn(
+                    loadSignedInAccount(email)
+                        ?: throw IllegalStateException("Account created, but your profile could not be loaded — sign in again"),
+                )
+            }
+        }.recoverCatching { error ->
+            if (error is NameTakenException) throw error
+            throw IllegalStateException(Cloud.explain(error))
         }
-    }
-
-    /** Re-insert the profiles row for an auth user whose first insert failed. */
-    private suspend fun repairProfileForCurrentUser(displayName: String) {
-        val client = Cloud.client()
-        val user = client.auth.currentUserOrNull()
-            ?: throw ProfileMissingException()
-        client.postgrest.from("profiles").insert(ProfileDto(id = user.id, displayName = displayName))
     }
 
     suspend fun signIn(email: String, password: String): Result<Account> {
@@ -134,11 +126,8 @@ class AccountRepository {
                 this.password = password
             }
             loadSignedInAccount(email)
-                ?: throw ProfileMissingException()
+                ?: throw IllegalStateException("Signed in, but your profile could not be loaded — try again")
         }.recoverCatching { error ->
-            // signUp's 23505 recovery keys on this sentinel: rethrow it as-is
-            // so the profile repair path can catch it.
-            if (error is ProfileMissingException) throw error
             throw IllegalStateException(Cloud.explain(error))
         }
     }
@@ -158,54 +147,12 @@ class AccountRepository {
             }
             val user = client.auth.currentUserOrNull()
                 ?: throw IllegalStateException("Google sign-in returned no user")
-            val email = user.email ?: ""
-            // Google users get no profiles row automatically: seed a neutral
-            // handle they can later claim as a real name.
-            val existing = loadAccount(user.id, email)
-            if (existing != null) {
-                _account.value = existing
-                existing
-            } else {
-                createProfileForNewGoogleUser(client, user.id)
-                val created = loadAccount(user.id, email)
-                    ?: throw IllegalStateException("Signed in with Google, but your lifter profile is missing")
-                _account.value = created
-                created
-            }
+            // The server seeded a neutral Lifter#### handle for a new Google
+            // user (never the legal name); ALLIES offers to claim a real one.
+            loadAccount(user.id, user.email ?: "")?.also { _account.value = it }
+                ?: throw IllegalStateException("Signed in with Google, but your profile could not be loaded — try again")
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
-        }
-    }
-
-    /**
-     * The DB rejects duplicate handles with 23505 (unique index on
-     * lower(display_name)); append a numeric suffix and retry.
-     */
-    private suspend fun createProfileForNewGoogleUser(
-        client: SupabaseClient,
-        userId: String,
-    ) {
-        // A Google account must NOT lock the handle to the real legal name:
-        // seed a neutral, deterministic Lifter handle the user can claim later.
-        val base = neutralHandle(userId)
-        var name = base
-        var suffix = 1
-        while (true) {
-            try {
-                client.postgrest.from("profiles").insert(
-                    ProfileDto(id = userId, displayName = name),
-                )
-                return
-            } catch (error: io.github.jan.supabase.postgrest.exception.PostgrestRestException) {
-                if (error.code != "23505" || suffix > 99) throw error
-                // The DB caps display_name at 24 chars ("between 2 and 24"),
-                // so the suffix must shorten the base, not extend the whole
-                // name past the cap — a 24-char base + " 1" would trip the
-                // check constraint and kill the retry loop.
-                val suffixText = " $suffix"
-                name = base.take(24 - suffixText.length) + suffixText
-                suffix++
-            }
         }
     }
 
@@ -218,14 +165,6 @@ class AccountRepository {
             else -> "Lifter" + cleaned.ifEmpty { "0" }
         }
     }
-
-    /**
-     * Unclaimed convention: "Lifter" + 4 digits derived from the userId hash —
-     * stable across sign-ins (String.hashCode is spec-fixed, never Random) so
-     * the same account always regenerates the same seed handle.
-     */
-    private fun neutralHandle(userId: String): String =
-        "Lifter" + ((userId.hashCode() and Int.MAX_VALUE) % 10_000).toString().padStart(4, '0')
 
     /**
      * Claim a real name. For a MANUAL claim, "that name is taken" beats
@@ -263,7 +202,7 @@ class AccountRepository {
     /**
      * Deletes this lifter's whole cloud account, then signs out.
      *
-     * `delete_my_account()` (migration 0017) removes the caller's auth.users
+     * `delete_my_account()` (baseline schema) removes the caller's auth.users
      * row server-side; profiles and every social table cascade from it, and
      * so does `cloud_archives`, which a profiles-only delete used to leave
      * behind. The RPC can only ever delete auth.uid(), so no service-role
@@ -368,8 +307,5 @@ internal fun requireAccount(account: AccountRepository): Result<Account> {
     }
 }
 
-/** Sentinel: auth succeeded but the profiles row is absent — recoverable by
- *  re-inserting the row, not by telling the user to sign up again. */
-private class ProfileMissingException : IllegalStateException(
-    "Signed in, but your lifter profile is missing",
-)
+/** The display name was taken before sign-up; shown to the lifter as is. */
+private class NameTakenException : IllegalStateException("That display name is taken — pick another")

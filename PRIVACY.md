@@ -39,7 +39,7 @@ storage:
   sync worker (`HealthSyncWorker.kt`).
 - Private notes on workouts. The server schema has no private-notes column:
   "private" means the server cannot read it, not that the UI hides it
-  (`supabase/migrations/0002_feed_and_notes.sql`, header comment).
+  (`supabase/migrations/0001_baseline.sql`, the comment above the `sessions` table).
 
 The app also offers manual export/import of this data as a JSON archive you
 control (`ExportWriter.kt` / `ExportReader.kt`).
@@ -109,7 +109,7 @@ holds for the cloud backup too: it is built without them.
   Android system settings. Uninstalling removes `ironvellum.db` and everything in
   the app's private storage.
 - **Cloud data:** Allies → ALLIES → **DELETE MY CLOUD ACCOUNT** deletes your
-  sign-in identity itself (`delete_my_account()`, migration 0017), which
+  sign-in identity itself (`delete_my_account()` in the baseline schema), which
   cascades to your lifter row and from there to every synced workout, set,
   earned title, level-up, like and ally link, and to your cloud backup archive
   (`on delete cascade` on all of them), then signs you out. The function only

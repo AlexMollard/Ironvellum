@@ -167,16 +167,20 @@ python tools/device.py labels    # visible text, for finding a tap target
 | `:app:testFossDebugUnitTest` | Scoring maths, progression, titles, catalogue invariants, the cloud wire format, crash journal, migration registry |
 | `:app:connectedFossDebugAndroidTest` | Room migrations against real SQLite, data survival across upgrades, navigation reachability, accessibility floors, and the user journeys (workout loop, skill practice, workout auto-fill, first run, delete) |
 | `:app:lintFossRelease` | Release-variant lint; triage the SARIF report, not the HTML |
-| `supabase/test/assert_all.sql` | What no Kotlin test can see: which tables have row security, who may execute which function, which columns a lifter may write, whether a feed row can pin itself |
+| `supabase/test/assert_all.sql` | What no Kotlin test can see: which tables have row security, who may execute which function, which columns a lifter may write, whether a feed row can pin itself, what sign-up does with a name |
 
 The backend assertions need Docker rather than a device:
 
 ```bash
 docker run -d --rm --name pg -e POSTGRES_PASSWORD=probe -p 5432:5432 postgres:16
 psql -h localhost -U postgres -f supabase/test/supabase_stub.sql
-for f in supabase/migrations/*.sql; do psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f "$f"; done
+psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/migrations/0001_baseline.sql
 psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/test/assert_all.sql
 ```
+
+`python tools/gate.py --backend` does all of that and also proves the hosted
+reset: it seeds data, runs `supabase/reset.sql`, checks nothing was left
+behind, re-applies the baseline and asserts again.
 
 <details>
 <summary><b>Project layout</b></summary>
@@ -188,7 +192,8 @@ app/src/main/kotlin/com/ironvellum/app/
   ui/          Compose screens by feature, plus theme and shared components
 app/src/test/          unit tests over the domain and wire format
 app/src/androidTest/   instrumented: migrations, journeys, accessibility
-supabase/migrations/   schema and row level security, applied in order
+supabase/migrations/   the whole schema and row level security, one baseline file
+supabase/reset.sql     wipes the hosted debug project before the baseline is applied
 supabase/test/         SQL assertions the Kotlin tests cannot make
 tools/                 device driving, art generation, geometry sweeps
 docs/                  release checklist, data safety, TODO, attribution

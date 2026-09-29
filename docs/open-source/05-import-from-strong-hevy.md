@@ -114,8 +114,8 @@ trusting the help pages:
    `room-migration-data-survival-test` coverage). `CloudSync.push` still backs
    them up but excludes them from feed rows.
    - Check how `public_feed` selects rows first: if it derives from
-     `sessions` server-side, this needs an `imported` column in migration
-     `0015` instead.
+     `sessions` server-side, this needs an `imported` column in
+     `0001_baseline.sql` instead.
 
 ## Decision for the owner
 
@@ -123,7 +123,7 @@ trusting the help pages:
 
 - **(a, recommended)** Yes. It is the lifter's real history, and manual
   logging already trusts the lifter's numbers, so an import adds no new trust
-  hole, only speed. The server's bounded, monotonic XP claim (`0011`) still
+  hole, only speed. The server's bounded, monotonic XP claim (`push_aggregates`) still
   caps absurd values, and imported sessions never reach the feed.
 - (b) No XP: history, PRs and strength only. This is safer for boards, but a
   five-year lifter starts at level 1, which is exactly the switching pain this

@@ -1,12 +1,12 @@
 -- Minimal stand-in for the parts of a hosted Supabase project that the
--- migrations assume exist. Applying this to a throwaway Postgres lets the whole
--- migration chain be EXECUTED before it ever reaches the live project, which is
--- otherwise the last unverified crash surface in the app: a migration can only
--- be proven by running it.
+-- baseline assumes exist. Applying this to a throwaway Postgres lets the whole
+-- schema be EXECUTED before it ever reaches the live project, which is
+-- otherwise the last unverified crash surface in the app: a schema file can
+-- only be proven by running it.
 --
 --   docker run -d --rm --name pg -e POSTGRES_PASSWORD=probe postgres:16
 --   psql -f supabase/test/supabase_stub.sql
---   psql -f supabase/migrations/0001_init.sql   # ... through the newest
+--   psql -f supabase/migrations/0001_baseline.sql
 --   psql -f supabase/test/rls_probe.sql
 --
 -- What this does NOT cover: PostgREST itself, GoTrue, and the real `anon` /
@@ -24,6 +24,9 @@ create table if not exists auth.users (
     role text,
     email text,
     encrypted_password text,
+    -- What supabase.auth.signUp(data = ...) lands in. The sign-up trigger reads
+    -- its display_name key, and must never read a Google name from it.
+    raw_user_meta_data jsonb,
     created_at timestamptz,
     updated_at timestamptz
 );
@@ -51,7 +54,7 @@ alter default privileges in schema public
 -- Supabase also grants EXECUTE on every new public-schema FUNCTION directly
 -- to anon and authenticated. Without this line a `revoke ... from public`
 -- looks sufficient here while the live project still answers the shipped
--- publishable key: exactly how 0009's friendship-oracle fix passed this suite
--- and stayed open in production.
+-- publishable key: exactly how an earlier friendship-oracle fix passed this
+-- suite and stayed open in production.
 alter default privileges in schema public
     grant execute on functions to anon, authenticated;

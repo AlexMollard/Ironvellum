@@ -9,7 +9,7 @@ Code references:
 - `AR` = `app/src/main/kotlin/com/ironvellum/app/data/cloud/AccountRepository.kt`
 - `HS` = `app/src/main/kotlin/com/ironvellum/app/data/HealthSync.kt`
 - `RP` = `app/src/main/kotlin/com/ironvellum/app/data/Repository.kt`
-- `M1`/`M2`/`M8` = `supabase/migrations/0001_init.sql` / `0002…` / `0008…`
+- `M1` = `supabase/migrations/0001_baseline.sql` (the whole schema)
 
 ## Form-level answers
 
@@ -21,7 +21,7 @@ Code references:
   IPC, no network involved.
 - **Do you provide a way for users to request that their data is deleted?**
   **Yes — in-app deletion.** Allies → ALLIES → DELETE MY CLOUD ACCOUNT calls
-  the `delete_my_account()` RPC (migration 0017), which deletes the caller's
+  the `delete_my_account()` RPC (`M1`), which deletes the caller's
   auth identity; the profile, every social table and the cloud backup archive
   cascade from it (`AccountRepository.deleteCloudData()`).
 
@@ -42,8 +42,8 @@ Code references:
   RLS. Optional: **Yes** (sign-in only).
 - Purpose: App functionality — syncing training history across the social
   features.
-- Code: `CS` `push()`; `M1` `sessions`/`session_sets`; `M2` adds `title`/`note`
-  to `sessions`; `M3` adds duration/distance/grade.
+- Code: `CS` `push()`; `M1` `sessions`/`session_sets` (title, note, duration,
+  distance and grade columns included).
 
 ### Fitness info — Health Connect data (NOT collected)
 - The app **reads** steps, distance, active calories, sleep, resting heart
@@ -69,7 +69,7 @@ Code references:
   treated as internal. Code: `CS` `pushDerivedAggregates()` →
   `push_aggregates(p_level, p_total_xp, p_titles_count, p_strength,
   p_streak_days)`; `M11` grants that RPC and revokes direct column writes.
-- Code: `CS` `ShadowPushDto`; `M8` `profiles` columns; `M8` header: "the cloud
+- Code: `CS` `ShadowPushDto`; `M1` `profiles` shadow columns; `M1` comment on them: "the cloud
   never holds the accrual clock".
 
 ### Identifiers — Google account user ID (collected, not shared beyond backend)
@@ -91,7 +91,7 @@ Code references:
   retains (see Q1) — removal requires a server-side service-role action.
 
 ### App interactions — likes, friend requests (collected, shared)
-- `session_likes`, `friendships` (`M1`, `M4`). Optional; purpose: social
+- `session_likes`, `friendships` (`M1`). Optional; purpose: social
   features.
 
 ### Inferred / advertising data
@@ -104,7 +104,7 @@ Code references:
   and everything else in the app's private storage.
 - **Cloud data:** in-app deletion exists — Allies → ALLIES → DELETE MY CLOUD
   ACCOUNT calls `AccountRepository.deleteCloudData()`, which runs the
-  signed-in-only `delete_my_account()` RPC (0017). It deletes the caller's
+  signed-in-only `delete_my_account()` RPC (`M1`). It deletes the caller's
   auth identity, and the profile, every synced table and `cloud_archives`
   cascade from it. Asserted in `supabase/test/assert_all.sql`.
 
@@ -112,7 +112,7 @@ Code references:
 
 - **Q1 — Deletion mechanism: RESOLVED, and now asserted.** In-app cloud deletion exists
   (`AccountRepository.deleteCloudData()`, surfaced in Allies → ALLIES). The
-  server-side capability was present from migration 0001 via the
+  server-side capability is in `M1` via the
   `profiles_delete` policy plus `on delete cascade`; only the UI was missing.
   The promise is executed rather than assumed: `supabase/test/assert_all.sql`
   deletes a lifter's profile as that lifter and asserts no rows survive in

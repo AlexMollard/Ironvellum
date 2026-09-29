@@ -22,7 +22,7 @@ training, and the docs describe the scoring the code actually runs.
 Measured effective hours paid: 1 week 60.0, 1 month 115.2, **1 year 919.2,
 which is 38 times a capped day** (`docs/TODO.md` row 33). That essence is
 pushed as `shadow_essence` (`CloudSync.kt:122`) and the `shadow_board` view
-orders by it (`0008_shadow_board.sql:35-45`), so absence climbs the board.
+orders by it (`shadow_board` in `0001_baseline.sql`), so absence climbs the board.
 
 The stated product rule is "accumulation caps at 24 hours, the rate decays
 every few hours away". Options, from TODO row 33:
@@ -76,9 +76,9 @@ Also stale: the row claims "nothing recomputes history".
 
 ## 3. Who can see the boards (OWNER decision)
 
-- Reads go through `can_view()` (`0001_init.sql:117-121`): the lifter
+- Reads go through `can_view()` (`0001_baseline.sql`): the lifter
   themselves, anyone set `public`, or friends. The default visibility is
-  `'friends'` (`0001_init.sql:22`).
+  `'friends'` (`profiles.visibility` in `0001_baseline.sql`).
 - So with no change, the boards are friends-only, and strangers appear only if
   they opted into `public`.
 - **Recommended:** keep it. A tracker that publishes a newcomer's training to
@@ -87,6 +87,6 @@ Also stale: the row claims "nothing recomputes history".
 
 ## 4. Ship order
 
-`0008`, `0009` and `0010` go live first (plan 01). `0011` ships with the
-next app build, and that build also carries the idle cap from section 1, so
+The baseline schema goes live first (plan 01), together with the next app
+build, and that build also carries the idle cap from section 1, so
 the first build that can write to a public board is already the fair one.

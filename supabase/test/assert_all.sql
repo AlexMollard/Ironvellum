@@ -2,18 +2,18 @@
 -- can gate CI the way the instrumented suite gates the app.
 --
 -- The probes beside this file are for reading: they print values a human
--- compares. This one decides. Every check restates a guarantee some migration
--- deliberately established, so a later migration that quietly undoes one fails
--- here instead of in production.
+-- compares. This one decides. Every check restates a guarantee the baseline
+-- deliberately establishes, so an edit that quietly undoes one fails here
+-- instead of in production.
 --
 --   docker run -d --rm --name pg -e POSTGRES_PASSWORD=probe -p 5432:5432 postgres:16
 --   psql -f supabase/test/supabase_stub.sql
---   for f in supabase/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -f "$f"; done
+--   psql -v ON_ERROR_STOP=1 -f supabase/migrations/0001_baseline.sql
 --   psql -v ON_ERROR_STOP=1 -f supabase/test/assert_all.sql
 --
--- Order matters: helpers, then a schema-presence guard (so an unapplied chain
--- fails on its own line rather than as a scatter of denials that look like the
--- guarantees holding), then fixtures, then the checks.
+-- Order matters: helpers, then a schema-presence guard (so an unapplied
+-- baseline fails on its own line rather than as a scatter of denials that look
+-- like the guarantees holding), then fixtures, then the checks.
 \set ON_ERROR_STOP 1
 
 -- ------------------------------------------------------------------- helpers
@@ -109,17 +109,59 @@ begin
 end;
 $$;
 
+-- The same, as the shipped publishable key: the anon role.
+create or replace function refused_as_anon(stmt text, expected text[])
+returns boolean language plpgsql as $$
+declare
+    state text;
+    msg text;
+begin
+    execute 'set local role anon';
+    begin
+        execute stmt;
+        execute 'reset role';
+        return false;
+    exception when others then
+        get stacked diagnostics state = returned_sqlstate, msg = message_text;
+        execute 'reset role';
+        if state = any (expected) then
+            return true;
+        end if;
+        raise exception 'unexpected failure (SQLSTATE %) while checking an anon refusal: % [%]',
+            state, msg, stmt;
+    end;
+end;
+$$;
+
+-- Signs a lifter up the way GoTrue does: one auth.users row, with the sign-up
+-- metadata, and nothing else. Returns the display_name of the profile the
+-- sign-up trigger made for it (null when it made none).
+create or replace function sign_up(uid uuid, meta jsonb)
+returns text language plpgsql as $$
+begin
+    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, raw_user_meta_data, created_at, updated_at)
+    values ('00000000-0000-0000-0000-000000000000', uid, 'authenticated', 'authenticated',
+            uid || '@m.test', '', meta, now(), now());
+    return (select p.display_name from profiles p where p.id = uid);
+end;
+$$;
+
 -- ---------------------------------------------------------- schema is present
 do $$
 begin
     perform assert_true(to_regclass('auth.users') is not null, 'auth.users missing: apply supabase/test/supabase_stub.sql first');
-    perform assert_true(to_regclass('public.profiles') is not null, 'profiles missing: the migration chain did not apply');
-    perform assert_true(to_regclass('public.session_likes') is not null, 'session_likes missing: the chain stopped before 0004');
-    perform assert_true(to_regproc('public.find_hunter') is not null, 'find_hunter missing: the chain stopped before 0010');
-    perform assert_true(to_regproc('public.push_aggregates') is not null, 'push_aggregates missing: the chain stopped before 0011');
-    perform assert_true(to_regproc('public.monarch_level') is not null, 'monarch_level missing: the chain stopped before 0011');
-    perform assert_true(to_regclass('public.session_comments') is not null, 'session_comments missing: the chain stopped before 0018');
-    perform assert_true(to_regproc('public.my_inbox') is not null, 'my_inbox missing: the chain stopped before 0018');
+    perform assert_true(to_regclass('public.profiles') is not null, 'profiles missing: the baseline did not apply');
+    perform assert_true(to_regclass('public.session_likes') is not null, 'session_likes missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.find_hunter') is not null, 'find_hunter missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.push_aggregates') is not null, 'push_aggregates missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.monarch_level') is not null, 'monarch_level missing: the baseline did not apply completely');
+    perform assert_true(to_regclass('public.session_comments') is not null, 'session_comments missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.my_inbox') is not null, 'my_inbox missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.handle_new_user') is not null, 'handle_new_user missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.display_name_available') is not null, 'display_name_available missing: the baseline did not apply completely');
+    perform assert_true(
+        exists (select 1 from pg_trigger t where t.tgrelid = 'auth.users'::regclass and t.tgname = 'on_auth_user_created' and not t.tgisinternal),
+        'on_auth_user_created is not on auth.users: no profile is made at sign-up');
 end $$;
 
 -- ------------------------------------------------------------------ fixtures
@@ -152,7 +194,7 @@ insert into earned_titles (user_id, title_id, unlocked_at)
 values ('a5500000-0000-4000-8000-000000000001','first-blood', now())
 on conflict do nothing;
 
--- 1.4 "Talk" (0018) runs on lifters of its own, so a block or mute can never
+-- 1.4 "Talk" runs on lifters of its own, so a block or mute can never
 -- mask a visibility leak the older checks exist to catch. Deleting the
 -- identities first cascades everything they touched, so a re-run starts clean.
 -- Dara is public and allied with Eli, Gus and Hale; Fenn is a private
@@ -171,7 +213,11 @@ insert into profiles (id, display_name, visibility) values
     ('a5500000-0000-4000-8000-000000000043','Fenn','private'),
     ('a5500000-0000-4000-8000-000000000044','Gus','public'),
     ('a5500000-0000-4000-8000-000000000045','Hale','public'),
-    ('a5500000-0000-4000-8000-000000000046','Ivo','public');
+    ('a5500000-0000-4000-8000-000000000046','Ivo','public')
+-- The sign-up trigger already made a neutral profile for each identity above.
+on conflict (id) do update set
+    display_name = excluded.display_name,
+    visibility = excluded.visibility;
 insert into friendships (requester_id, addressee_id, accepted) values
     ('a5500000-0000-4000-8000-000000000041','a5500000-0000-4000-8000-000000000042', true),
     ('a5500000-0000-4000-8000-000000000041','a5500000-0000-4000-8000-000000000044', true),
@@ -248,7 +294,7 @@ begin
     perform assert_true(leaky is null, format('view(s) without security_invoker: %s', leaky));
 end $$;
 
--- ------------------------------------------------------------ 1.4 talk (0018)
+-- ------------------------------------------------------------------ 1.4 talk
 do $$
 declare
     dara uuid := 'a5500000-0000-4000-8000-000000000041';
@@ -603,6 +649,186 @@ begin
     perform set_config('probe.uid', '', true);
 end $$;
 
+-- ------------------------------------------------------------------ sign-up
+-- The profile is made by the trigger on auth.users, never by the client: with
+-- email confirmation ON there is no session at sign-up, so a client insert
+-- would run as anon.
+do $$
+declare
+    -- Sign-up identities, all removed at the end of this block.
+    u1 uuid := 'a5500000-0000-4000-8000-000000000051';
+    u2 uuid := 'a5500000-0000-4000-8000-000000000052';
+    u3 uuid := 'a5500000-0000-4000-8000-000000000053';
+    u4 uuid := 'a5500000-0000-4000-8000-000000000054';
+    u5 uuid := 'a5500000-0000-4000-8000-000000000055';
+    u6 uuid := 'a5500000-0000-4000-8000-000000000056';
+    u7 uuid := 'a5500000-0000-4000-8000-000000000057';
+    u8 uuid := 'a5500000-0000-4000-8000-000000000058';
+    u9 uuid := 'a5500000-0000-4000-8000-000000000059';
+    ux uuid := 'a5500000-0000-4000-8000-00000000005a';
+    neutral constant text := '^Lifter[0-9]{4}$';
+    r text;
+    ok boolean;
+    n int;
+    g int;
+begin
+    -- Idempotent re-runs: earlier runs' identities and any neutral handles they
+    -- left behind must not collide with what is checked here.
+    delete from auth.users where id::text like 'a5500000-0000-4000-8000-00000000005_';
+    delete from auth.users where id::text like 'a5500000-0000-4000-9000-%';
+    delete from profiles where display_name ~ neutral;
+
+    -- ------------------------------------------------ the chosen name
+    r := sign_up(u1, '{"display_name": "  Kestrel  "}');
+    perform assert_true(r = 'Kestrel',
+        format('sign-up did not create the profile with the trimmed display_name metadata (got %s)', r));
+    perform assert_true((select count(*) from profiles where id = u1) = 1, 'sign-up made more than one profile');
+
+    -- Exactly at the bounds, both ends.
+    r := sign_up(u2, '{"display_name": "Ab"}');
+    perform assert_true(r = 'Ab', format('a 2-character display_name was not used (got %s)', r));
+    delete from auth.users where id = u2;
+    r := sign_up(u2, jsonb_build_object('display_name', repeat('y', 24)));
+    perform assert_true(r = repeat('y', 24), format('a 24-character display_name was not used (got %s)', r));
+    delete from auth.users where id = u2;
+
+    -- Google-style metadata alongside a chosen name: the chosen name wins.
+    r := sign_up(u2, '{"display_name": "Corvid", "full_name": "Real Legal Name", "name": "Real Legal"}');
+    perform assert_true(r = 'Corvid', format('display_name was ignored when full_name was present (got %s)', r));
+
+    -- ------------------------------------------------ taken or out of bounds
+    -- Taken in any case: the sign-up must SUCCEED with a neutral handle.
+    r := sign_up(u3, '{"display_name": "KESTREL"}');
+    perform assert_true(r ~ neutral, format('a taken name (other case) did not fall back to a neutral handle (got %s)', r));
+    r := sign_up(u4, '{"display_name": "kestrel"}');
+    perform assert_true(r ~ neutral, format('a taken name (lower case) did not fall back to a neutral handle (got %s)', r));
+    r := sign_up(u5, '{"display_name": " Ayla "}');
+    perform assert_true(r ~ neutral, format('a name taken by an existing lifter did not fall back (got %s)', r));
+    perform assert_true((select display_name from profiles where id = u1) = 'Kestrel',
+        'a taken name took the name from the lifter who owned it');
+    delete from auth.users where id in (u3, u4, u5);
+
+    foreach r in array array['A', repeat('x', 25), '   ', ''] loop
+        ok := sign_up(u6, jsonb_build_object('display_name', r)) ~ neutral;
+        delete from auth.users where id = u6;
+        perform assert_true(ok, format('an out-of-bounds display_name (%s characters) did not fall back to a neutral handle', char_length(r)));
+    end loop;
+
+    -- ------------------------------------------------ never a legal name
+    -- Google supplies full_name / name (and often email). None of it may become
+    -- a public handle.
+    r := sign_up(u6, '{"full_name": "Jane Q Public", "name": "Jane Public", "email": "jane@m.test", "avatar_url": "x"}');
+    perform assert_true(r ~ neutral, format('Google metadata (full_name/name only) did not yield a neutral handle (got %s)', r));
+    delete from auth.users where id = u6;
+    r := sign_up(u6, null);
+    perform assert_true(r ~ neutral, format('sign-up without any metadata did not yield a neutral handle (got %s)', r));
+    delete from auth.users where id = u6;
+    r := sign_up(u6, '{}');
+    perform assert_true(r ~ neutral, format('sign-up with empty metadata did not yield a neutral handle (got %s)', r));
+    delete from auth.users where id = u6;
+
+    -- ------------------------------------------------ neutral handle collisions
+    -- All but one of the 10000 handles are taken (rows written directly: the
+    -- replica role skips the trigger, and is switched back before anything is
+    -- deleted, or the cascades would be skipped too). The probe must walk past
+    -- every collision to the single free one, wherever it starts.
+    delete from auth.users where id in (u1, u2);
+    perform set_config('session_replication_role', 'replica', true);
+    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, created_at, updated_at)
+    select '00000000-0000-0000-0000-000000000000', ('a5500000-0000-4000-9000-' || lpad(to_hex(x), 12, '0'))::uuid,
+           'authenticated', 'authenticated', 'fill' || x || '@m.test', '', now(), now()
+    from generate_series(0, 9998) x;
+    insert into profiles (id, display_name)
+    select ('a5500000-0000-4000-9000-' || lpad(to_hex(x), 12, '0'))::uuid, 'Lifter' || lpad(x::text, 4, '0')
+    from generate_series(0, 9998) x;
+    perform set_config('session_replication_role', 'origin', true);
+    for g in 1..3 loop
+        r := sign_up(u7, '{}');
+        perform assert_true(r = 'Lifter9999', format('the neutral handle probe did not find the one free handle (got %s)', r));
+        delete from auth.users where id = u7;
+    end loop;
+    -- Every neutral handle taken: sign-up itself must still succeed.
+    perform set_config('session_replication_role', 'replica', true);
+    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, created_at, updated_at)
+    values ('00000000-0000-0000-0000-000000000000', u8, 'authenticated', 'authenticated', 'last@m.test', '', now(), now());
+    insert into profiles (id, display_name) values (u8, 'Lifter9999');
+    perform set_config('session_replication_role', 'origin', true);
+    r := sign_up(u7, '{}');
+    perform assert_true(r is null and exists (select 1 from auth.users where id = u7),
+        'sign-up failed, or invented a handle, when every neutral handle was taken');
+    delete from auth.users where id in (u7, u8);
+    delete from auth.users where id::text like 'a5500000-0000-4000-9000-%';
+    perform assert_true(not exists (select 1 from profiles where display_name ~ neutral),
+        'the neutral-handle fixtures were not cleaned up');
+
+    -- ------------------------------------------------ display_name_available
+    perform assert_true(
+        has_function_privilege('anon', 'public.display_name_available(text)', 'execute')
+            and has_function_privilege('authenticated', 'public.display_name_available(text)', 'execute')
+            and not has_function_privilege('public', 'public.display_name_available(text)', 'execute'),
+        'display_name_available() is not callable by anon and authenticated only: the app asks before sign-up');
+    r := sign_up(u1, '{"display_name": "Kestrel"}');
+    set local role anon;
+    perform assert_true(display_name_available('Nobody Yet') is true, 'a free name reads as taken');
+    perform assert_true(display_name_available('Kestrel') is false, 'a taken name reads as free');
+    perform assert_true(display_name_available('kESTREL') is false, 'a taken name (other case) reads as free');
+    perform assert_true(display_name_available('  Kestrel  ') is false, 'a taken name (padded) reads as free');
+    perform assert_true(display_name_available('Ab') is true and display_name_available(repeat('z', 24)) is true,
+        'a name exactly at the bounds reads as unavailable');
+    perform assert_true(
+        display_name_available('A') is false
+            and display_name_available(repeat('z', 25)) is false
+            and display_name_available('   ') is false
+            and display_name_available('') is false
+            and display_name_available(null) is false,
+        'an out-of-bounds name reads as available');
+    reset role;
+    perform set_config('probe.uid', u1::text, true);
+    set local role authenticated;
+    perform assert_true(display_name_available('Nobody Yet') is true and display_name_available('Kestrel') is false,
+        'display_name_available() answers wrongly for a signed-in lifter');
+    reset role;
+    perform set_config('probe.uid', '', true);
+
+    -- ------------------------------------------------ clients never insert profiles
+    delete from profiles where id = u1;   -- a lifter with no profile: the case a client insert used to serve
+    perform assert_true(
+        not exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'profiles' and cmd = 'INSERT'),
+        'profiles still has an insert policy');
+    perform assert_true(
+        not has_table_privilege('anon', 'public.profiles', 'insert')
+            and not has_table_privilege('authenticated', 'public.profiles', 'insert')
+            and not has_column_privilege('authenticated', 'public.profiles', 'display_name', 'insert')
+            and not has_column_privilege('anon', 'public.profiles', 'display_name', 'insert'),
+        'a client role still holds INSERT on profiles');
+    perform assert_true(
+        refused_as(u1, format('insert into profiles (id, display_name) values (%L, ''Sneaky'')', u1), array['42501']),
+        'an authenticated client can insert its own profile');
+    perform assert_true(
+        refused_as_anon(format('insert into profiles (id, display_name) values (%L, ''Sneaky'')', u1), array['42501']),
+        'the anon key can insert a profile: sign-up with email confirmation on would need this, and so could anyone');
+    delete from auth.users where id = u1;
+
+    -- ------------------------------------------------ the trigger function
+    perform assert_true(
+        not has_function_privilege('public', 'public.handle_new_user()', 'execute')
+            and not has_function_privilege('anon', 'public.handle_new_user()', 'execute')
+            and not has_function_privilege('authenticated', 'public.handle_new_user()', 'execute'),
+        'handle_new_user() is executable by a client role');
+    perform assert_true(
+        refused_as(u9, 'select public.handle_new_user()', array['42501']),
+        'a signed-in lifter can call handle_new_user()');
+    perform assert_true(
+        (select prosecdef from pg_proc where oid = 'public.handle_new_user()'::regprocedure)
+            and exists (select 1 from pg_proc p, unnest(p.proconfig) c
+                        where p.oid = 'public.handle_new_user()'::regprocedure and c like 'search_path=%'),
+        'handle_new_user() is not SECURITY DEFINER with a pinned search_path');
+
+    -- Nothing this block made survives it.
+    perform assert_true(not exists (select 1 from auth.users where id::text like 'a5500000-0000-4000-8000-00000000005_'),
+        'the sign-up fixtures were not cleaned up');
+end $$;
+
 -- -------------------------------------------------------------- the guarantees
 do $$
 declare
@@ -821,12 +1047,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 18,
-        format('schema_version() reports %s, not 18 — bump the literal with the migration', public.schema_version())
+        (select public.schema_version()) = 19,
+        format('schema_version() reports %s, not 19 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 18,
+        (select public.schema_version()) = 19,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -861,4 +1087,6 @@ drop function if exists assert_true(boolean, text);
 drop function if exists refused_as(uuid, text, text[]);
 drop function if exists must_run(uuid, text, text);
 drop function if exists refusal(uuid, text);
+drop function if exists refused_as_anon(text, text[]);
+drop function if exists sign_up(uuid, jsonb);
 drop function if exists value_as(uuid, text);

@@ -1107,7 +1107,7 @@ class Repository(
 
 
     /**
-     * Server caps: title <= 80, public note <= 500 (see supabase migration 0002).
+     * Server caps: title <= 80, public note <= 500 (see supabase/migrations/0001_baseline.sql).
      * Trimming locally means a sync can never fail on a value we already accepted.
      * The private note has no server constraint — it never leaves the device.
      */

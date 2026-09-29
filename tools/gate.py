@@ -103,10 +103,13 @@ def gradle(tasks: list[str], serial: str | None) -> int:
 
 
 def backend() -> int:
-    """Apply every migration to a throwaway Postgres and assert the guarantees.
+    """Apply the schema to a throwaway Postgres and assert the guarantees.
 
-    Mirrors ci.yml's `backend` job: the stub, the migration chain, the
-    declares-idempotent-or-immutable check, the re-apply, then assert_all.sql.
+    Mirrors ci.yml's `backend` job: the stub, the baseline, the
+    declares-idempotent check, the re-apply, then assert_all.sql. Then the
+    hosted reset round trip: seed a little, run supabase/reset.sql, prove it
+    left nothing behind (assert_reset.sql), apply the baseline again onto the
+    wiped project and run assert_all.sql once more.
     """
     migrations = sorted(glob.glob(os.path.join(ROOT, "supabase/migrations/*.sql")))
     if not migrations:
@@ -116,12 +119,12 @@ def backend() -> int:
     undeclared = []
     for path in migrations:
         with open(path, encoding="utf-8", errors="replace") as handle:
-            if not re.search(r"idempotent|immutable", handle.read(), re.I):
+            if not re.search(r"idempotent", handle.read(), re.I):
                 undeclared.append(os.path.basename(path))
     if undeclared:
-        # The re-apply below keys off that word, so a file declaring neither
+        # The re-apply below keys off that word, so a file that does not say it
         # would silently opt out of the idempotency check.
-        print(f"!! migrations declare neither idempotent nor immutable: {undeclared}")
+        print(f"!! migrations do not declare themselves idempotent: {undeclared}")
         return 1
 
     name = "ironvellum-gate-pg"
@@ -159,14 +162,22 @@ def backend() -> int:
             )
             return proc.returncode
 
-        steps = [os.path.join(ROOT, "supabase/test/supabase_stub.sql")] + migrations
-        # Re-apply only the files that CLAIM idempotency; the early ones are
-        # declared immutable and re-running them is expected to fail.
-        for path in migrations:
-            with open(path, encoding="utf-8", errors="replace") as handle:
-                if re.search(r"idempotent", handle.read(), re.I):
-                    steps.append(path)
-        steps.append(os.path.join(ROOT, "supabase/test/assert_all.sql"))
+        test = lambda fname: os.path.join(ROOT, "supabase/test", fname)
+        steps = [test("supabase_stub.sql")] + migrations
+        # Re-apply every file: each one declares itself idempotent (checked above).
+        steps += migrations
+        steps.append(test("assert_all.sql"))
+        # The hosted reset round trip. assert_all leaves its fixtures behind and
+        # reset_seed adds a sign-up-made profile and a row in every table, so
+        # reset.sql has real data to destroy. Then the baseline goes onto the
+        # wiped project again and the whole suite runs on top of it.
+        steps += [
+            test("reset_seed.sql"),
+            os.path.join(ROOT, "supabase/reset.sql"),
+            test("assert_reset.sql"),
+        ]
+        steps += migrations
+        steps.append(test("assert_all.sql"))
 
         for path in steps:
             print(f"   {os.path.relpath(path, ROOT)}")

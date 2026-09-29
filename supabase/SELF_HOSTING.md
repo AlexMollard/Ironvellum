@@ -14,11 +14,10 @@ training syncs to YOUR project and never to the shared Ironvellum instance.
 https://supabase.com/docs/guides/self-hosting/docker — it stands up the whole
 stack (Postgres, GoTrue auth, PostgREST, Studio) behind a single host.
 
-## 2. Apply every migration, in order
+## 2. Apply the schema
 
-The app expects the schema built by `supabase/migrations/`, applied in numeric
-order (`0001_init.sql` → `0017_delete_account.sql`, and any later files). With
-psql:
+The app expects the schema in `supabase/migrations/`: `0001_baseline.sql`,
+then any later files in numeric order. With psql:
 
 ```bash
 for f in supabase/migrations/*.sql; do
@@ -26,15 +25,18 @@ for f in supabase/migrations/*.sql; do
 done
 ```
 
-or paste each file, in order, into the project's SQL editor. `0014` adds the
-`schema_version()` beacon the app uses to check your project is ready; if it
-is missing, the app reports "migrations have not been applied" instead of
-sending data into a half-built schema.
+or paste each file, in order, into the project's SQL editor. The baseline
+includes the `schema_version()` beacon the app uses to check your project is
+ready; if it is missing, the app reports "migrations have not been applied"
+instead of sending data into a half-built schema.
+
+To wipe a project back to empty first, run `supabase/reset.sql` (it deletes
+every account and every app table).
 
 Afterwards you can verify with the SQL editor:
 
 ```sql
-select schema_version();  -- should return the newest migration number
+select schema_version();  -- should return the number NEEDED_SCHEMA_VERSION expects
 ```
 
 ## 3. Point the app at it

@@ -23,8 +23,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
 import java.io.IOException
 
-/** The schema literal the newest migration writes into [Cloud.NEEDED_SCHEMA_VERSION]. */
-const val NEEDED_SCHEMA_VERSION = 18
+/** The schema literal the baseline writes into [Cloud.NEEDED_SCHEMA_VERSION]. */
+const val NEEDED_SCHEMA_VERSION = 19
 
 /**
  * The backend the app currently talks to. [isDefault] distinguishes the

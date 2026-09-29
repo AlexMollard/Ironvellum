@@ -12,7 +12,7 @@ import java.time.Instant
 
 /*
  * Wire types for the Supabase REST API. Every @SerialName must match the
- * snake_case column in supabase/migrations/0001_init.sql exactly. Domain types
+ * snake_case column in supabase/migrations/0001_baseline.sql exactly. Domain types
  * never cross the wire; these are the only shapes PostgREST sees.
  */
 
@@ -581,7 +581,7 @@ data class ArchiveDto(
  * at runtime, on a user's device, as a 404 from PostgREST.
  */
 
-/** Arguments of `push_aggregates` (supabase/migrations/0011_server_side_aggregates.sql). */
+/** Arguments of `push_aggregates` (supabase/migrations/0001_baseline.sql). */
 @Serializable
 data class PushAggregatesArgs(
     @SerialName("p_total_xp") val totalXp: Long,
@@ -592,7 +592,7 @@ data class PushAggregatesArgs(
     @SerialName("p_shadow_rate") val shadowRate: Double,
 )
 
-/** Arguments of `find_hunter` (supabase/migrations/0010_hunter_discovery.sql). */
+/** Arguments of `find_hunter` (supabase/migrations/0001_baseline.sql). */
 @Serializable
 data class FindHunterArgs(
     @SerialName("name") val name: String,
@@ -603,6 +603,7 @@ const val RPC_PUSH_AGGREGATES = "push_aggregates"
 const val RPC_FIND_HUNTER = "find_hunter"
 const val RPC_MY_INBOX = "my_inbox"
 const val RPC_MARK_INBOX_SEEN = "mark_inbox_seen"
+const val RPC_DISPLAY_NAME_AVAILABLE = "display_name_available"
 
 /**
  * Encodes a typed RPC argument shape into the JsonObject the pinned

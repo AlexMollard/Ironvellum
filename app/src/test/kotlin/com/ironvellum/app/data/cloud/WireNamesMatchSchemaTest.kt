@@ -33,8 +33,8 @@ class WireNamesMatchSchemaTest {
     private fun tableColumns(table: String): Set<String> {
         val cols = mutableSetOf<String>()
         val create = Regex("""create table (?:if not exists )?$table\s*\(([\s\S]*?)\n\);""")
-        // One `alter table` may carry several `add column` clauses (0002 adds
-        // title and note in a single statement), so scan the whole statement.
+        // One `alter table` may carry several `add column` clauses, so scan the
+        // whole statement.
         val alter = Regex("""alter table $table\b([\s\S]*?);""")
         val addColumn = Regex("""add column (?:if not exists )?(\w+)""")
         for (sql in migrations) {
@@ -53,7 +53,7 @@ class WireNamesMatchSchemaTest {
         return cols
     }
 
-    /** Output columns of the LAST definition of a view (later migrations redefine it). */
+    /** Output columns of the LAST definition of a view (a later definition wins). */
     private fun viewColumns(view: String): Set<String> {
         val re = Regex("""create (?:or replace )?view $view\b[^;]*?\bas\s*select([\s\S]*?);""")
         val raw = migrations.mapNotNull { re.find(it)?.groupValues?.get(1) }.lastOrNull()
@@ -150,7 +150,7 @@ class WireNamesMatchSchemaTest {
 
     /** Parameter names of a `create function` signature in the migrations. */
     private fun functionParams(fn: String): Set<String> {
-        // 0014 onward qualify new functions with `public.`; older ones do not.
+        // Some functions are qualified with `public.`, some are not.
         val re = Regex("""create (?:or replace )?function (?:public\.)?$fn\s*\(([\s\S]*?)\)\s*returns""")
         val sig = migrations.mapNotNull { re.find(it)?.groupValues?.get(1) }.lastOrNull()
         requireNotNull(sig) { "no definition of function $fn in the migrations" }
@@ -170,7 +170,7 @@ class WireNamesMatchSchemaTest {
 
     /** Values of a named `check (col in ('a', 'b'))` constraint. */
     private fun checkValues(constraint: String): Set<String> {
-        val re = Regex("""add constraint $constraint\s+check\s*\(\s*\w+\s+in\s*\(([^)]*)\)""")
+        val re = Regex("""(?:add )?constraint $constraint\s+check\s*\(\s*\w+\s+in\s*\(([^)]*)\)""")
         val list = migrations.mapNotNull { re.find(it)?.groupValues?.get(1) }.lastOrNull()
         requireNotNull(list) { "no check constraint $constraint in the migrations" }
         return list.split(',').map { it.trim().trim('\'') }.toSet()

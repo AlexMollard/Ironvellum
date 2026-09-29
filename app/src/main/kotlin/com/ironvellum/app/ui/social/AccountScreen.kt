@@ -71,6 +71,7 @@ import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.BlockedLifter
 import com.ironvellum.app.data.cloud.FriendRow
 import com.ironvellum.app.data.cloud.SyncOutcome
+import com.ironvellum.app.data.cloud.SignUpOutcome
 import com.ironvellum.app.data.cloud.isUnclaimedHandle
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.NavChip
@@ -103,6 +104,8 @@ data class AccountUi(
     val busy: Boolean = false,
     /** The real server/network reason, verbatim — never a generic "failed". */
     val error: String? = null,
+    /** Sign-up succeeded but the server wants the email confirmed first. */
+    val notice: String? = null,
     val lastSync: SyncOutcome? = null,
     val friends: List<FriendRow> = emptyList(),
     val friendsLoading: Boolean = false,
@@ -167,7 +170,7 @@ class AccountViewModel(
     fun signIn(email: String, password: String) {
         viewModelScope.launch {
             setBusy(true)
-            _ui.value = _ui.value.copy(error = null)
+            _ui.value = _ui.value.copy(error = null, notice = null)
             accountRepo.signIn(email, password)
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
             setBusy(false)
@@ -177,8 +180,15 @@ class AccountViewModel(
     fun signUp(email: String, password: String, displayName: String) {
         viewModelScope.launch {
             setBusy(true)
-            _ui.value = _ui.value.copy(error = null)
+            _ui.value = _ui.value.copy(error = null, notice = null)
             accountRepo.signUp(email, password, displayName)
+                .onSuccess { outcome ->
+                    if (outcome is SignUpOutcome.ConfirmEmail) {
+                        _ui.value = _ui.value.copy(
+                            notice = "Account created — open the link sent to $email, then sign in.",
+                        )
+                    }
+                }
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
             setBusy(false)
         }
@@ -421,14 +431,14 @@ fun AccountScreen(
                 )
             },
         ) {
+            // SocialScreen owns the margins and the top gap, so this tab starts
+            // at the same spot under the pills as the others.
             Column(
                 Modifier
                     .fillMaxSize()
                     .imePadding()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
+                    .verticalScroll(rememberScrollState()),
             ) {
-                Spacer(Modifier.height(20.dp))
                 SignedInPanels(
                     ui = ui,
                     onOpenLifter = onOpenLifter,
@@ -472,6 +482,7 @@ fun AccountScreen(
             // title, so there was no way to sign in from anywhere in the app.
             else -> AuthPanels(
                 error = ui.error,
+                notice = ui.notice,
                 busy = ui.busy,
                 googleEnabled = Cloud.googleConfigured,
                 onGoogleSignIn = viewModel::signInWithGoogle,
@@ -543,6 +554,7 @@ private fun BusyPanel(label: String) {
 @Composable
 private fun AuthPanels(
     error: String?,
+    notice: String?,
     busy: Boolean,
     googleEnabled: Boolean,
     onGoogleSignIn: (String, String) -> Unit,
@@ -570,15 +582,12 @@ private fun AuthPanels(
     val canSubmit = emailValid && passwordValid && (mode == AuthMode.SIGN_IN || nameValid) && !busy
 
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
-        if (googleEnabled) {
-            GoogleSignInButton(onToken = onGoogleSignIn)
-            Spacer(Modifier.height(14.dp))
-        }
+        if (googleEnabled) GoogleSignInButton(onToken = onGoogleSignIn)
         OutlinedTextField(
             shape = MaterialTheme.shapes.small,
             value = email,
             onValueChange = { email = it.trim() },
-            label = { Text("Lifter email") },
+            label = { Text("Email") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
             modifier = Modifier.fillMaxWidth(),
@@ -588,7 +597,7 @@ private fun AuthPanels(
             shape = MaterialTheme.shapes.small,
             value = password,
             onValueChange = { password = it },
-            label = { Text("Sigil phrase (min 6)") },
+            label = { Text("Password") },
             singleLine = true,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             visualTransformation = PasswordVisualTransformation(),
@@ -600,7 +609,7 @@ private fun AuthPanels(
                 shape = MaterialTheme.shapes.small,
                 value = displayName,
                 onValueChange = { displayName = it.take(24) },
-                label = { Text("Lifter name (2–24)") },
+                label = { Text("Display name") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth(),
@@ -619,19 +628,28 @@ private fun AuthPanels(
         Spacer(Modifier.height(8.dp))
         Text(
             when {
-                !emailValid && email.isNotEmpty() -> "That email does not read as an email."
-                password.isNotEmpty() && !passwordValid -> "The sigil phrase needs at least 6 characters."
+                !emailValid && email.isNotEmpty() -> "Enter a valid email address."
+                password.isNotEmpty() && !passwordValid -> "Password needs at least 6 characters."
                 mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid ->
-                    "Lifter names run 2–24 characters."
+                    "Display name needs 2–24 characters."
                 else -> "Measurements stay on this device; workouts, XP and titles sync."
             },
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
         )
+        notice?.let {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                it,
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.EmeraldBright,
+            )
+        }
         error?.let {
             Spacer(Modifier.height(8.dp))
             Text(
-                "Sign-in was refused: $it",
+                "${if (mode == AuthMode.SIGN_IN) "Sign-in" else "Sign-up"} failed: $it",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.DangerRed,

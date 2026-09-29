@@ -88,13 +88,12 @@ session against the new project.
 
 ### Schema check
 
-A BYO project must have run `supabase/migrations/0001`-`0013` (and later
-ones). Today, a missing table only surfaces as `PGRST205` deep inside a
+A BYO project must have run `supabase/migrations/0001_baseline.sql`. Today, a missing table only surfaces as `PGRST205` deep inside a
 feature (`Cloud.kt:63-67`).
 
-- New migration `0014_schema_version.sql` (idempotent):
-  `create or replace function schema_version() returns int language sql stable as $$ select 14 $$;`
-  with `grant execute ... to anon, authenticated`. Every future migration
+- The baseline carries `schema_version()` (idempotent):
+  `create or replace function schema_version() returns int language sql stable as $$ select 19 $$;`
+  with `grant execute ... to anon, authenticated`. Every schema change
   bumps the literal.
 - `Cloud.probe(config): ProbeResult` calls `rpc("schema_version")` with a
   throwaway client built from the candidate config, and returns one of:
@@ -126,8 +125,7 @@ and DIAGNOSTICS (`:693`):
 
 1. Create a Supabase project (the free tier is fine for one person), or run
    the Docker stack (https://supabase.com/docs/guides/self-hosting/docker).
-2. Apply every file in `supabase/migrations/` in numeric order, with psql or
-   the SQL editor.
+2. Apply `supabase/migrations/0001_baseline.sql`, with psql or the SQL editor.
 3. Copy the project URL and publishable key into the app.
 4. Warn that free projects pause after a week of inactivity, and that a paused
    backend reads as "Unreachable" until it is resumed in the dashboard.
@@ -143,4 +141,4 @@ and DIAGNOSTICS (`:693`):
 - **Manual:** point the emulator build at a throwaway free project, sign up,
   back up, and confirm the `cloud_archives` row exists there and not on the
   shared project.
-- `python3 tools/gate.py --backend` passes with `0014`.
+- `python3 tools/gate.py --backend` passes with the baseline.

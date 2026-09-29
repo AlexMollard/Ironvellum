@@ -52,21 +52,19 @@ Run all three; all must pass before anything is uploaded:
 .\gradlew.bat :app:assembleFossRelease
 ```
 
-## 4. Supabase migrations
+## 4. Supabase schema
 
-Four files are STAGED AND NOT APPLIED. Order matters, and one of them must go
-out with its matching app build.
+The whole schema is ONE file, `supabase/migrations/0001_baseline.sql`, and the
+hosted project holds disposable debug data only. There is no upgrade path: a
+schema change edits the baseline, bumps the `schema_version()` literal and
+`NEEDED_SCHEMA_VERSION` in `Cloud.kt` together, and the project is rebuilt.
 
-| file | what it does | urgency |
-|---|---|---|
-| `0008_shadow_board.sql` | adds the shadow columns and the board view | optional; the client degrades gracefully without it (the shadow push is swallowed separately from training sync) |
-| `0009_backend_hardening.sql` | closes the friendship oracle, bounds feed text, blocks future-dated sessions, drops a dead view, pins a search path | **apply first — until it lands, anyone holding the shipped publishable key can enumerate the accepted-friendship graph, including for lifters who chose `private`** |
-| `0010_lifter_discovery.sql` | adds `find_lifter()` | apply before relying on friend requests: without it a by-name lookup returns nothing and the app reports that a real lifter does not exist |
-| `0011_server_side_aggregates.sql` | revokes direct writes to the ranked columns, derives level and title count, bounds the rest | **apply WITH the matching app build, never before** — the revoke makes an older client's profile upsert fail |
-
-1. Confirm what is already applied, then apply the pending files in numeric
-   order (supabase CLI or the SQL editor). Everything from `0005` onward is
-   idempotent and may be re-run; `0001`–`0004` are immutable.
+1. In the Supabase SQL editor, paste and run `supabase/reset.sql` (deletes every
+   account and every object the baseline creates, in one transaction), then
+   paste and run `supabase/migrations/0001_baseline.sql`. The baseline is
+   idempotent, so re-running it on a project that already carries it is a no-op.
+   Turn "Confirm email" off or leave it on: the sign-up trigger makes the
+   profile either way. Sign up again afterwards, then use RE-UPLOAD EVERYTHING.
 2. Re-run the assertion suite against a throwaway database first if the schema
    changed at all — nothing on a server does this any more (CI is manual-only
    because the repo is private and every runner minute is billed), and it is
@@ -76,14 +74,15 @@ out with its matching app build.
    python3 tools/gate.py --backend
    ```
 
-   That stands up `postgres:16` in Docker, applies the stub and every
-   migration, re-applies the ones that declare themselves idempotent, and runs
-   `assert_all.sql`. By hand, if you want the steps separately:
+   That stands up `postgres:16` in Docker, applies the stub and the baseline,
+   re-applies it, runs `assert_all.sql`, then seeds data, runs `reset.sql`,
+   checks it left nothing behind, re-applies the baseline and asserts again. By
+   hand, if you want the steps separately:
 
    ```bash
    docker run -d --rm --name pg -e POSTGRES_PASSWORD=probe -p 5432:5432 postgres:16
    psql -h localhost -U postgres -f supabase/test/supabase_stub.sql
-   for f in supabase/migrations/*.sql; do psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f "$f"; done
+   psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/migrations/0001_baseline.sql
    psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/test/assert_all.sql
    ```
 3. Smoke-test sign-in, a sync, and one friend request against production before

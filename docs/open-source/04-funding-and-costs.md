@@ -18,7 +18,7 @@ Source: https://supabase.com/pricing, read 2026-09-23. Figures are USD.
 | Line | Cost | Notes |
 |---|---|---|
 | Supabase Pro | $25/month | Includes $10 compute credit, which covers one Micro instance (1 GB RAM, 200 pooler connections) |
-| Database disk above 8 GB | $0.125/GB/month | Backups are capped at 8 MiB each (`0013_cloud_archives.sql:31`) |
+| Database disk above 8 GB | $0.125/GB/month | Backups are capped at 8 MiB each (`cloud_archives_size_cap` in `0001_baseline.sql`) |
 | Egress above 250 GB | $0.09/GB | Uploads are ingress and free. Egress is restores and feed/board reads |
 | Monthly active users above 100k | $0.00325 each | Not a realistic concern |
 | Google Play registration | $25 once | Only if the Play build ships |

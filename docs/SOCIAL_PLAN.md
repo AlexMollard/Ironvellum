@@ -27,9 +27,9 @@ public boards.
 
 ## 1.4 contract
 
-### Backend: `supabase/migrations/0018_social_talk.sql` (schema_version 18)
+### Backend: `supabase/migrations/0001_baseline.sql` (schema_version 19)
 
-Idempotent in the 0009 style. Every existing view column keeps its name and
+The 1.4 objects below live in the single baseline file, which is idempotent. Every existing view column keeps its name and
 meaning, because 1.3 clients still read them (`like_count`, `liked_by_me`, ...),
 and 1.3 still inserts likes without a kind.
 
