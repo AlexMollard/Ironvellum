@@ -377,7 +377,7 @@ class AccessibilityChecksTest {
             listOf("Today", "Settings"),
             // Truly last: starting a session leaves a live trial whose abandon
             // prompt sits between the sweep and the nav bar.
-            listOf("Train", "QUICK SESSION"),
+            listOf("Train", "QUICK WORKOUT"),
         )
 
         /** destination to the tab labels of one row inside it. */
