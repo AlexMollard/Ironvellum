@@ -29,7 +29,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Shield
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
@@ -116,6 +117,9 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.wrapContentHeight
 
+
+/** The Garrison's footer figures on Today. */
+data class GarrisonGlance(val perHour: Double, val inscriptions: Int)
 class DashboardUi(
     val profile: PlayerProfile? = null,
     val recent: List<WorkoutSession> = emptyList(),
@@ -215,6 +219,11 @@ class DashboardViewModel(
         .map { it.second }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Sex.MALE)
 
+    /** The Garrison at a glance: its live rate and the inscriptions waiting to be spent. */
+    val garrison: StateFlow<GarrisonGlance?> = combine(repo.observeIdleRate(), repo.observeRolls()) { rate, rolls ->
+        GarrisonGlance(perHour = rate.perHour, inscriptions = rolls)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     fun celebrationsSeen() = repo.clearPendingCelebrations()
 
     fun selectDay(day: Int) {
@@ -254,6 +263,7 @@ fun DashboardScreen(
     onOpenPresets: () -> Unit,
     onOpenCodex: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenGarrison: () -> Unit,
     onOpenWorkout: (Long) -> Unit,
     viewModel: DashboardViewModel =
         viewModel(factory = viewModelFactory {
@@ -629,15 +639,41 @@ fun DashboardScreen(
         ) {
             // The day and the plan line each get a line: side by side, the
             // plan's time estimate was the part that fell off ("~31…").
-            Text(
-                if (isTodaySelected) "TODAY · ${DAY_LABELS[selectedDay].orEmpty()}"
-                else DAY_LABELS[selectedDay].orEmpty(),
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = if (isTodaySelected) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.SectionHeader,
-                maxLines = 1,
-            )
+            // The last workout shares the day's line, right-aligned: as its own
+            // row between the card and the Garrison strip it read as a stray
+            // caption squeezed between two panels.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    if (isTodaySelected) "TODAY · ${DAY_LABELS[selectedDay].orEmpty()}"
+                    else DAY_LABELS[selectedDay].orEmpty(),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = if (isTodaySelected) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                    letterSpacing = IronvellumTracking.SectionHeader,
+                    maxLines = 1,
+                )
+                Spacer(Modifier.weight(1f))
+                ui.recent.firstOrNull()?.let { last ->
+                    val live = last.completedAtMs == null
+                    Text(
+                        if (live) "RESUME · ${last.label}"
+                        else "LAST · ${last.label} · ${formatDate(last.completedAtMs ?: last.startedAtMs, "MMM d")}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = if (live) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .padding(start = 12.dp)
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            // A finished workout opens its record; a live one
+                            // is continued.
+                            .clickable { if (live) onStartSession(last.id) else onOpenWorkout(last.id) }
+                            .padding(horizontal = 4.dp, vertical = 6.dp),
+                    )
+                }
+            }
             if (selectedPreset != null) {
                 Text(
                     SessionClock.planLine(selectedPreset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(selectedPreset.id)),
@@ -892,67 +928,74 @@ fun DashboardScreen(
             }
         }
 
-        // Last result and the way into the full routine: one quiet line each.
-        ui.recent.firstOrNull()?.let { last ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) {
-                        // A finished session still renders this row, so leaving
-                        // it enabled=false made the dashboard's normal state a
-                        // dead control: completed sessions go to their detail.
-                        if (last.completedAtMs == null) onStartSession(last.id) else onOpenWorkout(last.id)
-                    }
-                    .padding(top = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-            ) {
+        // The Garrison's way in. It left the nav bar and took the footer that
+        // used to repeat the Train tab ("routine, workouts & full log"), so
+        // Today spends one slim strip on it: the live rate, and the
+        // inscriptions waiting, which are the reason to go there at all.
+        val garrison by viewModel.garrison.collectAsStateWithLifecycle()
+        val waiting = garrison?.inscriptions ?: 0
+        Row(
+            Modifier
+                .padding(top = 8.dp)
+                .fillMaxWidth()
+                // A filled plate with a green edge and a chevron, so it reads as
+                // a control to press rather than a caption under the quest.
+                .clip(MaterialTheme.shapes.extraSmall)
+                .background(Brush.verticalGradient(listOf(Color(0xFF16221C), Color(0xFF111914))))
+                .inkBorder(
+                    if (waiting > 0) IronvellumColors.SovereignGold.copy(alpha = 0.7f) else IronvellumColors.Emerald.copy(alpha = 0.55f),
+                    MaterialTheme.shapes.extraSmall,
+                    1.dp,
+                )
+                .clickable(onClickLabel = "Open the Garrison") { onOpenGarrison() }
+                .heightIn(min = 54.dp)
+                .padding(start = 14.dp, end = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Icon(
+                Icons.Outlined.Shield,
+                contentDescription = null,
+                tint = IronvellumColors.EmeraldBright,
+                modifier = Modifier.size(18.dp),
+            )
+            Text(
+                "GARRISON",
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.Ink,
+                style = MaterialTheme.typography.labelMedium,
+                letterSpacing = IronvellumTracking.InlineLabel,
+                modifier = Modifier.weight(1f),
+            )
+            garrison?.let { g ->
                 Text(
-                    if (last.completedAtMs == null) "RESUME · ${last.label}" else "LAST · ${last.label}",
+                    "%.1f/H".format(java.util.Locale.US, g.perHour),
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
-                    color = if (last.completedAtMs == null) IronvellumColors.SovereignGold
-                    else IronvellumColors.InkMuted,
+                    color = IronvellumColors.EmeraldBright,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                )
+            }
+            if (waiting > 0) {
+                Text(
+                    "· $waiting ${if (waiting == 1) "INSCRIPTION" else "INSCRIPTIONS"}",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.SovereignGold,
                     letterSpacing = IronvellumTracking.InlineLabel,
                     maxLines = 1,
                 )
-                Text(
-                    formatDate(last.completedAtMs ?: last.startedAtMs, "MMM d"),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                )
             }
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = IronvellumColors.EmeraldBright,
+                modifier = Modifier.size(20.dp),
+            )
         }
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .clickable(
-                    interactionSource = remember { MutableInteractionSource() },
-                    indication = null,
-                ) { onOpenPresets() }
-                .padding(vertical = 10.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(
-                    Icons.Outlined.Edit,
-                    contentDescription = null,
-                    tint = IronvellumColors.InkMuted,
-                    modifier = Modifier.size(14.dp),
-                )
-                Text(
-                    "ROUTINE, WORKOUTS & FULL LOG",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.SectionHeader,
-                )
-            }
-        }
-        Spacer(Modifier.height(6.dp))
+        // The page's side margin again below the last strip, so it sits clear
+        // of the nav bar instead of reading as content cut off mid-scroll.
+        Spacer(Modifier.height(16.dp))
     }
 
     // Titles reconciled at startup (health data, imports) have no session to

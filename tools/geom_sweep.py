@@ -41,7 +41,7 @@ GEOMETRIES = [
     (540, "320x693dp  largest Display size setting - narrowest a user can make"),
 ]
 
-TABS = ["Today", "Train", "Stats", "Codex", "Allies", "Muster"]
+TABS = ["Today", "Train", "Stats", "Codex", "Allies"]
 
 
 def sh(*args: str) -> str:

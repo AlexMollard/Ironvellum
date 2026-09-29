@@ -60,7 +60,7 @@ Code references:
   design") also never leave the device (`M1` header comment).
 
 ### Fitness info — idle-game aggregates (collected, shared)
-- Muster essence / figure count / figure rate are pushed as profile columns.
+- Garrison essence / figure count / figure rate are pushed as profile columns.
   Optional (sign-in only), shared per visibility.
 - Also pushed as profile columns by the same call: **level, total XP, earned
   title count, lifetime strength and the training streak in days** — derived

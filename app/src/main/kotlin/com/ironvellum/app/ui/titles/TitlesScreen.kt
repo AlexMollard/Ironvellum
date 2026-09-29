@@ -366,7 +366,7 @@ fun TitlesScreen(
                             banner = "A FIGURE STIRS",
                             tagline = "DRAW EARNED",
                             name = "Inscription Waiting",
-                            subtitle = "SPEND IT ON THE MUSTER SCREEN",
+                            subtitle = "SPEND IT IN THE GARRISON",
                             accent = IronvellumColors.SovereignGold,
                         ),
                     )

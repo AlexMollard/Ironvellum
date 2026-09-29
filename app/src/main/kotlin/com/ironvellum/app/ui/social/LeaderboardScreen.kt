@@ -102,7 +102,7 @@ data class MusterBoardUi(
 /** Which board the BOARD tab shows; the muster roll is deliberately a separate board, not a metric. */
 private enum class Board(val label: String) {
     Training("TRAINING"),
-    Muster("MUSTER ROLL"),
+    Muster("GARRISON"),
 }
 
 /** Pickable ranking metric; each entry owns its sort key and display formatting. */
@@ -947,7 +947,7 @@ private fun MusterBoard(
                     )
                     // Stale rows must still tell the truth about the last fetch.
                     if (ui.error != null) {
-                        InlineErrorBanner("The muster ranks may be stale: ${ui.error}")
+                        InlineErrorBanner("The garrison ranks may be stale: ${ui.error}")
                         Spacer(Modifier.height(10.dp))
                     }
                     ui.rows.forEachIndexed { index, row ->
@@ -1024,7 +1024,7 @@ private fun MusterRankRow(
 private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
         Text(
-            "THE ROLL IS VEILED",
+            "THE GARRISON IS VEILED",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -1033,7 +1033,7 @@ private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            message ?: "The muster board could not be summoned. Stand fast and try again.",
+            message ?: "The garrison board could not be summoned. Stand fast and try again.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -1047,7 +1047,7 @@ private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
 private fun MusterEmptyPanel(onRefresh: () -> Unit) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
         Text(
-            "THE ROLL SLEEPS",
+            "THE GARRISON SLEEPS",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,

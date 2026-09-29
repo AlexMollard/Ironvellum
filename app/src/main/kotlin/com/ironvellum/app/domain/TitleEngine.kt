@@ -109,10 +109,10 @@ object Titles {
         // Power
         TitleDef("shadow_ascendant", "Rising Mark", "Reach level 5.", TitleRule.ReachLevel(5), TitleRarity.Common),
         TitleDef("royal_apex", "Royal Apex", "Reach level 10.", TitleRule.ReachLevel(10), TitleRarity.Common),
-        TitleDef("baron_of_shadows", "Keeper of the Roll", "Reach level 20.", TitleRule.ReachLevel(20), TitleRarity.Rare),
+        TitleDef("baron_of_shadows", "Keeper of the Garrison", "Reach level 20.", TitleRule.ReachLevel(20), TitleRarity.Rare),
         TitleDef("count_of_the_abyss", "Count of the Abyss", "Reach level 35.", TitleRule.ReachLevel(35), TitleRarity.Rare),
-        TitleDef("duke_of_shadows", "Warden of the Roll", "Reach level 50.", TitleRule.ReachLevel(50), TitleRarity.Epic),
-        TitleDef("sovereign_of_shadow", "Master of the Roll", "Reach level 75.", TitleRule.ReachLevel(75), TitleRarity.Masterwork),
+        TitleDef("duke_of_shadows", "Warden of the Garrison", "Reach level 50.", TitleRule.ReachLevel(50), TitleRarity.Epic),
+        TitleDef("sovereign_of_shadow", "Master of the Garrison", "Reach level 75.", TitleRule.ReachLevel(75), TitleRarity.Masterwork),
         TitleDef("monarch_of_shadows", "Grand Archivist", "Reach level 100.", TitleRule.ReachLevel(100), TitleRarity.Masterwork),
         // Volume
         TitleDef("gatecrasher", "Doorbreaker", "Log 250 working sets.", TitleRule.SetsLogged(250), TitleRarity.Common),

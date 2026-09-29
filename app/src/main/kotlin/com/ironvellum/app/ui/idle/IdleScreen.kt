@@ -43,6 +43,7 @@ import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.requiredSize
@@ -114,7 +115,7 @@ import java.util.Locale
 /** What the figures earned while the app was closed, shown once on arrival. */
 data class AwayReport(val essence: Long, val awayMs: Long)
 
-/** Everything the Muster screen renders, resolved from the repository. */
+/** Everything the Garrison screen renders, resolved from the repository. */
 data class IdleUi(
     val snapshot: IdleSnapshot? = null,
     val inputs: IdleInputs? = null,
@@ -183,6 +184,7 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
 
 @Composable
 fun IdleScreen(
+    onBack: () -> Unit,
     viewModel: IdleViewModel =
         viewModel(factory = viewModelFactory { initializer { IdleViewModel(ironvellumRepository()) } }),
 ) {
@@ -218,7 +220,22 @@ fun IdleScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 20.dp),
     ) {
-        SectionHeader("THE MUSTER ROLL")
+        // Opened from Today's footer, not a tab, so it carries its own way out.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            SectionHeader("THE GARRISON", Modifier.weight(1f))
+            Text(
+                "BACK",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                letterSpacing = IronvellumTracking.InlineLabel,
+                modifier = Modifier
+                    .padding(top = 18.dp)
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .clickable { onBack() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
 
         if (snapshot == null || inputs == null) {
             // Brief empty frame while the flows warm up; never fake numbers.
@@ -280,7 +297,7 @@ private fun achievementFor(result: RollResult): Achievement {
         RewardRarity.Masterwork -> "THE LEDGER ANSWERS" to IronvellumColors.SovereignGold
     }
     val notes = when (val reward = result.reward) {
-        is Reward.Figures -> listOf("ROLL +${reward.count} FIGURES")
+        is Reward.Figures -> listOf("GARRISON +${reward.count} FIGURES")
         is Reward.Relic -> listOf("RATE MULTIPLIER ×%.2f".format(reward.multiplier))
         is Reward.CrestFrame -> listOf("CREST FRAME UNLOCKED", "EQUIP IT ON YOUR LIFTER IDENTITY")
     }
@@ -340,7 +357,7 @@ private fun DrawWindow(rolls: Int, onInscribe: () -> Unit) {
             // An inscription pays figures, a relic OR a crest — a collection screen
             // showing only frames made a relic roll look like a lost crest.
             Text(
-                "Each rank-up earns one inscription: figures for the roll, a relic " +
+                "Each rank-up earns one inscription: figures for the garrison, a relic " +
                     "that lifts your rate, or a crest frame worn by your lifter.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -1115,7 +1132,7 @@ private fun OddsTable() {
         }
         Text(
             "Rarity odds are per inscription; the second figure is the split inside " +
-                "that rarity. Figures join the roll, a relic lifts your rate " +
+                "that rarity. Figures join the garrison, a relic lifts your rate " +
                 "for good, a crest is worn by your lifter.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,

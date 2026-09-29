@@ -71,7 +71,14 @@ class NavigationReachabilityTest {
         open("Stats", "STATUS WINDOW")
         open("Codex", "SKILL TREE")
         open("Allies", "THE FRONTLINE")
-        open("Muster", "THE MUSTER ROLL")
+
+        // The Garrison left the nav bar for Today's footer.
+        open("Today", "STEPS")
+        compose.onAllNodesWithText("GARRISON").onFirst().performClick()
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        assertShows("BACK")
+        compose.onAllNodesWithText("BACK").onFirst().performClick()
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         // Returning to the launch destination must also work: a nav graph that
         // only travels outward is a real failure mode.

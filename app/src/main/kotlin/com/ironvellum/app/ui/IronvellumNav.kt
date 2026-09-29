@@ -19,7 +19,6 @@ import androidx.compose.material.icons.outlined.BarChart
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
-import androidx.compose.material.icons.outlined.Bedtime
 import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -151,7 +150,8 @@ fun IronvellumRoot() {
         BottomDestination(Routes.STATS, "Stats", Icons.Outlined.BarChart),
         BottomDestination(Routes.TITLES, "Codex", Icons.Outlined.AutoStories),
         BottomDestination(Routes.SOCIAL, "Allies", Icons.Outlined.Groups),
-        BottomDestination(Routes.IDLE, "Muster", Icons.Outlined.Bedtime),
+        // The Garrison is reached from Today's footer, not a tab: five is the
+        // most a bottom bar should carry, and it is a place visited now and then.
     )
 
     Box(
@@ -204,9 +204,9 @@ fun IronvellumRoot() {
                                 )
                             }
                             .navigationBarsPadding()
-                            // Six labels share the width. At 360dp - the most
+                            // Five labels share the width. At 360dp - the most
                             // common modern phone - the old 10dp/8dp gaps left
-                            // "Muster" one glyph short and it rendered clipped.
+                            // the longest label one glyph short and clipped.
                             .padding(horizontal = 6.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.spacedBy(4.dp),
                     ) {
@@ -276,7 +276,7 @@ fun IronvellumRoot() {
                                     style = MaterialTheme.typography.labelMedium,
                                     fontFamily = ChakraPetch,
                                     color = if (selected) IronvellumColors.EmeraldBright else IronvellumColors.InkMuted,
-                                    // Six slots share one screen width, so the
+                                    // Five slots share one screen width, so the
                                     // label must never wrap. It cannot grow
                                     // either: the app pins the text scale
                                     // (IronvellumTheme), so this row has one size
@@ -331,6 +331,7 @@ fun IronvellumRoot() {
                             }
                         },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                        onOpenGarrison = { navController.navigate(Routes.IDLE) { launchSingleTop = true } },
                     )
                 }
                 composable(Routes.PRESETS) {
@@ -415,7 +416,7 @@ fun IronvellumRoot() {
                         MeasurementDetailScreen(site = site, onBack = { navController.popBackStack() })
                     }
                 }
-                composable(Routes.IDLE) { IdleScreen() }
+                composable(Routes.IDLE) { IdleScreen(onBack = { navController.popBackStack() }) }
                 composable(Routes.SOCIAL) {
                     SocialScreen(
                         onOpenLifter = { userId, name ->

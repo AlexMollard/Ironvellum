@@ -343,12 +343,17 @@ class AccessibilityChecksTest {
     @Test
     fun longScreensExposeTheirSectionsAsHeadings() {
         val without = mutableListOf<String>()
-        for (destination in listOf("Stats", "Muster", "Train")) {
+        // Muster is no longer a tab: it opens from Today's footer.
+        for (path in listOf(listOf("Stats"), listOf("Today", "GARRISON"), listOf("Train"))) {
             returnToNavigation()
-            compose.onNodeWithContentDescription(destination).performClick()
+            compose.onNodeWithContentDescription(path.first()).performClick()
+            if (path.drop(1).any { !openSurface(it) }) {
+                without += path.joinToString("/")
+                continue
+            }
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
             val headings = compose.onAllNodes(isHeading()).fetchSemanticsNodes().size
-            if (headings == 0) without += destination
+            if (headings == 0) without += path.joinToString("/")
         }
         assertEquals("screens with no heading to navigate by", emptyList<String>(), without)
     }
@@ -358,7 +363,7 @@ class AccessibilityChecksTest {
         firstOrNull { it.key == key }?.value as? T
 
     private companion object {
-        val DESTINATIONS = listOf("Train", "Stats", "Codex", "Allies", "Muster", "Today")
+        val DESTINATIONS = listOf("Train", "Stats", "Codex", "Allies", "Today")
 
         /**
          * Click paths: the destination's content description, then each label
@@ -381,8 +386,9 @@ class AccessibilityChecksTest {
             // its own entry point rather than leaving those glyphs unmeasured.
             listOf("Codex", "SKILL TREE", "Dead Hang", "ADD LOAD"),
             listOf("Train", "[ EDIT ]"),
-            // The settings screen replaces the nav bar, so it goes late.
+            // Settings and the Muster roll replace the nav bar, so they go late.
             listOf("Today", "Settings"),
+            listOf("Today", "GARRISON"),
             // Truly last: starting a session leaves a live trial whose abandon
             // prompt sits between the sweep and the nav bar.
             listOf("Train", "QUICK WORKOUT"),
