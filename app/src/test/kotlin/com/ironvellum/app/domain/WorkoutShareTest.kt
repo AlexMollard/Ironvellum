@@ -149,6 +149,19 @@ class WorkoutShareTest {
         assertTrue(card, card.contains("4\u00D75 \u00B7 top\u00A0+60\u00A0kg"))
     }
 
+    /** The isolation step is 1.25 kg, so a real load can sit on a quarter kilo. */
+    @Test
+    fun `a quarter-kilo load is printed as loaded, not rounded`() {
+        val raise = Exercise(id = 1, name = "Lateral Raise", muscleGroup = MuscleGroup.PUSH, isWeighted = true)
+        val card = WorkoutShare.format(
+            session(),
+            List(3) { set(1, "Lateral Raise", it, 8, weightKg = 8.75) },
+            mapOf(1L to raise),
+            zone,
+        )
+        assertTrue(card, card.contains("Lateral Raise \u00B7 3\u00D78 \u00B7 8.75\u00A0kg"))
+    }
+
     /** A dumbbell in the hand is the whole load, not load added on top of the lifter. */
     @Test
     fun `an implement's load is not written as added load`() {

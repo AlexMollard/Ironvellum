@@ -54,6 +54,7 @@ import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.components.formatLoadKg
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -295,20 +296,20 @@ private fun StatGrid(history: ExerciseHistory) {
         },
         if (hold) {
             listOf(
-                "ADDED LOAD" to (if (noSets) "—" else history.heaviestWeightKg?.let { "${formatKg(it)} kg" } ?: "BW"),
+                "ADDED LOAD" to (if (noSets) "—" else history.heaviestWeightKg?.let { "${formatLoadKg(it)} kg" } ?: "BW"),
                 "BEST HOLD (TIME × LOAD)" to (
                     if (noSets) "—" else
                         // Null added weight is a bodyweight hold, not the lifter's
                         // bodyweight printed as if it were added load.
-                        "${history.bestSetReps}s × " + (history.bestSetLoadKg?.let { "${formatKg(it)} kg" } ?: "BW")
+                        "${history.bestSetReps}s × " + (history.bestSetLoadKg?.let { "${formatLoadKg(it)} kg" } ?: "BW")
                     ),
             )
         } else {
             listOf(
-                "HEAVIEST SET" to (if (noSets) "—" else history.heaviestWeightKg?.let { "${formatKg(it)} kg × ${history.heaviestReps}" } ?: "BW"),
+                "HEAVIEST SET" to (if (noSets) "—" else history.heaviestWeightKg?.let { "${formatLoadKg(it)} kg × ${history.heaviestReps}" } ?: "BW"),
                 "BEST SET (REPS × LOAD)" to (
                     if (noSets) "—" else
-                        "${history.bestSetReps} × " + (history.bestSetLoadKg?.let { "${formatKg(it)} kg" } ?: "BW")
+                        "${history.bestSetReps} × " + (history.bestSetLoadKg?.let { "${formatLoadKg(it)} kg" } ?: "BW")
                     ),
             )
         },
@@ -463,7 +464,7 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean
                         // The load still belongs here: a weighted plank PR is
                         // "45s · 20 kg", not a bare "45s".
                         (if (isHold) "${record.reps}s · " else "${record.reps}×") +
-                            (record.weightKg?.let { "${formatKg(it)} kg" } ?: "BW"),
+                            (record.weightKg?.let { "${formatLoadKg(it)} kg" } ?: "BW"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.Ink,
                         maxLines = 1,
@@ -532,7 +533,7 @@ private fun SetLog(history: ExerciseHistory) {
                     // shove it out of the window.
                     Text(
                         (if (hold) "${set.reps}s · " else "${set.reps} reps · ") +
-                            (set.weightKg?.let { "${formatKg(it)} kg" } ?: "BW"),
+                            (set.weightKg?.let { "${formatLoadKg(it)} kg" } ?: "BW"),
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.Ink,
                         maxLines = 1,

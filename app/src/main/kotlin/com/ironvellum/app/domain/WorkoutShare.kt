@@ -177,7 +177,9 @@ object WorkoutShare {
         val carried = loads.filterNotNull()
         if (carried.isEmpty()) return ""
         val top = carried.max()
-        val text = if (top % 1.0 == 0.0) top.toInt().toString() else String.format(Locale.ENGLISH, "%.1f", top)
+        // Two places, trailing zeros dropped: the 1.25 kg isolation step lands
+        // on 8.75 kg, and one place printed "8.8 kg", a load nobody can rack.
+        val text = String.format(Locale.ENGLISH, "%.2f", top).trimEnd('0').trimEnd('.')
         val figure = (if (exercise?.isWeighted == true) "" else "+") + text + "\u00A0kg"
         val uniform = carried.size == loads.size && carried.distinct().size == 1
         return when {

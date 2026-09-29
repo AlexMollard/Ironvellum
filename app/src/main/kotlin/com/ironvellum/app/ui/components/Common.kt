@@ -442,6 +442,13 @@ fun formatDate(ms: Long, pattern: String = "MMM d · HH:mm"): String =
 fun formatBodyValue(value: Double): String = String.format(Locale.US, "%.1f", value)
 
 /**
+ * A load exactly as it can be racked: up to two places, trailing zeros
+ * dropped, so 24.0 reads "24", 15.2 "15.2" and the 1.25 kg isolation step's
+ * 8.75 "8.75". One place printed 8.75 kg as 8.8, a load nobody can pick up.
+ */
+fun formatLoadKg(kg: Double): String = String.format(Locale.US, "%.2f", kg).trimEnd('0').trimEnd('.')
+
+/**
  * Explicit both forms rather than appending "s": every count label in this app
  * is upper-case HUD text, so a derived plural would read "WORKOUTs". The owner's
  * own log header read "1 WORKOUTS".

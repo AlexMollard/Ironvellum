@@ -55,6 +55,7 @@ import com.ironvellum.app.ui.components.ShareCardDialog
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.components.formatLoadKg
 import com.ironvellum.app.ui.components.metricTotals
 import com.ironvellum.app.ui.components.setFigure
 import com.ironvellum.app.ui.ironvellumRepository
@@ -418,7 +419,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
 
 @Composable
 private fun SetChip(set: SessionSet, metric: ExerciseMetric, hold: Boolean) {
-    val weight = if (set.weightKg == null || set.weightKg == 0.0) "BW" else "${"%.1f".format(set.weightKg)} kg"
+    val weight = if (set.weightKg == null || set.weightKg == 0.0) "BW" else "${formatLoadKg(set.weightKg)} kg"
     Column(
         Modifier
             .clip(MaterialTheme.shapes.extraSmall)
