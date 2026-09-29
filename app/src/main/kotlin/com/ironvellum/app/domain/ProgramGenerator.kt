@@ -588,7 +588,7 @@ object ProgramGenerator {
                                 why = if (main.name.equals(mainName, true)) {
                                     "Main lift: strength is specific to the lift trained - Buckner 2017; TaskSpec 2025"
                                 } else {
-                                    "Stands in for the ${mainName}: closest match, fine for size, not max strength - " +
+                                    "Your gear's stand-in for the ${mainName}: good for size, less for max strength - " +
                                         "Kikuchi 2017; Buckner 2017"
                                 },
                             )
@@ -629,9 +629,9 @@ object ProgramGenerator {
         // brachialis work with no bar and no weights, say), and the line says so.
         val volume = weeklyVolumeOf(sessions)
         val capacityNote = if (capacityLimited) {
-            shortfallNote(volume, ctx.targetRange, "$days days leave", "Add a day to reach it.")
+            shortfallNote(volume, ctx.targetRange, "add a day to cover them.")
         } else {
-            shortfallNote(volume, ctx.targetRange, "your equipment leaves", "More gear would reach it.")
+            shortfallNote(volume, ctx.targetRange, "more gear would cover them.")
         }
         val frequencyNote = if (split == TrainingSplit.PUSH_PULL_LEGS && days == 3) ONCE_A_WEEK_NOTE else ""
 
@@ -657,24 +657,20 @@ object ProgramGenerator {
     }
 
     /**
-     * " Heads-up: [lead] X and Y short of the target (...)." naming every
-     * tracked muscle under the range's floor - the same test the coverage
-     * map uses to call a muscle UNDER - or "" when none is. Helpers are never
-     * named: under their floor they are light, not a problem. The volume
-     * level is not named: for strength and skill goals it does not move the
-     * range.
+     * " Short on X and Y — [advice]" naming every tracked muscle under the
+     * range's floor - the same test the coverage map uses to call a muscle
+     * UNDER - or "" when none is. Helpers are never named: under their floor
+     * they are light, not a problem. The range itself lives on the volume
+     * panel, so the line does not repeat it.
      */
     internal fun shortfallNote(
         volume: Map<Muscle, Double>,
         range: ClosedFloatingPointRange<Double>,
-        lead: String,
         advice: String,
     ): String {
         val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < range.start - 1e-9 }
         if (short.isEmpty()) return ""
-        val low = short.minOf { volume[it] ?: 0.0 }
-        return " Heads-up: $lead ${joinWithAnd(short.map { it.label.lowercase() })} short " +
-            "(${range.start.toInt()}-${range.endInclusive.toInt()} sets; lowest ${setsPhrase(low)}). $advice"
+        return " Short on ${joinWithAnd(short.map { it.label.lowercase() })} — $advice"
     }
 
     /**
@@ -743,7 +739,7 @@ object ProgramGenerator {
 
     /** Push/pull/legs on three days: allowed, and honest about what it trades. */
     internal const val ONCE_A_WEEK_NOTE =
-        " Each muscle once a week: fine for growth, but lifts get practised less often (Pelland 2026; Grgic 2018)."
+        " Each muscle once a week — fine, but lifts get less practice (Pelland 2026; Grgic 2018)."
 
     /** Deadlift and press practice scales with the room the week has. */
     private fun mainTargetCount(days: Int): Int = if (days >= 5) 2 else 1
@@ -1163,7 +1159,7 @@ object ProgramGenerator {
         val shortfall = if (deficit < 0.5) "Just under target on $name" else "${setsPhrase(deficit)} short on $name"
         val lead = if (muscle in ctx.priorityMuscles) "Priority: $shortfall" else shortfall.replaceFirstChar { it.uppercase() }
         return if (stretchesFor(exercise, muscle)) {
-            "$lead, trained stretched - ${longLengthEvidence(muscle)}"
+            "$lead, worked at full stretch - ${longLengthEvidence(muscle)}"
         } else {
             "$lead - Pelland 2026"
         }
@@ -1266,7 +1262,7 @@ object ProgramGenerator {
         }
         if (draft.entries.isEmpty()) return null
         return PlannedPreset(
-            name = draft.role?.let { roleLabel(it) } ?: "Session",
+            name = draft.role?.let { roleLabel(it) } ?: "Workout",
             note = presetNote(ctx.volume, ctx.focus),
             scheduledDay = scheduledDay,
             entries = draft.entries.toList(),
@@ -1299,23 +1295,20 @@ object ProgramGenerator {
 
     /** Why the reps moved, in the goal's own language. */
     private fun adjustReason(focus: TrainingFocus, compound: Boolean, reps: Int, range: IntRange): String {
-        val band = "band ${range.first}-${range.last}"
+        val lead = "Reps set to $reps (${range.first}-${range.last})"
         return when {
             focus == TrainingFocus.MUSCLE ->
-                "Reps moved to $reps ($band): working 1-3 reps short of failure builds muscle " +
-                    "without the recovery cost of grinding - Lopez 2021; Robinson 2024"
+                "$lead: builds muscle without grinding - Lopez 2021; Robinson 2024"
             focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL ->
                 if (compound) {
-                    "Reps moved to $reps ($band): heavy loads on the lifts you want stronger " +
-                        "drive strength - Lopez 2021; Buckner 2017"
+                    "$lead: heavy reps build strength on big lifts - Lopez 2021; Buckner 2017"
                 } else {
-                    "Reps moved to $reps ($band): accessories build the muscle behind the lift " +
-                        "at higher reps - Lopez 2021"
+                    "$lead: extra exercises build muscle at higher reps - Lopez 2021"
                 }
             compound ->
-                "Reps moved to $reps ($band): compounds stay heavy, accessories carry volume - Lopez 2021"
+                "$lead: big lifts stay heavy - Lopez 2021"
             else ->
-                "Reps moved to $reps ($band): accessories carry volume at higher reps - Lopez 2021"
+                "$lead: extra exercises carry volume at higher reps - Lopez 2021"
         }
     }
 
@@ -1482,8 +1475,8 @@ object ProgramGenerator {
             if (index in standIns) {
                 val standIn = standIns[index]
                 if (standIn != null) {
-                    swapNote = "Swapped the ${entry.exerciseName} for the ${standIn.name}: compound & skill " +
-                        "only, and it trains your ${muscleListOf(standIn)} - Gentil 2015"
+                    swapNote = "Swapped for ${standIn.name}: compound & skill only, and it trains the same " +
+                        "muscles - Gentil 2015"
                     name = standIn.name
                     // The isolation load says nothing about the stand-in.
                     load = null
@@ -1491,8 +1484,7 @@ object ProgramGenerator {
                 } else if (dropAllowed) {
                     changes += PlanChange(
                         PlanChange.Kind.REMOVED, entry.exerciseName,
-                        "Removed: compound & skill only, and no compound or skill movement " +
-                            "trains the same muscles closely enough - Gentil 2015",
+                        "Removed: with Compound & skill only on, nothing replaces its muscles - Gentil 2015",
                     )
                     continue
                 }
@@ -1518,10 +1510,9 @@ object ProgramGenerator {
                         ),
                     )
                 if (replacement != null) {
-                    swapNote = "Swapped the ${entry.exerciseName} for the ${replacement.name}: same " +
-                        "movement pattern, but the ${replacement.name} loads the " +
-                        "${dominantMuscle(profile)?.label?.lowercase() ?: "target muscle"} at long " +
-                        "length, where it grows more - ${longLengthEvidence(dominantMuscle(profile))}"
+                    swapNote = "Swapped for ${replacement.name}: loads the " +
+                        "${dominantMuscle(profile)?.label?.lowercase() ?: "target muscle"} stretched, " +
+                        "where it grows more - ${longLengthEvidence(dominantMuscle(profile))}"
                     name = replacement.name
                 }
             }
@@ -1555,8 +1546,7 @@ object ProgramGenerator {
                         loadNote = filled.note
                         changes += PlanChange(
                             PlanChange.Kind.LOAD_SET, name,
-                            "No load was set, so this one comes from your own logged lifts " +
-                                "(${filled.note}) - Zourdos 2016",
+                            "Load set from your logged lifts (${filled.note}) - Zourdos 2016",
                         )
                     }
                 }
@@ -1572,8 +1562,7 @@ object ProgramGenerator {
                 // is the only way to add volume, as in the week generator.
                 changes += PlanChange(
                     PlanChange.Kind.REMOVED, entry.exerciseName,
-                    "Removed: this session already trains your ${dominant.label.lowercase()} through " +
-                        "the same movement pattern, and a second version of it adds no new growth - Gentil 2015",
+                    "Removed: another exercise already trains ${dominant.label.lowercase()} the same way - Gentil 2015",
                 )
                 continue
             }
@@ -1596,9 +1585,9 @@ object ProgramGenerator {
             changes += PlanChange(
                 PlanChange.Kind.REMOVED, gone.exerciseName,
                 if (cost < 1e-9) {
-                    "Removed: over your ${ctx.cap}-movement cap, and your week already covers its muscles - Pelland 2026"
+                    "Removed: over your ${ctx.cap}-exercise cap, and the routine already covers its muscles - Pelland 2026"
                 } else {
-                    "Removed: over your ${ctx.cap}-movement cap, and it added the least to muscles still short - Pelland 2026"
+                    "Removed: over your ${ctx.cap}-exercise cap, and it helped short muscles least - Pelland 2026"
                 },
             )
         }
@@ -1633,9 +1622,8 @@ object ProgramGenerator {
             result += inRange
             changes += PlanChange(
                 PlanChange.Kind.ADDED, exercise.name,
-                "Added the ${exercise.name}: your week is ${setsPhrase(ctx.targetRange.start - (weekVolume[muscle] ?: 0.0))} " +
-                    "short on ${muscle.label.lowercase()} (minimum ${ctx.targetRange.start.toInt()}) - " +
-                    "it covers ${muscleListOf(exercise, muscle)} - Pelland 2026",
+                "Added ${exercise.name}: ${setsPhrase(ctx.targetRange.start - (weekVolume[muscle] ?: 0.0))} " +
+                    "short on ${muscle.label.lowercase()} this week - Pelland 2026",
             )
         }
 
@@ -1674,9 +1662,7 @@ object ProgramGenerator {
             val muscles = raisedFor.getValue(i).joinToString(" and ") { it.label.lowercase() }
             changes += PlanChange(
                 PlanChange.Kind.ADJUSTED, result[i].exerciseName,
-                "Sets raised from ${originalSets[i]} to ${result[i].sets}: your week is short on $muscles " +
-                    "(minimum ${ctx.targetRange.start.toInt()} sets) and more weekly sets build more " +
-                    "muscle up to that range - Pelland 2026",
+                "Sets ${originalSets[i]} → ${result[i].sets}: short on $muscles this week - Pelland 2026",
             )
         }
 
@@ -1687,16 +1673,16 @@ object ProgramGenerator {
     // ------------------------------------------------------------------ note
 
     /**
-     * The one-line rest and RIR guidance every generated preset carries in
-     * its note - the UI shows it under the session name.
+     * The one-line rest and effort guidance every generated preset carries
+     * in its note - the UI shows it under the workout name.
      */
     internal fun presetNote(tier: VolumeLevel, focus: TrainingFocus): String {
         val rir = ProgramRules.targetRir(tier, focus)
         return if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.GENERAL) {
-            "Rest 3-5 min on main lifts, 90 s+ on the rest. Keep $rir reps in reserve " +
+            "Rest 3-5 min on big lifts, 90 s on the rest. Stop about $rir reps short of failure " +
                 "(Schoenfeld 2016; Singer 2024; Refalo 2023)."
         } else {
-            "Rest 2-3 min, never under 90 s. Keep $rir reps in reserve " +
+            "Rest 2-3 min, at least 90 s. Stop about $rir reps short of failure " +
                 "(Singer 2024; Refalo 2023)."
         }
     }

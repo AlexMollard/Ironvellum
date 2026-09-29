@@ -28,7 +28,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.style.TextOverflow
+import com.ironvellum.app.domain.Evidence
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -135,7 +136,7 @@ class PresetsViewModel(
     }
 
     fun beginQuick(onStarted: (Long) -> Unit) {
-        viewModelScope.launch { onStarted(repo.startFreeformSession("Quick Session")) }
+        viewModelScope.launch { onStarted(repo.startFreeformSession("Quick Workout")) }
     }
 }
 
@@ -185,7 +186,7 @@ fun PresetsScreen(
             )
             Spacer(Modifier.height(12.dp))
             IronvellumButton(
-                label = "Quick Session",
+                label = "Quick Workout",
                 onClick = { viewModel.beginQuick(onQuickSession) },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -217,18 +218,31 @@ fun PresetsScreen(
                     modifier = Modifier.weight(1f),
                 )
             }
-            SectionHeader("Presets")
+            SectionHeader("Workouts")
             if (ui.presets.isEmpty()) {
                 Text(
-                    "No presets forged yet. Build your first training day.",
+                    "No workouts yet. Build your first training day.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             ui.presets.forEach { preset ->
                 InkPanel(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(preset.name, style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        // Weighted and capped: a long name used to run into
+                        // the day chip instead of wrapping beside it.
+                        Text(
+                            preset.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = IronvellumColors.Ink,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f).padding(end = 8.dp),
+                        )
                         preset.scheduledDay?.let {
                             Box(
                                 Modifier
@@ -240,8 +254,17 @@ fun PresetsScreen(
                             }
                         }
                     }
-                    if (preset.note.isNotBlank()) {
-                        Text(preset.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    // One line: the generator's full rest-and-effort note on
+                    // every card buried the exercises under repeated prose.
+                    val note = Evidence.split(preset.note).first
+                    if (note.isNotBlank()) {
+                        Text(
+                            note,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                     }
                     Text(
                         SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id)),
@@ -249,6 +272,8 @@ fun PresetsScreen(
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
                         letterSpacing = IronvellumTracking.InlineLabel,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.padding(top = 4.dp),
                     )
                     Spacer(Modifier.height(8.dp))
@@ -290,20 +315,27 @@ fun PresetsScreen(
                     }
                     Spacer(Modifier.height(10.dp))
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            "[ EDIT ]",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.InkMuted,
-                            modifier = Modifier
-                                .clip(MaterialTheme.shapes.extraSmall)
-                                .inkBorder(IronvellumColors.InkMuted.copy(alpha = 0.4f), MaterialTheme.shapes.extraSmall, 1.dp)
+                        Box(
+                            Modifier
+                                .heightIn(min = 44.dp)
                                 .clickable(
                                     interactionSource = remember { MutableInteractionSource() },
                                     indication = null,
-                                ) { onEdit(preset.id) }
-                                .padding(horizontal = 12.dp, vertical = 6.dp),
-                        )
+                                    onClickLabel = "Edit ${preset.name}",
+                                ) { onEdit(preset.id) },
+                            contentAlignment = Alignment.CenterStart,
+                        ) {
+                            Text(
+                                "[ EDIT ]",
+                                style = MaterialTheme.typography.labelMedium,
+                                fontFamily = ChakraPetch,
+                                color = IronvellumColors.InkMuted,
+                                modifier = Modifier
+                                    .clip(MaterialTheme.shapes.extraSmall)
+                                    .inkBorder(IronvellumColors.InkMuted.copy(alpha = 0.4f), MaterialTheme.shapes.extraSmall, 1.dp)
+                                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                            )
+                        }
                         val resume = live?.takeIf { it.presetId == preset.id }
                         if (resume != null) {
                             IronvellumButton("Continue", onClick = { onStartSession(resume.id) })
@@ -314,8 +346,8 @@ fun PresetsScreen(
                 }
             }
 
-            // "New Preset" used to float over the list, and it parked itself on
-            // top of a card's BEGIN button. A tile at the end of the presets
+            // "New Workout" used to float over the list, and it parked itself on
+            // top of a card's BEGIN button. A tile at the end of the workouts
             // covers nothing and needs no clearance spacer underneath.
             InkPanel(
                 Modifier
@@ -325,7 +357,7 @@ fun PresetsScreen(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClickLabel = "New preset",
+                        onClickLabel = "New workout",
                     ) { showNewChooser = true },
             ) {
                 Row(
@@ -340,7 +372,7 @@ fun PresetsScreen(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "NEW PRESET",
+                        "NEW WORKOUT",
                         style = MaterialTheme.typography.labelMedium,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.SystemGreen,
@@ -355,7 +387,7 @@ fun PresetsScreen(
             SectionHeader("Recent Workouts")
             if (ui.history.isEmpty()) {
                 Text(
-                    "No completed campaigns yet.",
+                    "No workouts logged yet — finish one and it lands here.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -405,7 +437,7 @@ fun PresetsScreen(
             onDismissRequest = { showNewChooser = false },
             title = {
                 Text(
-                    "NEW PRESET",
+                    "NEW WORKOUT",
                     style = MaterialTheme.typography.labelLarge,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.SystemGreen,
@@ -415,14 +447,14 @@ fun PresetsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     val options = buildList {
-                        add("Blank preset" to { showNewChooser = false; onNew() })
-                        add("From a template" to { showNewChooser = false; onGenerate("template", null) })
-                        add("Generate a week" to { showNewChooser = false; onGenerate("week", null) })
+                        add("Blank workout" to { showNewChooser = false; onNew() })
+                        add("Start from a template" to { showNewChooser = false; onGenerate("template", null) })
+                        add("Generate a routine" to { showNewChooser = false; onGenerate("week", null) })
                         add("Generate one workout" to { showNewChooser = false; onGenerate("session", null) })
                         // Improving needs a target: nothing to improve on an
                         // empty board.
                         if (ui.presets.isNotEmpty()) {
-                            add("Improve a preset" to { showNewChooser = false; onGenerate("improve", null) })
+                            add("Improve a workout" to { showNewChooser = false; onGenerate("improve", null) })
                         }
                     }
                     options.forEach { (label, action) ->
@@ -441,7 +473,7 @@ fun PresetsScreen(
             },
             confirmButton = {},
             dismissButton = {
-                TextButton(onClick = { showNewChooser = false }) { Text("Cancel") }
+                IronvellumButton(label = "Cancel", onClick = { showNewChooser = false }, quiet = true)
             },
         )
     }
@@ -500,7 +532,7 @@ private fun WeeklyCoverageCard(
         Spacer(Modifier.height(8.dp))
         if (ui.plannedPresets.isEmpty()) {
             Text(
-                "Build your week and see which muscles it covers.",
+                "Build a routine to see which muscles it covers.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

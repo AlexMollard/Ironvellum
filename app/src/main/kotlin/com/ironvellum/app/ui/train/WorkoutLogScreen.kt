@@ -158,7 +158,7 @@ fun WorkoutLogScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        "NO SESSIONS RECORDED",
+                        "NO WORKOUTS LOGGED YET",
                         style = MaterialTheme.typography.titleMedium,
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
@@ -166,7 +166,7 @@ fun WorkoutLogScreen(
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "Your chronicle is blank. Complete a workout and it will be carved into the record here.",
+                        "Complete a workout and it will be carved into the record here.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.InkMuted,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -260,7 +260,7 @@ private fun LifetimeLedger(
         // sessions, say so instead of drawing it.
         if (series.size >= 3) {
             Text(
-                "STRENGTH · LAST ${series.size} SESSIONS",
+                "STRENGTH · LAST ${series.size} WORKOUTS",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
@@ -269,7 +269,7 @@ private fun LifetimeLedger(
             TrendChart(values = series, color = IronvellumColors.Emerald)
         } else {
             Text(
-                "THE TREND LINE OPENS AT THREE SESSIONS",
+                "THE TREND LINE OPENS AT THREE WORKOUTS",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
@@ -364,15 +364,18 @@ private fun LogRow(
         // that stretched chip.
         Text(
             buildString {
-                append(sets.map { it.exerciseId }.distinct().size).append(" exercises")
-                append("  ·  ").append(doneSets.size).append("/").append(sets.size).append(" sets")
-                if (totals.reps > 0) append("  ·  ").append("%,d".format(totals.reps)).append(" reps")
-                if (totals.heldSeconds > 0) append("  ·  ").append("%,d".format(totals.heldSeconds)).append("s held")
-                if (totals.attempts > 0) append("  ·  ").append("%,d".format(totals.attempts)).append(" attempts")
-                if (totals.km > 0) append("  ·  ").append(formatBodyValue(totals.km)).append(" km")
+                val exerciseCount = sets.map { it.exerciseId }.distinct().size
+                append(exerciseCount).append(' ').append(plural(exerciseCount, "exercise", "exercises"))
+                append(" · ").append(doneSets.size).append("/").append(sets.size).append(" sets")
+                if (totals.reps > 0) append(" · ").append("%,d".format(totals.reps)).append(' ').append(plural(totals.reps, "rep", "reps"))
+                if (totals.heldSeconds > 0) append(" · ").append("%,d".format(totals.heldSeconds)).append("s held")
+                if (totals.attempts > 0) {
+                    append(" · ").append("%,d".format(totals.attempts)).append(' ').append(plural(totals.attempts, "attempt", "attempts"))
+                }
+                if (totals.km > 0) append(" · ").append(formatBodyValue(totals.km)).append(" km")
                 if (totals.secondsWorked > 0) {
                     val minutes = totals.secondsWorked / 60
-                    append("  ·  ").append(if (minutes > 0) "$minutes min" else "<1 min")
+                    append(" · ").append(if (minutes > 0) "$minutes min" else "<1 min")
                 }
             },
             style = MaterialTheme.typography.labelMedium,

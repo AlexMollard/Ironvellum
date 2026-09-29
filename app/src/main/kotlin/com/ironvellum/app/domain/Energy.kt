@@ -19,7 +19,7 @@ enum class EnergyConfidence { MEASURED, ESTIMATED, COARSE }
 data class EnergyEstimate(
     val kcal: Int,
     val confidence: EnergyConfidence,
-    /** Human-readable basis, e.g. "MET 8.3 x 72.5 kg x 31 min" — shown on tap. */
+    /** Human-readable basis, e.g. "MET 8.3 × 72.5 kg × 31 min" — shown on tap. */
     val basis: String,
     /** Inputs that were missing, e.g. "body fat" — shown so the user can improve it. */
     val missing: List<String> = emptyList(),
@@ -131,7 +131,7 @@ object Energy {
         return EnergyEstimate(
             kcal = bmr.toInt(),
             confidence = EnergyConfidence.ESTIMATED,
-            basis = "Katch-McArdle: 370 + 21.6 x ${"%.1f".format(lean)} kg lean (${weightKg} kg, ${bodyFatPct}% body fat)",
+            basis = "Katch-McArdle: 370 + 21.6 × ${"%.1f".format(lean)} kg lean (${weightKg} kg, ${bodyFatPct}% body fat)",
         )
     }
 
@@ -164,7 +164,7 @@ object Energy {
         return EnergyEstimate(
             kcal = metKcal(met, bodyKg, minutes),
             confidence = EnergyConfidence.ESTIMATED,
-            basis = "MET $met x $bodyKg kg x ${"%.0f".format(minutes)} min",
+            basis = "MET $met × $bodyKg kg × ${"%.0f".format(minutes)} min",
         )
     }
 
@@ -215,7 +215,7 @@ object Energy {
             // without it we can only assume moderate resistance per set.
             coarseKcal = metKcal(met, bodyKg, coarseMinutes)
             coarse = true
-            basis = StringBuilder("lift ${untimedSets.size} sets x MET $met x $bodyKg kg x ${"%.0f".format(coarseMinutes)} min")
+            basis = StringBuilder("${untimedSets.size} sets × MET $met × $bodyKg kg × ${"%.0f".format(coarseMinutes)} min")
         }
         val total = timedKcal + coarseKcal
         if (total <= 0) return null
@@ -224,7 +224,7 @@ object Energy {
             confidence = if (coarse) EnergyConfidence.COARSE else EnergyConfidence.ESTIMATED,
             basis = listOfNotNull(
                 basis.toString().ifEmpty { null },
-                "timed sets MET x $bodyKg kg x ${"%.0f".format(timedMinutes)} min".takeIf { timedMinutes > 0.0 },
+                "timed sets MET × $bodyKg kg × ${"%.0f".format(timedMinutes)} min".takeIf { timedMinutes > 0.0 },
             ).joinToString("; "),
         )
     }
@@ -256,7 +256,7 @@ object Energy {
         return EnergyEstimate(
             kcal = metKcal(3.5, bodyKg, minutes),
             confidence = EnergyConfidence.ESTIMATED,
-            basis = "MET 3.5 x $bodyKg kg x ${"%.0f".format(minutes)} min (${"%.2f".format(distanceKm)} km walked" +
+            basis = "MET 3.5 × $bodyKg kg × ${"%.0f".format(minutes)} min (${"%.2f".format(distanceKm)} km walked" +
                 if (strideDerived) ", stride from height)" else ", measured)",
         )
     }

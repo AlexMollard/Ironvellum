@@ -228,7 +228,7 @@ fun PresetEditorScreen(
     ) {
         Spacer(Modifier.height(20.dp))
         Text(
-            if (ui.presetId == null) "FORGE NEW PRESET" else "REFORGE PRESET",
+            if (ui.presetId == null) "FORGE NEW WORKOUT" else "REFORGE WORKOUT",
             style = MaterialTheme.typography.labelLarge,
             color = IronvellumColors.SystemGreen,
         )
@@ -237,7 +237,7 @@ fun PresetEditorScreen(
             shape = MaterialTheme.shapes.small,
             value = ui.name,
             onValueChange = viewModel::setName,
-            label = { Text("Preset name") },
+            label = { Text("Workout name") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -306,7 +306,7 @@ fun PresetEditorScreen(
                 enabled = ui.name.isNotBlank() && ui.entries.isNotEmpty(),
                 modifier = Modifier.weight(1f),
             ) {
-                Text("Save Preset")
+                Text("Save Workout")
             }
             if (ui.presetId != null) {
                 // Delete used to fire on the first tap; a new user prodding the

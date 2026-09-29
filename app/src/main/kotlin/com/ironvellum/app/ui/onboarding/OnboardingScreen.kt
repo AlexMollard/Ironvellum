@@ -86,6 +86,7 @@ import com.ironvellum.app.ui.program.GearPicker
 import com.ironvellum.app.ui.program.ProposedDay
 import com.ironvellum.app.ui.program.SourcesPanel
 import com.ironvellum.app.ui.program.planTexts
+import com.ironvellum.app.ui.program.planNotes
 import com.ironvellum.app.ui.program.SplitPicker
 import com.ironvellum.app.ui.program.splitCaption
 import com.ironvellum.app.ui.program.volumeCaption
@@ -483,13 +484,13 @@ fun OnboardingScreen(
 private fun stepTitle(step: Int): String = when (step) {
     0 -> "WHO YOU ARE"
     1 -> "HOW YOU TRAIN"
-    else -> "YOUR PROPOSED WEEK"
+    else -> "YOUR ROUTINE"
 }
 
 private fun stepProse(step: Int): String = when (step) {
     0 -> "Three facts scale every number this app shows you."
-    1 -> "Answer four things and Ironvellum builds you a week."
-    else -> "Built from your answers. Change anything before you take it."
+    1 -> "Answer four things and Ironvellum builds you a routine."
+    else -> "Built from your answers. Tap an exercise to adjust it."
 }
 
 /** Rune numerals, the skill tree's own counting: I, II, III. Reads as a quiet crest row, not a progress bar. */
@@ -539,7 +540,7 @@ private fun StepHeader(step: Int, onSkip: () -> Unit) {
                     .semantics {
                         role = Role.Button
                         contentDescription =
-                            "Skip setup - set your profile and routine later in Settings or the Stats log"
+                            "Skip setup — set your profile and routine later in Settings or the Stats log"
                     }
                     .padding(horizontal = 10.dp),
                 contentAlignment = Alignment.Center,
@@ -634,7 +635,7 @@ private fun StepFooter(
                 Column(Modifier.weight(1f)) {
                     if (!planReady) {
                         Text(
-                            "Still consulting the catalogue...",
+                            "Still consulting the catalogue…",
                             style = MaterialTheme.typography.labelSmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -714,17 +715,11 @@ private fun ProfileStep(
                 )
             }
             Spacer(Modifier.height(14.dp))
-            FieldLabel("SEX - PICKS THE BODY-FAT FORMULA")
+            FieldLabel("SEX")
             InkSegmented(
                 options = Sex.entries.map { it to it.name },
                 selected = sex,
                 onPick = onSex,
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "Strength scores are body-scaled against your weight; height powers BMI and FFMI.",
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
             )
         }
     }
@@ -793,7 +788,9 @@ private fun TrainingStep(
                     TrainingFocus.STRENGTH to "Power",
                     TrainingFocus.MUSCLE to "Muscle",
                     TrainingFocus.SKILL to "Skills",
-                    TrainingFocus.GENERAL to "All-round",
+                    // "All-round" clipped to "All-roun" at 360dp: four equal
+                    // segments leave ~72dp each. Keep every label short.
+                    TrainingFocus.GENERAL to "Mixed",
                 ),
                 selected = focus,
                 onPick = onFocus,
@@ -802,7 +799,7 @@ private fun TrainingStep(
             Text(
                 when (focus) {
                     TrainingFocus.STRENGTH ->
-                        "Low reps, heavy moves. Bigger numbers on the main lifts."
+                        "Low reps, heavy load. Bigger numbers on the main exercises."
                     TrainingFocus.MUSCLE ->
                         "Higher volume, moderate load. Size comes before bragging rights."
                     TrainingFocus.SKILL ->
@@ -900,7 +897,7 @@ private fun ProposalStep(
         if (current == null) {
             InkPanel(Modifier.fillMaxWidth()) {
                 Text(
-                    "Consulting the catalogue...",
+                    "Consulting the catalogue…",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -921,11 +918,27 @@ private fun ProposalStep(
                         }
                     },
                     onRemove = { entryIndex -> removeEntry(presetIndex, entryIndex) },
+                    showNote = false,
                 )
             }
             if (current.presets.isEmpty()) {
                 Text(
-                    "Nothing left - go back and rebuild, or take the starter week instead.",
+                    "Nothing left — go back and rebuild, or take the starter routine instead.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
+            // The rest guidance and any shortfall, said once for the routine
+            // rather than under every day, with the progression rule the goal
+            // picked beside it.
+            val notes = planNotes(current.presets) + when (focus) {
+                TrainingFocus.STRENGTH -> listOf("Strength goal: load goes up when you hit your reps.")
+                TrainingFocus.MUSCLE -> listOf("Muscle goal: reps go up first, then load.")
+                else -> emptyList()
+            }
+            notes.forEach { line ->
+                Text(
+                    line,
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -934,14 +947,14 @@ private fun ProposalStep(
 
         if (!isStarter) {
             IronvellumButton(
-                label = "Use the starter week instead",
+                label = "Use the starter routine",
                 onClick = viewModel::previewStarter,
                 quiet = true,
                 modifier = Modifier.fillMaxWidth(),
             )
         } else {
             IronvellumButton(
-                label = "Build from my answers instead",
+                label = "Build from my answers",
                 onClick = {
                     if (catalogue.isNotEmpty()) {
                         viewModel.ensurePlan(daysPerWeek, split, equipment, focus, tier, sex, catalogue, force = true)
@@ -949,27 +962,6 @@ private fun ProposalStep(
                 },
                 quiet = true,
                 modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        // Nothing else in the flow names the other tabs. One line, so the moon
-        // (Muster) and the people (Allies) are not discovered by accident.
-        Text(
-            "Rest trains too: MUSTER pays idle essence while you are away, " +
-                "and ALLIES is there when you want company.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-        // Stated where she accepts, not discovered in Settings later: the
-        // progression engine follows the goal she picked.
-        if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.MUSCLE) {
-            Text(
-                if (focus == TrainingFocus.STRENGTH) {
-                    "Taking this routine switches progression to linear progression for strength."
-                } else {
-                    "Taking this routine switches progression to double progression for hypertrophy."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
             )
         }
         current?.let { SourcesPanel(planTexts(it.presets)) }

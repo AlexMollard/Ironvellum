@@ -129,20 +129,20 @@ object Reminders {
             Triple(
                 "REST DAY",
                 "Rest up. The streak holds at $days.",
-                "Nothing scheduled today. Recovery is part of the program, " +
-                    "and the $days streak sits safe until your next quest.",
+                "Nothing scheduled today. Rest counts — your $days streak holds until your next quest.",
             )
         } else {
-            val moves = quest.entries.size
-            val sets = quest.entries.sumOf { it.targetSets }
+            val exercises = quest.entries.size.let { if (it == 1) "1 exercise" else "$it exercises" }
+            val sets = quest.entries.sumOf { it.targetSets }.let { if (it == 1) "1 set" else "$it sets" }
             Triple(
                 "QUEST OPEN · ${quest.name.uppercase()}",
-                "$moves moves · $sets sets waiting.",
+                "$exercises · $sets waiting.",
                 buildString {
-                    append("${quest.name}: $moves moves, $sets sets today. ")
+                    append("${quest.name}: $exercises, $sets today. ")
                     append(
-                        if (streak == 0) "Today's session starts the streak."
-                        else "$days streak. ${next ?: streak} is the next deed.",
+                        if (streak == 0) "Today's quest starts the streak."
+                        else if (next != null) "$days streak. Next deed at ${pluralDays(next)}."
+                        else "$days streak.",
                     )
                 },
             )

@@ -70,7 +70,7 @@ class ResumeLiveSessionTest {
     fun aStaleLiveSessionIsOfferedNotForced() {
         plantLiveSession("Yesterday's Trial", ageMs = Repository.RESUME_WINDOW_MS + 60 * 60_000L)
         ActivityScenario.launch(MainActivity::class.java).use {
-            waitForText("ROUTINE, PRESETS")
+            waitForText("ROUTINE, WORKOUTS")
             // The launch check reads the database off the main thread, so give
             // it the time a forced resume would take before judging.
             val forced = runCatching {

@@ -79,6 +79,7 @@ import java.util.Date
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -586,7 +587,7 @@ private fun AuthPanels(
                 password.isNotEmpty() && !passwordValid -> "The sigil phrase needs at least 6 characters."
                 mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid ->
                     "Lifter names run 2–24 characters."
-                else -> "Measurements stay on this device; sessions, XP and titles sync."
+                else -> "Measurements stay on this device; workouts, XP and titles sync."
             },
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
@@ -709,9 +710,9 @@ private fun SignedInPanels(
         Spacer(Modifier.height(8.dp))
         Text(
             when (acct.visibility) {
-                "public" -> "Every lifter on the board can read your sessions."
-                "friends" -> "Only lifters on your friend list can read your sessions."
-                else -> "No one but you can read your sessions."
+                "public" -> "Every lifter on the board can read your workouts."
+                "friends" -> "Only lifters on your friend list can read your workouts."
+                else -> "No one but you can read your workouts."
             },
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
@@ -732,7 +733,9 @@ private fun SignedInPanels(
             Spacer(Modifier.height(8.dp))
             Text(
                 buildString {
-                    append("Pushed ${outcome.sessions} sessions · ${outcome.sets} sets · ${outcome.titles} titles")
+                    append("Pushed ${outcome.sessions} ${plural(outcome.sessions, "workout", "workouts")} · ")
+                    append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
+                    append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
                     if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
                 },
                 style = MaterialTheme.typography.labelMedium,
@@ -790,7 +793,7 @@ private fun SignedInPanels(
         var confirmRestore by remember { mutableStateOf(false) }
         if (confirmRestore) {
             Text(
-                "This replaces EVERYTHING logged on this phone — sessions, " +
+                "This replaces EVERYTHING logged on this phone — workouts, " +
                     "titles, skills, stats and measurements — with the cloud " +
                     "archive. Anything not in that archive is lost for good.",
                 style = MaterialTheme.typography.bodySmall,
@@ -828,7 +831,9 @@ private fun SignedInPanels(
             Spacer(Modifier.height(8.dp))
             Text(
                 buildString {
-                    append("Restored ${outcome.sessions} sessions · ${outcome.sets} sets · ${outcome.titles} titles")
+                    append("Restored ${outcome.sessions} ${plural(outcome.sessions, "workout", "workouts")} · ")
+                    append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
+                    append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
                     if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
                 },
                 style = MaterialTheme.typography.labelMedium,
@@ -837,9 +842,9 @@ private fun SignedInPanels(
             )
         }
         Spacer(Modifier.height(14.dp))
-        PrivacyRow(Icons.Outlined.Lock, IronvellumColors.SovereignGold, "Body measurements — weight, height, body fat, BMI, FFMI — never leave this device.")
+        PrivacyRow(Icons.Outlined.Lock, IronvellumColors.SovereignGold, "Body measurements — weight, height, body fat — never leave this device.")
         Spacer(Modifier.height(6.dp))
-        PrivacyRow(Icons.Outlined.Public, IronvellumColors.Emerald, "Visibility decides who may read your sessions.")
+        PrivacyRow(Icons.Outlined.Public, IronvellumColors.Emerald, "Visibility decides who may read your workouts.")
     }
     // One-time claim prompt: visible after sign-in, but the surface around it
     // stays fully usable — skip hides it for the session, nothing nags twice.
@@ -886,7 +891,7 @@ private fun SignedInPanels(
     Spacer(Modifier.height(6.dp))
     Text(
         if (confirmDelete) {
-            "This removes your lifter, every synced session, title and ally " +
+            "This removes your lifter, every synced workout, title and ally " +
                 "from the cloud for good, and signs you out. Training logged " +
                 "on this phone stays on this phone."
         } else {

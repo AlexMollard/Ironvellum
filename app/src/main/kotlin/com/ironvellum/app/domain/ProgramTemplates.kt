@@ -40,9 +40,8 @@ object ProgramTemplates {
             authoredVolume = VolumeLevel.LOW,
             focus = TrainingFocus.STRENGTH,
             name = "Full-Body Barbell",
-            summary = "Three full-body days on five lifts. Add a little weight " +
-                "every session for as long as it keeps working - linear " +
-                "progression (ACSM 2009).",
+            summary = "Three full-body days on five big lifts. Add a little weight " +
+                "each workout while it keeps moving (ACSM 2009).",
             days = listOf(
                 day("Full Body A", 1, listOf(
                     entry("Back Squat", 3, 5),
@@ -67,9 +66,8 @@ object ProgramTemplates {
             authoredVolume = VolumeLevel.LOW,
             focus = TrainingFocus.MUSCLE,
             name = "Full-Body Size",
-            summary = "Three full-body days: every muscle trained each session, " +
-                "compounds first, stretch-biased accessories after. Sets " +
-                "follow your volume (Pelland 2026). Add load or reps every week.",
+            summary = "Three full-body days: every muscle each workout, big lifts " +
+                "first, stretch-focused exercises after (Pelland 2026).",
             days = listOf(
                 day("Full Body A", 1, listOf(
                     entry("Back Squat", 3, 8),
@@ -111,9 +109,8 @@ object ProgramTemplates {
             authoredVolume = VolumeLevel.STANDARD,
             focus = TrainingFocus.STRENGTH,
             name = "Upper/Lower Strength",
-            summary = "Upper/lower twice a week on the big lifts. Squat and " +
-                "bench are practiced twice a week - strength tracks practice " +
-                "frequency (Grgic 2018; Pelland 2026).",
+            summary = "Upper/lower twice a week. Squat and bench twice a week — " +
+                "strength follows practice (Grgic 2018; Pelland 2026).",
             days = listOf(
                 day("Upper Heavy", 1, listOf(
                     entry("Bench Press", 5, 3),
@@ -143,9 +140,8 @@ object ProgramTemplates {
             authoredVolume = VolumeLevel.STANDARD,
             focus = TrainingFocus.MUSCLE,
             name = "Upper/Lower Size",
-            summary = "Upper/lower twice a week, every session led by a " +
-                "compound and finished with stretch-biased accessories. Sets " +
-                "follow your volume (Pelland 2026; Maeo 2021).",
+            summary = "Upper/lower twice a week, each workout led by a big lift " +
+                "and finished with stretch-focused exercises (Pelland 2026; Maeo 2021).",
             days = listOf(
                 day("Upper A", 1, listOf(
                     entry("Bench Press", 4, 8),
@@ -194,10 +190,9 @@ object ProgramTemplates {
             authoredVolume = VolumeLevel.HIGH,
             focus = TrainingFocus.STRENGTH,
             name = "Heavy/Light Strength",
-            summary = "Heavy and light days across the week - periodised " +
-                "intensity buys a small real strength edge over constant " +
-                "training (Williams 2017; Moesgaard 2022). Squat and bench " +
-                "twice, deadlift once, everything else serves the lifts.",
+            summary = "Heavy and light days across the week for a small strength " +
+                "edge (Williams 2017; Moesgaard 2022). Squat and bench twice, " +
+                "deadlift once.",
             days = listOf(
                 day("Lower Heavy", 1, listOf(
                     entry("Back Squat", 5, 3),
@@ -232,9 +227,8 @@ object ProgramTemplates {
             authoredVolume = VolumeLevel.HIGH,
             focus = TrainingFocus.MUSCLE,
             name = "Push/Pull/Legs Size",
-            summary = "Push/pull/legs twice over. Sets follow your volume " +
-                "(Pelland 2026). Every hamstring and calf slot loads the " +
-                "stretch - long muscle lengths win (Maeo 2021; Kassiano 2023).",
+            summary = "Push/pull/legs twice over (Pelland 2026). Hamstring and calf " +
+                "work loads the stretch (Maeo 2021; Kassiano 2023).",
             days = listOf(
                 day("Push A", 1, listOf(
                     entry("Bench Press", 4, 8),
@@ -381,7 +375,7 @@ object ProgramTemplates {
                 ) {
                     val primary = MuscleMap.profile(exercise.name)!!.muscles
                         .filterValues { it >= 0.5 }.maxWithOrNull(compareBy { it.value })!!.key
-                    "For your ${ProgramGenerator.muscleListOf(exercise, primary)}, trained stretched - " +
+                    "For your ${ProgramGenerator.muscleListOf(exercise, primary)}, worked at full stretch - " +
                         ProgramGenerator.longLengthEvidence(primary)
                 } else {
                     "For your ${ProgramGenerator.muscleListOf(exercise)} - Pelland 2026"
@@ -442,13 +436,12 @@ object ProgramTemplates {
         val capped = presets.mapIndexed { d, (day, _) ->
             day.copy(
                 entries = work[d].first,
-                note = if (d in trimmed) day.note + " Trimmed to your $cap-movement cap." else day.note,
+                note = if (d in trimmed) day.note + " Trimmed to your $cap-exercise cap." else day.note,
             )
         }
         val fitted = fitToRange(capped, work.map { it.second }, template.focus, chosenRange)
         val shortfall = ProgramGenerator.shortfallNote(
-            ProgramRules.weeklyVolume(fitted), chosenRange,
-            "this program leaves", "Generate a week to fill them.",
+            ProgramRules.weeklyVolume(fitted), chosenRange, "generate a routine to fill them.",
         )
         return RoutinePlan(
             fitted.mapIndexed { i, day -> if (i == 0) day.copy(note = day.note + shortfall) else day },

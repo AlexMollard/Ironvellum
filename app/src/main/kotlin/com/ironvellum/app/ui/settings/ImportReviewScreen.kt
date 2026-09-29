@@ -33,6 +33,7 @@ import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -108,7 +109,8 @@ fun ImportReviewOverlay(
             val range = ui.parsed.dateRange
             Text(
                 buildString {
-                    append("${ui.parsed.workouts.size} workouts · ${ui.parsed.totalSets} sets")
+                    append("${ui.parsed.workouts.size} ${plural(ui.parsed.workouts.size, "workout", "workouts")}")
+                    append(" · ${ui.parsed.totalSets} ${plural(ui.parsed.totalSets, "set", "sets")}")
                     if (range != null) {
                         append(" · from ${formatDate(range.second, "d MMM yyyy")}")
                         append(" to ${formatDate(range.first, "d MMM yyyy")}")
@@ -146,7 +148,7 @@ fun ImportReviewOverlay(
                     Spacer(Modifier.height(6.dp))
                     Text(
                         if (ui.unitGuessed) {
-                            "Estimated ${ui.selectedUnit?.name?.lowercase()} from your barbell numbers — check a familiar lift before importing."
+                            "Estimated ${ui.selectedUnit?.name?.lowercase()} from your barbell numbers — check a familiar exercise before importing."
                         } else {
                             "Strong exports carry no unit column, so choose."
                         },
@@ -158,7 +160,7 @@ fun ImportReviewOverlay(
 
             Spacer(Modifier.height(14.dp))
             Text(
-                "MOVEMENTS WE COULD NOT MATCH",
+                "EXERCISES WE COULD NOT MATCH",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -167,7 +169,7 @@ fun ImportReviewOverlay(
             Spacer(Modifier.height(6.dp))
             if (ui.unmatched.isEmpty()) {
                 Text(
-                    "Every movement matched the catalogue.",
+                    "Every exercise matched the catalogue.",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -232,7 +234,7 @@ private fun UnmatchedRow(
         )
         Text(
             when (chosen) {
-                null -> "keep as NEW movement · measured in ${name.inferredMetric.lowercase()}"
+                null -> "keep as new exercise · measured in ${name.inferredMetric.lowercase()}"
                 else -> "maps to $chosen"
             },
             style = MaterialTheme.typography.labelSmall,
@@ -247,11 +249,11 @@ private fun UnmatchedRow(
                 color = IronvellumColors.SystemGreen,
                 modifier = Modifier
                     .clickable { expanded = true }
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = 14.dp),
             )
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 DropdownMenuItem(
-                    text = { Text("KEEP AS NEW MOVEMENT") },
+                    text = { Text("KEEP AS NEW EXERCISE") },
                     onClick = {
                         expanded = false
                         onPick(name.rawName, null)

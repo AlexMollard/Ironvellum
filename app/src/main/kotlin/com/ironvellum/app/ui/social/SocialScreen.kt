@@ -49,7 +49,7 @@ fun SocialScreen(onOpenLifter: (userId: String, displayName: String) -> Unit) {
         when (tab) {
             // Account carries the sign-in form, so "back" from it just returns
             // to the feed rather than popping the whole tab off the stack.
-            GuildTab.FEED -> FeedScreen(onOpenLifter = onOpenLifter)
+            GuildTab.FEED -> FeedScreen(onOpenLifter = onOpenLifter, onSignIn = { tab = GuildTab.ALLIES })
             GuildTab.BOARD -> LeaderboardScreen(onOpenFriend = onOpenLifter)
             GuildTab.ALLIES -> AccountScreen(
                 onBack = { tab = GuildTab.FEED },

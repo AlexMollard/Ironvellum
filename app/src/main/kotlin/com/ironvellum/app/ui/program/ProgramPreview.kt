@@ -34,6 +34,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.Equipment
@@ -68,7 +69,7 @@ fun dayLabel(scheduledDay: Int?): String =
     scheduledDay?.let { DAY_NAMES.getOrNull(it - 1) } ?: "Unscheduled"
 
 private fun entryScheme(entry: PlannedEntry): String = buildString {
-    append("${entry.sets} x ${entry.reps}")
+    append("${entry.sets}\u00D7${entry.reps}")
     entry.targetWeightKg?.let { append(" @ ${formatKg(it)} kg") }
 }
 
@@ -76,8 +77,14 @@ private fun formatKg(kg: Double): String =
     if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
 
 /**
- * One proposed training day. The day and its focus lead, in the app's crest
- * voice; a brush hairline separates the plan from its movement list.
+ * One proposed training day: a header line, then one compact row per
+ * exercise. The reason, the steppers and the remove pad stay folded until the
+ * lifter taps a row, one row open at a time. Unfolded, every row carried a
+ * reason line and five pads, and the first-run review read as a wall of
+ * controls eight screens long.
+ *
+ * [showNote] is off where the caller shows the plan's notes once for the
+ * whole routine instead of repeating the rest guidance under every day.
  */
 @Composable
 fun ProposedDay(
@@ -86,11 +93,13 @@ fun ProposedDay(
     onSets: (entryIndex: Int, delta: Int) -> Unit,
     onReps: (entryIndex: Int, delta: Int) -> Unit,
     onRemove: (entryIndex: Int) -> Unit,
+    showNote: Boolean = true,
 ) {
     // The ink identity is hand-drawn: a geometric RoundedCornerShape here
     // reads as a foreign rectangle, which is why InkCoverageTest fails the
     // build on one.
     val dayShape = MaterialTheme.shapes.extraSmall
+    var open by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf<Int?>(null) }
     Column(
         Modifier
             .fillMaxWidth()
@@ -99,73 +108,105 @@ fun ProposedDay(
             .inkBorder(IronvellumColors.Rune, dayShape, 1.dp)
             .padding(horizontal = 14.dp, vertical = 12.dp),
     ) {
-        Text(
-            dayLabel(preset.scheduledDay).uppercase(),
-            style = MaterialTheme.typography.titleMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.EmeraldBright,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Text(
-            preset.name.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        // Rest + RIR guidance rides every generated preset's note; it belongs
-        // with the session, not buried per movement. Its papers go to Sources.
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(
+                dayLabel(preset.scheduledDay).uppercase(),
+                style = MaterialTheme.typography.titleMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = IronvellumColors.EmeraldBright,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                preset.name.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SystemGreen,
+                letterSpacing = IronvellumTracking.InlineLabel,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(bottom = 3.dp),
+            )
+        }
+        // Rest guidance rides every generated preset's note; its papers go to
+        // Sources.
         val note = Evidence.split(preset.note).first
-        if (note.isNotBlank()) {
+        if (showNote && note.isNotBlank()) {
             Text(
                 note,
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
         }
-        Spacer(Modifier.height(8.dp))
+        Spacer(Modifier.height(4.dp))
         preset.entries.forEachIndexed { entryIndex, entry ->
             ProposedEntryRow(
                 entry = entry,
                 dayName = dayLabel(preset.scheduledDay),
                 editable = editable,
+                expanded = open == entryIndex,
+                onToggle = { open = if (open == entryIndex) null else entryIndex },
                 onSets = { delta -> onSets(entryIndex, delta) },
                 onReps = { delta -> onReps(entryIndex, delta) },
-                onRemove = { onRemove(entryIndex) },
+                onRemove = {
+                    open = null
+                    onRemove(entryIndex)
+                },
             )
         }
     }
 }
 
 /**
- * One proposed movement. Name and scheme are the content; the edit cluster
- * sits beneath, captioned, so the plan is what the eye lands on and the
- * glyphs read as annotation. The steppers are 32dp tappable boxes - well
- * over the 24dp accessibility floor - and each announces its purpose by
- * name, because a bare "-" tells a screen reader nothing.
+ * One proposed exercise: name and scheme, tappable. Open, it shows why the
+ * exercise is there and, when [editable], the set and rep pads and remove.
+ * Every pad clears the 44dp touch floor, and each announces its purpose by
+ * name, because a bare "−" tells a screen reader nothing.
  */
 @Composable
 fun ProposedEntryRow(
     entry: PlannedEntry,
     dayName: String,
     editable: Boolean,
+    expanded: Boolean,
+    onToggle: () -> Unit,
     onSets: (delta: Int) -> Unit,
     onReps: (delta: Int) -> Unit,
     onRemove: () -> Unit,
 ) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(vertical = 6.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
+    // Why this lift and dose, and where the load came from - without the
+    // citations, which [SourcesPanel] lists once per screen.
+    val reasons = listOfNotNull(entry.why, entry.loadNote)
+        .map { Evidence.split(it).first }
+        .filter { it.isNotBlank() }
+    val opens = editable || reasons.isNotEmpty()
+    Column(Modifier.fillMaxWidth()) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 44.dp)
+                .then(
+                    if (opens) {
+                        Modifier.clickable(
+                            onClickLabel = if (expanded) "Close ${entry.exerciseName}" else "Open ${entry.exerciseName}",
+                            onClick = onToggle,
+                        )
+                    } else {
+                        Modifier
+                    },
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
                 entry.exerciseName,
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.Ink,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
             )
+            Spacer(Modifier.width(8.dp))
             Text(
                 entryScheme(entry),
                 style = MaterialTheme.typography.labelMedium,
@@ -173,55 +214,58 @@ fun ProposedEntryRow(
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = IronvellumTracking.InlineLabel,
             )
+            // On the name row, not the stepper row: five 44dp pads plus their
+            // captions do not fit a 360dp phone on one line.
+            if (expanded && editable) {
+                Spacer(Modifier.width(6.dp))
+                TapPad("\u2715", "Remove ${entry.exerciseName} from $dayName") { onRemove() }
+            }
         }
-        // Why this lift and dose, and where the load came from - quiet, and
-        // without the citations, which [SourcesPanel] lists once per screen.
-        listOfNotNull(entry.why, entry.loadNote)
-            .map { Evidence.split(it).first }
-            .filter { it.isNotBlank() }
-            .forEach { line ->
+        if (expanded) {
+            reasons.forEach { line ->
                 Text(
                     line,
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
             }
-        if (editable) {
-            Spacer(Modifier.height(4.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    "SETS",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.clearAndSetSemantics {},
-                )
-                TapPad("-", "Fewer sets for ${entry.exerciseName}") { onSets(-1) }
-                TapPad("+", "More sets for ${entry.exerciseName}") { onSets(1) }
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    "REPS",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.clearAndSetSemantics {},
-                )
-                TapPad("-", "Fewer reps for ${entry.exerciseName}") { onReps(-1) }
-                TapPad("+", "More reps for ${entry.exerciseName}") { onReps(1) }
-                Spacer(Modifier.weight(1f))
-                TapPad("x", "Remove ${entry.exerciseName} from $dayName") { onRemove() }
+            if (editable) {
+                Spacer(Modifier.height(6.dp))
+                Row(
+                    Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                ) {
+                    Text(
+                        "SETS",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.clearAndSetSemantics {},
+                    )
+                    TapPad("\u2212", "Fewer sets for ${entry.exerciseName}") { onSets(-1) }
+                    TapPad("+", "More sets for ${entry.exerciseName}") { onSets(1) }
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        "REPS",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.clearAndSetSemantics {},
+                    )
+                    TapPad("\u2212", "Fewer reps for ${entry.exerciseName}") { onReps(-1) }
+                    TapPad("+", "More reps for ${entry.exerciseName}") { onReps(1) }
+                }
             }
+            Spacer(Modifier.height(8.dp))
         }
     }
 }
 
 /**
- * The small tap target used by the proposal editor. Not IronvellumButton: five
- * steppers per movement row need a control that stays narrow while clearing
- * the 24dp touch floor, which the 32dp box guarantees on both axes.
+ * The small tap target used by the proposal editor. Not IronvellumButton: four
+ * steppers per exercise row need a control that stays narrow while clearing
+ * the 44dp touch floor, which the 44dp box guarantees on both axes.
  */
 @Composable
 fun TapPad(
@@ -235,8 +279,8 @@ fun TapPad(
             .clip(shape)
             .background(IronvellumColors.VaultHigh)
             .clickable(onClick = onClick)
-            .heightIn(min = 32.dp)
-            .widthIn(min = 32.dp)
+            .heightIn(min = 44.dp)
+            .widthIn(min = 44.dp)
             .padding(horizontal = 8.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center,
     ) {
@@ -267,7 +311,7 @@ fun WeeklyVolumePanel(
     val goal = CoverageGoal(tier, focus, priorities.flatMap { it.muscles }.toSet())
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            "WEEKLY VOLUME - SETS PER MUSCLE",
+            "WEEKLY VOLUME · SETS PER MUSCLE",
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -335,6 +379,15 @@ fun WeeklyVolumePanel(
     }
 }
 
+/** "Load set", not the enum's "Load_set". */
+private fun changeKindLabel(kind: PlanChange.Kind): String = when (kind) {
+    PlanChange.Kind.ADDED -> "Added"
+    PlanChange.Kind.REMOVED -> "Removed"
+    PlanChange.Kind.SWAPPED -> "Swapped"
+    PlanChange.Kind.ADJUSTED -> "Adjusted"
+    PlanChange.Kind.LOAD_SET -> "Load set"
+}
+
 /** One decimal, trimmed of a trailing .0 - "14" and "14.5", never "14.0000". */
 private fun trim1(value: Double): String {
     val rounded = (value * 10).toLong() / 10.0
@@ -368,7 +421,7 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
                 } else {
                     "Already fits your goal. " +
                         "${ProgramGenerator.joinWithAnd(stillShort.map { it.label.lowercase() }).replaceFirstChar { it.uppercase() }} " +
-                        "stay short this week: no room in this session. Another day would cover them."
+                        "stay short — another day would cover them."
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -398,7 +451,7 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    "${entry.sets} x ${entry.reps}",
+                    "${entry.sets}\u00D7${entry.reps}",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -426,7 +479,7 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
                     modifier = Modifier.weight(1f),
                 )
                 Text(
-                    "${entry.sets} x ${entry.reps}" + when (kind) {
+                    "${entry.sets}\u00D7${entry.reps}" + when (kind) {
                         PlanChange.Kind.ADDED -> "  · added"
                         PlanChange.Kind.SWAPPED -> "  · swapped in"
                         PlanChange.Kind.ADJUSTED, PlanChange.Kind.LOAD_SET -> "  · adjusted"
@@ -449,7 +502,7 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
         improvement.changes.forEach { change ->
             Column(Modifier.fillMaxWidth().padding(top = 6.dp)) {
                 Text(
-                    "${change.kind.name.lowercase().replaceFirstChar { it.uppercase() }} - ${change.exerciseName}",
+                    "${changeKindLabel(change.kind)} · ${change.exerciseName}",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.Ink,
@@ -467,6 +520,16 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
 /** Every note and reason a plan carries, for [SourcesPanel]. */
 internal fun planTexts(presets: List<PlannedPreset>): List<String> =
     presets.flatMap { preset -> listOf(preset.note) + preset.entries.flatMap { listOfNotNull(it.why, it.loadNote) } }
+
+/**
+ * The plan's day notes, each said once. The first day's note is the shared
+ * rest guidance plus the routine-wide shortfall lines, so a note that another
+ * note merely extends is dropped rather than printed twice.
+ */
+internal fun planNotes(presets: List<PlannedPreset>): List<String> {
+    val notes = presets.map { Evidence.split(it.note).first.trim() }.filter { it.isNotBlank() }.distinct()
+    return notes.filter { n -> notes.none { it != n && it.startsWith(n) } }
+}
 
 /**
  * The papers behind [texts], once each, at the foot of the screen: the
@@ -534,13 +597,13 @@ internal fun SplitPicker(
 /** What the picked split does with the week, in one line. */
 internal fun splitCaption(split: TrainingSplit, days: Int): String = when (split) {
     TrainingSplit.FULL_BODY ->
-        "Every muscle, every session. Fewest days, longest sessions."
+        "Every muscle, every workout. Fewest days, longest workouts."
     TrainingSplit.UPPER_LOWER ->
         "Upper, then lower, twice each. Every muscle twice a week."
     TrainingSplit.PUSH_PULL_LEGS -> if (days == 3) {
-        "Each muscle once a week. Fine for growth, but lifts get practised less often."
+        "Each muscle once a week. Fine for growth, less practice per exercise."
     } else {
-        "Push, pull, legs twice over. Short sessions, every muscle twice a week."
+        "Push, pull, legs twice over. Short workouts, every muscle twice a week."
     }
     TrainingSplit.UPPER_LOWER_PPL ->
         "Push, pull, legs, then upper and lower. Every muscle twice in five days."
@@ -555,7 +618,7 @@ internal fun volumeCaption(volume: VolumeLevel, focus: TrainingFocus): String {
     val range = ProgramRules.weeklySetTarget(volume, focus)
     val sets = "${range.start.toInt()}-${range.endInclusive.toInt()} sets per muscle a week"
     if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL) {
-        return "$sets at every level. Higher levels add movements."
+        return "$sets at every level. Higher levels add exercises."
     }
     return when (volume) {
         VolumeLevel.LOW -> "$sets. Enough for a first year."

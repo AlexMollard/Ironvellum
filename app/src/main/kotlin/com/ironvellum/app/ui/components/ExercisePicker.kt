@@ -102,7 +102,7 @@ fun ExercisePickerPanel(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "SELECT MOVEMENT",
+                "SELECT EXERCISE",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
@@ -144,11 +144,11 @@ fun ExercisePickerPanel(
                         // A single line of text measured 20dp, under the WCAG AA
                         // floor; the row's own padding supplies the visual height.
                         .heightIn(min = 24.dp)
-                        .semantics { contentDescription = "Search movements" },
+                        .semantics { contentDescription = "Search exercises" },
                 )
                 if (query.isEmpty()) {
                     Text(
-                        "search movements",
+                        "search exercises",
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.InkMuted,
                     )
@@ -225,8 +225,8 @@ fun ExercisePickerPanel(
             // Say WHY nothing matched: a blank query with the catalogue present
             // means the filters did it, not the words.
             Text(
-                if (query.isNotBlank()) "No movement matches \"$query\""
-                else "No movement matches the filters set",
+                if (query.isNotBlank()) "No exercise matches \"$query\""
+                else "No exercise matches the filters set",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(vertical = 12.dp),

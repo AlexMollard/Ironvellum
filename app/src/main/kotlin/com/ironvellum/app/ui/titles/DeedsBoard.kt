@@ -6,6 +6,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -194,13 +195,14 @@ fun DeedsBoard(
         item(key = "rail") {
             Row(
                 Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
+                verticalAlignment = Alignment.Top,
             ) {
-                // Rail scrolls horizontally; a fixed Row squeezed the last chips
-                // into one letter per line off the screen edge.
-                Row(
-                    Modifier.weight(1f).horizontalScroll(rememberScrollState()),
+                // The chips wrap instead of scrolling: at 360dp a scrolling
+                // rail clipped the last chip mid-word ("LOCKE") at the edge.
+                FlowRow(
+                    Modifier.weight(1f).padding(top = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
                 ) {
                     DeedFilter.entries.forEach { f ->
                         // No count in the label: every section header below
@@ -213,9 +215,8 @@ fun DeedsBoard(
                         )
                     }
                 }
-                // The toggle sits OUTSIDE the horizontal scroll: inside it, the
-                // glyph was parked past the last chip, off the screen edge,
-                // where nobody would find it.
+                // The toggle sits outside the chips so it never wraps away
+                // from the right edge, where it is expected.
                 Box(
                     Modifier
                         .sizeIn(minWidth = 48.dp, minHeight = 48.dp)

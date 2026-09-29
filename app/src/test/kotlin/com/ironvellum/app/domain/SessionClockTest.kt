@@ -74,7 +74,7 @@ class SessionClockTest {
             PlannedEntry(exerciseName = "Bicep Curl", sets = 2, reps = 12, targetWeightKg = null),
         )
         // 3 × 340 + 2 × 130 = 1280 s → 22 min.
-        assertEquals("2 MOVES · 5 SETS · ~22 MIN", SessionClock.planLine(entries, TrainingFocus.STRENGTH))
+        assertEquals("2 EXERCISES · 5 SETS · ~22 MIN", SessionClock.planLine(entries, TrainingFocus.STRENGTH))
     }
 
     @Test
@@ -125,7 +125,7 @@ class SessionClockTest {
         // An even count takes the mean of the middle pair.
         assertEquals((235 + 265) / 2, SessionClock.medianPace(history.take(2)))
         val day = listOf(PlannedEntry(exerciseName = "Deadlift", sets = 18, reps = 5, targetWeightKg = null))
-        assertEquals("1 MOVES · 18 SETS · ~75 MIN", SessionClock.planLine(day, TrainingFocus.STRENGTH, 250))
+        assertEquals("1 EXERCISE · 18 SETS · ~75 MIN", SessionClock.planLine(day, TrainingFocus.STRENGTH, 250))
     }
 
     @Test

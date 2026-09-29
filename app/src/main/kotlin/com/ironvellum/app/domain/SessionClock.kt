@@ -123,11 +123,13 @@ object SessionClock {
         if (remainingSeconds <= 0) "EST ${minutes(totalSeconds)} MIN"
         else "EST ${minutes(totalSeconds)} MIN · ~${minutes(remainingSeconds)} LEFT"
 
-    /** "5 MOVES · 20 SETS · ~55 MIN" for a preset before it starts; [paceSeconds] as in [setSeconds]. */
+    /** "5 EXERCISES · 20 SETS · ~55 MIN" for a preset before it starts; [paceSeconds] as in [setSeconds]. */
     fun planLine(entries: List<PlannedEntry>, focus: TrainingFocus, paceSeconds: Int? = null): String {
         val sets = entries.sumOf { it.sets }
         val seconds = paceSeconds?.let { sets * it } ?: ProgramRules.sessionSeconds(entries, focus)
-        return "${entries.size} MOVES · $sets SETS · ~${minutes(seconds)} MIN"
+        val exercises = if (entries.size == 1) "EXERCISE" else "EXERCISES"
+        val setWord = if (sets == 1) "SET" else "SETS"
+        return "${entries.size} $exercises · $sets $setWord · ~${minutes(seconds)} MIN"
     }
 
     /** "4:07" under an hour, "1:04:07" past it. A clock set backwards reads 0:00. */

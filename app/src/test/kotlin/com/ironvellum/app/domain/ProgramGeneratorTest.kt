@@ -368,7 +368,7 @@ class ProgramGeneratorTest {
         }
         assertTrue(
             "note carries no rest guidance: ${plan.presets.first().note}",
-            plan.presets.first().note.contains("3-5 min") && plan.presets.first().note.contains("reps in reserve"),
+            plan.presets.first().note.contains("3-5 min") && plan.presets.first().note.contains("short of failure"),
         )
         // Small pool: linear progression on few lifts (ACSM 2009).
         assertTrue(
@@ -1043,12 +1043,12 @@ class ProgramGeneratorTest {
         val range = 5.0..15.0
         val everyHelperLight = ProgramRules.TRACKED.associateWith { 5.0 } + ProgramRules.HELPERS.associateWith { 0.0 }
         assertEquals(
-            "", ProgramGenerator.shortfallNote(everyHelperLight, range, "3 days leave", "Add a day to reach it."),
+            "", ProgramGenerator.shortfallNote(everyHelperLight, range, "add a day to cover them."),
         )
         val note = ProgramGenerator.shortfallNote(
-            everyHelperLight + (Muscle.QUADS to 3.0), range, "3 days leave", "Add a day to reach it.",
+            everyHelperLight + (Muscle.QUADS to 3.0), range, "add a day to cover them.",
         )
-        assertTrue(note, "quads short" in note)
+        assertTrue(note, "Short on quads" in note)
         ProgramRules.HELPERS.forEach { helper ->
             assertFalse("light ${helper.label} named: $note", helper.label.lowercase() in note)
         }
@@ -1386,7 +1386,7 @@ class ProgramGeneratorTest {
         assertTrue(
             "the lateral raise left without a reason line: ${improvement.changes}",
             improvement.changes.any {
-                it.detail.contains("compound & skill only") &&
+                it.detail.contains("compound & skill only", ignoreCase = true) &&
                     (it.exerciseName == "Lateral Raise" || it.detail.contains("Lateral Raise"))
             },
         )
@@ -1537,7 +1537,7 @@ class ProgramGeneratorTest {
         val after = improvement.after.entries.map { it.exerciseName }
         assertEquals("kept $after", 5, after.size)
         assertEquals("the lead lift was trimmed: $after", "Pull-up", after.first())
-        val removed = improvement.changes.filter { it.kind == PlanChange.Kind.REMOVED && "5-movement cap" in it.detail }
+        val removed = improvement.changes.filter { it.kind == PlanChange.Kind.REMOVED && "5-exercise cap" in it.detail }
         assertEquals("cap removals ${improvement.changes}", 2, removed.size)
         removed.forEach { change ->
             assertFalse("${change.exerciseName} reported removed but kept", change.exerciseName in after)

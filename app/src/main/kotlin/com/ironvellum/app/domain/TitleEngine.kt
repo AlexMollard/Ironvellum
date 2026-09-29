@@ -345,7 +345,7 @@ object Titles {
         ),
         TitleDef(
             "six_gate_week",
-            "Six-Session Week",
+            "Six-Workout Week",
             "Complete 6 workouts in a single week.",
             TitleRule.WorkoutsInWeek(6),
             TitleRarity.Epic,
@@ -440,16 +440,16 @@ object Titles {
         TitleDef("thirty_five_paths", "Thirty-Five Paths", "Try 35 different activities.", TitleRule.DistinctActivities(35), TitleRarity.Epic),
         TitleDef("walker_of_all_roads", "Walker of All Roads", "Try all 43 activities the catalogue offers. Nothing is foreign to you.", TitleRule.DistinctActivities(43), TitleRarity.Masterwork),
         // Single long runs
-        TitleDef("five_k_razor", "Five-K Razor", "Log a 5 km run in a single session.", TitleRule.LongestRun(5.0), TitleRarity.Common),
-        TitleDef("ten_k_hunter", "Ten-K Lifter", "Log a 10 km run in a single session.", TitleRule.LongestRun(10.0), TitleRarity.Common),
-        TitleDef("half_gate_marathon", "Half Marathon", "Log a 21.1 km run in a single session.", TitleRule.LongestRun(21.1), TitleRarity.Rare),
-        TitleDef("gate_marathon", "Marathon", "Log a 42.2 km run in a single session.", TitleRule.LongestRun(42.2), TitleRarity.Epic),
-        TitleDef("shadow_ultra", "Ultra", "Log a 100 km run in a single session. The road was never this long.", TitleRule.LongestRun(100.0), TitleRarity.Masterwork),
+        TitleDef("five_k_razor", "Five-K Razor", "Log a 5 km run in one go.", TitleRule.LongestRun(5.0), TitleRarity.Common),
+        TitleDef("ten_k_hunter", "Ten-K Lifter", "Log a 10 km run in one go.", TitleRule.LongestRun(10.0), TitleRarity.Common),
+        TitleDef("half_gate_marathon", "Half Marathon", "Log a 21.1 km run in one go.", TitleRule.LongestRun(21.1), TitleRarity.Rare),
+        TitleDef("gate_marathon", "Marathon", "Log a 42.2 km run in one go.", TitleRule.LongestRun(42.2), TitleRarity.Epic),
+        TitleDef("shadow_ultra", "Ultra", "Log a 100 km run in one go. The road was never this long.", TitleRule.LongestRun(100.0), TitleRarity.Masterwork),
         // Single long swims
-        TitleDef("first_water", "First Water", "Log a 1 km swim in a single session.", TitleRule.LongestSwim(1.0), TitleRarity.Common),
-        TitleDef("deep_current", "Deep Current", "Log a 2.5 km swim in a single session.", TitleRule.LongestSwim(2.5), TitleRarity.Rare),
-        TitleDef("abyss_lapper", "Abyss Lapper", "Log a 5 km swim in a single session.", TitleRule.LongestSwim(5.0), TitleRarity.Epic),
-        TitleDef("leviathan_swimmer", "Leviathan Swimmer", "Log a 10 km swim in a single session.", TitleRule.LongestSwim(10.0), TitleRarity.Masterwork),
+        TitleDef("first_water", "First Water", "Log a 1 km swim in one go.", TitleRule.LongestSwim(1.0), TitleRarity.Common),
+        TitleDef("deep_current", "Deep Current", "Log a 2.5 km swim in one go.", TitleRule.LongestSwim(2.5), TitleRarity.Rare),
+        TitleDef("abyss_lapper", "Abyss Lapper", "Log a 5 km swim in one go.", TitleRule.LongestSwim(5.0), TitleRarity.Epic),
+        TitleDef("leviathan_swimmer", "Leviathan Swimmer", "Log a 10 km swim in one go.", TitleRule.LongestSwim(10.0), TitleRarity.Masterwork),
         // Hardest climbing grade
         TitleDef("first_send", "First Send", "Send a route graded V1 or harder.", TitleRule.HardestGrade("V1"), TitleRarity.Common),
         TitleDef("chalk_dusted", "Chalk Dusted", "Send a route graded V2 or harder.", TitleRule.HardestGrade("V2"), TitleRarity.Common),
@@ -457,10 +457,10 @@ object Titles {
         TitleDef("vertical_sovereign", "Vertical Master", "Send a route graded V8 or harder.", TitleRule.HardestGrade("V8"), TitleRarity.Epic),
         TitleDef("gravity_defiant", "Gravity Defiant", "Send a route graded V11 or harder. Walls kneel.", TitleRule.HardestGrade("V11"), TitleRarity.Masterwork),
         // Sport sessions
-        TitleDef("first_arena", "First Arena", "Complete a session with sport play in it.", TitleRule.SportSessions(1), TitleRarity.Common),
-        TitleDef("arena_regular", "Arena Regular", "Complete 10 sessions with sport play in them.", TitleRule.SportSessions(10), TitleRarity.Common),
-        TitleDef("field_commander", "Field Commander", "Complete 50 sessions with sport play in them.", TitleRule.SportSessions(50), TitleRarity.Rare),
-        TitleDef("champion_of_games", "Champion of Games", "Complete 100 sessions with sport play in them.", TitleRule.SportSessions(100), TitleRarity.Epic),
+        TitleDef("first_arena", "First Arena", "Complete a workout with sport play in it.", TitleRule.SportSessions(1), TitleRarity.Common),
+        TitleDef("arena_regular", "Arena Regular", "Complete 10 workouts with sport play in them.", TitleRule.SportSessions(10), TitleRarity.Common),
+        TitleDef("field_commander", "Field Commander", "Complete 50 workouts with sport play in them.", TitleRule.SportSessions(50), TitleRarity.Rare),
+        TitleDef("champion_of_games", "Champion of Games", "Complete 100 workouts with sport play in them.", TitleRule.SportSessions(100), TitleRarity.Epic),
         // ---- Strength milestones ----
         // Load thresholds are estimated-1RM multiples of bodyweight, read per
         // sex (male / female). Female cells come from the ExRx-derived
@@ -476,7 +476,7 @@ object Titles {
             "Squat your own bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("back squat", "front squat"), male = 1.0, female = 0.6),
             TitleRarity.Common,
-            descriptionFemale = "Squat 0.6x your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Squat 0.6× your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "bench_mark",
@@ -484,7 +484,7 @@ object Titles {
             "Bench press your bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("bench press", "incline bench press", "close-grip bench press"), male = 1.0, female = 0.5),
             TitleRarity.Rare,
-            descriptionFemale = "Bench press 0.5x your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Bench press 0.5× your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "iron_wings",
@@ -492,7 +492,7 @@ object Titles {
             "Weight a pull-up or chin-up with half your bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("pull-up", "chin-up", "archer pull-up"), male = 0.5, female = 0.3),
             TitleRarity.Rare,
-            descriptionFemale = "Weight a pull-up or chin-up with 0.3x your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Weight a pull-up or chin-up with 0.3× your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "crown_press",
@@ -500,7 +500,7 @@ object Titles {
             "Overhead press three quarters of your bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("overhead press", "push press"), male = 0.75, female = 0.35),
             TitleRarity.Rare,
-            descriptionFemale = "Overhead press 0.35x your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Overhead press 0.35× your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "throne_of_iron",
@@ -508,7 +508,7 @@ object Titles {
             "Squat double bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("back squat", "front squat"), male = 2.0, female = 1.25),
             TitleRarity.Epic,
-            descriptionFemale = "Squat 1.25x your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Squat 1.25× your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "titans_pull",
@@ -516,7 +516,7 @@ object Titles {
             "Deadlift double bodyweight for an estimated 1RM.",
             TitleRule.LiftMultiple(setOf("deadlift", "sumo deadlift"), male = 2.0, female = 1.4),
             TitleRarity.Epic,
-            descriptionFemale = "Deadlift 1.4x your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Deadlift 1.4× your bodyweight for an estimated 1RM.",
         ),
         TitleDef(
             "atlas",
@@ -524,7 +524,7 @@ object Titles {
             "Deadlift triple bodyweight for an estimated 1RM. The sky holds itself up.",
             TitleRule.LiftMultiple(setOf("deadlift", "sumo deadlift"), male = 3.0, female = 2.25),
             TitleRarity.Masterwork,
-            descriptionFemale = "Deadlift 2.25x your bodyweight for an estimated 1RM. The sky holds itself up.",
+            descriptionFemale = "Deadlift 2.25× your bodyweight for an estimated 1RM. The sky holds itself up.",
         ),
         // Rep-volume feats. The counts are deliberately the same for both
         // sexes: these are submaximal endurance feats of bodyweight work, and
@@ -533,21 +533,21 @@ object Titles {
         TitleDef(
             "century_of_rungs",
             "Century of Rungs",
-            "Log 100 pull-ups or chin-ups in a single session.",
+            "Log 100 pull-ups or chin-ups in one workout.",
             TitleRule.SessionReps(setOf("pull-up", "chin-up"), count = 100),
             TitleRarity.Rare,
         ),
         TitleDef(
             "two_hundred_suns",
             "Two Hundred Suns",
-            "Log 200 push-ups in a single session.",
+            "Log 200 push-ups in one workout.",
             TitleRule.SessionReps(setOf("push-up"), count = 200),
             TitleRarity.Rare,
         ),
         TitleDef(
             "unshaking",
             "The Unshaking",
-            "Hold a single static position for 240 seconds without letting go.",
+            "Hold one static position for 240 s without letting go.",
             TitleRule.LongestHold(240),
             TitleRarity.Rare,
         ),

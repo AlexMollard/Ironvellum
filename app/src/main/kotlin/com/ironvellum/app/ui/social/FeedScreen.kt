@@ -313,6 +313,7 @@ class FeedViewModel(
 @Composable
 fun FeedScreen(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
+    onSignIn: () -> Unit,
     viewModel: FeedViewModel = viewModel(
         factory = viewModelFactory {
             initializer { FeedViewModel(ironvellumCloudSync(), ironvellumAccount(), ironvellumRepository()) }
@@ -343,7 +344,7 @@ fun FeedScreen(
         // above it was decoration.
         if (cloudConfigured && ui.signedIn && ui.entries.isNotEmpty()) {
             Text(
-                "${ui.entries.size} sessions witnessed",
+                "${ui.entries.size} ${if (ui.entries.size == 1) "workout" else "workouts"} witnessed",
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -354,7 +355,7 @@ fun FeedScreen(
         val err = ui.error
         when {
             !cloudConfigured -> NotConfigured()
-            !ui.signedIn -> NotSignedIn()
+            !ui.signedIn -> NotSignedIn(onSignIn)
             ui.loading && ui.entries.isEmpty() -> LoadingPanel()
             ui.entries.isEmpty() && err != null -> ErrorPanel(err, onRetry = { viewModel.load(force = true) })
             ui.entries.isEmpty() -> EmptyFeed(onRefresh = { viewModel.load(force = true) })
@@ -362,7 +363,7 @@ fun FeedScreen(
                 // A failed refresh must not hide behind yesterday's rows: the
                 // banner rides above the list, rows stay in place.
                 if (ui.error != null) {
-                    InlineErrorBanner("The newest fetch failed — these sessions are the last synced board: ${ui.error}")
+                    InlineErrorBanner("The newest fetch failed — these workouts are the last synced board: ${ui.error}")
                     Spacer(Modifier.height(10.dp))
                 }
                 ui.allyError?.let {
@@ -408,7 +409,7 @@ private fun NotConfigured() {
 }
 
 @Composable
-private fun NotSignedIn() {
+private fun NotSignedIn(onSignIn: () -> Unit) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
         Text(
             "SIGN IN TO WATCH THE FRONTLINE",
@@ -420,10 +421,12 @@ private fun NotSignedIn() {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "Sign in on the ALLIES tab to join the watch.",
+            "Sign in to see your allies' training.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
+        Spacer(Modifier.height(12.dp))
+        IronvellumButton("Sign in", onClick = onSignIn, modifier = Modifier.fillMaxWidth())
     }
 }
 
@@ -461,7 +464,7 @@ private fun EmptyFeed(onRefresh: () -> Unit) {
         )
         Spacer(Modifier.height(10.dp))
         Text(
-            "No sessions are public yet. Make yours visible from the account screen's visibility setting, then be the first name on the board.",
+            "No public workouts yet. Set yours to public on the ALLIES tab and be first on the board.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -531,7 +534,7 @@ private fun Feed(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            "Every lifter's public sessions, newest first",
+            "Every lifter's public workouts, newest first",
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -595,7 +598,7 @@ private fun Feed(
         if (ui.pagingError != null) {
             item(key = "paging-error") {
                 Text(
-                    "Older sessions slipped away — keep pulling to try again.",
+                    "Older workouts slipped away — keep pulling to try again.",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.DangerRed,
@@ -608,7 +611,7 @@ private fun Feed(
         if (ui.loadingMore) {
             item(key = "loading-more") {
                 Text(
-                    "Drawing in older sessions…",
+                    "Drawing in older workouts…",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -996,12 +999,13 @@ private fun MovementLine(entry: FeedEntry) {
     // load-bearing set exists, so a run no longer reports "1 x BW" and this
     // screen needs no cardio special-case of its own. A run's substance is its
     // distance, a climb's is its grade — headline whichever the hunt has.
-    val headline = entry.bestSet?.takeIf { it.isNotBlank() }?.let { "BEST $it" }
+    // The view writes "8 x 100.0 kg"; the card shows the app's own "8×100.0 kg".
+    val headline = entry.bestSet?.takeIf { it.isNotBlank() }?.let { "BEST ${it.replace(" x ", "×")}" }
         ?: entry.hardestGrade?.takeIf { it.isNotBlank() }?.let { "HARDEST $it" }
         ?: entry.distanceM?.takeIf { it > 0 }?.let { "${formatDistance(it)} COVERED" }
     val meta = buildList {
         if (entry.movementCount > 0) {
-            add("${entry.movementCount} ${if (entry.movementCount == 1) "MOVEMENT" else "MOVEMENTS"}")
+            add("${entry.movementCount} ${if (entry.movementCount == 1) "EXERCISE" else "EXERCISES"}")
         }
         entry.durationSec?.takeIf { it >= 60 }?.let { add(formatDuration(it)) }
     }
@@ -1069,7 +1073,7 @@ private fun MovementLine(entry: FeedEntry) {
     if (meta.isNotEmpty()) {
         Spacer(Modifier.height(4.dp))
         Text(
-            meta.joinToString("  ·  "),
+            meta.joinToString(" · "),
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             // Rune is the border token (#2A2D35): as text on Vault it was

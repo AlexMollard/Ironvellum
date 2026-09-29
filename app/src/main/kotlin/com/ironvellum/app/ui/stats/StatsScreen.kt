@@ -470,7 +470,7 @@ fun StatsScreen(
                 if (ui.sessions.isEmpty()) {
                     InkPanel(Modifier.fillMaxWidth()) {
                         MetricLabel("TRAINING")
-                        ChartCaption("Conquer a campaign to draw these lines.")
+                        ChartCaption("Finish a workout to draw these lines.")
                     }
                 } else {
                     InkPanel(Modifier.fillMaxWidth()) {
@@ -479,14 +479,14 @@ fun StatsScreen(
                         val totalXp = remember(ui.sessions) { ui.sessions.sumOf { it.xpAwarded } }
                         if (cumulative.size >= 2) {
                             TrendChart(cumulative, IronvellumColors.SystemGreen)
-                            ChartCaption("$totalXp XP across ${plural(ui.sessions.size, "campaign", "campaigns")}")
+                            ChartCaption("$totalXp XP across ${ui.sessions.size} ${plural(ui.sessions.size, "workout", "workouts")}")
                         } else {
-                            ChartCaption("One more campaign draws the line.")
+                            ChartCaption("One more workout draws the line.")
                         }
                     }
                     Spacer(Modifier.height(10.dp))
                     InkPanel(Modifier.fillMaxWidth()) {
-                        MetricLabel("STRENGTH PER CAMPAIGN")
+                        MetricLabel("STRENGTH PER WORKOUT")
                         // 0 means "not scored" (no bodyweight existed yet), not a
                         // collapse in strength — plotting it dropped the line to
                         // the floor. And TrendChart draws no line below 2 points.
@@ -494,16 +494,16 @@ fun StatsScreen(
                         if (scores.size >= 2) {
                             TrendChart(scores)
                             ChartCaption(
-                                "Best ${scores.max().toInt()} · ${plural(scores.size, "campaign", "campaigns")} · body-scaled (heavier lifters must move more)",
+                                "Best ${scores.max().toInt()} · ${scores.size} ${plural(scores.size, "workout", "workouts")} · scaled to bodyweight",
                             )
                         } else if (scores.size == 1) {
                             // Scored, just not plottable yet. The old copy said
                             // "log bodyweight" at a lifter who plainly had.
                             ChartCaption(
-                                "Best ${scores.first().toInt()} · one more scored campaign draws the line.",
+                                "Best ${scores.first().toInt()} · one more scored workout draws the line.",
                             )
                         } else {
-                            ChartCaption("Log bodyweight to score these campaigns.")
+                            ChartCaption("Log bodyweight to score these workouts.")
                         }
                     }
                 }
@@ -1081,7 +1081,7 @@ private fun ActivityTab(
                 MetricLabel("DAILY")
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "No activity synced yet — connect Health Connect in Settings.",
+                    "No daily data synced yet — connect Health Connect in Settings.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -1128,7 +1128,7 @@ private fun ActivityTab(
         Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             ActivityTile("BEST DAY", fmtInt(bestDay.steps), bestDay.date.toString(), Modifier.weight(1f))
-            ActivityTile("LIFETIME", fmtInt(lifetime), "${days.size} days tracked", Modifier.weight(1f))
+            ActivityTile("LIFETIME", fmtInt(lifetime), "${days.size} ${plural(days.size, "day", "days")} tracked", Modifier.weight(1f))
         }
 
         Spacer(Modifier.height(14.dp))
@@ -1280,7 +1280,7 @@ private fun EnergySection(
                 )
             }
         } else {
-            MetricValue("—", "no steps or sessions logged today")
+            MetricValue("—", "no steps or workouts logged today")
         }
 
         Spacer(Modifier.height(10.dp))

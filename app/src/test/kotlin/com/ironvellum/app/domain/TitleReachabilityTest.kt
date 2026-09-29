@@ -320,7 +320,7 @@ class TitleReachabilityTest {
             assertEquals(def.description, def.describeFor(Sex.MALE))
             // The prose carries a number, so it can disagree with the rule it
             // describes. Read it back and hold the two together.
-            val stated = Regex("""([0-9]*\.?[0-9]+)x""").find(female!!)?.groupValues?.get(1)?.toDouble()
+            val stated = Regex("""([0-9]*\.?[0-9]+)[x×]""").find(female!!)?.groupValues?.get(1)?.toDouble()
             assertEquals(
                 "${def.id} promises a bar the rule does not enforce",
                 rule.female,

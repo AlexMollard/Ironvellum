@@ -17,7 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.ui.graphics.Color
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -180,7 +180,7 @@ class ProgramBuilderViewModel(
             maxExercises.value = saved.maxExercises
         }
         // Templates exist only for strength and hypertrophy; a saved or
-        // default Skills / All-round goal would match no template.
+        // default Skills / Mixed goal would match no template.
         if (mode == "template" && focus.value != TrainingFocus.STRENGTH && focus.value != TrainingFocus.MUSCLE) {
             focus.value = TrainingFocus.MUSCLE
         }
@@ -279,8 +279,8 @@ class ProgramBuilderViewModel(
                             isolationWouldFill ->
                                 "Only isolation work would fill the gaps. Turn off Compound & skill only to add it."
                             sessionKind.value == SessionKind.AUTO ->
-                                "Your week already reaches the target on every muscle. " +
-                                    "Pick Full body, Upper or Lower for an extra session."
+                                "Your routine already reaches the target on every muscle. " +
+                                    "Pick Full body, Upper or Lower for an extra workout."
                             else -> "The catalogue cannot fill this workout with your equipment."
                         }
                     }
@@ -298,7 +298,7 @@ class ProgramBuilderViewModel(
                     if (target == null) {
                         // Thrown, not set: the fold below owns the error line,
                         // and a returned null would clear it.
-                        throw IllegalArgumentException("Pick a preset to improve.")
+                        throw IllegalArgumentException("Pick a workout to improve.")
                     } else {
                         val rest = all.filterIndexed { i, _ -> i != index }
                         _improvement.value = ProgramGenerator.improve(
@@ -383,8 +383,8 @@ class ProgramBuilderViewModel(
             (focus.value == TrainingFocus.STRENGTH || focus.value == TrainingFocus.MUSCLE)
 
     fun progressionLine(): String = when (focus.value) {
-        TrainingFocus.STRENGTH -> "Progression switched to linear progression for strength."
-        else -> "Progression switched to double progression for hypertrophy."
+        TrainingFocus.STRENGTH -> "Strength goal: load goes up when you hit your reps."
+        else -> "Muscle goal: reps go up first, then load."
     }
 
     fun addPresets(onDone: () -> Unit) {
@@ -396,7 +396,7 @@ class ProgramBuilderViewModel(
                 alignProgressionMode()
             }.fold(
                 onSuccess = { _error.value = null; onDone() },
-                onFailure = { _error.value = "Could not add the presets: ${it.message}. Nothing was written." },
+                onFailure = { _error.value = "Could not add the workouts: ${it.message}. Nothing was written." },
             )
         }
     }
@@ -410,7 +410,7 @@ class ProgramBuilderViewModel(
                 alignProgressionMode()
             }.fold(
                 onSuccess = { _error.value = null; onDone() },
-                onFailure = { _error.value = "Could not replace the presets: ${it.message}. Nothing was written." },
+                onFailure = { _error.value = "Could not replace the routine: ${it.message}. Nothing was written." },
             )
         }
     }
@@ -535,16 +535,16 @@ fun ProgramBuilderScreen(
             Text(
                 when (mode) {
                     "template" -> "FROM A TEMPLATE"
-                    "week" -> "GENERATE A WEEK"
+                    "week" -> "GENERATE A ROUTINE"
                     "session" -> "GENERATE ONE WORKOUT"
-                    else -> "IMPROVE A PRESET"
+                    else -> "IMPROVE A WORKOUT"
                 },
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = IronvellumTracking.InlineLabel,
             )
-            // The same BACK chip the Weekly Coverage / Movement Records
+            // The same BACK chip the Weekly Coverage / Exercise Records
             // screens use; system back alone was undiscoverable.
             Text(
                 "BACK",
@@ -563,7 +563,7 @@ fun ProgramBuilderScreen(
         QuestionPanel("WHAT YOU ARE CHASING") {
             InkSegmented(
                 // Templates are hand-authored for strength and hypertrophy
-                // only; offering Skills / All-round here composed questions
+                // only; offering Skills / Mixed here composed questions
                 // that matched no template.
                 options = if (mode == "template") {
                     listOf(
@@ -575,7 +575,7 @@ fun ProgramBuilderScreen(
                         TrainingFocus.STRENGTH to "Power",
                         TrainingFocus.MUSCLE to "Muscle",
                         TrainingFocus.SKILL to "Skills",
-                        TrainingFocus.GENERAL to "All-round",
+                        TrainingFocus.GENERAL to "Mixed",
                     )
                 },
                 selected = focus,
@@ -584,7 +584,7 @@ fun ProgramBuilderScreen(
             Spacer(Modifier.height(8.dp))
             Caption(
                 when (focus) {
-                    TrainingFocus.STRENGTH -> "Low reps, heavy moves. Bigger numbers on the main lifts."
+                    TrainingFocus.STRENGTH -> "Low reps, heavy load. Bigger numbers on the main exercises."
                     TrainingFocus.MUSCLE -> "Higher volume, moderate load. Size comes before bragging rights."
                     TrainingFocus.SKILL -> "Handstands, levers, the planche. Practice over pump."
                     TrainingFocus.GENERAL -> "A balanced mix: a bit stronger, a bit bigger, nothing neglected."
@@ -618,7 +618,7 @@ fun ProgramBuilderScreen(
             GearPicker(equipment = equipment, onChange = { viewModel.equipment.value = it })
         }
 
-        QuestionPanel("MOVEMENTS") {
+        QuestionPanel("EXERCISES") {
             // The same drawn toggle cell as the gear items: gold when on.
             PickCell(
                 label = "Compound & skill only",
@@ -668,7 +668,7 @@ fun ProgramBuilderScreen(
         }
 
         if (mode != "template") {
-            QuestionPanel("MUSCLES TO PRIORITISE - PICK UP TO 3") {
+            QuestionPanel("MUSCLES TO PRIORITISE · PICK UP TO 3") {
                 MuscleAreaChips(
                     selectedAreas = priorities,
                     onToggle = viewModel::togglePriority,
@@ -694,7 +694,7 @@ fun ProgramBuilderScreen(
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                Caption("\"What my week is missing\" reads the rest of your week and fills the gap.")
+                Caption("\"What my week is missing\" reads the rest of your routine and fills the gap.")
             }
             QuestionPanel("SCHEDULE IT ON") {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
@@ -719,7 +719,7 @@ fun ProgramBuilderScreen(
             SectionHeader("Templates")
             val templates = viewModel.matchingTemplates()
             if (templates.isEmpty()) {
-                Caption("No hand-authored template for this goal - generate a week instead.")
+                Caption("No hand-authored template for this goal — generate a routine instead.")
             }
             templates.forEach { template ->
                 val selected = template.id == templateId
@@ -757,7 +757,7 @@ fun ProgramBuilderScreen(
         }
 
         if (mode == "improve") {
-            SectionHeader("Which preset")
+            SectionHeader("Which workout")
             presets.forEach { preset ->
                 val selected = preset.id == (selectedPresetId ?: presetId)
                 InkPanel(
@@ -781,7 +781,7 @@ fun ProgramBuilderScreen(
         }
 
         Spacer(Modifier.height(8.dp))
-        Caption("Profile sex: ${if (sex == Sex.MALE) "male" else "female"}. ${Evidence.split(ProgramRules.SEX_NOTE).first}")
+        Caption(Evidence.split(ProgramRules.SEX_NOTE).first)
 
         if (error != null) {
             Spacer(Modifier.height(8.dp))
@@ -797,7 +797,7 @@ fun ProgramBuilderScreen(
         if (mode == "improve") {
             val current = improvement
             if (current == null) {
-                Caption("Reading your preset against the evidence...")
+                Caption("Reading your workout against the evidence…")
             } else {
                 // The rest of the week feeds the volume read but is NOT
                 // listed: on a five-day split it buried the diff under every
@@ -809,7 +809,7 @@ fun ProgramBuilderScreen(
                 BeforeAfter(current, stillShort = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < floor })
                 Spacer(Modifier.height(10.dp))
                 if (others.isNotEmpty()) {
-                    val noun = if (others.size == 1) "preset" else "presets"
+                    val noun = if (others.size == 1) "workout" else "workouts"
                     Caption("Weekly volume includes your ${others.size} other $noun.")
                 }
                 WeeklyVolumePanel(week, tier, focus, priorities)
@@ -817,7 +817,7 @@ fun ProgramBuilderScreen(
         } else {
             val current = plan
             if (current == null || current.presets.isEmpty()) {
-                Caption(if (catalogue.isEmpty()) "Consulting the catalogue..." else "Nothing to show yet.")
+                Caption(if (catalogue.isEmpty()) "Consulting the catalogue…" else "Nothing to show yet.")
             } else {
                 current.presets.forEachIndexed { presetIndex, preset ->
                     ProposedDay(
@@ -847,7 +847,7 @@ fun ProgramBuilderScreen(
                 WeeklyVolumePanel(volumePresets, tier, focus, priorities)
                 if (mode == "session" && presets.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
-                    val noun = if (presets.size == 1) "preset" else "presets"
+                    val noun = if (presets.size == 1) "workout" else "workouts"
                     Caption("Weekly volume includes your ${presets.size} existing $noun.")
                 }
             }
@@ -858,14 +858,14 @@ fun ProgramBuilderScreen(
             "week", "template" -> {
                 Column(Modifier.fillMaxWidth()) {
                     IronvellumButton(
-                        label = "Add to my presets",
+                        label = "Add to my routine",
                         onClick = { viewModel.addPresets(onDone) },
                         enabled = plan != null && plan!!.presets.isNotEmpty(),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(10.dp))
                     IronvellumButton(
-                        label = "Replace my presets",
+                        label = "Replace my routine",
                         onClick = { confirmReplace = true },
                         enabled = plan != null && plan!!.presets.isNotEmpty(),
                         quiet = true,
@@ -925,23 +925,27 @@ fun ProgramBuilderScreen(
             // Material's dialog container is a 28dp rounded rect - the most
             // obviously stock surface in the app. Give it the ink shape.
             shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmReplace = false },
-            title = { Text("Replace your presets?") },
+            title = { Text("Replace your routine?") },
             text = {
                 Text(
-                    "All ${presets.size} of your current presets will be deleted and the generated " +
-                        "week takes their place. Your workout history is untouched - completed sessions stay." +
+                    "Your ${presets.size} current ${if (presets.size == 1) "workout" else "workouts"} will be deleted " +
+                        "and the generated routine takes their place. Your workout history is untouched." +
                         if (viewModel.switchesProgression()) " " + viewModel.progressionLine() else "",
                 )
             },
             confirmButton = {
-                TextButton(onClick = {
-                    confirmReplace = false
-                    viewModel.replacePresets(onDone)
-                }) { Text("Replace", color = IronvellumColors.DangerRed) }
+                IronvellumButton(
+                    label = "Replace",
+                    onClick = {
+                        confirmReplace = false
+                        viewModel.replacePresets(onDone)
+                    },
+                )
             },
             dismissButton = {
-                TextButton(onClick = { confirmReplace = false }) { Text("Keep mine") }
+                IronvellumButton(label = "Keep mine", onClick = { confirmReplace = false }, quiet = true)
             },
         )
     }

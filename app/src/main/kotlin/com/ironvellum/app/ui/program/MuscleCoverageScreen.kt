@@ -215,7 +215,7 @@ fun MuscleCoverageScreen(
             InkPanel(Modifier.fillMaxWidth()) {
                 Text(
                     if (view == CoverageView.PLANNED) {
-                        "No presets forged yet. Build a training week and it will be mapped here."
+                        "No workouts yet. Build a routine and it will be mapped here."
                     } else {
                         "Nothing logged in the last 7 days."
                     },
@@ -250,7 +250,7 @@ fun MuscleCoverageScreen(
         )
         if (unattributed > 0) {
             Text(
-                "$unattributed sets not counted: no muscle data for those moves.",
+                "$unattributed sets not counted: no muscle data for those exercises.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -264,7 +264,7 @@ fun MuscleCoverageScreen(
         Spacer(Modifier.height(12.dp))
         SectionHeader("Helper muscles")
         Text(
-            "Mostly trained by your other lifts. Under " +
+            "Mostly trained by your other exercises. Under " +
                 "${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week reads light, not short.",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -275,7 +275,7 @@ fun MuscleCoverageScreen(
         if (underCount > 0) {
             Spacer(Modifier.height(12.dp))
             Text(
-                "$underCount muscles short this week.",
+                "$underCount ${if (underCount == 1) "muscle" else "muscles"} short this week.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

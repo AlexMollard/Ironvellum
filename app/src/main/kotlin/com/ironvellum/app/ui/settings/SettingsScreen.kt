@@ -374,7 +374,7 @@ class SettingsViewModel(
             _import.value = repo.importArchive(json).fold(
                 { r ->
                     ImportUi(
-                        summary = "restored ${r.presets} presets · ${r.sessions} sessions · " +
+                        summary = "restored ${r.presets} routine workouts · ${r.sessions} logged workouts · " +
                             "${r.sets} sets · ${r.stats} readings · ${r.titles} titles · " +
                             "${r.skills} skill logs · ${r.healthDays} health days",
                         // surface the first problem plus how many more, not silence
@@ -717,7 +717,7 @@ fun SettingsScreen(
             onDismissRequest = { confirmImport = false },
             title = { Text("Restore this archive?") },
             text = {
-                Text("Restoring replaces every preset, session, reading, title and skill log currently on this device. This cannot be undone.")
+                Text("Replaces your routine, workout log, readings, titles and skill logs on this device. This cannot be undone.")
             },
             confirmButton = {
                 TextButton(onClick = {
@@ -812,9 +812,8 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "Height powers BMI, FFMI and step estimates. Sex picks the body-fat formula " +
-                    "and normalises the strength score, so the shared board ranks the feat " +
-                    "rather than the physiology.",
+                "Height drives BMI and step estimates. Sex picks the body-fat formula " +
+                    "and scales the strength score, so the board ranks effort, not build.",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -974,7 +973,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "Full JSON archive: presets, routine, sessions, every set, readings, titles.",
+                "Full JSON archive: routine, workout log with every set, readings, titles.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )

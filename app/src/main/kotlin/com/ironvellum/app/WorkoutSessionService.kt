@@ -48,9 +48,9 @@ class WorkoutSessionService : Service() {
             manager.createNotificationChannel(
                 NotificationChannel(
                     CHANNEL_ID,
-                    "Workout in progress",
+                    "Trial in progress",
                     NotificationManager.IMPORTANCE_LOW,
-                ).apply { description = "Live progress for the session you have open." },
+                ).apply { description = "Live progress of the trial you have open." },
             )
         }
     }
@@ -107,15 +107,16 @@ class WorkoutSessionService : Service() {
         val done = sets.count { it.done }
         val total = sets.size
         val next = sets.firstOrNull { !it.done }
-        val label = sets.firstOrNull()?.exerciseName?.uppercase() ?: "WARMING UP"
+        // The exercise the lifter is on now, not the first one of the day.
+        val label = (next ?: sets.firstOrNull())?.exerciseName?.uppercase() ?: "WARMING UP"
         val body = when {
-            total == 0 -> "Loading the session..."
-            next == null -> "Every set conquered. Claim the victory."
+            total == 0 -> "Loading the trial…"
+            next == null -> "Every set conquered. Claim Victory."
             else -> buildString {
-                append("Next: ${next.exerciseName} · set ${next.setIndex + 1}")
+                append("Set ${next.setIndex + 1}")
                 // A HOLD set carries its figure in seconds; REPS sets count.
                 val figure = if (next.durationSec != null && next.reps == 0)
-                    "${next.durationSec}s" else "${next.reps} reps"
+                    "${next.durationSec}s" else "${next.reps} ${if (next.reps == 1) "rep" else "reps"}"
                 append(" · $figure")
                 next.weightKg?.takeIf { it > 0.0 }?.let { append(" · ${formatLoad(it)}") }
             }
@@ -129,7 +130,7 @@ class WorkoutSessionService : Service() {
         }
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_reminder)
-            .setContentTitle("MID WORKOUT · $label")
+            .setContentTitle("TRIAL · $label")
             .setContentText(body)
             .setSubText("$done / $total sets")
             .setProgress(total.coerceAtLeast(1), done, total == 0)

@@ -125,8 +125,8 @@ private enum class BoardMetric(val label: String) {
     fun format(row: LeaderboardRow): String = when (this) {
         Xp -> "${row.totalXp} XP"
         Level -> "LV ${row.level}"
-        Streak -> plural(row.streakDays, "DAY", "DAYS")
-        Titles -> "${row.titlesCount} TITLES"
+        Streak -> "${row.streakDays} " + plural(row.streakDays, "DAY", "DAYS")
+        Titles -> "${row.titlesCount} " + plural(row.titlesCount, "TITLE", "TITLES")
         Strength -> "STR ${row.lifetimeStrength}"
         Last7 -> "${row.sessionsLast7d} IN 7D"
     }
@@ -256,7 +256,7 @@ fun LeaderboardScreen(
         // a second empty-state line above a panel that explains the emptiness.
         if (ui.rows.isNotEmpty()) {
             Text(
-                plural(ui.rows.size, "lifter ranked", "lifters ranked"),
+                "${ui.rows.size} " + plural(ui.rows.size, "lifter ranked", "lifters ranked"),
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -342,7 +342,7 @@ private fun NotConfigured() {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "No Supabase endpoint is configured on this device, so no board exists here. The rest of Ironvellum keeps working — the clouds are simply absent.",
+            "No cloud server is set up on this device, so there is no board. The rest of Ironvellum still works.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -396,7 +396,7 @@ private fun EmptyBoard(onRefresh: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "No rivals ranked yet — every top spot starts unopposed. Invite allies by lifter name from the ALLIES tab, then return here to see who trains hardest.",
+            "No rivals ranked yet. Add allies by lifter name on the ALLIES tab.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -776,9 +776,9 @@ private fun RankRow(
         if (metric != BoardMetric.Level) add("LV ${row.level}")
         if (metric != BoardMetric.Xp) add("${row.totalXp} XP")
         if (metric != BoardMetric.Streak) add("${row.streakDays}-day streak")
-        if (metric != BoardMetric.Titles) add("${row.titlesCount} titles")
+        if (metric != BoardMetric.Titles) add("${row.titlesCount} " + plural(row.titlesCount, "title", "titles"))
         if (metric != BoardMetric.Strength) add("lifetime strength ${row.lifetimeStrength}")
-        if (metric != BoardMetric.Last7) add("${row.sessionsLast7d} in 7 days")
+        if (metric != BoardMetric.Last7) add("${row.sessionsLast7d} " + plural(row.sessionsLast7d, "workout", "workouts") + " in 7 days")
     }.joinToString(" · ")
 
     InkPanel(
@@ -928,7 +928,7 @@ private fun MusterBoard(
             ) {
                 Column(Modifier.fillMaxWidth()) {
                     Text(
-                        "This board ranks the muster roll — essence banked, figures inscribed — and stands apart from the training board by design.",
+                        "Ranks idle-vault progress — figures inscribed — separate from the training board.",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,

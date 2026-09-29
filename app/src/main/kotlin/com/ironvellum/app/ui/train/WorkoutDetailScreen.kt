@@ -135,7 +135,7 @@ fun WorkoutDetailScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "SESSION RECORD",
+                "WORKOUT RECORD",
                 style = MaterialTheme.typography.labelLarge,
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = IronvellumTracking.ScreenTitle,
@@ -182,7 +182,7 @@ fun WorkoutDetailScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        "SESSION NOT FOUND",
+                        "WORKOUT NOT FOUND",
                         style = MaterialTheme.typography.titleMedium,
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
@@ -190,7 +190,7 @@ fun WorkoutDetailScreen(
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "This record is missing from the chronicle. It may have been removed.",
+                        "This workout may have been deleted.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.InkMuted,
                     )
@@ -334,7 +334,7 @@ private fun energyBasisCopy(energy: EnergyEstimate): String = when (energy.confi
     EnergyConfidence.MEASURED -> "Measured by Health Connect — not an estimate."
     EnergyConfidence.ESTIMATED -> "Estimated: ${energy.basis}. MET values come from the Compendium of Physical Activities."
     // Lifting logs reps, not minutes, so working time is inferred from set count.
-    EnergyConfidence.COARSE -> "Rough estimate: ${energy.basis}. Lifting sets have no logged minutes, so working time is inferred from set count — treat this as a ballpark."
+    EnergyConfidence.COARSE -> "Rough estimate: ${energy.basis}. Sets log no minutes, so working time is inferred from set count."
 }
 
 @Composable

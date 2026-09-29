@@ -114,6 +114,7 @@ import java.time.ZoneId
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.wrapContentHeight
 
 class DashboardUi(
     val profile: PlayerProfile? = null,
@@ -799,7 +800,7 @@ fun DashboardScreen(
                         label = when {
                             resume != null -> "Continue ${resume.label}"
                             isTodaySelected -> "Accept Quest"
-                            else -> "Start Session"
+                            else -> "Start Workout"
                         },
                         onClick = {
                             if (resume != null) onStartSession(resume.id)
@@ -813,7 +814,7 @@ fun DashboardScreen(
                 // day reads REST DAY and "pick another day above" dead-ends on
                 // the same card. Name the real state and offer the way out.
                 Text(
-                    "NO WEEK YET",
+                    "NO ROUTINE YET",
                     style = MaterialTheme.typography.headlineSmall,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.Bold,
@@ -821,12 +822,12 @@ fun DashboardScreen(
                     letterSpacing = 1.sp,
                 )
                 Text(
-                    "Nothing is scheduled. Build a training week and it lands here.",
+                    "Nothing is scheduled. Build a routine and it lands here.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
                 Spacer(Modifier.weight(1f))
-                IronvellumButton(label = "Build a Week", onClick = onOpenPresets, modifier = Modifier.fillMaxWidth())
+                IronvellumButton(label = "Build a Routine", onClick = onOpenPresets, modifier = Modifier.fillMaxWidth())
             } else {
                 Text(
                     "REST DAY",
@@ -836,14 +837,33 @@ fun DashboardScreen(
                     color = IronvellumColors.SystemGreen,
                     letterSpacing = 1.sp,
                 )
+                // Owner rule: a rest day keeps the streak and says so.
                 Text(
-                    "Nothing scheduled. Recover, or pick another day above.",
+                    if (ui.streak > 0) "Rest up — your ${ui.streak}-day streak is safe." else "Rest up.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
-            }
-            // The rest-day art was drawn for this panel and never wired in,
-                // leaving the quest card's slack as dead space.
+                // The next scheduled day after this one, wrapping the week.
+                val next = (1..7).map { (selectedDay - 1 + it) % 7 + 1 }
+                    .firstNotNullOfOrNull { day -> ui.presets.firstOrNull { it.scheduledDay == day } }
+                if (next != null) {
+                    val nextDay = next.scheduledDay!!
+                    val dayName = DAY_LABELS[nextDay].orEmpty().lowercase().replaceFirstChar { it.uppercase() }
+                    Text(
+                        "Next: ${next.name} · $dayName",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.SystemGreen,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier
+                            .heightIn(min = 44.dp)
+                            .clickable(onClickLabel = "Show $dayName") { viewModel.selectDay(nextDay) }
+                            .wrapContentHeight(Alignment.CenterVertically),
+                    )
+                }
+                // The rest-day art was drawn for this panel. It lives in this
+                // branch only: outside it, it rendered on training days too
+                // and its weighted spacers starved the manifest to zero rows.
                 Spacer(Modifier.weight(1f))
                 Image(
                     painter = painterResource(R.drawable.art_empty_quests),
@@ -852,14 +872,14 @@ fun DashboardScreen(
                     // size win and it rendered postage-stamp small. The rest-day
                     // panel owns the page's slack, so the art gets most of it —
                     // but only when there IS slack: below the short-window
-                    // threshold the page scrolls and the quest button has to
-                    // stay reachable, so the art gives the room back.
+                    // threshold the page scrolls, so the art gives the room back.
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
                         .size(if (shortWindow) 160.dp else 280.dp)
                         .alpha(0.6f),
                 )
                 Spacer(Modifier.weight(1f))
+            }
         }
 
         // Last result and the way into the full routine: one quiet line each.
@@ -914,7 +934,7 @@ fun DashboardScreen(
                     modifier = Modifier.size(14.dp),
                 )
                 Text(
-                    "ROUTINE, PRESETS & FULL LOG",
+                    "ROUTINE, WORKOUTS & FULL LOG",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,

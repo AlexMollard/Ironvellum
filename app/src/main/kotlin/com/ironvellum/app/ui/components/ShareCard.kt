@@ -16,7 +16,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -53,7 +52,6 @@ import kotlinx.coroutines.launch
 fun ShareCardDialog(
     text: String,
     onDismiss: () -> Unit,
-    title: String = "SHARE THIS TRIAL",
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
@@ -73,7 +71,7 @@ fun ShareCardDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                title,
+                "SHARE THIS WORKOUT",
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -102,6 +100,7 @@ fun ShareCardDialog(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     IronvellumButton(
                         label = if (copied) "COPIED" else "COPY",
+                        quiet = true,
                         onClick = {
                             scope.launch {
                                 clipboard.setClipEntry(
@@ -120,7 +119,7 @@ fun ShareCardDialog(
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_TEXT, text)
                             }
-                            context.startActivity(Intent.createChooser(intent, "Share workout"))
+                            context.startActivity(Intent.createChooser(intent, "Share this workout"))
                         },
                         modifier = Modifier.weight(1f),
                     )
@@ -128,6 +127,6 @@ fun ShareCardDialog(
             }
         },
         confirmButton = {},
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+        dismissButton = { IronvellumButton("Close", quiet = true, onClick = onDismiss) },
     )
 }

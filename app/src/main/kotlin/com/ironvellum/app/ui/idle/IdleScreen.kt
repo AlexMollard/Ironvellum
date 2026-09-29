@@ -331,9 +331,8 @@ private fun DrawWindow(rolls: Int, onInscribe: () -> Unit) {
             // An inscription pays figures, a relic OR a crest — a collection screen
             // showing only frames made a relic roll look like a lost crest.
             Text(
-                "Every rank-up earns one inscription. An inscription yields " +
-                    "figures for the roll, a relic that lifts your rate, or a " +
-                    "crest frame worn on your lifter.",
+                "Each rank-up earns one inscription: figures for the roll, a relic " +
+                    "that lifts your rate, or a crest frame worn by your lifter.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -730,8 +729,8 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
                 )
             }
             if (inputsOpen) {
-                RateRow("SESSIONS · 7 DAYS", "${inputs.sessionsLast7d}")
-                RateRow("VOLUME · 7 DAYS", "${"%,.0f".format(inputs.volumeLast7d)} KG")
+                RateRow("WORKOUTS · 7 DAYS", "${inputs.sessionsLast7d}")
+                RateRow("VOLUME · 7 DAYS", "${"%,.0f".format(inputs.volumeLast7d)} kg")
                 RateRow("SKILLS UNLOCKED", "${inputs.skillsUnlocked}")
                 RateRow("STREAK", "${inputs.streakDays} D")
             }
@@ -1096,9 +1095,9 @@ private fun OddsTable() {
             }
         }
         Text(
-            "Rarity odds are per inscription. The second figure is the split inside " +
+            "Rarity odds are per inscription; the second figure is the split inside " +
                 "that rarity. Figures join the roll, a relic lifts your rate " +
-                "for good, a crest is worn on your lifter.",
+                "for good, a crest is worn by your lifter.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )

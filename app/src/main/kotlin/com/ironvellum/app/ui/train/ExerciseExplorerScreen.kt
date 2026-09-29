@@ -135,7 +135,7 @@ fun ExerciseExplorerScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "MOVEMENT RECORDS",
+                "EXERCISE RECORDS",
                 style = MaterialTheme.typography.labelLarge,
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = 6.sp,
@@ -219,7 +219,7 @@ fun ExerciseExplorerScreen(
             if (history == null || history.isEmpty) {
                 InkPanel(Modifier.fillMaxWidth().padding(top = 10.dp)) {
                     Text(
-                        "No sets logged yet - train this movement to open its record.",
+                        "No sets logged yet — train this exercise to open its record.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.InkMuted,
                     )
@@ -274,7 +274,7 @@ private fun StatGrid(history: ExerciseHistory) {
     val noSets = history.completedSets == 0
     val rows = listOf(
         listOf(
-            "SESSIONS" to history.sessions.toString(),
+            "WORKOUTS" to history.sessions.toString(),
             "COMPLETED SETS" to history.completedSets.toString(),
         ),
         // A hold has no rep count and no rep-volume; reporting either invents
@@ -348,7 +348,7 @@ private fun ScoreChart(history: ExerciseHistory) {
     val values = history.series.map { it.bestSetScore }
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            "STRENGTH SCORE PER SESSION",
+            "STRENGTH SCORE PER WORKOUT",
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
@@ -357,7 +357,7 @@ private fun ScoreChart(history: ExerciseHistory) {
         if (values.size < 2) {
             Spacer(Modifier.height(8.dp))
             Text(
-                "One session logged — a trend needs at least two.",
+                "One workout logged — a trend needs at least two.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -371,7 +371,7 @@ private fun ScoreChart(history: ExerciseHistory) {
             )
         }
         Text(
-            "best set score per session · ${history.series.size} ${plural(history.series.size, "session", "sessions")}",
+            "best set score per workout · ${history.series.size} ${plural(history.series.size, "workout", "workouts")}",
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
         )
@@ -390,7 +390,7 @@ private fun RepsChart(history: ExerciseHistory) {
     val values = history.series.map { it.totalReps.toDouble() }
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            if (isHold) "TOTAL TIME HELD PER SESSION" else "TOTAL REPS PER SESSION",
+            if (isHold) "TOTAL TIME HELD PER WORKOUT" else "TOTAL REPS PER WORKOUT",
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
@@ -411,7 +411,7 @@ private fun RepsChart(history: ExerciseHistory) {
             )
         }
         Text(
-            if (isHold) "seconds held per session · oldest to newest" else "completed reps per session · oldest to newest",
+            if (isHold) "seconds held per workout · oldest to newest" else "completed reps per workout · oldest to newest",
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
         )
