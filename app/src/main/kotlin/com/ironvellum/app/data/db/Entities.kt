@@ -123,13 +123,12 @@ data class ProfileEntity(
     /** Sex enum name; feeds the Navy body-fat estimator. */
     val sex: String = "MALE",
     /**
-     * INK is what a new lifter gets: the hand-drawn edges are the one thing in
-     * this UI that is only ours, where CLEAN reads like every other dark RPG
-     * fitness tracker (see MIGRATION_25_26). CLEAN is one tap away in
-     * Settings → APPEARANCE. A stored choice is never overwritten. Kotlin
-     * default only: the column has no SQL default, so the schema is unchanged.
+     * CLEAN is what a new lifter gets: it is easier on the eyes for a screen
+     * read mid-workout, and the hand-drawn INK treatment is one tap away in
+     * Settings → APPEARANCE for anyone who wants it (owner decision,
+     * 2026-09-23). A stored choice is never overwritten.
      */
-    val inkStyle: Boolean = true,
+    val inkStyle: Boolean = false,
     /**
      * Which strength-scoring formula last touched the stored sessions, as
      * [com.ironvellum.app.domain.StrengthIndex.SCORING_VERSION]. A marker only:

@@ -890,7 +890,7 @@ fun SettingsScreen(
                 letterSpacing = IronvellumTracking.SectionHeader,
             )
             Spacer(Modifier.height(10.dp))
-            val inkOn = profile?.inkStyle ?: true
+            val inkOn = profile?.inkStyle ?: false
             InkSegmented(
                 options = listOf(true to "INK", false to "CLEAN"),
                 selected = inkOn,

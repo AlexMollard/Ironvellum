@@ -2,24 +2,26 @@ package com.ironvellum.app.data
 
 import com.ironvellum.app.data.db.ProfileEntity
 import com.ironvellum.app.domain.PlayerProfile
-import org.junit.Assert.assertTrue
+import com.ironvellum.app.ui.theme.InkStyle
+import org.junit.Assert.assertFalse
 import org.junit.Test
 
 /**
  * A fresh install is seeded with `ProfileEntity(name, totalXp, currentTitleId)`
- * and the Kotlin default decides its look. INK is the product's appearance
- * (MIGRATION_25_26 restored it for every existing lifter); a CLEAN default
- * would hand every new lifter the generic look the migration removed.
+ * and the Kotlin default decides its look. The owner's rule: CLEAN is the
+ * default and INK is opt-in. A pre-release audit once flipped this to INK
+ * from a code comment; this pins the decision against that happening again.
  */
 class ProfileDefaultsTest {
 
     @Test
-    fun `a freshly seeded profile row wears the ink look`() {
-        assertTrue(ProfileEntity(name = "Lifter", totalXp = 0, currentTitleId = null).inkStyle)
+    fun `a freshly seeded profile row starts clean`() {
+        assertFalse(ProfileEntity(name = "Lifter", totalXp = 0, currentTitleId = null).inkStyle)
     }
 
     @Test
-    fun `the domain profile before Room emits wears the ink look`() {
-        assertTrue(PlayerProfile().inkStyle)
+    fun `the domain profile and the first frame start clean`() {
+        assertFalse(PlayerProfile().inkStyle)
+        assertFalse(InkStyle.enabled)
     }
 }

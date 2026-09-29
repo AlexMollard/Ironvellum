@@ -104,8 +104,8 @@ data class PlayerProfile(
     val totalXp: Long = 0,
     val currentTitleId: String? = null,
     val trainingMode: TrainingMode = TrainingMode.STRENGTH,
-    /** INK is the default look; the plain CLEAN treatment is opt-in. */
-    val inkStyle: Boolean = true,
+    /** CLEAN is the default look; the hand-drawn INK treatment is opt-in. */
+    val inkStyle: Boolean = false,
 )
 
 data class SkillPractice(

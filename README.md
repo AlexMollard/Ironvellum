@@ -9,7 +9,7 @@
 Log a session, get a number that means something. Body-scaled strength scoring,
 a 106-technique calisthenics tree, and a first-run flow that builds you a week.
 
-![Gate](https://img.shields.io/badge/gate-361%20unit%20%2B%2081%20instrumented-2E7D32)
+![Gate](https://img.shields.io/badge/gate-519%20unit%20%2B%2090%20instrumented-2E7D32)
 ![Tested locally](https://img.shields.io/badge/tested-locally%2C%20not%20CI-555555)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
@@ -71,7 +71,7 @@ training.
 | **Progressive overload** | Strength and hypertrophy schools with their own rep bands, per-movement load steps and a stall rule that deloads instead of repeating a failed session. |
 | **Measurements and health** | Weight, body fat, BMI and FFMI over time; optional Health Connect read for steps, distance, energy and sleep. |
 | **Shareable sessions** | A plain text card shaped after Wordle, no link and no image, that states only what you did. |
-| **Optional cloud** | Sign in to back up training and see a feed and leaderboard. Body measurements and health data never leave the device. |
+| **Optional cloud** | Sign in to back up training and see a feed and leaderboard. Body measurements and health data never leave the device. Delete your cloud account from the app at any time. |
 
 ## Architecture
 
@@ -95,7 +95,7 @@ source of truth: the cloud is a backup, never an authority.
 | Layer | Choice |
 |---|---|
 | Language | Kotlin 2.4.20 |
-| UI | Jetpack Compose, Material 3, a hand-drawn "ink" theme |
+| UI | Jetpack Compose, Material 3, an optional hand-drawn "ink" theme |
 | Local data | Room 2.8.5 with versioned migrations and migration tests |
 | Background | WorkManager |
 | Health | Health Connect 1.1.0 (read only, optional) |
