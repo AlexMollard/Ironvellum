@@ -79,7 +79,10 @@ import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.UnlockedTitle
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.domain.SessionClock
+import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.Xp
+import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -121,9 +124,15 @@ class DashboardUi(
     val stepsToday: Int = 0,
     /** Weekdays (ISO 1-7) with a completed session in the current Monday-week. */
     val completedWeekdays: Set<Int> = emptySet(),
+    /** The focus the quest estimate is timed at. */
+    val focus: TrainingFocus = TrainingFocus.MUSCLE,
 )
 
-class DashboardViewModel(private val repo: Repository) : ViewModel() {
+class DashboardViewModel(
+    private val repo: Repository,
+    /** What the lifter last told the generator; times the quest estimate. */
+    private val savedFocus: TrainingFocus? = null,
+) : ViewModel() {
 
     private val selectedDay = MutableStateFlow(LocalDate.now().dayOfWeek.value)
 
@@ -177,6 +186,7 @@ class DashboardViewModel(private val repo: Repository) : ViewModel() {
                 today,
             ),
             stepsToday = healthDays.firstOrNull { it.date == today }?.steps ?: 0,
+            focus = SessionClock.focusFor(savedFocus, profile?.trainingMode),
             completedWeekdays = doneDates
                 .filter { !it.isBefore(today.with(java.time.DayOfWeek.MONDAY)) }
                 .map { it.dayOfWeek.value }
@@ -227,7 +237,17 @@ fun DashboardScreen(
     onOpenSettings: () -> Unit,
     onOpenWorkout: (Long) -> Unit,
     viewModel: DashboardViewModel =
-        viewModel(factory = viewModelFactory { initializer { DashboardViewModel(ironvellumRepository()) } }),
+        viewModel(factory = viewModelFactory {
+            // The saved answers sit behind a Context only a composable can read;
+            // they are read once, when the view model is made.
+            val appContext = androidx.compose.ui.platform.LocalContext.current.applicationContext
+            initializer {
+                DashboardViewModel(
+                    ironvellumRepository(),
+                    com.ironvellum.app.data.ProgramAnswersStore.get(appContext)?.focus,
+                )
+            }
+        }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val selectedDay by viewModel.selected.collectAsStateWithLifecycle()
@@ -604,7 +624,7 @@ fun DashboardScreen(
                 )
                 if (selectedPreset != null) {
                     Text(
-                        "${selectedPreset.entries.size} MOVES · ${selectedPreset.entries.sumOf { it.targetSets }} SETS",
+                        SessionClock.planLine(selectedPreset.toPlanned().entries, ui.focus),
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,

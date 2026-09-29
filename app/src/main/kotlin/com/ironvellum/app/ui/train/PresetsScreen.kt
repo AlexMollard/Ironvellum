@@ -51,7 +51,7 @@ import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
-import com.ironvellum.app.domain.TrainingMode
+import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -118,10 +118,7 @@ class PresetsViewModel(
             history = history,
             plannedPresets = routine.map { it.toPlanned() },
             tier = tier,
-            focus = savedAnswers?.focus ?: when (profile?.trainingMode) {
-                TrainingMode.STRENGTH -> TrainingFocus.STRENGTH
-                else -> TrainingFocus.MUSCLE
-            },
+            focus = SessionClock.focusFor(savedAnswers?.focus, profile?.trainingMode),
             priorities = savedAnswers?.priorities.orEmpty().flatMap { it.muscles }.toSet(),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TrainUi())
@@ -243,6 +240,14 @@ fun PresetsScreen(
                     if (preset.note.isNotBlank()) {
                         Text(preset.note, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
+                    Text(
+                        SessionClock.planLine(preset.toPlanned().entries, ui.focus),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                        modifier = Modifier.padding(top = 4.dp),
+                    )
                     Spacer(Modifier.height(8.dp))
                     preset.entries.take(PRESET_CARD_MOVEMENTS).forEach { entry ->
                         Row(

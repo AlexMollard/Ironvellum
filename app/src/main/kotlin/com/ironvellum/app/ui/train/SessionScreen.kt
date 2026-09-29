@@ -113,6 +113,14 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
+import androidx.compose.runtime.produceState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
+import com.ironvellum.app.data.ProgramAnswersStore
+import com.ironvellum.app.domain.SessionClock
+import com.ironvellum.app.domain.TrainingFocus
 
 data class SessionUi(
     val session: WorkoutSession? = null,
@@ -163,6 +171,12 @@ class SessionViewModel(
     val bodyweight: StateFlow<Double?> = repo.observeStats()
         .map { it.firstOrNull()?.weightKg }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** What the lifter last told the generator, else the profile mode; times the estimate. */
+    private val savedFocus = ProgramAnswersStore.get(appContext)?.focus
+    val focus: StateFlow<TrainingFocus> = repo.observeProfile()
+        .map { SessionClock.focusFor(savedFocus, it?.trainingMode) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SessionClock.focusFor(savedFocus, null))
 
     fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) {
         viewModelScope.launch { repo.updateSet(setId, reps, weightKg, done) }
@@ -298,6 +312,7 @@ fun SessionScreen(
     val recentExerciseIds by viewModel.recentExerciseIds.collectAsStateWithLifecycle()
     val bodyweight by viewModel.bodyweight.collectAsStateWithLifecycle()
     val sex by viewModel.sex.collectAsStateWithLifecycle()
+    val focus by viewModel.focus.collectAsStateWithLifecycle()
     var completion by remember { mutableStateOf<Repository.CompletionResult?>(null) }
     var confirmAbandon by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
@@ -378,12 +393,36 @@ fun SessionScreen(
         }
         Spacer(Modifier.height(4.dp))
         val doneCount = ui.sets.count { it.done }
-        Text(
-            "$doneCount / ${ui.sets.size} sets conquered",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-        )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "$doneCount / ${ui.sets.size} sets conquered",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SystemGreen,
+                modifier = Modifier.weight(1f),
+            )
+            SessionElapsed(session.startedAtMs)
+        }
+        if (ui.sets.isNotEmpty()) {
+            val estimate = remember(ui.sets, exercises, focus) {
+                val metrics = exercises.associate { it.id to it.metric }
+                SessionClock.estimateLine(
+                    SessionClock.totalSeconds(ui.sets, { metrics[it] }, focus),
+                    SessionClock.remainingSeconds(ui.sets, { metrics[it] }, focus),
+                )
+            }
+            Text(
+                estimate,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            )
+        }
 
         // Render blocks in the preset's saved exercise order: sort explicitly
         // by exercisePosition instead of trusting the query's emission order.
@@ -1438,6 +1477,34 @@ private fun fieldColors(accent: Color) = OutlinedTextFieldDefaults.colors(
     focusedTextColor = IronvellumColors.Ink,
     unfocusedTextColor = IronvellumColors.Ink,
 )
+
+/**
+ * The live workout clock. Read from [startedAtMs] every tick, never counted
+ * locally, so leaving and returning shows the true figure; ticks only while
+ * the screen is started, and is its own composable so the tick recomposes
+ * this text alone, not the whole session.
+ */
+@Composable
+private fun SessionElapsed(startedAtMs: Long) {
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val now by produceState(System.currentTimeMillis(), startedAtMs, lifecycleOwner) {
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+            while (true) {
+                value = System.currentTimeMillis()
+                // Land on the next whole second of elapsed time.
+                delay(1_000L - (value - startedAtMs).mod(1_000L))
+            }
+        }
+    }
+    Text(
+        SessionClock.elapsedLabel(now - startedAtMs),
+        style = MaterialTheme.typography.titleMedium,
+        fontFamily = ChakraPetch,
+        fontWeight = FontWeight.Bold,
+        color = IronvellumColors.SovereignGold,
+        maxLines = 1,
+    )
+}
 
 /** Canonical modifier vocabulary — free text drifted ("defecit" vs "deficit"). */
 /** A hold steps in fives; a minute is twelve taps, not sixty. */
