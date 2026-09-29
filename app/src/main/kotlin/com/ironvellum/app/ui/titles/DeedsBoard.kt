@@ -503,7 +503,9 @@ private fun DeedFilterChip(label: String, selected: Boolean, onClick: () -> Unit
             // 23dp was under even the WCAG AA 24dp floor. 32dp matches the
             // Material chip height and only adds a few density pixels.
             .heightIn(min = 32.dp)
-            .padding(horizontal = 9.dp, vertical = 5.dp),
+            // 7dp and 0.5sp keep all five filters on one line at 411dp; at
+            // 9dp and 1sp "ALL" wrapped onto a row of its own.
+            .padding(horizontal = 7.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -511,7 +513,7 @@ private fun DeedFilterChip(label: String, selected: Boolean, onClick: () -> Unit
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
-            letterSpacing = 1.sp,
+            letterSpacing = 0.5.sp,
             // A chip label must never wrap: "CLIMBING" broke into one letter
             // per line when the row ran out of width.
             maxLines = 1,

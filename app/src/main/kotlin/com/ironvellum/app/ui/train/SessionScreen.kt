@@ -824,10 +824,14 @@ fun SessionScreen(
         val initial = target.weightKg?.let { loadText(it) }.orEmpty()
         var field by remember(target.id) { mutableStateOf(TextFieldValue(initial, TextRange(0, initial.length))) }
         val parsed = parseLoadKg(field.text)
-        // This set and every later set of the exercise not yet ticked off:
-        // a working weight usually holds for the rest of the exercise.
+        // This set, every later set of the exercise not yet ticked off (a
+        // working weight usually holds for the rest of the exercise), and every
+        // later TICKED set logged at this set's old load: correcting a load
+        // typed wrong on all five ticked sets was five dialogs. A ticked set at
+        // a different load was a deliberate change and is left alone.
         val following = ui.sets.filter {
-            it.exerciseId == target.exerciseId && it.setIndex >= target.setIndex && (it.id == target.id || !it.done)
+            it.exerciseId == target.exerciseId && it.setIndex >= target.setIndex &&
+                (it.id == target.id || !it.done || it.weightKg == target.weightKg)
         }
         val focus = remember { FocusRequester() }
         LaunchedEffect(target.id) { focus.requestFocus() }
@@ -1511,6 +1515,14 @@ private fun SetDeltaBadge(delta: SetRecords.Delta?, displaySetNo: Int) {
     ) {
         if (delta == null) return@Row
         val record = delta.record
+        if (record == null) {
+            Text(
+                "first set $displaySetNo on record",
+                style = MaterialTheme.typography.labelSmall,
+                color = IronvellumColors.InkMuted,
+            )
+            return@Row
+        }
         if (delta.isRecord) {
             Icon(
                 Icons.Filled.Bolt,
@@ -1524,34 +1536,25 @@ private fun SetDeltaBadge(delta: SetRecords.Delta?, displaySetNo: Int) {
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SovereignGold,
             )
-            record?.let {
-                Text(
-                    "was ${it.reps}×${prLoad(it.weightKg)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
-        } else if (record == null) {
-            Text(
-                "first set $displaySetNo on record",
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
-        } else {
-            Text(
-                "PR ${record.reps}×${prLoad(record.weightKg)}",
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
-            // Shortfall is muted, never red: a lighter back-off set is normal.
-            val colour = if (delta.deltaScore >= 0.0) IronvellumColors.EmeraldBright else IronvellumColors.InkMuted
-            Text(
-                (if (delta.deltaScore >= 0.0) "▲ +" else "▽ ") + "%.1f".format(delta.deltaScore),
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = colour,
-            )
         }
+        // Any set above its position's record says "was", the record it
+        // passed, whether or not an earlier set today already took NEW PR:
+        // equal sets read the same line, one of them with the gold mark. "PR"
+        // stays for a set at or under the record it is chasing.
+        val beaten = delta.deltaScore > 0.0
+        Text(
+            (if (beaten) "was " else "PR ") + "${record.reps}×${prLoad(record.weightKg)}",
+            style = MaterialTheme.typography.labelSmall,
+            color = IronvellumColors.InkMuted,
+        )
+        // Shortfall is muted, never red: a lighter back-off set is normal.
+        val colour = if (delta.deltaScore >= 0.0) IronvellumColors.EmeraldBright else IronvellumColors.InkMuted
+        Text(
+            (if (delta.deltaScore >= 0.0) "▲ +" else "▽ ") + "%.1f".format(delta.deltaScore),
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = colour,
+        )
     }
 }
 
