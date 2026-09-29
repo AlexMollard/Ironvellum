@@ -25,6 +25,8 @@ import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.VisibilityOff
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -610,6 +612,9 @@ private fun AuthPanels(
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var confirm by remember { mutableStateOf("") }
+    // One toggle shows both password fields: checking they match is the point.
+    var showPassword by remember { mutableStateOf(false) }
     var displayName by remember { mutableStateOf("") }
     var code by remember { mutableStateOf("") }
 
@@ -619,10 +624,14 @@ private fun AuthPanels(
     // Tied to the address it went to: editing the email starts over.
     val codeSent = mode == AuthMode.RESET && resetCodeSentTo != null && resetCodeSentTo == email
     val codeValid = code.length in 6..10
+    // A new password is typed twice: a typo there locks the lifter out of an
+    // account they only just made.
+    val choosingPassword = mode == AuthMode.SIGN_UP || codeSent
+    val confirmed = !choosingPassword || confirm == password
     val canSubmit = !busy && emailValid && when (mode) {
         AuthMode.SIGN_IN -> passwordValid
-        AuthMode.SIGN_UP -> passwordValid && nameValid
-        AuthMode.RESET -> !codeSent || (codeValid && passwordValid)
+        AuthMode.SIGN_UP -> passwordValid && confirmed && nameValid
+        AuthMode.RESET -> !codeSent || (codeValid && passwordValid && confirmed)
     }
 
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
@@ -650,15 +659,23 @@ private fun AuthPanels(
         }
         if (mode != AuthMode.RESET || codeSent) {
             Spacer(Modifier.height(10.dp))
-            OutlinedTextField(
-                shape = MaterialTheme.shapes.small,
+            PasswordField(
                 value = password,
                 onValueChange = { password = it },
-                label = { Text(if (mode == AuthMode.RESET) "New password" else "Password") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                visualTransformation = PasswordVisualTransformation(),
-                modifier = Modifier.fillMaxWidth(),
+                label = if (mode == AuthMode.RESET) "New password" else "Password",
+                shown = showPassword,
+                onToggleShown = { showPassword = !showPassword },
+            )
+        }
+        if (choosingPassword) {
+            Spacer(Modifier.height(10.dp))
+            PasswordField(
+                value = confirm,
+                onValueChange = { confirm = it },
+                label = "Confirm password",
+                shown = showPassword,
+                onToggleShown = { showPassword = !showPassword },
+                isError = confirm.isNotEmpty() && !confirmed,
             )
         }
         if (mode == AuthMode.SIGN_UP) {
@@ -705,6 +722,7 @@ private fun AuthPanels(
             when {
                 !emailValid && email.isNotEmpty() -> "Enter a valid email address."
                 password.isNotEmpty() && !passwordValid -> "Password needs at least 6 characters."
+                choosingPassword && confirm.isNotEmpty() && !confirmed -> "Passwords don't match."
                 mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid ->
                     "Display name needs 2–24 characters."
                 mode == AuthMode.RESET && !codeSent -> "We'll email you a code to set a new password."
@@ -736,6 +754,38 @@ private fun AuthPanels(
             )
         }
     }
+}
+
+/** Password input with a show/hide toggle; [shown] is shared by the password and its confirmation. */
+@Composable
+private fun PasswordField(
+    value: String,
+    onValueChange: (String) -> Unit,
+    label: String,
+    shown: Boolean,
+    onToggleShown: () -> Unit,
+    isError: Boolean = false,
+) {
+    OutlinedTextField(
+        shape = MaterialTheme.shapes.small,
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label) },
+        singleLine = true,
+        isError = isError,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        visualTransformation = if (shown) VisualTransformation.None else PasswordVisualTransformation(),
+        trailingIcon = {
+            IconButton(onClick = onToggleShown) {
+                Icon(
+                    if (shown) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                    contentDescription = if (shown) "Hide password" else "Show password",
+                    tint = IronvellumColors.InkMuted,
+                )
+            }
+        },
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 /**

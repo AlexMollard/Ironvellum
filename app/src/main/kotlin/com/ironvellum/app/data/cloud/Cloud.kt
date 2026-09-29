@@ -252,6 +252,10 @@ object Cloud {
         is AuthRestException -> when (error.errorCode) {
             AuthErrorCode.InvalidCredentials -> "Wrong email or password"
             AuthErrorCode.UserAlreadyExists -> "That email is already registered — sign in instead"
+            AuthErrorCode.EmailNotConfirmed -> "Confirm your email first — open the link we sent, then sign in"
+            AuthErrorCode.OtpExpired -> "That code is wrong or expired — request a new one"
+            AuthErrorCode.SamePassword -> "Pick a password you have not used on this account"
+            AuthErrorCode.WeakPassword -> "That password is too weak — make it longer"
             AuthErrorCode.OverEmailSendRateLimit, AuthErrorCode.OverRequestRateLimit ->
                 "Too many attempts — wait a minute and try again"
             else -> "Sign-in was refused — try again in a moment"
