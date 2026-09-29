@@ -114,7 +114,7 @@ class WorkoutShareTest {
             mapOf(1L to exercise(1, "Weighted Dip")),
             zone,
         )
-        assertTrue(card, card.contains("2\u00D76 +20 kg"))
+        assertTrue(card, card.contains("2\u00D76 +20\u00A0kg"))
         assertFalse(card, card.contains("top"))
     }
 
@@ -127,8 +127,8 @@ class WorkoutShareTest {
             zone,
         )
         // "2x6 +22.5 kg" would tell a reader both sets carried 22.5 kg.
-        assertTrue(card, card.contains("2\u00D76 \u00B7 top +22.5 kg"))
-        assertFalse(card, card.contains("+20 kg"))
+        assertTrue(card, card.contains("2\u00D76 \u00B7 top\u00A0+22.5\u00A0kg"))
+        assertFalse(card, card.contains("+20\u00A0kg"))
     }
 
     @Test
@@ -145,8 +145,22 @@ class WorkoutShareTest {
             zone,
         )
         // The defect this pins was read off a real share card on a device.
-        assertFalse(card, card.contains("4\u00D75 +60 kg"))
-        assertTrue(card, card.contains("4\u00D75 \u00B7 top +60 kg"))
+        assertFalse(card, card.contains("4\u00D75 +60\u00A0kg"))
+        assertTrue(card, card.contains("4\u00D75 \u00B7 top\u00A0+60\u00A0kg"))
+    }
+
+    /** A dumbbell in the hand is the whole load, not load added on top of the lifter. */
+    @Test
+    fun `an implement's load is not written as added load`() {
+        val press = Exercise(id = 1, name = "Dumbbell Shoulder Press", muscleGroup = MuscleGroup.PUSH, isWeighted = true)
+        val card = WorkoutShare.format(
+            session(),
+            List(3) { set(1, "Dumbbell Shoulder Press", it, 5, weightKg = 18.0) },
+            mapOf(1L to press),
+            zone,
+        )
+        assertTrue(card, card.contains("Dumbbell Shoulder Press \u00B7 3\u00D75 \u00B7 18\u00A0kg"))
+        assertFalse(card, card.contains("+18"))
     }
 
     @Test

@@ -117,10 +117,10 @@ object WorkoutShare {
 
     private fun summarise(group: List<SessionSet>, exercise: Exercise?): String =
         when (exercise?.metric ?: ExerciseMetric.REPS) {
-            ExerciseMetric.HOLD -> secondsBody(group) + loadSuffix(group)
+            ExerciseMetric.HOLD -> secondsBody(group) + loadSuffix(group, exercise)
             ExerciseMetric.DURATION -> {
                 val minutes = group.sumOf { it.durationSec ?: 0 } / 60
-                "$minutes min" + loadSuffix(group)
+                "$minutes min" + loadSuffix(group, exercise)
             }
             ExerciseMetric.DISTANCE_TIME -> {
                 val km = group.sumOf { it.distanceM ?: 0.0 } / 1000.0
@@ -140,9 +140,9 @@ object WorkoutShare {
                 // An archive from before HOLD existed restores a hold as a
                 // REPS movement with its seconds in the reps column.
                 if (holdSet(exercise, group.first())) {
-                    secondsBody(group) + loadSuffix(group)
+                    secondsBody(group) + loadSuffix(group, exercise)
                 } else {
-                    countsBody(group.map { it.reps }, "") + loadSuffix(group)
+                    countsBody(group.map { it.reps }, "") + loadSuffix(group, exercise)
                 }
         }
 
@@ -157,7 +157,10 @@ object WorkoutShare {
         }
 
     /**
-     * "+20 kg" for added load; blank when every set was bodyweight.
+     * The load, blank when every set was bodyweight. "+20 kg" is ADDED load
+     * on a bodyweight movement (a belt on a pull-up); a dumbbell or barbell
+     * lift reads " · 18 kg", because the weight in the hand is the whole load
+     * and "+18 kg" claimed it sat on top of the lifter's own.
      *
      * The reps body already refuses to collapse sets that differ - three fives
      * and an eight render "5/5/5/8", never "4x5" - and load answers to the same
@@ -165,15 +168,23 @@ object WorkoutShare {
      * printing "4x5 +60 kg", which claims four loaded sets to whoever reads the
      * card. When the load is not the same on every set it is labelled as the
      * top set, which is the only figure it honestly is.
+     *
+     * The figure, its unit and a "top" label are joined by no-break spaces so
+     * a narrow card never strands "kg" or "top" alone at a line end.
      */
-    private fun loadSuffix(group: List<SessionSet>): String {
+    private fun loadSuffix(group: List<SessionSet>, exercise: Exercise?): String {
         val loads = group.map { it.weightKg?.takeIf { kg -> kg > 0.0 } }
         val carried = loads.filterNotNull()
         if (carried.isEmpty()) return ""
         val top = carried.max()
         val text = if (top % 1.0 == 0.0) top.toInt().toString() else String.format(Locale.ENGLISH, "%.1f", top)
+        val figure = (if (exercise?.isWeighted == true) "" else "+") + text + "\u00A0kg"
         val uniform = carried.size == loads.size && carried.distinct().size == 1
-        return if (uniform) " +$text kg" else " \u00B7 top +$text kg"
+        return when {
+            !uniform -> " \u00B7 top\u00A0$figure"
+            exercise?.isWeighted == true -> " \u00B7 $figure"
+            else -> " $figure"
+        }
     }
 
     private fun clock(totalSeconds: Int): String {
