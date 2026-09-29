@@ -108,15 +108,14 @@ holds for the cloud backup too: it is built without them.
 - **Local data** persists until you uninstall the app or clear its storage from
   Android system settings. Uninstalling removes `ironvellum.db` and everything in
   the app's private storage.
-- **Cloud data:** Allies → ALLIES → **ERASE MY CLOUD DATA** deletes your lifter
-  row, which cascades to every synced session, set, earned title, level-up,
-  like and ally link (`on delete cascade` on all of them), and signs you out.
-  The delete is performed by you, under the `profiles_delete` row-level
-  security policy, which permits the owner and nobody else.
-- Your sign-in identity itself is left intact so you can start again from
-  scratch; removing the account record needs service-role credentials that are
-  deliberately never shipped in the app. Ask the project owner if you want the
-  identity removed as well.
+- **Cloud data:** Allies → ALLIES → **DELETE MY CLOUD ACCOUNT** deletes your
+  sign-in identity itself (`delete_my_account()`, migration 0017), which
+  cascades to your lifter row and from there to every synced workout, set,
+  earned title, level-up, like and ally link, and to your cloud backup archive
+  (`on delete cascade` on all of them), then signs you out. The function only
+  ever deletes the caller: it acts on `auth.uid()` and is not callable without
+  a sign-in. Signing in again afterwards creates a new, empty account. The
+  whole cascade is asserted in `supabase/test/assert_all.sql`.
 - Exported JSON archives are under your control; delete the file and it is
   gone.
 

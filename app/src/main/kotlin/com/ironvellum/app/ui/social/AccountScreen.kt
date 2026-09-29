@@ -787,7 +787,7 @@ private fun SignedInPanels(
         // promise from SessionScreen: the private note never leaves the phone.
         PrivacyRow(Icons.Outlined.Lock, IronvellumColors.SovereignGold, "Cloud backups never include your private notes — those stay on this device.")
         Spacer(Modifier.height(8.dp))
-        // Same inline-confirm treatment as ERASE MY CLOUD DATA below: the
+        // Same inline-confirm treatment as DELETE MY CLOUD ACCOUNT below: the
         // destructive step names exactly what it replaces before it runs.
         var confirmRestore by remember { mutableStateOf(false) }
         if (confirmRestore) {
@@ -879,7 +879,7 @@ private fun SignedInPanels(
     Spacer(Modifier.height(20.dp))
     var confirmDelete by remember { mutableStateOf(false) }
     Text(
-        "ERASE FROM THE CLOUD",
+        "DELETE CLOUD ACCOUNT",
         style = MaterialTheme.typography.labelMedium,
         fontFamily = ChakraPetch,
         letterSpacing = IronvellumTracking.InlineLabel,
@@ -888,11 +888,11 @@ private fun SignedInPanels(
     Spacer(Modifier.height(6.dp))
     Text(
         if (confirmDelete) {
-            "This removes your lifter, every synced workout, title and ally " +
-                "from the cloud for good, and signs you out. Training logged " +
-                "on this phone stays on this phone."
+            "This deletes your account, lifter, synced workouts, titles, allies " +
+                "and cloud backup for good, and signs you out. Training on this " +
+                "phone stays on this phone."
         } else {
-            "Deletes everything you have synced. Your on-device training is untouched."
+            "Deletes your cloud account and everything synced. Your on-device training is untouched."
         },
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
@@ -901,7 +901,7 @@ private fun SignedInPanels(
     if (confirmDelete) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             IronvellumButton(
-                label = "Erase it all",
+                label = "Delete account",
                 onClick = {
                     confirmDelete = false
                     onDeleteCloudData()
@@ -918,7 +918,7 @@ private fun SignedInPanels(
         }
     } else {
         IronvellumButton(
-            label = "Erase my cloud data",
+            label = "Delete my cloud account",
             onClick = { confirmDelete = true },
             enabled = !ui.busy,
             quiet = true,

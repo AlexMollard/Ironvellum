@@ -20,10 +20,10 @@ Code references:
   (`CS`; Supabase project URL is HTTPS). Health Connect reads are on-device
   IPC, no network involved.
 - **Do you provide a way for users to request that their data is deleted?**
-  **Yes — in-app deletion.** Allies → ALLIES → ERASE MY CLOUD DATA deletes the
-  caller's `profiles` row under the owner-only `profiles_delete` RLS policy;
-  every other table cascades from it (`AccountRepository.deleteCloudData()`).
-  The auth identity is retained by design — note this on the form if asked.
+  **Yes — in-app deletion.** Allies → ALLIES → DELETE MY CLOUD ACCOUNT calls
+  the `delete_my_account()` RPC (migration 0017), which deletes the caller's
+  auth identity; the profile, every social table and the cloud backup archive
+  cascade from it (`AccountRepository.deleteCloudData()`).
 
 ## Per data type
 
@@ -102,12 +102,11 @@ Code references:
 
 - **Local data:** uninstall (or Android "clear storage") removes `ironvellum.db`
   and everything else in the app's private storage.
-- **Cloud data:** in-app deletion exists — Allies → ALLIES → ERASE MY CLOUD
-  DATA calls `AccountRepository.deleteCloudData()`, deleting the caller's
-  `profiles` row under the owner-only `profiles_delete` RLS policy; every
-  other table cascades from it (`0001_init.sql`). The auth identity (email) is
-  retained by design; removing it needs service-role credentials, so it is a
-  server-side action by the project owner.
+- **Cloud data:** in-app deletion exists — Allies → ALLIES → DELETE MY CLOUD
+  ACCOUNT calls `AccountRepository.deleteCloudData()`, which runs the
+  signed-in-only `delete_my_account()` RPC (0017). It deletes the caller's
+  auth identity, and the profile, every synced table and `cloud_archives`
+  cascade from it. Asserted in `supabase/test/assert_all.sql`.
 
 ## OPEN QUESTIONS (owner must decide; do not submit the form until resolved)
 

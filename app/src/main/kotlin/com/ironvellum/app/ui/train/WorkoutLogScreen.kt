@@ -311,7 +311,7 @@ private fun LogRow(
     // Same-unit figures only: a climb's attempts and a run's kilometres must
     // not pass through the rep counter on their way onto this line.
     val totals = metricTotals(doneSets) { set -> figureMetric(set, exercises) }
-    // Inline confirm, same treatment as ERASE MY CLOUD DATA: the destructive
+    // Inline confirm, same treatment as DELETE MY CLOUD ACCOUNT: the destructive
     // step says what it does and asks once more before it does it. Row-local,
     // so arming one entry never arms another.
     var armed by remember { mutableStateOf(false) }

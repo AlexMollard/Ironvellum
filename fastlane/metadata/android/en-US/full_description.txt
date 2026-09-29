@@ -51,7 +51,8 @@ Features:
 - Shareable sessions: a plain text card shaped after Wordle, no link and no
   image, that states only what you did.
 - Optional cloud: sign in to back up training and see a feed and leaderboard.
-  Body measurements and health data never leave the device.
+  Body measurements and health data never leave the device. Delete your cloud
+  account from the app at any time.
 
 Ironvellum is free software under GPL-3.0-or-later. It has no ads, no trackers
 and no paid tier. Source: https://github.com/AlexMollard/Ironvellum
