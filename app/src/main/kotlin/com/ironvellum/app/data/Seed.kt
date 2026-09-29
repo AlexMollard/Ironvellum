@@ -307,8 +307,8 @@ object Seed {
             scheduledDay = 1,
             entries = listOf(
                 SeedEntry("Pull-up", 5, 5, 10.0, "weighted"),
-                SeedEntry("Chin-up", 4, 5, 10.0, "weighted"),
                 SeedEntry("Door Sheet Row", 4, 10),
+                SeedEntry("Chin-up", 4, 5, 10.0, "weighted"),
                 SeedEntry("Active Bar Hang", 3, 30),
                 SeedEntry("Ab Wheel Rollout", 3, 10),
                 SeedEntry("Wrist Curl", 3, 15, 10.0, "weighted"),
@@ -332,8 +332,8 @@ object Seed {
             scheduledDay = 4,
             entries = listOf(
                 SeedEntry("Pull-up", 5, 10),
-                SeedEntry("Chin-up", 4, 10),
                 SeedEntry("Door Sheet Row", 4, 15),
+                SeedEntry("Chin-up", 4, 10),
                 SeedEntry("Active Bar Hang", 3, 20),
                 SeedEntry("Inverted Row", 3, 15),
             ),

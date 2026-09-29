@@ -870,15 +870,15 @@ object Titles {
 
     /** Rule family, for grouping the codex by the kind of deed it demands. */
     fun category(rule: TitleRule): String = when (rule) {
-        TitleRule.FirstWorkout, is TitleRule.Workouts, is TitleRule.WorkoutsInWeek -> "Campaigns"
+        TitleRule.FirstWorkout, is TitleRule.Workouts, is TitleRule.WorkoutsInWeek -> "Workouts"
         is TitleRule.ReachLevel -> "Ascension"
         is TitleRule.SetsLogged, is TitleRule.RepsLogged -> "Volume"
         is TitleRule.SessionStrength, is TitleRule.LifetimeStrength -> "Strength"
         is TitleRule.StepsInDay, is TitleRule.StepsLifetime, is TitleRule.DistanceKmLifetime,
-        is TitleRule.ActiveKcalInDay, is TitleRule.StepGoalDays -> "Movement"
+        is TitleRule.ActiveKcalInDay, is TitleRule.StepGoalDays -> "Steps"
         is TitleRule.SleepMinutesInNight -> "Recovery"
         is TitleRule.SkillsMastered, is TitleRule.PracticeAttempts -> "Mastery"
-        is TitleRule.TrainingStreak -> "Campaigns"
+        is TitleRule.TrainingStreak -> "Workouts"
         is TitleRule.LiftMultiple, is TitleRule.SessionReps, is TitleRule.LongestHold -> "Strength"
         is TitleRule.ActivityMinutes, is TitleRule.ActivityDistanceKm,
         is TitleRule.DistinctActivities, is TitleRule.LongestRun, is TitleRule.LongestSwim,

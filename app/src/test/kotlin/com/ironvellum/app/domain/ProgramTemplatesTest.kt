@@ -51,7 +51,10 @@ class ProgramTemplatesTest {
             if (template.focus != TrainingFocus.MUSCLE) continue
             val floor = ProgramRules.weeklySetTarget(volume, TrainingFocus.MUSCLE).start
             val volumeMap = volumeOf(plan)
-            val note = plan.presets.first().note
+            val note = plan.note
+            plan.presets.forEach { built ->
+                assertFalse("${template.id} at $volume: routine advice in ${built.name}", "Short on" in built.note)
+            }
             ProgramRules.TRACKED.filter { (volumeMap[it] ?: 0.0) < floor }.forEach { muscle ->
                 assertTrue(
                     "${template.id} at $volume: ${muscle.label} at ${volumeMap[muscle]} not in note: $note",
@@ -206,7 +209,7 @@ class ProgramTemplatesTest {
         val plan = ProgramTemplates.build(template, template.authoredVolume, Equipment.FULL_GYM, catalogue, strength)
         val bench = plan.presets.flatMap { it.entries }.first { it.exerciseName == "Bench Press" }
         assertNotNull("bench press left unloaded with an e1RM on file", bench.targetWeightKg)
-        assertTrue(bench.loadNote!!.contains("e1RM"))
+        assertTrue(bench.loadNote!!.contains("estimated 1-rep max"))
     }
 
     @Test

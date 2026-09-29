@@ -220,7 +220,7 @@ object ProgramRules {
     ): Pair<Double, String>? {
         val e1rm = strength.bestE1rmKg[exerciseName.trim().lowercase()] ?: return null
         return loadFromE1rm(exerciseName, muscleGroup, e1rm, reps, rir) to
-            "from your ${maxE1rmLabel(e1rm)} kg e1RM"
+            "from your ${maxE1rmLabel(e1rm)} kg estimated 1-rep max"
     }
 
     private fun maxE1rmLabel(e1rm: Double): String =
@@ -331,7 +331,7 @@ object ProgramRules {
      * sex and deliberately ignores it.
      */
     const val SEX_NOTE: String =
-        "Same plan for men and women; loads scale off your own e1RM (Roberts 2020; Hunter 2014)."
+        "Same plan for men and women; loads scale off your own estimated 1-rep max (Roberts 2020; Hunter 2014)."
 
     // ------------------------------------------------------------------ rest
 

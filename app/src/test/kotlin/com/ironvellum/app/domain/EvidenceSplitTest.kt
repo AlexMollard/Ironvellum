@@ -45,7 +45,7 @@ private val PAPER = Regex("""[A-Z][A-Za-z]+ (?:19|20)\d\d""")
  */
 internal fun assertCitationsResolve(plans: List<RoutinePlan>) {
     val texts = plans.flatMap { plan ->
-        plan.presets.flatMap { p -> listOf(p.note) + p.entries.flatMap { listOfNotNull(it.why, it.loadNote) } }
+        listOf(plan.note) + plan.presets.flatMap { p -> listOf(p.note) + p.entries.flatMap { listOfNotNull(it.why, it.loadNote) } }
     } + ProgramRules.SEX_NOTE
     texts.forEach { raw ->
         assertFalse("citation left in: ${Evidence.split(raw).first}", PAPER.containsMatchIn(Evidence.split(raw).first))

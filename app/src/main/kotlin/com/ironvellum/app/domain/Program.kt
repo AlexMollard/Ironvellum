@@ -192,7 +192,12 @@ data class PlannedPreset(
     val entries: List<PlannedEntry>,
 )
 
-data class RoutinePlan(val presets: List<PlannedPreset>)
+/**
+ * A proposed routine. [note] is routine-wide advice (muscles the week leaves
+ * short, what a once-a-week split trades) shown once on review; it is never
+ * saved into a workout's note, which carries only that day's rest and effort line.
+ */
+data class RoutinePlan(val presets: List<PlannedPreset>, val note: String = "")
 
 /** The answers a generated program is built from. */
 data class ProgramRequest(

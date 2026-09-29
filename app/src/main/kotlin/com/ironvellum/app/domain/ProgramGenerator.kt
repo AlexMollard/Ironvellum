@@ -646,18 +646,67 @@ object ProgramGenerator {
                     val ordinal = 'A' + roleSeen.merge(session.role!!, 1, Int::plus)!! - 1
                     PlannedPreset(
                         name = "${roleLabel(session.role)} $ordinal",
-                        note = presetNote(ctx.volume, ctx.focus).let { base ->
-                            base + (if (session.day == sessions.mapNotNull { d -> d.day }.minOrNull()) capacityNote + frequencyNote else "")
-                        },
+                        note = presetNote(ctx.volume, ctx.focus),
                         scheduledDay = session.day,
-                        entries = session.entries.toList(),
+                        entries = spacePullUps(session.entries),
                     )
                 },
+            note = joinNotes(capacityNote, frequencyNote),
         )
     }
 
+    /** Routine-level note parts, blank ones dropped, one space between. */
+    internal fun joinNotes(vararg parts: String): String = parts.filter { it.isNotBlank() }.joinToString(" ")
+
     /**
-     * " Short on X and Y — [advice]" naming every tracked muscle under the
+     * Pull-up family for the no-back-to-back rule: every dynamic vertical
+     * pull (pull-ups, chin-ups, archer, L-sit, assisted, pulldowns,
+     * muscle-ups). Lever holds share the pattern but are not pull-ups.
+     */
+    internal fun isPullUpVariant(entry: PlannedEntry): Boolean {
+        if (MovementDifficulty.isHoldSet(null, entry.exerciseName, entry.modifiers)) return false
+        // Unprofiled catalogue rows ("Weighted Pull-up") and the lifter's own
+        // names go by name; a bodyweight row is never one.
+        val profile = MuscleMap.profile(entry) ?: return entry.exerciseName.lowercase().let {
+            ("pull-up" in it || "chin-up" in it) && "australian" !in it
+        }
+        return profile.pattern == MovementPattern.VERTICAL_PULL && profile.compound
+    }
+
+    /**
+     * Owner rule: no two pull-up variants back to back - another exercise
+     * sits between them. The first entry, the day's primary lift, never
+     * moves. After it, relative order inside each group is kept: a non-pull
+     * moves up only when a pull would otherwise follow a pull, and a pull
+     * moves up only when leaving it later would run out of separators. A
+     * workout with more pulls than separators keeps the surplus adjacent at
+     * the end (a pull-up-only day stays as written).
+     */
+    internal fun spacePullUps(entries: List<PlannedEntry>): List<PlannedEntry> {
+        if (entries.isEmpty()) return entries
+        val remaining = entries.drop(1).toMutableList()
+        val result = mutableListOf(entries.first())
+        while (remaining.isNotEmpty()) {
+            val pulls = remaining.count { isPullUpVariant(it) }
+            val separators = remaining.size - pulls
+            val lastIsPull = isPullUpVariant(result.last())
+            val next = remaining.first()
+            val index = when {
+                isPullUpVariant(next) && lastIsPull ->
+                    remaining.indexOfFirst { !isPullUpVariant(it) }.takeIf { it >= 0 } ?: 0
+                // Placing this separator now would leave too few for the
+                // pulls still to come: a pull goes first instead.
+                !isPullUpVariant(next) && !lastIsPull && pulls > separators ->
+                    remaining.indexOfFirst { isPullUpVariant(it) }
+                else -> 0
+            }
+            result += remaining.removeAt(index)
+        }
+        return result
+    }
+
+    /**
+     * "Short on X and Y — [advice]" naming every tracked muscle under the
      * range's floor - the same test the coverage map uses to call a muscle
      * UNDER - or "" when none is. Helpers are never named: under their floor
      * they are light, not a problem. The range itself lives on the volume
@@ -670,7 +719,7 @@ object ProgramGenerator {
     ): String {
         val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < range.start - 1e-9 }
         if (short.isEmpty()) return ""
-        return " Short on ${joinWithAnd(short.map { it.label.lowercase() })} — $advice"
+        return "Short on ${joinWithAnd(short.map { it.label.lowercase() })} — $advice"
     }
 
     /**
@@ -739,7 +788,7 @@ object ProgramGenerator {
 
     /** Push/pull/legs on three days: allowed, and honest about what it trades. */
     internal const val ONCE_A_WEEK_NOTE =
-        " Each muscle once a week — fine, but lifts get less practice (Pelland 2026; Grgic 2018)."
+        "Each muscle once a week — fine, but each exercise gets less practice (Pelland 2026; Grgic 2018)."
 
     /** Deadlift and press practice scales with the room the week has. */
     private fun mainTargetCount(days: Int): Int = if (days >= 5) 2 else 1
@@ -1148,20 +1197,22 @@ object ProgramGenerator {
     }
 
     /**
-     * Plain-language reason for a deficit fill: how short the week was and
-     * on which muscle, whether THIS movement trains it stretched, and the
+     * Plain-language reason for a deficit fill: which muscle it fills,
+     * whether THIS movement trains it stretched, how short the week WAS
+     * before it (past tense: the volume panel shows the filled week, so a
+     * present-tense "5 sets short" contradicted its IN RANGE), and the
      * citation. The filled muscle is always named, even at a 0.5 share.
      */
     private fun muscleWhy(exercise: Exercise, muscle: Muscle, ctx: Ctx, deficit: Double): String {
         // A sub-set shortfall is indirect-share noise; say so instead of
         // printing "0.1 sets". The target itself is on the volume panel.
         val name = muscle.label.lowercase()
-        val shortfall = if (deficit < 0.5) "Just under target on $name" else "${setsPhrase(deficit)} short on $name"
-        val lead = if (muscle in ctx.priorityMuscles) "Priority: $shortfall" else shortfall.replaceFirstChar { it.uppercase() }
+        val was = if (deficit < 0.5) "just under target" else "${setsPhrase(deficit)} short"
+        val target = if (muscle in ctx.priorityMuscles) "priority $name" else name
         return if (stretchesFor(exercise, muscle)) {
-            "$lead, worked at full stretch - ${longLengthEvidence(muscle)}"
+            "Fills $target at full stretch: the week was $was - ${longLengthEvidence(muscle)}"
         } else {
-            "$lead - Pelland 2026"
+            "Fills $target: the week was $was - Pelland 2026"
         }
     }
 
@@ -1265,7 +1316,7 @@ object ProgramGenerator {
             name = draft.role?.let { roleLabel(it) } ?: "Workout",
             note = presetNote(ctx.volume, ctx.focus),
             scheduledDay = scheduledDay,
-            entries = draft.entries.toList(),
+            entries = spacePullUps(draft.entries),
         )
     }
 
@@ -1301,12 +1352,12 @@ object ProgramGenerator {
                 "$lead: builds muscle without grinding - Lopez 2021; Robinson 2024"
             focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL ->
                 if (compound) {
-                    "$lead: heavy reps build strength on big lifts - Lopez 2021; Buckner 2017"
+                    "$lead: heavy reps build strength on compound exercises - Lopez 2021; Buckner 2017"
                 } else {
                     "$lead: extra exercises build muscle at higher reps - Lopez 2021"
                 }
             compound ->
-                "$lead: big lifts stay heavy - Lopez 2021"
+                "$lead: compound exercises stay heavy - Lopez 2021"
             else ->
                 "$lead: extra exercises carry volume at higher reps - Lopez 2021"
         }
@@ -1546,7 +1597,7 @@ object ProgramGenerator {
                         loadNote = filled.note
                         changes += PlanChange(
                             PlanChange.Kind.LOAD_SET, name,
-                            "Load set from your logged lifts (${filled.note}) - Zourdos 2016",
+                            "Load set from your logged sets (${filled.note}) - Zourdos 2016",
                         )
                     }
                 }
@@ -1614,7 +1665,8 @@ object ProgramGenerator {
             val seconds = ProgramRules.sessionSeconds(result, request.focus) +
                 3 * ProgramRules.setSeconds(request.focus, profileOf(exercise).compound)
             if (seconds > ProgramRules.SESSION_BUDGET_SECONDS) continue
-            val added = add(ctx, draft, exercise, sets = 3, why = muscleWhy(exercise, muscle, ctx, ctx.targetRange.start))
+            val deficit = ctx.targetRange.start - (weekVolume[muscle] ?: 0.0)
+            val added = add(ctx, draft, exercise, sets = 3, why = muscleWhy(exercise, muscle, ctx, deficit))
             // add() prescribes the focus anchor; keep it inside the same
             // rep range improve holds every other entry to, or the second
             // pass would "fix" what this pass just added.
@@ -1622,8 +1674,8 @@ object ProgramGenerator {
             result += inRange
             changes += PlanChange(
                 PlanChange.Kind.ADDED, exercise.name,
-                "Added ${exercise.name}: ${setsPhrase(ctx.targetRange.start - (weekVolume[muscle] ?: 0.0))} " +
-                    "short on ${muscle.label.lowercase()} this week - Pelland 2026",
+                "Added ${exercise.name}: the week was ${setsPhrase(deficit)} short on " +
+                    "${muscle.label.lowercase()} - Pelland 2026",
             )
         }
 
@@ -1662,11 +1714,22 @@ object ProgramGenerator {
             val muscles = raisedFor.getValue(i).joinToString(" and ") { it.label.lowercase() }
             changes += PlanChange(
                 PlanChange.Kind.ADJUSTED, result[i].exerciseName,
-                "Sets ${originalSets[i]} → ${result[i].sets}: short on $muscles this week - Pelland 2026",
+                "Sets ${originalSets[i]} → ${result[i].sets}: the week was short on $muscles - Pelland 2026",
             )
         }
 
-        val after = target.copy(entries = result)
+        // Owner rule: no two pull-up variants back to back. Each exercise
+        // moved up to split them says so.
+        val spaced = spacePullUps(result)
+        spaced.forEachIndexed { at, entry ->
+            if (at < result.indexOfFirst { it === entry }) {
+                changes += PlanChange(
+                    PlanChange.Kind.ADJUSTED, entry.exerciseName,
+                    "Moved up so no two pull-up variants run back to back",
+                )
+            }
+        }
+        val after = target.copy(entries = spaced)
         return Improvement(before = target, after = after, changes = changes)
     }
 
@@ -1679,7 +1742,7 @@ object ProgramGenerator {
     internal fun presetNote(tier: VolumeLevel, focus: TrainingFocus): String {
         val rir = ProgramRules.targetRir(tier, focus)
         return if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.GENERAL) {
-            "Rest 3-5 min on big lifts, 90 s on the rest. Stop about $rir reps short of failure " +
+            "Rest 3-5 min on compound exercises, 90 s on the rest. Stop about $rir reps short of failure " +
                 "(Schoenfeld 2016; Singer 2024; Refalo 2023)."
         } else {
             "Rest 2-3 min, at least 90 s. Stop about $rir reps short of failure " +

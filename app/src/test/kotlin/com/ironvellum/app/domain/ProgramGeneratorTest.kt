@@ -100,7 +100,7 @@ class ProgramGeneratorTest {
         val range = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.MUSCLE)
         val short = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < range.start - 0.5 }
         assertTrue("expected a capacity-limited week", short.isNotEmpty())
-        val note = plan.presets.first().note
+        val note = plan.note
         short.forEach { muscle ->
             assertTrue("note does not name ${muscle.label}: $note", muscle.label.lowercase() in note)
         }
@@ -117,10 +117,12 @@ class ProgramGeneratorTest {
     }
 
     @Test
-    fun `every muscle a generated week leaves under the floor is named in its note`() {
+    fun `every muscle a generated week leaves under the floor is named in its routine note, never a workout's`() {
         // The coverage map calls any muscle below the floor UNDER, even 11.6
         // of 12; a plan that shows UNDER there without saying so here reads
-        // as a generator bug rather than an honest capacity limit.
+        // as a generator bug rather than an honest capacity limit. The line
+        // is routine-wide advice: saved into the first workout's note it
+        // became a permanent mantra on that day.
         for (tier in VolumeLevel.entries) {
             for (equipment in listOf(Equipment.NOTHING, Equipment(fullGym = false, gear = Gear.entries.toSet()), Equipment.FULL_GYM)) {
                 for ((split, days) in TrainingSplit.OPTIONS) {
@@ -129,12 +131,16 @@ class ProgramGeneratorTest {
                     )
                     val volume = volumeOf(plan)
                     val floor = ProgramRules.weeklySetTarget(tier, TrainingFocus.MUSCLE).start
-                    val note = plan.presets.first().note
+                    val note = plan.note
                     ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < floor }.forEach { muscle ->
                         assertTrue(
                             "$tier $equipment $split ${days}d: ${muscle.label} at ${volume[muscle]} not in note: $note",
                             muscle.label.lowercase() in note,
                         )
+                    }
+                    val rest = ProgramGenerator.presetNote(tier, TrainingFocus.MUSCLE)
+                    plan.presets.forEach { preset ->
+                        assertEquals("$tier $equipment $split ${days}d: ${preset.name} note", rest, preset.note)
                     }
                 }
             }
@@ -296,7 +302,7 @@ class ProgramGeneratorTest {
         // 2 RIR = 66.67 -> floored to the 2.5 kg step.
         val bench = entries.first { it.exerciseName == "Bench Press" }
         assertEquals(65.0, bench.targetWeightKg!!, 1e-9)
-        assertTrue(bench.loadNote!!.contains("e1RM"))
+        assertTrue(bench.loadNote!!.contains("estimated 1-rep max"))
     }
 
     @Test
@@ -548,14 +554,15 @@ class ProgramGeneratorTest {
         )
         assertEquals(listOf("Push A", "Pull A", "Legs A"), plan.presets.map { it.name })
         assertEquals(listOf(1, 3, 5), plan.presets.map { it.scheduledDay })
-        assertTrue(plan.presets.first().note.contains("once a week"))
+        assertTrue(plan.note.contains("once a week"))
+        assertFalse(plan.presets.any { it.note.contains("once a week") })
         // The default 3-day split is still full body, and it carries no such note.
         val fullBody = ProgramGenerator.week(
             ProgramRequest(TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM, 3),
             catalogue, strength,
         )
         assertTrue(fullBody.presets.all { it.name.startsWith("Full Body") })
-        assertFalse(fullBody.presets.first().note.contains("once a week"))
+        assertFalse(fullBody.note.contains("once a week"))
     }
 
     @Test
@@ -973,7 +980,7 @@ class ProgramGeneratorTest {
                 catalogue, strength,
             )
             val volume = volumeOf(plan)
-            val notes = plan.presets.joinToString(" ") { it.note }.lowercase()
+            val notes = (plan.presets.map { it.note } + plan.note).joinToString(" ").lowercase()
             for (helper in ProgramRules.HELPERS) {
                 val sets = volume[helper] ?: 0.0
                 if (sets >= ProgramRules.HELPER_FLOOR_SETS - 1e-9) continue
@@ -1108,9 +1115,9 @@ class ProgramGeneratorTest {
         )
     }
 
-    /** The muscle a deficit fill was added for, read from its why ("2 sets short on tibialis - ..."). */
+    /** The muscle a deficit fill was added for, read from its why ("Fills tibialis: the week was 2 sets short - ..."). */
     private fun filledFor(entry: PlannedEntry): Muscle? {
-        val label = Regex("(?:short|target) on ([a-z ]+?)(?:,| -|$)").find(entry.why)?.groupValues?.get(1)
+        val label = Regex("^Fills (?:priority )?([a-z ]+?)(?: at full stretch)?:").find(entry.why)?.groupValues?.get(1)
         return Muscle.entries.firstOrNull { it.label.lowercase() == label }
     }
 

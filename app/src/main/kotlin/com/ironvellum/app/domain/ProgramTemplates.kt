@@ -303,7 +303,7 @@ object ProgramTemplates {
      * strength templates keep their sets). Scaling up never pushes a day
      * past the session time budget or its own authored length, whichever is
      * longer, and any muscle left under the chosen floor is named in the
-     * first day's note.
+     * routine's note.
      *
      * A day with more movements than the lifter's [maxExercises] (clamped to
      * [ProgramRules.MAX_EXERCISES_RANGE]) gives up, one at a time, the entry
@@ -370,15 +370,15 @@ object ProgramTemplates {
                         "closest match - Kikuchi 2017; Calatayud 2015"
                 } else if (template.focus == TrainingFocus.STRENGTH && isMainLift) {
                     "Main lift: strength is specific to the lift trained - Buckner 2017; TaskSpec 2025; Lopez 2021"
-                } else if (template.focus == TrainingFocus.MUSCLE &&
-                    MuscleMap.profile(exercise.name)?.stretchBias == true
-                ) {
-                    val primary = MuscleMap.profile(exercise.name)!!.muscles
-                        .filterValues { it >= 0.5 }.maxWithOrNull(compareBy { it.value })!!.key
-                    "For your ${ProgramGenerator.muscleListOf(exercise, primary)}, worked at full stretch - " +
-                        ProgramGenerator.longLengthEvidence(primary)
                 } else {
-                    "For your ${ProgramGenerator.muscleListOf(exercise)} - Pelland 2026"
+                    val profile = MuscleMap.profile(exercise.name)
+                    val primary = profile?.muscles?.filterValues { it >= 0.5 }?.maxByOrNull { it.value }?.key
+                    if (template.focus == TrainingFocus.MUSCLE && profile?.stretchBias == true && primary != null) {
+                        "For your ${ProgramGenerator.muscleListOf(exercise, primary)}, worked at full stretch - " +
+                            ProgramGenerator.longLengthEvidence(primary)
+                    } else {
+                        "For your ${ProgramGenerator.muscleListOf(exercise)} - Pelland 2026"
+                    }
                 }
                 entry.copy(
                     exerciseName = exercise.name,
@@ -444,7 +444,8 @@ object ProgramTemplates {
             ProgramRules.weeklyVolume(fitted), chosenRange, "generate a routine to fill them.",
         )
         return RoutinePlan(
-            fitted.mapIndexed { i, day -> if (i == 0) day.copy(note = day.note + shortfall) else day },
+            fitted.map { day -> day.copy(entries = ProgramGenerator.spacePullUps(day.entries)) },
+            note = shortfall,
         )
     }
 

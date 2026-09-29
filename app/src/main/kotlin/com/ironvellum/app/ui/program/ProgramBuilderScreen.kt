@@ -78,6 +78,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 
@@ -130,6 +131,14 @@ class ProgramBuilderViewModel(
     val maxExercises = MutableStateFlow(ProgramRules.DEFAULT_MAX_EXERCISES)
     val sessionKind = MutableStateFlow(SessionKind.AUTO)
     val sessionDay = MutableStateFlow<Int?>(1)
+
+    /** True once she has picked a day; the first-free-day default must not override her. */
+    private var sessionDayTouched = false
+
+    fun setSessionDay(day: Int?) {
+        sessionDayTouched = true
+        sessionDay.value = day
+    }
     val selectedTemplateId = MutableStateFlow<String?>(null)
     val selectedPresetId = MutableStateFlow<Long?>(presetId)
 
@@ -200,6 +209,15 @@ class ProgramBuilderViewModel(
                     _firstSessionEpochDay.value,
                     LocalDate.now().toEpochDay(),
                 )
+            }
+        }
+        // One workout lands on the first weekday her routine leaves free,
+        // not always Monday (unscheduled when every day is taken).
+        if (mode == "session") {
+            viewModelScope.launch {
+                runCatching { repo.observePresets().first() }.onSuccess { existing ->
+                    if (!sessionDayTouched) sessionDay.value = firstFreeWeekday(existing.mapNotNull { it.scheduledDay }.toSet())
+                }
             }
         }
     }
@@ -459,6 +477,9 @@ internal fun WorkoutPreset.toPlanned(): PlannedPreset = PlannedPreset(
     },
 )
 
+/** The first ISO weekday (1 = Monday) not in [taken], or null (unscheduled) when all seven are. */
+internal fun firstFreeWeekday(taken: Set<Int>): Int? = (1..7).firstOrNull { it !in taken }
+
 private val DAY_PICKS = listOf(
     1 to "Mon", 2 to "Tue", 3 to "Wed", 4 to "Thu",
     5 to "Fri", 6 to "Sat", 7 to "Sun", null to "—",
@@ -706,7 +727,7 @@ fun ProgramBuilderScreen(
                                     selected = sessionDay == day,
                                     modifier = Modifier.weight(1f),
                                     description = label.takeIf { day != null } ?: "No scheduled day",
-                                    onClick = { viewModel.sessionDay.value = day },
+                                    onClick = { viewModel.setSessionDay(day) },
                                 )
                             }
                         }
@@ -730,21 +751,20 @@ fun ProgramBuilderScreen(
                     accent = if (selected) IronvellumColors.SovereignGold else IronvellumColors.Rune,
                     onClick = { viewModel.selectedTemplateId.value = template.id },
                 ) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(
-                            template.name,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = if (selected) IronvellumColors.SovereignGold else IronvellumColors.Ink,
-                        )
-                        Text(
-                            "${template.split.label.uppercase()} · ${template.days.size} DAYS",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.InkMuted,
-                        )
-                    }
+                    // Stacked: a long name beside the split tag collided at 360dp.
+                    Text(
+                        template.name,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = if (selected) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+                    )
+                    Text(
+                        "${template.split.label.uppercase()} · ${template.days.size} DAYS",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                    )
                     Spacer(Modifier.height(4.dp))
                     Text(
                         template.summary,
@@ -837,6 +857,11 @@ fun ProgramBuilderScreen(
                     )
                     Spacer(Modifier.height(10.dp))
                 }
+                // Routine-wide advice, said once for the whole plan.
+                Evidence.split(current.note).first.trim().takeIf { it.isNotBlank() }?.let { note ->
+                    Caption(note)
+                    Spacer(Modifier.height(10.dp))
+                }
                 // A single generated workout is judged against the week it
                 // joins, so the volume panel reads the whole board. Adding
                 // never replaces the preset already on that day, so that day
@@ -914,7 +939,7 @@ fun ProgramBuilderScreen(
         SourcesPanel(
             listOf(ProgramRules.SEX_NOTE) + when (mode) {
                 "improve" -> improvement?.let { planTexts(listOf(it.after)) + it.changes.map { c -> c.detail } }.orEmpty()
-                else -> plan?.let { planTexts(it.presets) }.orEmpty()
+                else -> plan?.let { planTexts(it.presets, it.note) }.orEmpty()
             },
         )
         Spacer(Modifier.height(24.dp))
@@ -1008,7 +1033,8 @@ private fun MuscleAreaChips(
     onToggle: (MuscleArea) -> Unit,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        MuscleArea.entries.chunked(3).forEach { chunk ->
+        // Two per row: three wrapped "Hamstrings" onto two lines at 360dp.
+        MuscleArea.entries.chunked(2).forEach { chunk ->
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                 chunk.forEach { area ->
                     val on = area in selectedAreas
@@ -1018,6 +1044,7 @@ private fun MuscleAreaChips(
                         style = MaterialTheme.typography.labelMedium,
                         fontFamily = ChakraPetch,
                         color = if (on) IronvellumColors.Abyss else IronvellumColors.InkMuted,
+                        maxLines = 1,
                         modifier = Modifier
                             .weight(1f)
                             .clip(shape)
@@ -1034,7 +1061,7 @@ private fun MuscleAreaChips(
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                     )
                 }
-                if (chunk.size < 3) repeat(3 - chunk.size) { Spacer(Modifier.weight(1f)) }
+                if (chunk.size < 2) Spacer(Modifier.weight(1f))
             }
         }
     }

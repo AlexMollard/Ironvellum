@@ -271,7 +271,7 @@ object Skills {
         SkillDef(
             "Front Lever", 5, "Lever", requires = "Straddle Front Lever",
             standard = "Hold 8s, body fully straight and horizontal",
-            why = "The benchmark straight-arm pull — few movements demand more from lats and core.",
+            why = "The benchmark straight-arm pull — few exercises demand more from lats and core.",
         ),
         SkillDef(
             "Skin the Cat", 2, "Lever", requires = "One-Arm Hang",

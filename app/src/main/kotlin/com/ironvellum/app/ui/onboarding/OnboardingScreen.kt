@@ -488,7 +488,7 @@ private fun stepTitle(step: Int): String = when (step) {
 }
 
 private fun stepProse(step: Int): String = when (step) {
-    0 -> "Three facts scale every number this app shows you."
+    0 -> "Your sex, height and weight scale every number Ironvellum shows you."
     1 -> "Answer four things and Ironvellum builds you a routine."
     else -> "Built from your answers. Tap an exercise to adjust it."
 }
@@ -931,7 +931,7 @@ private fun ProposalStep(
             // The rest guidance and any shortfall, said once for the routine
             // rather than under every day, with the progression rule the goal
             // picked beside it.
-            val notes = planNotes(current.presets) + when (focus) {
+            val notes = planNotes(current) + when (focus) {
                 TrainingFocus.STRENGTH -> listOf("Strength goal: load goes up when you hit your reps.")
                 TrainingFocus.MUSCLE -> listOf("Muscle goal: reps go up first, then load.")
                 else -> emptyList()
@@ -964,7 +964,7 @@ private fun ProposalStep(
                 modifier = Modifier.fillMaxWidth(),
             )
         }
-        current?.let { SourcesPanel(planTexts(it.presets)) }
+        current?.let { SourcesPanel(planTexts(it.presets, it.note)) }
         Spacer(Modifier.height(2.dp))
     }
 }

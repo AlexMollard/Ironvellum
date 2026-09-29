@@ -47,6 +47,7 @@ import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.PlanChange
 import com.ironvellum.app.domain.ProgramGenerator
 import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingSplit
@@ -325,16 +326,20 @@ fun WeeklyVolumePanel(
             val open = range.endInclusive == Double.MAX_VALUE
             val bound = if (open) "${trim1(range.start)}+" else "${trim1(range.start)}-${trim1(range.endInclusive)}"
             val spoken = if (open) "at least ${trim1(range.start)}" else "${trim1(range.start)} to ${trim1(range.endInclusive)}"
-            val verdict = when (levelOf(muscle, sets, goal)) {
+            val level = levelOf(muscle, sets, goal)
+            val verdict = when (level) {
+                CoverageLevel.NONE -> "UNTRAINED"
+                CoverageLevel.UNDER -> "UNDER"
                 CoverageLevel.LIGHT -> "LIGHT"
-                CoverageLevel.NONE, CoverageLevel.UNDER -> "UNDER"
                 CoverageLevel.OVER -> "OVER"
                 CoverageLevel.IN_RANGE -> "IN RANGE"
             }
-            val colour = when (verdict) {
-                "IN RANGE" -> IronvellumColors.SystemGreen
-                "LIGHT" -> IronvellumColors.InkMuted
-                else -> IronvellumColors.SovereignGold
+            // The coverage legend's colours: red under, gold over.
+            val colour = when (level) {
+                CoverageLevel.IN_RANGE -> IronvellumColors.SystemGreen
+                CoverageLevel.OVER -> IronvellumColors.SovereignGold
+                CoverageLevel.LIGHT -> IronvellumColors.InkMuted
+                CoverageLevel.NONE, CoverageLevel.UNDER -> IronvellumColors.DangerRed
             }
             Row(
                 Modifier
@@ -344,7 +349,8 @@ fun WeeklyVolumePanel(
                     // verdict, instead of three swipes through bare fragments.
                     .semantics {
                         contentDescription =
-                            "${muscle.label}: ${trim1(sets)} sets weekly, $verdict, target $spoken"
+                            "${muscle.label}: ${trim1(sets)} ${if (trim1(sets) == "1") "set" else "sets"} weekly, " +
+                                "$verdict, target $spoken"
                     },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -518,17 +524,20 @@ fun BeforeAfter(improvement: Improvement, stillShort: List<Muscle> = emptyList()
 }
 
 /** Every note and reason a plan carries, for [SourcesPanel]. */
-internal fun planTexts(presets: List<PlannedPreset>): List<String> =
-    presets.flatMap { preset -> listOf(preset.note) + preset.entries.flatMap { listOfNotNull(it.why, it.loadNote) } }
+internal fun planTexts(presets: List<PlannedPreset>, routineNote: String = ""): List<String> =
+    listOf(routineNote) +
+        presets.flatMap { preset -> listOf(preset.note) + preset.entries.flatMap { listOfNotNull(it.why, it.loadNote) } }
 
 /**
- * The plan's day notes, each said once. The first day's note is the shared
- * rest guidance plus the routine-wide shortfall lines, so a note that another
- * note merely extends is dropped rather than printed twice.
+ * The plan's notes, each said once: the day notes (the shared rest
+ * guidance, plus any day's own extension - a note that another note merely
+ * extends is dropped rather than printed twice), then the routine-wide
+ * advice ([RoutinePlan.note]) that no single workout carries.
  */
-internal fun planNotes(presets: List<PlannedPreset>): List<String> {
-    val notes = presets.map { Evidence.split(it.note).first.trim() }.filter { it.isNotBlank() }.distinct()
-    return notes.filter { n -> notes.none { it != n && it.startsWith(n) } }
+internal fun planNotes(plan: RoutinePlan): List<String> {
+    val notes = plan.presets.map { Evidence.split(it.note).first.trim() }.filter { it.isNotBlank() }.distinct()
+    val routine = Evidence.split(plan.note).first.trim()
+    return notes.filter { n -> notes.none { it != n && it.startsWith(n) } } + listOf(routine).filter { it.isNotBlank() }
 }
 
 /**
