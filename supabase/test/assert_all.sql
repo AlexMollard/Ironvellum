@@ -282,16 +282,58 @@ begin
         'erasing a profile left rows behind in another table'
     );
 
+    -- 0017: the cloud wipe deletes the whole account. Two hunters, each with
+    -- a profile and a cloud archive; one erases themself.
+    -- The other must be untouched, and nothing of the first may survive -
+    -- least of all the archive, which hangs off auth.users, not profiles.
+    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, created_at, updated_at)
+    values ('00000000-0000-0000-0000-000000000000','a5500000-0000-4000-8000-000000000017','authenticated','authenticated','gone@m.test','',now(),now()),
+           ('00000000-0000-0000-0000-000000000000','a5500000-0000-4000-8000-000000000018','authenticated','authenticated','stays@m.test','',now(),now())
+    on conflict (id) do update set email = excluded.email;
+    insert into profiles (id, display_name)
+    values ('a5500000-0000-4000-8000-000000000017','GoneHunter'),
+           ('a5500000-0000-4000-8000-000000000018','StaysHunter')
+    on conflict (id) do update set display_name = excluded.display_name;
+    insert into cloud_archives (user_id, archive, size_bytes)
+    values ('a5500000-0000-4000-8000-000000000017','{}',2),
+           ('a5500000-0000-4000-8000-000000000018','{}',2)
+    on conflict (user_id) do update set archive = excluded.archive;
+
+    -- anon has no self to delete; the shipped key must not reach it at all.
+    perform assert_true(
+        not has_function_privilege('anon', 'public.delete_my_account()', 'execute')
+            and has_function_privilege('authenticated', 'public.delete_my_account()', 'execute'),
+        'delete_my_account() is callable by the wrong roles'
+    );
+
+    perform set_config('probe.uid', 'a5500000-0000-4000-8000-000000000017', true);
+    set local role authenticated;
+    perform delete_my_account();
+    reset role;
+    perform assert_true(
+        not exists (select 1 from auth.users where id = 'a5500000-0000-4000-8000-000000000017')
+            and not exists (select 1 from profiles where id = 'a5500000-0000-4000-8000-000000000017')
+            and not exists (select 1 from cloud_archives where user_id = 'a5500000-0000-4000-8000-000000000017'),
+        'delete_my_account() left the identity, the profile or the cloud archive behind'
+    );
+    perform assert_true(
+        exists (select 1 from auth.users where id = 'a5500000-0000-4000-8000-000000000018')
+            and exists (select 1 from profiles where id = 'a5500000-0000-4000-8000-000000000018')
+            and exists (select 1 from cloud_archives where user_id = 'a5500000-0000-4000-8000-000000000018'),
+        'delete_my_account() deleted another hunter'
+    );
+    perform set_config('probe.uid', '', true);
+
     -- 0014: the version beacon is public and tells the truth. The app probes
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 16,
-        format('schema_version() reports %s, not 16 — bump the literal with the migration', public.schema_version())
+        (select public.schema_version()) = 17,
+        format('schema_version() reports %s, not 17 — bump the literal with the migration', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 16,
+        (select public.schema_version()) = 17,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;

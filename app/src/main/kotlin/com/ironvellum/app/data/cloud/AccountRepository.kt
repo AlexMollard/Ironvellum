@@ -261,29 +261,24 @@ class AccountRepository {
 
 
     /**
-     * Deletes every trace of this lifter from the cloud, then signs out.
+     * Deletes this lifter's whole cloud account, then signs out.
      *
-     * One delete is enough: every social table references `profiles (id) on
-     * delete cascade`, and the RLS policy `profiles_delete` already allows the
-     * owner — and only the owner — to remove their own row. The capability
-     * existed server-side from the first migration and was simply never
-     * reachable from the app, which left the user no way to withdraw their
-     * data.
-     *
-     * The auth identity itself is deliberately left intact: this removes the
-     * training data, and the lifter can sign in again to start clean. Deleting
-     * the `auth.users` row needs service-role credentials that must never ship
-     * in an APK.
+     * `delete_my_account()` (migration 0017) removes the caller's auth.users
+     * row server-side; profiles and every social table cascade from it, and
+     * so does `cloud_archives`, which a profiles-only delete used to leave
+     * behind. The RPC can only ever delete auth.uid(), so no service-role
+     * credential ships in the APK. Signing in again afterwards is a new
+     * account.
      */
     suspend fun deleteCloudData(): Result<Unit> {
         val client = requireClient().getOrElse { return failure(it) }
-        val userId = _account.value?.userId
-            ?: return Result.failure(IllegalStateException("Sign in before deleting cloud data"))
+        _account.value?.userId
+            ?: return Result.failure(IllegalStateException("Sign in before deleting your cloud account"))
         return runCatching {
-            client.postgrest.from("profiles").delete {
-                filter { eq("id", userId) }
-            }
-            client.auth.signOut()
+            client.postgrest.rpc("delete_my_account")
+            // The server session died with the user; a failed sign-out call
+            // must not report the deletion itself as failed.
+            runCatching { client.auth.signOut() }
             _account.value = null
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
