@@ -280,6 +280,15 @@ object MuscleMap {
             muscles = mapOf(Muscle.OBLIQUES to 1.0, Muscle.ABS to 0.5, Muscle.ABDUCTORS to 0.5),
             pattern = MovementPattern.CORE, compound = false, stretchBias = false,
         ))
+        put("lying leg raise", ExerciseProfile(
+            // Floor work: the back is supported, so the abs are not loaded long.
+            muscles = mapOf(Muscle.ABS to 1.0, Muscle.HIP_FLEXORS to 1.0),
+            pattern = MovementPattern.CORE, compound = false, stretchBias = false,
+        ))
+        put("dead bug", ExerciseProfile(
+            muscles = mapOf(Muscle.ABS to 1.0, Muscle.HIP_FLEXORS to 0.5, Muscle.OBLIQUES to 0.5),
+            pattern = MovementPattern.CORE, compound = false, stretchBias = false,
+        ))
         // ---- Skill-tree strength holds ----
         // A hold set counts as ONE set, however many seconds it lasts. The
         // coverage dose is hard sets (Pelland 2026), and a rep set is not

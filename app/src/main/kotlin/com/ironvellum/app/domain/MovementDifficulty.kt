@@ -81,6 +81,8 @@ object MovementDifficulty {
         "weighted plank" to 2,
         "plank" to 1,
         "side plank" to 1,
+        "lying leg raise" to 1,
+        "dead bug" to 1,
 
         // Gym floor - barbell. UNLOADED difficulty only: every loaded compound
         // sits at tier 2 like its free-weight neighbours, XP is paid by the kilos.

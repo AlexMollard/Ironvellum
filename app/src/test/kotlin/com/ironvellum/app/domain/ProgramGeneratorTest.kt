@@ -1617,7 +1617,9 @@ class ProgramGeneratorTest {
     fun `a first year with no kit is never prescribed a bodyweight progression past tier III`() {
         // The onboarding call: no history, male, every offered split. Dragon
         // Flag (tier IV) once filled abs for LOW + NOTHING because it was the
-        // only floor ab movement in the pool; the abs now degrade honestly.
+        // only floor ab movement in the pool; Lying Leg Raise and Dead Bug
+        // (tier I) now fill the abs instead.
+        val floorAbs = setOf("Lying Leg Raise", "Dead Bug")
         for (focus in TrainingFocus.entries - TrainingFocus.SKILL) for ((split, days) in TrainingSplit.OPTIONS) {
             val plan = ProgramGenerator.week(
                 ProgramRequest(focus, VolumeLevel.LOW, Equipment.NOTHING, days, sex = Sex.MALE, split = split),
@@ -1630,5 +1632,14 @@ class ProgramGeneratorTest {
                 .map { it.exerciseName }
             assertTrue("$focus $split $days prescribed $tooHard", tooHard.isEmpty())
         }
+        val general = ProgramGenerator.week(
+            ProgramRequest(TrainingFocus.GENERAL, VolumeLevel.LOW, Equipment.NOTHING, 3, sex = Sex.MALE, split = TrainingSplit.FULL_BODY),
+            catalogue,
+            StrengthProfile(),
+        )
+        assertTrue(
+            "no floor ab movement:${entriesOf(general).map { it.exerciseName }}",
+            entriesOf(general).any { it.exerciseName in floorAbs },
+        )
     }
 }

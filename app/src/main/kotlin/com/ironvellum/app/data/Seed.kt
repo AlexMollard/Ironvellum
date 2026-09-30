@@ -64,6 +64,8 @@ object Seed {
         ExerciseEntity(name = "Weighted Plank", muscleGroup = MuscleGroup.CORE.name, isWeighted = true),
         ExerciseEntity(name = "Plank", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
         ExerciseEntity(name = "Side Plank", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
+        ExerciseEntity(name = "Lying Leg Raise", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
+        ExerciseEntity(name = "Dead Bug", muscleGroup = MuscleGroup.CORE.name, isWeighted = false),
 
         // Gym floor - barbell. Free-weight band (no loadFactor entry).
         ExerciseEntity(name = "Close-Grip Bench Press", muscleGroup = MuscleGroup.PUSH.name, isWeighted = true),
