@@ -98,6 +98,19 @@ class MuscleMapTest {
     }
 
     @Test
+    fun `deep single-leg squats and hip hinges credit the adductors`() {
+        // Kubo 2019 grew the adductors with the squat; the adductor magnus
+        // extends a flexed hip in every hinge. The shrimp squat and the RDL
+        // once credited none, so a leg day of both read "adductors light".
+        for (name in listOf(
+            "Pistol Squat", "Shrimp Squat", "Split Squat", "Bulgarian Split Squat",
+            "Deadlift", "Romanian Deadlift", "Good Morning",
+        )) {
+            assertEquals(name, 0.5, MuscleMap.profile(name)!!.muscles[Muscle.ADDUCTORS] ?: 0.0, 1e-9)
+        }
+    }
+
+    @Test
     fun `stretch bias marks exactly the long-length twins`() {
         // Maeo 2021: seated (long) beats lying (short) leg curl.
         assertTrue(MuscleMap.profile("Seated Leg Curl")!!.stretchBias)

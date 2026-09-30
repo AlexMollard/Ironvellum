@@ -233,10 +233,18 @@ object MuscleMap {
             muscles = mapOf(Muscle.ABDUCTORS to 1.0),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = false,
         ))
+        // Every hinge from a flexed hip credits ADDUCTORS 0.5: the posterior
+        // adductor magnus is a hip extensor, lengthened as the torso folds
+        // and working as it rises (movement anatomy; no longitudinal trial
+        // measured it, so the helper share and not the lead).
         put("deadlift", deadlift())
         put("romanian deadlift", ExerciseProfile(
-            // The load hangs from the hands, so the upper traps hold it as in a deadlift.
-            muscles = mapOf(Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 1.0, Muscle.LOWER_BACK to 0.5, Muscle.TRAPS to 0.5),
+            // The load hangs from the hands, so the upper traps and the grip
+            // hold it as in a deadlift.
+            muscles = mapOf(
+                Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 1.0, Muscle.LOWER_BACK to 0.5, Muscle.TRAPS to 0.5,
+                Muscle.FOREARMS to 0.5, Muscle.ADDUCTORS to 0.5,
+            ),
             pattern = MovementPattern.HINGE, compound = true, stretchBias = true,
         ))
         put("front squat", squatProfile(MovementPattern.SQUAT, glutes = 0.5))
@@ -361,7 +369,8 @@ object MuscleMap {
         put("pendlay row", row(lowerBack = true))
         put("t-bar row", row(lowerBack = true))
         put("good morning", ExerciseProfile(
-            muscles = mapOf(Muscle.HAMSTRINGS to 1.0, Muscle.LOWER_BACK to 1.0, Muscle.GLUTES to 0.5),
+            // A hinge from a flexed hip: the adductor magnus extends it (see romanian deadlift).
+            muscles = mapOf(Muscle.HAMSTRINGS to 1.0, Muscle.LOWER_BACK to 1.0, Muscle.GLUTES to 0.5, Muscle.ADDUCTORS to 0.5),
             pattern = MovementPattern.HINGE, compound = true, stretchBias = true,
         ))
         put("barbell lunge", squatProfile(MovementPattern.LUNGE))
@@ -591,10 +600,9 @@ object MuscleMap {
             muscles = mapOf(Muscle.QUADS to 1.0),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
         ))
-        put("shrimp squat", ExerciseProfile(
-            muscles = mapOf(Muscle.QUADS to 1.0, Muscle.GLUTES to 1.0, Muscle.ABDUCTORS to 0.5),
-            pattern = MovementPattern.LUNGE, compound = true, stretchBias = true,
-        ))
+        // A single-leg squat to full depth like the pistol, so the same
+        // squat shares: it had lost the adductors every other squat credits.
+        put("shrimp squat", squatProfile(MovementPattern.LUNGE))
         put("dragon squat", squatProfile(MovementPattern.LUNGE))
         put("hamstring bridge", ExerciseProfile(
             muscles = mapOf(Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 0.5),
@@ -804,11 +812,12 @@ object MuscleMap {
         ))
     }
 
+    /** The conventional pull: a hinge from a flexed hip, so the adductor magnus extends it too (see romanian deadlift). */
     private fun deadlift() = ExerciseProfile(
         muscles = mapOf(
             Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 1.0, Muscle.LOWER_BACK to 1.0,
             Muscle.RHOMBOIDS to 0.5, Muscle.TRAPS to 0.5, Muscle.QUADS to 0.5,
-            Muscle.FOREARMS to 0.5,
+            Muscle.FOREARMS to 0.5, Muscle.ADDUCTORS to 0.5,
         ),
         pattern = MovementPattern.HINGE, compound = true, stretchBias = true,
     )
