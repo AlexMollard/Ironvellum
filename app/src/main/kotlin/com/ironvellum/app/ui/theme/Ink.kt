@@ -322,19 +322,31 @@ fun Modifier.inkBorder(
     // on anything that was not Outline.Generic, which meant a border on a
     // CircleShape or RoundedCornerShape silently drew NOTHING - a vanished
     // border with a green build and no warning.
-    val path = when (val outline = shape.createOutline(size, layoutDirection, this)) {
-        is Outline.Generic -> outline.path
-        is Outline.Rounded -> Path().apply { addRoundRect(outline.roundRect) }
-        is Outline.Rectangle -> Path().apply { addRect(outline.rect) }
+    fun outlinePath(inset: Float): Path {
+        val box = Size((size.width - 2 * inset).coerceAtLeast(0f), (size.height - 2 * inset).coerceAtLeast(0f))
+        val path = when (val outline = shape.createOutline(box, layoutDirection, this)) {
+            is Outline.Generic -> outline.path
+            is Outline.Rounded -> Path().apply { addRoundRect(outline.roundRect) }
+            is Outline.Rectangle -> Path().apply { addRect(outline.rect) }
+        }
+        if (inset > 0f) path.translate(Offset(inset, inset))
+        return path
     }
     // Round join and cap, always: a jittered outline has near-180-degree turns,
     // and the default MITER join turns those into spikes that shoot past the
     // surface — visible as a bright notch at a panel's corner on device.
     fun stroke(px: Float) = Stroke(px, cap = StrokeCap.Round, join = StrokeJoin.Round)
     if (!InkStyle.enabled) {
-        drawPath(path, color, style = stroke(width.toPx()))
+        // Inset by half the stroke so the whole line lies inside the surface.
+        // Centred on the edge, a surface clipped to its shape (most cards)
+        // lost the outer half: a 1dp border drew as a faint ~1px hairline with
+        // broken anti-aliasing, while unclipped surfaces showed the full width,
+        // so the same border looked different from screen to screen.
+        val px = width.toPx()
+        drawPath(outlinePath(px / 2f), color, style = stroke(px))
         return@drawBehind
     }
+    val path = outlinePath(0f)
     drawPath(path, color.copy(alpha = color.alpha * 0.35f), style = stroke(width.toPx() * 2.6f))
     drawPath(path, color, style = stroke(width.toPx()))
 }
