@@ -964,70 +964,12 @@ class Repository(
         check(session.completedAtMs == null) { "Trial already sealed" }
         val doneSets = sessionDao.setsFor(sessionId).filter { it.done }
         val latestBodyweight = statDao.observeAll().first().firstOrNull()?.weightKg
-        // Split by metric. Strength work (reps AND static holds) earns
-        // difficulty-weighted XP and feeds the strength score; activities earn
-        // XP from ActivityScore and contribute NOTHING to strength.
-        val catalogue = exerciseDao.observeAll().first()
-        val metrics = catalogue.associate { row ->
-            row.id to runCatching { ExerciseMetric.valueOf(row.metric) }
-                .getOrDefault(ExerciseMetric.REPS)
-        }
-        val names = catalogue.associate { it.id to it.name }
-        val categories = catalogue.associate { it.id to it.category }
-        // The sex normalisation differs upper vs lower body, so the score needs
-        // the catalogue row's own group. An unknown stored group falls back to
-        // CORE's midpoint factor rather than crashing the whole completion.
-        val groups = catalogue.associate { row ->
-            row.id to (runCatching { MuscleGroup.valueOf(row.muscleGroup) }.getOrNull() ?: MuscleGroup.CORE)
-        }
-        fun metricOf(exerciseId: Long) = metrics[exerciseId] ?: ExerciseMetric.REPS
-        /** Seconds when the set is a hold, null when it is counted in reps. */
-        fun holdSecondsOf(set: SetLogEntity): Int? =
-            if (metricOf(set.exerciseId) == ExerciseMetric.HOLD) set.durationSec else null
-
-        val liftingSets = doneSets.filter { metricOf(it.exerciseId).isStrength }
-        val activitySets = doneSets.filterNot { metricOf(it.exerciseId).isStrength }
-        val liftingXp = Xp.award(
-            liftingSets.map { set ->
-                Xp.SetEffort(
-                    exerciseName = names[set.exerciseId] ?: "",
-                    reps = set.reps,
-                    holdSeconds = holdSecondsOf(set),
-                    weightKg = set.weightKg,
-                    modifiers = set.modifiers,
-                    metric = metricOf(set.exerciseId),
-                )
-            },
-            latestBodyweight,
-            doneSetCount = doneSets.size,
-        )
-        val activityXp = activitySets.sumOf { set ->
-            val metric = metricOf(set.exerciseId)
-            val per = ActivityScore.xp(
-                exerciseName = names[set.exerciseId] ?: "",
-                category = categories[set.exerciseId] ?: "",
-                metric = metric,
-                durationSec = set.durationSec,
-                distanceM = set.distanceM,
-                addedKg = set.weightKg,
-                bodyweightKg = latestBodyweight ?: 0.0,
-            )
-            if (metric == ExerciseMetric.ATTEMPTS_GRADE) per * set.reps else per
-        }
-        val xp = liftingXp + activityXp
-        val sessionStrength = StrengthIndex.sessionScore(
-            liftingSets.map { set ->
-                StrengthIndex.Effort(
-                    exerciseName = names[set.exerciseId] ?: "",
-                    reps = set.reps,
-                    holdSeconds = holdSecondsOf(set),
-                    addedKg = set.weightKg,
-                    muscleGroup = groups[set.exerciseId] ?: MuscleGroup.CORE,
-                )
-            },
-            latestBodyweight,
-            profileSex(),
-        ) ?: 0
+        // Strength work (reps AND static holds) earns difficulty-weighted XP
+        // and feeds the strength score; activities earn XP from ActivityScore
+        // and contribute NOTHING to strength. SessionScoring owns the split.
+        val scoring = SessionScoring(exerciseDao.observeAll().first())
+        val xp = scoring.xp(doneSets, latestBodyweight)
+        val sessionStrength = scoring.strength(doneSets, latestBodyweight, profileSex())
 
         // Quest bonus: completing the preset scheduled for today — ONCE, and
         // only if the trial contains at least one conquered set (doneSets,
@@ -2222,18 +2164,8 @@ class Repository(
         parsed: CsvWorkoutReader.ParsedImport,
         mapping: Map<String, Long>,
     ): MergeResult = db.withTransaction {
-        val catalogue = exerciseDao.observeAll().first()
-        val metrics = catalogue.associate { row ->
-            row.id to runCatching { ExerciseMetric.valueOf(row.metric) }
-                .getOrDefault(ExerciseMetric.REPS)
-        }
-        val names = catalogue.associate { it.id to it.name }
-        val categories = catalogue.associate { it.id to it.category }
-        val groups = catalogue.associate { row ->
-            row.id to (runCatching { MuscleGroup.valueOf(row.muscleGroup) }.getOrNull() ?: MuscleGroup.CORE)
-        }
+        val scoring = SessionScoring(exerciseDao.observeAll().first())
         val latestBodyweight = statDao.observeAll().first().firstOrNull()?.weightKg
-        fun metricOf(exerciseId: Long) = metrics[exerciseId] ?: ExerciseMetric.REPS
 
         var insertedSets = 0
         var skipped = 0
@@ -2295,39 +2227,8 @@ class Repository(
             insertedSets += setEntities.size
             sessionsInserted++
 
-            // Per-session XP, same calls completeSession makes.
-            val doneSets = setEntities.filter { it.done }
-            val liftingSets = doneSets.filter { metricOf(it.exerciseId).isStrength }
-            val activitySets = doneSets.filterNot { metricOf(it.exerciseId).isStrength }
-            val liftingXp = Xp.award(
-                liftingSets.map { set ->
-                    Xp.SetEffort(
-                        exerciseName = names[set.exerciseId] ?: "",
-                        reps = set.reps,
-                        holdSeconds = set.durationSec
-                            .takeIf { metricOf(set.exerciseId) == ExerciseMetric.HOLD },
-                        weightKg = set.weightKg,
-                        modifiers = set.modifiers,
-                        metric = metricOf(set.exerciseId),
-                    )
-                },
-                latestBodyweight,
-                doneSetCount = doneSets.size,
-            )
-            val activityXp = activitySets.sumOf { set ->
-                val metric = metricOf(set.exerciseId)
-                val per = ActivityScore.xp(
-                    exerciseName = names[set.exerciseId] ?: "",
-                    category = categories[set.exerciseId] ?: "",
-                    metric = metric,
-                    durationSec = set.durationSec,
-                    distanceM = set.distanceM,
-                    addedKg = set.weightKg,
-                    bodyweightKg = latestBodyweight ?: 0.0,
-                )
-                if (metric == ExerciseMetric.ATTEMPTS_GRADE) per * set.reps else per
-            }
-            val sessionXp = liftingXp + activityXp
+            // Per-session XP, priced exactly as completeSession prices it.
+            val sessionXp = scoring.xp(setEntities, latestBodyweight)
             if (sessionXp > 0) {
                 sessionDao.updateSession(sessionDao.byId(sessionId)!!.copy(xpAwarded = sessionXp))
             }
