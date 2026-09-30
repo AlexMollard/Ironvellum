@@ -17,10 +17,14 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,11 +33,14 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -1136,9 +1143,9 @@ private fun LiftsBoard(
                         SocialErrorBanner("Lift boards may be stale: ${ui.error}")
                         Spacer(Modifier.height(10.dp))
                     }
-                    ChipRail(
-                        options = Lift.entries.map { it to it.label.uppercase() },
+                    LiftPicker(
                         selected = lift,
+                        rankedCount = { liftStandings(ui.rows, it, window).size },
                         onPick = { lift = it },
                     )
                     Spacer(Modifier.height(10.dp))
@@ -1162,6 +1169,87 @@ private fun LiftsBoard(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * One bar naming the current lift; the full list opens on tap. A chip rail
+ * hid lifts off the edge of the screen, and this stays one row however many
+ * lifts get boards. Each entry says how many lifters it ranks, so an empty
+ * board is visible before it is opened.
+ */
+@Composable
+private fun LiftPicker(selected: Lift, rankedCount: (Lift) -> Int, onPick: (Lift) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    var barWidthPx by remember { mutableIntStateOf(0) }
+    val density = LocalDensity.current
+    Box(Modifier.fillMaxWidth().onSizeChanged { barWidthPx = it.width }) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .clip(MaterialTheme.shapes.small)
+                .background(Color(0xFF141A18))
+                .inkBorder(IronvellumColors.SovereignGold, MaterialTheme.shapes.small, 1.dp)
+                .clickable(onClickLabel = "Choose a lift") { expanded = true }
+                .padding(horizontal = 14.dp),
+        ) {
+            Text(
+                "LIFT",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+            )
+            Spacer(Modifier.width(12.dp))
+            Text(
+                selected.label.uppercase(),
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = IronvellumColors.SovereignGold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, tint = IronvellumColors.SovereignGold)
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            // As wide as the bar: sized to content, the longest name ran into its count.
+            modifier = Modifier.width(with(density) { barWidthPx.toDp() }),
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+        ) {
+            Lift.entries.forEach { lift ->
+                val count = rankedCount(lift)
+                DropdownMenuItem(
+                    text = {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                lift.label.uppercase(),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontFamily = ChakraPetch,
+                                fontWeight = if (lift == selected) FontWeight.Bold else FontWeight.Normal,
+                                color = if (lift == selected) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Spacer(Modifier.width(12.dp))
+                            Text(
+                                if (count == 0) "none yet" else "$count ranked",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = IronvellumColors.InkMuted,
+                            )
+                        }
+                    },
+                    onClick = {
+                        expanded = false
+                        onPick(lift)
+                    },
+                )
             }
         }
     }
