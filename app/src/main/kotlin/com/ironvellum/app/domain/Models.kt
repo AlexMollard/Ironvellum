@@ -91,6 +91,8 @@ data class WorkoutSession(
     val imported: Boolean = false,
     /** Who may see this workout in the cloud; the stricter of this and the profile visibility wins. */
     val audience: SessionAudience = SessionAudience.PROFILE,
+    /** When the sealed trial was last amended; null when it never was. */
+    val editedAtMs: Long? = null,
 )
 
 /**

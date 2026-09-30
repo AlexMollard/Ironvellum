@@ -603,4 +603,34 @@ class MigrationForwardTest {
         }
         InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase("$dbName-named")
     }
+
+    /**
+     * Schema 32 -> 33 adds the sealed trial's amended stamp. Every existing
+     * trial must come through unamended (null) with its figures untouched,
+     * and the new column must take a value afterwards.
+     */
+    @Test
+    fun upgradeTo33AddsTheAmendedStampAsNull() = runTest {
+        helper.createDatabase(dbName, 32).use { old ->
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, " +
+                    "xpAwarded, strengthScore, title, note, privateNote, imported, audience) " +
+                    "VALUES (5, NULL, 'Pull', 1789782608320, 1789785525853, 210, 480, '', '', '', 0, 'friends')",
+            )
+        }
+        helper.runMigrationsAndValidate(dbName, IronvellumDatabase.VERSION, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT xpAwarded, strengthScore, audience, editedAtMs FROM sessions WHERE id = 5").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(210, c.getInt(0))
+                assertEquals(480, c.getInt(1))
+                assertEquals("friends", c.getString(2))
+                assertTrue("an existing trial reads as never amended", c.isNull(3))
+            }
+            db.execSQL("UPDATE sessions SET editedAtMs = 1789790000000 WHERE id = 5")
+            db.query("SELECT editedAtMs FROM sessions WHERE id = 5").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(1789790000000L, c.getLong(0))
+            }
+        }
+    }
 }

@@ -77,7 +77,17 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 32
+        const val VERSION = 33
+
+        /**
+         * When a sealed trial was amended. Nullable with no default: every
+         * existing trial was never amended, and no row is read or rewritten.
+         */
+        private val MIGRATION_32_33 = object : Migration(32, 33) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE sessions ADD COLUMN editedAtMs INTEGER")
+            }
+        }
 
         /**
          * Renames the seeded default profile name from "Lifter" to
@@ -457,6 +467,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_29_30,
             MIGRATION_30_31,
             MIGRATION_31_32,
+            MIGRATION_32_33,
         )
 
         const val NAME = "ironvellum.db"

@@ -77,6 +77,12 @@ data class SessionEntity(
      * before the column existed.
      */
     val audience: String = "profile",
+    /**
+     * When the sealed trial was last amended; null for one never touched
+     * after sealing. Added by MIGRATION_32_33 with no default, so every
+     * existing row reads as unamended.
+     */
+    val editedAtMs: Long? = null,
 )
 
 @Entity(

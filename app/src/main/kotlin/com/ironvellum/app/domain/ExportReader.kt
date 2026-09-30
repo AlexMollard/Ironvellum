@@ -136,6 +136,9 @@ object ExportReader {
         imported = o.bool("imported") ?: false,
         // Absent from archives before 1.4 and for every PROFILE workout.
         audience = SessionAudience.fromWire(o.str("audience")),
+        // Absent from archives before amending existed and for every
+        // trial never amended.
+        editedAtMs = o.long("editedAtMs"),
     ) to (o.arr("sets") ?: emptyList()).map { s ->
         val set = s as Obj
         SessionSet(

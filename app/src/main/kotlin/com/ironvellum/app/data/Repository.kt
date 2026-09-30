@@ -1200,6 +1200,7 @@ class Repository(
         privateNote = privateNote,
         imported = imported,
         audience = SessionAudience.fromWire(audience),
+        editedAtMs = editedAtMs,
     )
 
     // ---------------------------------------------------------------- stats
@@ -1974,6 +1975,7 @@ class Repository(
                             privateNote = session.privateNote.take(WireLimits.PRIVATE_NOTE_MAX),
                             imported = session.imported,
                             audience = session.audience.wire,
+                            editedAtMs = session.editedAtMs,
                         ),
                     )
                     restoredSets += sessionDao.insertSets(

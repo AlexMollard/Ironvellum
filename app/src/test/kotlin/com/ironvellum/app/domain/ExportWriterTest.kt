@@ -245,4 +245,28 @@ class ExportWriterTest {
         assertEquals(1250.5, restored.distanceM!!, 0.0)
         assertEquals("V7", restored.grade)
     }
+
+    @Test
+    fun `an amended stamp survives a real write then read and is absent when never amended`() {
+        fun write(session: WorkoutSession) = ExportWriter.write(
+            profile = PlayerProfile(),
+            trainingMode = TrainingMode.STRENGTH,
+            presets = emptyList(),
+            sessions = listOf(session to emptyList()),
+            stats = emptyList(),
+            titles = emptyList(),
+            skills = emptyList(),
+            healthDays = emptyList(),
+            exportedAtMs = 1,
+        )
+        val amended = write(WorkoutSession(id = 4, label = "S", startedAtMs = 1, completedAtMs = 2, editedAtMs = 1_790_000_000_000))
+        assertEquals(
+            1_790_000_000_000,
+            ExportReader.read(amended).getOrThrow().sessions.single().first.editedAtMs,
+        )
+        // Never-amended trials keep the archive byte-identical to before.
+        val plain = write(WorkoutSession(id = 4, label = "S", startedAtMs = 1, completedAtMs = 2))
+        assertFalse(plain.contains("editedAtMs"))
+        assertNull(ExportReader.read(plain).getOrThrow().sessions.single().first.editedAtMs)
+    }
 }

@@ -253,6 +253,8 @@ object ExportWriter {
             if (session.audience != SessionAudience.PROFILE) {
                 append(",\"audience\":").appendEscaped(session.audience.wire)
             }
+            // Same rule: only an amended trial carries the stamp.
+            session.editedAtMs?.let { append(",\"editedAtMs\":").append(it) }
             append(",\"sets\":[")
             sets.forEachIndexed { ti, set ->
                 if (ti > 0) append(",")
