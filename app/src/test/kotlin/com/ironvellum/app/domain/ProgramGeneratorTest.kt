@@ -827,6 +827,29 @@ class ProgramGeneratorTest {
     }
 
     @Test
+    fun `improve leaves profiled activities, milestones and metre skills as written`() {
+        // Every catalogue row now has a muscle profile; a profile must not
+        // make improve re-dose a run, a milestone lift or a metre skill.
+        // Each is one set here, which improve would coerce to 2 if it dosed it.
+        val request = ProgramRequest(TrainingFocus.MUSCLE, VolumeLevel.STANDARD, Equipment.FULL_GYM)
+        val kept = listOf(
+            PlannedEntry("Heavy Bench Press", 1, 3, null),
+            PlannedEntry("Handstand Walk", 1, 10, null),
+            PlannedEntry("Running", 1, 30, null),
+            PlannedEntry("Plank", 1, 60, null),
+        )
+        val push = PlannedPreset("Push", "", 1, listOf(PlannedEntry("Bench Press", 3, 8, null)) + kept)
+        val improvement = ProgramGenerator.improve(push, emptyList(), request, catalogue, strength)
+        for (entry in kept) {
+            assertEquals(entry, improvement.after.entries.firstOrNull { it.exerciseName == entry.exerciseName })
+            assertTrue(
+                "${entry.exerciseName} was changed: ${improvement.changes}",
+                improvement.changes.none { it.exerciseName == entry.exerciseName },
+            )
+        }
+    }
+
+    @Test
     fun `improve never swaps a strength main lift and is idempotent there too`() {
         val request = ProgramRequest(
             TrainingFocus.STRENGTH, VolumeLevel.STANDARD, Equipment.FULL_GYM,

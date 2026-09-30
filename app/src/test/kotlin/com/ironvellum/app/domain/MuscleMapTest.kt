@@ -43,6 +43,20 @@ class MuscleMapTest {
     }
 
     @Test
+    fun `every catalogue exercise credits at least one muscle`() {
+        // Owner rule: no exercise shows zero muscle groups - holds,
+        // activities, milestones and metre skills included. A share of 0.0
+        // (the squats' explicit hamstrings) is not a muscle worked.
+        val missing = catalogue.filter { exercise ->
+            MuscleMap.profile(exercise.name)?.muscles.orEmpty().none { it.value > 0.0 }
+        }
+        assertTrue(
+            "catalogue exercises with no muscle credited: " + missing.joinToString { it.name },
+            missing.isEmpty(),
+        )
+    }
+
+    @Test
     fun `every MuscleMap key exists in the catalogue case-insensitively`() {
         val catalogueKeys = catalogue.map { it.name.trim().lowercase() }.toSet()
         val offenders = MuscleMap.keys.filter { it !in catalogueKeys }
@@ -214,12 +228,10 @@ class MuscleMapTest {
     @Test
     fun `every lever and planche hold has a profile`() {
         // Unprofiled, a lifter's lever and planche sets credited nothing on
-        // weekly coverage. Frog Stand is balance practice with the knees on
-        // the elbows, unprofiled like Crow Pose.
-        val exempt = setOf("Frog Stand")
+        // weekly coverage.
         val holds = Skills.ALL
             .filter { it.line == "Lever" || it.line == "Planche" || "Lever" in it.name }
-            .filter { it.metric == Skills.Metric.SECONDS && it.name !in exempt }
+            .filter { it.metric == Skills.Metric.SECONDS }
         assertTrue("fixture broken: ${holds.map { it.name }}", holds.size >= 15)
         val missing = holds.filter { MuscleMap.profile(it.name) == null }.map { it.name }
         assertTrue("lever/planche holds with no profile: $missing", missing.isEmpty())

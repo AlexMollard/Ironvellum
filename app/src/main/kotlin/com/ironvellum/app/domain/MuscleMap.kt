@@ -1,7 +1,7 @@
 package com.ironvellum.app.domain
 
 /**
- * Per-muscle contribution of every movement the generator may prescribe.
+ * Per-muscle contribution of every catalogue movement.
  *
  * THE SCALE (evidence brief section 9.4) - three levels anchored on the
  * fractional-set method of Pelland 2026, which compared exactly 1 / 0.5 / 0
@@ -56,13 +56,13 @@ object MuscleMap {
     private fun key(exerciseName: String) = exerciseName.trim().lowercase()
 
     /**
-     * Case-insensitive lookup. Returns null for anything the generator never
-     * prescribes a profile for: activities, balance and mobility holds,
-     * milestone rows, and any user-created movement - improve() passes those
-     * through untouched. The holds profiled here (L-sit, Side Plank, the
-     * lever and planche lines) only count toward the coverage of a lifter's
-     * own presets and logs; the generator never doses a hold, and improve()
-     * leaves a hold entry as the lifter wrote it.
+     * Case-insensitive lookup. Every catalogue row has a profile; null means
+     * a user-created movement, which improve() passes through untouched.
+     * Holds, activities, load-priced milestones and metre skills are profiled
+     * so the lifter sees what they work and so they count toward the
+     * coverage of his own presets and logs, but the generator never
+     * prescribes them ([ProgramGenerator.eligible]) and improve() leaves
+     * them as the lifter wrote them.
      */
     fun profile(exerciseName: String): ExerciseProfile? = profiles[key(exerciseName)]
 
@@ -233,14 +233,7 @@ object MuscleMap {
             muscles = mapOf(Muscle.ABDUCTORS to 1.0),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = false,
         ))
-        put("deadlift", ExerciseProfile(
-            muscles = mapOf(
-                Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 1.0, Muscle.LOWER_BACK to 1.0,
-                Muscle.RHOMBOIDS to 0.5, Muscle.TRAPS to 0.5, Muscle.QUADS to 0.5,
-                Muscle.FOREARMS to 0.5,
-            ),
-            pattern = MovementPattern.HINGE, compound = true, stretchBias = true,
-        ))
+        put("deadlift", deadlift())
         put("romanian deadlift", ExerciseProfile(
             // The load hangs from the hands, so the upper traps hold it as in a deadlift.
             muscles = mapOf(Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 1.0, Muscle.LOWER_BACK to 0.5, Muscle.TRAPS to 0.5),
@@ -611,7 +604,260 @@ object MuscleMap {
             muscles = mapOf(Muscle.HAMSTRINGS to 1.0),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
         ))
+        // ---- Load-priced milestones ----
+        // The lift itself at a stated load: the same muscles as the plain
+        // movement. The generator never prescribes these rows.
+        put("weighted pull-up", verticalPull())
+        put("weighted dip", dip())
+        for (name in listOf("pause squat", "heavy squat", "double-bodyweight squat", "triple-bodyweight squat")) {
+            put(name, squatProfile(MovementPattern.SQUAT))
+        }
+        for (name in listOf(
+            "volume bench press", "paused bench press", "heavy bench press", "double-bodyweight bench press",
+        )) {
+            put(name, pressFamily(MovementPattern.HORIZONTAL_PUSH))
+        }
+        for (name in listOf(
+            "volume overhead press", "bodyweight overhead press", "heavy overhead press", "half-again overhead press",
+        )) {
+            put(name, verticalPress())
+        }
+        for (name in listOf(
+            "volume deadlift", "double-bodyweight deadlift", "heavy deadlift", "triple-bodyweight deadlift",
+        )) {
+            put(name, deadlift())
+        }
+        // ---- Other holds ----
+        // Hangs: the grip holds the whole body, so the forearms lead; the
+        // cuff holds the shoulder, and an active hang pulls the blade down.
+        put("dead hang", hold(Muscle.FOREARMS to 1.0, Muscle.ROTATOR_CUFF to 0.5, pattern = MovementPattern.VERTICAL_PULL))
+        put("active bar hang", hold(
+            Muscle.FOREARMS to 1.0, Muscle.LATS to 0.5, Muscle.TRAPS to 0.5, Muscle.ROTATOR_CUFF to 0.5,
+            pattern = MovementPattern.VERTICAL_PULL,
+        ))
+        // One arm: the trunk resists the twist as well.
+        put("one-arm hang", hold(
+            Muscle.FOREARMS to 1.0, Muscle.LATS to 0.5, Muscle.ROTATOR_CUFF to 0.5, Muscle.OBLIQUES to 0.5,
+            pattern = MovementPattern.VERTICAL_PULL,
+        ))
+        // Planks: the abs resist extension, the obliques assist - single
+        // trunk bracing like the side plank.
+        put("plank", hold(Muscle.ABS to 1.0, Muscle.OBLIQUES to 0.5, pattern = MovementPattern.CORE, compound = false))
+        put("weighted plank", hold(Muscle.ABS to 1.0, Muscle.OBLIQUES to 0.5, pattern = MovementPattern.CORE, compound = false))
+        put("hollow hold", hold(
+            Muscle.ABS to 1.0, Muscle.HIP_FLEXORS to 0.5, Muscle.OBLIQUES to 0.5,
+            pattern = MovementPattern.CORE, compound = false,
+        ))
+        put("parallel bar support hold", supportHold())
+        // Rings shake: the cuff and the biceps hold the arms turned out.
+        put("ring support hold", supportHold(Muscle.ROTATOR_CUFF, Muscle.BICEPS))
+        put("wall handstand", handstandHold())
+        put("freestanding handstand", handstandHold(Muscle.ABS))
+        put("one-arm handstand", handstandHold(Muscle.ABS, Muscle.OBLIQUES))
+        // Walking on the hands: the handstand hold, shifted from hand to hand.
+        put("handstand walk", handstandHold(Muscle.ABS))
+        put("crow pose", armBalance())
+        put("frog stand", armBalance())
+        // Straight arms held out to the sides on rings: the lats and the
+        // costal chest pull the arms down, the biceps and cuff hold the joint.
+        put("iron cross", hold(
+            Muscle.LATS to 1.0, Muscle.LOWER_CHEST to 0.5, Muscle.MID_CHEST to 0.5, Muscle.BICEPS to 0.5,
+            Muscle.ROTATOR_CUFF to 0.5, Muscle.FOREARMS to 0.5,
+            pattern = MovementPattern.VERTICAL_PULL,
+        ))
+        // The body held sideways off a pole: the obliques lead, the top arm
+        // pulls, the bottom arm pushes.
+        put("human flag", hold(
+            Muscle.OBLIQUES to 1.0, Muscle.LATS to 0.5, Muscle.SIDE_DELTS to 0.5, Muscle.TRICEPS to 0.5,
+            Muscle.FOREARMS to 0.5,
+            pattern = MovementPattern.CORE,
+        ))
+        // The deepest compression, hands pressing down behind the hips.
+        put("manna", hold(
+            Muscle.ABS to 1.0, Muscle.HIP_FLEXORS to 1.0, Muscle.REAR_DELTS to 0.5, Muscle.TRICEPS to 0.5,
+            Muscle.TRAPS to 0.5, Muscle.FOREARMS to 0.5,
+            pattern = MovementPattern.CORE,
+        ))
+        // ---- Mobility holds ----
+        // The muscles held long or working to hold the position, all at the
+        // helper share. A squat hold, like every squat, credits no hamstrings.
+        put("deep squat hold", hold(
+            Muscle.QUADS to 0.5, Muscle.GLUTES to 0.5, Muscle.ADDUCTORS to 0.5, Muscle.CALVES to 0.5,
+            pattern = MovementPattern.SQUAT,
+        ))
+        put("pancake", hold(
+            Muscle.ADDUCTORS to 0.5, Muscle.HAMSTRINGS to 0.5, Muscle.HIP_FLEXORS to 0.5, Muscle.LOWER_BACK to 0.5,
+            pattern = MovementPattern.HINGE,
+        ))
+        put("bridge", hold(
+            Muscle.LOWER_BACK to 1.0, Muscle.GLUTES to 0.5, Muscle.FRONT_DELTS to 0.5, Muscle.TRICEPS to 0.5,
+            pattern = MovementPattern.CORE,
+        ))
+        put("front split", hold(
+            Muscle.HAMSTRINGS to 0.5, Muscle.HIP_FLEXORS to 0.5, Muscle.GLUTES to 0.5,
+            pattern = MovementPattern.LUNGE,
+        ))
+        // Hanging with the arms behind: the back lever's shoulder flexors, held long.
+        put("german hang", hold(
+            Muscle.FRONT_DELTS to 0.5, Muscle.UPPER_CHEST to 0.5, Muscle.BICEPS to 0.5, Muscle.ROTATOR_CUFF to 0.5,
+            Muscle.FOREARMS to 0.5,
+            pattern = MovementPattern.HORIZONTAL_PUSH,
+        ))
+        put("wrist prep", hold(Muscle.FOREARMS to 1.0, pattern = MovementPattern.ISOLATION, compound = false))
+        // ---- Activities: cardio ----
+        val gait = arrayOf(Muscle.CALVES, Muscle.QUADS, Muscle.GLUTES, Muscle.HAMSTRINGS, Muscle.HIP_FLEXORS)
+        put("running", activity(MovementPattern.LUNGE, *gait))
+        put("treadmill", activity(MovementPattern.LUNGE, *gait))
+        // Uneven ground: the glute med steadies every landing.
+        put("trail running", activity(MovementPattern.LUNGE, *gait, Muscle.ABDUCTORS))
+        put("walking", activity(MovementPattern.LUNGE, Muscle.CALVES, Muscle.GLUTES, Muscle.QUADS, Muscle.TIBIALIS))
+        put("hiking", activity(MovementPattern.LUNGE, Muscle.QUADS, Muscle.GLUTES, Muscle.CALVES, Muscle.HAMSTRINGS))
+        val pedal = arrayOf(Muscle.QUADS, Muscle.GLUTES, Muscle.HAMSTRINGS, Muscle.CALVES)
+        put("cycling", activity(MovementPattern.LUNGE, *pedal))
+        put("indoor cycling", activity(MovementPattern.LUNGE, *pedal))
+        put("elliptical", activity(MovementPattern.LUNGE, *pedal))
+        // The handles push and pull with the pedals.
+        put("assault bike", activity(MovementPattern.LUNGE, *pedal, Muscle.LATS, Muscle.TRICEPS))
+        put("stair climbing", activity(MovementPattern.LUNGE, Muscle.QUADS, Muscle.GLUTES, Muscle.CALVES))
+        put("versaclimber", activity(MovementPattern.LUNGE, Muscle.QUADS, Muscle.GLUTES, Muscle.CALVES, Muscle.LATS))
+        // The legs drive, then the back and arms finish the stroke.
+        put("rowing", activity(
+            MovementPattern.HORIZONTAL_PULL, Muscle.QUADS, Muscle.GLUTES, Muscle.HAMSTRINGS, Muscle.LATS,
+            Muscle.RHOMBOIDS, Muscle.BICEPS, Muscle.LOWER_BACK, Muscle.FOREARMS,
+        ))
+        put("ski erg", activity(MovementPattern.HORIZONTAL_PULL, Muscle.LATS, Muscle.TRICEPS, Muscle.ABS, Muscle.GLUTES))
+        val rope = arrayOf(Muscle.CALVES, Muscle.QUADS, Muscle.FOREARMS)
+        put("skipping", activity(MovementPattern.LUNGE, *rope))
+        put("jump rope intervals", activity(MovementPattern.LUNGE, *rope))
+        // A heavy rope loads the shoulders turning it.
+        put("weighted skipping", activity(MovementPattern.LUNGE, *rope, Muscle.FRONT_DELTS, Muscle.SIDE_DELTS))
+        // ---- Activities: water ----
+        val stroke = arrayOf(Muscle.LATS, Muscle.FRONT_DELTS, Muscle.TRICEPS, Muscle.ROTATOR_CUFF, Muscle.HIP_FLEXORS)
+        put("swimming", activity(MovementPattern.HORIZONTAL_PULL, *stroke))
+        // Treading water is the eggbeater kick: the adductors and quads.
+        put("water polo", activity(MovementPattern.HORIZONTAL_PULL, *stroke, Muscle.ADDUCTORS, Muscle.QUADS))
+        // ---- Activities: climbing ----
+        val climb = arrayOf(Muscle.FOREARMS, Muscle.LATS, Muscle.BRACHIALIS, Muscle.BICEPS, Muscle.CALVES)
+        put("bouldering", activity(MovementPattern.HORIZONTAL_PULL, *climb, Muscle.ABS))
+        put("sport climbing", activity(MovementPattern.HORIZONTAL_PULL, *climb))
+        put("top rope", activity(MovementPattern.HORIZONTAL_PULL, *climb))
+        // ---- Activities: sport ----
+        // Running sports: sprints, cuts and jumps.
+        val field = arrayOf(Muscle.QUADS, Muscle.GLUTES, Muscle.HAMSTRINGS, Muscle.CALVES)
+        put("football (soccer)", activity(MovementPattern.LUNGE, *field, Muscle.ADDUCTORS, Muscle.HIP_FLEXORS))
+        put("basketball", activity(MovementPattern.LUNGE, *field))
+        put("rugby", activity(MovementPattern.LUNGE, *field, Muscle.TRAPS, Muscle.LOWER_BACK))
+        put("volleyball", activity(MovementPattern.LUNGE, Muscle.QUADS, Muscle.CALVES, Muscle.GLUTES, Muscle.FRONT_DELTS, Muscle.ROTATOR_CUFF))
+        put("cricket", activity(
+            MovementPattern.LUNGE, Muscle.QUADS, Muscle.GLUTES, Muscle.HAMSTRINGS, Muscle.OBLIQUES,
+            Muscle.FRONT_DELTS, Muscle.ROTATOR_CUFF,
+        ))
+        // Racquet sports: court footwork, a rotating trunk and a swinging arm.
+        val racquet = arrayOf(
+            Muscle.QUADS, Muscle.CALVES, Muscle.GLUTES, Muscle.OBLIQUES, Muscle.FRONT_DELTS,
+            Muscle.ROTATOR_CUFF, Muscle.FOREARMS,
+        )
+        put("tennis", activity(MovementPattern.LUNGE, *racquet))
+        put("badminton", activity(MovementPattern.LUNGE, *racquet))
+        put("squash", activity(MovementPattern.LUNGE, *racquet))
+        put("table tennis", activity(MovementPattern.LUNGE, Muscle.FOREARMS, Muscle.OBLIQUES, Muscle.QUADS, Muscle.CALVES))
+        put("golf", activity(MovementPattern.CORE, Muscle.OBLIQUES, Muscle.GLUTES, Muscle.LOWER_BACK, Muscle.FOREARMS))
+        // Striking: punches protract and extend the arm off a rotating trunk;
+        // kicks add the hips.
+        val punch = arrayOf(Muscle.FRONT_DELTS, Muscle.TRICEPS, Muscle.SERRATUS, Muscle.OBLIQUES, Muscle.CALVES)
+        val kick = arrayOf(Muscle.HIP_FLEXORS, Muscle.GLUTES, Muscle.QUADS, Muscle.ABDUCTORS)
+        put("boxing", activity(MovementPattern.HORIZONTAL_PUSH, *punch))
+        put("kickboxing", activity(MovementPattern.HORIZONTAL_PUSH, *punch, *kick))
+        put("karate", activity(MovementPattern.HORIZONTAL_PUSH, *punch, *kick))
+        put("martial arts class", activity(MovementPattern.HORIZONTAL_PUSH, *punch, *kick))
+        // Grappling: gripping, pulling and bracing a resisting body.
+        val grapple = arrayOf(
+            Muscle.FOREARMS, Muscle.LATS, Muscle.BICEPS, Muscle.ABS, Muscle.GLUTES, Muscle.ADDUCTORS,
+            Muscle.QUADS, Muscle.TRAPS,
+        )
+        put("brazilian jiu-jitsu", activity(MovementPattern.CORE, *grapple))
+        put("wrestling", activity(MovementPattern.CORE, *grapple))
+        put("judo", activity(MovementPattern.CORE, *grapple))
+        // Board and snow sports: a flexed-knee stance balanced over the feet.
+        put("skateboarding", activity(MovementPattern.LUNGE, Muscle.QUADS, Muscle.GLUTES, Muscle.CALVES, Muscle.TIBIALIS, Muscle.ABDUCTORS))
+        put("snowboarding", activity(MovementPattern.LUNGE, Muscle.QUADS, Muscle.GLUTES, Muscle.CALVES, Muscle.TIBIALIS, Muscle.OBLIQUES))
+        put("skiing", activity(MovementPattern.LUNGE, Muscle.QUADS, Muscle.GLUTES, Muscle.ADDUCTORS, Muscle.ABDUCTORS, Muscle.CALVES))
+        // Paddling prone, then the pop-up and the stance.
+        put("surfing", activity(
+            MovementPattern.HORIZONTAL_PULL, Muscle.LATS, Muscle.TRAPS, Muscle.REAR_DELTS, Muscle.LOWER_BACK,
+            Muscle.TRICEPS, Muscle.QUADS,
+        ))
+        put("dancing", activity(MovementPattern.LUNGE, Muscle.CALVES, Muscle.QUADS, Muscle.GLUTES, Muscle.HIP_FLEXORS))
+        // ---- Activities: mobility ----
+        put("yoga", activity(
+            MovementPattern.CORE, Muscle.ABS, Muscle.TRICEPS, Muscle.FRONT_DELTS, Muscle.QUADS, Muscle.GLUTES,
+            Muscle.HAMSTRINGS,
+        ))
+        put("pilates", activity(MovementPattern.CORE, Muscle.ABS, Muscle.OBLIQUES, Muscle.HIP_FLEXORS, Muscle.GLUTES, Muscle.LOWER_BACK))
+        put("stretching", activity(
+            MovementPattern.CORE, Muscle.HAMSTRINGS, Muscle.HIP_FLEXORS, Muscle.CALVES, Muscle.ADDUCTORS,
+            Muscle.LOWER_BACK,
+        ))
+        put("mobility flow", activity(
+            MovementPattern.CORE, Muscle.HIP_FLEXORS, Muscle.GLUTES, Muscle.ADDUCTORS, Muscle.LOWER_BACK,
+            Muscle.ROTATOR_CUFF, Muscle.ABS,
+        ))
     }
+
+    private fun deadlift() = ExerciseProfile(
+        muscles = mapOf(
+            Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 1.0, Muscle.LOWER_BACK to 1.0,
+            Muscle.RHOMBOIDS to 0.5, Muscle.TRAPS to 0.5, Muscle.QUADS to 0.5,
+            Muscle.FOREARMS to 0.5,
+        ),
+        pattern = MovementPattern.HINGE, compound = true, stretchBias = true,
+    )
+
+    /**
+     * Holds and activities outside the lever and planche lines. Every share
+     * is the helper 0.5 unless a muscle plainly leads: no longitudinal trial
+     * measured growth from any of them, and not stretch biased - the
+     * lengthened-position trials were all dynamic.
+     */
+    private fun hold(
+        vararg muscles: Pair<Muscle, Double>,
+        pattern: MovementPattern,
+        compound: Boolean = true,
+    ) = ExerciseProfile(muscles = linkedMapOf(*muscles), pattern = pattern, compound = compound, stretchBias = false)
+
+    /**
+     * Cardio, sport, climbing, water and mobility sessions: the prime movers,
+     * dominant first, each at the helper 0.5 - practised submaximally, not
+     * sets taken near failure. Compound: the whole body works together.
+     * A pulling activity takes HORIZONTAL_PULL, never VERTICAL_PULL: the
+     * pull-up spacing rule ([ProgramGenerator.isPullUpVariant]) must not
+     * read a swim or a climb as a pull-up.
+     */
+    private fun activity(pattern: MovementPattern, vararg muscles: Muscle) = ExerciseProfile(
+        muscles = linkedMapOf(*muscles.map { it to 0.5 }.toTypedArray()),
+        pattern = pattern, compound = true, stretchBias = false,
+    )
+
+    /** Handstand holds: the front delts hold the arms overhead, the blade upward-rotated. */
+    private fun handstandHold(vararg extra: Muscle) = hold(
+        Muscle.FRONT_DELTS to 1.0, Muscle.TRAPS to 0.5, Muscle.SERRATUS to 0.5, Muscle.TRICEPS to 0.5,
+        Muscle.ROTATOR_CUFF to 0.5, Muscle.FOREARMS to 0.5, *extra.map { it to 0.5 }.toTypedArray(),
+        pattern = MovementPattern.VERTICAL_PUSH,
+    )
+
+    /** Support holds at the top of a dip: the blade held down, the elbows locked. */
+    private fun supportHold(vararg extra: Muscle) = hold(
+        Muscle.LOWER_CHEST to 0.5, Muscle.TRICEPS to 0.5, Muscle.TRAPS to 0.5, Muscle.FRONT_DELTS to 0.5,
+        *extra.map { it to 0.5 }.toTypedArray(),
+        pattern = MovementPattern.HORIZONTAL_PUSH,
+    )
+
+    /** Bent-arm balances (Crow, Frog Stand): the knees rest on the arms, the trunk holds the tuck. */
+    private fun armBalance() = hold(
+        Muscle.TRICEPS to 0.5, Muscle.FRONT_DELTS to 0.5, Muscle.SERRATUS to 0.5, Muscle.ABS to 0.5,
+        Muscle.FOREARMS to 0.5,
+        pattern = MovementPattern.HORIZONTAL_PUSH,
+    )
 
     /** L-sit holds: the hip flexors lift the legs while the abs curl the pelvis. */
     private fun lSit() = ExerciseProfile(

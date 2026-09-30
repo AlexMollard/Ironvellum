@@ -156,12 +156,24 @@ object ProgramGenerator {
         exercise.name.trim().lowercase().startsWith("assisted") ||
             MovementDifficulty.loadFactor(exercise.name) < FREE_WEIGHT_LOAD
 
-    private fun equipmentAllows(exercise: Exercise, equipment: Equipment): Boolean {
-        if (exercise.category.isNotBlank()) return false
-        // Holds are measured in seconds; a rep target on a plank is nonsense.
-        if (exercise.metric != ExerciseMetric.REPS) return false
-        return GearRequirements.allows(exercise.name, exercise.isWeighted, equipment)
-    }
+    private fun equipmentAllows(exercise: Exercise, equipment: Equipment): Boolean =
+        GearRequirements.allows(exercise.name, exercise.isWeighted, equipment)
+
+    /**
+     * Whether the generator may ever dose this movement, whatever the gear:
+     * a lifting row (no activity category) with a REPS metric - holds are
+     * measured in seconds, and a rep target on a plank is nonsense - that is
+     * neither a load-priced milestone nor a skill measured in metres (Seed
+     * stamps Handstand Walk REPS, but "10 metres" is not a rep target).
+     * Every catalogue row has a [MuscleMap] profile, so this, not the
+     * profile, is what keeps the rest out of the pool and out of improve().
+     */
+    private fun dosable(exercise: Exercise): Boolean =
+        exercise.category.isBlank() &&
+            exercise.metric == ExerciseMetric.REPS &&
+            !MovementDifficulty.isLoadPriced(exercise.name) &&
+            Skills.ALL.firstOrNull { skill -> skill.name.equals(exercise.name, ignoreCase = true) }
+                ?.metric != Skills.Metric.METRES
 
     /** How well the implement matches the gear: free weight 0, machine 1,
      * bodyweight 2, assisted machines last of all (3) - they are regressions
@@ -220,13 +232,11 @@ object ProgramGenerator {
         compoundOnly: Boolean = false,
     ): List<Exercise> =
         catalogue.filter {
-            equipmentAllows(it, equipment) &&
-                !MovementDifficulty.isLoadPriced(it.name) &&
+            dosable(it) &&
+                equipmentAllows(it, equipment) &&
                 MuscleMap.profile(it.name) != null &&
                 (focus == TrainingFocus.SKILL || !MuscleMap.isTechnique(it.name)) &&
-                !(compoundOnly && MovementDifficulty.isIsolation(it.name)) &&
-                Skills.ALL.firstOrNull { skill -> skill.name.equals(it.name, ignoreCase = true) }
-                    ?.metric != Skills.Metric.METRES
+                !(compoundOnly && MovementDifficulty.isIsolation(it.name))
         }
 
     /**
@@ -681,8 +691,7 @@ object ProgramGenerator {
      */
     internal fun isPullUpVariant(entry: PlannedEntry): Boolean {
         if (MovementDifficulty.isHoldSet(null, entry.exerciseName, entry.modifiers)) return false
-        // Unprofiled catalogue rows ("Weighted Pull-up") and the lifter's own
-        // names go by name; a bodyweight row is never one.
+        // The lifter's own names go by name; a bodyweight row is never one.
         val profile = MuscleMap.profile(entry) ?: return entry.exerciseName.lowercase().let {
             ("pull-up" in it || "chin-up" in it) && "australian" !in it
         }
@@ -1465,6 +1474,18 @@ object ProgramGenerator {
         )
 
     /**
+     * Whether improve() may re-dose [entry]: not a hold, and its catalogue
+     * row [dosable]. A name with no row (a user's own movement) goes by
+     * name: only a load-priced milestone or a metre skill is left alone.
+     */
+    private fun redosable(entry: PlannedEntry, catalogue: List<Exercise>): Boolean {
+        if (MovementDifficulty.isHoldSet(null, entry.exerciseName, entry.modifiers)) return false
+        val row = catalogue.firstOrNull { it.name.equals(entry.exerciseName, ignoreCase = true) }
+            ?: Exercise(name = entry.exerciseName, muscleGroup = MuscleGroup.CORE, isWeighted = false)
+        return dosable(row)
+    }
+
+    /**
      * Improves one preset toward the request's goal, keeping name, day and
      * every entry's modifiers:
      *  - reps and sets move into the goal's ranges (Lopez 2021);
@@ -1479,10 +1500,11 @@ object ProgramGenerator {
      *  - missing loads are filled from the strength profile;
      *  - a preset over [ProgramRules.exerciseCap] loses the entries the week
      *    misses least ([capTrimIndex]), each reported as REMOVED.
-     * Movements without a MuscleMap profile (user-created, CSV imports) and
-     * holds are passed through untouched: a hold's figure is seconds, so no
-     * rep range, swap or set top-up applies to it, but its profile still
-     * counts toward the week's coverage. With [ProgramRequest.compoundOnly] each of
+     * Movements without a MuscleMap profile (user-created, CSV imports),
+     * holds, activities, load-priced milestones and metre skills are passed
+     * through untouched ([redosable]): their figure is seconds, a session or
+     * a stated load, so no rep range, swap or set top-up applies to them,
+     * but their profile still counts toward the week's coverage. With [ProgramRequest.compoundOnly] each of
      * the lifter's own isolation entries becomes its closest compound or
      * skill stand-in ([compoundStandIn]) or is removed - unless removing
      * would empty the session, in which case they stay. Idempotent by
@@ -1527,8 +1549,9 @@ object ProgramGenerator {
         for ((index, entry) in target.entries.withIndex()) {
             // Modifiers count: a deficit push-up is already long-length work.
             val profile = MuscleMap.profile(entry)
-            if (profile == null || MovementDifficulty.isHoldSet(null, entry.exerciseName, entry.modifiers)) {
-                // Unknown movement or a hold: kept, untouched, modifiers intact.
+            if (profile == null || !redosable(entry, catalogue)) {
+                // Unknown movement, a hold, an activity or a milestone: kept,
+                // untouched, modifiers intact.
                 result += entry
                 continue
             }
@@ -1709,7 +1732,7 @@ object ProgramGenerator {
                 if ((week[muscle] ?: 0.0) >= ctx.targetRange.start) break
                 val index = result.indices.filter { i ->
                     val profile = MuscleMap.profile(result[i]) ?: return@filter false
-                    !MovementDifficulty.isHoldSet(null, result[i].exerciseName, result[i].modifiers) &&
+                    redosable(result[i], catalogue) &&
                         (profile.muscles[muscle] ?: 0.0) >= 0.5 && result[i].sets < 5 &&
                         ProgramRules.sessionSeconds(result, request.focus) +
                         ProgramRules.setSeconds(request.focus, profile.compound) <=
