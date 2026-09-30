@@ -150,6 +150,8 @@ import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.MuscleMap
+import com.ironvellum.app.domain.WEIGHTED_MODIFIER
+import com.ironvellum.app.domain.applicableModifiers
 import com.ironvellum.app.ui.program.RiteMusclesDialog
 import com.ironvellum.app.ui.program.ShareLevel
 import com.ironvellum.app.ui.program.musclesAt
@@ -600,6 +602,12 @@ fun SessionScreen(
                 // Modifiers change the profile: a deficit push-up credits the
                 // chest at stretch, so the muscles read from both.
                 val shares = MuscleMap.profile(first.exerciseName, first.modifiers)?.muscles
+                // No sliders glyph where the picker would open empty (a hold,
+                // a run): it promised a choice that is not there.
+                val modifiersEditable = canEditModifiers(
+                    exercises.firstOrNull { it.id == exerciseId }?.let(::applicableModifiers).orEmpty(),
+                    first.modifiers,
+                )
                 Row(
                     Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
@@ -643,7 +651,7 @@ fun SessionScreen(
                                 style = MaterialTheme.typography.labelSmall,
                                 color = IronvellumColors.SystemGreen,
                                 modifier = Modifier
-                                    .clickable { editModifiersFor = exerciseId }
+                                    .clickable(enabled = modifiersEditable) { editModifiersFor = exerciseId }
                                     .padding(vertical = 2.dp),
                             )
                         }
@@ -661,8 +669,10 @@ fun SessionScreen(
                             Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Move exercise down", tint = IronvellumColors.InkMuted)
                         }
                     }
-                    IconButton(onClick = { editModifiersFor = exerciseId }) {
-                        Icon(Icons.Outlined.Tune, contentDescription = "Edit modifiers", tint = IronvellumColors.InkMuted)
+                    if (modifiersEditable) {
+                        IconButton(onClick = { editModifiersFor = exerciseId }) {
+                            Icon(Icons.Outlined.Tune, contentDescription = "Edit modifiers", tint = IronvellumColors.InkMuted)
+                        }
                     }
                     IconButton(onClick = {
                         // A duplicate carries the block's own figure: a hold's
@@ -971,12 +981,8 @@ fun SessionScreen(
         val current = ui.sets.firstOrNull { it.exerciseId == exerciseId }
         ModifierPickerDialog(
             exerciseName = current?.exerciseName ?: "Exercise",
-            selected = current?.modifiers
-                ?.split(",")
-                ?.map { it.trim() }
-                ?.filter { it.isNotEmpty() }
-                ?.toSet()
-                ?: emptySet(),
+            applicable = exercises.firstOrNull { it.id == exerciseId }?.let(::applicableModifiers).orEmpty(),
+            selected = modifierTokens(current?.modifiers),
             onConfirm = { picked ->
                 viewModel.setModifiers(exerciseId, picked.joinToString(", "))
                 editModifiersFor = null
@@ -1935,19 +1941,33 @@ private const val DISTANCE_STEP_KM = 0.5
 /** Starting seconds for a hold added mid-session. */
 private const val DEFAULT_HOLD_SECONDS = 30
 
-private val MODIFIER_OPTIONS = listOf(
-    "weighted", "assisted", "deficit", "elevated", "incline", "decline",
-    "tempo", "paused", "banded", "one-arm", "archer", "hold seconds",
-)
+/** A comma-separated modifier string as its tokens, in order. */
+private fun modifierTokens(modifiers: String?): Set<String> =
+    modifiers.orEmpty().split(",").map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+
+/**
+ * Whether the picker has anything to show: a modifier that fits, or one
+ * already set that the lifter can remove. "weighted" alone is not enough -
+ * the load sets it, the picker only notes it.
+ */
+private fun canEditModifiers(applicable: List<String>, modifiers: String?): Boolean =
+    applicable.isNotEmpty() || modifierTokens(modifiers).any { !it.equals(WEIGHTED_MODIFIER, ignoreCase = true) }
 
 @Composable
 private fun ModifierPickerDialog(
     exerciseName: String,
+    applicable: List<String>,
     selected: Set<String>,
     onConfirm: (Set<String>) -> Unit,
     onDismiss: () -> Unit,
 ) {
     var picked by remember(exerciseName) { mutableStateOf(selected) }
+    // Every token already set stays visible and removable, fitting or not:
+    // a legacy "banded" or "hold seconds" is never dropped behind his back.
+    val weighted = selected.any { it.equals(WEIGHTED_MODIFIER, ignoreCase = true) }
+    val options = applicable + selected.filter { token ->
+        !token.equals(WEIGHTED_MODIFIER, ignoreCase = true) && applicable.none { it.equals(token, ignoreCase = true) }
+    }
     AlertDialog(
         // Material's dialog container is a 28dp rounded rect - the most
         // obviously stock surface in the app. Give it the ink shape.
@@ -1973,14 +1993,22 @@ private fun ModifierPickerDialog(
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
+                if (weighted) {
+                    Text(
+                        "weighted · set by load",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IronvellumColors.SystemGreen,
+                        modifier = Modifier.padding(top = 6.dp),
+                    )
+                }
                 Spacer(Modifier.height(10.dp))
-                MODIFIER_OPTIONS.chunked(3).forEach { row ->
+                options.chunked(3).forEach { row ->
                     Row(
                         Modifier.fillMaxWidth().padding(bottom = 6.dp),
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                     ) {
                         row.forEach { option ->
-                            val on = option in picked
+                            val on = picked.any { it.equals(option, ignoreCase = true) }
                             val shape = MaterialTheme.shapes.extraSmall
                             Box(
                                 Modifier
@@ -1995,7 +2023,11 @@ private fun ModifierPickerDialog(
                                     )
                                     .inkBorder(if (on) IronvellumColors.SystemGreen else IronvellumColors.Rune, shape, 1.dp)
                                     .clickable {
-                                        picked = if (on) picked - option else picked + option
+                                        picked = if (on) {
+                                            picked.filterNot { it.equals(option, ignoreCase = true) }.toSet()
+                                        } else {
+                                            picked + option
+                                        }
                                     }
                                     .padding(vertical = 8.dp, horizontal = 4.dp),
                                 contentAlignment = Alignment.Center,
