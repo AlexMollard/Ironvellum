@@ -544,7 +544,7 @@ private fun Feed(
             item(key = "paging-error") {
                 Text(
                     "Older trials slipped away — keep pulling to try again.",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.DangerRed,
                     modifier = Modifier
@@ -570,7 +570,7 @@ private fun Feed(
             item(key = "end") {
                 Text(
                     "You've reached the first page of the tidings.",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier

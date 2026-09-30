@@ -241,7 +241,7 @@ fun MeasurementDetailScreen(
                 supportingText = {
                     Text(
                         "Metric cm, one decimal · ${CM_MIN.toInt()}–${CM_MAX.toInt()} cm",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),

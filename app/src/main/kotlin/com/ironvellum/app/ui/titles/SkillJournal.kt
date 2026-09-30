@@ -89,6 +89,15 @@ fun SkillJournal(
 
     // ---- headline counters -------------------------------------------------
     SectionHeader("Journal")
+    // An empty Journal is a grid of blank tiles: say what fills it.
+    if (log.isEmpty()) {
+        Text(
+            "Every attempt at a technique is written here. Open a path below, pick a technique and log an attempt.",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.padding(bottom = 8.dp),
+        )
+    }
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         StatTile("ATTEMPTS", attempts.size.toString(), Modifier.weight(1f))
         StatTile("MASTERED", "${claimed.size}", Modifier.weight(1f), gold = claimed.isNotEmpty())

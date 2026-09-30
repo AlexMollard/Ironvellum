@@ -72,7 +72,7 @@ fun MeasurementsPanel(
         if (!anyReadings) {
             Text(
                 "Tap a site to take its first reading.",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(bottom = 6.dp),
             )
@@ -100,7 +100,7 @@ fun MeasurementsPanel(
         Text(
             "STAYS ON THIS DEVICE — your readings never leave this device. " +
                 "They are excluded from cloud sync by design; the JSON archive is yours alone.",
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(top = 2.dp, bottom = 4.dp),
         )

@@ -287,9 +287,9 @@ fun TitlesScreen(
             letterSpacing = 6.sp,
         )
         Text(
-            "${ui.unlocked.size} ${if (ui.unlocked.size == 1) "deed" else "deeds"} · " +
-                "${mastered.size} ${if (mastered.size == 1) "technique" else "techniques"}",
-            style = MaterialTheme.typography.labelLarge,
+            "${ui.unlocked.size} ${if (ui.unlocked.size == 1) "deed" else "deeds"} earned · " +
+                "${mastered.size} ${if (mastered.size == 1) "technique" else "techniques"} mastered",
+            style = MaterialTheme.typography.bodyMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
         )

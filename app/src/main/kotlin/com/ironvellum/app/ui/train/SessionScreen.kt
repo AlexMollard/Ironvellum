@@ -779,7 +779,7 @@ fun SessionScreen(
         if (!anyDone) {
             Text(
                 "Tick a set to seal the trial",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 textAlign = TextAlign.Center,
@@ -823,7 +823,7 @@ fun SessionScreen(
             title = { Text("Seal the Trial?") },
             text = {
                 val unticked = ui.sets.count { !it.done }
-                Text("$unticked ${plural(unticked, "set", "sets")} unticked — seal anyway?")
+                Text("$unticked ${plural(unticked, "set is", "sets are")} unticked and won't count. Seal anyway?")
             },
             // Claiming is the deliberate action here, so it takes the confirm
             // slot; KEEP GOING is the safe default.
@@ -1185,7 +1185,7 @@ private fun VictoryOverlay(
                         Spacer(Modifier.height(6.dp))
                     }
                     result.newTitles.filter { it.name.isNotBlank() }.forEach { title ->
-                        RewardRow("TITLE", title.name)
+                        RewardRow("DEED EARNED", title.name)
                         Spacer(Modifier.height(4.dp))
                     }
                     Spacer(Modifier.height(14.dp))
@@ -1359,7 +1359,10 @@ private fun SetRow(
             Column(Modifier.weight(1.25f)) {
                 if (showColumnLabels) ColumnLabel("LOAD")
                 Stepper(
-                    value = formatKg(weightKg),
+                    // A barbell lift with no load yet is unset, not bodyweight:
+                    // "BW" on a first bench press read as an instruction. A bare
+                    // unit, because Chakra Petch has no dash glyph.
+                    value = if (isWeighted && (weightKg ?: 0.0) <= 0.0) "kg" else formatKg(weightKg),
                     what = "load",
                     onMinus = { onChange(reps, stepDownKg(weightKg), done) },
                     onPlus = { onChange(reps, stepUpKg(weightKg), done) },
@@ -1517,14 +1520,14 @@ private fun SetRow(
     }
 }
 
-/** Shared 8sp column heading for the activity stepper columns. */
+/** Shared 10sp column heading for the activity stepper columns. */
 @Composable
 private fun ColumnLabel(text: String) {
     Text(
         text,
         style = MaterialTheme.typography.labelSmall,
         fontFamily = ChakraPetch,
-        fontSize = 8.sp,
+        fontSize = 10.sp,
         letterSpacing = 1.sp,
         color = IronvellumColors.InkMuted,
     )
@@ -1760,7 +1763,7 @@ private fun SessionNotesEditor(
 
     InkPanel(accent = IronvellumColors.SovereignGold) {
         Text(
-            "CHRONICLE",
+            "NAME & NOTES",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SovereignGold,
@@ -1944,7 +1947,7 @@ private fun ModifierPickerDialog(
             Column {
                 Text(
                     "Applies to every set of this exercise.",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
                 Spacer(Modifier.height(10.dp))
@@ -2039,7 +2042,7 @@ private fun RoutineUpdateDialog(
                 )
                 Text(
                     if (shortDay) {
-                        "Today ran short — the cycle keeps its sets; tick what else to take."
+                        "Fewer sets than planned, so the rite keeps its set count. Tick any other change to keep."
                     } else {
                         "Bring your rite in line with today's trial?"
                     },

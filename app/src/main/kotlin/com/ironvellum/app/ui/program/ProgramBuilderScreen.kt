@@ -885,20 +885,24 @@ fun ProgramBuilderScreen(
         when (mode) {
             "week", "template" -> {
                 Column(Modifier.fillMaxWidth()) {
+                    // With nothing written yet, add and replace are the same
+                    // act, and "delete your 0 rites" was a scare for nobody.
                     IronvellumButton(
-                        label = "Add to my cycle",
+                        label = if (presets.isEmpty()) "Take this cycle" else "Add to my cycle",
                         onClick = { viewModel.addPresets(onDone) },
                         enabled = plan != null && plan!!.presets.isNotEmpty(),
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    Spacer(Modifier.height(10.dp))
-                    IronvellumButton(
-                        label = "Replace my cycle",
-                        onClick = { confirmReplace = true },
-                        enabled = plan != null && plan!!.presets.isNotEmpty(),
-                        quiet = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
+                    if (presets.isNotEmpty()) {
+                        Spacer(Modifier.height(10.dp))
+                        IronvellumButton(
+                            label = "Replace my cycle",
+                            onClick = { confirmReplace = true },
+                            enabled = plan != null && plan!!.presets.isNotEmpty(),
+                            quiet = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
                     // One quiet line, so the progression switch is stated
                     // where she acts, not discovered in Settings later.
                     if (viewModel.switchesProgression()) {

@@ -545,7 +545,7 @@ internal fun LifterScreen(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "Mute hides their trials, remarks and tributes from you. They aren't told.",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
                 ui.notice?.let {

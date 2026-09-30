@@ -317,7 +317,9 @@ fun Modifier.inkBorder(
     color: Color,
     shape: Shape,
     width: Dp = 1.5.dp,
-): Modifier = this.drawBehind {
+): Modifier = if (width <= 0.dp) this else this.drawBehind {
+    // A zero width means no border. Handed to Stroke it is a hairline instead,
+    // which ringed every date on the training calendar in "today" gold.
     // Every outline kind is handled on purpose. An earlier version bailed out
     // on anything that was not Outline.Generic, which meant a border on a
     // CircleShape or RoundedCornerShape silently drew NOTHING - a vanished

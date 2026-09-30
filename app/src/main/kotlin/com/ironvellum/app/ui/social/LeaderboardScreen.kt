@@ -972,7 +972,7 @@ private fun MusterBoard(
                 Column(Modifier.fillMaxWidth()) {
                     Text(
                         "Ranks Veil progress — echoes inscribed — separate from the training reckoning.",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(bottom = 10.dp),
@@ -1179,7 +1179,7 @@ private fun LiftsBoard(
                 Column(Modifier.fillMaxWidth()) {
                     Text(
                         "Rungs only — bodyweight stays on each phone.",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(bottom = 10.dp),

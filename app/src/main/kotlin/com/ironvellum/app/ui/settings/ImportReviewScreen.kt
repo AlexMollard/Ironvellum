@@ -124,7 +124,7 @@ fun ImportReviewOverlay(
             )
             ui.parsed.problems.firstOrNull()?.let {
                 Spacer(Modifier.height(4.dp))
-                Text(it.message, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                Text(it.message, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
 
             // Strong only: the file carries no unit column, so the lifter
@@ -155,7 +155,7 @@ fun ImportReviewOverlay(
                         } else {
                             "Strong exports carry no unit column, so choose."
                         },
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                     )
                 }
@@ -173,7 +173,7 @@ fun ImportReviewOverlay(
             if (ui.unmatched.isEmpty()) {
                 Text(
                     "Every exercise matched the catalogue.",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
             }
@@ -200,13 +200,13 @@ fun ImportReviewOverlay(
             }
             ui.result?.let {
                 Spacer(Modifier.height(8.dp))
-                Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                Text(it, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
             Spacer(Modifier.height(10.dp))
             Text(
                 "Nothing here replaces your Chronicle. Trials already in the app are skipped; " +
                     "imported trials stay on this device and out of the Tidings.",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
             Spacer(Modifier.height(10.dp))
@@ -240,7 +240,7 @@ private fun UnmatchedRow(
                 null -> "keep as new exercise · measured in ${name.inferredMetric.lowercase()}"
                 else -> "maps to $chosen"
             },
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
         Spacer(Modifier.height(8.dp))

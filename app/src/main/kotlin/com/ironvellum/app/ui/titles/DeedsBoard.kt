@@ -589,9 +589,12 @@ private fun DeedRow(def: TitleDef, progress: Titles.Progress, unlockedAtMs: Long
                     )
                     Text(
                         if (claimed) "earned ${formatDate(unlockedAtMs, "d MMM yyyy")}" else def.describeFor(sex),
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                         color = if (claimed) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                        maxLines = 1,
+                        // The bar is the deed: two lines so a strength standard
+                        // is read whole rather than cut at the bodyweight.
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
                     )
                 }
                 RarityChip(def.rarity)

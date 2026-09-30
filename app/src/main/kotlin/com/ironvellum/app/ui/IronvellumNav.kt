@@ -377,6 +377,7 @@ fun IronvellumRoot(inboxRequest: Int = 0) {
                     DashboardScreen(
                         onStartSession = { id -> navController.navigate(Routes.session(id)) },
                         onOpenPresets = { navController.navigate(Routes.PRESETS) { launchSingleTop = true } },
+                        onOpenForge = { navController.navigate(Routes.programBuilder("week", null)) },
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                         onOpenCodex = {
                             // Same semantics as tapping the Codex tab: keep home
@@ -388,6 +389,13 @@ fun IronvellumRoot(inboxRequest: Int = 0) {
                             }
                         },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                        onOpenLedger = {
+                            navController.navigate(Routes.STATS) {
+                                popUpTo(Routes.DASHBOARD) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
                         onOpenGarrison = { navController.navigate(Routes.IDLE) { launchSingleTop = true } },
                     )
                 }

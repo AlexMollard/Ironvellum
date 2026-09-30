@@ -336,8 +336,12 @@ private fun LogRow(
                 )
             }
             ScorePill("+${session.xpAwarded}", "XP", IronvellumColors.Emerald)
-            Spacer(Modifier.width(8.dp))
-            ScorePill("%,d".format(session.strengthScore), "STR", IronvellumColors.SovereignGold)
+            // A zero strength score is no score (no bodyweight logged, or an
+            // activity-only trial): a gold "0 STR" read as a failing grade.
+            if (session.strengthScore > 0) {
+                Spacer(Modifier.width(8.dp))
+                ScorePill("%,d".format(session.strengthScore), "STR", IronvellumColors.SovereignGold)
+            }
             // Annotation glyphs so annotated sessions are findable at a glance
             // without opening each one.
             if (session.note.isNotBlank()) {

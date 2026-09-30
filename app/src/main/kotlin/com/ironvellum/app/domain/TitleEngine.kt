@@ -478,58 +478,58 @@ object Titles {
         TitleDef(
             "iron_standard",
             "Iron Standard",
-            "Squat your own bodyweight for an estimated 1RM.",
+            "Squat your own bodyweight as an estimated 1-rep max.",
             TitleRule.LiftMultiple(setOf("back squat", "front squat"), male = 1.0, female = 0.6),
             TitleRarity.Common,
-            descriptionFemale = "Squat 0.6× your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Squat 0.6× your bodyweight as an estimated 1-rep max.",
         ),
         TitleDef(
             "bench_mark",
             "Bench Mark",
-            "Bench press your bodyweight for an estimated 1RM.",
+            "Bench press your bodyweight as an estimated 1-rep max.",
             TitleRule.LiftMultiple(setOf("bench press", "incline bench press", "close-grip bench press"), male = 1.0, female = 0.5),
             TitleRarity.Rare,
-            descriptionFemale = "Bench press 0.5× your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Bench press 0.5× your bodyweight as an estimated 1-rep max.",
         ),
         TitleDef(
             "iron_wings",
             "Iron Wings",
-            "Weight a pull-up or chin-up with half your bodyweight for an estimated 1RM.",
+            "Weight a pull-up or chin-up with half your bodyweight as an estimated 1-rep max.",
             TitleRule.LiftMultiple(setOf("pull-up", "chin-up", "archer pull-up"), male = 0.5, female = 0.3),
             TitleRarity.Rare,
-            descriptionFemale = "Weight a pull-up or chin-up with 0.3× your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Weight a pull-up or chin-up with 0.3× your bodyweight as an estimated 1-rep max.",
         ),
         TitleDef(
             "crown_press",
             "Crown Press",
-            "Overhead press three quarters of your bodyweight for an estimated 1RM.",
+            "Overhead press three quarters of your bodyweight as an estimated 1-rep max.",
             TitleRule.LiftMultiple(setOf("overhead press", "push press"), male = 0.75, female = 0.35),
             TitleRarity.Rare,
-            descriptionFemale = "Overhead press 0.35× your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Overhead press 0.35× your bodyweight as an estimated 1-rep max.",
         ),
         TitleDef(
             "throne_of_iron",
             "Throne of Iron",
-            "Squat double bodyweight for an estimated 1RM.",
+            "Squat double bodyweight as an estimated 1-rep max.",
             TitleRule.LiftMultiple(setOf("back squat", "front squat"), male = 2.0, female = 1.25),
             TitleRarity.Epic,
-            descriptionFemale = "Squat 1.25× your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Squat 1.25× your bodyweight as an estimated 1-rep max.",
         ),
         TitleDef(
             "titans_pull",
             "Titan's Pull",
-            "Deadlift double bodyweight for an estimated 1RM.",
+            "Deadlift double bodyweight as an estimated 1-rep max.",
             TitleRule.LiftMultiple(setOf("deadlift", "sumo deadlift"), male = 2.0, female = 1.4),
             TitleRarity.Epic,
-            descriptionFemale = "Deadlift 1.4× your bodyweight for an estimated 1RM.",
+            descriptionFemale = "Deadlift 1.4× your bodyweight as an estimated 1-rep max.",
         ),
         TitleDef(
             "atlas",
             "Atlas",
-            "Deadlift triple bodyweight for an estimated 1RM. The sky holds itself up.",
+            "Deadlift triple bodyweight as an estimated 1-rep max. The sky holds itself up.",
             TitleRule.LiftMultiple(setOf("deadlift", "sumo deadlift"), male = 3.0, female = 2.25),
             TitleRarity.Masterwork,
-            descriptionFemale = "Deadlift 2.25× your bodyweight for an estimated 1RM. The sky holds itself up.",
+            descriptionFemale = "Deadlift 2.25× your bodyweight as an estimated 1-rep max. The sky holds itself up.",
         ),
         // Rep-volume feats. The counts are deliberately the same for both
         // sexes: these are submaximal endurance feats of bodyweight work, and
@@ -855,7 +855,7 @@ object Titles {
         is TitleRule.SportSessions ->
             Progress(ledger.sportSessions.toLong(), rule.count.toLong(), "sport trials")
         is TitleRule.TrainingStreak ->
-            Progress(ledger.trainingStreakDays.toLong(), rule.days.toLong(), "day oath")
+            Progress(ledger.trainingStreakDays.toLong(), rule.days.toLong(), "days")
         is TitleRule.WorkoutsInWeek ->
             Progress(ledger.bestWeekWorkouts.toLong(), rule.count.toLong(), "trials in a week")
         is TitleRule.LiftMultiple -> {
@@ -863,7 +863,7 @@ object Titles {
             // rounding 0.4999x up to the bar would claim a deed not earned.
             val bar = if (ledger.sex == Sex.FEMALE) rule.female else rule.male
             val best = rule.names.maxOfOrNull { ledger.bestLiftMultiple[normaliseName(it)] ?: 0.0 } ?: 0.0
-            Progress((best * 100).toLong(), (bar * 100).toLong(), "% of bodyweight (estimated 1RM)")
+            Progress((best * 100).toLong(), (bar * 100).toLong(), "% of bodyweight (estimated 1-rep max)")
         }
         is TitleRule.SessionReps -> {
             val best = rule.names.maxOfOrNull { ledger.bestSessionReps[normaliseName(it)] ?: 0 } ?: 0
@@ -876,7 +876,7 @@ object Titles {
     /** Rule family, for grouping the codex by the kind of deed it demands. */
     fun category(rule: TitleRule): String = when (rule) {
         TitleRule.FirstWorkout, is TitleRule.Workouts, is TitleRule.WorkoutsInWeek -> "Trials"
-        is TitleRule.ReachLevel -> "Ascension"
+        is TitleRule.ReachLevel -> "Level"
         is TitleRule.SetsLogged, is TitleRule.RepsLogged -> "Volume"
         is TitleRule.SessionStrength, is TitleRule.LifetimeStrength -> "Strength"
         is TitleRule.StepsInDay, is TitleRule.StepsLifetime, is TitleRule.DistanceKmLifetime,

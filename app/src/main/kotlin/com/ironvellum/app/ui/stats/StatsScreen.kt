@@ -104,6 +104,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.res.painterResource
 import com.ironvellum.app.R
 import java.util.Locale
+import com.ironvellum.app.ui.components.Term
+import com.ironvellum.app.ui.components.TermInfo
 
 // Genuinely unique chart/band colours that have no IronvellumColors token — kept in one
 // place so they aren't scattered; everything else must reference IronvellumColors.
@@ -241,7 +243,11 @@ fun StatsScreen(
                         Modifier.weight(1f),
                         onClick = if (latest == null) null else ({ drill = "BMI" }),
                     ) {
-                        MetricLabel("BMI")
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            MetricLabel("BMI")
+                            Spacer(Modifier.weight(1f))
+                            TermInfo(Term.BMI, Modifier.size(32.dp))
+                        }
                         // Paired with FFMI's caption so the two cards stay level.
                         MetricCaption("body mass index")
                         val bmi = latest?.let { BodyStats.bmi(it.weightKg, it.heightCm) }
@@ -266,7 +272,11 @@ fun StatsScreen(
                         Modifier.weight(1f),
                         onClick = if (latest == null) null else ({ drill = "FFMI" }),
                     ) {
-                        MetricLabel("FFMI")
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            MetricLabel("FFMI")
+                            Spacer(Modifier.weight(1f))
+                            TermInfo(Term.FFMI, Modifier.size(32.dp))
+                        }
                         MetricCaption("muscle mass for your height")
                         val ffmi = latest?.let { s -> s.bodyFatPct?.let { BodyStats.ffmi(s.weightKg, s.heightCm, it) } }
                         MetricValue(
@@ -768,13 +778,13 @@ private fun MetricValue(value: String, hint: String) {
         fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
         color = IronvellumColors.SovereignGold,
     )
-    Text(hint, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+    Text(hint, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
 }
 
 /** A plain-words gloss under an abbreviated metric name. */
 @Composable
 private fun MetricCaption(text: String) {
-    Text(text, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+    Text(text, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
 }
 
 @Composable
@@ -794,7 +804,7 @@ private fun MetricValueBig(value: String, unit: String) {
 @Composable
 private fun ChartCaption(text: String) {
     Spacer(Modifier.height(4.dp))
-    Text(text, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+    Text(text, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
 }
 
 private val WEEKDAYS = listOf("M", "T", "W", "T", "F", "S", "S")
@@ -991,7 +1001,7 @@ private fun AddStatDialog(
                     // tabs and a gear away from this dialog.
                     Text(
                         "Set your height once in SETTINGS to unlock BMI and FFMI.",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.SystemGreen,
                         modifier = Modifier
                             .clip(MaterialTheme.shapes.extraSmall)
@@ -1008,12 +1018,16 @@ private fun AddStatDialog(
                 if (showEstimator) {
                     // US Navy circumference method, pre-filled from the latest
                     // measurements the lifter already logged.
-                    Text(
-                        "Navy tape method from your neck, waist" +
-                            if (sex == Sex.FEMALE) " and hip readings." else " and readings.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = IronvellumColors.InkMuted,
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Navy tape method from your neck, waist" +
+                                if (sex == Sex.FEMALE) ", hips and height." else " and height.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                            modifier = Modifier.weight(1f),
+                        )
+                        TermInfo(Term.NAVY_TAPE)
+                    }
                     listOf("NECK (cm)" to neck, "WAIST (cm)" to waist).forEach { (label, field) ->
                         OutlinedTextField(
                             shape = MaterialTheme.shapes.small,
@@ -1111,7 +1125,7 @@ private fun ActivityTab(
                 MetricLabel("DAILY")
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "The daily page is blank — connect Health Connect in Settings.",
+                    "Steps, sleep, distance, active energy and resting heart rate show here once Health Connect is linked in Settings.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -1441,7 +1455,7 @@ private fun ActivityTile(label: String, value: String, hint: String, modifier: M
             fontWeight = FontWeight.Bold,
             color = IronvellumColors.SovereignGold,
         )
-        Text(hint, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+        Text(hint, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
     }
 }
 

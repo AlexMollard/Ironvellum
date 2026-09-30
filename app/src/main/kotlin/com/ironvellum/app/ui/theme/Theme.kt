@@ -118,7 +118,11 @@ private val IronvellumTypography: Typography
             bodySmall = base.bodySmall.copy(fontFamily = ChakraPetch),
             labelLarge = label(14, 4.0),
             labelMedium = label(12, 2.0),
-            labelSmall = label(10, 2.0),
+            // Material's own label size and tracking: this style carries whole
+            // sentences (captions, hints, deed bars), and 10sp at 2sp tracking
+            // read as a row of loose letters. Caps labels that want the wide
+            // look pass IronvellumTracking themselves.
+            labelSmall = label(11, 0.5),
         )
     }
 

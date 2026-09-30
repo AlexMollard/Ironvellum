@@ -258,7 +258,7 @@ private fun StatCard(label: String, value: String, hint: String = "") {
             color = IronvellumColors.SovereignGold,
         )
         if (hint.isNotBlank()) {
-            Text(hint, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+            Text(hint, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
     }
 }
@@ -370,7 +370,7 @@ private fun ScoreChart(history: ExerciseHistory) {
         }
         Text(
             "best set score per trial · ${history.series.size} ${plural(history.series.size, "trial", "trials")}",
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
     }
@@ -410,7 +410,7 @@ private fun RepsChart(history: ExerciseHistory) {
         }
         Text(
             if (isHold) "seconds held per trial · oldest to newest" else "completed reps per trial · oldest to newest",
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
     }

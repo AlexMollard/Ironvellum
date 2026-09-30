@@ -256,7 +256,7 @@ fun SkillDetailDialog(
                     if (entries.size > 6) {
                         Text(
                             "+${entries.size - 6} earlier — full list in JOURNAL",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                             modifier = Modifier.padding(top = 3.dp),
                         )
@@ -434,7 +434,7 @@ fun SkillDetailDialog(
                     Spacer(Modifier.height(6.dp))
                     Text(
                         "Claim only once you can hit ${skill.target}${skill.unit} on demand — it awards ${skill.xp} XP and can be undone.",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                     )
                 } else {

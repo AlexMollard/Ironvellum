@@ -1,5 +1,8 @@
 package com.ironvellum.app.ui.program
 
+import androidx.compose.foundation.layout.size
+import com.ironvellum.app.ui.components.TermInfo
+import com.ironvellum.app.ui.components.Term
 import androidx.compose.foundation.background
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
@@ -239,11 +242,16 @@ fun ProposedEntryRow(
         }
         if (expanded) {
             reasons.forEach { line ->
-                Text(
-                    line,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                )
+                // A load worked out from a 1-rep max says what that is.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        line,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    if ("1-rep max" in line) TermInfo(Term.ONE_REP_MAX, Modifier.size(32.dp))
+                }
             }
             if (editable) {
                 Spacer(Modifier.height(6.dp))
@@ -642,7 +650,8 @@ internal fun volumeCaption(volume: VolumeLevel, focus: TrainingFocus): String {
     val range = ProgramRules.weeklySetTarget(volume, focus)
     val sets = "${range.start.toInt()}-${range.endInclusive.toInt()} sets per muscle a week"
     if (focus == TrainingFocus.STRENGTH || focus == TrainingFocus.SKILL) {
-        return "$sets at every level. Higher levels add exercises."
+        // "level" is the XP level everywhere else, so name the setting itself.
+        return "$sets on any setting. Standard and High add exercises."
     }
     return when (volume) {
         VolumeLevel.LOW -> "$sets. Enough for a first year."

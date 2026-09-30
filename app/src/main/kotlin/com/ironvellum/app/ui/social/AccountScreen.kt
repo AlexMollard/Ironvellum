@@ -572,6 +572,16 @@ private fun AuthPanels(
 ) {
     var mode by remember { mutableStateOf(AuthMode.SIGN_IN) }
 
+    // A login wall with no reason to sign in reads as a requirement. Say it
+    // is optional and what it adds before asking for anything.
+    Text(
+        "Optional: everything else works without an account. Sign in to back up your trials, " +
+            "add allies, join a circle and stand in the Reckoning.",
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.Ink,
+    )
+    Spacer(Modifier.height(12.dp))
+
     // Segmented auth-mode switch: the shared inked picker. Password reset is
     // reached from SIGN IN, so it keeps that segment lit.
     InkSegmented(
@@ -698,9 +708,9 @@ private fun AuthPanels(
                 mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid ->
                     "True name needs 2–24 characters."
                 mode == AuthMode.RESET && !codeSent -> "We'll email you a code to set a new password."
-                else -> "Readings stay on this device; trials, XP and titles sync."
+                else -> "Readings stay on this device; trials, XP and deeds sync."
             },
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
         notice?.let {

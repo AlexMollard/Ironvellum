@@ -360,7 +360,7 @@ fun AccountSettingsScreen(
             Spacer(Modifier.height(10.dp))
             Text(
                 "Readings and private notes never leave this device.",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
         }
@@ -553,7 +553,7 @@ private fun BlockedList(blocked: List<BlockedLifter>, onUnblock: (String) -> Uni
     if (blocked.isEmpty()) {
         Text(
             "Nobody blocked. Block an Ironbound from their folio.",
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(vertical = 4.dp),
         )

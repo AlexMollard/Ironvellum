@@ -305,7 +305,7 @@ private fun AudiencePicker(audience: SessionAudience, onPick: (SessionAudience) 
             SessionAudience.FRIENDS -> "Only allies see it, even on a public folio."
             SessionAudience.PRIVATE -> "Only you see it."
         },
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
 }
@@ -346,7 +346,7 @@ private fun DetailHeader(
                 "DURATION",
             )
             LedgerStat("+${session.xpAwarded}", "XP", IronvellumColors.Emerald)
-            LedgerStat("${session.strengthScore}", "STRENGTH", IronvellumColors.SovereignGold)
+            if (session.strengthScore > 0) LedgerStat("${session.strengthScore}", "STRENGTH", IronvellumColors.SovereignGold)
             if (energy != null) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clip(MaterialTheme.shapes.extraSmall).clickable(onClick = onToggleBasis)) {
                     Text(
@@ -470,7 +470,8 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
-                groupSets.forEach { set -> SetChip(set, metric, hold) }
+                val weighted = groupSets.firstOrNull()?.let { exercises[it.exerciseId]?.isWeighted } == true
+                groupSets.forEach { set -> SetChip(set, metric, hold, weighted) }
             }
         }
         Spacer(Modifier.height(10.dp))
@@ -478,7 +479,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
 }
 
 @Composable
-private fun SetChip(set: SessionSet, metric: ExerciseMetric, hold: Boolean) {
+private fun SetChip(set: SessionSet, metric: ExerciseMetric, hold: Boolean, weighted: Boolean) {
     val weight = if (set.weightKg == null || set.weightKg == 0.0) "BW" else "${formatLoadKg(set.weightKg)} kg"
     Column(
         Modifier
@@ -499,6 +500,8 @@ private fun SetChip(set: SessionSet, metric: ExerciseMetric, hold: Boolean) {
                     setFigure(metric, set.reps, set.durationSec, set.distanceM).figure
                 metric == ExerciseMetric.DURATION ->
                     setFigure(metric, set.reps, set.durationSec, null).figure
+                // A barbell lift with no load is unset, not bodyweight.
+                weighted && (set.weightKg ?: 0.0) <= 0.0 -> "${set.reps} reps"
                 else -> "${set.reps}×$weight"
             },
             style = MaterialTheme.typography.labelLarge,

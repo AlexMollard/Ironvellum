@@ -48,6 +48,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -371,9 +372,9 @@ fun OnboardingScreen(
     // The same bounds the repository enforces, checked here so the footer can
     // name what is missing instead of leaving a dead button to explain itself.
     val missing = buildList {
-        if (name.trim().isEmpty()) add("your name")
+        if (name.trim().isEmpty()) add("a name")
         if (!BodyLimits.validHeight(heightInput.toDoubleOrNull())) add("height")
-        if (!BodyLimits.validWeight(weightInput.toDoubleOrNull())) add("a first reading")
+        if (!BodyLimits.validWeight(weightInput.toDoubleOrNull())) add("weight")
     }
     val profileValid = missing.isEmpty()
 
@@ -527,8 +528,8 @@ private fun StepRunes(step: Int, modifier: Modifier = Modifier) {
 
 /**
  * The header band: where she is (runes + ink rail), what this step is, and the
- * skip affordance, which carries its consequence in its own description
- * instead of a three-line caveat under the form.
+ * skip affordance, with its consequence on one quiet visible line and again
+ * in its own description.
  */
 @Composable
 private fun StepHeader(step: Int, onSkip: () -> Unit) {
@@ -561,6 +562,14 @@ private fun StepHeader(step: Int, onSkip: () -> Unit) {
                 )
             }
         }
+        // Sighted people get the cost of skipping too, not only TalkBack.
+        Text(
+            "Skipping leaves your scores blank and builds no cycle. Add your body in Settings and build a cycle in Rites any time.",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            textAlign = TextAlign.End,
+            modifier = Modifier.fillMaxWidth(),
+        )
         Spacer(Modifier.height(12.dp))
         // The filled portion grows with her progress; the rail is the same
         // brushed stroke the dashboard and the Codex use.
@@ -693,7 +702,7 @@ private fun ProfileStep(
                 shape = MaterialTheme.shapes.small,
                 value = name,
                 onValueChange = { onName(it.take(24)) },
-                label = { Text("Take your true name") },
+                label = { Text("Your name") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -814,7 +823,7 @@ private fun TrainingStep(
                     TrainingFocus.GENERAL ->
                         "A balanced mix: a bit stronger, a bit bigger, nothing neglected."
                 },
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
         }

@@ -112,6 +112,8 @@ import kotlinx.coroutines.withContext
 import java.util.Locale
 import androidx.compose.ui.text.intl.Locale as ComposeLocale
 import androidx.compose.runtime.mutableIntStateOf
+import com.ironvellum.app.ui.components.Term
+import com.ironvellum.app.ui.components.TermInfo
 
 private val HEALTH_PERMISSIONS = setOf(
     HealthPermission.getReadPermission(WeightRecord::class),
@@ -812,11 +814,11 @@ fun SettingsScreen(
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier
-                    .heightIn(min = 44.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
                     .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
                     .clickable(role = Role.Button) { onBack() }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    // 44dp touch target from padding, so the label sits centred.
+                    .padding(horizontal = 12.dp, vertical = 14.dp),
             )
         }
         Spacer(Modifier.height(10.dp))
@@ -829,21 +831,21 @@ fun SettingsScreen(
                     shape = MaterialTheme.shapes.small,
                     value = name,
                     onValueChange = { name = it.take(24) },
-                    label = { Text("Take your true name") },
+                    label = { Text("Your name") },
                     singleLine = true,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Text),
                     modifier = Modifier.weight(1f),
                 )
                 IronvellumButton(
-                    label = "Take",
+                    label = "Save",
                     onClick = { viewModel.rename(name) },
                     enabled = name.trim().isNotEmpty() && name.trim() != profile?.name,
                 )
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                "Your true name shows in the Reckoning. You can change it any time.",
-                style = MaterialTheme.typography.labelSmall,
+                "Your name shows in the Reckoning. You can change it any time.",
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
         }
@@ -887,7 +889,7 @@ fun SettingsScreen(
             Text(
                 "Height drives BMI and step estimates. Sex picks the body-fat formula " +
                     "and scales the strength score, so the Reckoning ranks effort, not build.",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
         }
@@ -915,14 +917,19 @@ fun SettingsScreen(
                 onPick = { viewModel.setMode(it) },
             )
             Spacer(Modifier.height(8.dp))
-            Text(
-                when (profile?.trainingMode) {
-                    TrainingMode.STRENGTH -> "Clear all sets → load rises, reps reset."
-                    else -> "Double progression: reps climb, then load."
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    when (profile?.trainingMode) {
+                        TrainingMode.STRENGTH -> "Clear all sets → load rises, reps reset. Three stalls in a row → deload."
+                        else -> "Double progression: reps climb, then load. Three stalls in a row → deload."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.weight(1f),
+                )
+                if (profile?.trainingMode != TrainingMode.STRENGTH) TermInfo(Term.DOUBLE_PROGRESSION)
+                TermInfo(Term.DELOAD)
+            }
         }
 
         Spacer(Modifier.height(14.dp))
@@ -943,12 +950,14 @@ fun SettingsScreen(
             Spacer(Modifier.height(4.dp))
             Text(
                 if (savedGear == null) "Not set: the exercise picker shows everything." else "Filters the exercise picker and the Forge.",
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
             Spacer(Modifier.height(10.dp))
             GearPicker(
-                equipment = savedGear ?: Equipment.NOTHING,
+                // Unset filters nothing, so it shows as the full gym rather than
+                // as "Nothing", which read as the opposite of the caption above.
+                equipment = savedGear ?: Equipment.FULL_GYM,
                 onChange = { ProgramAnswersStore.saveEquipment(context.applicationContext, it) },
             )
         }
@@ -981,7 +990,7 @@ fun SettingsScreen(
                 } else {
                     "Straight edges and even rules, for anyone who wants the plain version."
                 },
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
         }
@@ -1036,7 +1045,7 @@ fun SettingsScreen(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "Notifications are muted in Android's settings — the Summons arrives silently until you allow them.",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
             }
@@ -1054,7 +1063,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "Read weight, body fat and steps from Health Connect. Read-only.",
+                "Reads weight, body fat, steps, sleep, distance, active energy and resting heart rate. Read-only: nothing is written back.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -1112,17 +1121,17 @@ fun SettingsScreen(
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "$written days of activity history written.",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
             }
             sync.coverage?.let {
                 Spacer(Modifier.height(4.dp))
-                Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                Text(it, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
             sync.message?.let {
                 Spacer(Modifier.height(4.dp))
-                Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                Text(it, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
         }
 
@@ -1168,11 +1177,11 @@ fun SettingsScreen(
             }
             importUi.summary?.let {
                 Spacer(Modifier.height(4.dp))
-                Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                Text(it, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
             importUi.problems?.let {
                 Spacer(Modifier.height(4.dp))
-                Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                Text(it, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
             Spacer(Modifier.height(10.dp))
             IronvellumButton(
@@ -1321,7 +1330,7 @@ fun SettingsScreen(
             if (crashCount == 0) {
                 Text(
                     "The crash log is blank.",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
             } else {
@@ -1394,7 +1403,7 @@ fun SettingsScreen(
         Spacer(Modifier.height(14.dp))
         Text(
             "Ironvellum ${BuildConfig.VERSION_NAME}  ·  readings stay on this device",
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(horizontal = 4.dp),
         )

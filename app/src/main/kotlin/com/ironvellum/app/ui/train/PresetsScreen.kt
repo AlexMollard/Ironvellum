@@ -246,10 +246,17 @@ fun PresetsScreen(
             SectionHeader("Rites")
             if (ui.presets.isEmpty()) {
                 Text(
-                    "No rites are written yet. Build your first one.",
+                    "No rites are written yet. The Forge can build a whole week for you.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(Modifier.height(8.dp))
+                IronvellumButton(
+                    label = "Forge a Cycle",
+                    onClick = { onGenerate("week", null) },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(10.dp))
             }
             importResult?.let { line ->
                 Text(
@@ -495,29 +502,31 @@ fun PresetsScreen(
             },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    // Easiest first, each with one plain line, so someone new
+                    // can tell the Forge from a blank page without trying both.
                     val options = buildList {
-                        add("Blank Rite" to { showNewChooser = false; onNew() })
-                        add("Start from a pattern" to { showNewChooser = false; onGenerate("template", null) })
-                        add("Import code" to { showNewChooser = false; showImport = true })
-                        add("Forge a Cycle" to { showNewChooser = false; onGenerate("week", null) })
-                        add("Forge a Rite" to { showNewChooser = false; onGenerate("session", null) })
+                        add(Triple("Forge a Cycle", "A full week built from your answers.") { showNewChooser = false; onGenerate("week", null) })
+                        add(Triple("Forge a Rite", "One rite, built for today.") { showNewChooser = false; onGenerate("session", null) })
+                        add(Triple("Start from a pattern", "A hand-written weekly plan to adjust.") { showNewChooser = false; onGenerate("template", null) })
                         // Improving needs a target: nothing to improve on an
                         // empty board.
                         if (ui.presets.isNotEmpty()) {
-                            add("Temper a Rite" to { showNewChooser = false; onGenerate("improve", null) })
+                            add(Triple("Temper a Rite", "Improve one you already have.") { showNewChooser = false; onGenerate("improve", null) })
                         }
+                        add(Triple("Blank Rite", "Pick every exercise yourself.") { showNewChooser = false; onNew() })
+                        add(Triple("Import code", "Paste a cycle someone shared with you.") { showNewChooser = false; showImport = true })
                     }
-                    options.forEach { (label, action) ->
-                        Text(
-                            label,
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = IronvellumColors.Ink,
-                            modifier = Modifier
+                    options.forEach { (label, detail, action) ->
+                        Column(
+                            Modifier
                                 .fillMaxWidth()
                                 .clip(MaterialTheme.shapes.extraSmall)
                                 .clickable(onClick = action)
-                                .padding(horizontal = 8.dp, vertical = 12.dp),
-                        )
+                                .padding(horizontal = 8.dp, vertical = 8.dp),
+                        ) {
+                            Text(label, style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.Ink)
+                            Text(detail, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                        }
                     }
                 }
             },

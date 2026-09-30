@@ -115,6 +115,8 @@ def crashes(serial: str) -> int:
 
 
 def main() -> None:
+    # Labels carry glyphs (◆, →) the Windows console code page cannot print.
+    sys.stdout.reconfigure(encoding="utf-8")
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest="cmd", required=True)
     sub.add_parser("up")

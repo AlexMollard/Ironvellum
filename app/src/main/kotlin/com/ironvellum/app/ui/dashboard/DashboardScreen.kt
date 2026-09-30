@@ -116,7 +116,12 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.wrapContentHeight
+import com.ironvellum.app.ui.components.Term
+import com.ironvellum.app.ui.components.TermInfo
 
+
+/** Which of height and weight the scores still need. */
+enum class BodyGap { HEIGHT, WEIGHT, BOTH }
 
 /** The Garrison's footer figures on Today. */
 data class GarrisonGlance(val perHour: Double, val inscriptions: Int)
@@ -218,10 +223,29 @@ class DashboardViewModel(
         GarrisonGlance(perHour = rate.perHour, inscriptions = rolls)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
+    /**
+     * What the body-scaled numbers still wait for. Skipping the Binding leaves
+     * height and weight unset, and every score reads a dash until both exist.
+     */
+    val bodyGap: StateFlow<BodyGap?> = combine(repo.observeBodyProfile(), repo.observeStats()) { body, stats ->
+        val noHeight = (body.first ?: 0.0) <= 0.0
+        val noWeight = stats.isEmpty()
+        when {
+            noHeight && noWeight -> BodyGap.BOTH
+            noHeight -> BodyGap.HEIGHT
+            noWeight -> BodyGap.WEIGHT
+            else -> null
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
     fun celebrationsSeen() = repo.clearPendingCelebrations()
 
     fun selectDay(day: Int) {
         selectedDay.value = day
+    }
+
+    fun beginOpen(onStarted: (Long) -> Unit) {
+        viewModelScope.launchGuarded("begin open trial") { onStarted(repo.startFreeformSession("Open Trial")) }
     }
 
     fun beginPreset(presetId: Long, onStarted: (Long) -> Unit) {
@@ -255,8 +279,10 @@ private val QUEST_ROW_HEIGHT = 24.dp
 fun DashboardScreen(
     onStartSession: (Long) -> Unit,
     onOpenPresets: () -> Unit,
+    onOpenForge: () -> Unit,
     onOpenCodex: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenLedger: () -> Unit,
     onOpenGarrison: () -> Unit,
     onOpenWorkout: (Long) -> Unit,
     viewModel: DashboardViewModel =
@@ -294,6 +320,7 @@ fun DashboardScreen(
     }
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     val live by viewModel.live.collectAsStateWithLifecycle()
+    val bodyGap by viewModel.bodyGap.collectAsStateWithLifecycle()
     val profile = ui.profile
     val progress = Xp.progress(profile?.totalXp ?: 0L)
     val today = LocalDate.now()
@@ -367,6 +394,8 @@ fun DashboardScreen(
                         val worn = profile?.currentTitleId?.let { Titles.byId(it)?.name }
                         // Strength Rank and ascension are two labelled values,
                         // never joined into one phrase.
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f, fill = false)) {
                         Text(
                             "STRENGTH RANK · ${Rank.forLevel(progress.level)}",
                             style = MaterialTheme.typography.labelMedium,
@@ -390,6 +419,9 @@ fun DashboardScreen(
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
+                        }
+                        TermInfo(Term.RANKS)
+                        }
                         // A third line only when it says something: with no
                         // title worn AND none earned, "NO TITLE EARNED YET" was
                         // a line telling the lifter about a thing they cannot
@@ -617,6 +649,15 @@ fun DashboardScreen(
         }
 
         Spacer(Modifier.height(12.dp))
+        // Height lives in Settings and weight is a Ledger reading, so the
+        // button goes to whichever one is still missing, height first.
+        bodyGap?.let { gap ->
+            BodyGapStrip(
+                gap = gap,
+                onFix = if (gap == BodyGap.WEIGHT) onOpenLedger else onOpenSettings,
+            )
+            Spacer(Modifier.height(10.dp))
+        }
         // Today's quest counts as done when a session started from THIS preset
         // was completed today — otherwise the panel kept offering the same
         // quest after it was already finished.
@@ -883,7 +924,16 @@ fun DashboardScreen(
                     color = IronvellumColors.InkMuted,
                 )
                 Spacer(Modifier.weight(1f))
-                IronvellumButton(label = "Build a Cycle", onClick = onOpenPresets, modifier = Modifier.fillMaxWidth())
+                IronvellumButton(label = "Build a Cycle", onClick = onOpenForge, modifier = Modifier.fillMaxWidth())
+                // Not everyone wants a plan first: a trial can be logged
+                // exercise by exercise with no cycle at all.
+                Spacer(Modifier.height(8.dp))
+                IronvellumButton(
+                    label = "Begin an Open Trial",
+                    onClick = { viewModel.beginOpen(onStartSession) },
+                    quiet = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
             } else {
                 Text(
                     "RESPITE",
@@ -920,7 +970,7 @@ fun DashboardScreen(
                 // The rest-day art was drawn for this panel. It lives in this
                 // branch only: outside it, it rendered on training days too
                 // and its weighted spacers starved the manifest to zero rows.
-                Spacer(Modifier.weight(1f))
+                if (shortWindow) Spacer(Modifier.weight(1f))
                 Image(
                     painter = painterResource(R.drawable.art_empty_quests),
                     contentDescription = null,
@@ -929,12 +979,27 @@ fun DashboardScreen(
                     // panel owns the page's slack, so the art gets most of it —
                     // but only when there IS slack: below the short-window
                     // threshold the page scrolls, so the art gives the room back.
+                    // In the weighted panel the art takes what slack is left, up to
+                    // 280dp: a fixed 280dp pushed the panel's own button off screen
+                    // once the body prompt sat above it.
                     modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .size(if (shortWindow) 160.dp else 280.dp)
+                        .then(if (shortWindow) Modifier.size(160.dp) else Modifier.weight(1f).fillMaxWidth().heightIn(max = 280.dp).padding(vertical = 8.dp))
                         .alpha(0.6f),
                 )
-                Spacer(Modifier.weight(1f))
+                if (shortWindow) Spacer(Modifier.weight(1f))
+                // A respite is a suggestion, not a lock: someone who wants to
+                // train today can take the next rite early. Once a trial is
+                // sealed today the offer is spent.
+                val trainedToday = ui.recent.any { (it.completedAtMs ?: 0L) >= todayStart }
+                if (isTodaySelected && next != null && !trainedToday) {
+                    IronvellumButton(
+                        label = "Begin ${next.name} now",
+                        onClick = { viewModel.beginPreset(next.id, onStartSession) },
+                        quiet = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
 
@@ -1186,5 +1251,30 @@ private fun DayTile(day: Int, isToday: Boolean) {
             fontFamily = ChakraPetch,
             color = if (isToday) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
         )
+    }
+}
+
+/** One quiet line and one button: what the scores wait for, and where to add it. */
+@Composable
+private fun BodyGapStrip(gap: BodyGap, onFix: () -> Unit) {
+    InkPanel(Modifier.fillMaxWidth()) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                when (gap) {
+                    BodyGap.BOTH -> "Add your height and weight to unlock your scores."
+                    BodyGap.HEIGHT -> "Add your height to unlock BMI, FFMI and your scores."
+                    BodyGap.WEIGHT -> "Log your weight to unlock your scores."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.Ink,
+                modifier = Modifier.weight(1f),
+            )
+            Spacer(Modifier.width(10.dp))
+            IronvellumButton(
+                label = if (gap == BodyGap.WEIGHT) "Log weight" else "Set height",
+                onClick = onFix,
+                quiet = true,
+            )
+        }
     }
 }
