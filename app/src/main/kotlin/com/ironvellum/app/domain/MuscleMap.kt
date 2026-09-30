@@ -247,6 +247,19 @@ object MuscleMap {
             ),
             pattern = MovementPattern.HINGE, compound = true, stretchBias = true,
         ))
+        put("single-leg romanian deadlift", ExerciseProfile(
+            // The same hinge on one leg: the stance leg's hamstrings and glutes
+            // still extend the hip from full stretch. The glute med holds the
+            // pelvis level over one foot, as in every single-leg movement. The
+            // erectors keep their helper share - they still hold the torso -
+            // though the spine carries less than a bilateral pull; the scale
+            // has no step below 0.5.
+            muscles = mapOf(
+                Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 1.0, Muscle.ABDUCTORS to 0.5, Muscle.ADDUCTORS to 0.5,
+                Muscle.LOWER_BACK to 0.5, Muscle.TRAPS to 0.5, Muscle.FOREARMS to 0.5,
+            ),
+            pattern = MovementPattern.HINGE, compound = true, stretchBias = true,
+        ))
         put("front squat", squatProfile(MovementPattern.SQUAT, glutes = 0.5))
         put("hip thrust", ExerciseProfile(
             muscles = mapOf(Muscle.GLUTES to 1.0, Muscle.HAMSTRINGS to 0.5, Muscle.ADDUCTORS to 0.5),

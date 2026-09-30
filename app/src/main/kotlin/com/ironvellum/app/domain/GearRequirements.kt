@@ -28,8 +28,8 @@ package com.ironvellum.app.domain
  *   chest-supported row sits in the plate-loaded lever band (loadFactor
  *   0.70), so it is a machine and the full-gym rule covers it.
  * - Shared-implement lifts with isWeighted = true take the implement they
- *   are actually done with: romanian deadlift and bulgarian split squat
- *   DUMBBELLS or BARBELL.
+ *   are actually done with: romanian deadlift, single-leg romanian
+ *   deadlift and bulgarian split squat DUMBBELLS or BARBELL.
  * - Unlisted NON-weighted movements are allowed with nothing. Unlisted
  *   WEIGHTED movements are NOT allowed - every weighted, generator-eligible
  *   catalogue movement must have an explicit row (a test enforces this), so
@@ -116,6 +116,7 @@ object GearRequirements {
         "reverse curl" to listOf(setOf(Gear.DUMBBELLS), setOf(Gear.BARBELL)),
         // Shared-implement lifts: either implement as applicable.
         "romanian deadlift" to listOf(setOf(Gear.DUMBBELLS), setOf(Gear.BARBELL)),
+        "single-leg romanian deadlift" to listOf(setOf(Gear.DUMBBELLS), setOf(Gear.BARBELL)),
         "bulgarian split squat" to listOf(setOf(Gear.DUMBBELLS), setOf(Gear.BARBELL)),
         // Two-dumbbell moves: dumbbells, a bench, and a PAIR.
         "dumbbell bench press" to listOf(setOf(Gear.DUMBBELLS, Gear.BENCH)),

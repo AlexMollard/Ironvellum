@@ -51,6 +51,7 @@ object Seed {
         ExerciseEntity(name = "Cossack Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),
         ExerciseEntity(name = "Deadlift", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         ExerciseEntity(name = "Romanian Deadlift", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
+        ExerciseEntity(name = "Single-Leg Romanian Deadlift", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         ExerciseEntity(name = "Front Squat", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         ExerciseEntity(name = "Hip Thrust", muscleGroup = MuscleGroup.LEGS.name, isWeighted = true),
         ExerciseEntity(name = "Tib Raise", muscleGroup = MuscleGroup.LEGS.name, isWeighted = false),

@@ -28,6 +28,7 @@ object ExerciseSearch {
         a("hspu,hs pushup,handstand pushup", "handstand push up")
         a("ohp,press,military press", "overhead press")
         a("rdl", "romanian deadlift")
+        a("sl rdl,single leg rdl,slrdl", "single leg romanian deadlift")
         a("bp,bench", "bench press")
         a("dl", "deadlift")
         a("sq", "squat")

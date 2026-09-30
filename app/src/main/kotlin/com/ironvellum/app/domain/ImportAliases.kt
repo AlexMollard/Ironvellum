@@ -48,6 +48,7 @@ object ImportAliases {
         "squat" to "Back Squat",
         "deadlift" to "Deadlift",
         "romanian deadlift" to "Romanian Deadlift",
+        "single leg romanian deadlift" to "Single-Leg Romanian Deadlift",
         "front squat" to "Front Squat",
         "hip thrust" to "Hip Thrust",
         "bulgarian split squat" to "Bulgarian Split Squat",

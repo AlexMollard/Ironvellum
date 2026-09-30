@@ -29,6 +29,7 @@ class ExerciseSearchTest {
         assertNotNull(ExerciseSearch.rank("Handstand Push-up", "hspu"))
         assertNotNull(ExerciseSearch.rank("Overhead Press", "ohp"))
         assertNotNull(ExerciseSearch.rank("Romanian Deadlift", "rdl"))
+        assertNotNull(ExerciseSearch.rank("Single-Leg Romanian Deadlift", "sl rdl"))
         assertNotNull(ExerciseSearch.rank("Tuck Front Lever", "fl"))
         assertNotNull(ExerciseSearch.rank("Toes-to-Bar", "t2b"))
         assertNotNull(ExerciseSearch.rank("L-sit", "l sit"))

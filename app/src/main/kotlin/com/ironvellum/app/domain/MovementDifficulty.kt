@@ -72,6 +72,7 @@ object MovementDifficulty {
         "back extension" to 1,
         "cossack squat" to 2,
         "romanian deadlift" to 2,
+        "single-leg romanian deadlift" to 2,
         "front squat" to 2,
         "hip thrust" to 2,
         "tib raise" to 1, // isolation: single-joint dorsiflexion

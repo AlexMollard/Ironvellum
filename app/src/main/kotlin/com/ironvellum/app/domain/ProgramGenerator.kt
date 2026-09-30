@@ -605,7 +605,7 @@ object ProgramGenerator {
                     val key = mainName.lowercase()
                     if (mainCount.getOrDefault(key, 0) < (mainTargets[key] ?: 1)) {
                         val main = pool.firstOrNull { it.name.equals(mainName, ignoreCase = true) }
-                            ?: closestEquivalent(ctx, pool, pattern, session)
+                            ?: closestEquivalent(ctx, pool, pattern, session, mainName)
                         if (main != null) {
                             mainCount.merge(key, 1, Int::plus)
                             if ((mainTargets[key] ?: 1) <= mainCount.getValue(key)) exhausted += mainName
@@ -875,9 +875,14 @@ object ProgramGenerator {
         pool: List<Exercise>,
         pattern: MovementPattern,
         session: Draft,
+        mainName: String,
     ): Exercise? {
         // Same pattern, closest MuscleMap profile: prefer a compound the
-        // equipment fits, deterministic down to the name.
+        // equipment fits, deterministic down to the name. Between equals the
+        // one crediting fewer muscles the main lift does not train wins, not
+        // the later name: a dumbbell kit's deadlift stand-in is the two-leg
+        // RDL, not its single-leg twin with the abductors on top.
+        val trained = MuscleMap.profile(mainName)?.muscles.orEmpty().filterValues { it > 0.0 }.keys
         return pool
             .filter { profileOf(it).pattern == pattern && it.name !in session.names }
             .maxWithOrNull(
@@ -886,6 +891,7 @@ object ProgramGenerator {
                     { calisthenicsRank(ctx, it) },
                     { -fitScore(it, ctx.request.equipment) },
                     { -MovementDifficulty.tier(it.name) },
+                    { -profileOf(it).muscles.count { (m, share) -> share > 0.0 && m !in trained } },
                     { it.name },
                 ),
             )

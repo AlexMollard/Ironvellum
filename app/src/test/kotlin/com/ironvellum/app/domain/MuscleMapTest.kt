@@ -104,7 +104,7 @@ class MuscleMapTest {
         // once credited none, so a leg day of both read "adductors light".
         for (name in listOf(
             "Pistol Squat", "Shrimp Squat", "Split Squat", "Bulgarian Split Squat",
-            "Deadlift", "Romanian Deadlift", "Good Morning",
+            "Deadlift", "Romanian Deadlift", "Single-Leg Romanian Deadlift", "Good Morning",
         )) {
             assertEquals(name, 0.5, MuscleMap.profile(name)!!.muscles[Muscle.ADDUCTORS] ?: 0.0, 1e-9)
         }
