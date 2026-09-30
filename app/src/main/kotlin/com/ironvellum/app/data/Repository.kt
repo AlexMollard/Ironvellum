@@ -67,6 +67,8 @@ import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.modifiersAfterLoadChange
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetRecords
+import com.ironvellum.app.domain.SealedEdit
+import com.ironvellum.app.domain.TrialDraft
 import com.ironvellum.app.domain.SkillClaimResult
 import com.ironvellum.app.domain.SkillPractice
 import com.ironvellum.app.domain.Skills
@@ -759,13 +761,23 @@ class Repository(
      */
     suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
+        if (isSealed(current.sessionId)) return@withTransaction
         sessionDao.updateSet(current.copy(reps = reps, weightKg = weightKg, done = done))
         followLoad(current, weightKg)
     }
 
+    /**
+     * Sealed trials are immutable to the live-trial set editors: their XP and
+     * strength are banked, and changing a row here would leave both stale.
+     * Amending goes through [editSealedTrial], which settles the difference.
+     */
+    private suspend fun isSealed(sessionId: Long): Boolean =
+        sessionDao.byId(sessionId)?.completedAtMs != null
+
     /** Edits a static hold: its figure is seconds, and reps stays 0. */
     suspend fun updateHoldSet(setId: Long, seconds: Int, weightKg: Double?, done: Boolean) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
+        if (isSealed(current.sessionId)) return@withTransaction
         sessionDao.updateSet(
             current.copy(
                 reps = 0,
@@ -820,6 +832,7 @@ class Repository(
         done: Boolean,
     ) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
+        if (isSealed(current.sessionId)) return@withTransaction
         sessionDao.updateSet(
             current.copy(
                 reps = reps.coerceAtLeast(0),
@@ -1690,6 +1703,135 @@ class Repository(
         sessionDao.deleteSetsFor(sessionId)
         syncStateDao.deleteFor(sessionId)
         sessionDao.deleteCompleted(sessionId)
+    }
+
+    /** What amending a sealed trial did, for the screen that asked. */
+    data class AmendResult(
+        val settlement: SealedEdit.Settlement,
+        val strengthScore: Int,
+        val newTitles: List<TitleDef>,
+    )
+
+    /** The rows and figures an amendment would write, computed but not applied. */
+    private class AmendPlan(
+        val session: SessionEntity,
+        val rows: List<SetLogEntity>,
+        val settlement: SealedEdit.Settlement,
+        val strengthScore: Int,
+    )
+
+    /**
+     * The XP change [editSealedTrial] would make for [draft], without writing
+     * anything: the Save confirmation reads it. Same plan, same inputs.
+     */
+    suspend fun previewSealedEdit(
+        sessionId: Long,
+        draft: TrialDraft,
+        nowMs: Long = System.currentTimeMillis(),
+    ): SealedEdit.Settlement = db.withTransaction { planAmend(sessionId, draft, nowMs).settlement }
+
+    /**
+     * Amends a sealed trial in ONE transaction (owner-approved Option A, a
+     * delta correction): the sets are replaced from [draft] and renumbered
+     * gap-free, the difference in what the sets are worth is settled by
+     * [SealedEdit.settle], and the trial's strength is rescored and the
+     * lifetime sum re-summed.
+     *
+     * - Deeds are never revoked; inside the raise window a new one can still
+     *   be earned, after it none is evaluated.
+     * - No amendment pays inscriptions, whatever level it crosses.
+     * - The trial keeps its cloud row (upserted on local id, so comments and
+     *   tributes survive); the push fingerprint changes and it re-pushes.
+     */
+    suspend fun editSealedTrial(
+        sessionId: Long,
+        draft: TrialDraft,
+        nowMs: Long = System.currentTimeMillis(),
+    ): AmendResult = db.withTransaction {
+        val plan = planAmend(sessionId, draft, nowMs)
+        sessionDao.deleteSetsFor(sessionId)
+        sessionDao.insertSets(plan.rows)
+        sessionDao.updateSession(
+            plan.session.copy(
+                xpAwarded = plan.settlement.xpAwarded,
+                strengthScore = plan.strengthScore,
+                editedAtMs = nowMs,
+            ),
+        )
+        if (plan.settlement.applied != 0) profileDao.addXp(plan.settlement.applied.toLong())
+        // Re-summed, not nudged: the sum IS the lifetime figure.
+        profileDao.setLifetimeStrength(
+            sessionDao.observeCompletedWithSets().first().sumOf { it.session.strengthScore.toLong() },
+        )
+
+        val newly = if (plan.settlement.withinWindow) {
+            val profile = profileDao.get() ?: error("Profile missing")
+            val ledger = Titles.ledgerOf(
+                totalXp = profile.totalXp,
+                history = observeHistory().first(),
+                healthDays = observeHealthDays().first(),
+                practices = observeSkillPractices().first(),
+                exercises = exerciseCatalogue(),
+                sex = profileSex(),
+                bodyweightAt = bodyweightLookup(),
+            )
+            Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet()).also { found ->
+                titleDao.insertAll(found.map { TitleUnlockEntity(it.id, nowMs) })
+                profileDao.setCurrentTitle(found.firstOrNull()?.id ?: profile.currentTitleId)
+            }
+        } else {
+            emptyList()
+        }
+        AmendResult(plan.settlement, plan.strengthScore, newly)
+    }
+
+    private suspend fun planAmend(sessionId: Long, draft: TrialDraft, nowMs: Long): AmendPlan {
+        val session = sessionDao.byId(sessionId) ?: error("Trial $sessionId not found")
+        val completedAt = session.completedAtMs
+        check(completedAt != null) { "Trial $sessionId is still live - edit it on the trial screen" }
+        require(draft.tickedCount >= 1) {
+            "An amended trial needs at least one ticked set - delete the trial instead"
+        }
+        // One block per movement: the cloud keys sets on (movement, index),
+        // and two blocks of one movement would collide there and in records.
+        require(draft.blocks.map { it.exerciseId }.distinct().size == draft.blocks.size) {
+            "A movement appears in two blocks"
+        }
+        val catalogue = exerciseDao.observeAll().first()
+        val known = catalogue.map { it.id }.toSet()
+        require(draft.blocks.all { it.exerciseId in known }) { "A movement is not in the catalogue" }
+
+        val rows = draft.blocks.filter { it.sets.isNotEmpty() }.flatMapIndexed { position, block ->
+            block.sets.mapIndexed { index, s ->
+                SetLogEntity(
+                    sessionId = sessionId,
+                    exerciseId = block.exerciseId,
+                    exercisePosition = position,
+                    setIndex = index,
+                    reps = s.reps.coerceAtLeast(0),
+                    weightKg = s.weightKg?.takeIf { it > 0.0 },
+                    modifiers = block.modifiers,
+                    done = s.done,
+                    durationSec = s.durationSec?.coerceAtLeast(0),
+                    distanceM = s.distanceM?.coerceAtLeast(0.0),
+                    grade = s.grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
+                )
+            }
+        }
+        // Both sides priced at the weigh-in in force when the trial began, so
+        // an untouched set list moves nothing.
+        val stats = observeStats().first()
+        val bodyweight = if (stats.isEmpty()) null else SetRecords.bodyweightLookup(stats)(session.startedAtMs)
+        val scoring = SessionScoring(catalogue)
+        val settlement = SealedEdit.settle(
+            xpAwarded = session.xpAwarded,
+            oldSetsXp = scoring.xp(sessionDao.setsFor(sessionId), bodyweight),
+            newSetsXp = scoring.xp(rows, bodyweight),
+            totalXp = profileDao.get()?.totalXp ?: 0L,
+            completedAtMs = completedAt,
+            nowMs = nowMs,
+        )
+        return AmendPlan(session, rows, settlement, scoring.strength(rows, bodyweight, profileSex()))
     }
 
     suspend fun rename(name: String) {
