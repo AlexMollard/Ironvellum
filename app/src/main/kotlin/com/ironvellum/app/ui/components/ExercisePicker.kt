@@ -97,7 +97,7 @@ internal class ExercisePickerViewModel(
     context: Context,
 ) : ViewModel() {
     init {
-        // Primes ProgramAnswersStore.answers, which only fills on get/save.
+        // Primes ProgramAnswersStore.equipment, which only fills on get/save.
         ProgramAnswersStore.get(context)
     }
 
@@ -105,13 +105,13 @@ internal class ExercisePickerViewModel(
         repo.observeRecentExerciseIds(),
         repo.observeFavouriteExerciseIds(),
         repo.observeLastLogged(),
-        ProgramAnswersStore.answers.map { it?.equipment },
+        ProgramAnswersStore.equipment,
     ) { recents, favourites, last, equipment ->
         PickerData(recents, favourites, last, equipment)
     }.stateIn(
         viewModelScope,
         SharingStarted.WhileSubscribed(5_000),
-        PickerData(equipment = ProgramAnswersStore.answers.value?.equipment),
+        PickerData(equipment = ProgramAnswersStore.equipment.value),
     )
 
     fun setFavourite(exerciseId: Long, favourite: Boolean) {
@@ -205,7 +205,7 @@ fun ExercisePickerPanel(
         Spacer(Modifier.height(10.dp))
         PickerFilterBar(exercises, controls, data.equipment)
         Spacer(Modifier.height(12.dp))
-        LazyColumn(Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
+        LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
             exerciseRows(view, data, controls.query, browse = true, onPick, vm::setFavourite)
         }
     }

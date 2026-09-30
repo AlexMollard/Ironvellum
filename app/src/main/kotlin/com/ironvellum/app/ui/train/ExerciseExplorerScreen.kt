@@ -118,10 +118,13 @@ fun ExerciseExplorerScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
 
+    val selectedExercise = ui.selected
     Column(
         Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            // The list scrolls itself and must fill what is left of the screen;
+            // inside a scrolling column it could only take a fixed height.
+            .then(if (selectedExercise != null) Modifier.verticalScroll(rememberScrollState()) else Modifier)
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
@@ -151,16 +154,14 @@ fun ExerciseExplorerScreen(
         }
         Spacer(Modifier.height(12.dp))
 
-        val selectedExercise = ui.selected
         if (selectedExercise == null) {
-            // The screen's own header names it and BACK leaves it, so the
-            // panel is the bare list.
-            InkPanel(Modifier.fillMaxWidth()) {
-                ExercisePickerPanel(
-                    exercises = ui.exercises,
-                    onPick = viewModel::pick,
-                )
-            }
+            // The screen's own header names it and BACK leaves it, so this is
+            // the bare list. No panel around it: its rows are already cards.
+            ExercisePickerPanel(
+                exercises = ui.exercises,
+                onPick = viewModel::pick,
+                modifier = Modifier.weight(1f),
+            )
         } else {
             InkPanel(
                 Modifier
@@ -233,7 +234,7 @@ fun ExerciseExplorerScreen(
                 SetLog(history)
             }
         }
-        Spacer(Modifier.height(96.dp))
+        Spacer(Modifier.height(if (selectedExercise == null) 8.dp else 96.dp))
     }
 }
 
