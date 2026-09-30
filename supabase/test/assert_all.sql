@@ -159,6 +159,12 @@ begin
     perform assert_true(to_regproc('public.my_inbox') is not null, 'my_inbox missing: the baseline did not apply completely');
     perform assert_true(to_regproc('public.handle_new_user') is not null, 'handle_new_user missing: the baseline did not apply completely');
     perform assert_true(to_regproc('public.display_name_available') is not null, 'display_name_available missing: the baseline did not apply completely');
+    perform assert_true(to_regclass('public.warbands') is not null, 'warbands missing: the baseline did not apply completely');
+    perform assert_true(to_regclass('public.warband_members') is not null, 'warband_members missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.create_warband') is not null, 'create_warband missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.join_warband') is not null, 'join_warband missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.leave_warband') is not null, 'leave_warband missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.my_warband') is not null, 'my_warband missing: the baseline did not apply completely');
     perform assert_true(
         exists (select 1 from pg_trigger t where t.tgrelid = 'auth.users'::regclass and t.tgname = 'on_auth_user_created' and not t.tgisinternal),
         'on_auth_user_created is not on auth.users: no profile is made at sign-up');
@@ -275,7 +281,8 @@ begin
     from pg_tables t
     where t.schemaname = 'public'
       and t.tablename in ('profiles','friendships','sessions','session_sets','earned_titles','level_ups','session_likes',
-                          'blocks','mutes','session_comments','inbox_seen','reports','friend_request_log','cloud_archives','lift_marks')
+                          'blocks','mutes','session_comments','inbox_seen','reports','friend_request_log','cloud_archives','lift_marks',
+                          'warbands','warband_members')
       and not t.rowsecurity;
     perform assert_true(n = 0, format('%s public table(s) have RLS disabled', n));
 
@@ -1275,12 +1282,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 21,
-        format('schema_version() reports %s, not 21 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 22,
+        format('schema_version() reports %s, not 22 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 21,
+        (select public.schema_version()) = 22,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -1310,6 +1317,186 @@ begin
 
     raise notice 'ALL BACKEND ASSERTIONS PASSED';
 end $$;
+
+-- ---------------------------------------------------------------- 1.6 warbands
+-- The band path: anon is blind, membership is the only key, the code is the
+-- only way in, the band caps at 8, and leaving hands the band over or ends it.
+do $wb$
+declare
+    nova uuid := 'a5500000-0000-4000-8000-000000000051';
+    rey  uuid := 'a5500000-0000-4000-8000-000000000052';
+    sol  uuid := 'a5500000-0000-4000-8000-000000000053';
+    ron  uuid := 'a5500000-0000-4000-8000-000000000054';
+    finn uuid := 'a5500000-0000-4000-8000-000000000055';
+    ivo  uuid := 'a5500000-0000-4000-8000-000000000046';
+    filler uuid;
+    band text;
+    code text;
+    n int;
+begin
+    -- Fixtures: five bandmates plus the outsider Ivo (already signed up above).
+    -- Names deliberately differ from the 1.4 block's roster: the display-name
+    -- unique index is global, not per-fixture-family.
+    delete from auth.users where id in (
+        nova, rey, sol, ron, finn,
+        'a5500000-0000-4000-8000-000000000056',
+        'a5500000-0000-4000-8000-000000000057',
+        'a5500000-0000-4000-8000-000000000058');
+    insert into auth.users (instance_id, id, aud, role, email, encrypted_password, created_at, updated_at)
+    select '00000000-0000-0000-0000-000000000000', u, 'authenticated', 'authenticated', u || '@m.test', '', now(), now()
+    from unnest(array[nova, rey, sol, ron, finn,
+        'a5500000-0000-4000-8000-000000000056',
+        'a5500000-0000-4000-8000-000000000057',
+        'a5500000-0000-4000-8000-000000000058']::uuid[]) u;
+    insert into profiles (id, display_name, visibility) values
+        (nova, 'Nova', 'public'),
+        (rey,  'Rey',  'public'),
+        (sol,  'Sol',  'public'),
+        (ron,  'Ron',  'public'),
+        (finn, 'Finn', 'public'),
+        ('a5500000-0000-4000-8000-000000000056', 'Pax',  'public'),
+        ('a5500000-0000-4000-8000-000000000057', 'Tess', 'public'),
+        ('a5500000-0000-4000-8000-000000000058', 'Wade', 'public')
+    on conflict (id) do update set display_name = excluded.display_name, visibility = excluded.visibility;
+    delete from sessions where id in (
+        'a5566666-0000-4000-8000-000000000001', 'a5566666-0000-4000-8000-000000000002');
+    delete from warbands where id in (select warband_id from warband_members where user_id in (nova, rey, sol, ron, finn));
+
+    -- Grants: the four RPCs answer authenticated only; the tables answer no
+    -- client write at all (membership moves only through the RPCs).
+    perform assert_true(
+        not has_function_privilege('anon', 'public.create_warband(text)', 'execute')
+            and not has_function_privilege('anon', 'public.join_warband(text)', 'execute')
+            and not has_function_privilege('anon', 'public.leave_warband()', 'execute')
+            and not has_function_privilege('anon', 'public.my_warband()', 'execute')
+            and not has_function_privilege('anon', 'public.warband_member(uuid, uuid)', 'execute')
+            and not has_function_privilege('authenticated', 'public.warband_member(uuid, uuid)', 'execute')
+            and has_function_privilege('authenticated', 'public.in_my_warband(uuid)', 'execute')
+            and has_function_privilege('authenticated', 'public.create_warband(text)', 'execute')
+            and has_function_privilege('authenticated', 'public.join_warband(text)', 'execute')
+            and has_function_privilege('authenticated', 'public.leave_warband()', 'execute')
+            and has_function_privilege('authenticated', 'public.my_warband()', 'execute'),
+        'warband functions are callable beyond their intended callers'
+    );
+    perform assert_true(
+        refused_as(rey, format('select public.warband_member(%L, %L)', 'a5500000-0000-4000-8000-000000000051', rey), array['42501']),
+        'warband_member() answers a signed-in lifter'
+    );
+    perform assert_true(
+        refused_as_anon('select count(*) from warbands', array['42501'])
+            and refused_as_anon('select count(*) from warband_members', array['42501']),
+        'the shipped publishable key can read a warband table'
+    );
+
+    -- Create: happy path, code in the unambiguous alphabet, roster of one.
+    perform must_run(nova, 'select public.create_warband(''North Gate'')', 'create_warband refuses its own owner');
+    code := value_as(nova, 'select code from my_warband()');
+    perform assert_true(
+        code ~ '^[2-9A-HJ-NP-Z]{8}$',
+        format('create_warband drew a code outside the alphabet: %s', coalesce(code, '(null)'))
+    );
+    perform assert_true(
+        value_as(nova, 'select jsonb_array_length(members) from my_warband()') = '1',
+        'a fresh warband does not list exactly its owner'
+    );
+
+    -- One band per lifter.
+    perform assert_true(
+        refused_as(nova, 'select public.create_warband(''Other'')', array['P0001']),
+        'a lifter in a band created a second one'
+    );
+
+    -- Join: by code, case-insensitively; unknown codes refuse.
+    perform must_run(rey, format('select public.join_warband(%L)', lower(code)), 'join_warband refused a valid code');
+    perform must_run(sol, format('select public.join_warband(%L)', code), 'join_warband refused a second joiner');
+    perform assert_true(
+        value_as(nova, 'select jsonb_array_length(members) from my_warband()') = '3',
+        'the roster did not grow to the two joiners'
+    );
+    perform assert_true(
+        refused_as(ron, 'select public.join_warband(''ZZZZZZZZ'')', array['P0001']),
+        'an unknown code joined a band'
+    );
+
+    -- trained-this-week: the count follows the feed's own visibility — Rey's
+    -- public workout counts, Sol's private one never does. Completed NOW, so
+    -- the Monday-start anchor cannot drift across a week boundary mid-run.
+    insert into sessions (id, user_id, local_id, label, started_at, completed_at, audience) values
+        ('a5566666-0000-4000-8000-000000000001', rey, 1, 'Pull', now() - interval '1 hour', now(), 'profile'),
+        ('a5566666-0000-4000-8000-000000000002', sol, 1, 'Legs', now() - interval '1 hour', now(), 'private');
+    perform assert_true(
+        value_as(nova, 'select members->1->>''workouts_this_week'' from my_warband()') = '1'
+            and value_as(nova, 'select members->2->>''workouts_this_week'' from my_warband()') = '0',
+        'workouts_this_week counted a workout the feed would hide, or hid one it shows'
+    );
+    perform assert_true(
+        value_as(nova, 'select (members->1->>''last_workout_at'') is not null from my_warband()') = 'true',
+        'last_workout_at is null behind a visible workout'
+    );
+
+    -- The cap: fill to 8 server-side, the ninth joiner refuses. Ivo is still
+    -- bandless here, so the refusal can only come from the cap, never from the
+    -- one-band rule.
+    band := value_as(nova, 'select id::text from my_warband()');
+    perform assert_true(
+        refused_as(nova, format('insert into warband_members (warband_id, user_id) values (%L, %L)', band, ron), array['42501']),
+        'an insert grant lets a client add a bandmate silently'
+    );
+    insert into warband_members (warband_id, user_id)
+    select band::uuid, u from unnest(array[ron, finn,
+        'a5500000-0000-4000-8000-000000000056',
+        'a5500000-0000-4000-8000-000000000057',
+        'a5500000-0000-4000-8000-000000000058']::uuid[]) u;
+    perform assert_true(
+        refused_as(ivo, format('select public.join_warband(%L)', code), array['P0001']),
+        'a ninth lifter joined a full warband'
+    );
+
+    -- RLS: a member reads their band and roster; an outsider reads nothing.
+    perform must_run(ivo, 'select public.create_warband(''Ivo Cell'')', 'ivo could not create his own band');
+    perform assert_true(
+        value_as(nova, 'select count(*) from warbands') = '1'
+            and value_as(ivo, 'select count(*) from warbands') = '1',
+        'a warband is readable from outside its roster'
+    );
+    perform assert_true(
+        value_as(ivo, 'select count(*) from warband_members') = '1',
+        'warband_members leaks rows to a non-member'
+    );
+
+    -- Leaving: ownership hands to the oldest remaining member...
+    perform must_run(nova, 'select public.leave_warband()', 'the owner could not leave');
+    perform assert_true(
+        value_as(rey, 'select owner_id::text from my_warband()') = rey::text,
+        'leaving did not hand ownership to the oldest remaining member'
+    );
+    -- ...and the last member leaving deletes the band.
+    perform must_run(rey, 'select public.leave_warband()', 'rey could not leave');
+    perform must_run(sol, 'select public.leave_warband()', 'sol could not leave');
+    perform must_run(ron, 'select public.leave_warband()', 'ron could not leave');
+    perform must_run(finn, 'select public.leave_warband()', 'finn could not leave');
+    foreach filler in array array['a5500000-0000-4000-8000-000000000056',
+                                  'a5500000-0000-4000-8000-000000000057',
+                                  'a5500000-0000-4000-8000-000000000058']::uuid[] loop
+        perform must_run(filler, 'select public.leave_warband()', 'a filler could not leave');
+    end loop;
+    perform assert_true(
+        value_as(ron, 'select count(*) from warbands') = '0',
+        'the band outlived its last member'
+    );
+    -- Ivo's separate band is untouched by all of the above.
+    perform must_run(ivo, 'select public.leave_warband()', 'ivo could not leave');
+    select count(*) into n from warbands;
+    perform assert_true(n = 0, format('%s warband(s) survived the fixture teardown', n));
+
+    delete from sessions where id in (
+        'a5566666-0000-4000-8000-000000000001', 'a5566666-0000-4000-8000-000000000002');
+    delete from auth.users where id in (
+        nova, rey, sol, ron, finn,
+        'a5500000-0000-4000-8000-000000000056',
+        'a5500000-0000-4000-8000-000000000057',
+        'a5500000-0000-4000-8000-000000000058');
+end $wb$;
 
 drop function if exists assert_true(boolean, text);
 drop function if exists refused_as(uuid, text, text[]);

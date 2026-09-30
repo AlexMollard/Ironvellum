@@ -817,6 +817,9 @@ private fun SignedInPanels(
         RequestsPanel(incoming = incoming, onAccept = onAccept, onDecline = onDecline)
     }
 
+    SectionHeader("Warband")
+    WarbandSection(onOpenLifter = onOpenLifter)
+
     SectionHeader(if (accepted.isEmpty()) "Allies" else "Allies · ${accepted.size}")
     AlliesPanel(
         accepted = accepted,

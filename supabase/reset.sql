@@ -41,7 +41,16 @@ drop view if exists public.public_feed;
 drop view if exists public.shadow_board;
 drop view if exists public.leaderboard;
 
+-- The warband RPCs return the `warbands` row type, so they must go before the
+-- tables or the drop is refused on the dependency.
+drop function if exists public.my_warband();
+drop function if exists public.leave_warband();
+drop function if exists public.join_warband(text);
+drop function if exists public.create_warband(text);
+
 drop table if exists
+    public.warband_members,
+    public.warbands,
     public.lift_marks,
     public.reports,
     public.inbox_seen,
@@ -67,6 +76,8 @@ drop function if exists public.delete_my_account();
 drop function if exists public.push_aggregates(bigint, bigint, int, bigint, int, double precision);
 drop function if exists public.monarch_level(bigint);
 drop function if exists public.find_hunter(text);
+drop function if exists public.in_my_warband(uuid);
+drop function if exists public.warband_member(uuid, uuid);
 drop function if exists public.can_see_author(uuid);
 drop function if exists public.can_view_session(uuid, text);
 drop function if exists public.can_view(uuid);

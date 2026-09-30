@@ -10,6 +10,8 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import java.time.Instant
 import com.ironvellum.app.domain.Lift
+import com.ironvellum.app.domain.Warband
+import com.ironvellum.app.domain.WarbandMember
 
 /*
  * Wire types for the Supabase REST API. Every @SerialName must match the
@@ -693,12 +695,85 @@ data class FindHunterArgs(
     @SerialName("name") val name: String,
 )
 
+/** Arguments of `create_warband` (supabase/migrations/0001_baseline.sql). */
+@Serializable
+data class CreateWarbandArgs(
+    @SerialName("p_name") val name: String,
+)
+
+/** Arguments of `join_warband` (supabase/migrations/0001_baseline.sql). */
+@Serializable
+data class JoinWarbandArgs(
+    @SerialName("p_code") val code: String,
+)
+
+/**
+ * One bandmate as `my_warband()` reports them. A bandmate whose profile row is
+ * missing still lists — the server already substituted the neutral
+ * "Lifter" + short-id handle, so no client-side fallback is needed.
+ */
+@Serializable
+data class WarbandMemberDto(
+    @SerialName("user_id") val userId: String,
+    @SerialName("display_name") val displayName: String,
+    @SerialName("level") val level: Int = 1,
+    @SerialName("current_title_id") val currentTitleId: String? = null,
+    // Completed workouts in the current Monday-start week (UTC anchor),
+    // counted server-side under the feed's own visibility rules.
+    @SerialName("workouts_this_week") val workoutsThisWeek: Int = 0,
+    @SerialName("last_workout_at") val lastWorkoutAt: String? = null,
+)
+
+/** One row of `my_warband()`: the caller's band and roster, oldest member first. */
+@Serializable
+data class WarbandDto(
+    @SerialName("id") val id: String,
+    @SerialName("name") val name: String,
+    @SerialName("code") val code: String,
+    @SerialName("owner_id") val ownerId: String,
+    @SerialName("members") val members: List<WarbandMemberDto> = emptyList(),
+) {
+    fun toWarband(): Warband = Warband(
+        id = id,
+        name = name,
+        code = code,
+        ownerId = ownerId,
+        members = members.map {
+            WarbandMember(
+                userId = it.userId,
+                displayName = it.displayName,
+                level = it.level,
+                titleId = it.currentTitleId,
+                workoutsThisWeek = it.workoutsThisWeek,
+                lastWorkoutAtMs = it.lastWorkoutAt?.let { at -> Instant.parse(at).toEpochMilli() },
+            )
+        },
+    )
+}
+
+/**
+ * Read-back of `create_warband`/`join_warband`: a raw `warbands` row, whose
+ * code column is invite_code — a different shape from my_warband(), so it
+ * decodes separately and the roster is fetched right after.
+ */
+@Serializable
+data class WarbandRowDto(
+    @SerialName("id") val id: String,
+    @SerialName("name") val name: String,
+    @SerialName("invite_code") val inviteCode: String,
+    @SerialName("owner_id") val ownerId: String,
+)
+
 /** RPC names, declared once so the guard test and the call sites cannot drift. */
 const val RPC_PUSH_AGGREGATES = "push_aggregates"
 const val RPC_FIND_HUNTER = "find_hunter"
 const val RPC_MY_INBOX = "my_inbox"
 const val RPC_MARK_INBOX_SEEN = "mark_inbox_seen"
 const val RPC_DISPLAY_NAME_AVAILABLE = "display_name_available"
+const val RPC_CREATE_WARBAND = "create_warband"
+const val RPC_JOIN_WARBAND = "join_warband"
+const val RPC_LEAVE_WARBAND = "leave_warband"
+const val RPC_MY_WARBAND = "my_warband"
 
 /**
  * Encodes a typed RPC argument shape into the JsonObject the pinned

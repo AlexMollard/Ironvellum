@@ -3,6 +3,8 @@ package com.ironvellum.app.data.cloud
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.Cloud.failure
 import com.ironvellum.app.domain.PlayerProfile
+import com.ironvellum.app.domain.Warband
+import com.ironvellum.app.domain.isValidInviteCode
 import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SessionSet
@@ -691,6 +693,77 @@ class CloudSync(
                     )
                 }
             }
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /**
+     * The caller's warband, or null when they are in none. TTL 30s like the
+     * friends list; create/join/leave invalidate it at once.
+     */
+    suspend fun warband(force: Boolean = false): Result<Warband?> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            cache.getOrFetch(
+                key = CloudReadCache.KEY_WARBAND,
+                ttlMs = 30_000,
+                force = force,
+                userId = me.userId,
+            ) {
+                fetchWarband(client)
+            }
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    private suspend fun fetchWarband(client: io.github.jan.supabase.SupabaseClient): Warband? =
+        client.postgrest.rpc(RPC_MY_WARBAND).decodeList<WarbandDto>().singleOrNull()?.toWarband()
+
+    suspend fun createWarband(name: String): Result<Warband> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) {
+            return failure(IllegalArgumentException("Give the warband a name"))
+        }
+        return runCatching {
+            client.postgrest.rpc(RPC_CREATE_WARBAND, rpcArgs(CreateWarbandArgs(name = trimmed)))
+            cache.invalidate(CloudReadCache.KEY_WARBAND)
+            fetchWarband(client)
+                ?: throw IllegalStateException("The warband did not appear — pull to refresh")
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    suspend fun joinWarband(code: String): Result<Warband> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        val cleaned = code.trim().uppercase()
+        if (!isValidInviteCode(cleaned)) {
+            return failure(IllegalArgumentException("That code is not the right shape"))
+        }
+        return runCatching {
+            client.postgrest.rpc(RPC_JOIN_WARBAND, rpcArgs(JoinWarbandArgs(code = cleaned)))
+            cache.invalidate(CloudReadCache.KEY_WARBAND)
+            fetchWarband(client)
+                ?: throw IllegalStateException("The warband did not appear — pull to refresh")
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    suspend fun leaveWarband(): Result<Unit> {
+        val me = requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            client.postgrest.rpc(RPC_LEAVE_WARBAND)
+            Unit
+        }.onSuccess {
+            cache.invalidate(CloudReadCache.KEY_WARBAND)
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
@@ -1391,6 +1464,7 @@ private class CloudReadCache {
         const val KEY_LEADERBOARD = "leaderboard"
         const val KEY_SHADOW_BOARD = "shadow_board"
         const val KEY_FRIENDS = "friends"
+        const val KEY_WARBAND = "warband"
         const val KEY_FEED_FIRST_PAGE = "feed:first"
         const val KEY_LIKERS = "likers"
         const val KEY_COMMENTS = "comments"

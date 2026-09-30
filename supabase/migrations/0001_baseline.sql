@@ -325,6 +325,88 @@ alter table lift_marks add constraint lift_marks_lift check (lift in (
     'squat', 'bench', 'deadlift', 'ohp'
 ));
 
+-- ================================================================ warbands
+-- Invite-code bands of 3-8 allies (the 8 cap is enforced in join_warband, the
+-- code is the one way in). One band per lifter: warband_members.user_id is the
+-- whole primary key.
+--
+-- Privacy: a bandmate sees the band row and the member list; nobody else sees
+-- either. Membership is written ONLY by the RPCs below — there is no insert
+-- policy and no insert grant, so an owner cannot silently add anyone and a
+-- stranger cannot join without the code.
+create table if not exists warbands (
+    id          uuid primary key default gen_random_uuid(),
+    -- A band name is a small shouty HUD label, bounded like a title.
+    name        text not null check (char_length(name) between 1 and 24),
+    -- 8 chars, no 0/O/1/I/L: a code read aloud off a phone screen must be
+    -- unambiguous. Keep in step with InviteCodeAlphabet in domain/Warbands.kt.
+    invite_code text not null unique check (invite_code ~ '^[2-9A-HJ-NP-Z]{8}$'),
+    owner_id    uuid not null references auth.users (id) on delete cascade,
+    created_at  timestamptz default now()
+);
+
+create table if not exists warband_members (
+    warband_id uuid references warbands (id) on delete cascade,
+    user_id    uuid primary key references auth.users (id) on delete cascade,
+    joined_at  timestamptz default now()
+);
+
+-- Membership test used by the band policies below. SECURITY DEFINER or the two
+-- policies recurse through each other's sub-selects on warband_members. Closed
+-- to every client role: it answers about ANY (band, user) pair — an oracle over
+-- the whole roster graph, like is_friend().
+create or replace function public.warband_member(band uuid, who uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = pg_catalog, public
+as $$
+    select exists (
+        select 1 from warband_members m
+        where m.warband_id = band and m.user_id = who
+    );
+$$;
+revoke execute on function public.warband_member(uuid, uuid) from public, anon, authenticated;
+
+-- The caller-scoped face of warband_member(): answers only about auth.uid(),
+-- so it leaks nothing is_ally() does not already leak. The policies call THIS
+-- one — a policy is evaluated as the querying role, which needs the grant.
+create or replace function public.in_my_warband(band uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = pg_catalog, public
+as $$ select warband_member(band, auth.uid()) $$;
+revoke execute on function public.in_my_warband(uuid) from public, anon;
+grant execute on function public.in_my_warband(uuid) to authenticated;
+
+-- Members read the band's roster; nobody reads a band they are not in.
+drop policy if exists warbands_read on warbands;
+create policy warbands_read on warbands
+    for select to authenticated
+    using (in_my_warband(id));
+
+-- Only the owner renames or deletes the band.
+drop policy if exists warbands_update on warbands;
+create policy warbands_update on warbands
+    for update to authenticated
+    using (owner_id = auth.uid())
+    with check (owner_id = auth.uid());
+
+drop policy if exists warbands_delete on warbands;
+create policy warbands_delete on warbands
+    for delete to authenticated
+    using (owner_id = auth.uid());
+
+-- Your own membership row, plus your bandmates'. No write policies at all:
+-- create_warband/join_warband/leave_warband below are the only writers.
+drop policy if exists warband_members_read on warband_members;
+create policy warband_members_read on warband_members
+    for select to authenticated
+    using (user_id = auth.uid() or in_my_warband(warband_id));
+
 -- ================================================================ visibility functions
 
 -- Accepted friendship in either direction. SECURITY DEFINER because it must
@@ -467,6 +549,8 @@ alter table inbox_seen         enable row level security;
 alter table reports            enable row level security;
 alter table cloud_archives     enable row level security;
 alter table lift_marks         enable row level security;
+alter table warbands           enable row level security;
+alter table warband_members    enable row level security;
 
 -- profiles: readable per visibility, writable only by the owner. There is NO
 -- insert policy: the row is created server-side on sign-up, never by a client.
@@ -753,6 +837,16 @@ revoke all on lift_marks from anon, authenticated;
 grant select, delete on lift_marks to authenticated;
 grant insert (user_id, lift, step, recent_step, recent_at) on lift_marks to authenticated;
 grant update (user_id, lift, step, recent_step, recent_at) on lift_marks to authenticated;
+
+-- warbands: created only by create_warband(), membership only by the RPCs, so
+-- no insert grant on either table. The owner may rename the band and nothing
+-- else: invite_code, owner_id and created_at are the server's.
+revoke all on warbands from anon, authenticated;
+revoke update on warbands from authenticated;
+grant select, delete on warbands to authenticated;
+grant update (name) on warbands to authenticated;
+revoke all on warband_members from anon, authenticated;
+grant select on warband_members to authenticated;
 
 -- ================================================================ triggers
 
@@ -1489,13 +1583,184 @@ $$;
 revoke execute on function public.my_inbox() from public, anon;
 grant execute on function public.my_inbox() to authenticated;
 
+-- ---------------------------------------------------------------- warbands
+-- The invite-code alphabet create_warband() draws from: digits 2-9 and letters
+-- minus I, L and O — 31 unambiguous glyphs. Keep in step with
+-- InviteCodeAlphabet in domain/Warbands.kt and the check on warbands.invite_code.
+
+-- Creates a band with the caller as owner and only member, atomically. A code
+-- collision is absorbed by the unique index and another draw. SECURITY DEFINER
+-- because it writes two tables in one statement; every branch is pinned to
+-- auth.uid(), so it can only ever act on the caller.
+create or replace function public.create_warband(p_name text)
+returns warbands
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+    me       uuid := auth.uid();
+    alphabet text := '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+    w        warbands;
+begin
+    if me is null then
+        raise exception 'requires a signed-in lifter' using errcode = '42501';
+    end if;
+    if char_length(trim(p_name)) not between 1 and 24 then
+        raise exception 'a warband name is 1-24 characters';
+    end if;
+    -- One band per lifter: an existing membership wins before any insert.
+    if exists (select 1 from warband_members m where m.user_id = me) then
+        raise exception 'already in a warband — leave it first';
+    end if;
+    loop
+        begin
+            insert into warbands (name, invite_code, owner_id)
+            values (
+                trim(p_name),
+                (select string_agg(substr(alphabet, (1 + floor(random() * 31))::int, 1), '')
+                 from generate_series(1, 8)),
+                me
+            )
+            returning * into w;
+            exit;
+        exception when unique_violation then
+            null; -- code already drawn: try another
+        end;
+    end loop;
+    insert into warband_members (warband_id, user_id) values (w.id, me);
+    return w;
+end;
+$$;
+revoke execute on function public.create_warband(text) from public, anon;
+grant execute on function public.create_warband(text) to authenticated;
+
+-- Joins by code, case-insensitively, while there is room (max 8). SECURITY
+-- DEFINER for the same reason as create_warband.
+create or replace function public.join_warband(p_code text)
+returns warbands
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+    me uuid := auth.uid();
+    w  warbands;
+    n  int;
+begin
+    if me is null then
+        raise exception 'requires a signed-in lifter' using errcode = '42501';
+    end if;
+    if exists (select 1 from warband_members m where m.user_id = me) then
+        raise exception 'already in a warband — leave it first';
+    end if;
+    select * into w from warbands where invite_code = upper(trim(p_code));
+    if not found then
+        raise exception 'no warband with that code';
+    end if;
+    select count(*) into n from warband_members where warband_id = w.id;
+    if n >= 8 then
+        raise exception 'that warband is full';
+    end if;
+    insert into warband_members (warband_id, user_id) values (w.id, me);
+    return w;
+end;
+$$;
+revoke execute on function public.join_warband(text) from public, anon;
+grant execute on function public.join_warband(text) to authenticated;
+
+-- Leaves the band. If the owner leaves while others remain, ownership moves to
+-- the oldest remaining member (joined_at, then user id as the tiebreak); the
+-- last member leaving deletes the band.
+create or replace function public.leave_warband()
+returns void
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+    me     uuid := auth.uid();
+    band   uuid;
+    owner  uuid;
+    next   uuid;
+begin
+    if me is null then
+        raise exception 'requires a signed-in lifter' using errcode = '42501';
+    end if;
+    select warband_id into band from warband_members where user_id = me;
+    if band is null then
+        raise exception 'not in a warband';
+    end if;
+    select owner_id into owner from warbands where id = band;
+    delete from warband_members where user_id = me;
+    if not exists (select 1 from warband_members where warband_id = band) then
+        delete from warbands where id = band;
+    elsif owner = me then
+        select user_id into next
+        from warband_members
+        where warband_id = band
+        order by joined_at, user_id
+        limit 1;
+        update warbands set owner_id = next where id = band;
+    end if;
+end;
+$$;
+revoke execute on function public.leave_warband() from public, anon;
+grant execute on function public.leave_warband() to authenticated;
+
+-- The caller's band and roster, or no rows when they are in none. SECURITY
+-- DEFINER because the roster aggregates sessions of bandmates under the feed's
+-- own visibility rules (can_view_session: allies-only workouts of bandmates
+-- count, private ones never do) — a plain-member read could not see those
+-- rows directly. workouts_this_week counts completed sessions in the CURRENT
+-- Monday-start week, anchored with date_trunc('week', now()) in UTC — the
+-- client shows exactly this number, so both ends must keep the same anchor.
+-- last_workout_at is the newest completed session the caller may see, any week.
+create or replace function public.my_warband()
+returns table (id uuid, name text, code text, owner_id uuid, members jsonb)
+language sql
+stable
+security definer
+set search_path = pg_catalog, public
+as $$
+    select w.id, w.name, w.invite_code, w.owner_id,
+           (
+            select json_agg(json_build_object(
+                       'user_id', m.user_id,
+                       -- A bandmate whose profile row is missing still lists,
+                       -- under the neutral handle shape the sign-up trigger uses.
+                       'display_name', coalesce(p.display_name, 'Lifter' || right(m.user_id::text, 4)),
+                       'level', coalesce(p.level, 1),
+                       'current_title_id', p.current_title_id,
+                       'workouts_this_week', coalesce(week.n, 0),
+                       'last_workout_at', week.last_at
+                   ) order by m.joined_at, m.user_id)
+            from warband_members m
+            left join profiles p on p.id = m.user_id
+            left join lateral (
+                select count(*) as n, max(s.completed_at) as last_at
+                from sessions s
+                where s.user_id = m.user_id
+                  and s.completed_at is not null
+                  and s.completed_at >= date_trunc('week', now())
+                  and can_view_session(s.user_id, s.audience)
+            ) week on true
+            where m.warband_id = w.id
+           )
+    from warbands w
+    where exists (select 1 from warband_members me
+                  where me.warband_id = w.id and me.user_id = auth.uid());
+$$;
+revoke execute on function public.my_warband() from public, anon;
+grant execute on function public.my_warband() to authenticated;
+
 -- The version beacon. The app probes schema_version() as anon before pointing a
 -- lifter's training at a custom backend (Settings -> CLOUD, TEST), so a
 -- half-set-up project is reported before any data is sent to it. The anon
 -- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
 -- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 21 $$;
+language sql stable as $$ select 22 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

@@ -108,6 +108,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.width
 import com.ironvellum.app.domain.Relics
 import java.util.Locale
+import androidx.compose.ui.platform.LocalContext
+import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.data.cloud.Cloud
+import com.ironvellum.app.domain.Warband
+import com.ironvellum.app.ui.components.plural
 
 
 /** What the figures earned while the app was closed, shown once on arrival. */
@@ -234,6 +239,10 @@ fun IdleScreen(
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
+
+        // The band's pooled week, one line under the header. Refreshes on screen
+        // open only — no worker keeps it ticking while the lifter is elsewhere.
+        WarbandBannerLine()
 
         if (snapshot == null || inputs == null) {
             // Brief empty frame while the flows warm up; never fake numbers.
@@ -1195,3 +1204,35 @@ private fun rarityAccent(rarity: RewardRarity): Color = when (rarity) {
 
 /** Relics listed before the tail is summarised: past this each adds < 1%. */
 private const val VAULT_ROWS = 12
+
+/**
+ * The band's pooled week on the Garrison screen: "WARBAND · <name> · N workouts
+ * this week", summed from the members' counts exactly like the ALLIES tab's
+ * header. Hidden when signed out or bandless; a failed read hides the line —
+ * it is decoration here, and the ALLIES tab carries the honest error state.
+ * One read per screen entry; nothing keeps it fresh while the screen is closed.
+ */
+@Composable
+private fun WarbandBannerLine() {
+    val app = LocalContext.current.applicationContext as IronvellumApp
+    val configured = Cloud.config.collectAsStateWithLifecycle().value != null
+    val account by app.accountRepository.account.collectAsStateWithLifecycle()
+    if (!configured || account == null) return
+
+    var band by remember(account?.userId) { mutableStateOf<Warband?>(null) }
+    LaunchedEffect(account?.userId) {
+        band = app.cloudSync.warband().getOrNull()
+    }
+    band?.let { b ->
+        val total = b.members.sumOf { it.workoutsThisWeek }
+        Text(
+            "WARBAND · ${b.name} · $total ${plural(total, "workout", "workouts")} this week",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = IronvellumColors.SovereignGold,
+            letterSpacing = IronvellumTracking.InlineLabel,
+            modifier = Modifier.padding(top = 2.dp),
+        )
+    }
+}
