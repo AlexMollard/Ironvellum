@@ -136,14 +136,21 @@ class WarbandViewModel(
             call()
                 .onSuccess {
                     // The server's answer is the truth: the refetch reconciles
-                    // membership (and ownership after a handover) exactly.
-                    cloudSync.warband(force = true).onSuccess { fresh ->
-                        _ui.value = _ui.value.copy(warband = fresh)
-                    }
+                    // membership (and ownership after a handover) exactly. A
+                    // failed refetch must not leave the pre-action roster up
+                    // as if the action never happened.
+                    cloudSync.warband(force = true)
+                        .onSuccess { fresh -> _ui.value = _ui.value.copy(warband = fresh) }
+                        .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
                 }
                 .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
             _ui.value = _ui.value.copy(actionBusy = false)
         }
+    }
+
+    /** The dialogs' refusals are transient context: dismissing them clears the message. */
+    fun dismissActionError() {
+        _ui.value = _ui.value.copy(actionError = null)
     }
 }
 
@@ -216,7 +223,10 @@ fun WarbandSection(
             busy = ui.actionBusy,
             error = actionError,
             onCreate = viewModel::create,
-            onDismiss = { showCreate = false },
+            onDismiss = {
+                viewModel.dismissActionError()
+                showCreate = false
+            },
         )
     }
     if (showJoin) {
@@ -224,7 +234,10 @@ fun WarbandSection(
             busy = ui.actionBusy,
             error = actionError,
             onJoin = viewModel::join,
-            onDismiss = { showJoin = false },
+            onDismiss = {
+                viewModel.dismissActionError()
+                showJoin = false
+            },
         )
     }
     if (confirmLeave) {

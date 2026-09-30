@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.GroupAdd
 import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.PersonAdd
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -273,6 +274,7 @@ private fun InboxRow(
         is InboxItem.RequestAccepted -> Icons.Outlined.Handshake to "accepted your ally request"
         is InboxItem.NewComment -> Icons.Outlined.ChatBubbleOutline to "commented on ${item.sessionHeadline.orWorkout()}"
         is InboxItem.NewReaction -> item.reaction.glyph() to "${item.reaction.displayName()} on ${item.sessionHeadline.orWorkout()}"
+        is InboxItem.NewBandmate -> Icons.Outlined.GroupAdd to "joined your band ${item.bandName}"
     }
     val open: () -> Unit = when (item) {
         is InboxItem.NewComment -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout()) } }

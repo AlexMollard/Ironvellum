@@ -525,6 +525,14 @@ sealed interface InboxItem {
         val sessionHeadline: String,
         val reaction: Reaction,
     ) : InboxItem
+
+    /** A lifter joined the caller's warband; [bandName] carries the band. */
+    data class NewBandmate(
+        override val occurredAtMs: Long,
+        override val actorId: String,
+        override val actorName: String,
+        val bandName: String,
+    ) : InboxItem
 }
 
 data class Inbox(val items: List<InboxItem>, val seenAtMs: Long?) {
@@ -571,6 +579,12 @@ data class InboxRowDto(
                 sessionId = sessionId ?: return null,
                 sessionHeadline = sessionHeadline.orEmpty(),
                 reaction = Reaction.fromWire(reaction) ?: return null,
+            )
+            "band_join" -> InboxItem.NewBandmate(
+                occurredAtMs = at,
+                actorId = actorId,
+                actorName = name,
+                bandName = body.orEmpty(),
             )
             else -> null
         }
@@ -716,7 +730,8 @@ data class JoinWarbandArgs(
 data class WarbandMemberDto(
     @SerialName("user_id") val userId: String,
     @SerialName("display_name") val displayName: String,
-    @SerialName("level") val level: Int = 1,
+    // Null when the bandmate's profile is hidden from the caller.
+    @SerialName("level") val level: Int? = null,
     @SerialName("current_title_id") val currentTitleId: String? = null,
     // Completed workouts in the current Monday-start week (UTC anchor),
     // counted server-side under the feed's own visibility rules.

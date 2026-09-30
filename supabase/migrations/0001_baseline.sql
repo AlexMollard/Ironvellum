@@ -108,6 +108,14 @@ create table if not exists friend_request_log (
 );
 create index if not exists friend_request_log_idx on friend_request_log (requester_id, sent_at);
 
+-- Failed warband-code attempts, capped per lifter like friend requests: the
+-- code space is huge, but a throttled door costs nothing to close.
+create table if not exists warband_join_log (
+    user_id  uuid not null references profiles (id) on delete cascade,
+    tried_at timestamptz not null default now()
+);
+create index if not exists warband_join_log_idx on warband_join_log (user_id, tried_at);
+
 -- ---------------------------------------------------------------- sessions
 -- Private notes are deliberately absent from this table. They live only in the
 -- device's Room database and are never uploaded — "private" has to mean the
@@ -1570,6 +1578,24 @@ as $$
         join profiles p on p.id = l.user_id
         join me on s.user_id = me.id
         where l.user_id <> me.id
+
+        union all
+
+        -- A lifter joined the caller's warband: the roster is the feed's peer,
+        -- so its door opening is inbox-worthy like a request or an acceptance.
+        -- Identity follows profile visibility, as the roster shows it.
+        select 'band_join', m.joined_at, m.user_id,
+               case when can_view(m.user_id) then p.display_name
+                    else 'Lifter' || right(m.user_id::text, 4) end,
+               null, null, null, w.name, null
+        from warband_members m
+        join warbands w on w.id = m.warband_id
+        left join profiles p on p.id = m.user_id
+        join me on exists (
+            select 1 from warband_members mine
+            where mine.warband_id = m.warband_id and mine.user_id = me.id
+        )
+        where m.user_id <> me.id
     )
     select i.kind, i.occurred_at, i.actor_id, i.actor_name, i.session_id,
            i.session_headline, i.comment_id, i.body, i.reaction
@@ -1602,6 +1628,9 @@ declare
     me       uuid := auth.uid();
     alphabet text := '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
     w        warbands;
+    v        bigint;
+    code     text;
+    i        int;
 begin
     if me is null then
         raise exception 'requires a signed-in lifter' using errcode = '42501';
@@ -1615,13 +1644,17 @@ begin
     end if;
     loop
         begin
+            -- A secret-quality draw: five random bytes mapped to eight 5-bit
+            -- glyphs over the 31-glyph alphabet (31^8 exactly covers 2^40).
+            -- random() is documented as unfit for secrets.
+            v := ('x' || encode(gen_random_bytes(5), 'hex'))::bit(40)::bigint;
+            code := '';
+            for i in 1..8 loop
+                code := code || substr(alphabet, 1 + (v % 31)::int, 1);
+                v := v >> 5;
+            end loop;
             insert into warbands (name, invite_code, owner_id)
-            values (
-                trim(p_name),
-                (select string_agg(substr(alphabet, (1 + floor(random() * 31))::int, 1), '')
-                 from generate_series(1, 8)),
-                me
-            )
+            values (trim(p_name), code, me)
             returning * into w;
             exit;
         exception when unique_violation then
@@ -1654,12 +1687,24 @@ begin
     if exists (select 1 from warband_members m where m.user_id = me) then
         raise exception 'already in a warband — leave it first';
     end if;
+    -- Throttle the one guessable door: failed attempts only, 50 a day, the
+    -- same rolling-window pattern as ally requests.
+    delete from warband_join_log l where l.user_id = me and l.tried_at <= now() - interval '1 day';
+    select count(*) into n from warband_join_log l where l.user_id = me;
+    if n >= 50 then
+        raise exception 'Too many code attempts today — try again tomorrow.';
+    end if;
     select * into w from warbands where invite_code = upper(trim(p_code));
     if not found then
+        insert into warband_join_log (user_id) values (me);
         raise exception 'no warband with that code';
     end if;
+    -- Serialise joins per band: the cap check and the insert must read as one
+    -- step, or two simultaneous joins at seven can land both at nine.
+    perform pg_advisory_xact_lock(hashtextextended(w.id::text, 0));
     select count(*) into n from warband_members where warband_id = w.id;
     if n >= 8 then
+        insert into warband_join_log (user_id) values (me);
         raise exception 'that warband is full';
     end if;
     insert into warband_members (warband_id, user_id) values (w.id, me);
@@ -1713,9 +1758,12 @@ grant execute on function public.leave_warband() to authenticated;
 -- own visibility rules (can_view_session: allies-only workouts of bandmates
 -- count, private ones never do) — a plain-member read could not see those
 -- rows directly. workouts_this_week counts completed sessions in the CURRENT
--- Monday-start week, anchored with date_trunc('week', now()) in UTC — the
--- client shows exactly this number, so both ends must keep the same anchor.
--- last_workout_at is the newest completed session the caller may see, any week.
+-- Monday-start week, anchored in UTC explicitly so a moved server timezone
+-- cannot shift everyone's week — the client shows exactly this number, so
+-- both ends must keep the same anchor.
+-- Identity follows the profile's own visibility: a bandmate whose profile the
+-- caller cannot view lists under the neutral handle, with level and worn
+-- title withheld, exactly as anywhere else in the app.
 create or replace function public.my_warband()
 returns table (id uuid, name text, code text, owner_id uuid, members jsonb)
 language sql
@@ -1729,9 +1777,13 @@ as $$
                        'user_id', m.user_id,
                        -- A bandmate whose profile row is missing still lists,
                        -- under the neutral handle shape the sign-up trigger uses.
-                       'display_name', coalesce(p.display_name, 'Lifter' || right(m.user_id::text, 4)),
-                       'level', coalesce(p.level, 1),
-                       'current_title_id', p.current_title_id,
+                       'display_name', case when m.user_id = auth.uid() or can_view(m.user_id)
+                                            then coalesce(p.display_name, 'Lifter' || right(m.user_id::text, 4))
+                                            else 'Lifter' || right(m.user_id::text, 4) end,
+                       'level', case when m.user_id = auth.uid() or can_view(m.user_id)
+                                     then coalesce(p.level, 1) end,
+                       'current_title_id', case when m.user_id = auth.uid() or can_view(m.user_id)
+                                                then p.current_title_id end,
                        'workouts_this_week', coalesce(week.n, 0),
                        'last_workout_at', week.last_at
                    ) order by m.joined_at, m.user_id)
@@ -1742,7 +1794,7 @@ as $$
                 from sessions s
                 where s.user_id = m.user_id
                   and s.completed_at is not null
-                  and s.completed_at >= date_trunc('week', now())
+                  and s.completed_at >= (date_trunc('week', now() at time zone 'utc')) at time zone 'utc'
                   and can_view_session(s.user_id, s.audience)
             ) week on true
             where m.warband_id = w.id
@@ -1760,7 +1812,7 @@ grant execute on function public.my_warband() to authenticated;
 -- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
 -- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 22 $$;
+language sql stable as $$ select 23 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

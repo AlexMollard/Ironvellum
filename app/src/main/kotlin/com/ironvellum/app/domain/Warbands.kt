@@ -14,11 +14,12 @@ data class Warband(
     val members: List<WarbandMember>,
 )
 
-/** One bandmate. [workoutsThisWeek] counts completed workouts in the current Monday-start week (UTC anchor, server-computed). */
+/** One bandmate. [workoutsThisWeek] counts completed workouts in the current Monday-start week (UTC anchor, server-computed).
+ *  [level] and [titleId] are null when the bandmate's profile is hidden from the caller. */
 data class WarbandMember(
     val userId: String,
     val displayName: String,
-    val level: Int,
+    val level: Int?,
     /** The worn title id, null when bare; names resolve locally via Titles.byId. */
     val titleId: String?,
     val workoutsThisWeek: Int,

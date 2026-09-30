@@ -1282,12 +1282,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 22,
-        format('schema_version() reports %s, not 22 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 23,
+        format('schema_version() reports %s, not 23 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 22,
+        (select public.schema_version()) = 23,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -1329,6 +1329,7 @@ declare
     ron  uuid := 'a5500000-0000-4000-8000-000000000054';
     finn uuid := 'a5500000-0000-4000-8000-000000000055';
     ivo  uuid := 'a5500000-0000-4000-8000-000000000046';
+    pax  uuid := 'a5500000-0000-4000-8000-000000000056';
     filler uuid;
     band text;
     code text;
@@ -1413,10 +1414,36 @@ begin
         value_as(nova, 'select jsonb_array_length(members) from my_warband()') = '3',
         'the roster did not grow to the two joiners'
     );
+    -- And both joins knocked on the owner's inbox, like a request or an
+    -- acceptance: the 30-minute worker turns them into phone notifications.
+    perform assert_true(
+        value_as(nova, 'select count(*) from my_inbox() where kind = ''band_join''') = '2',
+        'band joins did not reach the owner''s inbox'
+    );
     perform assert_true(
         refused_as(ron, 'select public.join_warband(''ZZZZZZZZ'')', array['P0001']),
         'an unknown code joined a band'
     );
+
+    -- The code door is throttled: fifty failed attempts a day per lifter.
+    -- refused_as cannot grow the log (its handler rolls each attempt back),
+    -- so the fifty failures are seeded directly; the door must then shut by
+    -- message even for a real code, which shares P0001 with unknown codes.
+    insert into warband_join_log (user_id) select pax from generate_series(1, 50);
+    begin
+        perform set_config('probe.uid', pax::text, true);
+        execute 'set local role authenticated';
+        execute 'select public.join_warband(''AAAAAAAA'')';
+        execute 'reset role';
+        raise exception 'expected the join throttle, saw a join';
+    exception
+        when raise_exception then
+            execute 'reset role';
+            if sqlerrm not like 'Too many code attempts%' then
+                raise exception 'the 51st code attempt failed on something else: %', sqlerrm;
+            end if;
+    end;
+    delete from warband_join_log where user_id = pax;
 
     -- trained-this-week: the count follows the feed's own visibility — Rey's
     -- public workout counts, Sol's private one never does. Completed NOW, so
@@ -1451,6 +1478,24 @@ begin
         refused_as(ivo, format('select public.join_warband(%L)', code), array['P0001']),
         'a ninth lifter joined a full warband'
     );
+
+    -- Identity follows profile visibility inside the band too: a bandmate who
+    -- went private lists under the neutral handle with level and worn title
+    -- withheld, while a public bandmate reads as themselves.
+    update profiles set visibility = 'private' where id = finn;
+    perform assert_true(
+        value_as(nova, format(
+            'select m->>''display_name'' from my_warband(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
+            finn::text)) = 'Lifter0055'
+            and value_as(nova, format(
+            'select (m->>''level'') is null and (m->>''current_title_id'') is null from my_warband(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
+            finn::text)) = 'true'
+            and value_as(nova, format(
+            'select m->>''display_name'' from my_warband(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
+            rey::text)) = 'Rey',
+        'a private bandmate leaked a name, level or title'
+    );
+    update profiles set visibility = 'public' where id = finn;
 
     -- RLS: a member reads their band and roster; an outsider reads nothing.
     perform must_run(ivo, 'select public.create_warband(''Ivo Cell'')', 'ivo could not create his own band');

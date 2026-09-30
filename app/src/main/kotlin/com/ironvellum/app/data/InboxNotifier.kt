@@ -149,5 +149,6 @@ object InboxNotifier {
         }
         is InboxItem.FriendRequest -> "${item.actorName} wants to ally with you"
         is InboxItem.RequestAccepted -> "${item.actorName} accepted your request"
+        is InboxItem.NewBandmate -> "${item.actorName} joined your band ${item.bandName}"
     }
 }

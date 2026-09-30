@@ -55,6 +55,7 @@ drop table if exists
     public.reports,
     public.inbox_seen,
     public.friend_request_log,
+    public.warband_join_log,
     public.mutes,
     public.blocks,
     public.session_comments,
