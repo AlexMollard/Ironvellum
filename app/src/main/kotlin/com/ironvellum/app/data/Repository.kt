@@ -64,6 +64,7 @@ import com.ironvellum.app.domain.RollResult
 import com.ironvellum.app.domain.RoutineCode
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.RoutineUpdate
+import com.ironvellum.app.domain.modifiersAfterLoadChange
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SkillClaimResult
@@ -756,14 +757,15 @@ class Repository(
      * climbing grade. Holds keep their figure in `durationSec`, so the bug
      * would have erased a hold the moment it was ticked.
      */
-    suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) {
-        val current = sessionDao.setById(setId) ?: return
+    suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) = db.withTransaction {
+        val current = sessionDao.setById(setId) ?: return@withTransaction
         sessionDao.updateSet(current.copy(reps = reps, weightKg = weightKg, done = done))
+        followLoad(current, weightKg)
     }
 
     /** Edits a static hold: its figure is seconds, and reps stays 0. */
-    suspend fun updateHoldSet(setId: Long, seconds: Int, weightKg: Double?, done: Boolean) {
-        val current = sessionDao.setById(setId) ?: return
+    suspend fun updateHoldSet(setId: Long, seconds: Int, weightKg: Double?, done: Boolean) = db.withTransaction {
+        val current = sessionDao.setById(setId) ?: return@withTransaction
         sessionDao.updateSet(
             current.copy(
                 reps = 0,
@@ -772,6 +774,32 @@ class Repository(
                 done = done,
             ),
         )
+        followLoad(current, weightKg)
+    }
+
+    /**
+     * Keeps "weighted" in step with the load on a bodyweight movement (the
+     * catalogue's isWeighted false: pull-up, dip, push-up) after [before] was
+     * rewritten with [weightKg]: added when a set gains load, removed when the
+     * last loaded set loses it. Every set edit routes here, the typed load's
+     * "all sets" path included, each inside its caller's transaction so those
+     * concurrent writes cannot interleave the read and the write. Only a
+     * changed load counts, so ticking a set never touches a tag set by hand;
+     * barbell work and completed sessions are left alone.
+     */
+    private suspend fun followLoad(before: SetLogEntity, weightKg: Double?) {
+        if (before.weightKg == weightKg) return
+        val session = sessionDao.byId(before.sessionId) ?: return
+        if (session.completedAtMs != null) return
+        if (exerciseDao.byId(before.exerciseId)?.isWeighted != false) return
+        val rows = sessionDao.setsFor(before.sessionId).filter { it.exerciseId == before.exerciseId }
+        val current = rows.firstOrNull()?.modifiers ?: return
+        val next = modifiersAfterLoadChange(
+            current = current,
+            becameLoaded = (before.weightKg ?: 0.0) <= 0.0 && (weightKg ?: 0.0) > 0.0,
+            anyLoaded = rows.any { (it.weightKg ?: 0.0) > 0.0 },
+        )
+        if (next != current) sessionDao.setModifiers(before.sessionId, before.exerciseId, next)
     }
 
     /**
@@ -790,8 +818,8 @@ class Repository(
         grade: String?,
         weightKg: Double?,
         done: Boolean,
-    ) {
-        val current = sessionDao.setById(setId) ?: return
+    ) = db.withTransaction {
+        val current = sessionDao.setById(setId) ?: return@withTransaction
         sessionDao.updateSet(
             current.copy(
                 reps = reps.coerceAtLeast(0),
@@ -802,6 +830,7 @@ class Repository(
                 done = done,
             ),
         )
+        followLoad(current, weightKg)
     }
 
     /**

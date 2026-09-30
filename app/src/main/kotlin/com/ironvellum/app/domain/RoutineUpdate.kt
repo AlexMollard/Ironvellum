@@ -2,8 +2,10 @@ package com.ironvellum.app.domain
 
 /**
  * What a preset would look like if it matched the session the lifter just
- * finished. Only the DONE sets speak: a movement he skipped says nothing about
- * the plan, and a movement he added is not part of the plan at all.
+ * finished. The DONE sets speak for the figures; the set count follows the
+ * rows the block still has, so a set deleted mid-trial is told apart from one
+ * left unticked. A movement he skipped says nothing about the plan, and a
+ * movement he added is not part of the plan at all.
  */
 object RoutineUpdate {
 
@@ -43,16 +45,28 @@ object RoutineUpdate {
                 ),
             )
         }
+
+        /**
+         * The fields the offer starts with ticked: every one, except a set
+         * count that drops. Deleting a set mid-trial is often a bad day, not a
+         * new plan, so a smaller count is offered but must be ticked on purpose.
+         */
+        fun defaultTicks(): Set<Field> =
+            fields.filterNot { it == Field.SETS && after.targetSets < before.targetSets }.toSet()
     }
 
     /**
-     * Changes for the entries whose done sets differ from their plan, in
-     * preset order. Per entry: sets never drop below the plan (a short day
-     * proposes nothing there), reps (a hold's seconds, which
-     * the preset keeps in targetReps) = median, rounded down; load = the one
-     * used on the most sets, a tie going to the heavier, bodyweight staying
-     * null; modifiers = the session's when they differ. Activities are not
-     * proposed: their preset target is a passthrough, not a prescription.
+     * Changes for the entries whose finished block differs from their plan,
+     * in preset order. Per entry: sets = the rows the block has, ticked or
+     * not, so an unticked set (a short day) keeps the count, a deleted one
+     * lowers it (see [Change.defaultTicks]) and an added one raises it; reps
+     * (a hold's seconds, which the preset keeps in targetReps) = median of the
+     * done sets, rounded down; load = the one used on the most done sets, a
+     * tie going to the heavier, bodyweight staying null; modifiers = the
+     * session's when they differ. A block with no done set proposes nothing,
+     * not even its row count: an untouched movement says nothing about the
+     * plan. Activities are not proposed: their preset target is a
+     * passthrough, not a prescription.
      *
      * The same movement twice in a preset is matched by order: its Nth entry
      * to its Nth block of the session (blocks keep their own exercisePosition
@@ -72,18 +86,18 @@ object RoutineUpdate {
             seen[entry.exerciseId] = nth + 1
             val metric = metricOf(entry.exerciseId) ?: ExerciseMetric.REPS
             if (!metric.isStrength) return@mapNotNull null
-            val done = blocksByExercise[entry.exerciseId]?.getOrNull(nth)?.filter { it.done }.orEmpty()
+            val block = blocksByExercise[entry.exerciseId]?.getOrNull(nth).orEmpty()
+            val done = block.filter { it.done }
             if (done.isEmpty()) return@mapNotNull null
             val figures = done.map { set ->
                 if (metric == ExerciseMetric.HOLD) (set.durationSec ?: set.reps) else set.reps
             }
             val modifiers = done.first().modifiers
             val after = entry.copy(
-                // A short day never lowers the set count: a one-set workout of
-                // a three-set movement says nothing about the plan, and the
-                // offer must never read "3 sets -> 1". The count only grows or
-                // matches what was done.
-                targetSets = maxOf(done.size, entry.targetSets),
+                // Rows, not done sets: a set left unticked is a short day and
+                // keeps the count, while removeSet deletes the row, so a set
+                // taken out on purpose is the only way the count drops.
+                targetSets = block.size,
                 targetReps = medianDown(figures),
                 targetWeightKg = mostUsedLoad(done.map { it.weightKg }),
                 modifiers = if (sameModifiers(modifiers, entry.modifiers)) entry.modifiers else modifiers,

@@ -34,6 +34,8 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
  * data are left out; the catalogue has no descriptions or cues, so none are
  * shown. [onPick] null hides the confirm button; otherwise it labels itself
  * [confirmLabel] and picks the exercise the way tapping the card does.
+ * [modifiers] reshape the muscles as they do in the trial (a deficit
+ * push-up works the chest at stretch).
  */
 @Composable
 internal fun ExerciseInfoDialog(
@@ -42,8 +44,9 @@ internal fun ExerciseInfoDialog(
     onDismiss: () -> Unit,
     onPick: (() -> Unit)?,
     confirmLabel: String = "ADD",
+    modifiers: String = "",
 ) {
-    val shares = MuscleMap.profile(exercise.name)?.muscles.orEmpty()
+    val shares = MuscleMap.profile(exercise.name, modifiers)?.muscles.orEmpty()
     val gear = GearRequirements.needs(exercise.name)
         .joinToString(" or ") { set -> set.joinToString(" + ") { it.label.lowercase() } }
     val skill = Skills.forName(exercise.name)

@@ -44,6 +44,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.ui.draw.alpha
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Lock
@@ -61,6 +62,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
@@ -69,6 +71,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
@@ -100,6 +103,7 @@ import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.domain.isStrength
 import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.SessionSet
@@ -112,7 +116,9 @@ import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.ShareCardDialog
+import com.ironvellum.app.ui.components.ExerciseInfoDialog
 import com.ironvellum.app.ui.components.ExercisePickerSheet
+import com.ironvellum.app.ui.components.lastLoggedLine
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
@@ -143,7 +149,6 @@ import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.MuscleMap
-import com.ironvellum.app.ui.program.ExerciseMuscles
 import com.ironvellum.app.ui.program.ShareLevel
 import com.ironvellum.app.ui.program.musclesAt
 
@@ -180,6 +185,10 @@ class SessionViewModel(
 
     val exercises: StateFlow<List<Exercise>> =
         repo.observeExercises().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /** Each exercise's top set of its last sealed trial, for the info dialog. */
+    val lastLogged: StateFlow<Map<Long, LastLogged>> =
+        repo.observeLastLogged().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /**
      * The reader's own bar, for the deeds the victory overlay names: a woman
@@ -401,11 +410,12 @@ fun SessionScreen(
     val completion by viewModel.completion.collectAsStateWithLifecycle()
     val finish by viewModel.finish.collectAsStateWithLifecycle()
     val claiming by viewModel.claiming.collectAsStateWithLifecycle()
+    val lastLogged by viewModel.lastLogged.collectAsStateWithLifecycle()
     var confirmAbandon by remember { mutableStateOf(false) }
     var confirmClaim by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
     var editModifiersFor by remember { mutableStateOf<Long?>(null) }
-    var musclesFor by remember { mutableStateOf<Long?>(null) }
+    var infoFor by remember { mutableStateOf<Long?>(null) }
     var editLoadFor by remember { mutableStateOf<SessionSet?>(null) }
 
     // One route per metric, each passing the set's current values for the
@@ -576,25 +586,35 @@ fun SessionScreen(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Column(
-                        Modifier
-                            .weight(1f)
-                            .then(
-                                if (shares != null) {
-                                    Modifier.clickable(onClickLabel = "Show muscles for ${first.exerciseName}") {
-                                        musclesFor = exerciseId
-                                    }
-                                } else {
-                                    Modifier
+                    Column(Modifier.weight(1f)) {
+                        // The name and a small (i) are one 44dp target opening the
+                        // exercise's info. The glyph sits inline, not in a 48dp
+                        // IconButton, so the name keeps its width at 360dp.
+                        val infoLabel = "About ${first.exerciseName}"
+                        Row(
+                            Modifier
+                                .heightIn(min = 44.dp)
+                                .clickable(onClickLabel = infoLabel) { infoFor = exerciseId }
+                                .semantics {
+                                    contentDescription = infoLabel
+                                    role = Role.Button
                                 },
-                            ),
-                    ) {
-                        Text(
-                            first.exerciseName,
-                            style = MaterialTheme.typography.titleMedium,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                first.exerciseName,
+                                style = MaterialTheme.typography.titleMedium,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false),
+                            )
+                            Icon(
+                                Icons.Outlined.Info,
+                                contentDescription = null,
+                                tint = IronvellumColors.InkMuted,
+                                modifier = Modifier.padding(start = 4.dp).size(18.dp),
+                            )
+                        }
                         // Only real modifiers get a line. "tap to set modifiers"
                         // printed under every movement that had none, beside the
                         // slider glyph in this same header that does exactly that.
@@ -650,15 +670,7 @@ fun SessionScreen(
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .then(
-                                if (shares != null) {
-                                    Modifier.clickable(onClickLabel = "Show muscles for ${first.exerciseName}") {
-                                        musclesFor = exerciseId
-                                    }
-                                } else {
-                                    Modifier
-                                },
-                            )
+                            .clickable(onClickLabel = "About ${first.exerciseName}") { infoFor = exerciseId }
                             .padding(bottom = 2.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -944,28 +956,19 @@ fun SessionScreen(
         )
     }
 
-    musclesFor?.let { exerciseId ->
+    infoFor?.let { exerciseId ->
+        val exercise = exercises.firstOrNull { it.id == exerciseId }
         val current = ui.sets.firstOrNull { it.exerciseId == exerciseId }
-        val shares = current?.let { MuscleMap.profile(it.exerciseName, it.modifiers)?.muscles }
         // The block can vanish under an open dialog (last set deleted); then
         // there is nothing to show and the dialog simply does not draw.
-        if (current != null && shares != null) {
-            AlertDialog(
-                shape = MaterialTheme.shapes.medium,
-                containerColor = Color(0xFF0D1110),
-                onDismissRequest = { musclesFor = null },
-                title = {
-                    Text(
-                        current.exerciseName,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                },
-                text = { ExerciseMuscles(shares, Modifier.fillMaxWidth(), figureHeight = 240.dp) },
-                confirmButton = {
-                    IronvellumButton(label = "Close", onClick = { musclesFor = null }, quiet = true)
-                },
+        if (exercise != null && current != null) {
+            ExerciseInfoDialog(
+                exercise = exercise,
+                // Sealed trials only: the live one is never its own "last".
+                lastLine = lastLogged[exerciseId]?.let { lastLoggedLine(it, exercise, System.currentTimeMillis()) },
+                onDismiss = { infoFor = null },
+                onPick = null,
+                modifiers = current.modifiers,
             )
         }
     }
@@ -1017,20 +1020,11 @@ fun SessionScreen(
             SessionViewModel.Finish.ROUTINE -> {
                 val offer = routineUpdate
                 if (offer != null) {
-                    // Which preset entries got fewer done sets than planned —
-                    // the shape the set-count guard in RoutineUpdate.propose
-                    // suppresses, but the title still names.
-                    // The header says the plan kept its sets, so it must mean
-                    // that: no proposed change touches SETS, and at least one
-                    // positional block ran short. Counting by exerciseId alone
-                    // mislabels a preset that lists the same exercise twice.
-                    val shortDay = offer.changes.none { RoutineUpdate.Field.SETS in it.fields } &&
-                        offer.changes.any { change ->
-                            ui.sets.count {
-                                it.done && it.exerciseId == change.before.exerciseId &&
-                                    it.exercisePosition == change.before.position
-                            } < change.before.targetSets
-                        }
+                    // A set left unticked still counts as a row, so it never
+                    // lowers the set count (RoutineUpdate.propose); the title
+                    // says so whenever an offered movement has one.
+                    val offered = offer.changes.map { it.before.exerciseId }.toSet()
+                    val shortDay = ui.sets.any { !it.done && it.exerciseId in offered }
                     RoutineUpdateDialog(
                         offer = offer,
                         shortDay = shortDay,
@@ -1977,12 +1971,22 @@ private fun ModifierPickerDialog(
                                     .padding(vertical = 8.dp, horizontal = 4.dp),
                                 contentAlignment = Alignment.Center,
                             ) {
+                                // Centred and never wrapped: "hold seconds" wrapped,
+                                // so it measured the full cell and sat start-aligned.
+                                // At 360dp or a large font it shrinks to fit.
                                 Text(
                                     option,
                                     style = MaterialTheme.typography.labelSmall,
                                     fontFamily = ChakraPetch,
                                     color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                                    textAlign = TextAlign.Center,
                                     maxLines = 1,
+                                    softWrap = false,
+                                    overflow = TextOverflow.Ellipsis,
+                                    autoSize = TextAutoSize.StepBased(
+                                        minFontSize = 8.sp,
+                                        maxFontSize = MaterialTheme.typography.labelSmall.fontSize,
+                                    ),
                                 )
                             }
                         }
@@ -2013,9 +2017,10 @@ private fun fieldLine(change: RoutineUpdate.Change, field: RoutineUpdate.Field):
 /**
  * Offers to bring the preset in line with the session just finished, one
  * toggle per changed field so the lifter can take the reps and leave the
- * load. Every field starts ticked; a short day never lands here as a set
- * drop ([RoutineUpdate.propose] never lowers the set count). The session is
- * already completed and paid when this shows; dismissing it keeps the plan.
+ * load. Fields start ticked per [RoutineUpdate.Change.defaultTicks]: a set
+ * count lowered by deleted sets is offered unticked; unticked sets never
+ * lower it. The session is already completed and paid when this shows;
+ * dismissing it keeps the plan.
  */
 @Composable
 private fun RoutineUpdateDialog(
@@ -2025,7 +2030,7 @@ private fun RoutineUpdateDialog(
     onKeep: () -> Unit,
 ) {
     var ticked by remember(offer) {
-        mutableStateOf(offer.changes.associateWith { it.fields.toSet() })
+        mutableStateOf(offer.changes.associateWith { it.defaultTicks() })
     }
     AlertDialog(
         shape = MaterialTheme.shapes.medium,
@@ -2042,7 +2047,7 @@ private fun RoutineUpdateDialog(
                 )
                 Text(
                     if (shortDay) {
-                        "Fewer sets than planned, so the rite keeps its set count. Tick any other change to keep."
+                        "Unticked sets don't lower the set count. Tick the changes to keep."
                     } else {
                         "Bring your rite in line with today's trial?"
                     },

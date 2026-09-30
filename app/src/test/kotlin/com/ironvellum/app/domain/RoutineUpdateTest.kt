@@ -35,14 +35,14 @@ class RoutineUpdateTest {
         )
 
     @Test
-    fun `sets are the done sets and reps the median rounded down`() {
+    fun `sets follow the rows and reps the median of done sets, rounded down`() {
         // Planned 6, did 4 at the planned figures: the set-count guard keeps 6,
         // nothing else differs, so there is nothing to offer at all.
         val pull = entry(10, 1, 0, sets = 6, reps = 5, kg = 15.2)
         val sets = listOf(5, 5, 5, 3).map { set(1, 0, it, 15.2) } + set(1, 0, 5, 15.2, done = false) + set(1, 0, 5, 15.2, done = false)
         assertTrue(RoutineUpdate.propose(listOf(pull), sets, metricOf).isEmpty())
-        // Different figures still propose, but never a smaller set count.
-        val heavier = listOf(5, 5, 5, 5).map { set(1, 0, it, 20.0) }
+        // Different figures still propose; the two unticked rows keep the count.
+        val heavier = listOf(5, 5, 5, 5).map { set(1, 0, it, 20.0) } + List(2) { set(1, 0, 5, 20.0, done = false) }
         val change = RoutineUpdate.propose(listOf(pull), heavier, metricOf).single()
         assertEquals(pull, change.before)
         assertEquals(pull.copy(targetSets = 6, targetWeightKg = 20.0), change.after)
@@ -63,7 +63,8 @@ class RoutineUpdateTest {
         val bodyweight = entry(11, 2, 0, sets = 4, reps = 10, kg = null)
         assertEquals(
             null,
-            RoutineUpdate.propose(listOf(bodyweight), List(3) { set(2, 0, 8, null) }, metricOf).single().after.targetWeightKg,
+            RoutineUpdate.propose(listOf(bodyweight), List(3) { set(2, 0, 8, null) } + set(2, 0, 8, null, done = false), metricOf)
+                .single().after.targetWeightKg,
         )
         val bwTie = listOf(set(2, 0, 10, null), set(2, 0, 10, null), set(2, 0, 10, 5.0), set(2, 0, 10, 5.0))
         assertEquals(5.0, RoutineUpdate.propose(listOf(bodyweight), bwTie, metricOf).single().after.targetWeightKg)
@@ -103,23 +104,24 @@ class RoutineUpdateTest {
         val backoff = entry(22, 1, 2, sets = 3, reps = 8, kg = null)
         val sets = List(3) { set(1, 0, 3, 25.0) } + // heavy as planned
             set(4, 1, 30, null, seconds = 1800) +
-            List(2) { set(1, 2, 8, null) } // back-off: one set short
-        // The back-off ran one set short; the guard keeps the planned 3 sets
+            List(2) { set(1, 2, 8, null) } + set(1, 2, 8, null, done = false) // back-off: one set short
+        // The back-off left one set unticked; its row keeps the planned 3 sets
         // and its figures already match, so there is no proposal at all.
         assertTrue(RoutineUpdate.propose(listOf(heavy, run, backoff), sets, metricOf).isEmpty())
     }
 
     @Test
-    fun `a short day never shrinks the set count and every field starts ticked`() {
+    fun `an unticked set never shrinks the set count and every field starts ticked`() {
         val pull = entry(10, 1, 0, sets = 6, reps = 5, kg = 15.0)
-        val short = List(4) { set(1, 0, 6, 17.5) }
+        val short = List(4) { set(1, 0, 6, 17.5) } + List(2) { set(1, 0, 6, 17.5, done = false) }
         val change = RoutineUpdate.propose(listOf(pull), short, metricOf).single()
         val sets = RoutineUpdate.Field.SETS
         val reps = RoutineUpdate.Field.REPS
         val load = RoutineUpdate.Field.LOAD
-        // Four done sets of a six-set movement: the count never drops.
+        // Four of six rows ticked: the unticked two keep the count.
         assertEquals(listOf(reps, load), change.fields)
         assertEquals(6, change.after.targetSets)
+        assertEquals(setOf(reps, load), change.defaultTicks())
         // Narrowed to reps: load keeps its plan.
         assertEquals(pull.copy(targetReps = 6), change.only(setOf(reps))!!.after)
         assertEquals(pull, change.only(setOf(reps))!!.before)
@@ -130,10 +132,33 @@ class RoutineUpdateTest {
         val long = RoutineUpdate.propose(listOf(pull), List(7) { set(1, 0, 5, 15.0) }, metricOf).single()
         assertEquals(listOf(sets), long.fields)
         assertEquals(7, long.after.targetSets)
-        // The complaint this guard answers: one set of a three-set movement at
-        // the planned figures offers nothing, certainly not "3 sets -> 1".
+        // One ticked set of a three-set movement at the planned figures, the
+        // other two left unticked, offers nothing, certainly not "3 sets -> 1".
         val trio = entry(12, 1, 0, sets = 3, reps = 8, kg = 12.5)
-        val lone = listOf(set(1, 0, 8, 12.5))
+        val lone = listOf(set(1, 0, 8, 12.5)) + List(2) { set(1, 0, 8, 12.5, done = false) }
         assertTrue(RoutineUpdate.propose(listOf(trio), lone, metricOf).isEmpty())
+    }
+
+    @Test
+    fun `the set count follows the rows - deleted drops unticked, added rises ticked`() {
+        val trio = entry(12, 1, 0, sets = 3, reps = 8, kg = 12.5)
+        val sets = RoutineUpdate.Field.SETS
+        // A row deleted: offered as 3 -> 2, but left for the reader to tick.
+        val deleted = RoutineUpdate.propose(listOf(trio), List(2) { set(1, 0, 8, 12.5) }, metricOf).single()
+        assertEquals(listOf(sets), deleted.fields)
+        assertEquals(2, deleted.after.targetSets)
+        assertEquals(emptySet<RoutineUpdate.Field>(), deleted.defaultTicks())
+        // A row left unticked: a short day, the plan stands.
+        val unticked = List(2) { set(1, 0, 8, 12.5) } + set(1, 0, 8, 12.5, done = false)
+        assertTrue(RoutineUpdate.propose(listOf(trio), unticked, metricOf).isEmpty())
+        // A row added: 3 -> 4, ticked like any other change.
+        val added = RoutineUpdate.propose(listOf(trio), List(4) { set(1, 0, 8, 12.5) }, metricOf).single()
+        assertEquals(4, added.after.targetSets)
+        assertEquals(setOf(sets), added.defaultTicks())
+        // A deleted row beside a real change: the change starts ticked, the drop does not.
+        val heavier = RoutineUpdate.propose(listOf(trio), List(2) { set(1, 0, 8, 15.0) }, metricOf).single()
+        assertEquals(setOf(RoutineUpdate.Field.LOAD), heavier.defaultTicks())
+        // Rows but nothing ticked: a skipped movement proposes nothing, not even its count.
+        assertTrue(RoutineUpdate.propose(listOf(trio), List(2) { set(1, 0, 8, 12.5, done = false) }, metricOf).isEmpty())
     }
 }
