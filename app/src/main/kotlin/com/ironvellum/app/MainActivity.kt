@@ -1,5 +1,10 @@
 package com.ironvellum.app
 
+import android.content.Intent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.setValue
+import com.ironvellum.app.data.InboxNotifier
 import android.content.Context
 import android.content.res.Configuration
 import com.ironvellum.app.ui.theme.FIXED_FONT_SCALE
@@ -45,10 +50,27 @@ class MainActivity : ComponentActivity() {
             statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
             navigationBarStyle = SystemBarStyle.dark(Color.TRANSPARENT),
         )
+        // A rotation or process restore re-delivers the launch intent; only a
+        // fresh launch may act on it, or the inbox would reopen on every turn.
+        if (savedInstanceState == null) noteOpenTab(intent)
         setContent {
             IronvellumTheme {
-                IronvellumRoot()
+                IronvellumRoot(inboxRequest = inboxRequest)
             }
         }
     }
+
+    /** The notification tap while the activity is alive arrives here, not in onCreate. */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        noteOpenTab(intent)
+    }
+
+    private fun noteOpenTab(intent: Intent?) {
+        if (intent?.getStringExtra(InboxNotifier.EXTRA_OPEN_TAB) == InboxNotifier.TAB_INBOX) inboxRequest++
+    }
+
+    /** Bumped per notification tap so two taps in a row both navigate; the UI compares counts, not values. */
+    private var inboxRequest by mutableIntStateOf(0)
 }

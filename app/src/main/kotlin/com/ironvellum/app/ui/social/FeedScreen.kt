@@ -615,7 +615,9 @@ private fun FeedCard(
     // The picker opens inline under the action row rather than as a popup:
     // a menu anchored to a 44dp chip covered the stat strip it reacts to.
     var picking by remember { mutableStateOf(false) }
-    InkPanel(Modifier.fillMaxWidth(), accent = accent) {
+    // The whole card opens the workout: the identity row, chips and ally chip
+    // keep their own clickables, which consume the tap before the panel sees it.
+    InkPanel(Modifier.fillMaxWidth(), accent = accent, onClick = { onOpenComments(entry) }) {
         Column {
             // Identity header carries only the LV chip, so the worn title keeps a
             // wide column and sits directly under the name. The ally control is
@@ -941,7 +943,7 @@ private fun CountChip(
  * the selected chip deleted reactions people meant to confirm.
  */
 @Composable
-private fun ReactionPicker(current: Reaction?, counts: Map<Reaction, Int>, onPick: (Reaction?) -> Unit) {
+internal fun ReactionPicker(current: Reaction?, counts: Map<Reaction, Int>, onPick: (Reaction?) -> Unit) {
     FlowRow(
         Modifier.fillMaxWidth().padding(top = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(6.dp),

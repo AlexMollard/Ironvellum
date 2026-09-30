@@ -165,6 +165,15 @@ create table if not exists session_sets (
     constraint session_sets_mods_len check (char_length(modifiers) <= 64)
 );
 
+-- The order of the exercise within its workout, sent by the client so an ally
+-- viewing the workout sees exercises as they were performed. Without it the
+-- viewer can only order by name and a push day reads alphabetically. Nullable:
+-- a 1.4 client (and every row written before this column) sends none, and a
+-- required column would refuse its whole set insert.
+alter table session_sets
+    add column if not exists exercise_position int
+        check (exercise_position is null or exercise_position between 0 and 500);
+
 -- ---------------------------------------------------------------- titles, levels
 create table if not exists earned_titles (
     user_id     uuid not null references profiles (id) on delete cascade,
@@ -285,6 +294,24 @@ create table if not exists cloud_archives (
     constraint cloud_archives_size_cap check (size_bytes > 0 and size_bytes <= 8 * 1024 * 1024)
 );
 
+-- One row per lifter per lift: the bodyweight-relative TIER step, worked out on
+-- the phone. Only the coarse step integer leaves the device, never bodyweight or
+-- a ratio, so an ally cannot back-solve a lifter's weight from a public set
+-- load. recent_step is the best qualifying set of the last 7 days and recent_at
+-- says when, so the board can show who is on form without a second table.
+create table if not exists lift_marks (
+    user_id     uuid not null references profiles (id) on delete cascade,
+    lift        text not null,
+    step        int  not null,
+    recent_step int,
+    recent_at   timestamptz,
+    updated_at  timestamptz not null default now(),
+    primary key (user_id, lift),
+    constraint lift_marks_lift check (lift in ('pull_up', 'dip', 'squat', 'bench', 'deadlift', 'ohp')),
+    constraint lift_marks_step check (step between 0 and 10),
+    constraint lift_marks_recent_step check (recent_step is null or recent_step between 0 and 10)
+);
+
 -- ================================================================ visibility functions
 
 -- Accepted friendship in either direction. SECURITY DEFINER because it must
@@ -390,6 +417,26 @@ $$;
 revoke execute on function public.can_see_author(uuid) from public, anon;
 grant execute on function public.can_see_author(uuid) to authenticated;
 
+-- Whether [other] is an accepted ally of the caller and neither has blocked the
+-- other. is_friend() stays closed because it answers about ANY pair of users (an
+-- oracle over the whole friendship graph); this one only ever answers about
+-- auth.uid(), so a lifter learns nothing they could not already read from their
+-- own friendships rows. lift_marks_read needs it: friendships is RLS-limited to
+-- the two parties, and a block is invisible to the blocked side.
+create or replace function public.is_ally(other uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = pg_catalog, public
+as $$
+    select auth.uid() is not null
+        and is_friend(auth.uid(), other)
+        and not blocked_between(auth.uid(), other);
+$$;
+revoke execute on function public.is_ally(uuid) from public, anon;
+grant execute on function public.is_ally(uuid) to authenticated;
+
 -- ================================================================ row security
 
 alter table profiles           enable row level security;
@@ -406,6 +453,7 @@ alter table mutes              enable row level security;
 alter table inbox_seen         enable row level security;
 alter table reports            enable row level security;
 alter table cloud_archives     enable row level security;
+alter table lift_marks         enable row level security;
 
 -- profiles: readable per visibility, writable only by the owner. There is NO
 -- insert policy: the row is created server-side on sign-up, never by a client.
@@ -616,6 +664,31 @@ create policy cloud_archives_update on cloud_archives
     using (user_id = auth.uid())
     with check (user_id = auth.uid());
 
+-- lift_marks: your own, plus an accepted ally's. Deliberately NOT can_view():
+-- a public profile is not an ally, and strength tiers are an allies-only board.
+-- Writes are yours alone; the with-check stops a row being rewritten under
+-- another lifter's id.
+drop policy if exists lift_marks_read on lift_marks;
+create policy lift_marks_read on lift_marks
+    for select to authenticated
+    using (user_id = auth.uid() or is_ally(user_id));
+
+drop policy if exists lift_marks_insert on lift_marks;
+create policy lift_marks_insert on lift_marks
+    for insert to authenticated
+    with check (user_id = auth.uid());
+
+drop policy if exists lift_marks_update on lift_marks;
+create policy lift_marks_update on lift_marks
+    for update to authenticated
+    using (user_id = auth.uid())
+    with check (user_id = auth.uid());
+
+drop policy if exists lift_marks_delete on lift_marks;
+create policy lift_marks_delete on lift_marks
+    for delete to authenticated
+    using (user_id = auth.uid());
+
 -- ================================================================ column grants
 
 -- profiles: RLS and column privileges are ANDed. The client loses every ranked
@@ -661,6 +734,13 @@ revoke all on reports from anon, authenticated;
 grant insert (reporter_id, target_user_id, session_id, comment_id, reason, note)
     on reports to authenticated;
 
+-- lift_marks: updated_at is the server's (touch trigger), so a phone cannot
+-- date a mark into the future; only the five columns a lifter owns are writable.
+revoke all on lift_marks from anon, authenticated;
+grant select, delete on lift_marks to authenticated;
+grant insert (user_id, lift, step, recent_step, recent_at) on lift_marks to authenticated;
+grant update (user_id, lift, step, recent_step, recent_at) on lift_marks to authenticated;
+
 -- ================================================================ triggers
 
 -- Keeps updated_at honest without the client having to remember.
@@ -681,6 +761,10 @@ create trigger profiles_touch before update on profiles
 
 drop trigger if exists sessions_touch on sessions;
 create trigger sessions_touch before update on sessions
+    for each row execute function touch_updated_at();
+
+drop trigger if exists lift_marks_touch on lift_marks;
+create trigger lift_marks_touch before update on lift_marks
     for each row execute function touch_updated_at();
 
 -- A session dated year 9999 would pin attacker-chosen text to slot one of every
@@ -999,6 +1083,22 @@ select
     p.shadow_rate
 from profiles p
 order by p.shadow_essence desc;
+
+-- The strength board: one row per lifter per lift, for the caller and their
+-- accepted allies only (lift_marks_read), joined to profiles so a lifter whose
+-- profile the caller cannot read stays off the board. recent_step is nulled
+-- once the best set is older than 7 days so a stale mark never reads as form.
+create or replace view lift_board with (security_invoker = true) as
+select
+    m.user_id,
+    p.display_name,
+    p.current_title_id,
+    p.level,
+    m.lift,
+    m.step,
+    case when m.recent_at > now() - interval '7 days' then m.recent_step end as recent_step
+from lift_marks m
+join profiles p on p.id = m.user_id;
 
 -- One request per feed page regardless of length: counts, reactions and the
 -- movement content are all aggregated server-side from session_sets, which is
@@ -1382,7 +1482,7 @@ grant execute on function public.my_inbox() to authenticated;
 -- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
 -- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 19 $$;
+language sql stable as $$ select 20 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

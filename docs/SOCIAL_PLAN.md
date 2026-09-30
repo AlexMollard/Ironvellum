@@ -93,6 +93,35 @@ Out of scope for 1.4: replies and threads, friends' PRs or skill claims in the
 inbox (the server does not hold them), comments on the local workout record,
 push notifications, media.
 
+## 1.5 contract
+
+Owner decisions (2026-09-30): build ally strength boards, routine share codes,
+an ally workout view and inbox notifications; Warbands wait. Boards rank by
+**tier, not ratio**: allies already see set loads on the feed, so an exact
+bodyweight ratio would let them solve for bodyweight, which never leaves the
+phone.
+
+- **Ally strength boards.** `domain/LiftBoards.kt` scores six lifts (pull-up,
+  dip, squat, bench press, deadlift, overhead press) from the Epley e1RM over
+  bodyweight at the time, with bodyweight + added load for pull-ups and dips.
+  Five sex-aware tiers (Iron, Bronze, Silver, Gold, Mythic), each split into I
+  and II, plus Initiate below Iron: steps 0-10. Only the step leaves the phone.
+  Server: `lift_marks(user_id, lift, step, recent_step, recent_at, updated_at)`,
+  readable by the owner and accepted allies (`is_ally`), view `lift_board` with
+  `recent_step` only while `recent_at` is within 7 days. LIFTS board beside
+  TRAINING and GARRISON, WEEK / ALL TIME. Schema version 20.
+- **Routine share codes.** `IVR1:` + base64url of deflated JSON. Share from
+  Train; import from New workout › Import code, adding workouts unscheduled or
+  replacing the routine after a confirm. Per-exercise generator reasons are not
+  stored in Room, so codes carry workout notes but not reasons.
+- **Ally workout view.** The comments screen becomes the workout view: sets in
+  exercise order (`session_sets.exercise_position`), reactions, comments. The
+  whole feed card opens it.
+- **Inbox notifications.** A 30-minute WorkManager job reads `my_inbox()` and
+  posts one Android notification for items newer than a persisted mark and the
+  server seen-mark; no Google push service. Toggle under Account › Notifications.
+
+
 ## Moderation
 
 `supabase/moderation.sql` holds the owner's queries: open reports with names,

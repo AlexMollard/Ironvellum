@@ -36,6 +36,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.width
+import androidx.compose.ui.platform.LocalContext
+import com.ironvellum.app.data.InboxNotifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -84,6 +92,12 @@ fun AccountSettingsScreen(
 
     var editingName by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    var allyAlerts by remember { mutableStateOf(InboxNotifier.enabled(context)) }
+    var notificationsAllowed by remember { mutableStateOf(InboxNotifier.hasPermission(context)) }
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        notificationsAllowed = it
+    }
 
     Column(
         Modifier
@@ -278,6 +292,43 @@ fun AccountSettingsScreen(
             }
         }
 
+        SettingsGroup("NOTIFICATIONS") {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        "Ally activity",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.Ink,
+                    )
+                    // A blocked permission is the one state where ON does nothing;
+                    // saying so beats a switch that looks live and never fires.
+                    val blocked = allyAlerts && !notificationsAllowed
+                    Text(
+                        if (blocked) "Allow notifications in system settings" else "Requests, comments and reactions",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (blocked) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                    )
+                }
+                Box(Modifier.width(120.dp)) {
+                    InkSegmented(
+                        options = listOf("on" to "ON", "off" to "OFF"),
+                        selected = if (allyAlerts) "on" else "off",
+                        onPick = { pick ->
+                            val on = pick == "on"
+                            allyAlerts = on
+                            InboxNotifier.setEnabled(context, on)
+                            if (on && !InboxNotifier.hasPermission(context) &&
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                            ) {
+                                askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        },
+                    )
+                }
+            }
+        }
+
         SettingsGroup("PRIVACY") {
             var showBlocked by remember { mutableStateOf(false) }
             TapRow(
@@ -317,7 +368,11 @@ fun AccountSettingsScreen(
         Spacer(Modifier.height(24.dp))
         IronvellumButton(
             label = "Sign out",
-            onClick = viewModel::signOut,
+            onClick = {
+                // The next lifter must not inherit this one's notification or mark.
+                InboxNotifier.reset(context)
+                viewModel.signOut()
+            },
             enabled = !ui.busy,
             quiet = true,
             modifier = Modifier.fillMaxWidth(),
@@ -345,6 +400,7 @@ fun AccountSettingsScreen(
                     label = "Delete account",
                     onClick = {
                         confirmDelete = false
+                        InboxNotifier.reset(context)
                         viewModel.deleteCloudData()
                     },
                     enabled = !ui.busy,

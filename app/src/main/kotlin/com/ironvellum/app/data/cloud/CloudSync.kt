@@ -3,6 +3,8 @@ package com.ironvellum.app.data.cloud
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.Cloud.failure
 import com.ironvellum.app.domain.PlayerProfile
+import com.ironvellum.app.domain.LiftBoards
+import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Xp
@@ -237,6 +239,7 @@ class CloudSync(
                                 durationSec = set.durationSec,
                                 distanceM = set.distanceM,
                                 grade = set.grade,
+                                exercisePosition = set.exercisePosition,
                             ),
                         )
                     }
@@ -276,6 +279,50 @@ class CloudSync(
                 }
             }
 
+            // Tier steps ride after the training rows so a server below
+            // schema 20 (no lift_marks table) costs one problem line, not the
+            // sync. Only step integers leave the phone — never bodyweight.
+            runCatching {
+                val marks = LiftBoards.marks(
+                    history = history,
+                    bodyweightAt = SetRecords.bodyweightLookup(repo.observeStats().first()),
+                    sex = repo.observeBodyProfile().first().second,
+                    nowMs = System.currentTimeMillis(),
+                )
+                if (marks.isNotEmpty()) {
+                    client.postgrest.from("lift_marks").upsert(
+                        marks.map {
+                            LiftMarkDto(
+                                userId = me.userId,
+                                lift = it.lift.wire,
+                                step = it.step,
+                                recentStep = it.recentStep,
+                                recentAt = it.recentAtMs?.let { at -> Instant.ofEpochMilli(at).toString() },
+                            )
+                        },
+                    ) {
+                        onConflict = "user_id,lift"
+                    }
+                }
+                // A lift whose qualifying sets were all deleted or edited away
+                // must leave the board, or allies keep seeing a tier this
+                // lifter no longer holds.
+                val keep = marks.map { it.lift.wire }.toSet()
+                val stale = client.postgrest.from("lift_marks").select {
+                    filter { eq("user_id", me.userId) }
+                }.decodeList<LiftMarkDto>().map { it.lift }.filter { it !in keep }
+                if (stale.isNotEmpty()) {
+                    client.postgrest.from("lift_marks").delete {
+                        filter {
+                            eq("user_id", me.userId)
+                            isIn("lift", stale)
+                        }
+                    }
+                }
+            }.onFailure { error ->
+                problems += "Lift tiers were not synced: ${Cloud.explain(error)}"
+            }
+
             // Now that every session, set and title has landed, the server has
             // what it needs to derive the ranked numbers.
             pushDerivedAggregates()
@@ -291,6 +338,7 @@ class CloudSync(
             // would now show stale level/xp/title for this lifter.
             cache.invalidate(CloudReadCache.KEY_LEADERBOARD)
             cache.invalidate(CloudReadCache.KEY_FEED_FIRST_PAGE)
+            cache.invalidate(CloudReadCache.KEY_LIFT_BOARD)
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
@@ -432,6 +480,102 @@ class CloudSync(
                         currentTitleId = it.currentTitleId,
                     )
                 }
+            }
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /**
+     * Me plus accepted allies, every lift. TTL 60s like the other boards:
+     * tiers change only when someone pushes. A lift value this build does not
+     * know is skipped, so a newer client's extra lift cannot blank the board.
+     */
+    suspend fun liftBoard(force: Boolean = false): Result<List<LiftBoardRow>> {
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            cache.getOrFetch(
+                key = CloudReadCache.KEY_LIFT_BOARD,
+                ttlMs = 60_000,
+                force = force,
+                userId = account.account.value?.userId,
+            ) {
+                client.postgrest.from("lift_board").select()
+                    .decodeList<LiftBoardDto>()
+                    .mapNotNull { it.toRow() }
+            }
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /**
+     * One workout with its full sets. RLS decides visibility, so an
+     * invisible row (not an ally, blocked, private audience) reads as an empty
+     * result — reported as one clear failure rather than a blank screen.
+     * TTL 15s: sets never change after completion, but reactions on the same
+     * screen are refetched separately.
+     */
+    suspend fun workout(sessionId: String, force: Boolean = false): Result<AllyWorkout> {
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            cache.getOrFetch(
+                key = "${CloudReadCache.KEY_WORKOUT}:$sessionId",
+                ttlMs = 15_000,
+                force = force,
+                userId = account.account.value?.userId,
+            ) {
+                val session = client.postgrest.from("sessions").select(
+                    Columns.list(
+                        "id", "user_id", "label", "title", "note",
+                        "completed_at", "started_at", "xp_awarded", "strength_score",
+                    ),
+                ) {
+                    filter { eq("id", sessionId) }
+                }.decodeList<AllyWorkoutSessionDto>().firstOrNull()
+                    ?: throw IllegalStateException("This workout is not visible to you")
+                val sets = client.postgrest.from("session_sets").select {
+                    filter { eq("session_id", sessionId) }
+                    // A workout tops out far below PostgREST's 1000-row cap.
+                    limit(1000)
+                }.decodeList<AllySetDto>()
+                // Null positions (rows pushed before schema 20) sort last, then
+                // by name, so the order is stable rather than arrival-dependent.
+                val exercises = sets.groupBy { it.exerciseName }
+                    .entries
+                    .sortedWith(
+                        compareBy<Map.Entry<String, List<AllySetDto>>>(
+                            { e -> e.value.mapNotNull { it.exercisePosition }.minOrNull() ?: Int.MAX_VALUE },
+                        ).thenBy { it.key },
+                    )
+                    .map { (name, rows) ->
+                        AllyExercise(
+                            name = name,
+                            sets = rows.sortedBy { it.setIndex }.map {
+                                AllySet(
+                                    setIndex = it.setIndex,
+                                    reps = it.reps,
+                                    weightKg = it.weightKg,
+                                    durationSec = it.durationSec,
+                                    distanceM = it.distanceM,
+                                    grade = it.grade,
+                                    modifiers = it.modifiers,
+                                    done = it.done,
+                                )
+                            },
+                        )
+                    }
+                AllyWorkout(
+                    sessionId = session.id,
+                    userId = session.userId,
+                    headline = session.title.ifBlank { session.label },
+                    note = session.note,
+                    completedAtMs = session.completedAt?.let { Instant.parse(it).toEpochMilli() },
+                    startedAtMs = session.startedAt?.let { Instant.parse(it).toEpochMilli() },
+                    xpAwarded = session.xpAwarded,
+                    strengthScore = session.strengthScore,
+                    exercises = exercises,
+                )
             }
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
@@ -1155,6 +1299,8 @@ class CloudSync(
         cache.invalidate(CloudReadCache.KEY_INBOX)
         cache.invalidatePrefix("${CloudReadCache.KEY_COMMENTS}:")
         cache.invalidatePrefix("${CloudReadCache.KEY_LIKERS}:")
+        cache.invalidate(CloudReadCache.KEY_LIFT_BOARD)
+        cache.invalidatePrefix("${CloudReadCache.KEY_WORKOUT}:")
     }
 
     private fun completedDates(completed: List<com.ironvellum.app.domain.WorkoutSession>): Set<LocalDate> =
@@ -1211,7 +1357,7 @@ class CloudSync(
                     // changes a hold's seconds matches the watermark and never syncs.
                     listOf(
                         set.exerciseName, set.setIndex, set.reps, set.weightKg, set.modifiers, set.done,
-                        set.durationSec, set.distanceM, set.grade,
+                        set.durationSec, set.distanceM, set.grade, set.exercisePosition,
                     )
                 },
             )
@@ -1250,6 +1396,8 @@ private class CloudReadCache {
         const val KEY_INBOX = "inbox"
         const val KEY_BLOCKED = "blocked"
         const val KEY_MUTED = "muted"
+        const val KEY_LIFT_BOARD = "lift_board"
+        const val KEY_WORKOUT = "workout"
     }
 
     private class Entry(val value: Any?, val expiresAtMs: Long)

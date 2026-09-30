@@ -53,7 +53,11 @@ import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.LeaderboardRow
 import com.ironvellum.app.data.cloud.ShadowBoardRow
+import com.ironvellum.app.data.cloud.LiftBoardRow
 import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.Lift
+import com.ironvellum.app.domain.LiftBoards
+import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.ironvellumAccount
@@ -99,9 +103,19 @@ data class MusterBoardUi(
     val available: Boolean = true,
 )
 
+/** Snapshot of the lift boards: every lift's rows in one fetch, filtered locally by lift and window. */
+data class LiftsBoardUi(
+    val rows: List<LiftBoardRow> = emptyList(),
+    val loading: Boolean = false,
+    val error: String? = null,
+    /** Set once a fetch succeeded, so the first selection loads exactly once. */
+    val loaded: Boolean = false,
+)
+
 /** Which board the BOARD tab shows; the muster roll is deliberately a separate board, not a metric. */
 private enum class Board(val label: String) {
     Training("TRAINING"),
+    Lifts("LIFTS"),
     Muster("GARRISON"),
 }
 
@@ -186,6 +200,26 @@ class LeaderboardViewModel(
         }
     }
 
+    // Lift boards keep their own state too. One fetch carries every lift, so
+    // the chip and the WEEK / ALL TIME switch re-filter locally; the fetch is
+    // lazy, on first selection of LIFTS.
+    private val _lifts = MutableStateFlow(LiftsBoardUi())
+    val lifts = _lifts.asStateFlow()
+
+    fun loadLifts(force: Boolean = false) {
+        if (_lifts.value.loading) return
+        if (_lifts.value.loaded && !force) return
+        viewModelScope.launch {
+            _lifts.value = _lifts.value.copy(loading = true, error = null)
+            cloudSync.liftBoard(force)
+                .onSuccess { _lifts.value = LiftsBoardUi(rows = it, loaded = true) }
+                // Not marked loaded: a server below schema 20 (or a dropped
+                // connection) must retry on the next visit, not stay refused.
+                .onFailure { _lifts.value = _lifts.value.copy(error = it.reason()) }
+            _lifts.value = _lifts.value.copy(loading = false)
+        }
+    }
+
     // Device-local equipped crest frame; only this lifter's own avatar ever wears it.
     val equippedFrame: StateFlow<String?> = repo.observeEquippedFrame()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
@@ -236,6 +270,7 @@ fun LeaderboardScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val muster by viewModel.muster.collectAsStateWithLifecycle()
+    val lifts by viewModel.lifts.collectAsStateWithLifecycle()
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     var board by remember { mutableStateOf(Board.Training) }
 
@@ -246,59 +281,65 @@ fun LeaderboardScreen(
             .fillMaxSize()
             .verticalScroll(rememberScrollState()),
     ) {
+        // The picker sits above every state, so a lifter with an empty or
+        // failed TRAINING board can still reach LIFTS. GARRISON is offered
+        // only once the cloud actually has the muster board.
+        BoardSelector(
+            boards = Board.entries.filter { it != Board.Muster || muster.available },
+            selected = board,
+            onPick = {
+                board = it
+                if (it == Board.Muster) viewModel.loadMuster()
+                if (it == Board.Lifts) viewModel.loadLifts()
+            },
+        )
+        Spacer(Modifier.height(12.dp))
         when {
-            ui.loading && ui.rows.isEmpty() && board == Board.Training -> LoadingPanel()
-            ui.rows.isEmpty() && ui.error == null && board == Board.Training -> EmptyBoard(onRefresh = viewModel::load)
-            ui.rows.isEmpty() && ui.error != null && board == Board.Training -> ErrorPanel(onRefresh = viewModel::load)
+            // Three separate boards behind one tab: training measures what a
+            // lifter lifted, lifts ranks tiers per lift, the muster roll
+            // measures the vault.
+            board == Board.Lifts -> LiftsBoard(
+                ui = lifts,
+                myUserId = ui.myUserId,
+                equippedFrame = equippedFrame,
+                onRefresh = { viewModel.loadLifts(force = true) },
+                onOpenFriend = onOpenFriend,
+            )
+            board == Board.Muster && muster.available -> MusterBoard(
+                ui = muster,
+                myUserId = ui.myUserId,
+                equippedFrame = equippedFrame,
+                onRefresh = { viewModel.loadMuster(force = true) },
+            )
+            ui.loading && ui.rows.isEmpty() -> LoadingPanel()
+            ui.rows.isEmpty() && ui.error == null -> EmptyBoard(onRefresh = viewModel::load)
+            ui.rows.isEmpty() -> ErrorPanel(onRefresh = viewModel::load)
             else -> {
-                // Two separate boards behind one tab: the training board measures
-                // what a lifter lifted; the muster roll board measures the vault.
-                // The picker only appears once the cloud actually has the board —
-                // until then this is exactly the training board it always was.
-                if (muster.available) {
-                    BoardSelector(
-                        selected = board,
-                        onPick = {
-                            board = it
-                            if (it == Board.Muster) viewModel.loadMuster()
-                        },
-                    )
-                    Spacer(Modifier.height(12.dp))
-                }
-                if (board == Board.Muster && muster.available) {
-                    MusterBoard(
-                        ui = muster,
-                        myUserId = ui.myUserId,
-                        equippedFrame = equippedFrame,
-                        onRefresh = { viewModel.loadMuster(force = true) },
-                    )
-                } else {
-                    // Pull-to-refresh replaces the old REFRESH button for the normal signed-in board.
-                    // The gesture needs content to grab: in the empty/error states there is nothing to
-                    // pull (or the list just failed), so those states keep an explicit retry link.
-                    val pullState = remember { PullToRefreshState() }
-                    PullToRefreshBox(
-                        isRefreshing = ui.loading,
-                        onRefresh = { viewModel.load() },
-                        state = pullState,
-                        modifier = Modifier.fillMaxWidth(),
-                        indicator = {
-                            // House palette: dark vault plate with emerald stroke instead of default Material.
-                            PullToRefreshDefaults.Indicator(
-                                state = pullState,
-                                isRefreshing = ui.loading,
-                                modifier = Modifier.align(Alignment.TopCenter),
-                                containerColor = IronvellumColors.VaultHigh,
-                                color = IronvellumColors.EmeraldBright,
-                            )
-                        },
-                    ) {
-                        // PullToRefreshBox's content slot is a Box: emitted straight
-                        // into it, every row stacks at the same origin — the podium
-                        // vanished under the pinned self-row. A Column restores flow.
-                        Column(Modifier.fillMaxWidth()) {
-                            Board(ui, viewModel::load, onOpenFriend, equippedFrame)
-                        }
+                // Pull-to-refresh replaces the old REFRESH button for the normal signed-in board.
+                // The gesture needs content to grab: in the empty/error states there is nothing to
+                // pull (or the list just failed), so those states keep an explicit retry link.
+                val pullState = remember { PullToRefreshState() }
+                PullToRefreshBox(
+                    isRefreshing = ui.loading,
+                    onRefresh = { viewModel.load() },
+                    state = pullState,
+                    modifier = Modifier.fillMaxWidth(),
+                    indicator = {
+                        // House palette: dark vault plate with emerald stroke instead of default Material.
+                        PullToRefreshDefaults.Indicator(
+                            state = pullState,
+                            isRefreshing = ui.loading,
+                            modifier = Modifier.align(Alignment.TopCenter),
+                            containerColor = IronvellumColors.VaultHigh,
+                            color = IronvellumColors.EmeraldBright,
+                        )
+                    },
+                ) {
+                    // PullToRefreshBox's content slot is a Box: emitted straight
+                    // into it, every row stacks at the same origin — the podium
+                    // vanished under the pinned self-row. A Column restores flow.
+                    Column(Modifier.fillMaxWidth()) {
+                        Board(ui, viewModel::load, onOpenFriend, equippedFrame)
                     }
                 }
             }
@@ -485,16 +526,21 @@ private fun Board(
 /** Horizontally scrollable chip rail; labels never wrap. */
 @Composable
 private fun MetricChips(selected: BoardMetric, onPick: (BoardMetric) -> Unit) {
+    ChipRail(options = BoardMetric.entries.map { it to it.label }, selected = selected, onPick = onPick)
+}
+
+@Composable
+private fun <T> ChipRail(options: List<Pair<T, String>>, selected: T, onPick: (T) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState()),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        BoardMetric.entries.forEach { candidate ->
+        options.forEach { (candidate, label) ->
             val active = candidate == selected
             Text(
-                candidate.label,
+                label,
                 maxLines = 1,
                 softWrap = false,
                 style = MaterialTheme.typography.labelMedium,
@@ -810,14 +856,14 @@ private fun RefreshLink(onClick: () -> Unit, label: String) {
 }
 
 
-/** Segmented TRAINING / MUSTER ROLL picker, styled after the metric chips. */
+/** Segmented TRAINING / LIFTS / GARRISON picker, styled after the metric chips. */
 @Composable
-private fun BoardSelector(selected: Board, onPick: (Board) -> Unit) {
+private fun BoardSelector(boards: List<Board>, selected: Board, onPick: (Board) -> Unit) {
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Board.entries.forEach { candidate ->
+        boards.forEach { candidate ->
             val active = candidate == selected
             Text(
                 candidate.label,
@@ -1004,3 +1050,186 @@ private fun formatEssence(value: Long): String =
 
 /** Extraction rate as e.g. 218.2/H. */
 private fun formatRate(ratePerHour: Double): String = "%.1f/H".format(ratePerHour)
+
+/** Which slice of a lift board ranks: the best set of the last 7 days, or the best ever. */
+private enum class LiftWindow(val label: String) {
+    Week("WEEK"),
+    AllTime("ALL TIME"),
+}
+
+/** One lifter's place on one lift board; [step] is the tier step that ranked them, never a ratio. */
+private data class LiftStanding(val rank: Int, val row: LiftBoardRow, val step: Int)
+
+/**
+ * Ranks one lift for a window, best tier first. Ties share a rank (1, 1, 3) so
+ * two lifters on the same tier are never ordered by an arbitrary name sort
+ * that reads as one beating the other. WEEK drops lifters with no qualifying
+ * set in the last 7 days rather than ranking their stale tier.
+ */
+private fun liftStandings(rows: List<LiftBoardRow>, lift: Lift, window: LiftWindow): List<LiftStanding> {
+    val ranked = rows
+        .filter { it.lift == lift }
+        .mapNotNull { row ->
+            val step = if (window == LiftWindow.Week) row.recentStep else row.step
+            step?.let { row to it }
+        }
+        .sortedWith(
+            compareByDescending<Pair<LiftBoardRow, Int>> { it.second }
+                .thenBy { it.first.displayName.lowercase() },
+        )
+    var rank = 0
+    return ranked.mapIndexed { index, (row, step) ->
+        if (index == 0 || step != ranked[index - 1].second) rank = index + 1
+        LiftStanding(rank, row, step)
+    }
+}
+
+/** The lift boards: one chip per lift, WEEK / ALL TIME, ranked by tier name only. */
+@Composable
+private fun LiftsBoard(
+    ui: LiftsBoardUi,
+    myUserId: String?,
+    equippedFrame: String?,
+    onRefresh: () -> Unit,
+    onOpenFriend: (String, String) -> Unit,
+) {
+    var lift by remember { mutableStateOf(Lift.entries.first()) }
+    var window by remember { mutableStateOf(LiftWindow.AllTime) }
+    val standings = remember(ui.rows, lift, window) { liftStandings(ui.rows, lift, window) }
+
+    when {
+        ui.loading && ui.rows.isEmpty() -> LoadingPanel()
+        // Nothing to filter yet (e.g. the server is below schema 20): say why
+        // and offer the retry, without controls that would act on no data.
+        ui.rows.isEmpty() && ui.error != null -> {
+            SocialErrorBanner(ui.error)
+            Spacer(Modifier.height(10.dp))
+            RefreshLink(onClick = onRefresh, label = "Retry")
+        }
+        else -> {
+            val pullState = remember { PullToRefreshState() }
+            PullToRefreshBox(
+                isRefreshing = ui.loading,
+                onRefresh = onRefresh,
+                state = pullState,
+                modifier = Modifier.fillMaxWidth(),
+                indicator = {
+                    PullToRefreshDefaults.Indicator(
+                        state = pullState,
+                        isRefreshing = ui.loading,
+                        modifier = Modifier.align(Alignment.TopCenter),
+                        containerColor = IronvellumColors.VaultHigh,
+                        color = IronvellumColors.EmeraldBright,
+                    )
+                },
+            ) {
+                Column(Modifier.fillMaxWidth()) {
+                    Text(
+                        "Tiers only — bodyweight stays on each phone.",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.padding(bottom = 10.dp),
+                    )
+                    // Stale rows must still tell the truth about the last fetch.
+                    if (ui.error != null) {
+                        SocialErrorBanner("Lift boards may be stale: ${ui.error}")
+                        Spacer(Modifier.height(10.dp))
+                    }
+                    ChipRail(
+                        options = Lift.entries.map { it to it.label.uppercase() },
+                        selected = lift,
+                        onPick = { lift = it },
+                    )
+                    Spacer(Modifier.height(10.dp))
+                    InkSegmented(
+                        options = LiftWindow.entries.map { it to it.label },
+                        selected = window,
+                        onPick = { window = it },
+                    )
+                    Spacer(Modifier.height(12.dp))
+                    if (standings.isEmpty()) {
+                        LiftEmptyPanel(onRefresh)
+                    } else {
+                        standings.forEach { standing ->
+                            LiftRankRow(
+                                standing = standing,
+                                isMe = standing.row.userId == myUserId,
+                                equippedFrame = equippedFrame,
+                                onOpenFriend = { onOpenFriend(standing.row.userId, standing.row.displayName) },
+                            )
+                            Spacer(Modifier.height(10.dp))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** One lift board row: rank, identity, tier name as the headline. */
+@Composable
+private fun LiftRankRow(
+    standing: LiftStanding,
+    isMe: Boolean,
+    equippedFrame: String?,
+    onOpenFriend: () -> Unit,
+) {
+    val rank = standing.rank
+    val row = standing.row
+    val accent = when {
+        isMe -> IronvellumColors.SovereignGold
+        rank == 1 -> IronvellumColors.SovereignGold
+        rank == 2 -> IronvellumColors.EmeraldBright
+        rank == 3 -> Color(0xFFB08A5A) // bronze — no palette token exists for it
+        else -> IronvellumColors.Rune
+    }
+    InkPanel(modifier = Modifier.fillMaxWidth(), accent = accent, onClick = onOpenFriend) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                "#$rank",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = if (rank <= 3 || isMe) accent else IronvellumColors.InkMuted,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+            IdentityRow(
+                displayName = if (isMe) "${row.displayName} — YOU" else row.displayName,
+                userId = row.userId,
+                wornTitle = wornTitle(row.currentTitleId),
+                titleId = row.currentTitleId,
+                level = row.level,
+                size = IdentitySize.Standard,
+                // The equipped crest frame is worn by the local lifter alone.
+                frameId = if (isMe) equippedFrame else null,
+                isMe = isMe,
+                trailing = {
+                    Text(
+                        LiftBoards.tierName(standing.step),
+                        maxLines = 1,
+                        softWrap = false,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = accent,
+                    )
+                },
+            )
+        }
+    }
+}
+
+/** The board answered, but nobody is ranked on this lift in this window. */
+@Composable
+private fun LiftEmptyPanel(onRefresh: () -> Unit) {
+    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+        Text(
+            "No allies ranked on this lift yet — log it to claim a tier.",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
+        Spacer(Modifier.height(10.dp))
+        RefreshLink(onClick = onRefresh, label = "Check again")
+    }
+}

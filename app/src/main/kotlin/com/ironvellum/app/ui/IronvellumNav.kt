@@ -136,7 +136,7 @@ object Routes {
 private data class BottomDestination(val route: String, val label: String, val icon: ImageVector)
 
 @Composable
-fun IronvellumRoot() {
+fun IronvellumRoot(inboxRequest: Int = 0) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -201,6 +201,22 @@ fun IronvellumRoot() {
         androidx.compose.runtime.LaunchedEffect(Unit) {
             ironvellumApp.accountRepository.account.first { it != null }
             ironvellumApp.cloudSync.inbox()
+        }
+        // A tapped ally notification lands on Allies with INBOX selected. Held
+        // until setup is done (this branch), and counted in saveable state so a
+        // rotation does not replay a request that was already served.
+        var servedInboxRequest by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+        androidx.compose.runtime.LaunchedEffect(inboxRequest) {
+            if (inboxRequest <= servedInboxRequest) return@LaunchedEffect
+            servedInboxRequest = inboxRequest
+            lifecycle.withStarted {
+                navController.navigate(Routes.SOCIAL) {
+                    popUpTo(Routes.DASHBOARD) { saveState = false }
+                    launchSingleTop = true
+                    // Fresh entry: a restored one would keep whichever tab was open.
+                    restoreState = false
+                }
+            }
         }
         Scaffold(
             containerColor = Color.Transparent,
@@ -467,6 +483,7 @@ fun IronvellumRoot() {
                             navController.navigate(Routes.comments(sessionId, ownerId, headline))
                         },
                         onOpenAccount = { navController.navigate(Routes.ACCOUNT) },
+                        inboxRequest = inboxRequest,
                     )
                 }
                 composable(Routes.ACCOUNT) {

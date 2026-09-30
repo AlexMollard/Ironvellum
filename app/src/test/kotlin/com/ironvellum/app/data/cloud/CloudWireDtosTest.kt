@@ -82,4 +82,26 @@ class CloudWireDtosTest {
         assertEquals(emptyMap<Reaction, Int>(), old.reactions)
         assertNull(old.myReaction)
     }
+
+    @Test
+    fun `an unknown lift is skipped and a pre-20 set row decodes without exercise_position`() {
+        // Failure mode: a newer build adds a lift. A strict Lift decode would
+        // throw inside decodeList and blank every ally's board on this build.
+        val rows = json.decodeFromString<List<LiftBoardDto>>(
+            """[{"user_id": "u1", "display_name": "Kaida", "level": 7, "lift": "squat", "step": 6, "recent_step": null},
+                {"user_id": "u1", "display_name": "Kaida", "level": 7, "lift": "snatch", "step": 9}]""",
+        ).mapNotNull { it.toRow() }
+        assertEquals(1, rows.size)
+        assertEquals(com.ironvellum.app.domain.Lift.SQUAT, rows.single().lift)
+        assertEquals(6, rows.single().step)
+        assertNull(rows.single().recentStep)
+
+        // Failure mode: rows pushed before schema 20 have no position; a
+        // required field would fail the whole ally workout read.
+        val old = json.decodeFromString<AllySetDto>(
+            """{"exercise_name": "Pull-up", "set_index": 0, "reps": 5, "weight_kg": 10.0,
+                "modifiers": "", "done": true}""",
+        )
+        assertNull(old.exercisePosition)
+    }
 }

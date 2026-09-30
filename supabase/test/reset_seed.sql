@@ -34,6 +34,8 @@ insert into reports (reporter_id, target_user_id, reason)
 values ('a5500000-0000-4000-8000-0000000000a1', 'a5500000-0000-4000-8000-0000000000a2', 'spam');
 insert into cloud_archives (user_id, archive, size_bytes)
 values ('a5500000-0000-4000-8000-0000000000a1', '{}', 2);
+insert into lift_marks (user_id, lift, step, recent_step, recent_at)
+values ('a5500000-0000-4000-8000-0000000000a1', 'pull_up', 6, 6, now());
 
 -- Without these the reset check below would pass for a reset that does nothing.
 do $$
@@ -43,6 +45,7 @@ begin
        or (select display_name from profiles where id = 'a5500000-0000-4000-8000-0000000000a1') <> 'Seedling'
        or (select count(*) from sessions) = 0
        or (select count(*) from cloud_archives) = 0
+       or (select count(*) from lift_marks) = 0
        or (select count(*) from reports) = 0 then
         raise exception 'ASSERTION FAILED: the reset fixtures did not land, so the reset check would be vacuous';
     end if;

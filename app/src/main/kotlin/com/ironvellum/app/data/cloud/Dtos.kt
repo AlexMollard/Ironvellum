@@ -9,6 +9,7 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import java.time.Instant
+import com.ironvellum.app.domain.Lift
 
 /*
  * Wire types for the Supabase REST API. Every @SerialName must match the
@@ -90,14 +91,110 @@ data class SessionSetDto(
     @SerialName("modifiers") val modifiers: String,
     @SerialName("done") val done: Boolean,
     /**
-     * Columns `session_sets` has carried since migration 0003 and the client
-     * never sent. Without `duration_sec` a static hold pushes as `reps = 0`
-     * with its seconds nowhere, and an activity pushes with no distance or
-     * time at all. All three are nullable server-side.
+     * Columns `session_sets` carries beyond the conflict key. Without
+     * `duration_sec` a static hold pushes as `reps = 0` with its seconds
+     * nowhere, and an activity pushes with no distance or time at all. All
+     * are nullable server-side.
      */
     @SerialName("duration_sec") val durationSec: Int? = null,
     @SerialName("distance_m") val distanceM: Double? = null,
     @SerialName("grade") val grade: String? = null,
+    // Order of the exercise within the workout. Nullable and defaulted so a
+    // row written before schema 20 still decodes; the ally workout view sorts
+    // nulls last.
+    @SerialName("exercise_position") val exercisePosition: Int? = null,
+)
+
+/** `lift_marks` insert shape; only tier steps leave the phone, never bodyweight. */
+@Serializable
+data class LiftMarkDto(
+    @SerialName("user_id") val userId: String,
+    @SerialName("lift") val lift: String,
+    @SerialName("step") val step: Int,
+    @SerialName("recent_step") val recentStep: Int? = null,
+    @SerialName("recent_at") val recentAt: String? = null,
+)
+
+/** Decode-only shape of the `lift_board` view. `lift` stays a string so a lift this build lacks is skipped, not thrown. */
+@Serializable
+data class LiftBoardDto(
+    @SerialName("user_id") val userId: String,
+    @SerialName("display_name") val displayName: String,
+    @SerialName("current_title_id") val currentTitleId: String? = null,
+    @SerialName("level") val level: Int = 1,
+    @SerialName("lift") val lift: String,
+    @SerialName("step") val step: Int,
+    @SerialName("recent_step") val recentStep: Int? = null,
+) {
+    /** Null for a lift this build does not know. */
+    internal fun toRow(): LiftBoardRow? = Lift.fromWire(lift)?.let {
+        LiftBoardRow(userId, displayName, level, currentTitleId, it, step, recentStep)
+    }
+}
+
+/** Decode-only projection of the `sessions` row an ally workout view reads. */
+@Serializable
+data class AllyWorkoutSessionDto(
+    @SerialName("id") val id: String,
+    @SerialName("user_id") val userId: String,
+    @SerialName("label") val label: String,
+    @SerialName("title") val title: String = "",
+    @SerialName("note") val note: String = "",
+    @SerialName("completed_at") val completedAt: String? = null,
+    @SerialName("started_at") val startedAt: String? = null,
+    @SerialName("xp_awarded") val xpAwarded: Int = 0,
+    @SerialName("strength_score") val strengthScore: Int = 0,
+)
+
+/** Decode-only projection of `session_sets` for the ally workout view. */
+@Serializable
+data class AllySetDto(
+    @SerialName("exercise_name") val exerciseName: String,
+    @SerialName("set_index") val setIndex: Int,
+    @SerialName("reps") val reps: Int = 0,
+    @SerialName("weight_kg") val weightKg: Double? = null,
+    @SerialName("duration_sec") val durationSec: Int? = null,
+    @SerialName("distance_m") val distanceM: Double? = null,
+    @SerialName("grade") val grade: String? = null,
+    @SerialName("modifiers") val modifiers: String = "",
+    @SerialName("done") val done: Boolean = true,
+    @SerialName("exercise_position") val exercisePosition: Int? = null,
+)
+
+data class LiftBoardRow(
+    val userId: String,
+    val displayName: String,
+    val level: Int,
+    val currentTitleId: String?,
+    val lift: Lift,
+    val step: Int,
+    val recentStep: Int?,
+)
+
+data class AllyWorkout(
+    val sessionId: String,
+    val userId: String,
+    val headline: String,
+    val note: String,
+    val completedAtMs: Long?,
+    val startedAtMs: Long?,
+    val xpAwarded: Int,
+    val strengthScore: Int,
+    val exercises: List<AllyExercise>,
+)
+
+/** In exercise_position order (null positions last, then name). */
+data class AllyExercise(val name: String, val sets: List<AllySet>)
+
+data class AllySet(
+    val setIndex: Int,
+    val reps: Int,
+    val weightKg: Double?,
+    val durationSec: Int?,
+    val distanceM: Double?,
+    val grade: String?,
+    val modifiers: String,
+    val done: Boolean,
 )
 
 @Serializable
@@ -207,7 +304,7 @@ data class FeedEntryDto(
     @SerialName("strength_score") val strengthScore: Int,
     @SerialName("sets_done") val setsDone: Int,
     @SerialName("reps_done") val repsDone: Long,
-    // Defaulted: an un-migrated public_feed (before 0012) has no such column,
+    // Defaulted: a backend on an older schema has no such column,
     // and one missing field must not fail the whole page's decode.
     @SerialName("held_seconds") val heldSeconds: Long = 0,
     // The worn title id (null when bare).
@@ -222,7 +319,7 @@ data class FeedEntryDto(
     @SerialName("distance_m") val distanceM: Double? = null,
     @SerialName("hardest_grade") val hardestGrade: String? = null,
     @SerialName("movement_count") val movementCount: Int = 0,
-    // 0018 columns, all defaulted so a view from before 1.4 still decodes.
+    // Later columns, all defaulted so a view from an older schema still decodes.
     @SerialName("comment_count") val commentCount: Int = 0,
     // jsonb kind -> count. Kept as a raw object and filtered in
     // reactionCounts(): a typed Map<Reaction, Int> would throw on the first

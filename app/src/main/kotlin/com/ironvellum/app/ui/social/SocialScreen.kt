@@ -10,6 +10,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.mutableIntStateOf
+import com.ironvellum.app.data.InboxNotifier
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -44,6 +50,7 @@ fun SocialScreen(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onOpenComments: (sessionId: String, ownerId: String, headline: String) -> Unit,
     onOpenAccount: () -> Unit,
+    inboxRequest: Int = 0,
 ) {
     val app = LocalContext.current.applicationContext as IronvellumApp
     val account by app.accountRepository.account.collectAsStateWithLifecycle()
@@ -64,6 +71,16 @@ fun SocialScreen(
             sawSignedOut = false
         }
     }
+    // A notification tap asks for INBOX. The served count is saveable so BACK
+    // from a workout's comments (or a rotation) does not yank the lifter off
+    // whichever tab they moved to since.
+    var servedInboxRequest by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(inboxRequest) {
+        if (inboxRequest > servedInboxRequest) {
+            servedInboxRequest = inboxRequest
+            tab = GuildTab.INBOX
+        }
+    }
 
     if (!signedIn) {
         AccountScreen(onBack = {}, onOpenLifter = onOpenLifter)
@@ -71,6 +88,19 @@ fun SocialScreen(
     }
 
     val unread by app.cloudSync.inboxUnread.collectAsStateWithLifecycle()
+
+    // Opening the inbox is the moment ally notifications become relevant: clear
+    // the one posted for it, and ask for the permission once, here, rather than
+    // at launch where the lifter has no reason to say yes.
+    val context = LocalContext.current
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
+    LaunchedEffect(tab) {
+        if (tab != GuildTab.INBOX) return@LaunchedEffect
+        InboxNotifier.cancel(context)
+        if (InboxNotifier.takeFirstAsk(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
 
     // Every tab gets the same margins and starts at the same spot under the
     // pills; the tabs themselves add no outer padding or screen title.

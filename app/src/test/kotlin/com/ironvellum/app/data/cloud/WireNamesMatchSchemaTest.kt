@@ -329,4 +329,26 @@ class WireNamesMatchSchemaTest {
         assertEquals(checkValues("reports_reason_check"), ReportReason.entries.map { it.wire }.toSet())
         assertEquals(checkValues("sessions_audience_check"), SessionAudience.entries.map { it.wire }.toSet())
     }
+
+    @Test
+    fun `lift marks and the lift board match the schema`() {
+        // Failure mode: a drifted name decodes the default, so an ally's
+        // tier shows as step 0 with no error anywhere.
+        check("LiftMarkDto", LiftMarkDto.serializer().descriptor, tableColumns("lift_marks"))
+        check("LiftBoardDto", LiftBoardDto.serializer().descriptor, viewColumns("lift_board"))
+        assertTrue(
+            "session_sets has no exercise_position",
+            "exercise_position" in tableColumns("session_sets"),
+        )
+        assertTrue(
+            "SessionSetDto does not send exercise_position",
+            "exercise_position" in serialNames(SessionSetDto.serializer().descriptor),
+        )
+        // An extra client lift is refused by the check on every upsert (the
+        // whole batch fails); a missing one can never be uploaded.
+        assertEquals(
+            checkValues("lift_marks_lift"),
+            com.ironvellum.app.domain.Lift.entries.map { it.wire }.toSet(),
+        )
+    }
 }

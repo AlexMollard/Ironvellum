@@ -10,7 +10,7 @@
 -- thing back, so a half-reset is impossible):
 --   * EVERY row of auth.users, the owner's own account included. Deleting the
 --     identities cascades to profiles and everything keyed on them (workouts,
---     sets, reactions, comments, blocks, mutes, inbox, reports) and to
+--     sets, reactions, comments, lift marks, blocks, mutes, inbox, reports) and to
 --     cloud_archives, and takes GoTrue's own dependent rows (identities,
 --     sessions, refresh tokens) with it. Expect to sign up again.
 --   * Every object the baseline creates in the public schema: the sign-up
@@ -36,11 +36,13 @@ delete from auth.users;
 
 drop trigger if exists on_auth_user_created on auth.users;
 
+drop view if exists public.lift_board;
 drop view if exists public.public_feed;
 drop view if exists public.shadow_board;
 drop view if exists public.leaderboard;
 
 drop table if exists
+    public.lift_marks,
     public.reports,
     public.inbox_seen,
     public.friend_request_log,
@@ -69,6 +71,7 @@ drop function if exists public.can_see_author(uuid);
 drop function if exists public.can_view_session(uuid, text);
 drop function if exists public.can_view(uuid);
 drop function if exists public.blocked_between(uuid, uuid);
+drop function if exists public.is_ally(uuid);
 drop function if exists public.is_friend(uuid, uuid);
 drop function if exists public.reports_before_insert();
 drop function if exists public.mutes_before_insert();

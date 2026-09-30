@@ -20,4 +20,6 @@
     <exclude domain="sharedpref" path="onboarding.xml" />
     <exclude domain="sharedpref" path="program_answers.xml" />
     <exclude domain="sharedpref" path="reminders.xml" />
+    <!-- The notify mark and first-ask flag belong to this install's account and permission state. -->
+    <exclude domain="sharedpref" path="inbox_notifier.xml" />
 </full-backup-content>

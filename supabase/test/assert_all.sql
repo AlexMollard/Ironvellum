@@ -275,7 +275,7 @@ begin
     from pg_tables t
     where t.schemaname = 'public'
       and t.tablename in ('profiles','friendships','sessions','session_sets','earned_titles','level_ups','session_likes',
-                          'blocks','mutes','session_comments','inbox_seen','reports','friend_request_log')
+                          'blocks','mutes','session_comments','inbox_seen','reports','friend_request_log','cloud_archives','lift_marks')
       and not t.rowsecurity;
     perform assert_true(n = 0, format('%s public table(s) have RLS disabled', n));
 
@@ -829,6 +829,219 @@ begin
         'the sign-up fixtures were not cleaned up');
 end $$;
 
+-- ------------------------------------------------------------ strength boards
+-- Lifters of their own again, so no earlier block, mute or friendship can mask a
+-- lift_marks leak. Kit is the reader; Lux is an accepted ally; Moe only asked;
+-- Nia is an ally Kit later blocked; Oz is an ally who blocked Kit; Pax is a
+-- PUBLIC stranger (a public profile must still not open the strength board).
+delete from auth.users where id::text like 'a5500000-0000-4000-8000-00000000006_';
+insert into auth.users (instance_id, id, aud, role, email, encrypted_password, created_at, updated_at)
+select '00000000-0000-0000-0000-000000000000', ('a5500000-0000-4000-8000-0000000000' || n)::uuid,
+       'authenticated', 'authenticated', 'lift' || n || '@m.test', '', now(), now()
+from unnest(array['61','62','63','64','65','66']) n;
+insert into profiles (id, display_name, visibility) values
+    ('a5500000-0000-4000-8000-000000000061','Kit','public'),
+    ('a5500000-0000-4000-8000-000000000062','Lux','public'),
+    ('a5500000-0000-4000-8000-000000000063','Moe','public'),
+    ('a5500000-0000-4000-8000-000000000064','Nia','public'),
+    ('a5500000-0000-4000-8000-000000000065','Oz','public'),
+    ('a5500000-0000-4000-8000-000000000066','Pax','public')
+on conflict (id) do update set display_name = excluded.display_name, visibility = excluded.visibility;
+-- A block deletes the friendship and friendships_before_insert refuses an
+-- allied pair across a block, so the "accepted ally, then blocked" rows are
+-- written with triggers off (psql autocommits, so a transaction-local setting
+-- would already be gone by the insert), the way a block landing after an accept leaves them.
+insert into blocks (blocker_id, blocked_id) values
+    ('a5500000-0000-4000-8000-000000000061','a5500000-0000-4000-8000-000000000064'),
+    ('a5500000-0000-4000-8000-000000000065','a5500000-0000-4000-8000-000000000061');
+set session_replication_role = replica;
+insert into friendships (requester_id, addressee_id, accepted) values
+    ('a5500000-0000-4000-8000-000000000061','a5500000-0000-4000-8000-000000000062', true),
+    ('a5500000-0000-4000-8000-000000000063','a5500000-0000-4000-8000-000000000061', false),
+    ('a5500000-0000-4000-8000-000000000061','a5500000-0000-4000-8000-000000000064', true),
+    ('a5500000-0000-4000-8000-000000000065','a5500000-0000-4000-8000-000000000061', true);
+set session_replication_role = origin;
+insert into sessions (id, user_id, local_id, label, started_at, completed_at)
+values ('a5566666-0000-4000-8000-000000000001','a5500000-0000-4000-8000-000000000061',1,'Pull',
+        now() - interval '2 hour', now() - interval '1 hour');
+
+do $$
+declare
+    kit uuid := 'a5500000-0000-4000-8000-000000000061';
+    lux uuid := 'a5500000-0000-4000-8000-000000000062';
+    moe uuid := 'a5500000-0000-4000-8000-000000000063';
+    nia uuid := 'a5500000-0000-4000-8000-000000000064';
+    oz  uuid := 'a5500000-0000-4000-8000-000000000065';
+    pax uuid := 'a5500000-0000-4000-8000-000000000066';
+    n int;
+    r text;
+    t timestamptz;
+begin
+    -- 20: the beacon of this schema level, and the new column.
+    perform assert_true(
+        exists (select 1 from information_schema.columns
+                where table_schema = 'public' and table_name = 'session_sets' and column_name = 'exercise_position'
+                  and is_nullable = 'YES'),
+        'session_sets.exercise_position is missing or NOT NULL: the ally workout view cannot order exercises, or 1.4 clients cannot insert sets');
+    perform assert_true(
+        to_regclass('public.lift_marks') is not null and to_regclass('public.lift_board') is not null
+            and to_regproc('public.is_ally') is not null,
+        'lift_marks, lift_board or is_ally() is missing: the baseline did not apply completely');
+    perform assert_true(
+        (select rowsecurity from pg_tables where schemaname = 'public' and tablename = 'lift_marks'),
+        'lift_marks has RLS disabled: every lifter''s tiers are readable by anyone');
+
+    -- A 1.4-shaped set insert (no exercise_position) must still work, and the
+    -- new column is bounded like the other client-sent numbers.
+    perform must_run(kit,
+        'insert into session_sets (session_id, exercise_name, set_index, reps, done) values (''a5566666-0000-4000-8000-000000000001'', ''Pull-up'', 0, 5, true)',
+        'a 1.4 client set insert without exercise_position is refused: every old app would fail to sync');
+    perform must_run(kit,
+        'insert into session_sets (session_id, exercise_name, set_index, reps, done, exercise_position) values (''a5566666-0000-4000-8000-000000000001'', ''Dip'', 0, 5, true, 1)',
+        'a set insert carrying exercise_position is refused');
+    perform assert_true(
+        refused_as(kit,
+            'insert into session_sets (session_id, exercise_name, set_index, reps, exercise_position) values (''a5566666-0000-4000-8000-000000000001'', ''Dip'', 1, 5, -1)',
+            array['23514']),
+        'session_sets.exercise_position accepts a negative position');
+
+    -- The lifters write their own marks (this is also the write path the app uses).
+    perform must_run(kit, format(
+        'insert into lift_marks (user_id, lift, step, recent_step, recent_at) values (%L, ''pull_up'', 6, 6, now())', kit),
+        'a lifter cannot write their own lift mark');
+    perform must_run(lux, format(
+        'insert into lift_marks (user_id, lift, step, recent_step, recent_at) values (%L, ''pull_up'', 7, 7, now() - interval ''1 day''), (%L, ''bench'', 5, 5, now() - interval ''8 days''), (%L, ''squat'', 3, null, null)',
+        lux, lux, lux),
+        'an ally cannot write their own lift marks');
+    insert into lift_marks (user_id, lift, step) values (moe, 'dip', 4), (nia, 'dip', 4), (oz, 'dip', 4), (pax, 'dip', 4);
+
+    -- Reads. Each zero is paired with the ally's positive read below, so a
+    -- table that simply reads empty for everyone cannot pass.
+    perform set_config('probe.uid', kit::text, true);
+    set local role authenticated;
+    select count(*) into n from lift_marks where user_id = lux;
+    perform assert_true(n = 3, format('an accepted ally''s lift marks are hidden from their ally (saw %s of 3): the board would always read empty', n));
+    select count(*) into n from lift_marks where user_id = kit;
+    perform assert_true(n = 1, 'a lifter cannot read their own lift marks');
+    select count(*) into n from lift_marks where user_id = pax;
+    perform assert_true(n = 0, 'a stranger with a PUBLIC profile can read my lift marks: the strength board is not allies-only');
+    select count(*) into n from lift_marks where user_id = moe;
+    perform assert_true(n = 0, 'a PENDING ally request already opens the requester''s lift marks');
+    select count(*) into n from lift_marks where user_id = nia;
+    perform assert_true(n = 0, 'a lifter I blocked can still read and be read through lift_marks (block ignored)');
+    select count(*) into n from lift_marks where user_id = oz;
+    perform assert_true(n = 0, 'a lifter who blocked me still shows on my strength board (block ignored the other way)');
+    select count(*) into n from lift_board where user_id in (lux, kit);
+    perform assert_true(n = 4, format('lift_board misses the reader or their ally (saw %s of 4)', n));
+    select count(*) into n from lift_board where user_id in (pax, moe, nia, oz);
+    perform assert_true(n = 0, 'lift_board shows a stranger, a pending requester or a blocked lifter: the view is not security_invoker over lift_marks');
+    reset role;
+
+    -- The other side of each block and the stranger's view of me.
+    perform set_config('probe.uid', nia::text, true);
+    set local role authenticated;
+    select count(*) into n from lift_marks where user_id = kit;
+    perform assert_true(n = 0, 'a lifter blocked by me can still read MY lift marks (block ignored)');
+    reset role;
+    perform set_config('probe.uid', pax::text, true);
+    set local role authenticated;
+    select count(*) into n from lift_marks where user_id in (kit, lux);
+    perform assert_true(n = 0, 'a public stranger reads an ally group''s lift marks');
+    reset role;
+    perform set_config('probe.uid', lux::text, true);
+    set local role authenticated;
+    select count(*) into n from lift_marks where user_id = kit;
+    perform assert_true(n = 1, 'an accepted ally cannot read the requester''s marks: is_ally() must hold in both directions of a friendship');
+    reset role;
+
+    -- recent window: Lux's bench set is 8 days old, pull-up 1 day.
+    perform set_config('probe.uid', kit::text, true);
+    set local role authenticated;
+    select recent_step::text into r from lift_board where user_id = lux and lift = 'bench';
+    perform assert_true(r is null, format('lift_board.recent_step still reads %s for a set 8 days old: the 7-day window is not applied', r));
+    select recent_step::text into r from lift_board where user_id = lux and lift = 'pull_up';
+    perform assert_true(r = '7', format('lift_board.recent_step hides a set from yesterday (read %s)', coalesce(r, 'null')));
+    select step::text into r from lift_board where user_id = lux and lift = 'bench';
+    perform assert_true(r = '5', 'lift_board dropped the row when its recent set aged out: the overall step must stay');
+    reset role;
+
+    -- Writes across lifters and out of range.
+    perform assert_true(
+        refused_as(kit, format('insert into lift_marks (user_id, lift, step) values (%L, ''ohp'', 3)', lux), array['42501']),
+        'a lifter can write a mark under another lifter''s id');
+    perform assert_true(
+        refused_as(kit, format('update lift_marks set user_id = %L where user_id = %L and lift = ''pull_up''', lux, kit), array['42501']),
+        'a lifter can re-home their mark onto another lifter''s id (update with-check missing)');
+    perform must_run(kit, format('update lift_marks set step = 10 where user_id = %L', lux), 'update of another lifter''s mark errored instead of matching nothing');
+    perform must_run(kit, format('delete from lift_marks where user_id = %L', lux), 'delete of another lifter''s marks errored instead of matching nothing');
+    perform assert_true(
+        (select count(*) from lift_marks where user_id = lux) = 3 and (select max(step) from lift_marks where user_id = lux) = 7,
+        'a lifter can update or delete another lifter''s lift marks');
+    perform assert_true(
+        refused_as(kit, format('insert into lift_marks (user_id, lift, step) values (%L, ''curl'', 3)', kit), array['23514']),
+        'lift_marks accepts an unknown lift');
+    perform assert_true(
+        refused_as(kit, format('insert into lift_marks (user_id, lift, step) values (%L, ''ohp'', 11)', kit), array['23514']),
+        'lift_marks accepts a step above 10: one PATCH tops the board');
+    perform assert_true(
+        refused_as(kit, format('insert into lift_marks (user_id, lift, step) values (%L, ''ohp'', -1)', kit), array['23514']),
+        'lift_marks accepts a negative step');
+    perform assert_true(
+        refused_as(kit, format('insert into lift_marks (user_id, lift, step, recent_step) values (%L, ''ohp'', 3, 11)', kit), array['23514']),
+        'lift_marks accepts a recent_step above 10');
+    perform assert_true(
+        refused_as(kit, format('insert into lift_marks (user_id, lift, step, updated_at) values (%L, ''ohp'', 3, now() + interval ''1 year'')', kit), array['42501']),
+        'a lifter can set lift_marks.updated_at from the phone');
+
+    -- updated_at is the server's: age the row, let the lifter update it, and it
+    -- must have moved to now().
+    update lift_marks set updated_at = now() - interval '30 days' where user_id = kit and lift = 'pull_up';
+    perform must_run(kit, format('update lift_marks set step = 7 where user_id = %L and lift = ''pull_up''', kit),
+        'a lifter cannot update their own mark');
+    select updated_at into t from lift_marks where user_id = kit and lift = 'pull_up';
+    perform assert_true(t > now() - interval '1 minute', 'lift_marks.updated_at is not server-set on update: the touch trigger is missing');
+
+    -- is_ally: answers only about the caller, and never to the shipped key.
+    perform assert_true(
+        not has_function_privilege('anon', 'public.is_ally(uuid)', 'execute')
+            and not has_function_privilege('public', 'public.is_ally(uuid)', 'execute'),
+        'anon can execute is_ally(): the shipped key can probe the ally graph');
+    perform assert_true(
+        refused_as_anon(format('select public.is_ally(%L)', lux), array['42501']),
+        'the anon key can call is_ally()');
+    perform assert_true(
+        not has_table_privilege('anon', 'public.lift_marks', 'select')
+            and not has_table_privilege('anon', 'public.lift_marks', 'insert')
+            and not has_column_privilege('anon', 'public.lift_marks', 'step', 'insert'),
+        'anon holds a privilege on lift_marks');
+    perform assert_true(
+        (select prosecdef from pg_proc where oid = 'public.is_ally(uuid)'::regprocedure)
+            and exists (select 1 from pg_proc p, unnest(p.proconfig) c
+                        where p.oid = 'public.is_ally(uuid)'::regprocedure and c like 'search_path=%'),
+        'is_ally() is not SECURITY DEFINER with a pinned search_path');
+    perform set_config('probe.uid', kit::text, true);
+    set local role authenticated;
+    perform assert_true(public.is_ally(lux) and not public.is_ally(moe) and not public.is_ally(nia)
+                            and not public.is_ally(oz) and not public.is_ally(pax),
+        'is_ally() is wrong for an ally, a pending request, a blocked lifter or a stranger');
+    reset role;
+
+    -- Erased with the account, and only that account.
+    perform set_config('probe.uid', lux::text, true);
+    set local role authenticated;
+    perform delete_my_account();
+    reset role;
+    perform assert_true(
+        not exists (select 1 from lift_marks where user_id = lux),
+        'delete_my_account() left lift_marks behind: the erase promise is broken');
+    perform assert_true(
+        exists (select 1 from lift_marks where user_id = kit),
+        'delete_my_account() erased another lifter''s lift marks');
+    perform set_config('probe.uid', '', true);
+
+    delete from auth.users where id::text like 'a5500000-0000-4000-8000-00000000006_';
+end $$;
+
 -- -------------------------------------------------------------- the guarantees
 do $$
 declare
@@ -1047,12 +1260,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 19,
-        format('schema_version() reports %s, not 19 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 20,
+        format('schema_version() reports %s, not 20 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 19,
+        (select public.schema_version()) = 20,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
