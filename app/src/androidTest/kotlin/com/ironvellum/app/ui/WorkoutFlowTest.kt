@@ -198,6 +198,7 @@ class WorkoutFlowTest {
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
             Thread.sleep(POLL_MS)
         }
+        check(claimed) { "the unticked-sets confirm never composed; on screen: ${allText()}" }
         // Completion stacks celebrations: the victory screen, then one page per
         // award earned. Drain them by their own buttons.
         drainCelebrations()

@@ -16,10 +16,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
+import androidx.compose.ui.semantics.Role
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -118,7 +120,6 @@ private val HEALTH_PERMISSIONS = setOf(
     HealthPermission.getReadPermission(DistanceRecord::class),
     HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
     HealthPermission.getReadPermission(SleepSessionRecord::class),
-    HealthPermission.getReadPermission(RestingHeartRateRecord::class),
     HealthPermission.getReadPermission(RestingHeartRateRecord::class),
 )
 
@@ -811,9 +812,10 @@ fun SettingsScreen(
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier
+                    .heightIn(min = 44.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
                     .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-                    .clickable { onBack() }
+                    .clickable(role = Role.Button) { onBack() }
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }

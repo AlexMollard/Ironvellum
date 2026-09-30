@@ -128,8 +128,6 @@ class DashboardUi(
     val stepsToday: Int = 0,
     /** When Health Connect was last read; the step count is only as fresh as this. */
     val stepsSyncedAtMs: Long? = null,
-    /** Weekdays (ISO 1-7) with a completed session in the current Monday-week. */
-    val completedWeekdays: Set<Int> = emptySet(),
     /** The focus the quest estimate is timed at. */
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
     /** The lifter's own seconds per set; times the quest estimate. */
@@ -198,10 +196,6 @@ class DashboardViewModel(
             stepsSyncedAtMs = values[7] as Long?,
             focus = SessionClock.focusFor(savedFocus, profile?.trainingMode),
             pace = SessionClock.pace(history),
-            completedWeekdays = doneDates
-                .filter { !it.isBefore(today.with(java.time.DayOfWeek.MONDAY)) }
-                .map { it.dayOfWeek.value }
-                .toSet(),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
 

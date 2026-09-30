@@ -18,8 +18,8 @@ Owner decisions (2026-09-29):
 | Release | Theme | Scope |
 |---|---|---|
 | 1.4 | Talk | Comments, themed reactions, inbox, per-workout audience, block / mute / report, remove ally, server rate limits |
-| 1.5 | Fair fight | Friend boards per exercise on bodyweight-relative strength (score computed on device, only the number leaves it), weekly and all-time; routine sharing as a pasteable text code with its reasons and citations |
-| 1.6 | Warbands | Invite-code groups of 3-8, pooled Garrison banner, weekly group challenge, trained-this-week marks, friends witnessing skill claims |
+| 1.4 | Fair fight | Ally boards per lift — calisthenics skill ladders first, bodyweight-relative tiers behind them (score computed on device, only the step leaves it); routine sharing as a pasteable text code; the ally workout view; inbox notifications |
+| post-1.4 | Warbands | Invite-code groups of 3-8, pooled Garrison banner line, weekly group challenge, trained-this-week marks. Skill witnessing deferred: claims are device-local and need their own design |
 | Later | Community | Public audience and discovery, public Warbands, auto-hide after repeated reports, push (UnifiedPush, not FCM), media if asked for |
 
 Triggers for "Later": friends of friends asking to join, or people asking for
@@ -96,10 +96,10 @@ push notifications, media.
 ## 1.5 contract
 
 Owner decisions (2026-09-30): build ally strength boards, routine share codes,
-an ally workout view and inbox notifications; Warbands wait. Boards rank by
+an ally workout view and inbox notifications. Boards rank by
 **tier, not ratio**: allies already see set loads on the feed, so an exact
 bodyweight ratio would let them solve for bodyweight, which never leaves the
-phone.
+phone. (Warbands followed later the same day — see the roadmap above.)
 
 - **Ally strength boards.** `domain/LiftBoards.kt` ranks 17 boards, calisthenics
   first and barbell last, grouped Pull, Push, Static, Legs, Barbell. Two kinds:

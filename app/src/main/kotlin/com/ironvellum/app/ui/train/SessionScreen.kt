@@ -820,7 +820,7 @@ fun SessionScreen(
             shape = MaterialTheme.shapes.medium,
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmClaim = false },
-            title = { Text("Claim victory?") },
+            title = { Text("Claim Victory?") },
             text = {
                 val unticked = ui.sets.count { !it.done }
                 Text("$unticked ${plural(unticked, "set", "sets")} unticked — claim anyway?")
@@ -1020,10 +1020,17 @@ fun SessionScreen(
                     // Which preset entries got fewer done sets than planned —
                     // the shape the set-count guard in RoutineUpdate.propose
                     // suppresses, but the title still names.
-                    val shortDay = offer.changes.any { change ->
-                        ui.sets.count { it.done && it.exerciseId == change.before.exerciseId } <
-                            change.before.targetSets
-                    }
+                    // The header says the plan kept its sets, so it must mean
+                    // that: no proposed change touches SETS, and at least one
+                    // positional block ran short. Counting by exerciseId alone
+                    // mislabels a preset that lists the same exercise twice.
+                    val shortDay = offer.changes.none { RoutineUpdate.Field.SETS in it.fields } &&
+                        offer.changes.any { change ->
+                            ui.sets.count {
+                                it.done && it.exerciseId == change.before.exerciseId &&
+                                    it.exercisePosition == change.before.position
+                            } < change.before.targetSets
+                        }
                     RoutineUpdateDialog(
                         offer = offer,
                         shortDay = shortDay,
