@@ -59,6 +59,7 @@ import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.Progression
 import com.ironvellum.app.domain.Reward
 import com.ironvellum.app.domain.RollResult
+import com.ironvellum.app.domain.RoutineCode
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.SessionSet
@@ -448,6 +449,86 @@ class Repository(
                 )
             },
         )
+    }
+
+    /** What an import did: workouts written and exercise names the catalogue lacks. */
+    data class ImportedRoutine(val added: Int, val skippedExercises: List<String>)
+
+    /**
+     * Every preset in shareable form, week order then name. Notes lose their
+     * citations exactly as [savePlannedPreset] strips them: a share code is
+     * pasted into a chat, and a wall of paper references would bloat it and
+     * the receiving card for text nobody reads there.
+     */
+    suspend fun sharedRoutine(): List<RoutineCode.SharedWorkout> =
+        observePresets().first()
+            .sortedWith(compareBy<WorkoutPreset> { it.scheduledDay ?: Int.MAX_VALUE }.thenBy { it.name })
+            .map { preset ->
+                RoutineCode.SharedWorkout(
+                    name = preset.name,
+                    note = Evidence.split(preset.note).first,
+                    scheduledDay = preset.scheduledDay,
+                    entries = preset.entries.map { entry ->
+                        RoutineCode.SharedEntry(
+                            exerciseName = entry.exerciseName,
+                            sets = entry.targetSets,
+                            reps = entry.targetReps,
+                            targetWeightKg = entry.targetWeightKg,
+                            modifiers = entry.modifiers,
+                        )
+                    },
+                )
+            }
+
+    /**
+     * Writes a decoded share code. Exercises resolve by normalised catalogue
+     * name; one this catalogue lacks is dropped from its workout and reported,
+     * because refusing the whole code over one custom exercise would make
+     * most shared routines unimportable. A workout left with no exercises is
+     * skipped rather than saved empty.
+     *
+     * [replace] swaps the routine in the existing single transaction; the add
+     * path writes workouts UNSCHEDULED so the lifter's week is never
+     * disturbed by someone else's day numbers. If nothing at all resolves,
+     * nothing is written - "Replace" must never wipe a routine for an empty
+     * result.
+     */
+    suspend fun importSharedRoutine(
+        workouts: List<RoutineCode.SharedWorkout>,
+        replace: Boolean,
+    ): ImportedRoutine {
+        val canonical = exerciseDao.observeAll().first()
+            .associate { Titles.normaliseName(it.name) to it.name }
+        val skipped = LinkedHashSet<String>()
+        val rows = workouts.mapNotNull { workout ->
+            val entries = workout.entries.mapNotNull { entry ->
+                val name = canonical[Titles.normaliseName(entry.exerciseName)]
+                if (name == null) {
+                    skipped += entry.exerciseName
+                    null
+                } else {
+                    PlannedEntryRows(
+                        exerciseName = name,
+                        targetSets = entry.sets,
+                        targetReps = entry.reps,
+                        targetWeightKg = entry.targetWeightKg,
+                        modifiers = entry.modifiers,
+                    )
+                }
+            }
+            if (entries.isEmpty()) {
+                null
+            } else {
+                PlannedPresetRows(
+                    name = workout.name,
+                    note = Evidence.split(workout.note).first,
+                    scheduledDay = if (replace) workout.scheduledDay else null,
+                    entries = entries,
+                )
+            }
+        }
+        if (rows.isNotEmpty()) writeRoutinePresets(rows, clearFirst = replace)
+        return ImportedRoutine(added = rows.size, skippedExercises = skipped.toList())
     }
 
     /**

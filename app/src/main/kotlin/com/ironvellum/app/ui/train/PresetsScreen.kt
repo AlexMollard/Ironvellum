@@ -54,6 +54,7 @@ import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.WorkoutPreset
+import com.ironvellum.app.domain.RoutineCode
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
@@ -138,6 +139,19 @@ class PresetsViewModel(
     fun beginQuick(onStarted: (Long) -> Unit) {
         viewModelScope.launch { onStarted(repo.startFreeformSession("Quick Workout")) }
     }
+
+    fun shareRoutine(onCode: (String) -> Unit) {
+        viewModelScope.launchGuarded("share routine") { onCode(RoutineCode.encode(repo.sharedRoutine())) }
+    }
+
+    /** The write is one transaction, so a failure leaves the routine as it was. */
+    fun importRoutine(workouts: List<RoutineCode.SharedWorkout>, replace: Boolean, onDone: (String) -> Unit) {
+        viewModelScope.launch {
+            val summary = runCatching { importSummary(repo.importSharedRoutine(workouts, replace), replace) }
+                .getOrElse { "Import failed \u2014 nothing was changed." }
+            onDone(summary)
+        }
+    }
 }
 
 /**
@@ -176,6 +190,10 @@ fun PresetsScreen(
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val live by viewModel.live.collectAsStateWithLifecycle()
     var showNewChooser by remember { mutableStateOf(false) }
+    var showImport by remember { mutableStateOf(false) }
+    // Survives only the composition: a stale "Added 3 workouts" after leaving
+    // and returning to Train would read as a fresh import.
+    var importResult by remember { mutableStateOf<String?>(null) }
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -231,6 +249,14 @@ fun PresetsScreen(
                     "No workouts yet. Build your first training day.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            importResult?.let { line ->
+                Text(
+                    line,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.SystemGreen,
+                    modifier = Modifier.padding(bottom = 10.dp),
                 )
             }
             ui.presets.forEach { preset ->
@@ -353,6 +379,18 @@ fun PresetsScreen(
                 }
             }
 
+            // Sits with the list it exports, and only when there is something
+            // to export: an empty board would share a code that imports nothing.
+            if (ui.presets.isNotEmpty()) {
+                val context = androidx.compose.ui.platform.LocalContext.current
+                IronvellumButton(
+                    label = "Share routine",
+                    onClick = { viewModel.shareRoutine { code -> shareRoutineCode(context, code) } },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                    quiet = true,
+                )
+            }
+
             // "New Workout" used to float over the list, and it parked itself on
             // top of a card's BEGIN button. A tile at the end of the workouts
             // covers nothing and needs no clearance spacer underneath.
@@ -456,6 +494,7 @@ fun PresetsScreen(
                     val options = buildList {
                         add("Blank workout" to { showNewChooser = false; onNew() })
                         add("Start from a template" to { showNewChooser = false; onGenerate("template", null) })
+                        add("Import code" to { showNewChooser = false; showImport = true })
                         add("Generate a routine" to { showNewChooser = false; onGenerate("week", null) })
                         add("Generate one workout" to { showNewChooser = false; onGenerate("session", null) })
                         // Improving needs a target: nothing to improve on an
@@ -482,6 +521,17 @@ fun PresetsScreen(
             dismissButton = {
                 IronvellumButton(label = "Cancel", onClick = { showNewChooser = false }, quiet = true)
             },
+        )
+    }
+
+    if (showImport) {
+        ImportRoutineDialog(
+            currentWorkouts = ui.presets.size,
+            onImport = { workouts, replace ->
+                showImport = false
+                viewModel.importRoutine(workouts, replace) { importResult = it }
+            },
+            onDismiss = { showImport = false },
         )
     }
 }
