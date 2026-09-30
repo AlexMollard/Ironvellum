@@ -357,13 +357,7 @@ fun WeeklyVolumePanel(
                 CoverageLevel.OVER -> "OVER"
                 CoverageLevel.IN_RANGE -> "IN RANGE"
             }
-            // The coverage legend's colours: red under, gold over.
-            val colour = when (level) {
-                CoverageLevel.IN_RANGE -> IronvellumColors.SystemGreen
-                CoverageLevel.OVER -> IronvellumColors.SovereignGold
-                CoverageLevel.LIGHT -> IronvellumColors.InkMuted
-                CoverageLevel.NONE, CoverageLevel.UNDER -> IronvellumColors.DangerRed
-            }
+            val colour = verdictTextColour(level)
             Row(
                 Modifier
                     .fillMaxWidth()

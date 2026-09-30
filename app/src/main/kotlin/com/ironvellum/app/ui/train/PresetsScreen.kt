@@ -23,6 +23,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.AlertDialog
@@ -61,6 +63,7 @@ import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.program.BodyHeatMap
 import com.ironvellum.app.ui.program.CoverageGoal
+import com.ironvellum.app.ui.program.RiteMusclesDialog
 import com.ironvellum.app.ui.program.coverageGaps
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.ironvellumRepository
@@ -287,7 +290,7 @@ fun PresetsScreen(
                     Row(
                         Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.Top,
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
                         // Weighted and capped: a long name used to run into
                         // the day chip instead of wrapping beside it.
@@ -308,6 +311,23 @@ fun PresetsScreen(
                             ) {
                                 Text(DAY_LABELS[it] ?: "", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.SovereignGold)
                             }
+                        }
+                        var showMuscles by remember { mutableStateOf(false) }
+                        IconButton(onClick = { showMuscles = true }, modifier = Modifier.size(44.dp)) {
+                            Icon(
+                                Icons.Outlined.Info,
+                                contentDescription = "Muscles in ${preset.name}",
+                                tint = IronvellumColors.InkMuted,
+                                modifier = Modifier.size(18.dp),
+                            )
+                        }
+                        if (showMuscles) {
+                            RiteMusclesDialog(
+                                title = preset.name,
+                                entries = preset.toPlanned().entries,
+                                goal = CoverageGoal(ui.tier, ui.focus, ui.priorities),
+                                onDismiss = { showMuscles = false },
+                            )
                         }
                     }
                     Text(

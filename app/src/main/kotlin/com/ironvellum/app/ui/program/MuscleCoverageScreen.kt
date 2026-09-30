@@ -367,12 +367,7 @@ private fun MuscleRow(
         CoverageLevel.IN_RANGE -> "IN RANGE"
         CoverageLevel.OVER -> "OVER"
     }
-    val colour = when (level) {
-        CoverageLevel.IN_RANGE -> IronvellumColors.SystemGreen
-        CoverageLevel.OVER -> IronvellumColors.SovereignGold
-        CoverageLevel.LIGHT -> IronvellumColors.InkMuted
-        else -> IronvellumColors.DangerRed
-    }
+    val colour = verdictTextColour(level)
     val bound = if (range.endInclusive == Double.MAX_VALUE) {
         "${trimSets(range.start)}+"
     } else {

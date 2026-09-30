@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -62,25 +63,53 @@ fun coverageLevel(volume: Double, target: ClosedFloatingPointRange<Double>): Cov
 
 private fun levelColor(level: CoverageLevel): Color = when (level) {
     CoverageLevel.NONE -> IronvellumColors.Bracket
-    CoverageLevel.UNDER -> IronvellumColors.DangerRed
+    CoverageLevel.UNDER -> IronvellumColors.Emerald
     CoverageLevel.LIGHT -> IronvellumColors.InkMuted
     CoverageLevel.IN_RANGE -> IronvellumColors.Emerald
     CoverageLevel.OVER -> IronvellumColors.SovereignGold
 }
 
 /**
- * The fill for one tracked muscle. Under target the red deepens with the
- * shortfall - a muscle at 10 of 12 sets reads differently from one at 2 -
- * which is what makes the figure a heat map rather than four flat colours.
+ * Opacity of the green for a muscle under its range. Shortfall is never
+ * shown as a warning colour: the fill simply grows toward the full in-range
+ * green as the week approaches the target, so 11.5 of 12 sets reads almost
+ * done and 2 of 12 reads faint but still green. The floor keeps it apart
+ * from the grey of an untrained muscle; it reaches the in-range opacity at
+ * the target.
+ */
+fun underAlpha(volume: Double, target: ClosedFloatingPointRange<Double>): Float {
+    val fraction = if (target.start > 0.0) (volume / target.start).toFloat().coerceIn(0f, 1f) else 1f
+    return UNDER_FLOOR_ALPHA + (FULL_ALPHA - UNDER_FLOOR_ALPHA) * fraction
+}
+
+private const val FULL_ALPHA = 0.9f
+private const val UNDER_FLOOR_ALPHA = 0.3f
+
+/**
+ * The fill for one tracked muscle. Under target the green deepens with
+ * progress toward the range (see [underAlpha]), which is what makes the
+ * figure a heat map rather than a few flat colours.
  */
 private fun regionFill(level: CoverageLevel, volume: Double, target: ClosedFloatingPointRange<Double>): Color {
     val alpha = when (level) {
         CoverageLevel.NONE -> 0.55f
-        CoverageLevel.UNDER -> 0.35f + 0.5f * (volume / target.start).toFloat().coerceIn(0f, 1f)
+        CoverageLevel.UNDER -> underAlpha(volume, target)
         CoverageLevel.LIGHT -> 0.35f
-        else -> 0.9f
+        else -> FULL_ALPHA
     }
     return levelColor(level).copy(alpha = alpha)
+}
+
+/**
+ * The verdict word's colour in the tile lists, matching the figure: under
+ * target is a softened green (the word says UNDER, colour never scolds),
+ * untrained and light stay neutral, in range green, over gold.
+ */
+internal fun verdictTextColour(level: CoverageLevel): Color = when (level) {
+    CoverageLevel.NONE, CoverageLevel.LIGHT -> IronvellumColors.InkMuted
+    CoverageLevel.UNDER -> lerp(IronvellumColors.InkMuted, IronvellumColors.SystemGreen, 0.6f)
+    CoverageLevel.IN_RANGE -> IronvellumColors.SystemGreen
+    CoverageLevel.OVER -> IronvellumColors.SovereignGold
 }
 
 /**
@@ -385,6 +414,59 @@ fun ExerciseMuscleMap(
     }
 }
 
+/**
+ * Opacity of a muscle's green on a rite's figure: [sets] relative to the most
+ * worked muscle in that rite ([top]). A rite is a fraction of a week, so this
+ * is a share of the rite, never a verdict against the weekly range.
+ */
+fun riteAlpha(sets: Double, top: Double): Float {
+    if (sets <= 0.0 || top <= 0.0) return 0f
+    return UNDER_FLOOR_ALPHA + (FULL_ALPHA - UNDER_FLOOR_ALPHA) * (sets / top).toFloat().coerceIn(0f, 1f)
+}
+
+/**
+ * The same front and back figure, filled by what ONE rite works: the green
+ * deepens with the sets the rite gives a muscle, relative to its most worked
+ * muscle, and untouched muscles stay bare.
+ */
+@Composable
+fun RiteMuscleMap(
+    sets: Map<Muscle, Double>,
+    modifier: Modifier = Modifier,
+    figureHeight: Dp = 220.dp,
+) {
+    val top = sets.values.maxOrNull() ?: 0.0
+    val fill = { muscle: Muscle ->
+        val alpha = riteAlpha(sets[muscle] ?: 0.0, top)
+        if (alpha <= 0f) IronvellumColors.Bracket.copy(alpha = 0.55f) else IronvellumColors.Emerald.copy(alpha = alpha)
+    }
+    Column(modifier.clearAndSetSemantics {}) {
+        Canvas(
+            Modifier
+                .fillMaxWidth()
+                .height(figureHeight),
+        ) {
+            val h = size.height
+            val halfWidth = size.width / 2f
+            drawFigure(FRONT, Offset(halfWidth * 0.5f, 0f), h, fill, seed = 11)
+            drawFigure(BACK, Offset(halfWidth * 1.5f, 0f), h, fill, seed = 23)
+        }
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+            FigureLabel("FRONT", Modifier.weight(1f))
+            FigureLabel("BACK", Modifier.weight(1f))
+        }
+        Row(
+            Modifier.fillMaxWidth().padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(0.01, 1.0)), "FEWER SETS")
+            LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(1.0, 1.0)), "MORE SETS")
+            LegendKey(IronvellumColors.Bracket.copy(alpha = 0.55f), "NOT WORKED")
+        }
+    }
+}
+
 private fun DrawScope.drawFigure(
     regions: List<Region>,
     origin: Offset,
@@ -488,7 +570,12 @@ private fun Legend(modifier: Modifier = Modifier) {
             CoverageLevel.IN_RANGE to "IN RANGE",
             CoverageLevel.OVER to "OVER",
         ).forEach { (level, label) ->
-            LegendKey(levelColor(level).copy(alpha = 0.9f), label)
+            val swatch = if (level == CoverageLevel.UNDER) {
+                levelColor(level).copy(alpha = underAlpha(0.6, 0.0..1.0))
+            } else {
+                levelColor(level).copy(alpha = 0.9f)
+            }
+            LegendKey(swatch, label)
         }
     }
 }
