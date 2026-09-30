@@ -1798,6 +1798,10 @@ grant execute on function public.set_warband_goal(int) to authenticated;
 -- Identity follows the profile's own visibility: a bandmate whose profile the
 -- caller cannot view lists under the neutral handle, with level and worn
 -- title withheld, exactly as anywhere else in the app.
+-- The return row grew weekly_goal in schema 25, and create or replace cannot
+-- change a row type in place: drop the old shape first. Idempotent, and the
+-- function holds no data.
+drop function if exists public.my_warband();
 create or replace function public.my_warband()
 returns table (id uuid, name text, code text, owner_id uuid, weekly_goal int, members jsonb)
 language sql
