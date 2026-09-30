@@ -2,8 +2,10 @@ package com.ironvellum.app.ui.titles
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -19,8 +21,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -30,6 +30,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -68,6 +69,10 @@ import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.components.IronvellumTabPill
+import com.ironvellum.app.ui.components.InkPickerSheet
+import com.ironvellum.app.ui.components.plural
+import com.ironvellum.app.domain.ExerciseSearch
+import androidx.compose.ui.semantics.Role
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -289,10 +294,8 @@ fun TitlesScreen(
             color = IronvellumColors.SystemGreen,
         )
         Spacer(Modifier.height(12.dp))
-        // One persistent selector row: the three tabs, plus — only while the
-        // skill tree is open — the LINE toggle that hides the technique-line
-        // pills, so a second rail never stacks under the first.
-        var linesOpen by rememberSaveable { mutableStateOf(false) }
+        // One persistent selector row: the three tabs. The technique line is
+        // chosen from the bar below, which opens the shared picker sheet.
         Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -301,9 +304,6 @@ fun TitlesScreen(
             IronvellumTabPill("DEEDS", tab == TitlesTab.DEEDS) { tab = TitlesTab.DEEDS }
             IronvellumTabPill("SKILL TREE", tab == TitlesTab.TREE) { tab = TitlesTab.TREE }
             IronvellumTabPill("JOURNAL", tab == TitlesTab.JOURNAL) { tab = TitlesTab.JOURNAL }
-            if (tab == TitlesTab.TREE) {
-                LineFiltersButton(open = linesOpen) { linesOpen = !linesOpen }
-            }
         }
 
         if (tab == TitlesTab.JOURNAL) {
@@ -340,19 +340,13 @@ fun TitlesScreen(
                 color = IronvellumColors.InkMuted,
             )
             Spacer(Modifier.height(10.dp))
-            if (linesOpen) {
-                // Expanded state, not a second persistent rail: the pills only
-                // exist while the LINE toggle above is open.
-                Row(
-                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Skills.LINES.forEach { line ->
-                        IronvellumTabPill(line.uppercase(), line == treeLine) { treeLine = line }
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-            }
+            LinePickerBar(
+                line = treeLine,
+                selected = treeLine,
+                mastered = mastered,
+                onPick = { treeLine = it },
+            )
+            Spacer(Modifier.height(10.dp))
             SkillTreeGraph(
                 line = treeLine,
                 mastered = mastered,
@@ -428,49 +422,97 @@ fun TitlesScreen(
 private enum class TitlesTab { DEEDS, TREE, JOURNAL }
 
 /**
- * The one control that opens the technique-line pills, built like the exercise
- * picker's FILTERS button so both read as the same mechanism: a button, not a
- * second rail of tabs.
+ * The line selector as one bar: tapping it opens the shared picker sheet,
+ * the same pattern as the boards' lift picker. A toggle hiding a rail of
+ * pills made the tree's primary navigation feel like a buried filter.
  */
 @Composable
-private fun LineFiltersButton(open: Boolean, onClick: () -> Unit) {
-    val shape = MaterialTheme.shapes.small
+private fun LinePickerBar(line: String, selected: String, mastered: Set<String>, onPick: (String) -> Unit) {
+    var open by remember { mutableStateOf(false) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .heightIn(min = 44.dp)
-            .clip(shape)
-            .background(Brush.linearGradient(listOf(Color(0xFF141C18), Color(0xFF101714))))
-            .inkBorder(
-                if (open) IronvellumColors.SystemGreen else IronvellumColors.Rune,
-                shape,
-                1.dp,
-            )
-            .clickable(onClickLabel = if (open) "Hide technique lines" else "Show technique lines", onClick = onClick)
-            .padding(horizontal = 12.dp),
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
+            .inkBorder(IronvellumColors.SovereignGold, MaterialTheme.shapes.small, 1.dp)
+            .clickable(onClickLabel = "Choose a technique line") { open = true }
+            .padding(horizontal = 14.dp),
     ) {
-        Icon(
-            Icons.Outlined.Tune,
-            contentDescription = null,
-            tint = IronvellumColors.SystemGreen,
-            modifier = Modifier.size(18.dp),
-        )
-        Spacer(Modifier.width(8.dp))
         Text(
             "LINE",
-            style = MaterialTheme.typography.labelMedium,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            line.uppercase(),
+            style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = 1.sp,
+            color = IronvellumColors.SovereignGold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
         )
-        Spacer(Modifier.width(6.dp))
         Icon(
-            if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            Icons.Filled.KeyboardArrowDown,
             contentDescription = null,
-            tint = IronvellumColors.SystemGreen,
-            modifier = Modifier.size(18.dp),
+            tint = IronvellumColors.SovereignGold,
         )
+    }
+    if (!open) return
+
+    var query by remember { mutableStateOf("") }
+    // A line matches its own name and the names of its techniques, so
+    // "lever" finds the Lever line via Front Lever and friends.
+    val lines = Skills.LINES.mapNotNull { candidate ->
+        val names = listOf(candidate) + Skills.ALL.filter { it.line == candidate }.map { it.name }
+        names.mapNotNull { ExerciseSearch.rank(it, query) }.minOrNull()?.let { candidate to it }
+    }
+    val shown = if (query.isBlank()) lines.map { it.first } else lines.sortedBy { it.second }.map { it.first }
+    InkPickerSheet(
+        title = "CHOOSE A LINE",
+        onDismiss = { open = false },
+        query = query,
+        onQueryChange = { query = it },
+        searchLabel = "Search lines",
+        count = shown.size,
+    ) {
+        shown.forEach { candidate ->
+            val skills = Skills.ALL.filter { it.line == candidate }
+            val done = skills.count { it.name in mastered }
+            item(key = candidate) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .clip(MaterialTheme.shapes.small)
+                        .selectable(selected = candidate == selected, role = Role.RadioButton) {
+                            open = false
+                            onPick(candidate)
+                        }
+                        .padding(horizontal = 8.dp, vertical = 8.dp),
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            candidate,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = if (candidate == selected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (candidate == selected) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+                        )
+                        Text(
+                            plural(done, "1 mastered", "$done mastered") + " · ${skills.size} techniques",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = IronvellumColors.InkMuted,
+                        )
+                    }
+                }
+            }
+        }
     }
 }
 
