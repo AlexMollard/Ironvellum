@@ -229,6 +229,22 @@ object ProgramGenerator {
                     ?.metric != Skills.Metric.METRES
         }
 
+    /**
+     * [eligible] narrowed to what this lifter may be prescribed: a bodyweight
+     * progression more than a tier past the training age is out (a first
+     * year never gets a tier IV Dragon Flag). A hard filter, not a sort key:
+     * the deficit fill re-sorts by waste, and a slot with nothing easier
+     * degrades into the shortfall note instead (DEGRADE RULE). SKILL keeps
+     * the whole tree - its lifter asked for the progressions. Every week,
+     * session and improve selection reads this pool.
+     */
+    private fun prescribable(catalogue: List<Exercise>, request: ProgramRequest): List<Exercise> {
+        val pool = eligible(catalogue, request.equipment, request.focus, request.compoundOnly)
+        if (request.focus == TrainingFocus.SKILL) return pool
+        val ceiling = desiredBodyweightTier(request.volume) + 1
+        return pool.filter { it.isWeighted || MovementDifficulty.tier(it.name) <= ceiling }
+    }
+
     // ----------------------------------------------------------- session draft
 
     private class Draft(val day: Int?, val role: Role?) {
@@ -554,7 +570,7 @@ object ProgramGenerator {
     fun week(request: ProgramRequest, catalogue: List<Exercise>, strength: StrengthProfile): RoutinePlan {
         val days = request.daysPerWeek.coerceIn(1, 6)
         val split = request.split.takeIf { days in it.dayOptions } ?: TrainingSplit.forDays(days)
-        val pool = eligible(catalogue, request.equipment, request.focus, request.compoundOnly)
+        val pool = prescribable(catalogue, request)
         if (pool.isEmpty()) return RoutinePlan(emptyList())
         val ctx = Ctx(request, pool, strength, ProgramRules.exerciseCap(request.volume, request.maxExercises))
         val sessions = layout(split, days).map { (day, role) -> Draft(day, role) }
@@ -1247,7 +1263,7 @@ object ProgramGenerator {
         catalogue: List<Exercise>,
         strength: StrengthProfile,
     ): PlannedPreset? {
-        val pool = eligible(catalogue, request.equipment, request.focus, request.compoundOnly)
+        val pool = prescribable(catalogue, request)
         if (pool.isEmpty()) return null
         val ctx = Ctx(request, pool, strength, ProgramRules.exerciseCap(request.volume, request.maxExercises))
         val existing = ProgramRules.weeklyVolume(existingWeek)
@@ -1479,7 +1495,7 @@ object ProgramGenerator {
         catalogue: List<Exercise>,
         strength: StrengthProfile,
     ): Improvement {
-        val pool = eligible(catalogue, request.equipment, request.focus, request.compoundOnly)
+        val pool = prescribable(catalogue, request)
         val ctx = Ctx(request, pool, strength, ProgramRules.exerciseCap(request.volume, request.maxExercises))
         val changes = mutableListOf<PlanChange>()
         val result = mutableListOf<PlannedEntry>()

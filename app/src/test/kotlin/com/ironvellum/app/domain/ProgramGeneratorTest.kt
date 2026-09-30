@@ -1612,4 +1612,23 @@ class ProgramGeneratorTest {
         val legs = plan.presets.first { it.name.startsWith("Legs") }.entries.map { it.exerciseName }
         assertTrue("the hinge lost its only compound: $legs", "Romanian Deadlift" in legs)
     }
+
+    @Test
+    fun `a first year with no kit is never prescribed a bodyweight progression past tier III`() {
+        // The onboarding call: no history, male, every offered split. Dragon
+        // Flag (tier IV) once filled abs for LOW + NOTHING because it was the
+        // only floor ab movement in the pool; the abs now degrade honestly.
+        for (focus in TrainingFocus.entries - TrainingFocus.SKILL) for ((split, days) in TrainingSplit.OPTIONS) {
+            val plan = ProgramGenerator.week(
+                ProgramRequest(focus, VolumeLevel.LOW, Equipment.NOTHING, days, sex = Sex.MALE, split = split),
+                catalogue,
+                StrengthProfile(),
+            )
+            assertTrue("$focus $split $days built nothing", plan.presets.isNotEmpty())
+            val tooHard = entriesOf(plan)
+                .filter { !byName(it.exerciseName).isWeighted && MovementDifficulty.tier(it.exerciseName) > 3 }
+                .map { it.exerciseName }
+            assertTrue("$focus $split $days prescribed $tooHard", tooHard.isEmpty())
+        }
+    }
 }
