@@ -53,6 +53,9 @@ import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.WeightRecord
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.data.ProgramAnswersStore
+import com.ironvellum.app.domain.Equipment
+import com.ironvellum.app.ui.program.GearPicker
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
@@ -876,6 +879,32 @@ fun SettingsScreen(
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
+            )
+        }
+
+        // The same gear question the generator asks, stored in the same place,
+        // so changing it here moves the picker's MY GEAR filter and the next
+        // generated routine together.
+        val savedGear by ProgramAnswersStore.equipment.collectAsStateWithLifecycle()
+        LaunchedEffect(Unit) { ProgramAnswersStore.get(context.applicationContext) }
+        InkPanel(Modifier.fillMaxWidth()) {
+            Text(
+                "GEAR",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SystemGreen,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                if (savedGear == null) "Not set: the exercise picker shows everything." else "Filters the exercise picker and the routine generator.",
+                style = MaterialTheme.typography.labelSmall,
+                color = IronvellumColors.InkMuted,
+            )
+            Spacer(Modifier.height(10.dp))
+            GearPicker(
+                equipment = savedGear ?: Equipment.NOTHING,
+                onChange = { ProgramAnswersStore.saveEquipment(context.applicationContext, it) },
             )
         }
 

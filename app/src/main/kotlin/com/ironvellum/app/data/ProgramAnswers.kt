@@ -59,9 +59,17 @@ object ProgramAnswersStore {
     private const val KEY_MAX_EXERCISES = "maxExercises"
 
     private val _answers = MutableStateFlow<ProgramAnswers?>(null)
+    private val _equipment = MutableStateFlow<Equipment?>(null)
 
     /** Latest known answers, or null before the first read and when unset. */
     val answers: StateFlow<ProgramAnswers?> = _answers.asStateFlow()
+
+    /**
+     * The lifter's gear on its own. Settings can set it without the rest of
+     * the generator questions ever being answered, and the exercise picker's
+     * MY GEAR filter reads it; null until gear is first saved.
+     */
+    val equipment: StateFlow<Equipment?> = _equipment.asStateFlow()
 
     fun get(context: Context): ProgramAnswers? {
         val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -94,15 +102,18 @@ object ProgramAnswersStore {
             // value outside the range clamps rather than voiding the answers.
             val maxExercises = prefs.getInt(KEY_MAX_EXERCISES, ProgramRules.DEFAULT_MAX_EXERCISES)
                 .coerceIn(ProgramRules.MAX_EXERCISES_RANGE)
-            if (volume == null || split == null || focus == null || fullGym == null || days !in split.dayOptions) {
-                null
-            } else {
-                val equipment = Equipment(
-                    fullGym = fullGym,
+            _equipment.value = fullGym?.let {
+                Equipment(
+                    fullGym = it,
                     gear = gear ?: emptySet(),
                     dumbbellMaxKg = dumbbellMaxKg,
                     dumbbellPair = dumbbellPair ?: true,
                 )
+            }
+            val equipment = _equipment.value
+            if (volume == null || split == null || focus == null || equipment == null || days !in split.dayOptions) {
+                null
+            } else {
                 ProgramAnswers(volume, focus, equipment, days, priorities, split, compoundOnly, maxExercises)
             }
         }.getOrNull()
@@ -110,21 +121,32 @@ object ProgramAnswersStore {
         return parsed
     }
 
+    /** Gear only; the other answers are left as they are. */
+    fun saveEquipment(context: Context, equipment: Equipment) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putEquipment(equipment) }
+        _equipment.value = equipment
+        _answers.value = _answers.value?.copy(equipment = equipment)
+    }
+
+    private fun android.content.SharedPreferences.Editor.putEquipment(equipment: Equipment) {
+        putBoolean(KEY_FULL_GYM, equipment.fullGym)
+        putString(KEY_GEAR, equipment.gear.joinToString(",") { it.name })
+        equipment.dumbbellMaxKg?.let { putString(KEY_DUMBBELL_MAX, it.toString()) } ?: remove(KEY_DUMBBELL_MAX)
+        putBoolean(KEY_DUMBBELL_PAIR, equipment.dumbbellPair)
+    }
+
     fun save(context: Context, answers: ProgramAnswers) {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit {
             putString(KEY_VOLUME, answers.volume.name)
             putString(KEY_SPLIT, answers.split.name)
             putString(KEY_FOCUS, answers.focus.name)
-            putBoolean(KEY_FULL_GYM, answers.equipment.fullGym)
-            putString(KEY_GEAR, answers.equipment.gear.joinToString(",") { it.name })
-            answers.equipment.dumbbellMaxKg?.let { putString(KEY_DUMBBELL_MAX, it.toString()) }
-                ?: remove(KEY_DUMBBELL_MAX)
-            putBoolean(KEY_DUMBBELL_PAIR, answers.equipment.dumbbellPair)
+            putEquipment(answers.equipment)
             putInt(KEY_DAYS, answers.daysPerWeek)
             putString(KEY_PRIORITIES, answers.priorities.joinToString(",") { it.name })
             putBoolean(KEY_COMPOUND_ONLY, answers.compoundOnly)
             putInt(KEY_MAX_EXERCISES, answers.maxExercises.coerceIn(ProgramRules.MAX_EXERCISES_RANGE))
         }
         _answers.value = answers
+        _equipment.value = answers.equipment
     }
 }

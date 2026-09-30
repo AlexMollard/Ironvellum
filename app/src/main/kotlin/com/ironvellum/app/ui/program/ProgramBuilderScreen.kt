@@ -172,7 +172,10 @@ class ProgramBuilderViewModel(
         // while she had just answered STANDARD / MUSCLE. Applying a saved
         // answer counts as a deliberate choice, so the suggestVolume /
         // trainingMode fallbacks must not override it.
-        ProgramAnswersStore.get(appContext)?.let { saved ->
+        val savedAnswers = ProgramAnswersStore.get(appContext)
+        // Gear set in Settings counts even before the generator was ever run.
+        ProgramAnswersStore.equipment.value?.let { equipment.value = it }
+        savedAnswers?.let { saved ->
             if (!tierTouched) {
                 tierTouched = true
                 tier.value = saved.volume
