@@ -22,4 +22,6 @@
     <exclude domain="sharedpref" path="reminders.xml" />
     <!-- The notify mark and first-ask flag belong to this install's account and permission state. -->
     <exclude domain="sharedpref" path="inbox_notifier.xml" />
+    <!-- Paid-band-week flags are meaningless, and double-paying-adjacent, without the database. -->
+    <exclude domain="sharedpref" path="warband_payout.xml" />
 </full-backup-content>

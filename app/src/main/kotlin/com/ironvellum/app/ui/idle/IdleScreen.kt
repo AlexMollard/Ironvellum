@@ -112,7 +112,6 @@ import androidx.compose.ui.platform.LocalContext
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.domain.Warband
-import com.ironvellum.app.ui.components.plural
 
 
 /** What the figures earned while the app was closed, shown once on arrival. */
@@ -1206,10 +1205,12 @@ private fun rarityAccent(rarity: RewardRarity): Color = when (rarity) {
 private const val VAULT_ROWS = 12
 
 /**
- * The band's pooled week on the Garrison screen: "WARBAND · <name> · N workouts
- * this week", summed from the members' counts exactly like the ALLIES tab's
- * header. Hidden when signed out or bandless; a failed read hides the line —
- * it is decoration here, and the ALLIES tab carries the honest error state.
+ * The band's pooled week on the Garrison screen: "WARBAND · <name> · N / goal
+ * this week" over the same progress rail the ALLIES header uses, at a smaller
+ * stroke. Summed from the members' counts exactly like that header, and a
+ * crossed goal adds the gold GOAL MET mark. Hidden when signed out or
+ * bandless; a failed read hides the line — it is decoration here, and the
+ * ALLIES tab carries the honest error state.
  * One read per screen entry; nothing keeps it fresh while the screen is closed.
  */
 @Composable
@@ -1225,14 +1226,24 @@ private fun WarbandBannerLine() {
     }
     band?.let { b ->
         val total = b.members.sumOf { it.workoutsThisWeek }
-        Text(
-            "WARBAND · ${b.name} · $total ${plural(total, "workout", "workouts")} this week",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
-            letterSpacing = IronvellumTracking.InlineLabel,
-            modifier = Modifier.padding(top = 2.dp),
-        )
+        // Goal absent (an older server answer) falls back to the Warband default silently.
+        val goal = b.weeklyGoal.coerceAtLeast(1)
+        val met = total >= goal
+        Column(Modifier.padding(top = 2.dp)) {
+            Text(
+                "WARBAND · ${b.name} · $total / $goal this week" + if (met) " · GOAL MET" else "",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = if (met) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            )
+            InkRail(
+                fraction = (total.toFloat() / goal).coerceIn(0f, 1f),
+                modifier = Modifier.padding(top = 3.dp),
+                height = 3.dp,
+                seed = b.id.hashCode(),
+            )
+        }
     }
 }

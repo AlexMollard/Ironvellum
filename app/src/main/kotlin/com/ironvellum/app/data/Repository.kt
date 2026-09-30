@@ -76,6 +76,7 @@ import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.UnlockedTitle
+import com.ironvellum.app.domain.Warband
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.WorkoutSession
@@ -2515,6 +2516,41 @@ class Repository(
     /** `shadows` is the on-disk column name; `figures` is what the app calls it now. */
     private fun IdleStateEntity.toIdleState() =
         IdleState(essence = essence, figures = shadows, relicMultiplier = relicMultiplier, lastCollectedAtMs = lastCollectedAtMs)
+
+    /**
+     * Pays the band's weekly-goal bonus when it is owed: the XP lands in the
+     * local profile through the same [Xp] plumbing a completed session uses
+     * (zero server writes), and the once-per-band+week flag flips in the same
+     * call, so a re-read or re-render can never pay twice. Returns the XP
+     * paid, or null when nothing is owed.
+     */
+    suspend fun maybePayBandGoalBonus(
+        band: Warband,
+        myUserId: String,
+        payoutStore: WarbandGoalPayoutStore,
+    ): Int? {
+        val weekKey = WarbandGoalPayout.isoWeekKey()
+        val mine = band.members.firstOrNull { it.userId == myUserId }?.workoutsThisWeek ?: 0
+        val total = band.members.sumOf { it.workoutsThisWeek }
+        if (!WarbandGoalPayout.owes(
+                bandId = band.id,
+                weekKey = weekKey,
+                total = total,
+                goal = band.weeklyGoal,
+                contributed = mine,
+                paidKeys = if (payoutStore.hasPaid(band.id, weekKey)) {
+                    setOf(WarbandGoalPayout.payoutKey(band.id, weekKey))
+                } else {
+                    emptySet()
+                },
+            )
+        ) {
+            return null
+        }
+        profileDao.addXp(WarbandGoalPayout.BONUS_XP.toLong())
+        payoutStore.markPaid(band.id, weekKey)
+        return WarbandGoalPayout.BONUS_XP
+    }
 
     companion object {
         /**

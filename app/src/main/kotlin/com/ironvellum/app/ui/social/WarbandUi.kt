@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
 import androidx.compose.material3.AlertDialog
@@ -28,6 +30,7 @@ import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.text.KeyboardOptions
@@ -40,18 +43,26 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.widget.Toast
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Warband
 import com.ironvellum.app.domain.WarbandMember
+import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.WarbandGoalPayoutStore
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.AccountRepository
+import com.ironvellum.app.ui.components.Achievement
+import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
+import com.ironvellum.app.ui.ironvellumRepository
+import com.ironvellum.app.ui.program.TapPad
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -74,6 +85,8 @@ import kotlinx.coroutines.launch
 data class WarbandUiState(
     val signedIn: Boolean = false,
     val warband: Warband? = null,
+    /** The signed-in lifter's id — decides who sees the goal EDIT affordance. */
+    val myUserId: String? = null,
     val loading: Boolean = false,
     /** Failure of the band READ; the panel offers a retry. */
     val error: String? = null,
@@ -81,14 +94,18 @@ data class WarbandUiState(
     val actionBusy: Boolean = false,
     /** A server REFUSAL of the last action (full band, already in one, bad code) — inline, never a toast-only. */
     val actionError: String? = null,
+    /** XP just paid for the band's weekly goal — shown once, then cleared. */
+    val payoutXp: Int? = null,
 )
 
 class WarbandViewModel(
     private val cloudSync: CloudSync,
-    accountRepo: AccountRepository,
+    private val accountRepo: AccountRepository,
+    private val repository: Repository,
+    private val payoutStore: WarbandGoalPayoutStore,
 ) : ViewModel() {
 
-    private val _ui = MutableStateFlow(WarbandUiState(signedIn = accountRepo.account.value != null))
+    private val _ui = MutableStateFlow(WarbandUiState(signedIn = accountRepo.account.value != null, myUserId = accountRepo.account.value?.userId))
     val ui = _ui.asStateFlow()
 
     private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
@@ -100,7 +117,7 @@ class WarbandViewModel(
         viewModelScope.launch {
             accountRepo.account.collect { account ->
                 val was = _ui.value.signedIn
-                _ui.value = _ui.value.copy(signedIn = account != null)
+                _ui.value = _ui.value.copy(signedIn = account != null, myUserId = account?.userId)
                 when {
                     account != null && !was -> load()
                     account == null -> _ui.value = WarbandUiState(signedIn = false)
@@ -115,11 +132,25 @@ class WarbandViewModel(
         viewModelScope.launch {
             _ui.value = _ui.value.copy(loading = true, error = null)
             cloudSync.warband()
-                .onSuccess { band -> _ui.value = _ui.value.copy(warband = band) }
+                .onSuccess { band -> onBand(band) }
                 .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
             _ui.value = _ui.value.copy(loading = false)
         }
     }
+
+    /**
+     * Records the band and, when this lifter contributed to a met weekly goal,
+     * pays the once-per-band+week bonus; the overlay reads [WarbandUiState.payoutXp].
+     */
+    private suspend fun onBand(band: Warband?) {
+        _ui.value = _ui.value.copy(warband = band)
+        val me = band?.members?.firstOrNull { it.userId == _ui.value.myUserId } ?: return
+        repository.maybePayBandGoalBonus(band, me.userId, payoutStore)?.let { xp ->
+            _ui.value = _ui.value.copy(payoutXp = xp)
+        }
+    }
+
+    fun setGoal(goal: Int) = act { cloudSync.setWarbandGoal(goal) }
 
     fun create(name: String) = act { cloudSync.createWarband(name) }
 
@@ -140,7 +171,7 @@ class WarbandViewModel(
                     // failed refetch must not leave the pre-action roster up
                     // as if the action never happened.
                     cloudSync.warband(force = true)
-                        .onSuccess { fresh -> _ui.value = _ui.value.copy(warband = fresh) }
+                        .onSuccess { fresh -> onBand(fresh) }
                         .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
                 }
                 .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
@@ -151,6 +182,11 @@ class WarbandViewModel(
     /** The dialogs' refusals are transient context: dismissing them clears the message. */
     fun dismissActionError() {
         _ui.value = _ui.value.copy(actionError = null)
+    }
+
+    /** The payout overlay is a one-shot moment: dismissed once acknowledged. */
+    fun dismissPayout() {
+        _ui.value = _ui.value.copy(payoutXp = null)
     }
 }
 
@@ -163,13 +199,25 @@ class WarbandViewModel(
 @Composable
 fun WarbandSection(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
-    viewModel: WarbandViewModel = viewModel(
-        factory = viewModelFactory {
-            initializer { WarbandViewModel(ironvellumCloudSync(), ironvellumAccount()) }
-        },
-    ),
+    viewModel: WarbandViewModel? = null,
 ) {
-    val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val app = LocalContext.current.applicationContext
+    // The store needs an application context, which a CreationExtras factory
+    // cannot see — the caller may inject a view model (previews, tests), so
+    // the default is built here where the context is composable-readable.
+    val vm = viewModel ?: viewModel(
+        factory = viewModelFactory {
+            initializer {
+                WarbandViewModel(
+                    ironvellumCloudSync(),
+                    ironvellumAccount(),
+                    ironvellumRepository(),
+                    WarbandGoalPayoutStore.from(app),
+                )
+            }
+        },
+    )
+    val ui by vm.ui.collectAsStateWithLifecycle()
     if (!ui.signedIn) return
     // Locals, not the delegated property: the leave dialog and the error
     // branch need a stable, smart-castable band/error for one composition.
@@ -180,6 +228,7 @@ fun WarbandSection(
     var showCreate by remember { mutableStateOf(false) }
     var showJoin by remember { mutableStateOf(false) }
     var confirmLeave by remember { mutableStateOf(false) }
+    var showGoalEditor by remember { mutableStateOf(false) }
 
     when {
         band == null && ui.loading -> InkPanel(Modifier.fillMaxWidth()) {
@@ -196,7 +245,7 @@ fun WarbandSection(
         band == null && loadError != null -> Column(Modifier.fillMaxWidth()) {
             SocialErrorBanner(loadError)
             Spacer(Modifier.height(4.dp))
-            SocialRefreshLink(onClick = viewModel::load, label = "Try again")
+            SocialRefreshLink(onClick = vm::load, label = "Try again")
         }
         else -> {
             if (band == null) {
@@ -211,8 +260,10 @@ fun WarbandSection(
                     band = band,
                     busy = ui.actionBusy,
                     error = actionError,
+                    isOwner = band.ownerId == ui.myUserId,
                     onOpenLifter = onOpenLifter,
                     onLeave = { confirmLeave = true },
+                    onEditGoal = { showGoalEditor = true },
                 )
             }
         }
@@ -222,9 +273,9 @@ fun WarbandSection(
         CreateWarbandDialog(
             busy = ui.actionBusy,
             error = actionError,
-            onCreate = viewModel::create,
+            onCreate = vm::create,
             onDismiss = {
-                viewModel.dismissActionError()
+                vm.dismissActionError()
                 showCreate = false
             },
         )
@@ -233,9 +284,9 @@ fun WarbandSection(
         JoinWarbandDialog(
             busy = ui.actionBusy,
             error = actionError,
-            onJoin = viewModel::join,
+            onJoin = vm::join,
             onDismiss = {
-                viewModel.dismissActionError()
+                vm.dismissActionError()
                 showJoin = false
             },
         )
@@ -258,12 +309,40 @@ fun WarbandSection(
             confirmButton = {
                 IronvellumButton(label = "Leave", onClick = {
                     confirmLeave = false
-                    viewModel.leave()
+                    vm.leave()
                 })
             },
             dismissButton = {
                 IronvellumButton(label = "Stay", onClick = { confirmLeave = false }, quiet = true)
             },
+        )
+    }
+    if (showGoalEditor && band != null) {
+        GoalEditorDialog(
+            busy = ui.actionBusy,
+            error = actionError,
+            goal = band.weeklyGoal,
+            onSave = {
+                showGoalEditor = false
+                vm.setGoal(it)
+            },
+            onDismiss = {
+                vm.dismissActionError()
+                showGoalEditor = false
+            },
+        )
+    }
+    ui.payoutXp?.let { xp ->
+        AchievementOverlay(
+            items = listOf(
+                Achievement(
+                    banner = "BAND GOAL MET",
+                    name = band?.name ?: "The band",
+                    tagline = "The band hit its weekly goal and you pulled your weight.",
+                    xp = xp,
+                ),
+            ),
+            onDone = vm::dismissPayout,
         )
     }
 }
@@ -304,8 +383,10 @@ private fun WarbandRoster(
     band: Warband,
     busy: Boolean,
     error: String?,
+    isOwner: Boolean,
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onLeave: () -> Unit,
+    onEditGoal: () -> Unit,
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
@@ -314,6 +395,9 @@ private fun WarbandRoster(
     // The week header is the client summing the members' counts — the server
     // does not hand back a total.
     val total = band.members.sumOf { it.workoutsThisWeek }
+    // Goal absent (an older server answer) falls back to the Warband default silently.
+    val goal = band.weeklyGoal.coerceAtLeast(1)
+    val met = total >= goal
     val monday = remember { weekMondayLabel() }
 
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
@@ -324,7 +408,32 @@ private fun WarbandRoster(
             fontWeight = FontWeight.Bold,
             color = IronvellumColors.Ink,
         )
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(6.dp))
+        // The weekly challenge: the band's progress toward the owner's goal.
+        // At goal the rail reads full and the mark turns gold — the moment the
+        // payout overlay fires for contributors.
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            InkRail(
+                fraction = (total.toFloat() / goal).coerceIn(0f, 1f),
+                modifier = Modifier.weight(1f),
+                height = 8.dp,
+                seed = band.id.hashCode(),
+            )
+            Text(
+                if (met) "GOAL MET" else "$total / $goal this week",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = if (met) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            )
+            if (isOwner) {
+                // 44dp minimum touch target via TapPad; the label is announced
+                // with the current goal so a screen reader hears what it edits.
+                TapPad("EDIT", "Change the weekly goal, currently $goal") { onEditGoal() }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 "CODE ${band.code}",
@@ -339,8 +448,18 @@ private fun WarbandRoster(
                 }
                 Toast.makeText(context, "Band code copied", Toast.LENGTH_SHORT).show()
             }
+            RowAction("SHARE", IronvellumColors.SystemGreen) {
+                val intent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        "Join my Ironvellum band ${band.name} — code ${band.code}",
+                    )
+                }
+                context.startActivity(Intent.createChooser(intent, "Share band"))
+            }
         }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(8.dp))
         Text(
             "Week of $monday · $total ${plural(total, "workout", "workouts")} across the band",
             style = MaterialTheme.typography.labelMedium,
@@ -351,7 +470,12 @@ private fun WarbandRoster(
         Spacer(Modifier.height(8.dp))
         // Members render oldest first (the server's order), the owner wears a mark.
         band.members.forEach { member ->
-            WarbandMemberRow(member = member, isOwner = member.userId == band.ownerId, onOpenLifter = onOpenLifter)
+            WarbandMemberRow(
+                member = member,
+                isOwner = member.userId == band.ownerId,
+                goal = goal,
+                onOpenLifter = onOpenLifter,
+            )
         }
         Spacer(Modifier.height(12.dp))
         IronvellumButton(label = "Leave", onClick = onLeave, enabled = !busy, quiet = true)
@@ -363,6 +487,7 @@ private fun WarbandRoster(
 private fun WarbandMemberRow(
     member: WarbandMember,
     isOwner: Boolean,
+    goal: Int,
     onOpenLifter: (userId: String, displayName: String) -> Unit,
 ) {
     Row(
@@ -398,6 +523,14 @@ private fun WarbandMemberRow(
                     color = if (member.workoutsThisWeek >= 1) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
                 )
             }
+            // The member's share of the week's goal, on the same rail language
+            // as the band's own progress — a slim stroke, not a second counter.
+            InkRail(
+                fraction = (member.workoutsThisWeek.toFloat() / goal).coerceIn(0f, 1f),
+                modifier = Modifier.width(96.dp),
+                height = 3.dp,
+                seed = member.userId.hashCode(),
+            )
             member.lastWorkoutAtMs?.let { ms ->
                 Text(
                     relativeTime(ms),
@@ -532,6 +665,72 @@ private fun JoinWarbandDialog(
         },
     )
 }
+
+/**
+ * The owner's weekly-goal editor: a 5–50 stepper, no free-text field, so the
+ * value can never leave the server's accepted range. A refused save comes
+ * back through [error] and renders inline, like the other band dialogs.
+ */
+@Composable
+private fun GoalEditorDialog(
+    busy: Boolean,
+    error: String?,
+    goal: Int,
+    onSave: (goal: Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var value by remember { mutableStateOf(goal) }
+
+    AlertDialog(
+        shape = MaterialTheme.shapes.medium,
+        containerColor = Color(0xFF0D1110),
+        onDismissRequest = onDismiss,
+        title = { Text("Weekly goal") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Workouts the whole band aims for this week.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                ) {
+                    TapPad("−", "Lower the weekly goal, currently $value") {
+                        value = (value - 1).coerceIn(GOAL_RANGE.first, GOAL_RANGE.last)
+                    }
+                    Text(
+                        "$value",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = IronvellumColors.Ink,
+                        modifier = Modifier.widthIn(min = 48.dp),
+                        textAlign = TextAlign.Center,
+                    )
+                    TapPad("+", "Raise the weekly goal, currently $value") {
+                        value = (value + 1).coerceIn(GOAL_RANGE.first, GOAL_RANGE.last)
+                    }
+                }
+                InlineActionError(error)
+            }
+        },
+        confirmButton = {
+            IronvellumButton(
+                label = "Save",
+                onClick = { onSave(value) },
+                enabled = !busy,
+            )
+        },
+        dismissButton = {
+            IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true, enabled = !busy)
+        },
+    )
+}
+
+/** The server's accepted goal range (CloudSync.setWarbandGoal mirrors it). */
+private val GOAL_RANGE = 5..50
 
 /** The server's alphabet is unambiguous (no 0/O/1/I/L), so a run of 8 of those is a code. */
 private val CODE_CANDIDATE = Regex("[2-9A-HJ-NP-Z]{8}")
