@@ -8,6 +8,9 @@
     <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
     <uses-permission android:name="android.permission.health.READ_RESTING_HEART_RATE" />
+    <!-- Lets step reads reach data recorded before the app was installed;
+         requested from Settings alongside the data reads. -->
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_HISTORY" />
     <!-- Lets the Health Connect read run from a background worker, not only
          while the app is open; requested from Settings. -->
     <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />

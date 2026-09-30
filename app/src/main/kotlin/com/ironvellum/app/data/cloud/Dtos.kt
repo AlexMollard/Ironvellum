@@ -268,7 +268,7 @@ data class FeedEntry(
     val currentTitleId: String?,
     val likeCount: Int,
     val likedByMe: Boolean,
-    /** Up to 3 heaviest-volume movements, " · "-joined; null for pre-migration sessions. */
+    /** Up to 3 heaviest-volume movements, " · "-joined; null for archives written before this column. */
     val topMovements: String?,
     /**
      * Headline set like "8 x 80.0 kg" or "6 x BW". Null when the hunt had no

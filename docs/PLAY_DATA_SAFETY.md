@@ -47,8 +47,10 @@ Code references:
 
 ### Fitness info — Health Connect data (NOT collected)
 - The app **reads** steps, distance, active calories, sleep, resting heart
-  rate, weight, body fat from Health Connect (`AM`, 7 `READ_*` permissions;
-  `HS`). These reads stay **on the device** (stored in the local `health_days`
+  rate, weight, body fat from Health Connect (`AM`, 7 `READ_*` data
+  permissions plus `READ_HEALTH_DATA_HISTORY`, which widens step reads to
+  data recorded before the app was installed; `HS`). These reads stay **on
+  the device** (stored in the local `health_days`
   Room table, `RP.syncHealthHistory`). They are **never uploaded** — the cloud
   schema has no table for them, and `push()` sends none of them.
 - Data Safety: declare as **not collected, not shared**. But you MUST complete
@@ -133,8 +135,9 @@ Code references:
   owner retains cloud data for inactive accounts is not encoded anywhere; the
   privacy policy currently says "while the project exists". Confirm or amend.
 - **Q5 — Health Connect permissions declaration:** the Google Health Connect
-  API Request form must have been submitted for these seven data types before
-  shipping; whether it has been is unknown from the repo. Open.
+  API Request form must have been submitted for these seven data types (the
+  history scope needs no separate data type — it widens the steps read)
+  before shipping; whether it has been is unknown from the repo. Open.
 
 ## Policy sources (checked 2026-09-15)
 

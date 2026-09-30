@@ -269,18 +269,17 @@ object Cloud {
             // migration, so it is shown as is — "try again" would send them
             // straight back into the same limit.
             "P0001" -> error.error.ifBlank { "The cloud refused this request — try again" }
-            // Written for the board's migration 0008, but these codes
-            // mean "that table, column or function is not there" for ANY
-            // feature — it named the wrong one the moment cloud_archives
-            // (0013) was absent and a failed BACKUP blamed the leaderboard.
+            // These codes mean "that table, column or function is not there"
+            // for ANY feature — naming one feature was wrong the moment
+            // cloud_archives landed and a failed BACKUP blamed the board.
             // PostgREST answers a missing table with PGRST205, a missing
             // column with PGRST204 and a missing FUNCTION with PGRST202, all
             // from its schema cache — the raw Postgres codes only surface
             // when the statement actually reaches the database.
             //
-            // PGRST202 was absent, so an unapplied 0011 made push_aggregates
-            // report "try again" and the lifter retried forever while their
-            // level sat frozen on the board.
+            // A half-applied baseline once left push_aggregates missing, so
+            // PGRST202 made it report "try again" and the lifter retried
+            // forever while their level sat frozen on the board.
             "42703", "42P01", "PGRST202", "PGRST204", "PGRST205" ->
                 "This part of the cloud is not set up yet — its database migration has not been applied"
             else -> "The cloud refused this request — try again"
