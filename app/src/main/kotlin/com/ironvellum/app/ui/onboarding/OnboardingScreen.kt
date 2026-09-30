@@ -534,7 +534,8 @@ private fun StepHeader(step: Int, onSkip: () -> Unit) {
             StepRunes(step, Modifier.weight(1f))
             Box(
                 Modifier
-                    .heightIn(min = 40.dp)
+                    .heightIn(min = 48.dp)
+                    .widthIn(min = 64.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
                     .clickable(onClick = onSkip)
                     .semantics {

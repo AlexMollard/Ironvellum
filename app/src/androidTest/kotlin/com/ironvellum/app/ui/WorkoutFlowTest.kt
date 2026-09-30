@@ -197,7 +197,7 @@ class WorkoutFlowTest {
 
     /** "0 / 17 sets conquered" -> 0 */
     private fun conqueredCount(): Int {
-        val line = allText().firstOrNull { it.contains("sets conquered") }
+        val line = allText().firstOrNull { it.contains(" conquered") }
             ?: error("the session screen must show the conquered count")
         return line.substringBefore('/').trim().toInt()
     }

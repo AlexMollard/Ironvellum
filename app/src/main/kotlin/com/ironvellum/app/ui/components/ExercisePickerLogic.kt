@@ -33,14 +33,14 @@ internal fun gearFits(exercise: Exercise, equipment: Equipment?): Boolean =
 
 /**
  * One pass over the catalogue.
- *
  * Results sort favourites first, then (under a query) by
  * [ExerciseSearch.rank] and name, or (no query) by muscle group and name.
  * FAVOURITES and RECENT only pin when nothing narrows the list: under a
  * query or a content chip they would float above rows that already answer
- * the question. Recents keep their most-recent-first order and are NOT
- * re-sorted; ids the catalogue no longer has drop out silently. Pinned rows
- * still respect the gear filter, so "All gear" is the one way to see them all.
+ * the question. A pinned row is left out of the groups below, so no
+ * exercise shows twice. Recents keep their most-recent-first order and are
+ * NOT re-sorted; ids the catalogue no longer has drop out silently. Pinned
+ * rows still respect the gear filter, so "All gear" is the one way to see them all.
  */
 internal fun buildPickerView(
     exercises: List<Exercise>,
@@ -75,12 +75,13 @@ internal fun buildPickerView(
     val byId = if (pinned) exercises.associateBy { it.id } else emptyMap()
     val favourites = if (pinned) ordered.filter { it.id in favouriteIds } else emptyList()
     val recents = if (pinned) {
-        recentIds.distinct().mapNotNull { byId[it] }.filter { it.id in visible }
+        recentIds.distinct().mapNotNull { byId[it] }.filter { it.id in visible && it.id !in favouriteIds }
     } else {
         emptyList()
     }
+    val shown = (favourites + recents).mapTo(HashSet()) { it.id }
     val grouped = activityCategoryOrder(exercises)
-        .map { c -> c to ordered.filter { it.category == c } }
+        .map { c -> c to ordered.filter { it.category == c && it.id !in shown } }
         .filter { (_, list) -> list.isNotEmpty() }
     return PickerView(favourites, recents, grouped, ordered.size)
 }

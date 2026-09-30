@@ -376,7 +376,7 @@ class AccessibilityChecksTest {
             listOf("Stats", "DETAIL"),
             listOf("Stats", "TRAINING"),
             listOf("Stats", "DAILY"),
-            listOf("Train", "EXPLORER"),
+            listOf("Train", "EXERCISES"),
             listOf("Train", "FULL LOG"),
             // Two levels down, and the densest screens in the app: the skill
             // sheet and the preset editor are wall-to-wall glyph steppers,

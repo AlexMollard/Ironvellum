@@ -231,7 +231,7 @@ fun PresetsScreen(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 NavChip(
-                    label = "EXPLORER",
+                    label = "EXERCISES",
                     icon = Icons.Outlined.FitnessCenter,
                     onClick = onOpenExercises,
                     modifier = Modifier.weight(1f),

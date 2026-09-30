@@ -195,7 +195,7 @@ fun ExercisePickerPanel(
     val view = pickerView(exercises, controls, data)
     Column(modifier.fillMaxWidth()) {
         Text(
-            "${view.count}",
+            plural(view.count, "1 exercise", "${view.count} exercises"),
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.align(Alignment.End),

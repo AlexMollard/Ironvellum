@@ -433,7 +433,8 @@ private fun ClosestDeedCard(def: TitleDef, progress: Titles.Progress) {
         ProgressTrack(progress.fraction, tall = false)
         Spacer(Modifier.height(4.dp))
         Text(
-            "${progress.current} / ${progress.target} · ${progress.remaining} ${progress.unit} to go",
+            "${progress.current} / ${progress.target} · ${progress.remaining} " +
+                "${if (progress.unit == "level" && progress.remaining != 1L) "levels" else progress.unit} to go",
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SovereignGold,

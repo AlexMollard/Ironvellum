@@ -851,6 +851,8 @@ fun SettingsScreen(
             )
         }
 
+        Spacer(Modifier.height(14.dp))
+
         InkPanel(Modifier.fillMaxWidth()) {
             Text(
                 "TRAINING MODE",
@@ -881,6 +883,8 @@ fun SettingsScreen(
                 color = IronvellumColors.InkMuted,
             )
         }
+
+        Spacer(Modifier.height(14.dp))
 
         // The same gear question the generator asks, stored in the same place,
         // so changing it here moves the picker's MY GEAR filter and the next

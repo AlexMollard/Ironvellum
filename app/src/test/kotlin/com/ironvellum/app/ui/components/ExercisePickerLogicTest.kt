@@ -52,7 +52,11 @@ class ExercisePickerLogicTest {
         )
         val unfiltered = buildPickerView(list, "", PickerFilters(), null, emptyList(), setOf(3L))
         assertEquals(listOf(3L), unfiltered.favourites.map { it.id })
-        assertEquals("favourite leads its group", listOf(3L, 1L, 2L), unfiltered.grouped.single().second.map { it.id })
+        assertEquals("a pinned favourite is not repeated below", listOf(1L, 2L), unfiltered.grouped.single().second.map { it.id })
+        val withRecent = buildPickerView(list, "", PickerFilters(), null, listOf(3L, 1L), setOf(3L))
+        assertEquals("recent skips what FAVOURITES already shows", listOf(1L), withRecent.recents.map { it.id })
+        assertEquals(listOf(2L), withRecent.grouped.single().second.map { it.id })
+        assertEquals("count stays the number of distinct matches", 3, withRecent.count)
 
         val searched = buildPickerView(list, "up", PickerFilters(), null, emptyList(), setOf(3L))
         assertTrue("no pinned section under a query", searched.favourites.isEmpty())

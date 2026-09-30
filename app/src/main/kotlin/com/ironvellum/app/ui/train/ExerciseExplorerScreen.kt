@@ -134,7 +134,7 @@ fun ExerciseExplorerScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "EXERCISE RECORDS",
+                "EXERCISES",
                 style = MaterialTheme.typography.labelLarge,
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = 6.sp,

@@ -77,7 +77,7 @@ class PresetAutoFillTest {
 
         // Auto-filled sets are what the lifter then edits, so the session has
         // to arrive with set rows rather than an empty shell.
-        val conquered = driver.awaitAnyText { it.contains("sets conquered") }
+        val conquered = driver.awaitAnyText { it.contains(" conquered") }
         val total = conquered.substringAfter('/').trim().takeWhile { it.isDigit() }.toIntOrNull() ?: 0
         assertTrue("an auto-filled session must contain sets, saw \"$conquered\"", total > 0)
     }

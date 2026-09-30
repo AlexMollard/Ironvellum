@@ -121,7 +121,7 @@ data class LiftsBoardUi(
 /** Which board the BOARD tab shows; the muster roll is deliberately a separate board, not a metric. */
 private enum class Board(val label: String) {
     Training("TRAINING"),
-    Lifts("LIFTS"),
+    Lifts("STRENGTH"),
     Muster("GARRISON"),
 }
 
@@ -1358,12 +1358,12 @@ private fun LiftRankRow(
     }
 }
 
-/** The board answered, but nobody is ranked on this lift in this window. */
+/** The board answered, but nobody is ranked on it in this window. */
 @Composable
 private fun LiftEmptyPanel(onRefresh: () -> Unit) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
         Text(
-            "No allies ranked on this lift yet — log it to claim a tier.",
+            "No allies ranked here yet — log one of its exercises to claim a spot.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )

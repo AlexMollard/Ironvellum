@@ -117,6 +117,7 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.launchGuarded
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -516,7 +517,7 @@ fun SessionScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "$doneCount / ${ui.sets.size} sets conquered",
+                "$doneCount / ${ui.sets.size} ${plural(ui.sets.size, "set", "sets")} conquered",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -1708,6 +1709,9 @@ private fun SessionNotesEditor(
     var title by rememberSaveable(session.id) { mutableStateOf(session.title) }
     var publicNote by rememberSaveable(session.id) { mutableStateOf(session.note) }
     var privateNote by rememberSaveable(session.id) { mutableStateOf(session.privateNote) }
+    // Signed out there is no feed: saying "shown on the feed" would be false.
+    val signedIn = (LocalContext.current.applicationContext as com.ironvellum.app.IronvellumApp)
+        .accountRepository.account.collectAsStateWithLifecycle().value != null
 
     InkPanel(accent = IronvellumColors.SovereignGold) {
         Text(
@@ -1727,7 +1731,7 @@ private fun SessionNotesEditor(
             label = {
                 FieldLabel(
                     icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.SovereignGold) },
-                    text = "TITLE · optional, shown on the feed",
+                    text = if (signedIn) "TITLE · optional, shown on the feed" else "TITLE · optional",
                     color = IronvellumColors.SovereignGold,
                 )
             },
@@ -1748,7 +1752,7 @@ private fun SessionNotesEditor(
             label = {
                 FieldLabel(
                     icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.SystemGreen) },
-                    text = "PUBLIC NOTE · every lifter on the feed can read this",
+                    text = if (signedIn) "PUBLIC NOTE · every lifter on the feed can read this" else "NOTE · shared with allies once you sign in",
                     color = IronvellumColors.SystemGreen,
                 )
             },

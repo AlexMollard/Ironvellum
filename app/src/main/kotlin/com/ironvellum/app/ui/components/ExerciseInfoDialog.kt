@@ -81,6 +81,9 @@ internal fun ExerciseInfoDialog(
                     // The coverage screen's figure and MAIN / ASSIST lines, so
                     // an exercise reads the same wherever the lifter asks.
                     ExerciseMuscles(shares, Modifier.fillMaxWidth(), figureHeight = 180.dp)
+                } else {
+                    InfoHeading("MUSCLES")
+                    InfoBody("No muscle data for this exercise yet.", IronvellumColors.InkMuted)
                 }
                 if (gear.isNotEmpty()) {
                     InfoHeading("GEAR")
@@ -94,14 +97,15 @@ internal fun ExerciseInfoDialog(
                     skill.requires?.let { InfoBody("Needs $it first", IronvellumColors.InkMuted) }
                 }
                 if (boards.isNotEmpty()) {
-                    InfoHeading("STRENGTH BOARD")
+                    InfoHeading("ALLY STRENGTH BOARD")
                     boards.forEach { board ->
-                        val detail = if (board.lift.kind == LiftKind.LADDER && board.rung != null) {
-                            " · rung ${board.rung} of ${board.rungCount}"
-                        } else {
-                            ""
-                        }
-                        InfoBody("${board.lift.label}$detail")
+                        InfoBody(
+                            if (board.lift.kind == LiftKind.LADDER && board.rung != null) {
+                                "${board.lift.label} board — rung ${board.rung} of ${board.rungCount}"
+                            } else {
+                                "Counts toward the ${board.lift.label.lowercase()} board"
+                            },
+                        )
                     }
                 }
                 if (lastLine != null) {
