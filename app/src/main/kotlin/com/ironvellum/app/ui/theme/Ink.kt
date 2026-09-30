@@ -377,12 +377,14 @@ fun DrawScope.inkRail(
     }
     // Track and fill are each ONE filled shape whose top and bottom edges
     // wander. They used to be chains of round-capped lines with a random width
-    // per link: neighbouring links differed in weight, so each cap bulged past
-    // its joint and the bar read as a row of lumps.
+    // per link, so neighbouring links differed in weight and each cap bulged past
+    // its joint: the bar read as a row of lumps.
+    // ONE seed for both shapes: the fill's edge must wander exactly with the
+    // track it overlays, or the track peeks out along the fill as a seam.
     if (track.alpha > 0f) drawPath(railPath(size.width, h, mid, seed, taper = false), color = track)
     if (fraction <= 0f) return
     val end = size.width * fraction.coerceIn(0f, 1f)
-    drawPath(railPath(end, h, mid, seed * 31 + 7, taper = true), brush = fill)
+    drawPath(railPath(end, h, mid, seed, taper = true), brush = fill)
 }
 
 /**

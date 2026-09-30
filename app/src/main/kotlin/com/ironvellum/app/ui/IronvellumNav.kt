@@ -457,7 +457,10 @@ fun IronvellumRoot(inboxRequest: Int = 0) {
                 }
                 composable(Routes.TITLES) { TitlesScreen() }
                 composable(Routes.SETTINGS) {
-                    SettingsScreen(onOpenSupport = { navController.navigate(Routes.SUPPORT) })
+                    SettingsScreen(
+                        onOpenSupport = { navController.navigate(Routes.SUPPORT) },
+                        onBack = { navController.popBackStack() },
+                    )
                 }
                 composable(Routes.SUPPORT) { SupportScreen() }
                 composable(

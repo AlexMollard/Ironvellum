@@ -26,14 +26,11 @@ object RoutineUpdate {
                 }
             }
 
-        /** Whether the session did fewer sets than planned. */
-        val dropsSets: Boolean get() = after.targetSets < before.targetSets
-
-        /**
-         * This change narrowed to [accepted]: every other field keeps its
-         * planned value, so applying it writes only what the lifter ticked.
-         * Null when nothing it moves was accepted.
-         */
+    /**
+     * This change narrowed to [accepted]: every other field keeps its
+     * planned value, so applying it writes only what the lifter ticked.
+     * Null when nothing it moves was accepted.
+     */
         fun only(accepted: Set<Field>): Change? {
             val kept = fields.filter { it in accepted }.toSet()
             if (kept.isEmpty()) return null
@@ -49,15 +46,9 @@ object RoutineUpdate {
     }
 
     /**
-     * The fields ticked before the lifter touches anything: all of them, except
-     * a drop in set count - one short day must not shrink the plan by accident.
-     */
-    fun defaultAccepted(change: Change): Set<Field> =
-        change.fields.filterNot { it == Field.SETS && change.dropsSets }.toSet()
-
-    /**
      * Changes for the entries whose done sets differ from their plan, in
-     * preset order. Per entry: sets = done sets; reps (a hold's seconds, which
+     * preset order. Per entry: sets never drop below the plan (a short day
+     * proposes nothing there), reps (a hold's seconds, which
      * the preset keeps in targetReps) = median, rounded down; load = the one
      * used on the most sets, a tie going to the heavier, bodyweight staying
      * null; modifiers = the session's when they differ. Activities are not
@@ -88,7 +79,11 @@ object RoutineUpdate {
             }
             val modifiers = done.first().modifiers
             val after = entry.copy(
-                targetSets = done.size,
+                // A short day never lowers the set count: a one-set workout of
+                // a three-set movement says nothing about the plan, and the
+                // offer must never read "3 sets -> 1". The count only grows or
+                // matches what was done.
+                targetSets = maxOf(done.size, entry.targetSets),
                 targetReps = medianDown(figures),
                 targetWeightKg = mostUsedLoad(done.map { it.weightKg }),
                 modifiers = if (sameModifiers(modifiers, entry.modifiers)) entry.modifiers else modifiers,

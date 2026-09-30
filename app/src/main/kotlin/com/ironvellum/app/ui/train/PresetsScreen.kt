@@ -259,6 +259,22 @@ fun PresetsScreen(
                     modifier = Modifier.padding(bottom = 10.dp),
                 )
             }
+            // The generator's rest-and-effort note is the same for every card,
+            // so it prints once here, up to two lines, instead of ellipsising
+            // on each card and burying the exercises under repeated prose.
+            ui.presets.map { Evidence.split(it.note).first }
+                .filter { it.isNotBlank() }
+                .distinct()
+                .forEach { note ->
+                    Text(
+                        note,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(bottom = 8.dp),
+                    )
+                }
             ui.presets.forEach { preset ->
                 InkPanel(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
                     Row(
@@ -286,18 +302,6 @@ fun PresetsScreen(
                                 Text(DAY_LABELS[it] ?: "", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.SovereignGold)
                             }
                         }
-                    }
-                    // One line: the generator's full rest-and-effort note on
-                    // every card buried the exercises under repeated prose.
-                    val note = Evidence.split(preset.note).first
-                    if (note.isNotBlank()) {
-                        Text(
-                            note,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
                     }
                     Text(
                         SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id)),

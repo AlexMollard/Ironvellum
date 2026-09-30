@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.program
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,6 +29,7 @@ import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -215,6 +217,19 @@ fun ProposedEntryRow(
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = IronvellumTracking.InlineLabel,
             )
+            // Collapsed-state hint: onboarding's prose says "Tap an exercise
+            // to adjust it", but the row gave no visible sign it opens.
+            // Decorative - the clickable already announces open/close - and
+            // only on rows that actually open.
+            if (opens) {
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    if (expanded) "\u25BE" else "\u25B8",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.clearAndSetSemantics {},
+                )
+            }
             // On the name row, not the stepper row: five 44dp pads plus their
             // captions do not fit a 360dp phone on one line.
             if (expanded && editable) {
@@ -649,11 +664,25 @@ internal fun PickCell(
     OutlinedButton(
         shape = shape,
         onClick = onClick,
+        // Selection must read as a pressed state, not a recoloured label:
+        // gold edge plus a faint wash of the same ink, so a picked cell has a
+        // boundary you can point at.
+        border = BorderStroke(
+            1.dp,
+            if (selected) IronvellumColors.SovereignGold else MaterialTheme.colorScheme.outlineVariant,
+        ),
         // The unscheduled option is drawn as "—", which a screen reader
         // announces as a dash. Say what it means (same rule as the editor).
-        modifier = modifier.then(
-            if (description != null) Modifier.semantics { contentDescription = description } else Modifier,
-        ),
+        modifier = modifier
+            .then(
+                if (description != null) Modifier.semantics { contentDescription = description } else Modifier,
+            )
+            // Selected reads as pressed: gold edge above plus a faint wash of
+            // the same ink, so a picked cell has a boundary you can point at.
+            .background(
+                if (selected) IronvellumColors.SovereignGold.copy(alpha = 0.10f) else Color.Transparent,
+                shape,
+            ),
         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
     ) {
         Text(

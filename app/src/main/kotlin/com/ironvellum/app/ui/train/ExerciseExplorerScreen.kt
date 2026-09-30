@@ -149,7 +149,8 @@ fun ExerciseExplorerScreen(
                     .clip(MaterialTheme.shapes.extraSmall)
                     .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
                     .clickable { onBack() }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    // 44dp minimum touch target; the text alone measured ~30dp.
+                    .padding(horizontal = 12.dp, vertical = 14.dp),
             )
         }
         Spacer(Modifier.height(12.dp))
@@ -294,15 +295,15 @@ private fun StatGrid(history: ExerciseHistory) {
                     if (noSets) "—" else
                         // Null added weight is a bodyweight hold, not the lifter's
                         // bodyweight printed as if it were added load.
-                        "${history.bestSetReps}s × " + (history.bestSetLoadKg?.let { "${formatLoadKg(it)} kg" } ?: "BW")
+                        "${history.bestSetReps}s×" + (history.bestSetLoadKg?.let { "${formatLoadKg(it)} kg" } ?: "BW")
                     ),
             )
         } else {
             listOf(
-                "HEAVIEST SET" to (if (noSets) "—" else history.heaviestWeightKg?.let { "${formatLoadKg(it)} kg × ${history.heaviestReps}" } ?: "BW"),
+                "HEAVIEST SET" to (if (noSets) "—" else history.heaviestWeightKg?.let { "${formatLoadKg(it)} kg×${history.heaviestReps}" } ?: "BW"),
                 "BEST SET (REPS × LOAD)" to (
                     if (noSets) "—" else
-                        "${history.bestSetReps} × " + (history.bestSetLoadKg?.let { "${formatLoadKg(it)} kg" } ?: "BW")
+                        "${history.bestSetReps}×" + (history.bestSetLoadKg?.let { "${formatLoadKg(it)} kg" } ?: "BW")
                     ),
             )
         },

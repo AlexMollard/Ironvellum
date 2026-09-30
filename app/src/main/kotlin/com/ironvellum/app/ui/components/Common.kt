@@ -38,7 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -47,11 +47,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
+import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -248,13 +248,16 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             // Ink, not gold: a section marker decorates, it does not report
             // anything earned, and gold is reserved for what is.
-            // Decorative: without clearing it, a screen reader announces the
-            // glyph as a character before every section name.
-            Text(
-                "\u25E0",
-                color = IronvellumColors.Bracket,
-                fontSize = 12.sp,
-                modifier = Modifier.clearAndSetSemantics {},
+            // A drawn diamond, not a text glyph: the old U+25E0 arc rendered
+            // clipped at 12sp (its glyph box cuts the arc's top) and showed as
+            // a stray fragment before every section name. Decorative: cleared
+            // from semantics so a screen reader announces only the section.
+            Box(
+                Modifier
+                    .size(5.dp)
+                    .graphicsLayer(rotationZ = 45f)
+                    .inkBorder(IronvellumColors.Bracket, rememberInkShape(9), 1.dp)
+                    .clearAndSetSemantics {},
             )
             Text(
                 text = text.uppercase(),
@@ -308,46 +311,27 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
                 seed = 3,
             )
         }
-        // No plate behind the count. A translucent black box over a
-        // hand-drawn rail read as a hard-edged rectangle sitting ON the art —
-        // the one geometric shape on the card. Legibility instead comes from
-        // the ink flipping where the fill actually ends.
-        //
-        // The whole label used to flip together once the bar passed 82%, but
-        // the label is wide enough to STRADDLE the fill edge: at 91% the count
-        // sat on the bright fill while its "XP" hung past the tip, dark ink on
-        // the dark track. So draw it twice and clip each copy to the side it
-        // belongs to - the two are laid out identically, so they register.
-        val label = "$into / $needed XP"
-        val labelStyle = MaterialTheme.typography.labelSmall
-        @Composable
-        fun countLayer(ink: Color, clip: DrawScope.() -> ClosedFloatingPointRange<Float>) {
-            Box(
-                Modifier
-                    .matchParentSize()
-                    .drawWithContent {
-                        val span = clip()
-                        clipRect(left = span.start, right = span.endInclusive) {
-                            this@drawWithContent.drawContent()
-                        }
-                    },
-            ) {
-                Text(
-                    label,
-                    modifier = Modifier
-                        .align(Alignment.CenterEnd)
-                        .padding(horizontal = 10.dp, vertical = 2.dp),
-                    style = labelStyle,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = ink,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-            }
-        }
-        // Dark ink over the bright fill, light ink over the bare track.
-        countLayer(IronvellumColors.Abyss) { 0f..size.width * animated }
-        countLayer(IronvellumColors.Ink) { size.width * animated..size.width }
+        // No plate behind the count — a translucent black box over a
+        // hand-drawn rail read as a hard-edged rectangle sitting ON the art,
+        // the one geometric shape on the card — and the old two-copy trick
+        // (dark ink clipped to the fill, light to the track) still failed at
+        // the tip: there the fill tapers thin, so the label sat half on dark
+        // track ABOVE and BELOW the bright sliver and neither ink read. One
+        // light label with a soft dark glow carries its own contrast across
+        // the fill edge instead of trying to track it.
+        Text(
+            "$into / $needed XP",
+            modifier = Modifier
+                .align(Alignment.CenterEnd)
+                .padding(horizontal = 10.dp, vertical = 2.dp),
+            style = MaterialTheme.typography.labelSmall.copy(
+                shadow = Shadow(color = Color(0xCC0B100E), blurRadius = 6f),
+            ),
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = IronvellumColors.Ink,
+            letterSpacing = IronvellumTracking.InlineLabel,
+        )
     }
 }
 

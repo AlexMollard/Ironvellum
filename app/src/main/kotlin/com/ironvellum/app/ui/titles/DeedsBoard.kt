@@ -70,7 +70,9 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 /** Status rail filters; counts are derived independently per chip. */
 private enum class DeedFilter(val label: String) {
     IN_PROGRESS("IN PROGRESS"),
-    CLOSE("CLOSE"),
+    // "CLOSE" read as a dismiss button next to the search field; the chip
+    // means the deed is close enough to finish.
+    IN_REACH("IN REACH"),
     CLAIMED("CLAIMED"),
     LOCKED("LOCKED"),
     ALL("ALL"),
@@ -80,7 +82,7 @@ private fun DeedFilter.matches(def: TitleDef, unlocked: Map<String, Long>, progr
     val claimed = def.id in unlocked
     return when (this) {
         DeedFilter.IN_PROGRESS -> !claimed && progress.fraction < 0.5f
-        DeedFilter.CLOSE -> !claimed && progress.fraction >= 0.5f
+        DeedFilter.IN_REACH -> !claimed && progress.fraction >= 0.5f
         DeedFilter.CLAIMED -> claimed
         DeedFilter.LOCKED -> !claimed
         DeedFilter.ALL -> true
@@ -501,9 +503,10 @@ private fun DeedFilterChip(label: String, selected: Boolean, onClick: () -> Unit
                 role = Role.Checkbox
                 this.selected = selected
             }
-            // 23dp was under even the WCAG AA 24dp floor. 32dp matches the
-            // Material chip height and only adds a few density pixels.
-            .heightIn(min = 32.dp)
+            // 32dp matched the Material chip but sat under the app-wide 44dp
+            // touch floor; the min height is the target, the padding only
+            // centres the label in it.
+            .heightIn(min = 44.dp)
             // 7dp and 0.5sp keep all five filters on one line at 411dp; at
             // 9dp and 1sp "ALL" wrapped onto a row of its own.
             .padding(horizontal = 7.dp, vertical = 5.dp),

@@ -47,7 +47,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
@@ -350,13 +349,6 @@ fun DashboardScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Image(
-                        painter = painterResource(classEmblem(progress.level)),
-                        contentDescription = ArmyClass.forLevel(progress.level).title,
-                        modifier = Modifier.size(46.dp),
-                        // the rank art is near-black on the void background
-                        colorFilter = ColorFilter.tint(IronvellumColors.SystemGreen),
-                    )
                     Column(
                         Modifier
                             .weight(1f)
@@ -501,6 +493,7 @@ fun DashboardScreen(
                             value = if (ui.streak > 0) "${ui.streak}d" else "—",
                             accent = if (ui.streak > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                             fraction = (ui.streak / 7f).coerceIn(0f, 1f),
+                            note = if (ui.streak > 0) null else "log a day to start it",
                         )
                     }
                 } else {
@@ -523,6 +516,7 @@ fun DashboardScreen(
                             value = if (ui.streak > 0) "${ui.streak}d" else "—",
                             accent = if (ui.streak > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                             fraction = (ui.streak / 7f).coerceIn(0f, 1f),
+                            note = if (ui.streak > 0) null else "log a day to start it",
                         )
                         GaugeStat(
                             label = "TITLES",
@@ -543,6 +537,23 @@ fun DashboardScreen(
 
         Spacer(Modifier.height(12.dp))
 
+        // The tick answers the same question the quest panel does: did THIS
+        // day's scheduled workout get logged this week. It used to light for
+        // any workout logged that weekday, so a lifter who ran a different
+        // workout saw a bright tick above a quest still offering to start.
+        val weekZone = ZoneId.systemDefault()
+        val weekMonday = today.with(java.time.DayOfWeek.MONDAY)
+        fun questDoneFor(day: Int): Boolean {
+            val preset = ui.presets.firstOrNull { it.scheduledDay == day } ?: return false
+            val date = weekMonday.plusDays((day - 1).toLong())
+            val start = date.atStartOfDay(weekZone).toInstant().toEpochMilli()
+            val end = date.plusDays(1).atStartOfDay(weekZone).toInstant().toEpochMilli()
+            return ui.recent.any { session ->
+                val at = session.completedAtMs ?: session.startedAtMs
+                session.presetId == preset.id && at >= start && at < end
+            }
+        }
+
         // Week rail: a hairline, not a fourth card.
         AnimatedVisibility(shown, enter = fadeIn(tween(300, delayMillis = 140))) {
             Row(
@@ -556,7 +567,7 @@ fun DashboardScreen(
                     // The rail must answer "did I train this week?" at a
                     // glance: a done day is struck bright, a missed scheduled
                     // day stays dim. No red, no nag - the ledger, not guilt.
-                    val isDone = day in ui.completedWeekdays
+                    val isDone = questDoneFor(day)
                     Column(
                         Modifier
                             .weight(1f)
@@ -752,9 +763,10 @@ fun DashboardScreen(
                             selectedPreset.note,
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
-                            maxLines = 1,
-                            // Without this the note was sliced mid-word with
-                            // no mark that anything followed.
+                            // The note also lives on the Train card, so it is
+                            // the lifter's own words: two lines, readable,
+                            // before any mark that more follows.
+                            maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
@@ -1005,8 +1017,9 @@ fun DashboardScreen(
     AchievementOverlay(
         items = owed.map { def ->
             Achievement(
-                banner = "TITLE EARNED",
-                tagline = "DEED CLAIMED",
+                // Noun contract: a title is unlocked; "deed claimed" is Codex
+                // language only, and this payout happens outside it.
+                banner = "TITLE UNLOCKED",
                 name = def.name,
                 subtitle = def.describeFor(sex).uppercase(),
             )
@@ -1082,7 +1095,7 @@ private fun StepsAsOf(syncedAtMs: Long?, today: LocalDate) {
 
 /** Counter row with its own hairline meter, so the cluster reads as instruments. */
 @Composable
-private fun GaugeStat(label: String, value: String, accent: Color, fraction: Float) {
+private fun GaugeStat(label: String, value: String, accent: Color, fraction: Float, note: String? = null) {
     Column {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text(
@@ -1107,6 +1120,17 @@ private fun GaugeStat(label: String, value: String, accent: Color, fraction: Flo
             fill = Brush.horizontalGradient(listOf(accent, accent)),
             seed = label.hashCode(),
         )
+        // A caption under the rail: for a bare "—" it names what would move it.
+        if (note != null) {
+            Text(
+                note,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
     }
 }
 
@@ -1124,13 +1148,6 @@ private fun GoalTrack(fraction: Float) {
 }
 
 
-/** Class emblem art escalates with the ladder: soldier -> knight -> commander -> grand marshal. */
-private fun classEmblem(level: Int): Int = when {
-    level >= 70 -> R.drawable.ic_rank_grand_marshal
-    level >= 40 -> R.drawable.ic_rank_commander
-    level >= 15 -> R.drawable.ic_rank_knight
-    else -> R.drawable.ic_rank_soldier
-}
 @Composable
 private fun HeroStat(value: String, label: String, valueColor: Color = IronvellumColors.Ink) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {

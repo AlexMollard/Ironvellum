@@ -87,6 +87,7 @@ import com.ironvellum.app.ui.ironvellumHealthSync
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
+import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.IronvellumColors
 import android.Manifest
@@ -118,14 +119,22 @@ private val HEALTH_PERMISSIONS = setOf(
     HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
     HealthPermission.getReadPermission(SleepSessionRecord::class),
     HealthPermission.getReadPermission(RestingHeartRateRecord::class),
+    HealthPermission.getReadPermission(RestingHeartRateRecord::class),
 )
 
+/** Asked on top of [HEALTH_PERMISSIONS]; a declined history grant must not
+ * make a working sync report "not connected", and its absence hides data
+ * recorded before the app was installed. */
+private val HISTORY_PERMISSION = HealthPermission.PERMISSION_READ_HEALTH_DATA_HISTORY
+
 /**
- * What the Connect button asks for: the data reads, plus background reading
+ * What the Connect button asks for: the data reads, plus history reading so
+ * steps recorded before the install are visible, plus background reading
  * where this Health Connect build supports it so the daily worker can sync
- * while the app is closed. Kept out of [HEALTH_PERMISSIONS] on purpose: that
- * set is the "is anything connected" check, and a declined background grant
- * must not make a working foreground sync report "not connected".
+ * while the app is closed. Both extras are kept out of [HEALTH_PERMISSIONS]
+ * on purpose: that set is the "is anything connected" check, and a declined
+ * background or history grant must not make a working foreground sync
+ * report "not connected".
  */
 private fun healthPermissionRequest(context: Context): Set<String> {
     val background = runCatching {
@@ -134,9 +143,9 @@ private fun healthPermissionRequest(context: Context): Set<String> {
         ) == HealthConnectFeatures.FEATURE_STATUS_AVAILABLE
     }.getOrDefault(false)
     return if (background) {
-        HEALTH_PERMISSIONS + HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND
+        HEALTH_PERMISSIONS + HISTORY_PERMISSION + HealthPermission.PERMISSION_READ_HEALTH_DATA_IN_BACKGROUND
     } else {
-        HEALTH_PERMISSIONS
+        HEALTH_PERMISSIONS + HISTORY_PERMISSION
     }
 }
 
@@ -606,6 +615,7 @@ class SettingsViewModel(
 @Composable
 fun SettingsScreen(
     onOpenSupport: () -> Unit = {},
+    onBack: () -> Unit = {},
     viewModel: SettingsViewModel =
         viewModel(
             factory = viewModelFactory {
@@ -771,13 +781,32 @@ fun SettingsScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(24.dp))
-        Text(
-            "LEDGER",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = 6.sp,
-        )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "SETTINGS",
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                letterSpacing = 6.sp,
+            )
+            // Same back affordance as the other sub-screens (Weekly Coverage,
+            // Workout Log): an outlined quiet label, not a buried arrow.
+            Text(
+                "BACK",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                modifier = Modifier
+                    .clip(MaterialTheme.shapes.extraSmall)
+                    .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
+                    .clickable { onBack() }
+                    .padding(horizontal = 12.dp, vertical = 6.dp),
+            )
+        }
         Spacer(Modifier.height(10.dp))
 
         InkPanel(Modifier.fillMaxWidth()) {
@@ -801,7 +830,7 @@ fun SettingsScreen(
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                "Ironvellum is earned — a name is chosen.",
+                "Your name shows on the leaderboard. You can change it any time.",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -1141,7 +1170,9 @@ fun SettingsScreen(
                 IronvellumButton(
                     label = "Use My Own Backend",
                     onClick = { cloudFieldsShown = !cloudFieldsShown },
-                    quiet = cloudFieldsShown,
+                    // Advanced action, not the path most lifters take: quiet,
+                    // so it never out-shouts the shared-cloud default.
+                    quiet = true,
                 )
                 if (cloudFieldsShown) {
                     Spacer(Modifier.height(10.dp))

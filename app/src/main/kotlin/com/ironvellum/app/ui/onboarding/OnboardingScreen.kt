@@ -270,16 +270,22 @@ class OnboardingViewModel(
         viewModelScope.launch {
             runCatching {
                 if (_isStarter.value) repo.applyStarterTemplate() else repo.applyRoutine(plan)
+                // Every focus the question offers must land in the profile, or
+                // Settings' TRAINING MODE silently shows the STRENGTH default
+                // for Skills and Mixed. Skill practice is low-rep and
+                // load-driven, so it follows the strength engine; a mixed goal
+                // suits double progression (reps first, then load).
+                when (focus) {
+                    TrainingFocus.STRENGTH, TrainingFocus.SKILL ->
+                        repo.setTrainingMode(TrainingMode.STRENGTH)
+                    TrainingFocus.MUSCLE, TrainingFocus.GENERAL ->
+                        repo.setTrainingMode(TrainingMode.HYPERTROPHY)
+                }
                 if (generated) {
                     ProgramAnswersStore.save(
                         appContext,
                         ProgramAnswers(tier, focus, equipment, daysPerWeek, emptySet(), split),
                     )
-                    when (focus) {
-                        TrainingFocus.STRENGTH -> repo.setTrainingMode(TrainingMode.STRENGTH)
-                        TrainingFocus.MUSCLE -> repo.setTrainingMode(TrainingMode.HYPERTROPHY)
-                        else -> {}
-                    }
                 }
             }.fold(
                 onSuccess = {

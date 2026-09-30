@@ -194,7 +194,8 @@ fun WorkoutDetailScreen(
                 modifier = Modifier
                     .clip(MaterialTheme.shapes.extraSmall)
                     .clickable { onBack() }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    // 44dp minimum touch target; the text alone measured ~30dp.
+                    .padding(horizontal = 12.dp, vertical = 14.dp),
             )
         }
         Spacer(Modifier.height(12.dp))
@@ -489,16 +490,16 @@ private fun SetChip(set: SessionSet, metric: ExerciseMetric, hold: Boolean) {
         Text(
             when {
                 hold -> "${set.durationSec ?: set.reps}s" +
-                    if (set.weightKg != null && set.weightKg > 0.0) " × $weight" else ""
+                    if (set.weightKg != null && set.weightKg > 0.0) "×$weight" else ""
                 metric == ExerciseMetric.ATTEMPTS_GRADE ->
                     // The grade is the climb's identity; the weight slot is not
                     // (a boulder problem carries no load).
-                    set.reps.toString() + set.grade?.takeIf { it.isNotBlank() }?.let { " × $it" }.orEmpty()
+                    set.reps.toString() + set.grade?.takeIf { it.isNotBlank() }?.let { "×$it" }.orEmpty()
                 metric == ExerciseMetric.DISTANCE_TIME ->
                     setFigure(metric, set.reps, set.durationSec, set.distanceM).figure
                 metric == ExerciseMetric.DURATION ->
                     setFigure(metric, set.reps, set.durationSec, null).figure
-                else -> "${set.reps} × $weight"
+                else -> "${set.reps}×$weight"
             },
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,

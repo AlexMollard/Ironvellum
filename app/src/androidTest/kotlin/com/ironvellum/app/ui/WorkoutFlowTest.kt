@@ -219,13 +219,13 @@ class WorkoutFlowTest {
      * Clicks through every celebration overlay until the dashboard is back.
      * Each overlay's advance button reads "Continue", or "Next (1/3)" while
      * more award pages remain. A session that differs from its preset then
-     * offers a routine update; this test keeps the plan so the seeded preset
+     * offers a routine update; this test keeps the routine so the seeded preset
      * stays as later tests expect it.
      */
     private fun drainCelebrations(rounds: Int = 12) {
         repeat(rounds) {
             if (allText().any { it.endsWith("XP") && it.contains('/') }) return
-            val advance = allText().firstOrNull { it == "CONTINUE" || it.startsWith("NEXT (") || it == "KEEP PLAN" }
+            val advance = allText().firstOrNull { it == "CONTINUE" || it.startsWith("NEXT (") || it == "KEEP ROUTINE" }
             if (advance != null) {
                 compose.onAllNodesWithText(advance).onFirst()
                     .performSemanticsAction(SemanticsActions.OnClick)
@@ -235,14 +235,15 @@ class WorkoutFlowTest {
         }
     }
 
-    /** "0 / 100 XP" on the dashboard header -> 0 */
+    /** "⏱ 1 min · LEVEL 1 · 55 / 100 XP" on the victory screen -> 55 */
     private fun xpFromHeader(): Int {
         // Poll rather than assume where completion lands: the victory screen
         // dismisses back to the dashboard, but only once its own work settles.
         awaitText("XP")
         val header = allText().firstOrNull { it.endsWith("XP") && it.contains('/') }
             ?: error("no XP header on screen; saw: ${allText()}")
-        return header.substringBefore('/').trim().toInt()
+        val pair = header.substringBefore(" XP").trim().substringAfterLast("· ")
+        return pair.substringBefore('/').trim().toInt()
     }
 
     private companion object {

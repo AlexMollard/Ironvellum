@@ -44,9 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.semantics.Role
-import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -404,6 +402,12 @@ private fun RollWindow(state: IdleState, rate: IdleRate, pendingExact: Double) {
                 )
                 LivePulse(active = rate.perHour > 0.0)
             }
+            // One plain line so the numbers below read as a figure, not jargon.
+            Text(
+                "Essence banked so far, and the pace it gathers each hour.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
             // Hero row: the climbing total on the left, the rate gauge on the
             // right at a FIXED size. The dial previously lived in a weighted
             // Row slot with no height, so its arc collapsed to a sliver and was
@@ -700,9 +704,22 @@ private fun RollStat(label: String, value: String, modifier: Modifier = Modifier
 @Composable
 private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
     val atFloor = inputs.sessionsLast7d == 0 && inputs.volumeLast7d == 0.0
+    // No history at all: zero recent sessions AND no skill unlocks means the
+    // lifter has never trained, so the decay line would read as nonsense.
+    val firstRun = atFloor && inputs.skillsUnlocked == 0
     InkPanel(accent = if (atFloor) IronvellumColors.SovereignGold else IronvellumColors.Emerald) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            if (atFloor) {
+            if (firstRun) {
+                Text(
+                    "The Garrison gathers essence while you're away. " +
+                        "Log workouts to raise the pace — your figures and " +
+                        "history will fill in as you train.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.Ink,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            } else if (atFloor) {
                 Text(
                     "The figures have heard nothing from you. Your rate has decayed to its floor — return to training and they will rise again.",
                     style = MaterialTheme.typography.bodyMedium,
@@ -987,24 +1004,19 @@ private fun RelicVault(relics: List<RelicHolding>) {
                 )
             }
             if (relics.isEmpty()) {
-                // The art carries faint edge strokes from its source canvas;
-                // drawn larger and clipped to the seal's square, they fall
-                // outside the window instead of reading as a stray rule.
-                Box(
-                    Modifier
+                // Sized to the window, not blown up and clipped: the source
+                // canvas carries only a handful of faint semi-transparent
+                // strokes at its outer 6dp (verified by pixel scan), and the
+                // 4dp inset each side keeps them off the panel edge without
+                // cropping the seal itself.
+                Image(
+                    painter = painterResource(R.drawable.art_empty_muster),
+                    contentDescription = null,
+                    modifier = Modifier
                         .align(Alignment.CenterHorizontally)
-                        .size(132.dp)
-                        .clipToBounds(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.art_empty_muster),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .requiredSize(190.dp)
-                            .alpha(0.55f),
-                    )
-                }
+                        .size(124.dp)
+                        .alpha(0.55f),
+                )
                 Spacer(Modifier.height(10.dp))
                 Text(
                     "Nothing inscribed yet.",

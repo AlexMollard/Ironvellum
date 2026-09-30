@@ -594,9 +594,9 @@ internal fun AllySet.figure(): String {
     return when {
         metres != null -> (if (metres >= 1000) String.format(Locale.US, "%.1f km", metres / 1000) else "${metres.toInt()} m") +
             (seconds?.let { " · ${it}s" }.orEmpty())
-        !grade.isNullOrBlank() -> "$reps × $grade"
-        seconds != null -> "${seconds}s" + (load?.let { " × $it" }.orEmpty())
-        else -> "$reps × ${load ?: "BW"}"
+        !grade.isNullOrBlank() -> "$reps×$grade"
+        seconds != null -> "${seconds}s" + (load?.let { "×$it" }.orEmpty())
+        else -> "$reps×${load ?: "BW"}"
     }
 }
 

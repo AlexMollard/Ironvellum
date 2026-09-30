@@ -60,10 +60,13 @@ class RoutineUpdateApplyTest {
         prefilled.filter { it.exerciseId == a }.sortedBy { it.setIndex }.take(4).zip(listOf(6, 6, 6, 4)).forEach { (set, reps) ->
             repo.updateSet(set.id, reps, 15.2, done = true)
         }
-        // B: all three, 10,9,7.
+        // B: all three, 10,9,7 — then a fourth set above the plan, so B's
+        // proposal rises to four while A's short day cannot shrink its six.
         prefilled.filter { it.exerciseId == b }.sortedBy { it.setIndex }.zip(listOf(10, 9, 7)).forEach { (set, reps) ->
             repo.updateSet(set.id, reps, null, done = true)
         }
+        val extraB = repo.addExtraSet(sessionId, b, reps = 9, weightKg = null, modifiers = "")
+        repo.updateSet(extraB, 9, null, done = true)
         // C: exactly as planned.
         prefilled.filter { it.exerciseId == c }.forEach { repo.updateSet(it.id, 8, 20.0, done = true) }
 
@@ -73,8 +76,12 @@ class RoutineUpdateApplyTest {
         val offer = repo.routineUpdateFor(sessionId)!!
         assertEquals(presetId, offer.presetId)
         assertEquals(listOf(a, b), offer.changes.map { it.before.exerciseId })
+        // A ran short: sets never drop, so only its reps move.
         val changeA = offer.changes.first { it.before.exerciseId == a }
-        assertEquals(listOf(RoutineUpdate.Field.SETS, RoutineUpdate.Field.REPS), changeA.fields)
+        assertEquals(listOf(RoutineUpdate.Field.REPS), changeA.fields)
+        // B ran long: the extra set is offered, with its reps.
+        val changeB = offer.changes.first { it.before.exerciseId == b }
+        assertEquals(listOf(RoutineUpdate.Field.SETS, RoutineUpdate.Field.REPS), changeB.fields)
 
         val loggedBefore = db.sessionDao().setsFor(sessionId)
         val entriesBefore = db.presetDao().presetWithEntries(presetId)!!.entries.associateBy { it.exerciseId }

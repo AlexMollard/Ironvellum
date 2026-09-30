@@ -753,16 +753,10 @@ fun SessionScreen(
         }
 
         Spacer(Modifier.height(10.dp))
-        Text(
-            "+ Add a one-off exercise",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            modifier = Modifier
-                .clip(MaterialTheme.shapes.extraSmall)
-                .clickable { showExercisePicker = true }
-                .padding(horizontal = 4.dp, vertical = 6.dp),
-        )
+        // The screen's only add action: a real button, not faint link text.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
+            IronvellumButton("Add exercise", onClick = { showExercisePicker = true })
+        }
         Spacer(Modifier.height(16.dp))
         SessionNotesEditor(session = session, viewModel = viewModel)
 
@@ -991,8 +985,16 @@ fun SessionScreen(
             SessionViewModel.Finish.ROUTINE -> {
                 val offer = routineUpdate
                 if (offer != null) {
+                    // Which preset entries got fewer done sets than planned —
+                    // the shape the set-count guard in RoutineUpdate.propose
+                    // suppresses, but the title still names.
+                    val shortDay = offer.changes.any { change ->
+                        ui.sets.count { it.done && it.exerciseId == change.before.exerciseId } <
+                            change.before.targetSets
+                    }
                     RoutineUpdateDialog(
                         offer = offer,
+                        shortDay = shortDay,
                         onUpdate = viewModel::applyRoutineUpdate,
                         onKeep = viewModel::keepPlan,
                     )
@@ -1035,7 +1037,7 @@ private fun awardsFor(result: Repository.CompletionResult, sex: Sex): List<Achie
     result.newTitles.forEach { title ->
         add(
             Achievement(
-                banner = "TITLE EARNED",
+                banner = "TITLE UNLOCKED",
                 name = title.name,
                 subtitle = title.describeFor(sex).uppercase(),
             ),
@@ -1121,8 +1123,12 @@ private fun VictoryOverlay(
                         fontWeight = FontWeight.Bold,
                         color = Color.White,
                     )
+                    // Level progress, not the running total: on a first run
+                    // the total is the awarded figure and read as a repeat.
+                    val progress = Xp.progress(result.totalXp)
                     Text(
-                        "\u23F1 ${result.durationMinutes} min · total ${result.totalXp} XP",
+                        "\u23F1 ${result.durationMinutes} min · LEVEL ${progress.level}" +
+                            " · ${progress.intoLevel}/${progress.needed} XP",
                         style = MaterialTheme.typography.labelMedium,
                         color = IronvellumColors.InkMuted,
                     )
@@ -1139,7 +1145,7 @@ private fun VictoryOverlay(
                         RewardRow("CLASS UNLOCKED", result.classAfter)
                         Spacer(Modifier.height(6.dp))
                     }
-                    result.newTitles.forEach { title ->
+                    result.newTitles.filter { it.name.isNotBlank() }.forEach { title ->
                         RewardRow("TITLE", title.name)
                         Spacer(Modifier.height(4.dp))
                     }
@@ -1501,7 +1507,7 @@ private fun SetDeltaBadge(delta: SetRecords.Delta?, displaySetNo: Int) {
         val record = delta.record
         if (record == null) {
             Text(
-                "first set $displaySetNo on record",
+                "Set $displaySetNo — first on record",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -1965,18 +1971,19 @@ private fun fieldLine(change: RoutineUpdate.Change, field: RoutineUpdate.Field):
 /**
  * Offers to bring the preset in line with the session just finished, one
  * toggle per changed field so the lifter can take the reps and leave the
- * sets. Every field starts ticked except a drop in set count
- * ([RoutineUpdate.defaultAccepted]). The session is already completed and
- * paid when this shows; dismissing it keeps the plan.
+ * load. Every field starts ticked; a short day never lands here as a set
+ * drop ([RoutineUpdate.propose] never lowers the set count). The session is
+ * already completed and paid when this shows; dismissing it keeps the plan.
  */
 @Composable
 private fun RoutineUpdateDialog(
     offer: Repository.RoutineUpdateOffer,
+    shortDay: Boolean,
     onUpdate: (List<RoutineUpdate.Change>) -> Unit,
     onKeep: () -> Unit,
 ) {
     var ticked by remember(offer) {
-        mutableStateOf(offer.changes.associateWith { RoutineUpdate.defaultAccepted(it) })
+        mutableStateOf(offer.changes.associateWith { it.fields.toSet() })
     }
     AlertDialog(
         shape = MaterialTheme.shapes.medium,
@@ -1992,7 +1999,11 @@ private fun RoutineUpdateDialog(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    "Update to match today?",
+                    if (shortDay) {
+                        "Today ran short — the plan keeps its sets; tick what else to take."
+                    } else {
+                        "Bring your routine in line with today's workout?"
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -2094,7 +2105,7 @@ private fun RoutineUpdateDialog(
                     onClick = { onUpdate(narrowed) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                IronvellumButton("Keep plan", quiet = true, onClick = onKeep, modifier = Modifier.fillMaxWidth())
+                IronvellumButton("Keep routine", quiet = true, onClick = onKeep, modifier = Modifier.fillMaxWidth())
             }
         },
     )

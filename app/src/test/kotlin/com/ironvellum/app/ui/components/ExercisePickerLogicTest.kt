@@ -97,11 +97,11 @@ class ExercisePickerLogicTest {
         val day = 86_400_000L
         val now = 100 * day + 12 * 3_600_000L
         val weightedPull = LastLogged(1, 5, 20.0, null, null, null, now - 3 * day)
-        assertEquals("5 × +20 kg · 3d ago", lastLoggedLine(weightedPull, ex(1, "Pull-up"), now, ZoneOffset.UTC))
+        assertEquals("5×+20 kg · 3d ago", lastLoggedLine(weightedPull, ex(1, "Pull-up"), now, ZoneOffset.UTC))
 
         val row = LastLogged(2, 8, 7.5, null, null, null, now - 30 * day)
         val line = lastLoggedLine(row, ex(2, "Goblet Squat", weighted = true), now, ZoneOffset.UTC)
-        assertTrue(line, line.startsWith("8 × 7.5 kg · "))
+        assertTrue(line, line.startsWith("8×7.5 kg · "))
         assertFalse("old workouts read as a date", line.contains("ago"))
 
         val hold = LastLogged(3, 0, null, 45, null, null, now - day)

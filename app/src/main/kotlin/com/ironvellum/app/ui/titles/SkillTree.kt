@@ -27,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.Skills
@@ -185,6 +186,14 @@ private fun SkillRow(
             Canvas(Modifier.fillMaxSize()) {
                 val rail = RailW.toPx()
                 val stroke = 2f.dp.toPx()
+                // Each row paints its own half-segments, so consecutive rows
+                // meet exactly at the row boundary — where antialiasing left a
+                // faint seam. Every segment that runs off the top or bottom of
+                // the row extends half a stroke width past it, overlapping the
+                // neighbour's end instead of kissing it.
+                val over = stroke / 2f
+                val top = -over
+                val bottom = size.height + over
                 val mid = size.height / 2f
                 val dotX = row.depth * rail + rail / 2f
                 val color = accent.copy(alpha = 0.85f)
@@ -197,8 +206,8 @@ private fun SkillRow(
                         // Ancestor rail: brushed, and never tapered - it runs
                         // through the row rather than starting or ending in it.
                         inkStroke(
-                            Offset(x, 0f),
-                            Offset(x, size.height),
+                            Offset(x, top),
+                            Offset(x, bottom),
                             paint.passing.getValue(d),
                             stroke,
                             seed = d * 17,
@@ -210,14 +219,14 @@ private fun SkillRow(
                 row.fromDepth?.let { from ->
                     if (from == row.depth) {
                         // same column: a straight trunk segment into the dot
-                        inkStroke(Offset(dotX, 0f), Offset(dotX, mid), color, stroke, seed = row.depth * 7, taperEnds = false)
+                        inkStroke(Offset(dotX, top), Offset(dotX, mid), color, stroke, seed = row.depth * 7, taperEnds = false)
                     } else {
                         val parentX = from * rail + rail / 2f
                         // parent's column drops in to this row's branch, then
                         // carries on past it when more siblings follow
-                        inkStroke(Offset(parentX, 0f), Offset(parentX, mid), paint.intoRow, stroke, seed = from * 11, taperEnds = false)
+                        inkStroke(Offset(parentX, top), Offset(parentX, mid), paint.intoRow, stroke, seed = from * 11, taperEnds = false)
                         if (!row.isLastChild) {
-                            inkStroke(Offset(parentX, mid), Offset(parentX, size.height), paint.pastRow, stroke, seed = from * 13, taperEnds = false)
+                            inkStroke(Offset(parentX, mid), Offset(parentX, bottom), paint.pastRow, stroke, seed = from * 13, taperEnds = false)
                         }
                         inkStroke(Offset(parentX, mid), Offset(dotX, mid), color, stroke, seed = from * 5, taperEnds = false)
                     }
@@ -225,7 +234,7 @@ private fun SkillRow(
 
                 // hand the line to the row below
                 if (row.children.isNotEmpty()) {
-                    inkStroke(Offset(dotX, mid), Offset(dotX, size.height), paint.below, stroke, seed = row.depth * 3, taperEnds = false)
+                    inkStroke(Offset(dotX, mid), Offset(dotX, bottom), paint.below, stroke, seed = row.depth * 3, taperEnds = false)
                 }
             }
             Box(
@@ -284,11 +293,17 @@ private fun SkillRow(
                         else -> "needs ${row.skill.requires}"
                     },
                     style = MaterialTheme.typography.labelSmall,
-                    fontSize = 9.sp,
+                    // 9sp was unreadably small; 11sp matches the smallest body
+                    // copy anywhere in the app.
+                    fontSize = 11.sp,
                     color = if (mastered) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
                     maxLines = 1,
+                    // A long standard used to clip mid-word and run into the
+                    // tier column at the right edge.
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+            Spacer(Modifier.width(8.dp))
             Column(horizontalAlignment = Alignment.End) {
                 Text(
                     Skills.tierLabel(row.skill.tier),
@@ -302,8 +317,9 @@ private fun SkillRow(
                     Text(
                         "${row.children.size} paths",
                         style = MaterialTheme.typography.labelSmall,
-                        fontSize = 8.sp,
+                        fontSize = 11.sp,
                         color = IronvellumColors.InkMuted,
+                        maxLines = 1,
                     )
                 }
             }

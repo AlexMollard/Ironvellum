@@ -23,6 +23,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -63,7 +65,6 @@ import com.ironvellum.app.data.cloud.LiftBoardRow
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Lift
 import com.ironvellum.app.domain.LiftBoards
-import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.ironvellumAccount
@@ -102,9 +103,10 @@ data class MusterBoardUi(
     /** Set once a fetch has completed, so the first selection can trigger a lazy load exactly once. */
     val loaded: Boolean = false,
     /**
-     * False once the cloud says the board does not exist yet (migration 0008
-     * unapplied). Offering a board that cannot load reads as a connection
-     * fault, so the picker retires itself instead of showing a standing error.
+     * False once the cloud says the board does not exist yet (its schema is
+     * older than the muster board). Offering a board that cannot load reads
+     * as a connection fault, so the picker retires itself instead of showing
+     * a standing error.
      */
     val available: Boolean = true,
 )
@@ -279,6 +281,9 @@ fun LeaderboardScreen(
     val lifts by viewModel.lifts.collectAsStateWithLifecycle()
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     var board by remember { mutableStateOf(Board.Training) }
+    // Metric lives here so it can share the board row: one selector row at
+    // rest, with the ranking metric as a right-aligned dropdown on TRAINING.
+    var metric by remember { mutableStateOf(BoardMetric.Xp) }
 
     // SocialScreen owns the margins, the top gap and the signed-out screen, so
     // every tab starts its content at the same spot under the pills.
@@ -297,6 +302,13 @@ fun LeaderboardScreen(
                 board = it
                 if (it == Board.Muster) viewModel.loadMuster()
                 if (it == Board.Lifts) viewModel.loadLifts()
+            },
+            // The ranking metric hides behind this dropdown on the same row:
+            // a second stacked rail would break the one-selector-row rule.
+            trailing = if (board == Board.Training) {
+                { MetricDropdown(selected = metric, onPick = { metric = it }) }
+            } else {
+                null
             },
         )
         Spacer(Modifier.height(12.dp))
@@ -345,7 +357,7 @@ fun LeaderboardScreen(
                     // into it, every row stacks at the same origin — the podium
                     // vanished under the pinned self-row. A Column restores flow.
                     Column(Modifier.fillMaxWidth()) {
-                        Board(ui, viewModel::load, onOpenFriend, equippedFrame)
+                        Board(ui, metric, viewModel::load, onOpenFriend, equippedFrame)
                     }
                 }
             }
@@ -436,11 +448,11 @@ private fun ErrorPanel(onRefresh: () -> Unit) {
 @Composable
 private fun Board(
     ui: LeaderboardUi,
+    metric: BoardMetric,
     onRefresh: () -> Unit,
     onOpenFriend: (String, String) -> Unit,
     equippedFrame: String?,
 ) {
-    var metric by remember { mutableStateOf(BoardMetric.Xp) }
     val sorted = remember(ui.rows, metric) { sortRows(ui.rows, metric) }
     val podiumCount = minOf(3, sorted.size)
     val rest = sorted.drop(podiumCount)
@@ -472,9 +484,6 @@ private fun Board(
         Spacer(Modifier.height(10.dp))
     }
     Spacer(Modifier.height(10.dp))
-
-    MetricChips(selected = metric, onPick = { metric = it })
-    Spacer(Modifier.height(12.dp))
 
     Podium(sorted.take(podiumCount), metric, ui.myUserId, equippedFrame)
     Spacer(Modifier.height(14.dp))
@@ -526,44 +535,6 @@ private fun Board(
             equippedFrame = equippedFrame,
             onOpenFriend = { onOpenFriend(myRow.userId, myRow.displayName) },
         )
-    }
-}
-
-/** Horizontally scrollable chip rail; labels never wrap. */
-@Composable
-private fun MetricChips(selected: BoardMetric, onPick: (BoardMetric) -> Unit) {
-    ChipRail(options = BoardMetric.entries.map { it to it.label }, selected = selected, onPick = onPick)
-}
-
-@Composable
-private fun <T> ChipRail(options: List<Pair<T, String>>, selected: T, onPick: (T) -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        options.forEach { (candidate, label) ->
-            val active = candidate == selected
-            Text(
-                label,
-                maxLines = 1,
-                softWrap = false,
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                color = if (active) IronvellumColors.Abyss else IronvellumColors.InkMuted,
-                modifier = Modifier
-                    // 44dp hit area around a compact pill: the visual stays small.
-                    .heightIn(min = 44.dp)
-                    .selectable(selected = active, role = Role.Tab) { onPick(candidate) }
-                    .wrapContentHeight()
-                    .clip(MaterialTheme.shapes.small)
-                    .background(if (active) IronvellumColors.SovereignGold else Color(0xFF141A18))
-                    .inkBorder(if (active) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            )
-        }
     }
 }
 
@@ -862,33 +833,109 @@ private fun RefreshLink(onClick: () -> Unit, label: String) {
 }
 
 
-/** Segmented TRAINING / LIFTS / GARRISON picker, styled after the metric chips. */
+/** Segmented TRAINING / LIFTS / GARRISON picker, styled after the metric chips.
+ *
+ *  The optional trailing slot keeps a subordinate control (the TRAINING
+ *  metric dropdown) on the same row, so the screen never stacks two
+ *  selector rails.
+ */
 @Composable
-private fun BoardSelector(boards: List<Board>, selected: Board, onPick: (Board) -> Unit) {
+private fun BoardSelector(
+    boards: List<Board>,
+    selected: Board,
+    onPick: (Board) -> Unit,
+    trailing: (@Composable () -> Unit)? = null,
+) {
     Row(
         Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        boards.forEach { candidate ->
-            val active = candidate == selected
+        Row(
+            Modifier
+                .weight(1f, fill = false)
+                .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            boards.forEach { candidate ->
+                val active = candidate == selected
+                Text(
+                    candidate.label,
+                    maxLines = 1,
+                    softWrap = false,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                    color = if (active) IronvellumColors.Abyss else IronvellumColors.InkMuted,
+                    modifier = Modifier
+                        // 44dp hit area around a compact pill: the visual stays small.
+                        .heightIn(min = 44.dp)
+                        .selectable(selected = active, role = Role.Tab) { onPick(candidate) }
+                        .wrapContentHeight()
+                        .clip(MaterialTheme.shapes.small)
+                        .background(if (active) IronvellumColors.SovereignGold else Color(0xFF141A18))
+                        .inkBorder(if (active) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
+                        .padding(horizontal = 12.dp, vertical = 6.dp),
+                )
+            }
+        }
+        trailing?.invoke()
+    }
+}
+
+/** The TRAINING ranking metric, folded onto the board row as a compact dropdown. */
+@Composable
+private fun MetricDropdown(selected: BoardMetric, onPick: (BoardMetric) -> Unit) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .heightIn(min = 44.dp)
+                .clip(MaterialTheme.shapes.small)
+                .background(Color(0xFF141A18))
+                .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
+                .selectable(selected = false, role = Role.DropdownList) { open = true }
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+        ) {
             Text(
-                candidate.label,
+                selected.label,
                 maxLines = 1,
                 softWrap = false,
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
-                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                color = if (active) IronvellumColors.Abyss else IronvellumColors.InkMuted,
-                modifier = Modifier
-                    // 44dp hit area around a compact pill: the visual stays small.
-                    .heightIn(min = 44.dp)
-                    .selectable(selected = active, role = Role.Tab) { onPick(candidate) }
-                    .wrapContentHeight()
-                    .clip(MaterialTheme.shapes.small)
-                    .background(if (active) IronvellumColors.SovereignGold else Color(0xFF141A18))
-                    .inkBorder(if (active) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                fontWeight = FontWeight.Bold,
+                color = IronvellumColors.Emerald,
             )
+            Icon(
+                Icons.Outlined.ArrowDropDown,
+                contentDescription = "Change ranking metric",
+                tint = IronvellumColors.Emerald,
+            )
+        }
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            containerColor = Color(0xFF0D1110),
+            shape = MaterialTheme.shapes.medium,
+        ) {
+            BoardMetric.entries.forEach { candidate ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            candidate.label,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = ChakraPetch,
+                            fontWeight = if (candidate == selected) FontWeight.Bold else FontWeight.Normal,
+                            color = if (candidate == selected) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                        )
+                    },
+                    onClick = {
+                        open = false
+                        onPick(candidate)
+                    },
+                )
+            }
         }
     }
 }
@@ -1142,17 +1189,25 @@ private fun LiftsBoard(
                         SocialErrorBanner("Lift boards may be stale: ${ui.error}")
                         Spacer(Modifier.height(10.dp))
                     }
-                    LiftPicker(
-                        selected = lift,
-                        rankedCount = { liftStandings(ui.rows, it, window).size },
-                        onPick = { lift = it },
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    InkSegmented(
-                        options = LiftWindow.entries.map { it to it.label },
-                        selected = window,
-                        onPick = { window = it },
-                    )
+                    // One selector row: the board bar and the WEEK / ALL TIME
+                    // window share it, with 44dp targets on both.
+                    Row(
+                        Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        LiftPicker(
+                            selected = lift,
+                            rankedCount = { liftStandings(ui.rows, it, window).size },
+                            onPick = { lift = it },
+                            modifier = Modifier.weight(1f),
+                        )
+                        CompactSegmented(
+                            options = LiftWindow.entries.map { it to it.label },
+                            selected = window,
+                            onPick = { window = it },
+                        )
+                    }
                     Spacer(Modifier.height(12.dp))
                     if (standings.isEmpty()) {
                         LiftEmptyPanel(onRefresh)
@@ -1180,12 +1235,16 @@ private fun LiftsBoard(
  * many lifters it ranks, so an empty board is visible before it is opened.
  */
 @Composable
-private fun LiftPicker(selected: Lift, rankedCount: (Lift) -> Int, onPick: (Lift) -> Unit) {
+private fun LiftPicker(
+    selected: Lift,
+    rankedCount: (Lift) -> Int,
+    onPick: (Lift) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     var open by remember { mutableStateOf(false) }
     Row(
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .heightIn(min = 48.dp)
             .clip(MaterialTheme.shapes.small)
             .background(Color(0xFF141A18))
@@ -1241,6 +1300,41 @@ private fun LiftPicker(selected: Lift, rankedCount: (Lift) -> Int, onPick: (Lift
                     }
                 }
             }
+        }
+    }
+}
+
+/** Pill-style compact segmented control for a right-aligned same-row slot; 44dp targets. */
+@Composable
+private fun <T> CompactSegmented(
+    options: List<Pair<T, String>>,
+    selected: T,
+    onPick: (T) -> Unit,
+) {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        options.forEach { (candidate, label) ->
+            val active = candidate == selected
+            Text(
+                label,
+                maxLines = 1,
+                softWrap = false,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
+                color = if (active) IronvellumColors.Abyss else IronvellumColors.InkMuted,
+                modifier = Modifier
+                    // 44dp hit area around a compact pill: the visual stays small.
+                    .heightIn(min = 44.dp)
+                    .selectable(selected = active, role = Role.Tab) { onPick(candidate) }
+                    .wrapContentHeight()
+                    .clip(MaterialTheme.shapes.small)
+                    .background(if (active) IronvellumColors.SovereignGold else Color(0xFF141A18))
+                    .inkBorder(if (active) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
+                    .padding(horizontal = 10.dp, vertical = 6.dp),
+            )
         }
     }
 }

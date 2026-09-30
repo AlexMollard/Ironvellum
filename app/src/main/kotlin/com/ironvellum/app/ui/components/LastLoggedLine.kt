@@ -11,7 +11,7 @@ import java.time.temporal.ChronoUnit
 private const val RELATIVE_DAYS = 14
 
 /**
- * "5 × +20 kg · 3d ago", "45s · yesterday", "8 × 7.5 kg · 12 Sep".
+ * "5×+20 kg · 3d ago", "45s · yesterday", "8×7.5 kg · 12 Sep".
  *
  * Load on a bodyweight movement (or a "Weighted ..." one) is ADDED load, so
  * it prints with a plus; a barbell or dumbbell row prints the load itself.
@@ -28,10 +28,10 @@ internal fun lastLoggedFigure(last: LastLogged, exercise: Exercise): String {
     val added = !exercise.isWeighted || exercise.name.trim().lowercase().startsWith("weighted")
     val load = last.weightKg?.takeIf { it > 0.0 }?.let { (if (added) "+" else "") + formatLoadKg(it) + " kg" }
     return when (exercise.metric) {
-        ExerciseMetric.REPS -> "${last.reps} × ${load ?: "BW"}"
+        ExerciseMetric.REPS -> "${last.reps}×${load ?: "BW"}"
         ExerciseMetric.HOLD -> {
             val seconds = setFigure(exercise.metric, last.reps, last.durationSec, last.distanceM).figure
-            if (load == null) "${seconds}s" else "${seconds}s × $load"
+            if (load == null) "${seconds}s" else "${seconds}s×$load"
         }
         ExerciseMetric.DURATION -> "${setFigure(exercise.metric, last.reps, last.durationSec, last.distanceM).figure} min"
         ExerciseMetric.DISTANCE_TIME -> setFigure(exercise.metric, last.reps, last.durationSec, last.distanceM).figure

@@ -1,26 +1,42 @@
 package com.ironvellum.app.ui.titles
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -53,6 +69,7 @@ import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.components.IronvellumTabPill
 import com.ironvellum.app.ui.theme.ChakraPetch
+import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -272,13 +289,21 @@ fun TitlesScreen(
             color = IronvellumColors.SystemGreen,
         )
         Spacer(Modifier.height(12.dp))
+        // One persistent selector row: the three tabs, plus — only while the
+        // skill tree is open — the LINE toggle that hides the technique-line
+        // pills, so a second rail never stacks under the first.
+        var linesOpen by rememberSaveable { mutableStateOf(false) }
         Row(
             Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
             horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             IronvellumTabPill("DEEDS", tab == TitlesTab.DEEDS) { tab = TitlesTab.DEEDS }
             IronvellumTabPill("SKILL TREE", tab == TitlesTab.TREE) { tab = TitlesTab.TREE }
             IronvellumTabPill("JOURNAL", tab == TitlesTab.JOURNAL) { tab = TitlesTab.JOURNAL }
+            if (tab == TitlesTab.TREE) {
+                LineFiltersButton(open = linesOpen) { linesOpen = !linesOpen }
+            }
         }
 
         if (tab == TitlesTab.JOURNAL) {
@@ -300,21 +325,34 @@ fun TitlesScreen(
         if (tab == TitlesTab.TREE) {
             // No "Skill Tree" heading: the selected pill above already says it.
             // The tally is the line worth keeping here.
+            Spacer(Modifier.height(12.dp))
             Text(
                 "${mastered.count { it in Skills.BY_NAME }} of ${Skills.ALL.size} techniques mastered",
                 style = MaterialTheme.typography.labelMedium,
                 color = IronvellumColors.InkMuted,
             )
+            Spacer(Modifier.height(4.dp))
+            // The roman tier numerals on every node read as noise without one
+            // line of explanation.
+            Text(
+                "Tiers I — V · a higher numeral is a harder standard",
+                style = MaterialTheme.typography.labelMedium,
+                color = IronvellumColors.InkMuted,
+            )
             Spacer(Modifier.height(10.dp))
-            Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Skills.LINES.forEach { line ->
-                    IronvellumTabPill(line.uppercase(), line == treeLine) { treeLine = line }
+            if (linesOpen) {
+                // Expanded state, not a second persistent rail: the pills only
+                // exist while the LINE toggle above is open.
+                Row(
+                    Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Skills.LINES.forEach { line ->
+                        IronvellumTabPill(line.uppercase(), line == treeLine) { treeLine = line }
+                    }
                 }
+                Spacer(Modifier.height(10.dp))
             }
-            Spacer(Modifier.height(14.dp))
             SkillTreeGraph(
                 line = treeLine,
                 mastered = mastered,
@@ -374,7 +412,7 @@ fun TitlesScreen(
                 result.newTitles.forEach { title ->
                     add(
                         Achievement(
-                            banner = "TITLE EARNED",
+                            banner = "TITLE UNLOCKED",
                             name = title.name,
                             subtitle = "${title.rarity.name.uppercase()} · ${title.describeFor(ui.sex).uppercase()}",
                         ),
@@ -388,6 +426,53 @@ fun TitlesScreen(
 }
 
 private enum class TitlesTab { DEEDS, TREE, JOURNAL }
+
+/**
+ * The one control that opens the technique-line pills, built like the exercise
+ * picker's FILTERS button so both read as the same mechanism: a button, not a
+ * second rail of tabs.
+ */
+@Composable
+private fun LineFiltersButton(open: Boolean, onClick: () -> Unit) {
+    val shape = MaterialTheme.shapes.small
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .heightIn(min = 44.dp)
+            .clip(shape)
+            .background(Brush.linearGradient(listOf(Color(0xFF141C18), Color(0xFF101714))))
+            .inkBorder(
+                if (open) IronvellumColors.SystemGreen else IronvellumColors.Rune,
+                shape,
+                1.dp,
+            )
+            .clickable(onClickLabel = if (open) "Hide technique lines" else "Show technique lines", onClick = onClick)
+            .padding(horizontal = 12.dp),
+    ) {
+        Icon(
+            Icons.Outlined.Tune,
+            contentDescription = null,
+            tint = IronvellumColors.SystemGreen,
+            modifier = Modifier.size(18.dp),
+        )
+        Spacer(Modifier.width(8.dp))
+        Text(
+            "LINE",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = IronvellumColors.SystemGreen,
+            letterSpacing = 1.sp,
+        )
+        Spacer(Modifier.width(6.dp))
+        Icon(
+            if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            tint = IronvellumColors.SystemGreen,
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
 
 // No line art on the tree's pills. Six of the ten lines had a mark and four did
 // not, and the marks themselves read as bad clip-art at pill size - the owner's
