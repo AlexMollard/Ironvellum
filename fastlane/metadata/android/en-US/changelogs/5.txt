@@ -1,5 +1,10 @@
-Comment on allies' workouts
-Salute, Iron or Flame reactions
-Inbox for requests, comments and reactions
-Choose who sees each workout
-Remove, mute, block or report a lifter
+Ally boards: calisthenics skill ladders and lift tiers
+Comment on and react to allies' workouts
+Open an ally's full workout
+Inbox for requests, comments and reactions, with notifications
+Choose who sees each workout; remove, mute, block or report
+Share a routine as a code, or import one
+New exercise picker: nickname search, favourites, last set, gear filter, info
+Set your gear in Settings
+Reset your password with an emailed code
+Crisper borders and fixes
