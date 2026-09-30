@@ -294,11 +294,12 @@ create table if not exists cloud_archives (
     constraint cloud_archives_size_cap check (size_bytes > 0 and size_bytes <= 8 * 1024 * 1024)
 );
 
--- One row per lifter per lift: the bodyweight-relative TIER step, worked out on
--- the phone. Only the coarse step integer leaves the device, never bodyweight or
--- a ratio, so an ally cannot back-solve a lifter's weight from a public set
--- load. recent_step is the best qualifying set of the last 7 days and recent_at
--- says when, so the board can show who is on form without a second table.
+-- One row per lifter per board: the coarse step, worked out on the phone. On a
+-- bodyweight-tier board it is the tier (never bodyweight or a ratio, so an ally
+-- cannot back-solve a lifter's weight from a public set load); on a skill-ladder
+-- board it is the 1-based rung. recent_step is the best qualifying set of the
+-- last 7 days and recent_at says when, so the board can show who is on form
+-- without a second table.
 create table if not exists lift_marks (
     user_id     uuid not null references profiles (id) on delete cascade,
     lift        text not null,
@@ -307,10 +308,22 @@ create table if not exists lift_marks (
     recent_at   timestamptz,
     updated_at  timestamptz not null default now(),
     primary key (user_id, lift),
-    constraint lift_marks_lift check (lift in ('pull_up', 'dip', 'squat', 'bench', 'deadlift', 'ohp')),
     constraint lift_marks_step check (step between 0 and 10),
     constraint lift_marks_recent_step check (recent_step is null or recent_step between 0 and 10)
 );
+
+-- The board list grew at schema 21 (calisthenics ladders: step is the 1-based
+-- rung). The lift check is dropped and re-added by name so pasting this file
+-- over a live schema-20 database widens it; existing rows all carry old wires
+-- and still pass. Keep in step with Lift.wire in LiftBoards.kt.
+alter table lift_marks drop constraint if exists lift_marks_lift;
+alter table lift_marks add constraint lift_marks_lift check (lift in (
+    'pull_up', 'one_arm_pull', 'muscle_up',
+    'dip', 'push_up', 'hspu',
+    'front_lever', 'back_lever', 'planche', 'handstand', 'l_sit', 'human_flag',
+    'pistol',
+    'squat', 'bench', 'deadlift', 'ohp'
+));
 
 -- ================================================================ visibility functions
 
@@ -1482,7 +1495,7 @@ grant execute on function public.my_inbox() to authenticated;
 -- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
 -- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 20 $$;
+language sql stable as $$ select 21 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

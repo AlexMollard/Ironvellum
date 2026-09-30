@@ -274,3 +274,24 @@ data class OwnedRelicEntity(
     val multiplier: Double,
     val drawnAtMs: Long,
 )
+
+/**
+ * A catalogue exercise the lifter starred in the picker. Preferences, not
+ * training: the row is cleaned up with its exercise (cascade), and nothing
+ * else reads it. exerciseId is the primary key, so it is its own index.
+ */
+@Entity(
+    tableName = "favourite_exercises",
+    foreignKeys = [
+        ForeignKey(
+            entity = ExerciseEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["exerciseId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+)
+data class FavouriteExerciseEntity(
+    @PrimaryKey val exerciseId: Long,
+    val addedAtMs: Long,
+)

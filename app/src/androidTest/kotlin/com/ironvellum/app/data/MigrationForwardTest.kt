@@ -495,4 +495,83 @@ class MigrationForwardTest {
         }
         db.close()
     }
+
+    /**
+     * Schema 30 -> 31 adds `favourite_exercises`. Purely additive: the
+     * workouts, sets and exercise rows written at 30 must all come through
+     * with their values, the new table must exist and be empty, and it must
+     * accept a favourite that references a surviving exercise.
+     */
+    @Test
+    fun upgradeTo31AddsFavouritesWithoutLosingTheTraining() = runTest {
+        helper.createDatabase(dbName, 30).use { old ->
+            old.execSQL(
+                "INSERT INTO exercises (id, name, muscleGroup, isWeighted, metric, category) " +
+                    "VALUES (7001, 'Fixture Pull-up', 'PULL', 0, 'REPS', '')",
+            )
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, " +
+                    "xpAwarded, strengthScore, title, note, privateNote, imported, audience) " +
+                    "VALUES (91, NULL, 'Heavy Pull', 1700000000000, 1700003600000, 240, 512, 'Top set', '', 'sore left elbow', 0, 'profile')",
+            )
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, " +
+                    "xpAwarded, strengthScore, title, note, privateNote, imported, audience) " +
+                    "VALUES (92, NULL, 'Legs', 1690000000000, 1690003600000, 150, 300, '', '', '', 1, 'profile')",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade) " +
+                    "VALUES (5001, 91, 7001, 0, 1, 6, 42.5, '', 1, NULL, NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade) " +
+                    "VALUES (5002, 91, 7001, 0, 2, 5, 45.0, '', 1, NULL, NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade) " +
+                    "VALUES (5003, 92, 7001, 0, 1, 8, 60.0, '', 1, NULL, NULL, NULL)",
+            )
+        }
+
+        val db = helper.runMigrationsAndValidate(
+            dbName,
+            IronvellumDatabase.VERSION,
+            true,
+            *IronvellumDatabase.MIGRATIONS,
+        )
+
+        db.query("SELECT COUNT(*), SUM(xpAwarded), SUM(imported) FROM sessions").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("both workouts must survive", 2, c.getInt(0))
+            assertEquals(390, c.getInt(1))
+            assertEquals(1, c.getInt(2))
+        }
+        db.query("SELECT privateNote FROM sessions WHERE id = 91").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("sore left elbow", c.getString(0))
+        }
+        db.query("SELECT COUNT(*), SUM(reps), MAX(weightKg) FROM set_logs").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals("all three logged sets must survive", 3, c.getInt(0))
+            assertEquals(19, c.getInt(1))
+            assertEquals(60.0, c.getDouble(2), 0.001)
+        }
+        db.query("SELECT name, muscleGroup FROM exercises WHERE id = 7001").use { c ->
+            assertTrue("the exercise row must survive", c.moveToFirst())
+            assertEquals("Fixture Pull-up", c.getString(0))
+        }
+        db.query("SELECT COUNT(*) FROM favourite_exercises").use { c ->
+            assertTrue("the favourites table must exist", c.moveToFirst())
+            assertEquals("nothing is starred on upgrade", 0, c.getInt(0))
+        }
+        db.execSQL("INSERT INTO favourite_exercises (exerciseId, addedAtMs) VALUES (7001, 1700000000003)")
+        db.query("SELECT COUNT(*) FROM favourite_exercises WHERE exerciseId = 7001").use { c ->
+            assertTrue(c.moveToFirst())
+            assertEquals(1, c.getInt(0))
+        }
+        db.close()
+    }
 }

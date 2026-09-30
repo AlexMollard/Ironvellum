@@ -86,10 +86,6 @@ class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
 
     private val selected = MutableStateFlow<Exercise?>(null)
 
-    // Most-recent-first ids from completed sessions; the picker preserves the order.
-    val recentExerciseIds: StateFlow<List<Long>> =
-        repo.observeRecentExerciseIds().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
     val ui: StateFlow<ExplorerUi> = combine(
         repo.observeExercises(),
         selected,
@@ -121,7 +117,6 @@ fun ExerciseExplorerScreen(
         viewModel(factory = viewModelFactory { initializer { ExerciseExplorerViewModel(ironvellumRepository()) } }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    val recentExerciseIds by viewModel.recentExerciseIds.collectAsStateWithLifecycle()
 
     Column(
         Modifier
@@ -159,14 +154,11 @@ fun ExerciseExplorerScreen(
         val selectedExercise = ui.selected
         if (selectedExercise == null) {
             // The screen's own header names it and BACK leaves it, so the
-            // panel drops its SELECT EXERCISE title and CLOSE.
+            // panel is the bare list.
             InkPanel(Modifier.fillMaxWidth()) {
                 ExercisePickerPanel(
                     exercises = ui.exercises,
-                    recentIds = recentExerciseIds,
                     onPick = viewModel::pick,
-                    onDismiss = null,
-                    title = null,
                 )
             }
         } else {

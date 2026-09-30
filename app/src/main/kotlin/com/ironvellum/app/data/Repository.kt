@@ -2,6 +2,8 @@ package com.ironvellum.app.data
 import androidx.room.withTransaction
 import com.ironvellum.app.data.db.ExerciseDao
 import com.ironvellum.app.data.db.ExerciseEntity
+import com.ironvellum.app.data.db.FavouriteExerciseEntity
+import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.data.db.GachaStateEntity
 import com.ironvellum.app.data.db.HealthDayDao
 import com.ironvellum.app.data.db.HealthDayEntity
@@ -120,6 +122,7 @@ class Repository(
     private val syncStateDao: SyncStateDao = db.syncStateDao()
     private val idleDao: IdleDao = db.idleDao()
     private val gachaDao = db.gachaDao()
+    private val favouriteExerciseDao = db.favouriteExerciseDao()
     // ---------------------------------------------------------------- seeding
 
     suspend fun ensureSeeded() {
@@ -1445,6 +1448,25 @@ class Repository(
      */
     fun observeRecentExerciseIds(limit: Int = RECENT_EXERCISE_LIMIT): Flow<List<Long>> =
         sessionDao.observeRecentExerciseIds(limit)
+
+    /**
+     * Each exercise's top set from its most recent completed workout (see
+     * [LastLogged]), for the picker's "last time" line. One query, not one
+     * per row; an exercise never logged is simply absent.
+     */
+    fun observeLastLogged(): Flow<Map<Long, LastLogged>> =
+        sessionDao.observeLatestWorkoutSets().map { LastLogged.topSets(it) }
+
+    fun observeFavouriteExerciseIds(): Flow<Set<Long>> =
+        favouriteExerciseDao.observeIds().map { it.toSet() }
+
+    suspend fun setFavourite(exerciseId: Long, favourite: Boolean) {
+        if (favourite) {
+            favouriteExerciseDao.add(FavouriteExerciseEntity(exerciseId, System.currentTimeMillis()))
+        } else {
+            favouriteExerciseDao.remove(exerciseId)
+        }
+    }
 
     /**
      * The sex the strength normalisation scores against. An unreadable stored

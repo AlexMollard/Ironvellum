@@ -159,8 +159,27 @@ object GearRequirements {
         return alternatives.any { alternative -> equipment.gear.containsAll(alternative) }
     }
 
+    /**
+     * Whether a browsing lifter with [equipment] can do the row, for the
+     * exercise picker's "my gear" filter. It reuses [allows], differing in
+     * two places where the generator is strict and browsing must not be:
+     * activities (a non-blank [category]) are never gear-gated, and a
+     * weighted, non-machine movement with no requirements row has UNKNOWN
+     * needs, so it stays visible instead of being treated as impossible.
+     */
+    fun fits(exerciseName: String, isWeighted: Boolean, category: String, equipment: Equipment): Boolean {
+        if (category.isNotBlank()) return true
+        val name = exerciseName.trim().lowercase()
+        if (isWeighted && !isMachine(name) && name !in requirements) return true
+        return allows(exerciseName, isWeighted, equipment)
+    }
+
     /** True when the movement cannot be done with a single dumbbell. */
     fun needsPair(name: String): Boolean = name.trim().lowercase() in pairOnly
+
+    /** The alternative gear sets the movement needs (each set must be fully owned); empty when unlisted or nothing is needed. */
+    fun needs(exerciseName: String): List<Set<Gear>> =
+        requirements[exerciseName.trim().lowercase()].orEmpty().filter { it.isNotEmpty() }
 
     /** Whether the movement has an explicit row - the silent-fallthrough guard. */
     internal fun hasEntry(name: String): Boolean = name.trim().lowercase() in requirements

@@ -2,17 +2,42 @@ package com.ironvellum.app.domain
 
 import kotlin.math.sqrt
 
+/** How a board scores: bodyweight-ratio tiers, or an ordered ladder of skill rungs. */
+enum class LiftKind { TIERED, LADDER }
+
+/** Display grouping of the boards, in list order. */
+enum class LiftGroup(val label: String) {
+    PULL("Pull"),
+    PUSH("Push"),
+    STATIC("Static"),
+    LEGS("Legs"),
+    BARBELL("Barbell"),
+}
+
 /**
- * The six lifts the ally boards rank. [wire] is the `lift_marks.lift` value
- * (check constraint in the baseline schema); [label] is the chip text.
+ * The boards the ally boards rank, calisthenics first and barbell last.
+ * [wire] is the `lift_marks.lift` value (check constraint in the baseline
+ * schema); [label] is the chip text. LADDER boards take their rungs from
+ * [LiftBoards.rungs].
  */
-enum class Lift(val wire: String, val label: String) {
-    PULL_UP("pull_up", "Pull-up"),
-    DIP("dip", "Dip"),
-    SQUAT("squat", "Squat"),
-    BENCH("bench", "Bench press"),
-    DEADLIFT("deadlift", "Deadlift"),
-    OVERHEAD_PRESS("ohp", "Overhead press"),
+enum class Lift(val wire: String, val label: String, val group: LiftGroup, val kind: LiftKind) {
+    PULL_UP("pull_up", "Weighted pull-up", LiftGroup.PULL, LiftKind.TIERED),
+    ONE_ARM_PULL("one_arm_pull", "One-arm pull-up", LiftGroup.PULL, LiftKind.LADDER),
+    MUSCLE_UP("muscle_up", "Muscle-up", LiftGroup.PULL, LiftKind.LADDER),
+    DIP("dip", "Weighted dip", LiftGroup.PUSH, LiftKind.TIERED),
+    PUSH_UP("push_up", "One-arm push-up", LiftGroup.PUSH, LiftKind.LADDER),
+    HSPU("hspu", "Handstand push-up", LiftGroup.PUSH, LiftKind.LADDER),
+    FRONT_LEVER("front_lever", "Front lever", LiftGroup.STATIC, LiftKind.LADDER),
+    BACK_LEVER("back_lever", "Back lever", LiftGroup.STATIC, LiftKind.LADDER),
+    PLANCHE("planche", "Planche", LiftGroup.STATIC, LiftKind.LADDER),
+    HANDSTAND("handstand", "Handstand", LiftGroup.STATIC, LiftKind.LADDER),
+    L_SIT("l_sit", "L-sit to manna", LiftGroup.STATIC, LiftKind.LADDER),
+    HUMAN_FLAG("human_flag", "Human flag", LiftGroup.STATIC, LiftKind.LADDER),
+    PISTOL("pistol", "Single-leg squat", LiftGroup.LEGS, LiftKind.LADDER),
+    SQUAT("squat", "Squat", LiftGroup.BARBELL, LiftKind.TIERED),
+    BENCH("bench", "Bench press", LiftGroup.BARBELL, LiftKind.TIERED),
+    DEADLIFT("deadlift", "Deadlift", LiftGroup.BARBELL, LiftKind.TIERED),
+    OVERHEAD_PRESS("ohp", "Overhead press", LiftGroup.BARBELL, LiftKind.TIERED),
     ;
 
     companion object {
@@ -22,7 +47,7 @@ enum class Lift(val wire: String, val label: String) {
     }
 }
 
-/** step 0..[LiftBoards.MAX_STEP]; recentStep/recentAtMs = best qualifying set in the 7 days before nowMs, null when none. */
+/** step 0..[LiftBoards.MAX_STEP] (a LADDER step is the 1-based rung); recentStep/recentAtMs = best qualifying set in the 7 days before nowMs, null when none. */
 data class LiftMark(val lift: Lift, val step: Int, val recentStep: Int?, val recentAtMs: Long?)
 
 /**
@@ -134,41 +159,164 @@ object LiftBoards {
         set.exerciseName.contains("assisted", ignoreCase = true) ||
             set.modifiers.split(",").any { it.trim().equals("assisted", ignoreCase = true) }
 
-    /** One mark per lift with at least one qualifying set; empty when bodyweight is unknown (bodyweightAt returns <= 0). */
+    /** One rung of a LADDER board: a catalogue exercise and the figure that clears it. */
+    data class Rung(val exercise: String, val metric: Skills.Metric, val target: Int)
+
+    /**
+     * Rung exercise names per LADDER lift, easiest first, in the skill tree's
+     * own progression order. The standard (reps or seconds) is read off
+     * [Skills.SkillDef.standard], so the board and the tree never disagree.
+     *
+     * Handstand Walk is deliberately absent from the handstand ladder: its
+     * standard is metres, and a workout set cannot carry a distance for it.
+     * No rung uses a gym-line skill, so [Skills.femaleStandard] never applies;
+     * the calisthenics standards are the same for every lifter.
+     */
+    private val LADDER_EXERCISES: Map<Lift, List<String>> = mapOf(
+        Lift.ONE_ARM_PULL to listOf("Australian Pull-up", "Pull-up", "Archer Pull-up", "One-Arm Negative", "One-Arm Pull-up"),
+        Lift.MUSCLE_UP to listOf("Muscle-up", "Strict Muscle-up", "Ring Muscle-up", "Inverted Muscle-up"),
+        Lift.PUSH_UP to listOf(
+            "Incline Push-up", "Push-up", "Diamond Push-up", "Archer Push-up", "One-Arm Negative Push-up", "One-Arm Push-up",
+        ),
+        Lift.HSPU to listOf("Pike Press", "Wall HSPU", "Handstand Push-up", "90-Degree Push-up"),
+        Lift.FRONT_LEVER to listOf(
+            "Front Row Hold", "Tuck Front Lever", "Advanced Tuck Front Lever", "One-Leg Front Lever",
+            "Straddle Front Lever", "Front Lever",
+        ),
+        Lift.BACK_LEVER to listOf("Skin the Cat", "Tuck Back Lever", "Advanced Tuck Back Lever", "Straddle Back Lever", "Back Lever"),
+        Lift.PLANCHE to listOf(
+            "Frog Stand", "Tuck Planche", "Advanced Tuck Planche", "One-Leg Planche", "Straddle Planche", "Full Planche",
+        ),
+        Lift.HANDSTAND to listOf("Crow Pose", "Wall Handstand", "Freestanding Handstand", "One-Arm Handstand"),
+        Lift.L_SIT to listOf("L-sit", "Straddle L-sit", "V-Sit", "Manna"),
+        Lift.HUMAN_FLAG to listOf("Dead Hang", "One-Arm Hang", "Human Flag"),
+        Lift.PISTOL to listOf("Split Squat", "Sissy Squat", "Shrimp Squat", "Pistol Squat", "Dragon Squat"),
+    )
+
+    private val LADDERS: Map<Lift, List<Rung>> = LADDER_EXERCISES.mapValues { (lift, names) ->
+        require(names.size in 1..MAX_STEP) { "${lift.wire} needs 1..$MAX_STEP rungs" }
+        names.map { name ->
+            val skill = requireNotNull(Skills.forName(name)) { "${lift.wire}: no skill named $name" }
+            Rung(name, skill.metric, skill.target)
+        }
+    }
+
+    /** The rungs of a LADDER lift, easiest first; empty for a TIERED lift. */
+    fun rungs(lift: Lift): List<Rung> = LADDERS[lift].orEmpty()
+
+    /** A board an exercise counts toward: [rung] is the 1-based ladder rung of [rungCount], or null on a TIERED board. */
+    data class BoardEntry(val lift: Lift, val rung: Int?, val rungCount: Int)
+
+    /** Every board [exerciseName] counts toward: its TIERED lift, and each LADDER rung it is. Empty when none. */
+    fun boardsFor(exerciseName: String): List<BoardEntry> {
+        val name = Titles.normaliseName(exerciseName)
+        return buildList {
+            LIFT_BY_NAME[name]?.let { add(BoardEntry(it, null, 0)) }
+            for ((lift, rungs) in LADDERS) {
+                val index = rungs.indexOfFirst { Titles.normaliseName(it.exercise) == name }
+                if (index >= 0) add(BoardEntry(lift, index + 1, rungs.size))
+            }
+        }
+    }
+
+    /** Headline for a step: the tier name on TIERED boards, the rung's exercise on LADDER boards. */
+    fun stepLabel(lift: Lift, step: Int): String {
+        if (lift.kind == LiftKind.TIERED) return tierName(step)
+        return rungs(lift).getOrNull(step - 1)?.exercise ?: "No rung yet"
+    }
+
+    /** "rung 4 of 6" for a LADDER step; null on TIERED boards and for step 0. */
+    fun stepDetail(lift: Lift, step: Int): String? {
+        val rungs = rungs(lift)
+        if (rungs.isEmpty() || step < 1) return null
+        return "rung ${step.coerceAtMost(rungs.size)} of ${rungs.size}"
+    }
+
+    /** The highest rung of [lift] cleared by a set of [exercise] worth [reps] / [seconds]; 0 when none. */
+    private fun rungCleared(lift: Lift, exercise: String, reps: Int, seconds: Int?): Int {
+        val rungs = LADDERS[lift] ?: return 0
+        val index = rungs.indexOfFirst { Titles.normaliseName(it.exercise) == exercise }
+        if (index < 0) return 0
+        val rung = rungs[index]
+        val figure = when (rung.metric) {
+            Skills.Metric.REPS -> reps
+            Skills.Metric.SECONDS -> seconds ?: 0
+            Skills.Metric.METRES -> 0
+        }
+        return if (figure >= rung.target && rung.target > 0) index + 1 else 0
+    }
+
+    /**
+     * One mark per lift with at least one qualifying set. TIERED lifts need a
+     * known bodyweight (bodyweightAt returns > 0); LADDER lifts never do.
+     *
+     * LADDER step = the highest rung whose exercise has a done, non-assisted
+     * set meeting the rung's standard, so a higher rung implies every lower
+     * one. [practices] are the local skill-practice records: a practice
+     * attempt at a rung's skill counts exactly like a logged set (a lifter
+     * who drills a lever in the skill tree, not in a workout, still ranks).
+     * Claim rows are ignored: a claim is an honours mark, not a measured figure.
+     */
     fun marks(
         history: List<Pair<WorkoutSession, List<SessionSet>>>,
         bodyweightAt: (Long) -> Double,
         sex: Sex,
         nowMs: Long,
+        practices: List<SkillPractice> = emptyList(),
     ): List<LiftMark> {
         val best = HashMap<Lift, Int>()
         val recentBest = HashMap<Lift, Int>()
         val recentAt = HashMap<Lift, Long>()
+
+        fun record(lift: Lift, step: Int, at: Long, isRecent: Boolean) {
+            if (step > (best[lift] ?: -1)) best[lift] = step
+            if (isRecent && step > (recentBest[lift] ?: -1)) {
+                recentBest[lift] = step
+                recentAt[lift] = at
+            } else if (isRecent && step == recentBest[lift] && at > (recentAt[lift] ?: 0L)) {
+                recentAt[lift] = at
+            }
+        }
+
+        fun recent(at: Long) = at <= nowMs && at > nowMs - WEEK_MS
+
         for ((session, sets) in history) {
             val bodyweight = bodyweightAt(session.startedAtMs)
-            if (bodyweight <= 0.0) continue
             val workoutAt = session.completedAtMs ?: session.startedAtMs
-            val isRecent = workoutAt <= nowMs && workoutAt > nowMs - WEEK_MS
+            val isRecent = recent(workoutAt)
             for (set in sets) {
                 if (!set.done) continue
+                if (isAssisted(set)) continue
+                val name = Titles.normaliseName(set.exerciseName)
+
+                for (lift in LADDERS.keys) {
+                    val step = rungCleared(lift, name, set.reps, set.durationSec)
+                    if (step > 0) record(lift, step, workoutAt, isRecent)
+                }
+
+                if (bodyweight <= 0.0) continue
                 // Epley's rep term stops being honest past 12 (ProgramRules.MAX_E1RM_REPS).
                 if (set.reps < 1 || set.reps > ProgramRules.MAX_E1RM_REPS) continue
-                if (isAssisted(set)) continue
-                val lift = LIFT_BY_NAME[Titles.normaliseName(set.exerciseName)] ?: continue
+                val lift = LIFT_BY_NAME[name] ?: continue
                 val added = (set.weightKg ?: 0.0).coerceAtLeast(0.0)
                 val load = if (lift in BODYWEIGHT_LIFTS) bodyweight + added else added
                 if (load <= 0.0) continue
                 val e1rm = load * (1.0 + set.reps / 30.0)
-                val step = stepFor(lift, sex, e1rm / bodyweight)
-                if (step > (best[lift] ?: -1)) best[lift] = step
-                if (isRecent && step > (recentBest[lift] ?: -1)) {
-                    recentBest[lift] = step
-                    recentAt[lift] = workoutAt
-                } else if (isRecent && step == recentBest[lift] && workoutAt > (recentAt[lift] ?: 0L)) {
-                    recentAt[lift] = workoutAt
-                }
+                record(lift, stepFor(lift, sex, e1rm / bodyweight), workoutAt, isRecent)
             }
         }
+
+        for (practice in practices) {
+            if (practice.claimed) continue
+            val name = Titles.normaliseName(practice.skillName)
+            val isRecent = recent(practice.practicedAtMs)
+            for (lift in LADDERS.keys) {
+                // A practice value is seconds for a SECONDS rung, reps otherwise.
+                val step = rungCleared(lift, name, practice.value, practice.value)
+                if (step > 0) record(lift, step, practice.practicedAtMs, isRecent)
+            }
+        }
+
         return Lift.entries.mapNotNull { lift ->
             val step = best[lift] ?: return@mapNotNull null
             LiftMark(lift, step, recentBest[lift], recentAt[lift])

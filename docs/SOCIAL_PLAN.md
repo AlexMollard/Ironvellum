@@ -101,15 +101,28 @@ an ally workout view and inbox notifications; Warbands wait. Boards rank by
 bodyweight ratio would let them solve for bodyweight, which never leaves the
 phone.
 
-- **Ally strength boards.** `domain/LiftBoards.kt` scores six lifts (pull-up,
-  dip, squat, bench press, deadlift, overhead press) from the Epley e1RM over
-  bodyweight at the time, with bodyweight + added load for pull-ups and dips.
-  Five sex-aware tiers (Iron, Bronze, Silver, Gold, Mythic), each split into I
-  and II, plus Initiate below Iron: steps 0-10. Only the step leaves the phone.
+- **Ally strength boards.** `domain/LiftBoards.kt` ranks 17 boards, calisthenics
+  first and barbell last, grouped Pull, Push, Static, Legs, Barbell. Two kinds:
+  - TIERED (weighted pull-up, weighted dip, squat, bench press, deadlift,
+    overhead press): Epley e1RM over bodyweight at the time, with bodyweight +
+    added load for pull-ups and dips. Five sex-aware tiers (Iron, Bronze, Silver,
+    Gold, Mythic), each split into I and II, plus Initiate below Iron: steps 0-10.
+  - LADDER (schema 21): an ordered list of skill rungs, easiest first, each a
+    catalogue exercise plus the reps or hold seconds from its `Skills.kt`
+    standard. Step = the highest rung with a done, non-assisted set meeting the
+    standard (a higher rung implies the lower ones); no bodyweight needed.
+    Skill-practice records count like sets, claims do not. Boards (wire):
+    `one_arm_pull`, `muscle_up`, `push_up`, `hspu`, `front_lever`, `back_lever`,
+    `planche`, `handstand`, `l_sit`, `human_flag`, `pistol`. Handstand Walk is
+    not a rung: a workout set cannot carry its metres.
+  Only the step leaves the phone. The board shows the tier name, or the rung's
+  exercise with "rung 4 of 6".
   Server: `lift_marks(user_id, lift, step, recent_step, recent_at, updated_at)`,
   readable by the owner and accepted allies (`is_ally`), view `lift_board` with
-  `recent_step` only while `recent_at` is within 7 days. LIFTS board beside
-  TRAINING and GARRISON, WEEK / ALL TIME. Schema version 20.
+  `recent_step` only while `recent_at` is within 7 days. The `lift_marks_lift`
+  check is dropped and re-added by name in the baseline, so pasting it over a
+  schema-20 database widens it without a reset. LIFTS board beside TRAINING and
+  GARRISON, WEEK / ALL TIME. Schema version 21.
 - **Routine share codes.** `IVR1:` + base64url of deflated JSON. Share from
   Train; import from New workout › Import code, adding workouts unscheduled or
   replacing the routine after a confirm. Per-exercise generator reasons are not

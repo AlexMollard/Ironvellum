@@ -186,7 +186,7 @@ class LiftBoardsTest {
 
     @Test
     fun stepNeverDecreasesAsTheRatioGrows() {
-        for (lift in Lift.entries) for (sex in Sex.entries) {
+        for (lift in Lift.entries.filter { it.kind == LiftKind.TIERED }) for (sex in Sex.entries) {
             val steps = listOf(0.0, 0.3, 0.6, 0.9, 1.2, 1.5, 1.8, 2.1, 2.4, 3.0, 5.0, 9.0)
                 .map { LiftBoards.stepFor(lift, sex, it) }
             assertEquals("$lift $sex", steps.sorted(), steps)
@@ -198,5 +198,152 @@ class LiftBoardsTest {
         for (lift in Lift.entries) assertEquals(lift, Lift.fromWire(lift.wire))
         assertNull(Lift.fromWire("snatch"))
         assertNull(Lift.fromWire(null))
+    }
+
+    @Test
+    fun wireNamesAreUnique() {
+        assertEquals(Lift.entries.size, Lift.entries.map { it.wire }.toSet().size)
+    }
+
+    @Test
+    fun barbellBoardsComeLastAndCalisthenicsFirst() {
+        val groups = Lift.entries.map { it.group.ordinal }
+        assertEquals(groups.sorted(), groups)
+        assertEquals(LiftGroup.BARBELL, Lift.entries.last().group)
+        assertEquals(LiftGroup.PULL, Lift.entries.first().group)
+    }
+
+    // ---- ladders
+
+    private fun hold(name: String, seconds: Int, done: Boolean = true, modifiers: String = "") =
+        SessionSet(exerciseId = 1, exerciseName = name, setIndex = 0, reps = 0, modifiers = modifiers, done = done, durationSec = seconds)
+
+    private fun frontLeverStep(vararg sets: SessionSet, daysAgo: Int = 1, bw: (Long) -> Double = { bodyweight }) =
+        marks(listOf(workout(daysAgo, *sets)), bw = bw).singleOrNull { it.lift == Lift.FRONT_LEVER }?.step
+
+    @Test
+    fun ladderRungNeedsItsStandardAndOneShortDoesNotCount() {
+        val rungs = LiftBoards.rungs(Lift.FRONT_LEVER)
+        val straddle = rungs.indexOfFirst { it.exercise == "Straddle Front Lever" } + 1
+        val target = rungs[straddle - 1].target
+        assertEquals(straddle, frontLeverStep(hold("Straddle Front Lever", target)))
+        // One second short of the standard clears nothing on that exercise.
+        assertNull(frontLeverStep(hold("Straddle Front Lever", target - 1)))
+
+        val pistol = LiftBoards.rungs(Lift.PISTOL)
+        val pistolRung = pistol.indexOfFirst { it.exercise == "Pistol Squat" }
+        val need = pistol[pistolRung].target
+        fun pistolStep(reps: Int) = marks(listOf(workout(1, set("Pistol Squat", reps, null)))).singleOrNull { it.lift == Lift.PISTOL }?.step
+        assertEquals(pistolRung + 1, pistolStep(need))
+        assertNull(pistolStep(need - 1))
+    }
+
+    @Test
+    fun ladderHoldReadsSecondsNotReps() {
+        val need = LiftBoards.rungs(Lift.FRONT_LEVER).first().target
+        val repsOnly = SessionSet(exerciseId = 1, exerciseName = "Front Row Hold", setIndex = 0, reps = need, done = true)
+        assertNull(frontLeverStep(repsOnly))
+    }
+
+    @Test
+    fun higherRungWinsAndImpliesLowerOnes() {
+        val rungs = LiftBoards.rungs(Lift.FRONT_LEVER)
+        val top = rungs.last()
+        // Only the top rung was ever logged: the board still reads the top step.
+        assertEquals(rungs.size, frontLeverStep(hold(top.exercise, top.target)))
+        val mixed = frontLeverStep(
+            hold(rungs[1].exercise, rungs[1].target),
+            hold(rungs[3].exercise, rungs[3].target),
+            hold(rungs[2].exercise, rungs[2].target),
+        )
+        assertEquals(4, mixed)
+    }
+
+    @Test
+    fun ladderMarkExistsWithUnknownBodyweightButTieredDoesNot() {
+        val rung = LiftBoards.rungs(Lift.FRONT_LEVER)[1]
+        val history = listOf(workout(1, hold(rung.exercise, rung.target), set("Back Squat", 5, 150.0)))
+        val lifts = marks(history) { 0.0 }.map { it.lift }
+        assertEquals(listOf(Lift.FRONT_LEVER), lifts)
+    }
+
+    @Test
+    fun assistedAndUndoneLadderSetsNeverCount() {
+        val rung = LiftBoards.rungs(Lift.FRONT_LEVER)[0]
+        assertNull(frontLeverStep(hold(rung.exercise, rung.target, modifiers = "assisted")))
+        assertNull(frontLeverStep(hold(rung.exercise, rung.target, done = false)))
+        assertNull(frontLeverStep(hold("Assisted " + rung.exercise, rung.target)))
+    }
+
+    @Test
+    fun ladderRecentWindowIsSevenDays() {
+        val rungs = LiftBoards.rungs(Lift.FRONT_LEVER)
+        val old = marks(listOf(workout(30, hold(rungs[3].exercise, rungs[3].target)))).single()
+        assertEquals(4, old.step)
+        assertNull(old.recentStep)
+
+        val history = listOf(
+            workout(30, hold(rungs[3].exercise, rungs[3].target)),
+            workout(2, hold(rungs[1].exercise, rungs[1].target)),
+        )
+        val mark = marks(history).single()
+        assertEquals(4, mark.step)
+        assertEquals(2, mark.recentStep)
+        assertEquals(now - 2 * day, mark.recentAtMs)
+    }
+
+    @Test
+    fun practiceRecordsCountLikeSetsButClaimsDoNot() {
+        val rung = LiftBoards.rungs(Lift.FRONT_LEVER)[2]
+        fun withPractice(p: SkillPractice) =
+            LiftBoards.marks(emptyList(), { 0.0 }, Sex.MALE, now, listOf(p)).singleOrNull()
+        val met = withPractice(SkillPractice(rung.exercise, now - 2 * day, value = rung.target))!!
+        assertEquals(3, met.step)
+        assertEquals(3, met.recentStep)
+        assertNull(withPractice(SkillPractice(rung.exercise, now - 2 * day, value = rung.target - 1)))
+        assertNull(withPractice(SkillPractice(rung.exercise, now - 2 * day, claimed = true, value = rung.target)))
+        assertNull(withPractice(SkillPractice(rung.exercise, now - 20 * day, value = rung.target))!!.recentStep)
+    }
+
+    @Test
+    fun stepLabelNamesTheTierOrTheRung() {
+        assertEquals("Iron I", LiftBoards.stepLabel(Lift.SQUAT, 1))
+        val rungs = LiftBoards.rungs(Lift.FRONT_LEVER)
+        assertEquals(rungs[3].exercise, LiftBoards.stepLabel(Lift.FRONT_LEVER, 4))
+        assertEquals("rung 4 of ${rungs.size}", LiftBoards.stepDetail(Lift.FRONT_LEVER, 4))
+        assertNull(LiftBoards.stepDetail(Lift.SQUAT, 4))
+    }
+
+    @Test
+    fun everyLadderIsWellFormedAndItsRungsAreInTheCatalogue() {
+        val catalogue = com.ironvellum.app.data.Seed.exercises.map { it.name }.toSet()
+        for (lift in Lift.entries) {
+            val rungs = LiftBoards.rungs(lift)
+            if (lift.kind == LiftKind.TIERED) {
+                assertTrue("$lift", rungs.isEmpty())
+                continue
+            }
+            assertTrue("$lift needs 3+ rungs", rungs.size >= 3)
+            assertTrue("$lift over the step cap", rungs.size <= LiftBoards.MAX_STEP)
+            assertEquals("$lift repeats a rung", rungs.size, rungs.map { it.exercise }.toSet().size)
+            for (rung in rungs) {
+                assertTrue("${rung.exercise} is not in the catalogue", rung.exercise in catalogue)
+                assertTrue("${rung.exercise} has no target", rung.target > 0)
+                // A workout set cannot carry a distance, so a metres rung could never be met.
+                assertTrue("${rung.exercise} is measured in metres", rung.metric != Skills.Metric.METRES)
+            }
+        }
+    }
+
+    @Test
+    fun boardsForResolvesRungsAndTieredNamesButNotUnrelatedExercises() {
+        val rungs = LiftBoards.rungs(Lift.ONE_ARM_PULL)
+        val index = rungs.indexOfFirst { it.exercise == "Archer Pull-up" }
+        assertTrue(index >= 0)
+        assertTrue(
+            LiftBoards.BoardEntry(Lift.ONE_ARM_PULL, index + 1, rungs.size) in LiftBoards.boardsFor(" archer pull-up "),
+        )
+        assertTrue(LiftBoards.BoardEntry(Lift.DIP, null, 0) in LiftBoards.boardsFor("Weighted Dip"))
+        assertTrue(LiftBoards.boardsFor("Face Pull").isEmpty())
     }
 }

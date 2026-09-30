@@ -23,8 +23,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material.icons.outlined.Refresh
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -33,14 +31,15 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
+import com.ironvellum.app.domain.ExerciseSearch
+import com.ironvellum.app.domain.LiftGroup
+import com.ironvellum.app.ui.components.InkPickerSheet
+import com.ironvellum.app.ui.components.PickerSectionHeader
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -1175,83 +1174,123 @@ private fun LiftsBoard(
 }
 
 /**
- * One bar naming the current lift; the full list opens on tap. A chip rail
- * hid lifts off the edge of the screen, and this stays one row however many
- * lifts get boards. Each entry says how many lifters it ranks, so an empty
- * board is visible before it is opened.
+ * One bar naming the current board; tapping it opens the shared picker
+ * sheet, grouped Pull / Push / Static / Legs / Barbell and searchable by
+ * board or rung name ("fl" finds the front lever board). Each row says how
+ * many lifters it ranks, so an empty board is visible before it is opened.
  */
 @Composable
 private fun LiftPicker(selected: Lift, rankedCount: (Lift) -> Int, onPick: (Lift) -> Unit) {
-    var expanded by remember { mutableStateOf(false) }
-    var barWidthPx by remember { mutableIntStateOf(0) }
-    val density = LocalDensity.current
-    Box(Modifier.fillMaxWidth().onSizeChanged { barWidthPx = it.width }) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 48.dp)
-                .clip(MaterialTheme.shapes.small)
-                .background(Color(0xFF141A18))
-                .inkBorder(IronvellumColors.SovereignGold, MaterialTheme.shapes.small, 1.dp)
-                .clickable(onClickLabel = "Choose a lift") { expanded = true }
-                .padding(horizontal = 14.dp),
-        ) {
-            Text(
-                "LIFT",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-            )
-            Spacer(Modifier.width(12.dp))
-            Text(
-                selected.label.uppercase(),
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = IronvellumColors.SovereignGold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, tint = IronvellumColors.SovereignGold)
-        }
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false },
-            // As wide as the bar: sized to content, the longest name ran into its count.
-            modifier = Modifier.width(with(density) { barWidthPx.toDp() }),
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
-        ) {
-            Lift.entries.forEach { lift ->
-                val count = rankedCount(lift)
-                DropdownMenuItem(
-                    text = {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                lift.label.uppercase(),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontFamily = ChakraPetch,
-                                fontWeight = if (lift == selected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (lift == selected) IronvellumColors.SovereignGold else IronvellumColors.Ink,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Spacer(Modifier.width(12.dp))
-                            Text(
-                                if (count == 0) "none yet" else "$count ranked",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = IronvellumColors.InkMuted,
-                            )
-                        }
-                    },
-                    onClick = {
-                        expanded = false
+    var open by remember { mutableStateOf(false) }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(Color(0xFF141A18))
+            .inkBorder(IronvellumColors.SovereignGold, MaterialTheme.shapes.small, 1.dp)
+            .clickable(onClickLabel = "Choose a board") { open = true }
+            .padding(horizontal = 14.dp),
+    ) {
+        Text(
+            selected.group.label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+        )
+        Spacer(Modifier.width(12.dp))
+        Text(
+            selected.label.uppercase(),
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = IronvellumColors.SovereignGold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, tint = IronvellumColors.SovereignGold)
+    }
+    if (!open) return
+
+    var query by remember { mutableStateOf("") }
+    val matches = Lift.entries.mapNotNull { lift ->
+        val names = listOf(lift.label) + LiftBoards.rungs(lift).map { it.exercise }
+        names.mapNotNull { ExerciseSearch.rank(it, query) }.minOrNull()?.let { lift to it }
+    }
+    // Board order within a group is progression order; a query re-sorts by how well it matched.
+    val shown = if (query.isBlank()) matches.map { it.first } else matches.sortedBy { it.second }.map { it.first }
+    InkPickerSheet(
+        title = "CHOOSE A BOARD",
+        onDismiss = { open = false },
+        query = query,
+        onQueryChange = { query = it },
+        searchLabel = "Search boards",
+        count = shown.size,
+    ) {
+        LiftGroup.entries.forEach { group ->
+            val inGroup = shown.filter { it.group == group }
+            if (inGroup.isEmpty()) return@forEach
+            item(key = "group-${group.name}") { PickerSectionHeader(group.label.uppercase()) }
+            inGroup.forEach { lift ->
+                item(key = lift.wire) {
+                    BoardPickerRow(lift, lift == selected, rankedCount(lift)) {
+                        open = false
                         onPick(lift)
-                    },
-                )
+                    }
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun BoardPickerRow(lift: Lift, isSelected: Boolean, ranked: Int, onClick: () -> Unit) {
+    val rungs = LiftBoards.rungs(lift)
+    val detail = if (rungs.isEmpty()) {
+        "Bodyweight tiers"
+    } else {
+        "${rungs.size} rungs · ${rungs.first().exercise} to ${rungs.last().exercise}"
+    }
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        // Same card as the exercise picker rows, so both sheets read as lists of things to press.
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
+            .inkBorder(
+                if (isSelected) IronvellumColors.SovereignGold else IronvellumColors.Rune,
+                MaterialTheme.shapes.small,
+                1.dp,
+            )
+            .selectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)
+            .heightIn(min = 60.dp)
+            .padding(horizontal = 14.dp, vertical = 8.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                lift.label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                color = if (isSelected) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+            )
+            Text(
+                detail,
+                style = MaterialTheme.typography.labelSmall,
+                color = IronvellumColors.InkMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            if (ranked == 0) "none yet" else "$ranked ranked",
+            style = MaterialTheme.typography.labelSmall,
+            color = if (ranked == 0) IronvellumColors.InkMuted else IronvellumColors.EmeraldBright,
+        )
     }
 }
 
@@ -1293,15 +1332,26 @@ private fun LiftRankRow(
                 frameId = if (isMe) equippedFrame else null,
                 isMe = isMe,
                 trailing = {
-                    Text(
-                        LiftBoards.tierName(standing.step),
-                        maxLines = 1,
-                        softWrap = false,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = accent,
-                    )
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            LiftBoards.stepLabel(row.lift, standing.step),
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.End,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontFamily = ChakraPetch,
+                            fontWeight = FontWeight.Bold,
+                            color = accent,
+                        )
+                        LiftBoards.stepDetail(row.lift, standing.step)?.let { detail ->
+                            Text(
+                                detail,
+                                maxLines = 1,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = IronvellumColors.InkMuted,
+                            )
+                        }
+                    }
                 },
             )
         }

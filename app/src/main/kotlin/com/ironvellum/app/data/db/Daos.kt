@@ -7,6 +7,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.ironvellum.app.domain.ExerciseSetRow
+import com.ironvellum.app.domain.LastLogged
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -26,6 +27,18 @@ interface ExerciseDao {
     /** Case-insensitive name lookup — import resolves exercises by name, not id. */
     @Query("SELECT * FROM exercises WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun byName(name: String): ExerciseEntity?
+}
+
+@Dao
+interface FavouriteExerciseDao {
+    @Query("SELECT exerciseId FROM favourite_exercises")
+    fun observeIds(): Flow<List<Long>>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun add(favourite: FavouriteExerciseEntity)
+
+    @Query("DELETE FROM favourite_exercises WHERE exerciseId = :exerciseId")
+    suspend fun remove(exerciseId: Long)
 }
 
 @Dao
@@ -165,6 +178,25 @@ interface SessionDao {
             "GROUP BY s.exerciseId ORDER BY MAX(x.startedAtMs) DESC LIMIT :limit",
     )
     fun observeRecentExerciseIds(limit: Int): Flow<List<Long>>
+
+    /**
+     * Every done set of each exercise's most recent completed workout, in
+     * ONE query: the inner join finds each exercise's latest start time once
+     * (a grouped scan), the outer join keeps that workout's sets. The top
+     * set per exercise is picked in Kotlin ([LastLogged.topSets]).
+     */
+    @Query(
+        "SELECT s.exerciseId AS exerciseId, s.reps AS reps, s.weightKg AS weightKg, " +
+            "s.durationSec AS durationSec, s.distanceM AS distanceM, s.grade AS grade, " +
+            "x.startedAtMs AS atMs " +
+            "FROM set_logs s JOIN sessions x ON s.sessionId = x.id " +
+            "JOIN (SELECT s2.exerciseId AS eid, MAX(x2.startedAtMs) AS latest " +
+            "FROM set_logs s2 JOIN sessions x2 ON s2.sessionId = x2.id " +
+            "WHERE s2.done = 1 AND x2.completedAtMs IS NOT NULL GROUP BY s2.exerciseId) l " +
+            "ON l.eid = s.exerciseId AND l.latest = x.startedAtMs " +
+            "WHERE s.done = 1 AND x.completedAtMs IS NOT NULL",
+    )
+    fun observeLatestWorkoutSets(): Flow<List<LastLogged>>
 
     @Query("SELECT * FROM sessions ORDER BY startedAtMs DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<SessionEntity>>

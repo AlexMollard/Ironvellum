@@ -25,7 +25,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.ui.text.style.TextOverflow
 import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.compose.ui.graphics.Color
-import com.ironvellum.app.ui.components.ExercisePickerPanel
+import com.ironvellum.app.ui.components.ExercisePickerSheet
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -95,14 +95,9 @@ class PresetEditorViewModel(
     private val _baseline = MutableStateFlow(EditorUi(presetId = presetId))
     val baseline: StateFlow<EditorUi> = _baseline.asStateFlow()
 
-    // Most-recent-first ids from completed sessions; the picker preserves the order.
-    private val _recentExerciseIds = MutableStateFlow<List<Long>>(emptyList())
-    val recentExerciseIds: StateFlow<List<Long>> = _recentExerciseIds.asStateFlow()
-
     init {
         viewModelScope.launch {
             val exercises = repo.observeExercises().first()
-            _recentExerciseIds.value = repo.observeRecentExerciseIds().first()
             val loaded = if (presetId != null) {
                 val existing = repo.observePresets().first().firstOrNull { it.id == presetId }
                 if (existing != null) {
@@ -243,7 +238,6 @@ fun PresetEditorScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val baseline by viewModel.baseline.collectAsStateWithLifecycle()
-    val recentExerciseIds by viewModel.recentExerciseIds.collectAsStateWithLifecycle()
     var adding by remember { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }
 
@@ -317,7 +311,6 @@ fun PresetEditorScreen(
             EntryRow(
                 entry = entry,
                 exercises = ui.exercises,
-                recentIds = recentExerciseIds,
                 isFirst = index == 0,
                 isLast = index == ui.entries.lastIndex,
                 onEntry = { viewModel.updateEntry(index, it) },
@@ -363,9 +356,8 @@ fun PresetEditorScreen(
     }
 
     if (adding) {
-        ExercisePickerDialog(
+        ExercisePickerSheet(
             exercises = ui.exercises,
-            recentIds = recentExerciseIds,
             onPick = { exercise ->
                 viewModel.addEntry(exercise)
                 adding = false
@@ -397,37 +389,10 @@ fun PresetEditorScreen(
     }
 }
 
-/** The exercise picker in the ink dialog, for both adding a row and swapping one. */
-@Composable
-private fun ExercisePickerDialog(
-    exercises: List<Exercise>,
-    recentIds: List<Long>,
-    onPick: (Exercise) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    AlertDialog(
-        // Material's dialog container is a 28dp rounded rect - the most
-        // obviously stock surface in the app. Give it the ink shape.
-        shape = MaterialTheme.shapes.medium,
-        onDismissRequest = onDismiss,
-        containerColor = Color(0xFF0D1110),
-        text = {
-            ExercisePickerPanel(
-                exercises = exercises,
-                recentIds = recentIds,
-                onPick = onPick,
-                onDismiss = onDismiss,
-            )
-        },
-        confirmButton = {},
-    )
-}
-
 @Composable
 private fun EntryRow(
     entry: EditorEntry,
     exercises: List<Exercise>,
-    recentIds: List<Long>,
     isFirst: Boolean,
     isLast: Boolean,
     onEntry: (EditorEntry) -> Unit,
@@ -459,9 +424,8 @@ private fun EntryRow(
                     )
                 }
                 if (expanded) {
-                    ExercisePickerDialog(
+                    ExercisePickerSheet(
                         exercises = exercises,
-                        recentIds = recentIds,
                         onPick = { exercise ->
                             // A metric switch invalidates the old targets (10 reps ≠ 40 min).
                             val defaults = if (exercise.metric == ExerciseMetric.REPS) {

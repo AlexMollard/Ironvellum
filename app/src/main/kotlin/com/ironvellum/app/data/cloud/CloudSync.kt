@@ -288,6 +288,7 @@ class CloudSync(
                     bodyweightAt = SetRecords.bodyweightLookup(repo.observeStats().first()),
                     sex = repo.observeBodyProfile().first().second,
                     nowMs = System.currentTimeMillis(),
+                    practices = repo.observeSkillPractices().first(),
                 )
                 if (marks.isNotEmpty()) {
                     client.postgrest.from("lift_marks").upsert(

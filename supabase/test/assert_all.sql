@@ -980,6 +980,21 @@ begin
     perform assert_true(
         refused_as(kit, format('insert into lift_marks (user_id, lift, step) values (%L, ''curl'', 3)', kit), array['23514']),
         'lift_marks accepts an unknown lift');
+    perform must_run(kit, format(
+        'insert into lift_marks (user_id, lift, step, recent_step, recent_at) values '
+        '(%L, ''one_arm_pull'', 3, 3, now()), (%L, ''muscle_up'', 1, null, null), (%L, ''push_up'', 6, 6, now()), '
+        '(%L, ''hspu'', 2, null, null), (%L, ''front_lever'', 5, 5, now()), (%L, ''back_lever'', 4, null, null), '
+        '(%L, ''planche'', 6, null, null), (%L, ''handstand'', 4, null, null), (%L, ''l_sit'', 2, null, null), '
+        '(%L, ''human_flag'', 3, null, null), (%L, ''pistol'', 5, 5, now())',
+        kit, kit, kit, kit, kit, kit, kit, kit, kit, kit, kit),
+        'a ladder board wire is refused by the lift check: the schema-21 boards cannot sync');
+    perform assert_true(
+        (select count(*) from lift_marks where user_id = kit and lift in ('one_arm_pull','muscle_up','push_up','hspu','front_lever','back_lever','planche','handstand','l_sit','human_flag','pistol')) = 11,
+        'not every ladder board wire landed');
+    perform assert_true(
+        refused_as(kit, format('insert into lift_marks (user_id, lift, step) values (%L, ''front_lever_2'', 3)', kit), array['23514']),
+        'lift_marks accepts a near-miss ladder wire');
+    delete from lift_marks where user_id = kit and lift <> 'pull_up';
     perform assert_true(
         refused_as(kit, format('insert into lift_marks (user_id, lift, step) values (%L, ''ohp'', 11)', kit), array['23514']),
         'lift_marks accepts a step above 10: one PATCH tops the board');
@@ -1260,12 +1275,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 20,
-        format('schema_version() reports %s, not 20 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 21,
+        format('schema_version() reports %s, not 21 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 20,
+        (select public.schema_version()) = 21,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;

@@ -67,6 +67,7 @@ import com.ironvellum.app.data.cloud.CloudConfig
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.ProbeResult
 import com.ironvellum.app.domain.CsvWorkoutReader
+import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.ImportAliases
 import com.ironvellum.app.domain.BodyLimits
@@ -180,6 +181,9 @@ class SettingsViewModel(
 
     /** Catalogue names for the review picker; refreshed when review opens. */
     val catalogueNames: StateFlow<List<String>> = repo.observeCatalogueNames()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    /** The catalogue rows themselves, for the universal picker the review maps names with. */
+    val catalogueExercises: StateFlow<List<Exercise>> = repo.observeExercises()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
     private val _sync = MutableStateFlow(SyncUi(available = runCatching { healthSync.available() }.getOrDefault(false)))
     val sync: StateFlow<SyncUi> = _sync.asStateFlow()
@@ -731,7 +735,7 @@ fun SettingsScreen(
     }
 
     val importReview by viewModel.importReview.collectAsStateWithLifecycle()
-    val catalogueNames by viewModel.catalogueNames.collectAsStateWithLifecycle()
+    val catalogueExercises by viewModel.catalogueExercises.collectAsStateWithLifecycle()
 
     if (confirmImport) {
         AlertDialog(
@@ -1324,7 +1328,7 @@ fun SettingsScreen(
     importReview?.let { review ->
         ImportReviewOverlay(
             ui = review,
-            catalogueNames = catalogueNames,
+            exercises = catalogueExercises,
             onPick = viewModel::chooseImportMapping,
             onUnitPick = viewModel::setImportUnit,
             onImport = viewModel::confirmCsvImport,

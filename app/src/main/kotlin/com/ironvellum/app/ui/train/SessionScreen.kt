@@ -112,7 +112,7 @@ import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.ShareCardDialog
-import com.ironvellum.app.ui.components.ExercisePickerPanel
+import com.ironvellum.app.ui.components.ExercisePickerSheet
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
@@ -187,10 +187,6 @@ class SessionViewModel(
     val sex: StateFlow<Sex> = repo.observeBodyProfile()
         .map { it.second }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Sex.MALE)
-
-    // Most-recent-first ids from completed sessions; the picker preserves the order.
-    val recentExerciseIds: StateFlow<List<Long>> =
-        repo.observeRecentExerciseIds().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val bodyweight: StateFlow<Double?> = repo.observeStats()
         .map { it.firstOrNull()?.weightKg }
@@ -396,7 +392,6 @@ fun SessionScreen(
     val records by viewModel.records.collectAsStateWithLifecycle()
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val exercises by viewModel.exercises.collectAsStateWithLifecycle()
-    val recentExerciseIds by viewModel.recentExerciseIds.collectAsStateWithLifecycle()
     val bodyweight by viewModel.bodyweight.collectAsStateWithLifecycle()
     val sex by viewModel.sex.collectAsStateWithLifecycle()
     val focus by viewModel.focus.collectAsStateWithLifecycle()
@@ -949,25 +944,13 @@ fun SessionScreen(
     }
 
     if (showExercisePicker) {
-        AlertDialog(
-            // Material's dialog container is a 28dp rounded rect - the most
-            // obviously stock surface in the app. Give it the ink shape.
-            shape = MaterialTheme.shapes.medium,
-            onDismissRequest = { showExercisePicker = false },
-            containerColor = Color(0xFF0D1110),
-            title = {},
-            text = {
-                ExercisePickerPanel(
-                    exercises = exercises,
-                    recentIds = recentExerciseIds,
-                    onPick = { exercise ->
-                        viewModel.addExercise(exercise.id, exercise.metric == ExerciseMetric.HOLD)
-                        showExercisePicker = false
-                    },
-                    onDismiss = { showExercisePicker = false },
-                )
+        ExercisePickerSheet(
+            exercises = exercises,
+            onPick = { exercise ->
+                viewModel.addExercise(exercise.id, exercise.metric == ExerciseMetric.HOLD)
+                showExercisePicker = false
             },
-            confirmButton = {},
+            onDismiss = { showExercisePicker = false },
         )
     }
 

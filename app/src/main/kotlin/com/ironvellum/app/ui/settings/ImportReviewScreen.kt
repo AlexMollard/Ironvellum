@@ -13,8 +13,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.draw.clip
+import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.ui.components.ExercisePickerSheet
+import com.ironvellum.app.ui.theme.inkBorder
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -79,7 +82,7 @@ data class ImportReviewUi(
 @Composable
 fun ImportReviewOverlay(
     ui: ImportReviewUi,
-    catalogueNames: List<String>,
+    exercises: List<Exercise>,
     onPick: (rawName: String, catalogueName: String?) -> Unit,
     onUnitPick: (CsvWorkoutReader.WeightUnit) -> Unit,
     onImport: () -> Unit,
@@ -178,7 +181,7 @@ fun ImportReviewOverlay(
                 UnmatchedRow(
                     name = name,
                     choices = ui.choices,
-                    catalogueNames = catalogueNames,
+                    exercises = exercises,
                     onPick = onPick,
                 )
                 Spacer(Modifier.height(8.dp))
@@ -221,10 +224,10 @@ fun ImportReviewOverlay(
 private fun UnmatchedRow(
     name: UnmatchedImportName,
     choices: Map<String, String?>,
-    catalogueNames: List<String>,
+    exercises: List<Exercise>,
     onPick: (String, String?) -> Unit,
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var picking by remember { mutableStateOf(false) }
     val chosen = choices[name.rawName]
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
@@ -241,34 +244,59 @@ private fun UnmatchedRow(
             color = IronvellumColors.InkMuted,
         )
         Spacer(Modifier.height(8.dp))
-        Box {
-            Text(
-                if (chosen == null) "CHOOSE" else "CHANGE",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                modifier = Modifier
-                    .clickable { expanded = true }
-                    .padding(vertical = 14.dp),
-            )
-            DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                DropdownMenuItem(
-                    text = { Text("KEEP AS NEW EXERCISE") },
-                    onClick = {
-                        expanded = false
-                        onPick(name.rawName, null)
-                    },
-                )
-                catalogueNames.forEach { catalogueName ->
-                    DropdownMenuItem(
-                        text = { Text(catalogueName) },
-                        onClick = {
-                            expanded = false
-                            onPick(name.rawName, catalogueName)
-                        },
-                    )
+        Text(
+            if (chosen == null) "CHOOSE" else "CHANGE",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.SystemGreen,
+            modifier = Modifier
+                .heightIn(min = 44.dp)
+                .clickable { picking = true }
+                .padding(vertical = 14.dp),
+        )
+    }
+    if (picking) {
+        ExercisePickerSheet(
+            exercises = exercises,
+            title = "MATCH EXERCISE",
+            // Old history is often gym work the saved gear cannot do; the
+            // chip is still there, but the mapping starts unfiltered.
+            defaultMyGear = false,
+            onPick = { exercise ->
+                picking = false
+                onPick(name.rawName, exercise.name)
+            },
+            onDismiss = { picking = false },
+            topContent = {
+                item(key = "keep_new") {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 10.dp)
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .inkBorder(IronvellumColors.SystemGreen, MaterialTheme.shapes.extraSmall, 1.dp)
+                            .clickable {
+                                picking = false
+                                onPick(name.rawName, null)
+                            }
+                            .heightIn(min = 44.dp)
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Text(
+                            "KEEP AS NEW EXERCISE",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = ChakraPetch,
+                            color = IronvellumColors.SystemGreen,
+                        )
+                        Text(
+                            "measured in ${name.inferredMetric.lowercase()}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = IronvellumColors.InkMuted,
+                        )
+                    }
                 }
-            }
-        }
+            },
+        )
     }
 }

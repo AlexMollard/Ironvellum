@@ -1,10 +1,9 @@
 package com.ironvellum.app.ui.components
 
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
+import android.content.Context
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,19 +13,23 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.outlined.Tune
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
+import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,274 +40,335 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.data.ProgramAnswersStore
+import com.ironvellum.app.data.Repository
+import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.inkBorder
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+/** Everything the picker reads besides the catalogue; all of it live. */
+internal data class PickerData(
+    /** Most-recent-first, from completed workouts; the order is the point. */
+    val recentIds: List<Long> = emptyList(),
+    val favouriteIds: Set<Long> = emptySet(),
+    val lastLogged: Map<Long, LastLogged> = emptyMap(),
+    /** The gear the lifter saved with the program answers; null = none saved. */
+    val equipment: Equipment? = null,
+)
 
 /**
- * One picker for every place an exercise is chosen: search, group filters,
- * grouped rows, skill tiers marked. Replaces the two raw scrolling lists.
- * [title] is null where the host screen already names the task, and
- * [onDismiss] null where the host has its own way back.
+ * Feeds every picker host the same live data, so no screen snapshots recents
+ * or carries its own copy. Scoped to the host's ViewModel store owner.
+ */
+internal class ExercisePickerViewModel(
+    private val repo: Repository,
+    context: Context,
+) : ViewModel() {
+    init {
+        // Primes ProgramAnswersStore.answers, which only fills on get/save.
+        ProgramAnswersStore.get(context)
+    }
+
+    val data: StateFlow<PickerData> = combine(
+        repo.observeRecentExerciseIds(),
+        repo.observeFavouriteExerciseIds(),
+        repo.observeLastLogged(),
+        ProgramAnswersStore.answers.map { it?.equipment },
+    ) { recents, favourites, last, equipment ->
+        PickerData(recents, favourites, last, equipment)
+    }.stateIn(
+        viewModelScope,
+        SharingStarted.WhileSubscribed(5_000),
+        PickerData(equipment = ProgramAnswersStore.answers.value?.equipment),
+    )
+
+    fun setFavourite(exerciseId: Long, favourite: Boolean) {
+        viewModelScope.launch { repo.setFavourite(exerciseId, favourite) }
+    }
+}
+
+@Composable
+private fun rememberPickerViewModel(): ExercisePickerViewModel {
+    val appContext = LocalContext.current.applicationContext
+    return viewModel(
+        key = "exercise_picker",
+        factory = viewModelFactory { initializer { ExercisePickerViewModel(ironvellumRepository(), appContext) } },
+    )
+}
+
+private class PickerControls(defaultMyGear: Boolean) {
+    var query by mutableStateOf("")
+    var filters by mutableStateOf(PickerFilters(myGear = defaultMyGear))
+    var filtersOpen by mutableStateOf(false)
+}
+
+@Composable
+private fun pickerView(exercises: List<Exercise>, controls: PickerControls, data: PickerData): PickerView =
+    remember(exercises, controls.query, controls.filters, data) {
+        buildPickerView(exercises, controls.query, controls.filters, data.equipment, data.recentIds, data.favouriteIds)
+    }
+
+/**
+ * The universal exercise picker as a full-screen sheet: search pinned above
+ * the keyboard, then the filter rails and the FAVOURITES / RECENT / grouped
+ * rows. [topContent] adds host-specific rows above the filters (the import
+ * review's "keep as new exercise"). [defaultMyGear] sets whether the MY GEAR
+ * chip starts on; it only exists when the lifter has saved equipment.
+ */
+@Composable
+fun ExercisePickerSheet(
+    exercises: List<Exercise>,
+    onPick: (Exercise) -> Unit,
+    onDismiss: () -> Unit,
+    title: String = "SELECT EXERCISE",
+    defaultMyGear: Boolean = true,
+    topContent: (LazyListScope.() -> Unit)? = null,
+) {
+    val vm = rememberPickerViewModel()
+    val data by vm.data.collectAsStateWithLifecycle()
+    val controls = remember { PickerControls(defaultMyGear) }
+    val view = pickerView(exercises, controls, data)
+    InkPickerSheet(
+        title = title,
+        onDismiss = onDismiss,
+        query = controls.query,
+        onQueryChange = { controls.query = it },
+        searchLabel = "Search exercises",
+        count = view.count,
+    ) {
+        topContent?.invoke(this)
+        item(key = "filters") {
+            PickerFilterBar(exercises, controls, data.equipment)
+            Spacer(Modifier.height(12.dp))
+        }
+        exerciseRows(view, data, controls.query, browse = false, onPick, vm::setFavourite)
+    }
+}
+
+/**
+ * The same picker inline, for screens that ARE the picker (the explorer): the
+ * host's own header names it and its own back leaves it. Same rails, rows,
+ * favourites and last-logged lines as the sheet.
  */
 @Composable
 fun ExercisePickerPanel(
     exercises: List<Exercise>,
-    recentIds: List<Long>,
     onPick: (Exercise) -> Unit,
-    onDismiss: (() -> Unit)?,
     modifier: Modifier = Modifier,
-    title: String? = "SELECT EXERCISE",
+    defaultMyGear: Boolean = true,
 ) {
-    var query by remember { mutableStateOf("") }
-    var group by remember { mutableStateOf<MuscleGroup?>(null) }
-    var category by remember { mutableStateOf<String?>(null) }
-    var equipment by remember { mutableStateOf<EquipmentFacet?>(null) }
-
-    val filtered = exercises
-        .filter { group == null || it.muscleGroup == group }
-        .filter { category == null || it.category == category }
-        .filter { equipment == null || equipmentFacet(it) == equipment }
-        .filter { matchesSearch(it.name, query) }
-        .sortedWith(compareBy({ it.muscleGroup.ordinal }, { it.name }))
-    // Grouped for display; a search term filters every group, so only non-empty groups appear.
-    val grouped = activityCategoryOrder(exercises)
-        .map { c -> c to filtered.filter { it.category == c } }
-        .filter { (_, list) -> list.isNotEmpty() }
-
-    // Recents only pin when nothing narrows the list; under a query or filter
-    // they would float above results that already answer the question. The id
-    // list arrives most-recent-first and is NOT re-sorted: the order is the
-    // only thing that makes it useful. Catalogue rows the lifter no longer
-    // has (removed or imported under a new id) drop out silently, and no
-    // history means an empty list, so no RECENT heading renders.
-    val showRecents = query.isBlank() && group == null && category == null && equipment == null
-    val recents = if (showRecents) {
-        recentIds.distinct().mapNotNull { id -> exercises.firstOrNull { it.id == id } }
-    } else {
-        emptyList()
-    }
-
+    val vm = rememberPickerViewModel()
+    val data by vm.data.collectAsStateWithLifecycle()
+    val controls = remember { PickerControls(defaultMyGear) }
+    val view = pickerView(exercises, controls, data)
     Column(modifier.fillMaxWidth()) {
-        // CLOSE sits in the header, not under the list: in a dialog the list
-        // took every pixel below it and the button was laid out but never drawn.
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                title.orEmpty(),
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = IronvellumColors.SovereignGold,
-                letterSpacing = 3.sp,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                "${filtered.size}",
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
-            if (onDismiss != null) {
-                Box(
-                    Modifier
-                        .padding(start = 8.dp)
-                        .heightIn(min = 44.dp)
-                        .widthIn(min = 44.dp)
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .clickable(onClickLabel = "Close", onClick = onDismiss)
-                        .semantics {
-                            contentDescription = "Close"
-                            role = Role.Button
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "CLOSE",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        letterSpacing = 3.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                    )
-                }
-            }
-        }
-
+        Text(
+            "${view.count}",
+            style = MaterialTheme.typography.labelSmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.align(Alignment.End),
+        )
+        Spacer(Modifier.height(4.dp))
+        PickerSearchField(controls.query, { controls.query = it }, "Search exercises")
         Spacer(Modifier.height(10.dp))
-
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .background(Color(0xFF141A18), MaterialTheme.shapes.extraSmall)
-                .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-                .padding(horizontal = 10.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Icon(Icons.Filled.Search, contentDescription = null, tint = IronvellumColors.InkMuted)
-            Spacer(Modifier.height(0.dp))
-            Box(Modifier.padding(start = 8.dp).fillMaxWidth()) {
-                BasicTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    singleLine = true,
-                    textStyle = MaterialTheme.typography.bodyMedium.copy(color = IronvellumColors.Ink),
-                    cursorBrush = SolidColor(IronvellumColors.SystemGreen),
-                    // The placeholder below is a SIBLING Text, so the field
-                    // itself announced nothing and a screen reader landed on an
-                    // unlabelled input. The magnifier stays decorative: naming
-                    // both would read the same thing twice.
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        // A single line of text measured 20dp, under the WCAG AA
-                        // floor; the row's own padding supplies the visual height.
-                        .heightIn(min = 24.dp)
-                        .semantics { contentDescription = "Search exercises" },
-                )
-                if (query.isEmpty()) {
-                    Text(
-                        "search exercises",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = IronvellumColors.InkMuted,
-                    )
-                }
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
-
-        // Both rails scroll horizontally: muscle groups plus activity
-        // categories no longer fit a phone width, and a fixed Row squeezed the
-        // last chips into one letter per line off the screen edge.
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            FilterChip("ALL", group == null) { group = null }
-            // Only lifting groups belong here — CARDIO/SPORT/CLIMBING/WATER/
-            // MOBILITY are the category rail below, so listing them twice both
-            // overflowed the row and duplicated the same filter.
-            LIFTING_GROUPS.forEach { mg ->
-                FilterChip(mg.name, group == mg) { group = if (group == mg) null else mg }
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            FilterChip("ALL", category == null) { category = null }
-            activityCategoryOrder(exercises).filter { it.isNotBlank() }.forEach { c ->
-                FilterChip(c.uppercase(), category == c) { category = if (category == c) null else c }
-            }
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-        ) {
-            FilterChip("ALL", equipment == null) { equipment = null }
-            EquipmentFacet.entries.forEach { facet ->
-                FilterChip(facet.label, equipment == facet) {
-                    equipment = if (equipment == facet) null else facet
-                }
-            }
-        }
-
+        PickerFilterBar(exercises, controls, data.equipment)
         Spacer(Modifier.height(12.dp))
-
         LazyColumn(Modifier.fillMaxWidth().heightIn(max = 420.dp)) {
-            if (recents.isNotEmpty()) {
-                item(key = "header_recent") {
-                    PickerSectionHeader("RECENT")
-                }
-                items(recents, key = { "recent_${it.id}" }) { exercise ->
-                    PickerRow(exercise = exercise, onPick = onPick)
+            exerciseRows(view, data, controls.query, browse = true, onPick, vm::setFavourite)
+        }
+    }
+}
+
+/**
+ * One line while closed: FILTERS plus the filters that are on, each tapped
+ * to clear, so a narrowed list always says why. Open, the choices wrap in two
+ * labelled groups with no ALL chips (tapping an active chip turns it off).
+ * Three stacked scrolling rails, each with its own ALL, took a third of the
+ * sheet before a single exercise showed.
+ *
+ * Muscle groups and activity categories are one TYPE choice: a lifting group
+ * and an activity never overlap, so holding both could only empty the list.
+ */
+@Composable
+private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls, equipment: Equipment?) {
+    val f = controls.filters
+    val categories = activityCategoryOrder(exercises).filter { it.isNotBlank() }
+    val active = buildList<Pair<String, () -> Unit>> {
+        f.group?.let { add(it.name to { controls.filters = controls.filters.copy(group = null) }) }
+        f.category?.let { add(it.uppercase() to { controls.filters = controls.filters.copy(category = null) }) }
+        if (equipment != null && f.myGear) add("MY GEAR" to { controls.filters = controls.filters.copy(myGear = false) })
+        f.facet?.let { add(it.label to { controls.filters = controls.filters.copy(facet = null) }) }
+    }
+    Column {
+        FlowRow(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            FiltersButton(open = controls.filtersOpen, activeCount = active.size) {
+                controls.filtersOpen = !controls.filtersOpen
+            }
+            active.forEach { (label, clear) -> FilterChip("$label ✕", true, clear) }
+        }
+        if (!controls.filtersOpen) return@Column
+        FilterGroup("TYPE") {
+            LIFTING_GROUPS.forEach { mg ->
+                FilterChip(mg.name, f.group == mg) {
+                    controls.filters = f.copy(group = if (f.group == mg) null else mg, category = null)
                 }
             }
-            grouped.forEach { (cat, list) ->
-                item(key = "header_$cat") {
-                    PickerSectionHeader(if (cat.isBlank()) "STRENGTH" else cat.uppercase())
-                }
-                items(list, key = { it.id }) { exercise ->
-                    PickerRow(exercise = exercise, onPick = onPick)
+            categories.forEach { c ->
+                FilterChip(c.uppercase(), f.category == c) {
+                    controls.filters = f.copy(category = if (f.category == c) null else c, group = null)
                 }
             }
         }
+        FilterGroup("GEAR") {
+            // Absent without saved equipment: nothing to filter by.
+            if (equipment != null) {
+                FilterChip("MY GEAR", f.myGear) { controls.filters = f.copy(myGear = !f.myGear) }
+            }
+            EquipmentFacet.entries.forEach { facet ->
+                FilterChip(facet.label, f.facet == facet) {
+                    controls.filters = f.copy(facet = if (f.facet == facet) null else facet)
+                }
+            }
+        }
+    }
+}
 
-        if (filtered.isEmpty()) {
-            // Say WHY nothing matched: a blank query with the catalogue present
-            // means the filters did it, not the words.
+@Composable
+private fun FilterGroup(label: String, chips: @Composable () -> Unit) {
+    Spacer(Modifier.height(12.dp))
+    Text(
+        label,
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = ChakraPetch,
+        color = IronvellumColors.InkMuted,
+        letterSpacing = 2.sp,
+    )
+    Spacer(Modifier.height(6.dp))
+    FlowRow(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) { chips() }
+}
+
+/** The one control that opens the filter groups; built as a button so it reads as one. */
+@Composable
+private fun FiltersButton(open: Boolean, activeCount: Int, onClick: () -> Unit) {
+    val label = if (open) "Hide filters" else "Show filters"
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .heightIn(min = 44.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(Brush.linearGradient(listOf(Color(0xFF141C18), Color(0xFF101714))))
+            .inkBorder(
+                if (open) IronvellumColors.SystemGreen else IronvellumColors.Rune,
+                MaterialTheme.shapes.small,
+                1.dp,
+            )
+            .clickable(onClickLabel = label, onClick = onClick)
+            .padding(horizontal = 12.dp),
+    ) {
+        Icon(Icons.Outlined.Tune, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(18.dp))
+        Spacer(Modifier.width(8.dp))
+        Text(
+            if (activeCount > 0) "FILTERS · $activeCount" else "FILTERS",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = IronvellumColors.SystemGreen,
+            letterSpacing = 1.sp,
+        )
+        Spacer(Modifier.width(6.dp))
+        Icon(
+            if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            tint = IronvellumColors.SystemGreen,
+            modifier = Modifier.size(18.dp),
+        )
+    }
+}
+
+private fun LazyListScope.exerciseRows(
+    view: PickerView,
+    data: PickerData,
+    query: String,
+    browse: Boolean,
+    onPick: (Exercise) -> Unit,
+    onFavourite: (Long, Boolean) -> Unit,
+) {
+    val now = System.currentTimeMillis()
+    fun LazyListScope.rows(prefix: String, list: List<Exercise>) {
+        items(list, key = { "${prefix}_${it.id}" }) { exercise ->
+            PickerRow(
+                exercise = exercise,
+                lastLine = data.lastLogged[exercise.id]?.let { lastLoggedLine(it, exercise, now) },
+                favourite = exercise.id in data.favouriteIds,
+                browse = browse,
+                onPick = onPick,
+                onFavourite = { onFavourite(exercise.id, it) },
+            )
+        }
+    }
+    if (view.favourites.isNotEmpty()) {
+        item(key = "header_favourites") { PickerSectionHeader("FAVOURITES") }
+        rows("fav", view.favourites)
+    }
+    if (view.recents.isNotEmpty()) {
+        item(key = "header_recent") { PickerSectionHeader("RECENT") }
+        rows("recent", view.recents)
+    }
+    view.grouped.forEach { (cat, list) ->
+        item(key = "header_$cat") { PickerSectionHeader(if (cat.isBlank()) "STRENGTH" else cat.uppercase()) }
+        rows("row", list)
+    }
+    if (view.count == 0) {
+        item(key = "empty") {
+            // Say WHY nothing matched: a blank query with the catalogue
+            // present means the filters did it, not the words.
             Text(
-                if (query.isNotBlank()) "No exercise matches \"$query\""
-                else "No exercise matches the filters set",
+                if (query.isNotBlank()) "No exercise matches \"$query\"" else "No exercise matches the filters set",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(vertical = 12.dp),
             )
         }
-    }
-}
-
-/** Header strip shared by RECENT and the category groups, so the pinned section reads as a peer. */
-@Composable
-private fun PickerSectionHeader(label: String) {
-    Text(
-        label,
-        style = MaterialTheme.typography.labelSmall,
-        fontFamily = ChakraPetch,
-        fontWeight = FontWeight.Bold,
-        color = IronvellumColors.SovereignGold,
-        letterSpacing = 2.sp,
-        modifier = Modifier
-            .fillMaxWidth()
-            // Inked after all: the full-bleed rule protects
-            // surfaces whose edges are the SCREEN's edge. This
-            // strip sits inside the picker panel with both ends
-            // visible, so a square bar just reads as old chrome.
-            // The fill sits ~2 luminance units from the panel, so
-            // its hand-drawn edge was invisible however much the
-            // shape wandered. The brushed border is what actually
-            // reads as drawn here.
-            .background(Color(0xFF101512), MaterialTheme.shapes.extraSmall)
-            .inkBorder(IronvellumColors.Bracket, MaterialTheme.shapes.extraSmall, 1.dp)
-            .padding(vertical = 6.dp, horizontal = 4.dp),
-    )
-}
-
-private val WHITESPACE = Regex("\\s+")
-
-/**
- * Every whitespace-separated token of [query] must start a word of [name],
- * in any order: "ext leg" finds Leg Extension, "chin" finds Chin-up. A bare
- * substring match made "chin" find every Machine row too.
- */
-internal fun matchesSearch(name: String, query: String): Boolean =
-    query.trim().split(WHITESPACE).filter { it.isNotEmpty() }.all { token -> startsWord(name, token) }
-
-private fun startsWord(name: String, token: String): Boolean {
-    var from = 0
-    while (true) {
-        val at = name.indexOf(token, from, ignoreCase = true)
-        if (at < 0) return false
-        if (at == 0 || !name[at - 1].isLetterOrDigit()) return true
-        from = at + 1
     }
 }
 
@@ -346,7 +410,7 @@ private val LIFTING_GROUPS = listOf(
 )
 
 @Composable
-private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
+internal fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
             .background(
@@ -385,15 +449,38 @@ private fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
         )
     }
 }
+
+/**
+ * One exercise as a card: the whole card picks one exercise, like a menu
+ * entry. Bare text rows with a lone "+" read as a printed list, not something
+ * to press; [browse] only changes what a screen reader says picking does.
+ */
 @Composable
-private fun PickerRow(exercise: Exercise, onPick: (Exercise) -> Unit) {
+private fun PickerRow(
+    exercise: Exercise,
+    lastLine: String?,
+    favourite: Boolean,
+    browse: Boolean,
+    onPick: (Exercise) -> Unit,
+    onFavourite: (Boolean) -> Unit,
+) {
     val skill = Skills.forName(exercise.name)
+    var showInfo by remember { mutableStateOf(false) }
+    val pickLabel = if (browse) "Open ${exercise.name}" else "Add ${exercise.name}"
     Row(
         Modifier
             .fillMaxWidth()
-            .clickable { onPick(exercise) }
-            .padding(vertical = 11.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .padding(vertical = 4.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
+            .inkBorder(
+                if (favourite) IronvellumColors.SovereignGold.copy(alpha = 0.55f) else IronvellumColors.Rune,
+                MaterialTheme.shapes.small,
+                1.dp,
+            )
+            .clickable(onClickLabel = pickLabel) { onPick(exercise) }
+            .heightIn(min = 60.dp)
+            .padding(start = 14.dp, top = 8.dp, bottom = 8.dp, end = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -401,44 +488,103 @@ private fun PickerRow(exercise: Exercise, onPick: (Exercise) -> Unit) {
                 exercise.name,
                 style = MaterialTheme.typography.bodyLarge,
                 color = IronvellumColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
+            // What the lifter will be asked to log sits with the muscle group,
+            // so the right edge holds only the two things that can be pressed.
             Text(
-                buildString {
+                buildAnnotatedString {
                     append(exercise.muscleGroup.name.lowercase())
-                    if (exercise.isWeighted) append("  ·  weighted")
-                    if (skill != null) append("  ·  skill ${Skills.tierLabel(skill.tier)} ${skill.line}")
+                    append(" · ")
+                    append(metricWord(exercise.metric))
+                    if (exercise.isWeighted) append(" · weighted")
+                    if (skill != null) {
+                        append(" · ")
+                        withStyle(SpanStyle(color = IronvellumColors.SystemGreen)) {
+                            append("skill ${Skills.tierLabel(skill.tier)} ${skill.line}")
+                        }
+                    }
                 },
                 style = MaterialTheme.typography.labelSmall,
-                color = if (skill != null) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                color = IronvellumColors.InkMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (lastLine != null) {
+                Text(
+                    "last $lastLine",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.SovereignGold.copy(alpha = 0.85f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        val infoLabel = "About ${exercise.name}"
+        Box(
+            Modifier
+                .size(44.dp)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .clickable(onClickLabel = infoLabel) { showInfo = true }
+                .semantics {
+                    contentDescription = infoLabel
+                    role = Role.Button
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                Icons.Outlined.Info,
+                contentDescription = null,
+                tint = IronvellumColors.InkMuted,
             )
         }
-        // Metric glyph: shows what the user will be asked to log before they commit.
-        Text(
-            when (exercise.metric) {
-                ExerciseMetric.REPS -> "× reps"
-                ExerciseMetric.HOLD -> "◷ hold"
-                ExerciseMetric.DURATION -> "◷ time"
-                ExerciseMetric.DISTANCE_TIME -> "→ distance"
-                ExerciseMetric.ATTEMPTS_GRADE -> "◇ attempts"
-            },
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
+        val starLabel = if (favourite) "Remove ${exercise.name} from favourites" else "Add ${exercise.name} to favourites"
+        Box(
+            Modifier
+                .size(44.dp)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .clickable(onClickLabel = starLabel) { onFavourite(!favourite) }
+                .semantics {
+                    contentDescription = starLabel
+                    role = Role.Checkbox
+                    this.selected = favourite
+                },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                if (favourite) Icons.Filled.Star else Icons.Outlined.StarBorder,
+                contentDescription = null,
+                tint = if (favourite) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+            )
+        }
+        // A chevron, not a "+" button: one tap picks one exercise, and a row of
+        // add buttons read as "tick several, then confirm".
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = IronvellumColors.SovereignGold,
+            modifier = Modifier.padding(start = 2.dp, end = 4.dp),
         )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            "+",
-            style = MaterialTheme.typography.titleMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SovereignGold,
+    }
+    if (showInfo) {
+        ExerciseInfoDialog(
+            exercise = exercise,
+            lastLine = lastLine,
+            onDismiss = { showInfo = false },
+            onPick = {
+                showInfo = false
+                onPick(exercise)
+            },
+            confirmLabel = if (browse) "CHOOSE" else "ADD",
         )
     }
 }
 
-/** "" (strength) first, then the known activity groups, then anything novel alphabetically. */
-private fun activityCategoryOrder(exercises: List<Exercise>): List<String> {
-    val present = exercises.map { it.category }.distinct()
-    val known = listOf("Cardio", "Sport", "Climbing", "Water", "Mobility").filter { it in present }
-    val extra = present.filter { it.isNotBlank() && it !in known }.sorted()
-    return listOf("") + known + extra
+internal fun metricWord(metric: ExerciseMetric): String = when (metric) {
+    ExerciseMetric.REPS -> "reps"
+    ExerciseMetric.HOLD -> "hold"
+    ExerciseMetric.DURATION -> "time"
+    ExerciseMetric.DISTANCE_TIME -> "distance"
+    ExerciseMetric.ATTEMPTS_GRADE -> "attempts"
 }

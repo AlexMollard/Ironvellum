@@ -7,6 +7,8 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.ironvellum.app.data.db.ExerciseDao
+import com.ironvellum.app.data.db.FavouriteExerciseDao
+import com.ironvellum.app.data.db.FavouriteExerciseEntity
 import com.ironvellum.app.data.db.ExerciseEntity
 import com.ironvellum.app.data.db.GachaDao
 import com.ironvellum.app.data.db.GachaStateEntity
@@ -53,6 +55,7 @@ import com.ironvellum.app.data.db.OwnedRelicEntity
         GachaStateEntity::class,
         OwnedCrestFrameEntity::class,
         OwnedRelicEntity::class,
+        FavouriteExerciseEntity::class,
     ],
     version = IronvellumDatabase.VERSION,
     exportSchema = true,
@@ -70,10 +73,28 @@ abstract class IronvellumDatabase : RoomDatabase() {
     abstract fun syncStateDao(): SyncStateDao
     abstract fun idleDao(): IdleDao
     abstract fun gachaDao(): GachaDao
+    abstract fun favouriteExerciseDao(): FavouriteExerciseDao
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 30
+        const val VERSION = 31
+
+        /**
+         * Picker favourites. Purely additive: one new table, no existing
+         * row read or rewritten. DDL matches [FavouriteExerciseEntity]
+         * (NOT NULL columns, cascade to exercises) or Room refuses to open.
+         */
+        private val MIGRATION_30_31 = object : Migration(30, 31) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `favourite_exercises` (" +
+                        "`exerciseId` INTEGER NOT NULL, `addedAtMs` INTEGER NOT NULL, " +
+                        "PRIMARY KEY(`exerciseId`), " +
+                        "FOREIGN KEY(`exerciseId`) REFERENCES `exercises`(`id`) " +
+                        "ON UPDATE NO ACTION ON DELETE CASCADE)",
+                )
+            }
+        }
 
         /**
          * Per-workout cloud audience. 'profile' (follow the profile's
@@ -421,6 +442,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_27_28,
             MIGRATION_28_29,
             MIGRATION_29_30,
+            MIGRATION_30_31,
         )
 
         const val NAME = "ironvellum.db"
