@@ -109,12 +109,16 @@ create table if not exists friend_request_log (
 create index if not exists friend_request_log_idx on friend_request_log (requester_id, sent_at);
 
 -- Failed warband-code attempts, capped per lifter like friend requests: the
--- code space is huge, but a throttled door costs nothing to close.
+-- code space is huge, but a throttled door costs nothing to close. RLS is on
+-- with no policies: the security-definer RPCs own every write, and no client
+-- role may read another lifter's attempts.
 create table if not exists warband_join_log (
     user_id  uuid not null references profiles (id) on delete cascade,
     tried_at timestamptz not null default now()
 );
 create index if not exists warband_join_log_idx on warband_join_log (user_id, tried_at);
+alter table warband_join_log enable row level security;
+revoke all on warband_join_log from anon, authenticated;
 
 -- ---------------------------------------------------------------- sessions
 -- Private notes are deliberately absent from this table. They live only in the
@@ -350,6 +354,9 @@ create table if not exists warbands (
     -- unambiguous. Keep in step with InviteCodeAlphabet in domain/Warbands.kt.
     invite_code text not null unique check (invite_code ~ '^[2-9A-HJ-NP-Z]{8}$'),
     owner_id    uuid not null references auth.users (id) on delete cascade,
+    -- The band's weekly challenge: the owner sets how many workouts the band
+    -- should total this week. Bounded so a stray 999 cannot sit on the banner.
+    weekly_goal int not null default 12 check (weekly_goal between 5 and 50),
     created_at  timestamptz default now()
 );
 
@@ -1753,6 +1760,33 @@ $$;
 revoke execute on function public.leave_warband() from public, anon;
 grant execute on function public.leave_warband() to authenticated;
 
+-- The owner sets the band's weekly challenge. Owner-only (a member is refused
+-- with 42501, the same code a revoked grant gives) and bounded to 5..50: the
+-- band's whole weekly pace hangs off this one number. SECURITY DEFINER like the
+-- other warband RPCs; it writes the warbands row, which has no update grant.
+create or replace function public.set_warband_goal(p_goal int)
+returns void
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+    band uuid;
+begin
+    select w.id into band from warbands w where w.owner_id = auth.uid();
+    if band is null then
+        raise exception 'only the warband owner sets the weekly goal'
+            using errcode = '42501';
+    end if;
+    if p_goal is null or p_goal not between 5 and 50 then
+        raise exception 'a weekly goal is 5-50 workouts';
+    end if;
+    update warbands set weekly_goal = p_goal where id = band;
+end;
+$$;
+revoke execute on function public.set_warband_goal(int) from public, anon;
+grant execute on function public.set_warband_goal(int) to authenticated;
+
 -- The caller's band and roster, or no rows when they are in none. SECURITY
 -- DEFINER because the roster aggregates sessions of bandmates under the feed's
 -- own visibility rules (can_view_session: allies-only workouts of bandmates
@@ -1765,13 +1799,13 @@ grant execute on function public.leave_warband() to authenticated;
 -- caller cannot view lists under the neutral handle, with level and worn
 -- title withheld, exactly as anywhere else in the app.
 create or replace function public.my_warband()
-returns table (id uuid, name text, code text, owner_id uuid, members jsonb)
+returns table (id uuid, name text, code text, owner_id uuid, weekly_goal int, members jsonb)
 language sql
 stable
 security definer
 set search_path = pg_catalog, public
 as $$
-    select w.id, w.name, w.invite_code, w.owner_id,
+    select w.id, w.name, w.invite_code, w.owner_id, w.weekly_goal,
            (
             select json_agg(json_build_object(
                        'user_id', m.user_id,
@@ -1812,7 +1846,7 @@ grant execute on function public.my_warband() to authenticated;
 -- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
 -- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 23 $$;
+language sql stable as $$ select 25 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

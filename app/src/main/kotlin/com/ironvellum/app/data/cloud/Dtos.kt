@@ -721,6 +721,12 @@ data class JoinWarbandArgs(
     @SerialName("p_code") val code: String,
 )
 
+/** Args of `set_warband_goal(int)`: the band's weekly workout goal, 5..50. */
+@Serializable
+data class SetWarbandGoalArgs(
+    @SerialName("p_goal") val goal: Int,
+)
+
 /**
  * One bandmate as `my_warband()` reports them. A bandmate whose profile row is
  * missing still lists — the server already substituted the neutral
@@ -746,6 +752,8 @@ data class WarbandDto(
     @SerialName("name") val name: String,
     @SerialName("code") val code: String,
     @SerialName("owner_id") val ownerId: String,
+    // The owner's weekly challenge for the band; server default 12.
+    @SerialName("weekly_goal") val weeklyGoal: Int = 12,
     @SerialName("members") val members: List<WarbandMemberDto> = emptyList(),
 ) {
     fun toWarband(): Warband = Warband(
@@ -753,6 +761,7 @@ data class WarbandDto(
         name = name,
         code = code,
         ownerId = ownerId,
+        weeklyGoal = weeklyGoal,
         members = members.map {
             WarbandMember(
                 userId = it.userId,
@@ -788,6 +797,7 @@ const val RPC_DISPLAY_NAME_AVAILABLE = "display_name_available"
 const val RPC_CREATE_WARBAND = "create_warband"
 const val RPC_JOIN_WARBAND = "join_warband"
 const val RPC_LEAVE_WARBAND = "leave_warband"
+const val RPC_SET_WARBAND_GOAL = "set_warband_goal"
 const val RPC_MY_WARBAND = "my_warband"
 
 /**

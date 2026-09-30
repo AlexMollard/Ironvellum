@@ -344,10 +344,18 @@ class WireNamesMatchSchemaTest {
     }
 
     @Test
+    fun `set_warband_goal takes one p_goal argument`() {
+        // The goal travels through a named argument; a rename on either side
+        // would silently post a null and the server would refuse the owner.
+        assertEquals(setOf("p_goal"), functionParams(RPC_SET_WARBAND_GOAL))
+    }
+
+    @Test
     fun `warband rpc argument names match the function signatures`() {
         for ((fn, dto) in listOf(
             RPC_CREATE_WARBAND to CreateWarbandArgs.serializer().descriptor,
             RPC_JOIN_WARBAND to JoinWarbandArgs.serializer().descriptor,
+            RPC_SET_WARBAND_GOAL to SetWarbandGoalArgs.serializer().descriptor,
         )) {
             val params = functionParams(fn)
             assertTrue("no parameters parsed for $fn — the parser is broken", params.isNotEmpty())

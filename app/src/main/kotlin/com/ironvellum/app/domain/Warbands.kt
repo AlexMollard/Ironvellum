@@ -10,6 +10,8 @@ data class Warband(
     val name: String,
     val code: String,
     val ownerId: String,
+    /** The owner's weekly challenge: total band workouts aimed for this week. */
+    val weeklyGoal: Int = 12,
     /** Oldest member first — the server's order, kept as handed over. */
     val members: List<WarbandMember>,
 )

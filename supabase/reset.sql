@@ -45,6 +45,7 @@ drop view if exists public.leaderboard;
 -- tables or the drop is refused on the dependency.
 drop function if exists public.my_warband();
 drop function if exists public.leave_warband();
+drop function if exists public.set_warband_goal(int);
 drop function if exists public.join_warband(text);
 drop function if exists public.create_warband(text);
 

@@ -769,6 +769,23 @@ class CloudSync(
         }
     }
 
+    /** The owner sets the band's weekly goal; the server refuses anyone else. */
+    suspend fun setWarbandGoal(goal: Int): Result<Unit> {
+        requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        if (goal !in 5..50) {
+            return failure(IllegalArgumentException("A weekly goal is 5-50 workouts"))
+        }
+        return runCatching {
+            client.postgrest.rpc(RPC_SET_WARBAND_GOAL, rpcArgs(SetWarbandGoalArgs(goal = goal)))
+            Unit
+        }.onSuccess {
+            cache.invalidate(CloudReadCache.KEY_WARBAND)
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
     suspend fun requestFriend(displayName: String): Result<Unit> {
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }

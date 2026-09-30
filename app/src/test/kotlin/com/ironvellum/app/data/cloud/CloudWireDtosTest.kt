@@ -57,7 +57,7 @@ class CloudWireDtosTest {
     fun `a warband decodes its roster with the neutral-name and bare-title fallbacks`() {
         val dto = json.decodeFromString<WarbandDto>(
             """{"id": "7c9e6a4e-0000-4000-8000-0000000000aa", "name": "North Gate",
-                "code": "K7M2PQ4X", "owner_id": "owner-1",
+                "code": "K7M2PQ4X", "owner_id": "owner-1", "weekly_goal": 9,
                 "members": [
                   {"user_id": "owner-1", "display_name": "Nova", "level": 9,
                    "current_title_id": "first-blood", "workouts_this_week": 2,
@@ -69,6 +69,12 @@ class CloudWireDtosTest {
         val band = dto.toWarband()
         assertEquals("K7M2PQ4X", band.code)
         assertEquals("owner-1", band.ownerId)
+        assertEquals(9, band.weeklyGoal)
+        // A band row from before the goal shipped decodes the server default.
+        assertEquals(12, json.decodeFromString<WarbandDto>(
+            """{"id": "7c9e6a4e-0000-4000-8000-0000000000aa", "name": "North Gate",
+                "code": "K7M2PQ4X", "owner_id": "owner-1"}""",
+        ).toWarband().weeklyGoal)
         assertEquals(2, band.members.size)
         assertEquals("first-blood", band.members[0].titleId)
         assertEquals(2, band.members[0].workoutsThisWeek)

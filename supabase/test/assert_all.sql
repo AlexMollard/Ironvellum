@@ -1282,12 +1282,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 23,
-        format('schema_version() reports %s, not 23 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 25,
+        format('schema_version() reports %s, not 25 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 23,
+        (select public.schema_version()) = 25,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -1370,13 +1370,15 @@ begin
             and not has_function_privilege('anon', 'public.join_warband(text)', 'execute')
             and not has_function_privilege('anon', 'public.leave_warband()', 'execute')
             and not has_function_privilege('anon', 'public.my_warband()', 'execute')
+            and not has_function_privilege('anon', 'public.set_warband_goal(int)', 'execute')
             and not has_function_privilege('anon', 'public.warband_member(uuid, uuid)', 'execute')
             and not has_function_privilege('authenticated', 'public.warband_member(uuid, uuid)', 'execute')
             and has_function_privilege('authenticated', 'public.in_my_warband(uuid)', 'execute')
             and has_function_privilege('authenticated', 'public.create_warband(text)', 'execute')
             and has_function_privilege('authenticated', 'public.join_warband(text)', 'execute')
             and has_function_privilege('authenticated', 'public.leave_warband()', 'execute')
-            and has_function_privilege('authenticated', 'public.my_warband()', 'execute'),
+            and has_function_privilege('authenticated', 'public.my_warband()', 'execute')
+            and has_function_privilege('authenticated', 'public.set_warband_goal(int)', 'execute'),
         'warband functions are callable beyond their intended callers'
     );
     perform assert_true(
@@ -1405,6 +1407,28 @@ begin
     perform assert_true(
         refused_as(nova, 'select public.create_warband(''Other'')', array['P0001']),
         'a lifter in a band created a second one'
+    );
+
+    -- Weekly goal: fresh bands ship the default, the owner sets it, a member
+    -- and the range bounds are both refused, and my_warband() reports it back.
+    perform assert_true(
+        value_as(nova, 'select weekly_goal from my_warband()') = '12',
+        'a fresh warband did not default its weekly_goal to 12'
+    );
+    perform assert_true(
+        refused_as(rey, 'select public.set_warband_goal(12)', array['42501']),
+        'a band member set the weekly goal'
+    );
+    perform assert_true(
+        refused_as(nova, 'select public.set_warband_goal(4)', array['P0001'])
+            and refused_as(nova, 'select public.set_warband_goal(51)', array['P0001'])
+            and refused_as(nova, 'select public.set_warband_goal(null)', array['P0001']),
+        'set_warband_goal accepted an out-of-range or null goal'
+    );
+    perform must_run(nova, 'select public.set_warband_goal(9)', 'the owner could not set the weekly goal');
+    perform assert_true(
+        value_as(nova, 'select weekly_goal from my_warband()') = '9',
+        'my_warband() did not report the goal the owner set'
     );
 
     -- Join: by code, case-insensitively; unknown codes refuse.
@@ -1444,6 +1468,14 @@ begin
             end if;
     end;
     delete from warband_join_log where user_id = pax;
+
+    -- RLS on, no policies: the attempt log answers no client role at all.
+    -- The definer RPCs keep writing it, proven by the throttle above.
+    perform assert_true(
+        refused_as_anon('select count(*) from warband_join_log', array['42501'])
+            and refused_as(rey, 'select count(*) from warband_join_log', array['42501']),
+        'the warband attempt log is readable by a client role'
+    );
 
     -- trained-this-week: the count follows the feed's own visibility — Rey's
     -- public workout counts, Sol's private one never does. Completed NOW, so
