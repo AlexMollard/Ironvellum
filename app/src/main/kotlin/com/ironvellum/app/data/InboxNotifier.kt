@@ -15,6 +15,7 @@ import com.ironvellum.app.MainActivity
 import com.ironvellum.app.R
 import com.ironvellum.app.data.cloud.Inbox
 import com.ironvellum.app.data.cloud.InboxItem
+import com.ironvellum.app.ui.social.displayName
 
 /**
  * Turns new ally activity into one Android notification.
@@ -70,7 +71,7 @@ object InboxNotifier {
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         manager.createNotificationChannel(
             NotificationChannel(CHANNEL_ID, "Allies", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = "Requests, comments and reactions from your allies."
+                description = "Requests, remarks and tributes from your allies."
             },
         )
     }
@@ -113,7 +114,7 @@ object InboxNotifier {
         if (!canNotify(context)) return
 
         val latest = line(fresh.first())
-        val (title, text) = if (fresh.size == 1) "Ironvellum" to latest else "${fresh.size} new in your inbox" to latest
+        val (title, text) = if (fresh.size == 1) "Ironvellum" to latest else "${fresh.size} new missives" to latest
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(EXTRA_OPEN_TAB, TAB_INBOX)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
@@ -141,14 +142,14 @@ object InboxNotifier {
     }
 
     private fun line(item: InboxItem): String = when (item) {
-        is InboxItem.NewComment -> "${item.actorName} commented: ${item.body}"
+        is InboxItem.NewComment -> "${item.actorName} left a remark: ${item.body}"
         is InboxItem.NewReaction -> {
-            val reaction = item.reaction.name.lowercase().replaceFirstChar { it.uppercase() }
-            val headline = item.sessionHeadline.ifBlank { "your workout" }
-            "${item.actorName} reacted $reaction to $headline"
+            val reaction = item.reaction.displayName()
+            val headline = item.sessionHeadline.ifBlank { "your trial" }
+            "${item.actorName} paid $reaction tribute to $headline"
         }
         is InboxItem.FriendRequest -> "${item.actorName} wants to ally with you"
         is InboxItem.RequestAccepted -> "${item.actorName} accepted your request"
-        is InboxItem.NewBandmate -> "${item.actorName} joined your band ${item.bandName}"
+        is InboxItem.NewBandmate -> "${item.actorName} joined your circle ${item.bandName}"
     }
 }

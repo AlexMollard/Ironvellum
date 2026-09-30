@@ -123,7 +123,7 @@ data class StatEntry(
 )
 
 data class PlayerProfile(
-    val name: String = "Lifter",
+    val name: String = "Ironbound",
     val totalXp: Long = 0,
     val currentTitleId: String? = null,
     val trainingMode: TrainingMode = TrainingMode.STRENGTH,

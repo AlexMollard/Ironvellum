@@ -124,14 +124,14 @@ data class LiftsBoardUi(
 private enum class Board(val label: String) {
     Training("TRAINING"),
     Lifts("STRENGTH"),
-    Muster("GARRISON"),
+    Muster("THE VEIL"),
 }
 
 /** Pickable ranking metric; each entry owns its sort key and display formatting. */
 private enum class BoardMetric(val label: String) {
     Xp("XP"),
     Level("LEVEL"),
-    Streak("STREAK"),
+    Streak("OATH"),
     Titles("TITLES"),
     Strength("STRENGTH"),
     Last7("7-DAY"),
@@ -371,7 +371,7 @@ fun LeaderboardScreen(
 private fun LoadingPanel() {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
         Text(
-            "Consulting the board…",
+            "Reading the reckoning…",
             style = MaterialTheme.typography.bodyMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -383,7 +383,7 @@ private fun LoadingPanel() {
 private fun EmptyBoard(onRefresh: () -> Unit) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
         Text(
-            "THE BOARD IS YOURS ALONE",
+            "THE RECKONING IS YOURS ALONE",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -392,7 +392,7 @@ private fun EmptyBoard(onRefresh: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "No rivals ranked yet. Add allies by lifter name on the ALLIES tab.",
+            "No standings yet. Add allies by true name on the ALLIES tab.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -427,7 +427,7 @@ private fun InlineErrorBanner(message: String) {
 private fun ErrorPanel(onRefresh: () -> Unit) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
         Text(
-            "THE BOARD FLICKERED",
+            "THE RECKONING IS SMUDGED",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -436,7 +436,7 @@ private fun ErrorPanel(onRefresh: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "The Ledger could not summon the rankings. Stand fast and try again.",
+            "The Ledger could not read the reckoning. Try again in a moment.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -480,7 +480,7 @@ private fun Board(
         if (ui.error != null) RefreshLink(onClick = onRefresh, label = "Retry")
     }
     if (ui.error != null) {
-        InlineErrorBanner("The board flickered — these standings are the last synced ones: ${ui.error}")
+        InlineErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
         Spacer(Modifier.height(10.dp))
     }
     Spacer(Modifier.height(10.dp))
@@ -490,7 +490,7 @@ private fun Board(
 
     if (sorted.size == 1) {
         Text(
-            "You stand alone on the board. Recruit allies from the ALLIES tab to raise the stakes.",
+            "You stand alone in the reckoning. Add allies from the ALLIES tab to fill it.",
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -738,10 +738,10 @@ private fun RankRow(
     val extras = buildList {
         if (metric != BoardMetric.Level) add("LV ${row.level}")
         if (metric != BoardMetric.Xp) add("${row.totalXp} XP")
-        if (metric != BoardMetric.Streak) add("${row.streakDays}-day streak")
+        if (metric != BoardMetric.Streak) add("${row.streakDays}-day oath")
         if (metric != BoardMetric.Titles) add("${row.titlesCount} " + plural(row.titlesCount, "title", "titles"))
         if (metric != BoardMetric.Strength) add("lifetime strength ${row.lifetimeStrength}")
-        if (metric != BoardMetric.Last7) add("${row.sessionsLast7d} " + plural(row.sessionsLast7d, "workout", "workouts") + " in 7 days")
+        if (metric != BoardMetric.Last7) add("${row.sessionsLast7d} " + plural(row.sessionsLast7d, "trial", "trials") + " in 7 days")
     }.joinToString(" · ")
 
     InkPanel(
@@ -909,7 +909,7 @@ private fun MetricDropdown(selected: BoardMetric, onPick: (BoardMetric) -> Unit)
             )
             Icon(
                 Icons.Outlined.ArrowDropDown,
-                contentDescription = "Change ranking metric",
+                contentDescription = "Change reckoning metric",
                 tint = IronvellumColors.Emerald,
             )
         }
@@ -971,7 +971,7 @@ private fun MusterBoard(
             ) {
                 Column(Modifier.fillMaxWidth()) {
                     Text(
-                        "Ranks idle-vault progress — figures inscribed — separate from the training board.",
+                        "Ranks Veil progress — echoes inscribed — separate from the training reckoning.",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
@@ -979,7 +979,7 @@ private fun MusterBoard(
                     )
                     // Stale rows must still tell the truth about the last fetch.
                     if (ui.error != null) {
-                        InlineErrorBanner("The garrison ranks may be stale: ${ui.error}")
+                        InlineErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
                         Spacer(Modifier.height(10.dp))
                     }
                     ui.rows.forEachIndexed { index, row ->
@@ -1041,7 +1041,7 @@ private fun MusterRankRow(
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "${row.shadows} figures · ${formatRate(row.ratePerHour)}",
+            "${row.shadows} echoes · ${formatRate(row.ratePerHour)}",
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             style = MaterialTheme.typography.labelSmall,
@@ -1056,7 +1056,7 @@ private fun MusterRankRow(
 private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
         Text(
-            "THE GARRISON IS VEILED",
+            "THE VEIL WILL NOT PART",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -1065,7 +1065,7 @@ private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            message ?: "The garrison board could not be summoned. Stand fast and try again.",
+            message ?: "The Ledger could not read the Veil's reckoning. Try again in a moment.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -1079,7 +1079,7 @@ private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
 private fun MusterEmptyPanel(onRefresh: () -> Unit) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
         Text(
-            "THE GARRISON SLEEPS",
+            "THE VEIL IS STILL",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -1088,7 +1088,7 @@ private fun MusterEmptyPanel(onRefresh: () -> Unit) {
         )
         Spacer(Modifier.height(8.dp))
         Text(
-            "No lifter has inscribed figures yet — the vault is empty and every top spot here is unclaimed.",
+            "No Ironbound has inscribed echoes yet — the Veil is empty and every top standing here is unclaimed.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -1178,7 +1178,7 @@ private fun LiftsBoard(
             ) {
                 Column(Modifier.fillMaxWidth()) {
                     Text(
-                        "Tiers only — bodyweight stays on each phone.",
+                        "Rungs only — bodyweight stays on each phone.",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
@@ -1186,7 +1186,7 @@ private fun LiftsBoard(
                     )
                     // Stale rows must still tell the truth about the last fetch.
                     if (ui.error != null) {
-                        SocialErrorBanner("Lift boards may be stale: ${ui.error}")
+                        SocialErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
                         Spacer(Modifier.height(10.dp))
                     }
                     // One selector row: the board bar and the WEEK / ALL TIME
@@ -1249,7 +1249,7 @@ private fun LiftPicker(
             .clip(MaterialTheme.shapes.small)
             .background(Color(0xFF141A18))
             .inkBorder(IronvellumColors.SovereignGold, MaterialTheme.shapes.small, 1.dp)
-            .clickable(onClickLabel = "Choose a board") { open = true }
+            .clickable(onClickLabel = "Choose a reckoning") { open = true }
             .padding(horizontal = 14.dp),
     ) {
         Text(
@@ -1281,11 +1281,11 @@ private fun LiftPicker(
     // Board order within a group is progression order; a query re-sorts by how well it matched.
     val shown = if (query.isBlank()) matches.map { it.first } else matches.sortedBy { it.second }.map { it.first }
     InkPickerSheet(
-        title = "CHOOSE A BOARD",
+        title = "CHOOSE A RECKONING",
         onDismiss = { open = false },
         query = query,
         onQueryChange = { query = it },
-        searchLabel = "Search boards",
+        searchLabel = "Search reckonings",
         count = shown.size,
     ) {
         LiftGroup.entries.forEach { group ->
@@ -1343,7 +1343,7 @@ private fun <T> CompactSegmented(
 private fun BoardPickerRow(lift: Lift, isSelected: Boolean, ranked: Int, onClick: () -> Unit) {
     val rungs = LiftBoards.rungs(lift)
     val detail = if (rungs.isEmpty()) {
-        "Bodyweight tiers"
+        "Bodyweight rungs"
     } else {
         "${rungs.size} rungs · ${rungs.first().exercise} to ${rungs.last().exercise}"
     }
@@ -1457,7 +1457,7 @@ private fun LiftRankRow(
 private fun LiftEmptyPanel(onRefresh: () -> Unit) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
         Text(
-            "No allies ranked here yet — log one of its exercises to claim a spot.",
+            "No allies stand here yet — log one of its exercises to claim a standing.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )

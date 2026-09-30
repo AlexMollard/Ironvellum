@@ -951,7 +951,7 @@ declare
     n int;
 begin
     if blocked_between(new.requester_id, new.addressee_id) then
-        raise exception 'You can’t send an ally request to this lifter.';
+        raise exception 'You can’t send an ally request to this Ironbound.';
     end if;
 
     delete from friend_request_log l
@@ -1593,7 +1593,7 @@ as $$
         -- Identity follows profile visibility, as the roster shows it.
         select 'band_join', m.joined_at, m.user_id,
                case when can_view(m.user_id) then p.display_name
-                    else 'Lifter' || right(m.user_id::text, 4) end,
+                    else 'Ironbound' || right(m.user_id::text, 4) end,
                null, null, null, w.name, null
         from warband_members m
         join warbands w on w.id = m.warband_id
@@ -1816,8 +1816,8 @@ as $$
                        -- A bandmate whose profile row is missing still lists,
                        -- under the neutral handle shape the sign-up trigger uses.
                        'display_name', case when m.user_id = auth.uid() or can_view(m.user_id)
-                                            then coalesce(p.display_name, 'Lifter' || right(m.user_id::text, 4))
-                                            else 'Lifter' || right(m.user_id::text, 4) end,
+                                            then coalesce(p.display_name, 'Ironbound' || right(m.user_id::text, 4))
+                                            else 'Ironbound' || right(m.user_id::text, 4) end,
                        'level', case when m.user_id = auth.uid() or can_view(m.user_id)
                                      then coalesce(p.level, 1) end,
                        'current_title_id', case when m.user_id = auth.uid() or can_view(m.user_id)
@@ -1862,8 +1862,8 @@ grant execute on function public.schema_version() to anon, authenticated;
 --
 -- Name: the sign-up metadata key display_name, trimmed, when it is 2..24 chars
 -- and not taken (case-insensitively, the unique index on lower(display_name)).
--- Otherwise a neutral handle 'Lifter' plus four digits, which is exactly the
--- shape the app's claim-your-name panel recognises (^(?:Hunter|Lifter)\d{4}$).
+-- Otherwise a neutral handle 'Ironbound' plus four digits, which is exactly the
+-- shape the app's claim-your-name panel recognises (^(?:Hunter|Lifter|Ironbound)\d{4}$).
 -- The probe starts at a random number and walks forward, so it finds a free
 -- handle whenever one exists. It NEVER reads full_name / name (Google's
 -- metadata is a legal name and must not become a public handle).
@@ -1896,7 +1896,7 @@ begin
     end if;
 
     for i in 0..9999 loop
-        handle := 'Lifter' || lpad(((start_at + i) % 10000)::text, 4, '0');
+        handle := 'Ironbound' || lpad(((start_at + i) % 10000)::text, 4, '0');
         begin
             insert into profiles (id, display_name) values (new.id, handle);
             return new;

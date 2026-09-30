@@ -39,7 +39,7 @@ class OnboardingBackTest {
     fun backOnTheTrainingQuestionsReturnsToTheProfileInsteadOfLeavingTheApp() {
         compose.onNodeWithText("WHO YOU ARE").assertIsDisplayed()
 
-        compose.onNodeWithText("Claim your name").performTextInput("Sam")
+        compose.onNodeWithText("Take your true name").performTextInput("Sam")
         compose.onNodeWithText("Height (cm)").performTextInput("165")
         compose.onNodeWithText("Weight (kg)").performTextInput("61")
         compose.onNodeWithText("CONTINUE").performClick()

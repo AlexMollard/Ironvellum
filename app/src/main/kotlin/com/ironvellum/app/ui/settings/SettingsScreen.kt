@@ -321,8 +321,8 @@ class SettingsViewModel(
                 importing = false,
                 result = run.fold(
                     { r ->
-                        "Imported ${r.sessions} workouts · ${r.sets} sets · " +
-                            "+${r.xpAwarded} XP · ${r.skipped} already in your log"
+                        "Imported ${r.sessions} trials · ${r.sets} sets · " +
+                            "+${r.xpAwarded} XP · ${r.skipped} already in your Chronicle"
                     },
                     { "Import failed: ${it.message ?: "the file could not be read"}" },
                 ),
@@ -413,9 +413,9 @@ class SettingsViewModel(
             _import.value = repo.importArchive(json).fold(
                 { r ->
                     ImportUi(
-                        summary = "restored ${r.presets} routine workouts · ${r.sessions} logged workouts · " +
-                            "${r.sets} sets · ${r.stats} readings · ${r.titles} titles · " +
-                            "${r.skills} skill logs · ${r.healthDays} health days",
+                        summary = "restored ${r.presets} rites · ${r.sessions} sealed trials · " +
+                            "${r.sets} sets · ${r.stats} readings · ${r.titles} deeds · " +
+                            "${r.skills} Journal attempts · ${r.healthDays} health days",
                         // surface the first problem plus how many more, not silence
                         problems = r.problems.takeIf { it.isNotEmpty() }?.let {
                             if (it.size == 1) it.first() else "${it.first()} (+${it.size - 1} more)"
@@ -562,9 +562,9 @@ class SettingsViewModel(
                     return@launch
                 }
                 message = if (bodyProfile.value.first == null) {
-                    "Imported into your stat history. Set your height below to unlock BMI."
+                    "Imported into your Ledger. Set your height below to unlock BMI."
                 } else {
-                    "Imported into your stat history."
+                    "Imported into your Ledger."
                 }
             } else {
                 message = "No weight found in Health Connect yet."
@@ -601,7 +601,7 @@ class SettingsViewModel(
                 message = when {
                     read.days.isNotEmpty() || read.bodyReadings.isNotEmpty() ->
                         "Activity history updated — ${read.days.size} days, " +
-                            "${read.bodyReadings.size} weigh-ins." +
+                            "${read.bodyReadings.size} readings." +
                             read.problems.firstOrNull()?.let { " Partial: $it" }.orEmpty()
                     // never claim success on an empty write again
                     read.problems.isNotEmpty() -> "Nothing synced — ${read.problems.first()}"
@@ -770,7 +770,7 @@ fun SettingsScreen(
             onDismissRequest = { confirmImport = false },
             title = { Text("Restore this archive?") },
             text = {
-                Text("Replaces your routine, workout log, readings, titles and skill logs on this device. This cannot be undone.")
+                Text("Replaces your rites and cycle, Chronicle, readings, deeds and Journal on this device. This cannot be undone.")
             },
             confirmButton = {
                 IronvellumButton(label = "Restore", onClick = {
@@ -829,20 +829,20 @@ fun SettingsScreen(
                     shape = MaterialTheme.shapes.small,
                     value = name,
                     onValueChange = { name = it.take(24) },
-                    label = { Text("Claim your name") },
+                    label = { Text("Take your true name") },
                     singleLine = true,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Text),
                     modifier = Modifier.weight(1f),
                 )
                 IronvellumButton(
-                    label = "Claim",
+                    label = "Take",
                     onClick = { viewModel.rename(name) },
                     enabled = name.trim().isNotEmpty() && name.trim() != profile?.name,
                 )
             }
             Spacer(Modifier.height(4.dp))
             Text(
-                "Your name shows on the leaderboard. You can change it any time.",
+                "Your true name shows in the Reckoning. You can change it any time.",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -886,7 +886,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(8.dp))
             Text(
                 "Height drives BMI and step estimates. Sex picks the body-fat formula " +
-                    "and scales the strength score, so the board ranks effort, not build.",
+                    "and scales the strength score, so the Reckoning ranks effort, not build.",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -928,13 +928,13 @@ fun SettingsScreen(
         Spacer(Modifier.height(14.dp))
 
         // The same gear question the generator asks, stored in the same place,
-        // so changing it here moves the picker's MY GEAR filter and the next
+        // so changing it here moves the picker's MY ARMOURY filter and the next
         // generated routine together.
         val savedGear by ProgramAnswersStore.equipment.collectAsStateWithLifecycle()
         LaunchedEffect(Unit) { ProgramAnswersStore.get(context.applicationContext) }
         InkPanel(Modifier.fillMaxWidth()) {
             Text(
-                "GEAR",
+                "ARMOURY",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -942,7 +942,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                if (savedGear == null) "Not set: the exercise picker shows everything." else "Filters the exercise picker and the routine generator.",
+                if (savedGear == null) "Not set: the exercise picker shows everything." else "Filters the exercise picker and the Forge.",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -993,7 +993,7 @@ fun SettingsScreen(
         // meets it before the archive and cloud plumbing.
         InkPanel(Modifier.fillMaxWidth()) {
             Text(
-                "DAILY REMINDER",
+                "THE SUMMONS",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -1001,7 +1001,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "One nudge in the evening when today's quest is still open. No streak guilt, no noise.",
+                "One summons in the evening while today's trial is still unsealed. No oath guilt, no noise.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -1019,7 +1019,7 @@ fun SettingsScreen(
             IronvellumButton(
                 // The label is the action, not the state: "Reminder on" read
                 // like a command to turn it on while it was already on.
-                label = if (remindersOn) "Turn reminders off" else "Turn reminders on",
+                label = if (remindersOn) "Turn the Summons off" else "Turn the Summons on",
                 quiet = true,
                 onClick = {
                     if (remindersOn) {
@@ -1035,7 +1035,7 @@ fun SettingsScreen(
             if (remindersOn && deniedNotifications) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Notifications are muted in Android's settings — the reminder fires silently until you allow them.",
+                    "Notifications are muted in Android's settings — the Summons arrives silently until you allow them.",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -1138,7 +1138,7 @@ fun SettingsScreen(
             )
             Spacer(Modifier.height(6.dp))
             Text(
-                "Full JSON archive: routine, workout log with every set, readings, titles.",
+                "Full JSON archive: rites and cycle, the Chronicle with every set, readings, deeds.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -1320,7 +1320,7 @@ fun SettingsScreen(
             Spacer(Modifier.height(6.dp))
             if (crashCount == 0) {
                 Text(
-                    "No crashes recorded.",
+                    "The crash log is blank.",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -1393,7 +1393,7 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(14.dp))
         Text(
-            "Ironvellum ${BuildConfig.VERSION_NAME}  ·  measurements stay on this device",
+            "Ironvellum ${BuildConfig.VERSION_NAME}  ·  readings stay on this device",
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(horizontal = 4.dp),

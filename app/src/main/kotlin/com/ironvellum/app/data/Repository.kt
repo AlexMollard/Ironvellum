@@ -128,7 +128,7 @@ class Repository(
 
     suspend fun ensureSeeded() {
         if (profileDao.get() == null) {
-            profileDao.upsert(ProfileEntity(name = "Lifter", totalXp = 0, currentTitleId = null))
+            profileDao.upsert(ProfileEntity(name = "Ironbound", totalXp = 0, currentTitleId = null))
         }
         val existingNames = exerciseDao.observeAll().first().map { it.name }.toSet()
         val missing = Seed.exercises.filterNot { it.name in existingNames }
@@ -437,7 +437,7 @@ class Repository(
     suspend fun savePlannedPreset(presetId: Long?, preset: PlannedPreset): Long {
         val idByName = exerciseDao.observeAll().first().associate { it.name to it.id }
         val unknown = preset.entries.map { it.exerciseName }.filterNot { it in idByName }
-        require(unknown.isEmpty()) { "Unknown exercises in preset \"${preset.name}\": $unknown" }
+        require(unknown.isEmpty()) { "Unknown exercises in rite \"${preset.name}\": $unknown" }
         return savePreset(
             presetId = presetId,
             name = preset.name,
@@ -580,7 +580,7 @@ class Repository(
             val resolved = presets.map { preset ->
                 val missing = preset.entries.filterNot { it.exerciseName in idByName }
                 require(missing.isEmpty()) {
-                    "Unknown exercises in preset \"${preset.name}\": ${missing.map { it.exerciseName }}"
+                    "Unknown exercises in rite \"${preset.name}\": ${missing.map { it.exerciseName }}"
                 }
                 preset
             }
@@ -629,7 +629,7 @@ class Repository(
 
     suspend fun startSessionFromPreset(presetId: Long): Long = db.withTransaction {
         claimLiveSession()?.let { return@withTransaction it }
-        val pw = presetDao.presetWithEntries(presetId) ?: error("Preset $presetId not found")
+        val pw = presetDao.presetWithEntries(presetId) ?: error("Rite $presetId not found")
         val sessionId = sessionDao.insertSession(
             SessionEntity(
                 presetId = presetId,
@@ -713,7 +713,7 @@ class Repository(
         sessionDao.insertSession(
             SessionEntity(
                 presetId = null,
-                label = label.ifBlank { "Freeform" },
+                label = label.ifBlank { "Open Trial" },
                 startedAtMs = System.currentTimeMillis(),
                 completedAtMs = null,
                 xpAwarded = 0,
@@ -931,8 +931,8 @@ class Repository(
     )
 
     suspend fun completeSession(sessionId: Long): CompletionResult = db.withTransaction {
-        val session = sessionDao.byId(sessionId) ?: error("Session $sessionId not found")
-        check(session.completedAtMs == null) { "Session already completed" }
+        val session = sessionDao.byId(sessionId) ?: error("Trial $sessionId not found")
+        check(session.completedAtMs == null) { "Trial already sealed" }
         val doneSets = sessionDao.setsFor(sessionId).filter { it.done }
         val latestBodyweight = statDao.observeAll().first().firstOrNull()?.weightKg
         // Split by metric. Strength work (reps AND static holds) earns
@@ -1973,7 +1973,7 @@ class Repository(
                         preset.entries.sortedBy { it.position }.mapNotNull { entry ->
                             val exerciseId = resolveExercise(entry.exerciseName)
                             if (exerciseId == null) {
-                                problems.add("preset \"${preset.name}\" entry dropped: no exercise name")
+                                problems.add("rite \"${preset.name}\" entry dropped: no exercise name")
                                 return@mapNotNull null
                             }
                             PresetEntryEntity(
@@ -2231,7 +2231,7 @@ class Repository(
             val sessionId = sessionDao.insertSession(
                 SessionEntity(
                     presetId = null,
-                    label = workout.label.trim().ifBlank { "Imported workout" },
+                    label = workout.label.trim().ifBlank { "Imported trial" },
                     startedAtMs = workout.startedAtMs,
                     completedAtMs = workout.completedAtMs ?: workout.startedAtMs,
                     xpAwarded = 0,

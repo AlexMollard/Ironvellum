@@ -261,12 +261,12 @@ class TitleEngineTest {
     fun `progress units read correctly`() {
         assertEquals("steps in a day", Titles.progress(TitleRule.StepsInDay(1), full()).unit)
         assertEquals("km lifetime", Titles.progress(TitleRule.DistanceKmLifetime(1.0), full()).unit)
-        assertEquals("day streak", Titles.progress(TitleRule.TrainingStreak(3), full()).unit)
+        assertEquals("day oath", Titles.progress(TitleRule.TrainingStreak(3), full()).unit)
         assertEquals("active kcal in a day", Titles.progress(TitleRule.ActiveKcalInDay(500), full()).unit)
         assertEquals("minutes slept in a night", Titles.progress(TitleRule.SleepMinutesInNight(480), full()).unit)
-        assertEquals("skills mastered", Titles.progress(TitleRule.SkillsMastered(5), full()).unit)
-        assertEquals("practice attempts", Titles.progress(TitleRule.PracticeAttempts(25), full()).unit)
-        assertEquals("workouts in a week", Titles.progress(TitleRule.WorkoutsInWeek(3), full()).unit)
+        assertEquals("techniques mastered", Titles.progress(TitleRule.SkillsMastered(5), full()).unit)
+        assertEquals("Journal attempts", Titles.progress(TitleRule.PracticeAttempts(25), full()).unit)
+        assertEquals("trials in a week", Titles.progress(TitleRule.WorkoutsInWeek(3), full()).unit)
     }
 
     // ---- activity ledger assembly ----

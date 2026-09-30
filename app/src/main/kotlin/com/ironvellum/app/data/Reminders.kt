@@ -56,10 +56,10 @@ object Reminders {
         manager.createNotificationChannel(
             NotificationChannel(
                 CHANNEL_ID,
-                "Daily reminder",
+                "The Summons",
                 NotificationManager.IMPORTANCE_DEFAULT,
             ).apply {
-                description = "A once-a-day nudge that today's quest is still open."
+                description = "A once-a-day summons that today's trial is still unsealed."
             },
         )
     }
@@ -127,22 +127,22 @@ object Reminders {
         val (title, text, bigText) = if (quest == null) {
             // A scheduled rest day is a kept day, not a missed one: say so.
             Triple(
-                "REST DAY",
-                "Rest up. The streak holds at $days.",
-                "Nothing scheduled today. Rest counts — your $days streak holds until your next quest.",
+                "RESPITE",
+                "Take your respite. The oath holds at $days.",
+                "Nothing in your cycle today. Respite counts — your oath of $days holds until your next trial.",
             )
         } else {
             val exercises = quest.entries.size.let { if (it == 1) "1 exercise" else "$it exercises" }
             val sets = quest.entries.sumOf { it.targetSets }.let { if (it == 1) "1 set" else "$it sets" }
             Triple(
-                "QUEST OPEN · ${quest.name.uppercase()}",
+                "THE SUMMONS · ${quest.name.uppercase()}",
                 "$exercises · $sets waiting.",
                 buildString {
                     append("${quest.name}: $exercises, $sets today. ")
                     append(
-                        if (streak == 0) "Today's quest starts the streak."
-                        else if (next != null) "$days streak. Next deed at ${pluralDays(next)}."
-                        else "$days streak.",
+                        if (streak == 0) "Today's Trial starts the oath."
+                        else if (next != null) "Oath · $days kept. Next deed at ${pluralDays(next)}."
+                        else "Oath · $days kept.",
                     )
                 },
             )

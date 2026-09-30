@@ -224,7 +224,7 @@ fun SkillDetailDialog(
                 if (entries.isNotEmpty()) {
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        "HISTORY",
+                        "RECENT ATTEMPTS",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,

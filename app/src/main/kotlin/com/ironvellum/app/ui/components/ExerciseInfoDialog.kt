@@ -83,33 +83,33 @@ internal fun ExerciseInfoDialog(
                     ExerciseMuscles(shares, Modifier.fillMaxWidth(), figureHeight = 180.dp)
                 } else {
                     InfoHeading("MUSCLES")
-                    InfoBody("No muscle data for this exercise yet.", IronvellumColors.InkMuted)
+                    InfoBody("The Ledger holds no muscle data for this exercise yet.", IronvellumColors.InkMuted)
                 }
                 if (gear.isNotEmpty()) {
-                    InfoHeading("GEAR")
+                    InfoHeading("ARMOURY")
                     InfoBody(gear.replaceFirstChar { it.uppercase() })
                 }
                 if (skill != null) {
-                    InfoHeading("SKILL")
+                    InfoHeading("TECHNIQUE")
                     InfoBody("${Skills.tierLabel(skill.tier)} · ${skill.line}", IronvellumColors.SystemGreen)
                     InfoBody("Claim: ${skill.standard}")
                     if (skill.why.isNotBlank()) InfoBody(skill.why, IronvellumColors.InkMuted)
                     skill.requires?.let { InfoBody("Needs $it first", IronvellumColors.InkMuted) }
                 }
                 if (boards.isNotEmpty()) {
-                    InfoHeading("ALLY STRENGTH BOARD")
+                    InfoHeading("THE RECKONING")
                     boards.forEach { board ->
                         InfoBody(
                             if (board.lift.kind == LiftKind.LADDER && board.rung != null) {
-                                "${board.lift.label} board — rung ${board.rung} of ${board.rungCount}"
+                                "${board.lift.label} reckoning — rung ${board.rung} of ${board.rungCount}"
                             } else {
-                                "Counts toward the ${board.lift.label.lowercase()} board"
+                                "Counts toward the ${board.lift.label.lowercase()} reckoning"
                             },
                         )
                     }
                 }
                 if (lastLine != null) {
-                    InfoHeading("LAST LOGGED")
+                    InfoHeading("LAST TRIAL")
                     InfoBody(lastLine, IronvellumColors.SovereignGold)
                 }
             }

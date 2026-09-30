@@ -55,7 +55,7 @@ class SupportScreenFlavourTest {
     fun donationControlsMatchFlavour() {
         openSupport()
         val expected = if (BuildConfig.SUPPORT_LINKS) 1 else 0
-        listOf("Sponsor on GitHub", "Donate on Liberapay", "View the Ledger").forEach { label ->
+        listOf("Sponsor on GitHub", "Donate on Liberapay", "View the costs").forEach { label ->
             compose.onAllNodes(control(label)).assertCountEquals(expected)
         }
     }

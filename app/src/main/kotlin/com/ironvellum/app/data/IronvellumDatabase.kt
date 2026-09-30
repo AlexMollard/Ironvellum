@@ -77,7 +77,20 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 31
+        const val VERSION = 32
+
+        /**
+         * Renames the seeded default profile name from "Lifter" to
+         * "Ironbound", the glossary's word for the user. Only the exact seed
+         * is touched, so any name someone typed survives; someone who typed
+         * "Lifter" on purpose is renamed too, which was accepted as the cost
+         * of not leaving the retired word on every untouched install.
+         */
+        private val MIGRATION_31_32 = object : Migration(31, 32) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("UPDATE profile SET name = 'Ironbound' WHERE name = 'Lifter'")
+            }
+        }
 
         /**
          * Picker favourites. Purely additive: one new table, no existing
@@ -443,6 +456,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_28_29,
             MIGRATION_29_30,
             MIGRATION_30_31,
+            MIGRATION_31_32,
         )
 
         const val NAME = "ironvellum.db"

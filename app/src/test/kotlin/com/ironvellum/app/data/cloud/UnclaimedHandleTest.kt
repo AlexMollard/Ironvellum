@@ -13,9 +13,11 @@ import org.junit.Test
 class UnclaimedHandleTest {
 
     @Test
-    fun `only a seeded Lifter or legacy Hunter handle with exactly four digits counts as unclaimed`() {
-        assertTrue(isUnclaimedHandle("Lifter1234"))  // current seed prefix
+    fun `only a seeded Ironbound or legacy Lifter or Hunter handle with exactly four digits counts as unclaimed`() {
+        assertTrue(isUnclaimedHandle("Ironbound1234"))  // current seed prefix
+        assertTrue(isUnclaimedHandle("Lifter1234"))  // seed prefix of older builds
         assertTrue(isUnclaimedHandle("Hunter1234"))  // seed prefix of older builds
+        assertFalse(isUnclaimedHandle("Ironbound123")) // too few digits
 
         // Boundaries of the seed format — each of these is a name the player
         // could legitimately hold and must count as CLAIMED:

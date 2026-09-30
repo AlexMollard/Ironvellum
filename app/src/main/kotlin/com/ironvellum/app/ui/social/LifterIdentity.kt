@@ -101,7 +101,7 @@ internal fun IdentityRow(
             )
             Column(Modifier.weight(1f)) {
                 Text(
-                    displayName.ifBlank { "LIFTER" },
+                    displayName.ifBlank { "IRONBOUND" },
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.Bold,

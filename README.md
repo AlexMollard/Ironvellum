@@ -7,7 +7,7 @@
 **An Android training tracker that scores what you actually lift.**
 
 Log a workout, get a number that means something. Body-scaled strength scoring,
-a 106-technique calisthenics tree, and a first-run flow that builds you a routine.
+a 106-technique calisthenics tree, and a first-run flow that builds you a cycle.
 
 ![Gate](https://img.shields.io/badge/gate-523%20unit%20%2B%2090%20instrumented-2E7D32)
 ![Tested locally](https://img.shields.io/badge/tested-locally%2C%20not%20CI-555555)
@@ -22,13 +22,13 @@ a 106-technique calisthenics tree, and a first-run flow that builds you a routin
 
 <div align="center">
 
-| Your day | The routine it built you | The trial |
+| Your day | The cycle it built you | The trial |
 |:---:|:---:|:---:|
-| <img src="docs/images/dashboard.png" width="230" alt="Today screen showing strength rank, streak, titles and today's quest" /> | <img src="docs/images/train.png" width="230" alt="Train screen listing the generated workouts" /> | <img src="docs/images/session.png" width="230" alt="A workout in progress with per-set load and rep steppers" /> |
+| <img src="docs/images/dashboard.png" width="230" alt="Today screen showing strength rank, oath, deeds and today's trial" /> | <img src="docs/images/train.png" width="230" alt="Rites screen listing the forged rites" /> | <img src="docs/images/session.png" width="230" alt="A trial in progress with per-set load and rep steppers" /> |
 
-| Skill tree | Deeds | Share card |
+| Paths | Deeds | Share card |
 |:---:|:---:|:---:|
-| <img src="docs/images/skilltree.png" width="230" alt="Calisthenics skill tree with prerequisite lines" /> | <img src="docs/images/codex.png" width="230" alt="Deeds board grouped by category with progress bars" /> | <img src="docs/images/share.png" width="230" alt="Wordle-style plain text share card" /> |
+| <img src="docs/images/skilltree.png" width="230" alt="The Paths technique tree with prerequisite lines" /> | <img src="docs/images/codex.png" width="230" alt="Deeds board grouped by category with progress bars" /> | <img src="docs/images/share.png" width="230" alt="Wordle-style plain text share card" /> |
 
 </div>
 
@@ -41,7 +41,7 @@ away from the training that earned it.
 Ironvellum scores a set by what it costs you:
 
 - **Body-scaled.** A rep is worth `reps × (bodyweight + added) / bodyweight^0.67`,
-  the standard allometric exponent, so a lighter lifter is not permanently
+  the standard allometric exponent, so a lighter body is not permanently
   outranked for being light.
 - **Priced per implement.** A marked kilogram is not the same load on every
   machine. A 45 degree sled transmits `0.70`, a smith bar `0.90`, a pinned stack
@@ -52,7 +52,7 @@ Ironvellum scores a set by what it costs you:
   the one the progression states.
 - **Per-sex standards.** Strength score is normalised by muscle group using
   published gaps (Miller et al., sanity-checked against IPF GL), and every
-  strength deed states the bar for the lifter reading it rather than the men's
+  strength deed states the bar for the person reading it rather than the men's
   number with a footnote.
 
 Everything works offline. An account is optional and only ever backs up
@@ -60,19 +60,25 @@ training.
 
 ## Features
 
+The app keeps its own words, all defined in [docs/GLOSSARY.md](docs/GLOSSARY.md):
+a saved workout is a **rite**, the weekly plan is a **cycle**, a workout in
+progress is a **trial**, sealed when you finish and written into your
+**chronicle**.
+
 |  | |
 |---|---|
-| **Guided first run** | Pick your split (full body, upper/lower, push/pull/legs), weekly volume, equipment and goal, then review an editable routine built from the real catalogue. No routine is imposed on you. |
-| **Evidence-based program builder** | Hand-written templates for each split, for strength or muscle, fitted to your weekly volume (low, standard or high) and the gear you own: a full gym, nothing, or toggles for a pull-up bar, dip bars, parallettes, rings, dumbbells, barbell, bench and ab wheel, with dumbbell loads capped at your heaviest and reps raised to match. Or generate a routine or a single workout sized to the 2020-2026 volume research, or improve a workout you already have and see the before and after. Cap the exercises per workout (5 by default) or turn on Compound & skill only to leave isolation work out. Every exercise says in plain words why it was picked and cites the study. Loads come from your own PRs. |
-| **Weekly muscle coverage** | A body map on Train shows the sets each of 26 muscles gets in your planned routine or the last seven days, against the range for your volume and goal. The chest counts as upper, mid and lower, and lever and planche holds count toward the muscles they work. Helpers your other exercises mostly train (upper and lower chest, traps, front delts, rotator cuff, serratus, brachialis, forearms, obliques, lower back, hip flexors, adductors, abductors, tibialis) are held to a floor of 3 sets a week instead of a range. Each muscle's sets break down by exercise, and every exercise shows its main and assisting muscles on a figure, on the live workout screen too. |
-| **Live workouts** | Type a set's exact load, watch a running workout timer, and continue a workout you left instead of starting over. Time estimates learn your pace from the workouts you log. After a workout, tick which changes to sets, reps, load and modifiers go back into your routine. |
+| **The Binding** | A guided first run. Pick your split (full body, upper/lower, push/pull/legs), weekly volume, armoury (the equipment you own) and goal, then review an editable cycle built from the real catalogue. No cycle is imposed on you. |
+| **The Forge** | An evidence-based builder. Hand-written patterns for each split, for strength or muscle, fitted to your weekly volume (low, standard or high) and your armoury: a full gym, nothing, or toggles for a pull-up bar, dip bars, parallettes, rings, dumbbells, barbell, bench and ab wheel, with dumbbell loads capped at your heaviest and reps raised to match. Or forge a cycle or a single rite sized to the 2020-2026 volume research, or temper a rite you already have and see the before and after. Cap the exercises per rite (5 by default) or turn on Compound & skill only to leave isolation work out. Every exercise says in plain words why it was picked and cites the study. Loads come from your own peaks. |
+| **Weekly muscle coverage** | A body map on the Rites tab shows the sets each of 26 muscles gets in your planned cycle or the last seven days, against the range for your volume and goal. The chest counts as upper, mid and lower, and lever and planche holds count toward the muscles they work. Helpers your other exercises mostly train (upper and lower chest, traps, front delts, rotator cuff, serratus, brachialis, forearms, obliques, lower back, hip flexors, adductors, abductors, tibialis) are held to a floor of 3 sets a week instead of a range. Each muscle's sets break down by exercise, and every exercise shows its main and assisting muscles on a figure, on the live trial screen too. |
+| **Live trials** | Type a set's exact load, watch a running timer, and continue a trial you left instead of starting over. Time estimates learn your pace from the trials you seal. After a trial, tick which changes to sets, reps, load and modifiers go back into your cycle. |
 | **241 exercises** | Barbell, dumbbell, cable, plate-loaded, selectorised, smith, assisted, bodyweight, plus cardio, sport, climbing, water and mobility. |
-| **106-technique skill tree** | Fourteen lines: pull, push, handstand, lever, planche, rings, movement, legs, core, mobility, plus squat, bench, press and deadlift ladders with bodyweight-relative bars. Each rung is gated on the one before it and carries a written claim standard. |
-| **105 deeds** | Level, volume, streak, strength and activity milestones, with progress you can watch rather than a surprise. |
-| **Progressive overload** | Strength and hypertrophy schools with their own rep bands, per-exercise load steps and a stall rule that deloads instead of repeating a failed workout. |
+| **Paths: 106 techniques** | Fourteen paths: pull, push, handstand, lever, planche, rings, movement, legs, core, mobility, plus squat, bench, press and deadlift ladders with bodyweight-relative bars. Each technique is gated on the one before it and carries a written claim standard. |
+| **105 deeds** | Level, volume, oath (days kept in a row), strength and activity milestones, with progress you can watch rather than a surprise. Each deed grants a title to wear. |
+| **Progressive overload** | Strength and hypertrophy schools with their own rep bands, per-exercise load steps and a stall rule that deloads instead of repeating a failed trial. |
 | **Measurements and health** | Weight, body fat, BMI and FFMI over time; optional Health Connect read for steps, distance, energy and sleep. |
-| **Shareable workouts** | A plain text card shaped after Wordle, no link and no image, that states only what you did. |
-| **Optional cloud** | Sign in to back up training and see a feed and leaderboard. Body measurements and health data never leave the device. Delete your cloud account from the app at any time. |
+| **Shareable trials** | A plain text card shaped after Wordle, no link and no image, that states only what you did. |
+| **The Veil** | An idle layer: each trial leaves an echo, and echoes gather essence while you are away, spent on inscriptions for relics and crests. |
+| **Optional cloud** | Sign in to back up training, follow your allies' tidings, form a circle with a shared weekly goal, and stand in the Reckoning, a leaderboard for each lift. Body measurements and health data never leave the device. Delete your cloud account from the app at any time. |
 
 ## Architecture
 

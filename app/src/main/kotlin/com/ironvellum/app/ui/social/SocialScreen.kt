@@ -37,9 +37,9 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumTabPill
 
 private enum class GuildTab(val label: String) {
-    FEED("FEED"),
-    INBOX("INBOX"),
-    BOARD("BOARD"),
+    FEED("TIDINGS"),
+    INBOX("MISSIVES"),
+    BOARD("RECKONING"),
     // "ALLIES", not "GUILD" — the bottom nav tab already says Allies; repeating
     // it here put the same word on screen three times.
     ALLIES("ALLIES"),
@@ -115,7 +115,7 @@ fun SocialScreen(
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { explainNotifications = false },
             title = { Text("Ally notifications?") },
-            text = { Text("See ally requests, comments and reactions.") },
+            text = { Text("See ally requests, remarks and tributes.") },
             // ALLOW is the only path to the system prompt; NOT NOW just closes.
             confirmButton = {
                 IronvellumButton(

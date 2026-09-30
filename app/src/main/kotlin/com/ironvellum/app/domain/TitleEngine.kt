@@ -67,7 +67,12 @@ sealed interface TitleRule {
  * strength milestone is Rare, long streaks / deep skills / heavy loads are
  * Epic, and Masterwork is reserved for the extreme end of a ladder.
  */
-enum class TitleRarity { Common, Rare, Epic, Masterwork }
+enum class TitleRarity {
+    Common, Rare, Epic, Masterwork;
+
+    /** Display name: Epic reads as Fabled, the glossary's rarity word. */
+    val label: String get() = if (this == Epic) "Fabled" else name
+}
 
 data class TitleDef(
     val id: String,
@@ -100,42 +105,42 @@ object Titles {
 
     val ALL: List<TitleDef> = listOf(
         // Deeds of war
-        TitleDef("awakened", "First Mark", "Complete your first workout.", TitleRule.FirstWorkout, TitleRarity.Common),
-        TitleDef("iron_discipline", "Iron Discipline", "Complete 25 workouts.", TitleRule.Workouts(25), TitleRarity.Rare),
-        TitleDef("relentless", "Relentless", "Complete 50 workouts.", TitleRule.Workouts(50), TitleRarity.Rare),
-        TitleDef("unbroken", "Unbroken", "Complete 100 workouts.", TitleRule.Workouts(100), TitleRarity.Epic),
-        TitleDef("hundred_battles", "Hundred Battles", "Complete 250 workouts.", TitleRule.Workouts(250), TitleRarity.Epic),
-        TitleDef("eternal_grinder", "Eternal Grinder", "Complete 500 workouts.", TitleRule.Workouts(500), TitleRarity.Masterwork),
+        TitleDef("awakened", "First Mark", "Seal your first trial.", TitleRule.FirstWorkout, TitleRarity.Common),
+        TitleDef("iron_discipline", "Iron Discipline", "Seal 25 trials.", TitleRule.Workouts(25), TitleRarity.Rare),
+        TitleDef("relentless", "Relentless", "Seal 50 trials.", TitleRule.Workouts(50), TitleRarity.Rare),
+        TitleDef("unbroken", "Unbroken", "Seal 100 trials.", TitleRule.Workouts(100), TitleRarity.Epic),
+        TitleDef("hundred_battles", "Inkstained", "Seal 250 trials.", TitleRule.Workouts(250), TitleRarity.Epic),
+        TitleDef("eternal_grinder", "The Ceaseless", "Seal 500 trials.", TitleRule.Workouts(500), TitleRarity.Masterwork),
         // Power
         TitleDef("shadow_ascendant", "Rising Mark", "Reach level 5.", TitleRule.ReachLevel(5), TitleRarity.Common),
-        TitleDef("royal_apex", "Royal Apex", "Reach level 10.", TitleRule.ReachLevel(10), TitleRarity.Common),
-        TitleDef("baron_of_shadows", "Keeper of the Garrison", "Reach level 20.", TitleRule.ReachLevel(20), TitleRarity.Rare),
-        TitleDef("count_of_the_abyss", "Count of the Abyss", "Reach level 35.", TitleRule.ReachLevel(35), TitleRarity.Rare),
-        TitleDef("duke_of_shadows", "Warden of the Garrison", "Reach level 50.", TitleRule.ReachLevel(50), TitleRarity.Epic),
-        TitleDef("sovereign_of_shadow", "Master of the Garrison", "Reach level 75.", TitleRule.ReachLevel(75), TitleRarity.Masterwork),
+        TitleDef("royal_apex", "Graven Mark", "Reach level 10.", TitleRule.ReachLevel(10), TitleRarity.Common),
+        TitleDef("baron_of_shadows", "Ashen Scribe", "Reach level 20.", TitleRule.ReachLevel(20), TitleRarity.Rare),
+        TitleDef("count_of_the_abyss", "Voice of the Abyss", "Reach level 35.", TitleRule.ReachLevel(35), TitleRarity.Rare),
+        TitleDef("duke_of_shadows", "Inkbound Sage", "Reach level 50.", TitleRule.ReachLevel(50), TitleRarity.Epic),
+        TitleDef("sovereign_of_shadow", "Master of the Vellum", "Reach level 75.", TitleRule.ReachLevel(75), TitleRarity.Masterwork),
         TitleDef("monarch_of_shadows", "Grand Archivist", "Reach level 100.", TitleRule.ReachLevel(100), TitleRarity.Masterwork),
         // Volume
-        TitleDef("gatecrasher", "Doorbreaker", "Log 250 working sets.", TitleRule.SetsLogged(250), TitleRarity.Common),
-        TitleDef("storm_of_steel", "Storm of Steel", "Log 500 working sets.", TitleRule.SetsLogged(500), TitleRarity.Rare),
+        TitleDef("gatecrasher", "Anvil-Struck", "Log 250 working sets.", TitleRule.SetsLogged(250), TitleRarity.Common),
+        TitleDef("storm_of_steel", "Ashfall", "Log 500 working sets.", TitleRule.SetsLogged(500), TitleRarity.Rare),
         TitleDef("gate_breaker", "Threshold Breaker", "Log 1,000 working sets.", TitleRule.SetsLogged(1_000), TitleRarity.Rare),
         TitleDef("world_splitter", "World Splitter", "Log 2,500 working sets.", TitleRule.SetsLogged(2_500), TitleRarity.Epic),
-        TitleDef("steel_tempest", "Steel Tempest", "Log 10,000 working sets.", TitleRule.SetsLogged(10_000), TitleRarity.Masterwork),
-        TitleDef("monarchs_mandate", "Standing Order", "Log 2,000 total reps.", TitleRule.RepsLogged(2_000), TitleRarity.Common),
-        TitleDef("ten_thousand_echoes", "Ten Thousand Echoes", "Log 10,000 total reps.", TitleRule.RepsLogged(10_000), TitleRarity.Rare),
-        TitleDef("endless_legion", "Endless Legion", "Log 25,000 total reps.", TitleRule.RepsLogged(25_000), TitleRarity.Epic),
+        TitleDef("steel_tempest", "The Black Tempest", "Log 10,000 working sets.", TitleRule.SetsLogged(10_000), TitleRarity.Masterwork),
+        TitleDef("monarchs_mandate", "Tally of Iron", "Log 2,000 total reps.", TitleRule.RepsLogged(2_000), TitleRarity.Common),
+        TitleDef("ten_thousand_echoes", "Ten Thousand Strokes", "Log 10,000 total reps.", TitleRule.RepsLogged(10_000), TitleRarity.Rare),
+        TitleDef("endless_legion", "Unending Ink", "Log 25,000 total reps.", TitleRule.RepsLogged(25_000), TitleRarity.Epic),
         TitleDef("myriad_strikes", "Myriad Strikes", "Log 50,000 total reps.", TitleRule.RepsLogged(50_000), TitleRarity.Masterwork),
         // Body-scaled strength
         TitleDef(
             "iron_ascension",
-            "Iron Ascension",
-            "Score 1,000 strength in one workout — scaled to your body.",
+            "Iron Tide",
+            "Score 1,000 strength in one trial — scaled to your body.",
             TitleRule.SessionStrength(1_000),
             TitleRarity.Rare,
         ),
         TitleDef(
             "titans_verdict",
             "Titan's Verdict",
-            "Score 3,000 strength in one workout — scaled to your body.",
+            "Score 3,000 strength in one trial — scaled to your body.",
             TitleRule.SessionStrength(3_000),
             TitleRarity.Epic,
         ),
@@ -163,7 +168,7 @@ object Titles {
         // Steps in a day
         TitleDef(
             "shadow_marcher",
-            "Long Marcher",
+            "Long Stride",
             "Walk 10,000 steps in a single day.",
             TitleRule.StepsInDay(10_000),
             TitleRarity.Common,
@@ -184,7 +189,7 @@ object Titles {
         ),
         TitleDef(
             "red_zone_hunter",
-            "Red Zone Lifter",
+            "Ember-Shod",
             "Walk 30,000 steps in a single day.",
             TitleRule.StepsInDay(30_000),
             TitleRarity.Epic,
@@ -199,21 +204,21 @@ object Titles {
         ),
         TitleDef(
             "wandering_soldier",
-            "Wandering Soldier",
+            "Drifting Shade",
             "Walk 500,000 steps in your lifetime.",
             TitleRule.StepsLifetime(500_000),
             TitleRarity.Rare,
         ),
         TitleDef(
             "million_march",
-            "Million March",
+            "Million Footfalls",
             "Walk 1,000,000 steps in your lifetime.",
             TitleRule.StepsLifetime(1_000_000),
             TitleRarity.Epic,
         ),
         TitleDef(
             "shadow_exodus",
-            "Great March",
+            "The Great Wandering",
             "Walk 5,000,000 steps in your lifetime.",
             TitleRule.StepsLifetime(5_000_000),
             TitleRarity.Masterwork,
@@ -221,14 +226,14 @@ object Titles {
         // Distance
         TitleDef(
             "fifty_k_traveler",
-            "Fifty-K Traveler",
+            "Dust-Walker",
             "Cover 50 km on foot in your lifetime.",
             TitleRule.DistanceKmLifetime(50.0),
             TitleRarity.Common,
         ),
         TitleDef(
             "path_carver",
-            "Path Carver",
+            "Wayfinder",
             "Cover 250 km on foot in your lifetime.",
             TitleRule.DistanceKmLifetime(250.0),
             TitleRarity.Rare,
@@ -273,21 +278,21 @@ object Titles {
         // Step-goal consistency
         TitleDef(
             "marching_orders",
-            "Marching Orders",
+            "Measured Tread",
             "Hit a 10,000-step day 10 times.",
             TitleRule.StepGoalDays(10),
             TitleRarity.Rare,
         ),
         TitleDef(
             "cadence_keeper",
-            "Cadence Keeper",
+            "Cadence of Iron",
             "Hit a 10,000-step day 50 times.",
             TitleRule.StepGoalDays(50),
             TitleRarity.Epic,
         ),
         TitleDef(
             "eternal_vanguard",
-            "Eternal Vanguard",
+            "Hundred Dawns",
             "Hit a 10,000-step day 100 times.",
             TitleRule.StepGoalDays(100),
             TitleRarity.Masterwork,
@@ -296,57 +301,57 @@ object Titles {
         TitleDef(
             "three_day_oath",
             "Three-Day Oath",
-            "Keep a 3-day streak.",
+            "Keep a 3-day oath.",
             TitleRule.TrainingStreak(3),
             TitleRarity.Common,
         ),
         TitleDef(
             "week_of_shadows",
             "Week of Iron",
-            "Keep a 7-day streak.",
+            "Keep a 7-day oath.",
             TitleRule.TrainingStreak(7),
             TitleRarity.Common,
         ),
         TitleDef(
             "fortnight_vigil",
             "Fortnight Vigil",
-            "Keep a 14-day streak.",
+            "Keep a 14-day oath.",
             TitleRule.TrainingStreak(14),
             TitleRarity.Rare,
         ),
         TitleDef(
             "unrelenting_watch",
             "Unrelenting Watch",
-            "Keep a 30-day streak.",
+            "Keep a 30-day oath.",
             TitleRule.TrainingStreak(30),
             TitleRarity.Epic,
         ),
         TitleDef(
             "hundred_day_promise",
             "Hundred-Day Promise",
-            "Keep a 100-day streak.",
+            "Keep a 100-day oath.",
             TitleRule.TrainingStreak(100),
             TitleRarity.Masterwork,
         ),
         // Weekly workout volume
         TitleDef(
             "triple_threat",
-            "Triple Threat",
-            "Complete 3 workouts in a single week.",
+            "Threefold Iron",
+            "Seal 3 trials in a single week.",
             TitleRule.WorkoutsInWeek(3),
             TitleRarity.Common,
         ),
         TitleDef(
             "fivefold_assault",
-            "Fivefold Assault",
-            "Complete 5 workouts in a single week.",
+            "Fivefold Fury",
+            "Seal 5 trials in a single week.",
             TitleRule.WorkoutsInWeek(5),
             TitleRarity.Rare,
         ),
         TitleDef(
             "six_gate_week",
-            "Six-Workout Week",
-            "Complete 6 workouts in a single week.",
+            "Six-Trial Week",
+            "Seal 6 trials in a single week.",
             TitleRule.WorkoutsInWeek(6),
             TitleRarity.Epic,
         ),
@@ -354,42 +359,42 @@ object Titles {
         TitleDef(
             "first_technique",
             "First Technique",
-            "Master 1 skill.",
+            "Master 1 technique.",
             TitleRule.SkillsMastered(1),
             TitleRarity.Common,
         ),
         TitleDef(
             "apprentice_of_five",
             "Apprentice of Five",
-            "Master 5 skills.",
+            "Master 5 techniques.",
             TitleRule.SkillsMastered(5),
             TitleRarity.Rare,
         ),
         TitleDef(
             "ten_folds_form",
             "Tenfold Form",
-            "Master 10 skills.",
+            "Master 10 techniques.",
             TitleRule.SkillsMastered(10),
             TitleRarity.Epic,
         ),
         TitleDef(
             "keeper_of_twenty_five",
-            "Keeper of Twenty-Five",
-            "Master 25 skills.",
+            "Sage of Twenty-Five",
+            "Master 25 techniques.",
             TitleRule.SkillsMastered(25),
             TitleRarity.Epic,
         ),
         TitleDef(
             "fifty_fanged_style",
             "Fifty-Fanged Style",
-            "Master 50 skills.",
+            "Master 50 techniques.",
             TitleRule.SkillsMastered(50),
             TitleRarity.Masterwork,
         ),
         TitleDef(
             "grandmaster_of_all",
             "Grandmaster of All",
-            "Master all 84 skills. The tree is yours.",
+            "Master all 84 techniques. Every path is yours.",
             TitleRule.SkillsMastered(84),
             TitleRarity.Masterwork,
         ),
@@ -397,21 +402,21 @@ object Titles {
         TitleDef(
             "first_hundred_cuts",
             "First Hundred Cuts",
-            "Log 25 practice attempts.",
+            "Log 25 attempts in the Journal.",
             TitleRule.PracticeAttempts(25),
             TitleRarity.Common,
         ),
         TitleDef(
             "hundred_cuts_deep",
             "Hundred Cuts Deep",
-            "Log 100 practice attempts.",
+            "Log 100 attempts in the Journal.",
             TitleRule.PracticeAttempts(100),
             TitleRarity.Rare,
         ),
         TitleDef(
             "five_hundred_repetitions",
             "Five Hundred Repetitions",
-            "Log 500 practice attempts.",
+            "Log 500 attempts in the Journal.",
             TitleRule.PracticeAttempts(500),
             TitleRarity.Epic,
         ),
@@ -424,7 +429,7 @@ object Titles {
         TitleDef("wind_that_never_sleeps", "Wind That Never Sleeps", "Log 50,000 activity minutes in your lifetime.", TitleRule.ActivityMinutes(50_000), TitleRarity.Masterwork),
         // Lifetime activity distance
         TitleDef("road_of_shadows", "The Long Road", "Cover 10 km through logged activities.", TitleRule.ActivityDistanceKm(10.0), TitleRarity.Common),
-        TitleDef("hundred_gate_march", "Hundred-Kilometre March", "Cover 100 km through logged activities.", TitleRule.ActivityDistanceKm(100.0), TitleRarity.Common),
+        TitleDef("hundred_gate_march", "Ashen Hundred", "Cover 100 km through logged activities.", TitleRule.ActivityDistanceKm(100.0), TitleRarity.Common),
         TitleDef("horizon_breaker", "Horizon Breaker", "Cover 500 km through logged activities.", TitleRule.ActivityDistanceKm(500.0), TitleRarity.Rare),
         TitleDef("world_walker", "World Walker", "Cover 2,000 km through logged activities.", TitleRule.ActivityDistanceKm(2_000.0), TitleRarity.Epic),
         TitleDef("beyond_the_map", "Beyond the Map", "Cover 10,000 km through logged activities.", TitleRule.ActivityDistanceKm(10_000.0), TitleRarity.Masterwork),
@@ -434,14 +439,14 @@ object Titles {
         // imports domain — reading the count from Seed would close a dependency
         // cycle — so the number is stated here and pinned against Seed by
         // TitleReachabilityTest; growing the catalogue must update both.
-        TitleDef("three_paths", "Three Paths", "Try 3 different activities.", TitleRule.DistinctActivities(3), TitleRarity.Common),
-        TitleDef("ten_paths", "Ten Paths", "Try 10 different activities.", TitleRule.DistinctActivities(10), TitleRarity.Rare),
-        TitleDef("twenty_five_paths", "Twenty-Five Paths", "Try 25 different activities.", TitleRule.DistinctActivities(25), TitleRarity.Rare),
-        TitleDef("thirty_five_paths", "Thirty-Five Paths", "Try 35 different activities.", TitleRule.DistinctActivities(35), TitleRarity.Epic),
+        TitleDef("three_paths", "Three Roads", "Try 3 different activities.", TitleRule.DistinctActivities(3), TitleRarity.Common),
+        TitleDef("ten_paths", "Ten Roads", "Try 10 different activities.", TitleRule.DistinctActivities(10), TitleRarity.Rare),
+        TitleDef("twenty_five_paths", "Twenty-Five Roads", "Try 25 different activities.", TitleRule.DistinctActivities(25), TitleRarity.Rare),
+        TitleDef("thirty_five_paths", "Thirty-Five Roads", "Try 35 different activities.", TitleRule.DistinctActivities(35), TitleRarity.Epic),
         TitleDef("walker_of_all_roads", "Walker of All Roads", "Try all 43 activities the catalogue offers. Nothing is foreign to you.", TitleRule.DistinctActivities(43), TitleRarity.Masterwork),
         // Single long runs
         TitleDef("five_k_razor", "Five-K Razor", "Log a 5 km run in one go.", TitleRule.LongestRun(5.0), TitleRarity.Common),
-        TitleDef("ten_k_hunter", "Ten-K Lifter", "Log a 10 km run in one go.", TitleRule.LongestRun(10.0), TitleRarity.Common),
+        TitleDef("ten_k_hunter", "Ten-K Blade", "Log a 10 km run in one go.", TitleRule.LongestRun(10.0), TitleRarity.Common),
         TitleDef("half_gate_marathon", "Half Marathon", "Log a 21.1 km run in one go.", TitleRule.LongestRun(21.1), TitleRarity.Rare),
         TitleDef("gate_marathon", "Marathon", "Log a 42.2 km run in one go.", TitleRule.LongestRun(42.2), TitleRarity.Epic),
         TitleDef("shadow_ultra", "Ultra", "Log a 100 km run in one go. The road was never this long.", TitleRule.LongestRun(100.0), TitleRarity.Masterwork),
@@ -457,10 +462,10 @@ object Titles {
         TitleDef("vertical_sovereign", "Vertical Master", "Send a route graded V8 or harder.", TitleRule.HardestGrade("V8"), TitleRarity.Epic),
         TitleDef("gravity_defiant", "Gravity Defiant", "Send a route graded V11 or harder. Walls kneel.", TitleRule.HardestGrade("V11"), TitleRarity.Masterwork),
         // Sport sessions
-        TitleDef("first_arena", "First Arena", "Complete a workout with sport play in it.", TitleRule.SportSessions(1), TitleRarity.Common),
-        TitleDef("arena_regular", "Arena Regular", "Complete 10 workouts with sport play in them.", TitleRule.SportSessions(10), TitleRarity.Common),
-        TitleDef("field_commander", "Field Commander", "Complete 50 workouts with sport play in them.", TitleRule.SportSessions(50), TitleRarity.Rare),
-        TitleDef("champion_of_games", "Champion of Games", "Complete 100 workouts with sport play in them.", TitleRule.SportSessions(100), TitleRarity.Epic),
+        TitleDef("first_arena", "First Wager", "Seal a trial with sport play in it.", TitleRule.SportSessions(1), TitleRarity.Common),
+        TitleDef("arena_regular", "Seasoned Hand", "Seal 10 trials with sport play in them.", TitleRule.SportSessions(10), TitleRarity.Common),
+        TitleDef("field_commander", "Hand of Iron", "Seal 50 trials with sport play in them.", TitleRule.SportSessions(50), TitleRarity.Rare),
+        TitleDef("champion_of_games", "Hundred Wagers", "Seal 100 trials with sport play in them.", TitleRule.SportSessions(100), TitleRarity.Epic),
         // ---- Strength milestones ----
         // Load thresholds are estimated-1RM multiples of bodyweight, read per
         // sex (male / female). Female cells come from the ExRx-derived
@@ -532,15 +537,15 @@ object Titles {
         // maximal-strength gaps the load titles above price in.
         TitleDef(
             "century_of_rungs",
-            "Century of Rungs",
-            "Log 100 pull-ups or chin-ups in one workout.",
+            "Hundred Risings",
+            "Log 100 pull-ups or chin-ups in one trial.",
             TitleRule.SessionReps(setOf("pull-up", "chin-up"), count = 100),
             TitleRarity.Rare,
         ),
         TitleDef(
             "two_hundred_suns",
             "Two Hundred Suns",
-            "Log 200 push-ups in one workout.",
+            "Log 200 push-ups in one trial.",
             TitleRule.SessionReps(setOf("push-up"), count = 200),
             TitleRarity.Rare,
         ),
@@ -802,14 +807,14 @@ object Titles {
     }
 
     fun progress(rule: TitleRule, ledger: Ledger): Progress = when (rule) {
-        TitleRule.FirstWorkout -> Progress(ledger.workouts.toLong().coerceAtMost(1), 1, "workout")
-        is TitleRule.Workouts -> Progress(ledger.workouts.toLong(), rule.count.toLong(), "workouts")
+        TitleRule.FirstWorkout -> Progress(ledger.workouts.toLong().coerceAtMost(1), 1, "trial")
+        is TitleRule.Workouts -> Progress(ledger.workouts.toLong(), rule.count.toLong(), "trials")
         is TitleRule.ReachLevel ->
             Progress(Xp.levelFor(ledger.totalXp).toLong(), rule.level.toLong(), "level")
         is TitleRule.SetsLogged -> Progress(ledger.sets.toLong(), rule.count.toLong(), "sets")
         is TitleRule.RepsLogged -> Progress(ledger.reps.toLong(), rule.count.toLong(), "reps")
         is TitleRule.SessionStrength ->
-            Progress(ledger.sessionStrength.toLong(), rule.min.toLong(), "strength in one workout")
+            Progress(ledger.sessionStrength.toLong(), rule.min.toLong(), "strength in one trial")
         is TitleRule.LifetimeStrength ->
             Progress(ledger.lifetimeStrength.toLong(), rule.min.toLong(), "lifetime strength")
         is TitleRule.StepsInDay ->
@@ -825,9 +830,9 @@ object Titles {
         is TitleRule.StepGoalDays ->
             Progress(ledger.stepGoalDays.toLong(), rule.days.toLong(), "days hitting 10,000 steps")
         is TitleRule.SkillsMastered ->
-            Progress(ledger.skillsMastered.toLong(), rule.count.toLong(), "skills mastered")
+            Progress(ledger.skillsMastered.toLong(), rule.count.toLong(), "techniques mastered")
         is TitleRule.PracticeAttempts ->
-            Progress(ledger.practiceAttempts.toLong(), rule.count.toLong(), "practice attempts")
+            Progress(ledger.practiceAttempts.toLong(), rule.count.toLong(), "Journal attempts")
         is TitleRule.ActivityMinutes ->
             Progress(ledger.activityMinutes.toLong(), rule.minutes.toLong(), "activity minutes")
         is TitleRule.ActivityDistanceKm ->
@@ -848,11 +853,11 @@ object Titles {
                 "hardest grade",
             )
         is TitleRule.SportSessions ->
-            Progress(ledger.sportSessions.toLong(), rule.count.toLong(), "sport sessions")
+            Progress(ledger.sportSessions.toLong(), rule.count.toLong(), "sport trials")
         is TitleRule.TrainingStreak ->
-            Progress(ledger.trainingStreakDays.toLong(), rule.days.toLong(), "day streak")
+            Progress(ledger.trainingStreakDays.toLong(), rule.days.toLong(), "day oath")
         is TitleRule.WorkoutsInWeek ->
-            Progress(ledger.bestWeekWorkouts.toLong(), rule.count.toLong(), "workouts in a week")
+            Progress(ledger.bestWeekWorkouts.toLong(), rule.count.toLong(), "trials in a week")
         is TitleRule.LiftMultiple -> {
             // Floored to whole percent like LongestRun floors to whole km:
             // rounding 0.4999x up to the bar would claim a deed not earned.
@@ -862,7 +867,7 @@ object Titles {
         }
         is TitleRule.SessionReps -> {
             val best = rule.names.maxOfOrNull { ledger.bestSessionReps[normaliseName(it)] ?: 0 } ?: 0
-            Progress(best.toLong(), rule.count.toLong(), "reps in one session")
+            Progress(best.toLong(), rule.count.toLong(), "reps in one trial")
         }
         is TitleRule.LongestHold ->
             Progress(ledger.bestHoldSeconds.toLong(), rule.seconds.toLong(), "seconds in one hold")
@@ -870,7 +875,7 @@ object Titles {
 
     /** Rule family, for grouping the codex by the kind of deed it demands. */
     fun category(rule: TitleRule): String = when (rule) {
-        TitleRule.FirstWorkout, is TitleRule.Workouts, is TitleRule.WorkoutsInWeek -> "Workouts"
+        TitleRule.FirstWorkout, is TitleRule.Workouts, is TitleRule.WorkoutsInWeek -> "Trials"
         is TitleRule.ReachLevel -> "Ascension"
         is TitleRule.SetsLogged, is TitleRule.RepsLogged -> "Volume"
         is TitleRule.SessionStrength, is TitleRule.LifetimeStrength -> "Strength"
@@ -878,7 +883,7 @@ object Titles {
         is TitleRule.ActiveKcalInDay, is TitleRule.StepGoalDays -> "Steps"
         is TitleRule.SleepMinutesInNight -> "Recovery"
         is TitleRule.SkillsMastered, is TitleRule.PracticeAttempts -> "Mastery"
-        is TitleRule.TrainingStreak -> "Workouts"
+        is TitleRule.TrainingStreak -> "Trials"
         is TitleRule.LiftMultiple, is TitleRule.SessionReps, is TitleRule.LongestHold -> "Strength"
         is TitleRule.ActivityMinutes, is TitleRule.ActivityDistanceKm,
         is TitleRule.DistinctActivities, is TitleRule.LongestRun, is TitleRule.LongestSwim,

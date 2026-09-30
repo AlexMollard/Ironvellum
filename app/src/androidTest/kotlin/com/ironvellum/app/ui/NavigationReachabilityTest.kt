@@ -67,15 +67,15 @@ class NavigationReachabilityTest {
         // Today is the launch destination; assert it rendered before navigating.
         assertShows("STEPS")
 
-        open("Train", "TRAINING GROUNDS")
-        open("Stats", "YOUR NUMBERS")
-        open("Codex", "SKILL TREE")
+        open("Rites", "YOUR RITES")
+        open("Ledger", "THE LEDGER")
+        open("Codex", "PATHS")
         // Signed out (the test profile is), Allies is the account screen alone.
-        open("Allies", "Cloud link for lifters")
+        open("Allies", "Cloud link for the Ironbound")
 
         // The Garrison left the nav bar for Today's footer.
         open("Today", "STEPS")
-        compose.onAllNodesWithText("GARRISON").onFirst().performClick()
+        compose.onAllNodesWithText("THE VEIL").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         assertShows("BACK")
         compose.onAllNodesWithText("BACK").onFirst().performClick()

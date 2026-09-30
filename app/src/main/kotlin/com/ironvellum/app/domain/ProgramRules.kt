@@ -331,7 +331,7 @@ object ProgramRules {
      * sex and deliberately ignores it.
      */
     const val SEX_NOTE: String =
-        "Same plan for men and women; loads scale off your own estimated 1-rep max (Roberts 2020; Hunter 2014)."
+        "Same cycle for men and women; loads scale off your own estimated 1-rep max (Roberts 2020; Hunter 2014)."
 
     // ------------------------------------------------------------------ rest
 

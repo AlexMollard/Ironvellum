@@ -189,7 +189,7 @@ class OnboardingViewModel(
                 repo.setHeight(heightCm)
                 repo.addStat(weightKg, null)
             }.onFailure {
-                _applyError.value = "Could not save your profile" + (it.message?.let { m -> ": $m" } ?: "")
+                _applyError.value = "Could not save your details" + (it.message?.let { m -> ": $m" } ?: "")
             }
         }
     }
@@ -294,7 +294,7 @@ class OnboardingViewModel(
                     prefs.edit { putBoolean(KEY_DISMISSED, true) }
                 },
                 onFailure = {
-                    _applyError.value = "Could not save the routine" +
+                    _applyError.value = "Could not save the cycle" +
                         (it.message?.let { m -> ": $m" } ?: "") + ". Nothing was written."
                 },
             )
@@ -373,7 +373,7 @@ fun OnboardingScreen(
     val missing = buildList {
         if (name.trim().isEmpty()) add("your name")
         if (!BodyLimits.validHeight(heightInput.toDoubleOrNull())) add("height")
-        if (!BodyLimits.validWeight(weightInput.toDoubleOrNull())) add("a first weigh-in")
+        if (!BodyLimits.validWeight(weightInput.toDoubleOrNull())) add("a first reading")
     }
     val profileValid = missing.isEmpty()
 
@@ -490,12 +490,12 @@ fun OnboardingScreen(
 private fun stepTitle(step: Int): String = when (step) {
     0 -> "WHO YOU ARE"
     1 -> "HOW YOU TRAIN"
-    else -> "YOUR ROUTINE"
+    else -> "YOUR CYCLE"
 }
 
 private fun stepProse(step: Int): String = when (step) {
     0 -> "Your sex, height and weight scale every number Ironvellum shows you."
-    1 -> "Answer four things and Ironvellum builds you a routine."
+    1 -> "Answer four things and the Forge builds you a cycle."
     else -> "Built from your answers. Tap an exercise to adjust it."
 }
 
@@ -547,7 +547,7 @@ private fun StepHeader(step: Int, onSkip: () -> Unit) {
                     .semantics {
                         role = Role.Button
                         contentDescription =
-                            "Skip setup — set your profile and routine later in Settings or the Stats log"
+                            "Skip the Binding — set your details and cycle later in Settings or the Ledger"
                     }
                     .padding(horizontal = 10.dp),
                 contentAlignment = Alignment.Center,
@@ -651,7 +651,7 @@ private fun StepFooter(
                     // Accepting the routine is the earned moment: the one gold
                     // button in the flow.
                     IronvellumButton(
-                        label = "Take this routine",
+                        label = "Take this cycle",
                         onClick = onAccept,
                         enabled = planReady,
                         gold = true,
@@ -693,7 +693,7 @@ private fun ProfileStep(
                 shape = MaterialTheme.shapes.small,
                 value = name,
                 onValueChange = { onName(it.take(24)) },
-                label = { Text("Claim your name") },
+                label = { Text("Take your true name") },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -757,7 +757,7 @@ private fun TrainingStep(
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         InkPanel(Modifier.fillMaxWidth()) {
-            FieldLabel("HOW YOU SPLIT THE WEEK")
+            FieldLabel("HOW YOU DIVIDE THE WEEK")
             Spacer(Modifier.height(8.dp))
             SplitPicker(split = split, days = daysPerWeek, onPick = onSplit)
             Spacer(Modifier.height(8.dp))
@@ -783,7 +783,7 @@ private fun TrainingStep(
             )
         }
         InkPanel(Modifier.fillMaxWidth()) {
-            FieldLabel("WHAT YOU HAVE ACCESS TO")
+            FieldLabel("YOUR ARMOURY")
             Spacer(Modifier.height(8.dp))
             GearPicker(equipment = equipment, onChange = onEquipment)
         }
@@ -930,7 +930,7 @@ private fun ProposalStep(
             }
             if (current.presets.isEmpty()) {
                 Text(
-                    "Nothing left — go back and rebuild, or take the starter routine instead.",
+                    "Nothing left — go back and rebuild, or take the starter cycle instead.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -954,14 +954,14 @@ private fun ProposalStep(
 
         if (!isStarter) {
             IronvellumButton(
-                label = "Use the starter routine",
+                label = "Use the starter cycle",
                 onClick = viewModel::previewStarter,
                 quiet = true,
                 modifier = Modifier.fillMaxWidth(),
             )
         } else {
             IronvellumButton(
-                label = "Build from my answers",
+                label = "Forge from my answers",
                 onClick = {
                     if (catalogue.isNotEmpty()) {
                         viewModel.ensurePlan(daysPerWeek, split, equipment, focus, tier, sex, catalogue, force = true)

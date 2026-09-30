@@ -88,7 +88,7 @@ object Skills {
         SkillDef(
             "Dead Hang", 1, "Pull",
             standard = "Hang 60s from a bar, arms straight, shoulders active",
-            why = "Grip endurance and shoulder integrity underneath every pulling skill.",
+            why = "Grip endurance and shoulder integrity underneath every pulling technique.",
         ),
         SkillDef(
             "Scapular Pull", 1, "Pull", requires = "Dead Hang",
@@ -103,7 +103,7 @@ object Skills {
         SkillDef(
             "Pull-up", 3, "Pull", requires = "Australian Pull-up",
             standard = "8 clean reps, chin over bar, dead hang each rep",
-            why = "The foundation every advanced pulling skill is measured against.",
+            why = "The foundation every advanced pulling technique is measured against.",
         ),
         SkillDef(
             "L-sit Pull-up", 4, "Pull", requires = "Pull-up",
@@ -118,7 +118,7 @@ object Skills {
         SkillDef(
             "Weighted Pull-up", 5, "Pull", requires = "Archer Pull-up",
             standard = "5 reps with +25 kg, chin over bar every rep",
-            why = "External load builds the absolute strength ceiling of the whole line.",
+            why = "External load builds the absolute strength ceiling of the whole path.",
         ),
         SkillDef(
             "One-Arm Negative", 4, "Pull", requires = "Archer Pull-up",
@@ -184,7 +184,7 @@ object Skills {
         SkillDef(
             "Weighted Dip", 4, "Push", requires = "Parallel Bar Dip",
             standard = "5 reps with +20 kg, full depth every rep",
-            why = "Overloaded pressing strength that carries into every ring and planche skill.",
+            why = "Overloaded pressing strength that carries into every ring and planche technique.",
         ),
         // HANDSTAND line — balance, press and its extremes
         SkillDef(
@@ -215,7 +215,7 @@ object Skills {
         SkillDef(
             "Freestanding Handstand", 3, "Handstand", requires = "Wall Handstand",
             standard = "Hold 30s free of any support, balancing with fingers",
-            why = "The gateway skill: every advanced hand-balance is built on a 30s handstand.",
+            why = "The gateway technique: every advanced hand-balance is built on a 30s handstand.",
         ),
         SkillDef(
             "Handstand Walk", 3, "Handstand", requires = "Freestanding Handstand",
@@ -225,7 +225,7 @@ object Skills {
         SkillDef(
             "Handstand Push-up", 4, "Handstand", requires = "Wall HSPU",
             standard = "3 freestanding reps, head touching floor",
-            why = "Full-bodyweight vertical press — the strongest pushing feat on the line.",
+            why = "Full-bodyweight vertical press — the strongest pushing feat on the path.",
         ),
         SkillDef(
             "90-Degree Push-up", 5, "Handstand", requires = "Handstand Push-up",
@@ -256,7 +256,7 @@ object Skills {
         SkillDef(
             "Advanced Tuck Front Lever", 3, "Lever", requires = "Tuck Front Lever",
             standard = "Hold 12s with an open hip angle, back rounded flat",
-            why = "Doubles the lever arm — the real strength jump on the line.",
+            why = "Doubles the lever arm — the real strength jump on the path.",
         ),
         SkillDef(
             "One-Leg Front Lever", 3, "Lever", requires = "Advanced Tuck Front Lever",
@@ -276,7 +276,7 @@ object Skills {
         SkillDef(
             "Skin the Cat", 2, "Lever", requires = "One-Arm Hang",
             standard = "3 reps, full rotation through German hang and back out",
-            why = "Shoulder extension and rotation capacity that both lever lines feed on.",
+            why = "Shoulder extension and rotation capacity that both lever paths feed on.",
         ),
         SkillDef(
             "Tuck Back Lever", 2, "Lever", requires = "Skin the Cat",
@@ -302,7 +302,7 @@ object Skills {
         SkillDef(
             "Frog Stand", 1, "Planche",
             standard = "Hold 30s, arms straight-ish, feet off floor",
-            why = "Introduces the forward lean the whole planche line depends on.",
+            why = "Introduces the forward lean the whole planche path depends on.",
         ),
         SkillDef(
             "Tuck Planche", 2, "Planche", requires = "Frog Stand",
@@ -338,7 +338,7 @@ object Skills {
         SkillDef(
             "Ring Support Hold", 1, "Rings",
             standard = "Hold 60s, arms locked, rings turned out, no shaking",
-            why = "Stabilises the shoulders on the unstable surface every ring skill needs.",
+            why = "Stabilises the shoulders on the unstable surface every ring technique needs.",
         ),
         SkillDef(
             "Ring Row", 2, "Rings", requires = "Ring Support Hold",
@@ -446,7 +446,7 @@ object Skills {
         SkillDef(
             "Back Squat", 1, "Squat",
             standard = "5 reps at your bodyweight, hips below knees every rep",
-            why = "The lift every other leg skill is measured against, learned before it is loaded.",
+            why = "The lift every other leg technique is measured against, learned before it is loaded.",
         ),
         SkillDef(
             "Pause Squat", 2, "Squat", requires = "Back Squat",
@@ -461,12 +461,12 @@ object Skills {
         SkillDef(
             "Double-Bodyweight Squat", 4, "Squat", requires = "Heavy Squat",
             standard = "1 rep at double bodyweight, full depth, no wraps",
-            why = "Twice your bodyweight below parallel is the classical mark of a strong lifter.",
+            why = "Twice your bodyweight below parallel is the classical mark of a strong Ironbound.",
         ),
         SkillDef(
             "Triple-Bodyweight Squat", 5, "Squat", requires = "Double-Bodyweight Squat",
             standard = "1 rep at triple bodyweight, full depth, competition-legal",
-            why = "Triple-bodyweight squatting is strength-sport territory few recreational lifters ever reach.",
+            why = "Triple-bodyweight squatting is strength-sport territory few recreational Ironbound ever reach.",
         ),
         // BENCH line — the upper-body barbell benchmark (ExRx strength standards)
         SkillDef(
@@ -487,7 +487,7 @@ object Skills {
         SkillDef(
             "Heavy Bench Press", 4, "Bench", requires = "Paused Bench Press",
             standard = "1 rep at one and a half times bodyweight, no bounce",
-            why = "Half again your bodyweight is the bench mark that separates lifters from benchers.",
+            why = "Half again your bodyweight is the bench mark that separates the Ironbound from benchers.",
         ),
         SkillDef(
             "Double-Bodyweight Bench Press", 5, "Bench", requires = "Heavy Bench Press",
@@ -570,7 +570,7 @@ object Skills {
         SkillDef(
             "Manna", 5, "Core", requires = "V-Sit",
             standard = "Hold 5s, hips above hands, legs overhead",
-            why = "Rarest compression skill in bodyweight training.",
+            why = "Rarest compression technique in bodyweight training.",
         ),
         SkillDef(
             "Hanging Knee Raise", 1, "Core",
@@ -625,8 +625,8 @@ object Skills {
         ),
         SkillDef(
             "Wrist Prep", 1, "Mobility",
-            standard = "10-minute routine: rocks, pulses and stretches both directions, pain-free",
-            why = "Keeps wrists healthy enough to load every handstand and planche skill.",
+            standard = "10-minute drill: rocks, pulses and stretches both directions, pain-free",
+            why = "Keeps wrists healthy enough to load every handstand and planche technique.",
         ),
     )
 

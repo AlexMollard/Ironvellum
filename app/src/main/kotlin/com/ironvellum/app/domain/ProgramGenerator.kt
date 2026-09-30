@@ -588,7 +588,7 @@ object ProgramGenerator {
                                 why = if (main.name.equals(mainName, true)) {
                                     "Main lift: strength is specific to the lift trained - Buckner 2017; TaskSpec 2025"
                                 } else {
-                                    "Your gear's stand-in for the ${mainName}: good for size, less for max strength - " +
+                                    "Your armoury's stand-in for the ${mainName}: good for size, less for max strength - " +
                                         "Kikuchi 2017; Buckner 2017"
                                 },
                             )
@@ -631,7 +631,7 @@ object ProgramGenerator {
         val capacityNote = if (capacityLimited) {
             shortfallNote(volume, ctx.targetRange, "add a day to cover them.")
         } else {
-            shortfallNote(volume, ctx.targetRange, "more gear would cover them.")
+            shortfallNote(volume, ctx.targetRange, "a fuller armoury would cover them.")
         }
         val frequencyNote = if (split == TrainingSplit.PUSH_PULL_LEGS && days == 3) ONCE_A_WEEK_NOTE else ""
 
@@ -1313,7 +1313,7 @@ object ProgramGenerator {
         }
         if (draft.entries.isEmpty()) return null
         return PlannedPreset(
-            name = draft.role?.let { roleLabel(it) } ?: "Workout",
+            name = draft.role?.let { roleLabel(it) } ?: "Rite",
             note = presetNote(ctx.volume, ctx.focus),
             scheduledDay = scheduledDay,
             entries = spacePullUps(draft.entries),
@@ -1636,7 +1636,7 @@ object ProgramGenerator {
             changes += PlanChange(
                 PlanChange.Kind.REMOVED, gone.exerciseName,
                 if (cost < 1e-9) {
-                    "Removed: over your ${ctx.cap}-exercise cap, and the routine already covers its muscles - Pelland 2026"
+                    "Removed: over your ${ctx.cap}-exercise cap, and the cycle already covers its muscles - Pelland 2026"
                 } else {
                     "Removed: over your ${ctx.cap}-exercise cap, and it helped short muscles least - Pelland 2026"
                 },

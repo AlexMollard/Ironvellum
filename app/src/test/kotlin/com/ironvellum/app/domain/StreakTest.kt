@@ -60,19 +60,19 @@ class ArmyClassTest {
 
     @Test
     fun `class ladder thresholds`() {
-        assertEquals("Recruit", ArmyClass.forLevel(1).title)
-        assertEquals("Soldier", ArmyClass.forLevel(5).title)
-        assertEquals("Knight", ArmyClass.forLevel(15).title)
-        assertEquals("Elite Knight", ArmyClass.forLevel(25).title)
-        assertEquals("Commander", ArmyClass.forLevel(40).title)
-        assertEquals("Marshal", ArmyClass.forLevel(55).title)
-        assertEquals("Grand Marshal", ArmyClass.forLevel(70).title)
-        assertEquals("Grand Marshal", ArmyClass.forLevel(99).title)
+        assertEquals("Acolyte", ArmyClass.forLevel(1).title)
+        assertEquals("Adept", ArmyClass.forLevel(5).title)
+        assertEquals("Warden", ArmyClass.forLevel(15).title)
+        assertEquals("Magister", ArmyClass.forLevel(25).title)
+        assertEquals("Archon", ArmyClass.forLevel(40).title)
+        assertEquals("Exarch", ArmyClass.forLevel(55).title)
+        assertEquals("Sovereign", ArmyClass.forLevel(70).title)
+        assertEquals("Sovereign", ArmyClass.forLevel(99).title)
     }
 
     @Test
     fun `next tier reveals the road ahead`() {
-        assertEquals("Soldier", ArmyClass.nextFor(1)?.title)
+        assertEquals("Adept", ArmyClass.nextFor(1)?.title)
         assertEquals(null, ArmyClass.nextFor(70))
     }
 }

@@ -111,7 +111,7 @@ object Progression {
                 return Recommendation(
                     backedOff,
                     band.first,
-                    "Stalled ${stalls + 1} sessions — deload to $backedOff kg, rebuild from ${band.first} reps",
+                    "Stalled ${stalls + 1} trials — deload to $backedOff kg, rebuild from ${band.first} reps",
                     rest,
                     deload = true,
                 )

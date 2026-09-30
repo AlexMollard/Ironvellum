@@ -188,7 +188,7 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
  * "Activity Log", so one word named both a step count and a training record
  * and the owner kept opening this tab looking for his workouts.
  */
-private enum class StatsTab(val label: String) { BODY("BODY"), TRAINING("TRAINING"), DAILY("DAILY") }
+private enum class StatsTab(val label: String) { BODY("FRAME"), TRAINING("TRAINING"), DAILY("DAILY") }
 
 @Composable
 fun StatsScreen(
@@ -211,7 +211,7 @@ fun StatsScreen(
     Column(Modifier.fillMaxSize()) {
         Spacer(Modifier.height(20.dp))
         Text(
-            "YOUR NUMBERS",
+            "THE LEDGER",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -309,12 +309,12 @@ fun StatsScreen(
                             ChartCaption("max ${formatBodyValue(weights.max())} kg")
                         }
                     } else {
-                        ChartCaption("Two readings unlock the trend line.")
+                        ChartCaption("Two readings draw the line.")
                     }
                 }
                 Spacer(Modifier.height(10.dp))
                 InkPanel(Modifier.fillMaxWidth()) {
-                    MetricLabel("BMI HISTORY")
+                    MetricLabel("BMI TREND")
                     val bmis = remember(ui.stats) {
                         ui.stats.sortedBy { it.takenAtMs }
                             .mapNotNull { BodyStats.bmi(it.weightKg, it.heightCm) }
@@ -338,7 +338,7 @@ fun StatsScreen(
                 }
                 Spacer(Modifier.height(14.dp))
                 IronvellumButton(
-                    "Log weight / body fat",
+                    "Log a reading",
                     onClick = { showAdd = true },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -365,7 +365,7 @@ fun StatsScreen(
                         )
                         Spacer(Modifier.height(10.dp))
                         Text(
-                            "No readings yet. The Ledger knows nothing of your vessel.",
+                            "The Ledger knows nothing of your frame yet. Log a reading to begin.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -459,7 +459,7 @@ fun StatsScreen(
                 // Stats. It lives under Train, so put the door here too rather
                 // than expect him to re-learn the map.
                 NavChip(
-                    label = "FULL WORKOUT LOG",
+                    label = "FULL CHRONICLE",
                     icon = Icons.Outlined.History,
                     onClick = onOpenLog,
                     modifier = Modifier.fillMaxWidth(),
@@ -472,7 +472,7 @@ fun StatsScreen(
                 if (ui.sessions.isEmpty()) {
                     InkPanel(Modifier.fillMaxWidth()) {
                         MetricLabel("TRAINING")
-                        ChartCaption("Finish a workout to draw these lines.")
+                        ChartCaption("Seal a trial to draw these lines.")
                     }
                 } else {
                     InkPanel(Modifier.fillMaxWidth()) {
@@ -481,14 +481,14 @@ fun StatsScreen(
                         val totalXp = remember(ui.sessions) { ui.sessions.sumOf { it.xpAwarded } }
                         if (cumulative.size >= 2) {
                             TrendChart(cumulative, IronvellumColors.SystemGreen)
-                            ChartCaption("$totalXp XP across ${ui.sessions.size} ${plural(ui.sessions.size, "workout", "workouts")}")
+                            ChartCaption("$totalXp XP across ${ui.sessions.size} ${plural(ui.sessions.size, "trial", "trials")}")
                         } else {
-                            ChartCaption("One more workout draws the line.")
+                            ChartCaption("One more trial draws the line.")
                         }
                     }
                     Spacer(Modifier.height(10.dp))
                     InkPanel(Modifier.fillMaxWidth()) {
-                        MetricLabel("STRENGTH PER WORKOUT")
+                        MetricLabel("STRENGTH PER TRIAL")
                         // 0 means "not scored" (no bodyweight existed yet), not a
                         // collapse in strength — plotting it dropped the line to
                         // the floor. And TrendChart draws no line below 2 points.
@@ -496,16 +496,16 @@ fun StatsScreen(
                         if (scores.size >= 2) {
                             TrendChart(scores)
                             ChartCaption(
-                                "Best ${scores.max().toInt()} · ${scores.size} ${plural(scores.size, "workout", "workouts")} · scaled to bodyweight",
+                                "Best ${scores.max().toInt()} · ${scores.size} ${plural(scores.size, "trial", "trials")} · scaled to bodyweight",
                             )
                         } else if (scores.size == 1) {
                             // Scored, just not plottable yet. The old copy said
                             // "log bodyweight" at a lifter who plainly had.
                             ChartCaption(
-                                "Best ${scores.first().toInt()} · one more scored workout draws the line.",
+                                "Best ${scores.first().toInt()} · one more scored trial draws the line.",
                             )
                         } else {
-                            ChartCaption("Log bodyweight to score these workouts.")
+                            ChartCaption("Log bodyweight to score these trials.")
                         }
                     }
                 }
@@ -668,13 +668,13 @@ private fun StatDrillDialog(
         title = {
             Column {
                 Text(
-                    "$metric — vessel rating",
+                    "$metric — frame rating",
                     style = MaterialTheme.typography.titleLarge,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.SovereignGold,
                 )
                 Text(
-                    "The Ledger rates your vessel",
+                    "The Ledger rates your frame",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -684,7 +684,7 @@ private fun StatDrillDialog(
             Column {
                 if (current == null) {
                     Text(
-                        "Not enough data. Log readings to open this window.",
+                        "This page is still blank. Log readings to fill it.",
                         style = MaterialTheme.typography.bodyMedium,
                     )
                 } else {
@@ -705,9 +705,9 @@ private fun StatDrillDialog(
                     Spacer(Modifier.height(12.dp))
                     if (series.size >= 2) {
                         TrendChart(series, IronvellumColors.SystemGreen, fromZero = false)
-                        ChartCaption("${series.size} readings on record")
+                        ChartCaption("${series.size} readings in the Ledger")
                     } else {
-                        ChartCaption("Two readings unlock the trend line.")
+                        ChartCaption("Two readings draw the line.")
                     }
                     Spacer(Modifier.height(8.dp))
                     bands.forEachIndexed { i, band ->
@@ -893,7 +893,7 @@ private fun CalendarGrid(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            CalendarLegend(CalendarConquered, "conquered")
+            CalendarLegend(CalendarConquered, "sealed")
             CalendarLegend(IronvellumColors.SovereignGold, "today")
             CalendarLegend(IronvellumColors.SystemGreen, "scheduled")
         }
@@ -947,7 +947,7 @@ private fun AddStatDialog(
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
-                    "LOG BODY READING",
+                    "LOG A READING",
                     style = MaterialTheme.typography.labelLarge,
                     fontFamily = ChakraPetch,
                     letterSpacing = IronvellumTracking.InlineLabel,
@@ -1010,7 +1010,7 @@ private fun AddStatDialog(
                     // measurements the lifter already logged.
                     Text(
                         "Navy tape method from your neck, waist" +
-                            if (sex == Sex.FEMALE) " and hip measurements." else " and measurements.",
+                            if (sex == Sex.FEMALE) " and hip readings." else " and readings.",
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                     )
@@ -1111,7 +1111,7 @@ private fun ActivityTab(
                 MetricLabel("DAILY")
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "No daily data synced yet — connect Health Connect in Settings.",
+                    "The daily page is blank — connect Health Connect in Settings.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -1197,7 +1197,7 @@ private fun ActivityTab(
         val kcal7 = last7
         if (kcal7.isEmpty()) {
             Text(
-                "No active calories recorded yet.",
+                "Active calories are unwritten — Health Connect has reported none yet.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -1221,7 +1221,7 @@ private fun ActivityTab(
         val sleep7 = sorted.filter { it.date > today.minusDays(7) && it.sleepMinutes > 0 }
         if (sleep7.isEmpty()) {
             Text(
-                "No sleep recorded yet.",
+                "Sleep is unwritten — Health Connect has reported none yet.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -1312,7 +1312,7 @@ private fun EnergySection(
                 )
             }
         } else {
-            MetricValue("—", "no steps or workouts logged today")
+            MetricValue("—", "no steps or trials logged today")
         }
 
         Spacer(Modifier.height(10.dp))
@@ -1331,7 +1331,7 @@ private fun EnergySection(
                 if (measuredCount == 0) {
                     "all MET estimates — Health Connect has not reported active calories."
                 } else {
-                    "$measuredCount of ${window.size} days are Health Connect measurements. " +
+                    "$measuredCount of ${window.size} days are measured by Health Connect. " +
                         "Estimates are never added on top of a measured day."
                 }
             ChartCaption("${charted.size} of ${window.size} days estimable · $measuredLine")

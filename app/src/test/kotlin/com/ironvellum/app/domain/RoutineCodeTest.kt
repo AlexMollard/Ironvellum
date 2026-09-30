@@ -84,8 +84,8 @@ class RoutineCodeTest {
 
     @Test
     fun `text without a code says so`() {
-        assertTrue(failureOf("just some chat text").contains("No routine code found"))
-        assertTrue(failureOf("").contains("No routine code found"))
+        assertTrue(failureOf("just some chat text").contains("No cycle code found"))
+        assertTrue(failureOf("").contains("No cycle code found"))
     }
 
     @Test
@@ -108,7 +108,7 @@ class RoutineCodeTest {
     @Test
     fun `deflate of something that is not a routine fails cleanly`() {
         assertTrue(failureOf(rawCode("[1,2,3]")).isNotBlank())
-        assertTrue(failureOf(rawCode("{\"v\":1,\"w\":[]}")).contains("no workouts"))
+        assertTrue(failureOf(rawCode("{\"v\":1,\"w\":[]}")).contains("no rites"))
         assertTrue(failureOf(rawCode("{\"v\":9,\"w\":[]}")).contains("different version"))
         val badSets = "{\"v\":1,\"w\":[{\"n\":\"A\",\"t\":\"\",\"d\":null,\"e\":[[\"Plank\",0,5,null,\"\"]]}]}"
         assertTrue(failureOf(rawCode(badSets)).contains("set or rep"))
@@ -129,7 +129,7 @@ class RoutineCodeTest {
         val entry = SharedEntry("Plank", 3, 30, null, "")
         val workout = SharedWorkout("W", "", null, listOf(entry))
         assertEquals(14, RoutineCode.decode(RoutineCode.encode(List(14) { workout })).getOrThrow().size)
-        assertTrue(failureOf(RoutineCode.encode(List(15) { workout })).contains("14 workouts"))
+        assertTrue(failureOf(RoutineCode.encode(List(15) { workout })).contains("14 rites"))
         val twenty = workout.copy(entries = List(20) { entry })
         assertEquals(20, RoutineCode.decode(RoutineCode.encode(listOf(twenty))).getOrThrow()[0].entries.size)
         val twentyOne = workout.copy(entries = List(21) { entry })

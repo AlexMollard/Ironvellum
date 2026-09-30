@@ -254,7 +254,7 @@ fun PresetEditorScreen(
     ) {
         Spacer(Modifier.height(20.dp))
         Text(
-            if (ui.presetId == null) "FORGE NEW WORKOUT" else "REFORGE WORKOUT",
+            if (ui.presetId == null) "FORGE A RITE" else "REFORGE THIS RITE",
             style = MaterialTheme.typography.labelLarge,
             color = IronvellumColors.SystemGreen,
         )
@@ -263,7 +263,7 @@ fun PresetEditorScreen(
             shape = MaterialTheme.shapes.small,
             value = ui.name,
             onValueChange = viewModel::setName,
-            label = { Text("Workout name") },
+            label = { Text("Rite name") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
@@ -272,12 +272,12 @@ fun PresetEditorScreen(
             shape = MaterialTheme.shapes.small,
             value = ui.note,
             onValueChange = viewModel::setNote,
-            label = { Text("Note / mantra") },
+            label = { Text("Note") },
             singleLine = true,
             modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(10.dp))
-        Text("Routine day", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.SystemGreen)
+        Text("Cycle day", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.SystemGreen)
         Spacer(Modifier.height(4.dp))
         Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             DAY_OPTIONS.chunked(4).forEach { chunk ->
@@ -292,7 +292,7 @@ fun PresetEditorScreen(
                                 .weight(1f)
                                 // The unscheduled option is drawn as "—", which a
                                 // screen reader announces as a dash. Say what it means.
-                                .semantics { contentDescription = label.takeIf { day != null } ?: "No scheduled day" },
+                                .semantics { contentDescription = label.takeIf { day != null } ?: "No day in the cycle" },
                             contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
                         ) {
                             Text(
@@ -330,7 +330,7 @@ fun PresetEditorScreen(
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             IronvellumButton(
-                label = "Save Workout",
+                label = "Save Rite",
                 onClick = { viewModel.save(onDone) },
                 enabled = ui.name.isNotBlank() && ui.entries.isNotEmpty(),
                 modifier = Modifier.weight(1f),
@@ -372,7 +372,7 @@ fun PresetEditorScreen(
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmDiscard = false },
             title = { Text("Discard changes?") },
-            text = { Text("Unsaved edits to this workout will be lost.") },
+            text = { Text("Unsaved edits to this rite will be lost.") },
             confirmButton = {
                 IronvellumButton(
                     label = "Discard",

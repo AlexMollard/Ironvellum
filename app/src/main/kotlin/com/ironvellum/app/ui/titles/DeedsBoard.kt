@@ -73,7 +73,7 @@ private enum class DeedFilter(val label: String) {
     // "CLOSE" read as a dismiss button next to the search field; the chip
     // means the deed is close enough to finish.
     IN_REACH("IN REACH"),
-    CLAIMED("CLAIMED"),
+    CLAIMED("EARNED"),
     LOCKED("LOCKED"),
     ALL("ALL"),
 }
@@ -115,7 +115,7 @@ private fun RarityChip(rarity: TitleRarity, modifier: Modifier = Modifier) {
             .padding(horizontal = 6.dp, vertical = 2.dp),
     ) {
         Text(
-            rarity.name.uppercase(),
+            rarity.label.uppercase(),
             style = MaterialTheme.typography.labelSmall,
             fontSize = 9.sp,
             fontFamily = ChakraPetch,
@@ -289,7 +289,7 @@ fun DeedsBoard(
                         }
                     }
                     Text(
-                        equipped?.describeFor(sex) ?: "Earn a deed below, then wear it.",
+                        equipped?.describeFor(sex) ?: "Earn a deed below, then wear its title.",
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                     )
@@ -314,7 +314,7 @@ fun DeedsBoard(
         if (earned.isNotEmpty()) {
             item(key = "claimed-head") {
                 CategoryHeader(
-                    category = "CLAIMED ${earned.size}",
+                    category = "EARNED ${earned.size}",
                     claimed = earned.size,
                     total = earned.size,
                     open = claimedOpen,
@@ -588,7 +588,7 @@ private fun DeedRow(def: TitleDef, progress: Titles.Progress, unlockedAtMs: Long
                         color = IronvellumColors.Ink,
                     )
                     Text(
-                        if (claimed) "claimed ${formatDate(unlockedAtMs, "d MMM yyyy")}" else def.describeFor(sex),
+                        if (claimed) "earned ${formatDate(unlockedAtMs, "d MMM yyyy")}" else def.describeFor(sex),
                         style = MaterialTheme.typography.labelSmall,
                         color = if (claimed) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                         maxLines = 1,

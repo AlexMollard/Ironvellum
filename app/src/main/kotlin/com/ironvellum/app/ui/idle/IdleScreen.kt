@@ -224,7 +224,7 @@ fun IdleScreen(
     ) {
         // Opened from Today's footer, not a tab, so it carries its own way out.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            SectionHeader("THE GARRISON", Modifier.weight(1f))
+            SectionHeader("THE VEIL", Modifier.weight(1f))
             Text(
                 "BACK",
                 style = MaterialTheme.typography.labelMedium,
@@ -247,7 +247,7 @@ fun IdleScreen(
             // Brief empty frame while the flows warm up; never fake numbers.
             InkPanel {
                 Text(
-                    "The figures are assembling…",
+                    "The echoes are gathering…",
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
                     style = MaterialTheme.typography.bodyMedium,
@@ -303,15 +303,15 @@ private fun achievementFor(result: RollResult): Achievement {
         RewardRarity.Masterwork -> "THE LEDGER ANSWERS" to IronvellumColors.SovereignGold
     }
     val notes = when (val reward = result.reward) {
-        is Reward.Figures -> listOf("GARRISON +${reward.count} FIGURES")
+        is Reward.Figures -> listOf("THE VEIL +${reward.count} ECHOES")
         is Reward.Relic -> listOf("RATE MULTIPLIER ×%.2f".format(reward.multiplier))
-        is Reward.CrestFrame -> listOf("CREST FRAME UNLOCKED", "EQUIP IT ON YOUR LIFTER IDENTITY")
+        is Reward.CrestFrame -> listOf("CREST INSCRIBED", "WEAR IT ON YOUR FOLIO")
     }
     return Achievement(
         banner = "INSCRIBED",
         tagline = tagline,
         name = rewardName(result.reward),
-        subtitle = result.rarity.name.uppercase(),
+        subtitle = rarityLabel(result.rarity),
         notes = notes,
         accent = accent,
         // Only relics. A figures payout is a number, not an object, and a
@@ -363,14 +363,14 @@ private fun DrawWindow(rolls: Int, onInscribe: () -> Unit) {
             // An inscription pays figures, a relic OR a crest — a collection screen
             // showing only frames made a relic roll look like a lost crest.
             Text(
-                "Each rank-up earns one inscription: figures for the garrison, a relic " +
-                    "that lifts your rate, or a crest frame worn by your lifter.",
+                "Each level-up earns one inscription: echoes for the Veil, a relic " +
+                    "that lifts your rate, or a crest worn on your folio.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
             if (rolls > 0) {
                 IronvellumButton(
-                    label = "Inscribe figure ($rolls)",
+                    label = "Inscribe ($rolls)",
                     onClick = onInscribe,
                     enabled = true,
                     gold = true,
@@ -379,7 +379,7 @@ private fun DrawWindow(rolls: Int, onInscribe: () -> Unit) {
             } else {
                 // No dead button: state the path to the next inscription instead.
                 Text(
-                    "RANK UP TO EARN THE NEXT INSCRIPTION",
+                    "LEVEL UP TO EARN THE NEXT INSCRIPTION",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     letterSpacing = IronvellumTracking.InlineLabel,
@@ -447,7 +447,7 @@ private fun RollWindow(state: IdleState, rate: IdleRate, pendingExact: Double) {
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 RollStat(
-                    label = "FIGURES",
+                    label = "ECHOES",
                     value = state.figures.toString(),
                     modifier = Modifier.weight(1f),
                 )
@@ -719,8 +719,8 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (firstRun) {
                 Text(
-                    "The Garrison gathers essence while you're away. " +
-                        "Log workouts to raise the pace — your figures and " +
+                    "The Veil gathers essence while you're away. " +
+                        "Seal trials to raise the pace — your echoes and " +
                         "history will fill in as you train.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
@@ -729,7 +729,7 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
                 )
             } else if (atFloor) {
                 Text(
-                    "The figures have heard nothing from you. Your rate has decayed to its floor — return to training and they will rise again.",
+                    "The echoes have heard nothing from you. Your rate has decayed to its floor — return to training and they will rise again.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
                     maxLines = 4,
@@ -737,7 +737,7 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
                 )
             } else {
                 Text(
-                    "Your training drives this rate. Idle time only collects at the pace your figures have earned.",
+                    "Your training drives this rate. Idle time only collects at the pace your echoes have earned.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.InkMuted,
                     maxLines = 3,
@@ -753,7 +753,7 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
                 share = ((rate.trainingFactor - 1.0) / (Idle.MAX_TRAINING_FACTOR - 1.0)).toFloat(),
             )
             FactorRow(
-                label = "SKILL FACTOR",
+                label = "TECHNIQUE FACTOR",
                 value = "×${"%.2f".format(rate.skillFactor)}",
                 share = ((rate.skillFactor - 1.0) / (Idle.MAX_SKILL_FACTOR - 1.0)).toFloat(),
             )
@@ -780,10 +780,10 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
                 )
             }
             if (inputsOpen) {
-                RateRow("WORKOUTS · 7 DAYS", "${inputs.sessionsLast7d}")
+                RateRow("TRIALS · 7 DAYS", "${inputs.sessionsLast7d}")
                 RateRow("VOLUME · 7 DAYS", "${"%,.0f".format(inputs.volumeLast7d)} kg")
-                RateRow("SKILLS UNLOCKED", "${inputs.skillsUnlocked}")
-                RateRow("STREAK", "${inputs.streakDays} D")
+                RateRow("TECHNIQUES MASTERED", "${inputs.skillsUnlocked}")
+                RateRow("OATH", "${inputs.streakDays} D")
             }
         }
     }
@@ -871,7 +871,7 @@ private fun CapWindow() {
         // Unbounded and short: at maxLines = 3 the last clause — the cap
         // itself — was the part the ellipsis cut on a 360dp phone.
         Text(
-            "Figures work at full strength for ${Idle.FULL_RATE_HOURS.toInt()} hours, then taper over " +
+            "Echoes work at full strength for ${Idle.FULL_RATE_HOURS.toInt()} hours, then taper over " +
                 "${Idle.TAPER_WINDOW_HOURS.toInt()} to a tenth. One absence pays at most " +
                 "${(Idle.MAX_EFFECTIVE_HOURS / 24).toInt()} days.",
             style = MaterialTheme.typography.bodyMedium,
@@ -887,7 +887,7 @@ private fun formatEssence(value: Long): String = String.format(Locale.getDefault
 
 /** Display name per reward type — `Reward` has no shared name property. */
 private fun rewardName(reward: Reward): String = when (reward) {
-    is Reward.Figures -> "${reward.count} Figures"
+    is Reward.Figures -> "${reward.count} ${if (reward.count == 1) "Echo" else "Echoes"}"
     is Reward.Relic -> reward.name
     is Reward.CrestFrame -> reward.name
 }
@@ -1118,7 +1118,7 @@ private fun OddsTable() {
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 Row(Modifier.fillMaxWidth()) {
                     Text(
-                        odds.rarity.name.uppercase(),
+                        rarityLabel(odds.rarity),
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         letterSpacing = IronvellumTracking.InlineLabel,
@@ -1135,7 +1135,7 @@ private fun OddsTable() {
                 }
                 if (odds.figureChance > 0.0) {
                     OddsLine(
-                        "${odds.figuresLow}\u2013${odds.figuresHigh} figures",
+                        "${odds.figuresLow}\u2013${odds.figuresHigh} echoes",
                         formatChance(odds.figureChance),
                     )
                 }
@@ -1146,21 +1146,21 @@ private fun OddsTable() {
                     )
                 }
                 if (odds.frameChance > 0.0) {
-                    OddsLine("Crest frame", formatChance(odds.frameChance))
+                    OddsLine("Crest", formatChance(odds.frameChance))
                 }
             }
         }
         Text(
-            "Rarity odds are per inscription; the second figure is the split inside " +
-                "that rarity. Figures join the garrison, a relic lifts your rate " +
-                "for good, a crest is worn by your lifter.",
+            "Rarity odds are per inscription; the second number is the split inside " +
+                "that rarity. Echoes join the Veil, a relic lifts your rate " +
+                "for good, a crest is worn on your folio.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
         // Pity changes the real odds, so it is stated here. The table above
         // would otherwise be quietly wrong about what the roller does.
         Text(
-            "After ${Gacha.PITY_AFTER} inscriptions that yield only figures, the next one " +
+            "After ${Gacha.PITY_AFTER} inscriptions that yield only echoes, the next one " +
                 "is guaranteed a relic or a crest.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.SovereignGold,
@@ -1193,6 +1193,9 @@ private fun formatChance(fraction: Double): String {
     val pct = fraction * 100.0
     return if (pct % 1.0 == 0.0) "${pct.toInt()}%" else "%.1f%%".format(pct)
 }
+
+private fun rarityLabel(rarity: RewardRarity): String =
+    if (rarity == RewardRarity.Epic) "FABLED" else rarity.name.uppercase()
 
 private fun rarityAccent(rarity: RewardRarity): Color = when (rarity) {
     RewardRarity.Common -> IronvellumColors.InkMuted
@@ -1231,7 +1234,7 @@ private fun WarbandBannerLine() {
         val met = total >= goal
         Column(Modifier.padding(top = 2.dp)) {
             Text(
-                "WARBAND · ${b.name} · $total / $goal this week" + if (met) " · GOAL MET" else "",
+                "CIRCLE · ${b.name} · $total / $goal this week" + if (met) " · GOAL MET" else "",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,

@@ -12,13 +12,13 @@ object ArmyClass {
     data class Tier(val level: Int, val title: String)
 
     val LADDER: List<Tier> = listOf(
-        Tier(1, "Recruit"),
-        Tier(5, "Soldier"),
-        Tier(15, "Knight"),
-        Tier(25, "Elite Knight"),
-        Tier(40, "Commander"),
-        Tier(55, "Marshal"),
-        Tier(70, "Grand Marshal"),
+        Tier(1, "Acolyte"),
+        Tier(5, "Adept"),
+        Tier(15, "Warden"),
+        Tier(25, "Magister"),
+        Tier(40, "Archon"),
+        Tier(55, "Exarch"),
+        Tier(70, "Sovereign"),
     )
 
     fun forLevel(level: Int): Tier {

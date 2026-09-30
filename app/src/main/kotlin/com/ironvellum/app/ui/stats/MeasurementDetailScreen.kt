@@ -142,7 +142,7 @@ fun MeasurementDetailScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "MEASUREMENT · ${site.label.uppercase()}",
+                "READINGS · ${site.label.uppercase()}",
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -165,21 +165,21 @@ fun MeasurementDetailScreen(
         // The privacy promise, stated where the data lives.
         InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
             Text(
-                "SEALED TO THIS DEVICE",
+                "STAYS ON THIS DEVICE",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = IronvellumTracking.InlineLabel,
             )
             Text(
-                "Body measurements never leave your phone. They are excluded from " +
+                "Your readings never leave this device. They are excluded from " +
                     "cloud sync by design — the JSON archive on this device is the only copy.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
         }
 
-        SectionHeader("History")
+        SectionHeader("Trend")
         InkPanel(Modifier.fillMaxWidth()) {
             val series = ui.entries.sortedBy { it.takenAtMs }.map { it.valueCm }
             if (series.size >= 2) {
@@ -192,7 +192,7 @@ fun MeasurementDetailScreen(
                 }
             } else {
                 Text(
-                    "Two readings unlock the line.",
+                    "Two readings draw the line.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -265,7 +265,7 @@ fun MeasurementDetailScreen(
         if (ui.entries.isEmpty()) {
             InkPanel(Modifier.fillMaxWidth()) {
                 Text(
-                    "No readings yet — take the first measurement.",
+                    "This page is blank — take the first reading.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -348,7 +348,7 @@ fun MeasurementDetailScreen(
             if (ui.entries.size > READING_ROWS) {
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Newest $READING_ROWS of ${ui.entries.size} ${plural(ui.entries.size, "reading", "readings")} shown — the chart above carries the full history.",
+                    "Newest $READING_ROWS of ${ui.entries.size} ${plural(ui.entries.size, "reading", "readings")} shown — the chart above carries them all.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(horizontal = 4.dp),

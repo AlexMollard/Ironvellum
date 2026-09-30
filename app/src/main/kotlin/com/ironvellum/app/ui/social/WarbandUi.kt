@@ -235,7 +235,7 @@ fun WarbandSection(
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 InkSpinner()
                 Text(
-                    "Mustering the band…",
+                    "Reading the circle…",
                     style = MaterialTheme.typography.bodyMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -296,13 +296,13 @@ fun WarbandSection(
             shape = MaterialTheme.shapes.medium,
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmLeave = false },
-            title = { Text("Leave ${band?.name ?: "the band"}?") },
+            title = { Text("Leave ${band?.name ?: "the circle"}?") },
             text = {
                 Text(
                     if ((band?.members?.size ?: 0) > 1) {
-                        "You leave the band and its shared week. If you are the owner, the longest-standing remaining member takes over."
+                        "You leave the circle and its shared week. If you are the Keeper, the longest-standing remaining member takes over."
                     } else {
-                        "You are the last member — leaving deletes the band and its code."
+                        "You are the last member — leaving deletes the circle and its code."
                     }
                 )
             },
@@ -336,9 +336,9 @@ fun WarbandSection(
         AchievementOverlay(
             items = listOf(
                 Achievement(
-                    banner = "BAND GOAL MET",
-                    name = band?.name ?: "The band",
-                    tagline = "The band hit its weekly goal and you pulled your weight.",
+                    banner = "CIRCLE'S GOAL MET",
+                    name = band?.name ?: "The circle",
+                    tagline = "The circle met its weekly goal and you carried your share.",
                     xp = xp,
                 ),
             ),
@@ -356,7 +356,7 @@ private fun WarbandPitch(
 ) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
         Text(
-            "WARBAND",
+            "YOUR CIRCLE",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -365,14 +365,14 @@ private fun WarbandPitch(
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            "Form a band of up to 8 — share one code, chase one week.",
+            "Form a circle of up to 8 allies — share one code, chase one week.",
             style = MaterialTheme.typography.bodyMedium,
             color = IronvellumColors.Ink,
         )
         Spacer(Modifier.height(12.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
-            IronvellumButton(label = "Create", onClick = onCreate, enabled = !busy)
-            IronvellumButton(label = "Join", onClick = onJoin, enabled = !busy, quiet = true)
+            IronvellumButton(label = "Form a circle", onClick = onCreate, enabled = !busy)
+            IronvellumButton(label = "Join a circle", onClick = onJoin, enabled = !busy, quiet = true)
         }
         InlineActionError(error)
     }
@@ -436,7 +436,7 @@ private fun WarbandRoster(
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
-                "CODE ${band.code}",
+                "CIRCLE CODE ${band.code}",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -444,24 +444,24 @@ private fun WarbandRoster(
             )
             RowAction("COPY", IronvellumColors.SystemGreen) {
                 scope.launch {
-                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Ironvellum band code", band.code)))
+                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Ironvellum circle code", band.code)))
                 }
-                Toast.makeText(context, "Band code copied", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "Circle code copied", Toast.LENGTH_SHORT).show()
             }
             RowAction("SHARE", IronvellumColors.SystemGreen) {
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(
                         Intent.EXTRA_TEXT,
-                        "Join my Ironvellum band ${band.name} — code ${band.code}",
+                        "Join my Ironvellum circle ${band.name} — code ${band.code}",
                     )
                 }
-                context.startActivity(Intent.createChooser(intent, "Share band"))
+                context.startActivity(Intent.createChooser(intent, "Share circle"))
             }
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "Week of $monday · $total ${plural(total, "workout", "workouts")} across the band",
+            "Week of $monday · $total ${plural(total, "trial", "trials")} across the circle",
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -540,7 +540,7 @@ private fun WarbandMemberRow(
             }
             if (isOwner) {
                 Text(
-                    "OWNER",
+                    "KEEPER",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.SovereignGold,
@@ -567,14 +567,14 @@ private fun CreateWarbandDialog(
         shape = MaterialTheme.shapes.medium,
         containerColor = Color(0xFF0D1110),
         onDismissRequest = onDismiss,
-        title = { Text("Create a band") },
+        title = { Text("Form a circle") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
                     value = name,
                     onValueChange = { name = it.take(24) },
-                    label = { Text("Band name (1–24)") },
+                    label = { Text("Circle name (1–24)") },
                     singleLine = true,
                     enabled = !busy,
                     isError = name.isNotBlank() && !valid,
@@ -635,7 +635,7 @@ private fun JoinWarbandDialog(
         shape = MaterialTheme.shapes.medium,
         containerColor = Color(0xFF0D1110),
         onDismissRequest = onDismiss,
-        title = { Text("Join a band") },
+        title = { Text("Join a circle") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -644,7 +644,7 @@ private fun JoinWarbandDialog(
                     onValueChange = { raw ->
                         code = raw.uppercase().filter { it.isLetterOrDigit() }.take(8)
                     },
-                    label = { Text("Invite code (8 characters)") },
+                    label = { Text("Circle code (8 characters)") },
                     singleLine = true,
                     enabled = !busy,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
@@ -689,7 +689,7 @@ private fun GoalEditorDialog(
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Workouts the whole band aims for this week.",
+                    "Trials the whole circle aims for this week.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )

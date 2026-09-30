@@ -88,11 +88,11 @@ fun SkillJournal(
     val today = LocalDate.now()
 
     // ---- headline counters -------------------------------------------------
-    SectionHeader("Practice Record")
+    SectionHeader("Journal")
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         StatTile("ATTEMPTS", attempts.size.toString(), Modifier.weight(1f))
         StatTile("MASTERED", "${claimed.size}", Modifier.weight(1f), gold = claimed.isNotEmpty())
-        StatTile("STREAK", "${practiceStreak(byDay, today)}d", Modifier.weight(1f))
+        StatTile("DAYS IN A ROW", "${practiceStreak(byDay, today)}d", Modifier.weight(1f))
         StatTile(
             "LAST",
             attempts.firstOrNull()?.let { formatDate(it.practicedAtMs, "d MMM") } ?: "—",
@@ -191,7 +191,7 @@ fun SkillJournal(
     }
 
     // ---- per-line emblem cards --------------------------------------------
-    SectionHeader("Progression Lines")
+    SectionHeader("Paths")
     Skills.LINES.chunked(2).forEach { pair ->
         Row(
             Modifier.fillMaxWidth().padding(bottom = 8.dp),
@@ -277,7 +277,7 @@ fun SkillJournal(
             )
             Spacer(Modifier.height(10.dp))
             Text(
-                "No attempts yet. Open a technique and log what you actually hit.",
+                "The Journal is blank. Open a technique and log what you actually hit.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )

@@ -65,10 +65,10 @@ object LiftBoards {
 
     private const val WEEK_MS = 7L * 24 * 60 * 60 * 1000
 
-    /** Iron, Bronze, Silver, Gold, Mythic - each spans two steps (I, II). */
-    private val TIER_NAMES = listOf("Iron", "Bronze", "Silver", "Gold", "Mythic")
+    /** Ash, Bone, Silver, Gold, Umbral - each spans two steps (I, II). */
+    private val TIER_NAMES = listOf("Ash", "Bone", "Silver", "Gold", "Umbral")
 
-    /** 0 "Initiate", 1 "Iron I", 2 "Iron II", 3 "Bronze I", ... 9 "Mythic I", 10 "Mythic II". */
+    /** 0 "Initiate", 1 "Ash I", 2 "Ash II", 3 "Bone I", ... 9 "Umbral I", 10 "Umbral II". */
     fun tierName(step: Int): String {
         val s = step.coerceIn(0, MAX_STEP)
         if (s == 0) return "Initiate"
@@ -107,7 +107,7 @@ object LiftBoards {
 
     /**
      * Tier floors as multiples of bodyweight for the estimated 1RM, in tier
-     * order (Iron, Bronze, Silver, Gold, Mythic) = Strength Level's Beginner,
+     * order (Ash, Bone, Silver, Gold, Umbral) = Strength Level's Beginner,
      * Novice, Intermediate, Advanced, Elite.
      *
      * Source: strengthlevel.com/strength-standards, read 2026-09-30.
@@ -142,7 +142,7 @@ object LiftBoards {
 
     /**
      * Step for a bodyweight multiple. Each tier splits at the geometric
-     * midpoint between its floor and the next floor; the Mythic ceiling is
+     * midpoint between its floor and the next floor; the Umbral ceiling is
      * open, so its split reuses the previous tier's growth ratio.
      */
     internal fun stepFor(lift: Lift, sex: Sex, ratio: Double): Int {

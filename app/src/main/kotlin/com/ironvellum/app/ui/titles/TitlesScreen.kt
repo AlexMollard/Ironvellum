@@ -174,7 +174,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TitlesUi())
 
     fun equip(titleId: String) {
-        viewModelScope.launchGuarded("equip title") { repo.equipTitle(titleId) }
+        viewModelScope.launchGuarded("wear title") { repo.equipTitle(titleId) }
     }
 
     fun practice(skillName: String, value: Int, weightKg: Double?) {
@@ -302,7 +302,7 @@ fun TitlesScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IronvellumTabPill("DEEDS", tab == TitlesTab.DEEDS) { tab = TitlesTab.DEEDS }
-            IronvellumTabPill("SKILL TREE", tab == TitlesTab.TREE) { tab = TitlesTab.TREE }
+            IronvellumTabPill("PATHS", tab == TitlesTab.TREE) { tab = TitlesTab.TREE }
             IronvellumTabPill("JOURNAL", tab == TitlesTab.JOURNAL) { tab = TitlesTab.JOURNAL }
         }
 
@@ -376,9 +376,9 @@ fun TitlesScreen(
                         banner = "TECHNIQUE MASTERED",
                         tagline = "TIER ${Skills.tierLabel(result.skill.tier)}",
                         name = result.skill.name,
-                        subtitle = "${result.skill.line.uppercase()} LINE",
+                        subtitle = "${result.skill.line.uppercase()} PATH",
                         xp = result.xpAwarded,
-                        notes = result.unlockedNext.map { "PATH OPENED · ${it.name}" },
+                        notes = result.unlockedNext.map { "TECHNIQUE OPENED · ${it.name}" },
                     ),
                 )
                 if (result.levelAfter > result.levelBefore) {
@@ -395,10 +395,10 @@ fun TitlesScreen(
                 if (result.levelAfter > result.levelBefore) {
                     add(
                         Achievement(
-                            banner = "A FIGURE STIRS",
+                            banner = "THE VEIL STIRS",
                             tagline = "DRAW EARNED",
                             name = "Inscription Waiting",
-                            subtitle = "SPEND IT IN THE GARRISON",
+                            subtitle = "SPEND IT BEYOND THE VEIL",
                             accent = IronvellumColors.SovereignGold,
                         ),
                     )
@@ -406,9 +406,9 @@ fun TitlesScreen(
                 result.newTitles.forEach { title ->
                     add(
                         Achievement(
-                            banner = "TITLE UNLOCKED",
+                            banner = "DEED EARNED",
                             name = title.name,
-                            subtitle = "${title.rarity.name.uppercase()} · ${title.describeFor(ui.sex).uppercase()}",
+                            subtitle = "${title.rarity.label.uppercase()} · ${title.describeFor(ui.sex).uppercase()}",
                         ),
                     )
                 }
@@ -437,11 +437,11 @@ private fun LinePickerBar(line: String, selected: String, mastered: Set<String>,
             .clip(MaterialTheme.shapes.small)
             .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
             .inkBorder(IronvellumColors.SovereignGold, MaterialTheme.shapes.small, 1.dp)
-            .clickable(onClickLabel = "Choose a technique line") { open = true }
+            .clickable(onClickLabel = "Choose a path") { open = true }
             .padding(horizontal = 14.dp),
     ) {
         Text(
-            "LINE",
+            "PATH",
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -474,11 +474,11 @@ private fun LinePickerBar(line: String, selected: String, mastered: Set<String>,
     }
     val shown = if (query.isBlank()) lines.map { it.first } else lines.sortedBy { it.second }.map { it.first }
     InkPickerSheet(
-        title = "CHOOSE A LINE",
+        title = "CHOOSE A PATH",
         onDismiss = { open = false },
         query = query,
         onQueryChange = { query = it },
-        searchLabel = "Search lines",
+        searchLabel = "Search paths",
         count = shown.size,
     ) {
         shown.forEach { candidate ->

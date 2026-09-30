@@ -160,8 +160,8 @@ fun IronvellumRoot(inboxRequest: Int = 0) {
 
     val destinations = listOf(
         BottomDestination(Routes.DASHBOARD, "Today", Icons.Outlined.Home),
-        BottomDestination(Routes.PRESETS, "Train", Icons.Outlined.FitnessCenter),
-        BottomDestination(Routes.STATS, "Stats", Icons.Outlined.BarChart),
+        BottomDestination(Routes.PRESETS, "Rites", Icons.Outlined.FitnessCenter),
+        BottomDestination(Routes.STATS, "Ledger", Icons.Outlined.BarChart),
         BottomDestination(Routes.TITLES, "Codex", Icons.Outlined.AutoStories),
         BottomDestination(Routes.SOCIAL, "Allies", Icons.Outlined.Groups),
         // The Garrison is reached from Today's footer, not a tab: five is the

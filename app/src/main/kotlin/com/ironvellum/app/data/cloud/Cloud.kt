@@ -261,7 +261,7 @@ object Cloud {
             else -> "Sign-in was refused — try again in a moment"
         }
         is PostgrestRestException -> when (error.code) {
-            "23505" -> "That name is already taken by another lifter"
+            "23505" -> "That true name is taken"
             "42501" -> "The cloud refused this — you are not allowed to change that record"
             "23514" -> "The cloud rejected this value as out of range"
             // raise exception in our own triggers (rate limits, blocked

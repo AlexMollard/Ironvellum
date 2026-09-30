@@ -132,8 +132,8 @@ class WorkoutSessionService : Service() {
         // The exercise the lifter is on now, not the first one of the day.
         val title = (next ?: sets.firstOrNull())?.exerciseName ?: "Trial"
         val body = when {
-            total == 0 -> "Loading the trial…"
-            next == null -> "Every set conquered. Claim Victory."
+            total == 0 -> "Opening the trial…"
+            next == null -> "Every set is done. Seal the Trial."
             else -> buildString {
                 append("Set ${next.setIndex + 1}")
                 // A HOLD set carries its figure in seconds; REPS sets count.

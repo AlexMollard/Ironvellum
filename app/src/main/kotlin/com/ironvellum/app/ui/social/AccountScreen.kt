@@ -512,7 +512,7 @@ private fun AccountTitle() {
         letterSpacing = IronvellumTracking.ScreenTitle,
     )
     Text(
-        "Cloud link for lifters",
+        "Cloud link for the Ironbound",
         style = MaterialTheme.typography.labelLarge,
         fontFamily = ChakraPetch,
         color = IronvellumColors.SystemGreen,
@@ -656,7 +656,7 @@ private fun AuthPanels(
                 shape = MaterialTheme.shapes.small,
                 value = displayName,
                 onValueChange = { displayName = it.take(24) },
-                label = { Text("Display name") },
+                label = { Text("True name") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier.fillMaxWidth(),
@@ -696,9 +696,9 @@ private fun AuthPanels(
                 password.isNotEmpty() && !passwordValid -> "Password needs at least 6 characters."
                 choosingPassword && confirm.isNotEmpty() && !confirmed -> "Passwords don't match."
                 mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid ->
-                    "Display name needs 2–24 characters."
+                    "True name needs 2–24 characters."
                 mode == AuthMode.RESET && !codeSent -> "We'll email you a code to set a new password."
-                else -> "Measurements stay on this device; workouts, XP and titles sync."
+                else -> "Readings stay on this device; trials, XP and titles sync."
             },
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
@@ -817,7 +817,7 @@ private fun SignedInPanels(
         RequestsPanel(incoming = incoming, onAccept = onAccept, onDecline = onDecline)
     }
 
-    SectionHeader("Warband")
+    SectionHeader("Circle")
     WarbandSection(onOpenLifter = onOpenLifter)
 
     SectionHeader(if (accepted.isEmpty()) "Allies" else "Allies · ${accepted.size}")
@@ -895,7 +895,7 @@ private fun VisibilityChip(visibility: String) {
 
 
 /**
- * One-time "CLAIM YOUR NAME" prompt for Google users still carrying their
+ * One-time "TAKE YOUR TRUE NAME" prompt for Google users still carrying their
  * seeded Lifter#### handle. The name is how other lifters find and add you —
  * so claiming it matters, but skipping must never trap the user here.
  */
@@ -916,7 +916,7 @@ private fun ClaimNamePanel(
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Outlined.Badge, contentDescription = null, tint = IronvellumColors.SovereignGold)
             Text(
-                "CLAIM YOUR NAME",
+                "TAKE YOUR TRUE NAME",
                 style = MaterialTheme.typography.titleMedium,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
@@ -925,7 +925,7 @@ private fun ClaimNamePanel(
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "This name is how other lifters find and add you.",
+            "This true name is how other Ironbound find and add you.",
             style = MaterialTheme.typography.labelMedium,
             color = IronvellumColors.InkMuted,
             maxLines = 2,
@@ -945,7 +945,7 @@ private fun ClaimNamePanel(
             shape = MaterialTheme.shapes.small,
             value = name,
             onValueChange = { name = it.take(24) },
-            label = { Text("Lifter name (2–24)") },
+            label = { Text("True name (2–24)") },
             singleLine = true,
             enabled = !busy,
             isError = name.isNotBlank() && !valid,
@@ -958,7 +958,7 @@ private fun ClaimNamePanel(
         )
         Spacer(Modifier.height(12.dp))
         IronvellumButton(
-            label = "Claim",
+            label = "Take",
             onClick = { onClaim(cleaned) },
             enabled = valid && !busy,
             modifier = Modifier.fillMaxWidth(),
@@ -996,7 +996,7 @@ private fun AddAllyPanel(loading: Boolean, onRequest: (String) -> Unit) {
                 shape = MaterialTheme.shapes.small,
                 value = friendName,
                 onValueChange = { friendName = it.take(24) },
-                label = { Text("Add an ally by name") },
+                label = { Text("Add an ally by true name") },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                 modifier = Modifier.weight(1f),
@@ -1071,7 +1071,7 @@ private fun AlliesPanel(
             )
             Spacer(Modifier.height(8.dp))
             Text(
-                "No allies yet. Invite one by name above.",
+                "No allies yet. Invite one by true name above.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -1103,7 +1103,7 @@ private fun AlliesPanel(
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmRemove = null },
             title = { Text("Remove ${friend.displayName} as an ally?") },
-            text = { Text("Their allies-only workouts leave your feed. Either of you can send a new request later.") },
+            text = { Text("Their allies-only trials leave your tidings. Either of you can send a new request later.") },
             confirmButton = {
                 IronvellumButton(label = "Remove", onClick = {
                     confirmRemove = null

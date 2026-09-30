@@ -170,7 +170,7 @@ internal fun InboxScreen(
         when {
             !ui.loaded -> InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
                 Text(
-                    "Reading your inbox…",
+                    "Reading your missives…",
                     style = MaterialTheme.typography.bodyMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -187,7 +187,7 @@ internal fun InboxScreen(
             }
             else -> {
                 if (err != null) {
-                    SocialErrorBanner("The newest fetch failed: $err")
+                    SocialErrorBanner("The ink has faded — these missives are from your last sync: $err")
                     Spacer(Modifier.height(10.dp))
                 }
                 ui.actionError?.let {
@@ -242,7 +242,7 @@ internal fun InboxScreen(
 private fun EmptyInbox() {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
         Text(
-            "INBOX CLEAR",
+            "NO MISSIVES",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -251,7 +251,7 @@ private fun EmptyInbox() {
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            "Ally requests, comments and reactions on your workouts land here.",
+            "Ally requests, remarks and tributes on your trials land here.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -272,9 +272,9 @@ private fun InboxRow(
     val (icon, line) = when (item) {
         is InboxItem.FriendRequest -> Icons.Outlined.PersonAdd to "wants to be your ally"
         is InboxItem.RequestAccepted -> Icons.Outlined.Handshake to "accepted your ally request"
-        is InboxItem.NewComment -> Icons.Outlined.ChatBubbleOutline to "commented on ${item.sessionHeadline.orWorkout()}"
-        is InboxItem.NewReaction -> item.reaction.glyph() to "${item.reaction.displayName()} on ${item.sessionHeadline.orWorkout()}"
-        is InboxItem.NewBandmate -> Icons.Outlined.GroupAdd to "joined your band ${item.bandName}"
+        is InboxItem.NewComment -> Icons.Outlined.ChatBubbleOutline to "left a remark on ${item.sessionHeadline.orWorkout()}"
+        is InboxItem.NewReaction -> item.reaction.glyph() to "paid ${item.reaction.displayName()} tribute on ${item.sessionHeadline.orWorkout()}"
+        is InboxItem.NewBandmate -> Icons.Outlined.GroupAdd to "joined your circle ${item.bandName}"
     }
     val open: () -> Unit = when (item) {
         is InboxItem.NewComment -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout()) } }
@@ -311,7 +311,7 @@ private fun InboxRow(
             Column(Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        item.actorName.ifBlank { "A lifter" },
+                        item.actorName.ifBlank { "An Ironbound" },
                         style = MaterialTheme.typography.labelLarge,
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
@@ -373,4 +373,4 @@ private fun AnswerLabel(text: String, tint: androidx.compose.ui.graphics.Color) 
     )
 }
 
-private fun String.orWorkout(): String = ifBlank { "your workout" }
+private fun String.orWorkout(): String = ifBlank { "your trial" }

@@ -315,7 +315,7 @@ private fun SkillRow(
                 )
                 if (row.children.size > 1) {
                     Text(
-                        "${row.children.size} paths",
+                        "opens ${row.children.size}",
                         style = MaterialTheme.typography.labelSmall,
                         fontSize = 11.sp,
                         color = IronvellumColors.InkMuted,

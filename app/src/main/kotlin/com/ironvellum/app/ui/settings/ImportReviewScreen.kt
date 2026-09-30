@@ -112,7 +112,7 @@ fun ImportReviewOverlay(
             val range = ui.parsed.dateRange
             Text(
                 buildString {
-                    append("${ui.parsed.workouts.size} ${plural(ui.parsed.workouts.size, "workout", "workouts")}")
+                    append("${ui.parsed.workouts.size} ${plural(ui.parsed.workouts.size, "trial", "trials")}")
                     append(" · ${ui.parsed.totalSets} ${plural(ui.parsed.totalSets, "set", "sets")}")
                     if (range != null) {
                         append(" · from ${formatDate(range.second, "d MMM yyyy")}")
@@ -204,8 +204,8 @@ fun ImportReviewOverlay(
             }
             Spacer(Modifier.height(10.dp))
             Text(
-                "Nothing here replaces your log. Workouts already in the app are skipped; " +
-                    "imported history stays on this device and off the public feed.",
+                "Nothing here replaces your Chronicle. Trials already in the app are skipped; " +
+                    "imported trials stay on this device and out of the Tidings.",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )

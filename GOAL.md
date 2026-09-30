@@ -1,5 +1,8 @@
 # Ironvellum — Goal Spec (draft for approval)
 
+> The original v1 brief, kept as history. The Solo Leveling theme it names was
+> retired; the app's words now come from [docs/GLOSSARY.md](docs/GLOSSARY.md).
+
 Solo Leveling-themed Android fitness app for weighted + bodyweight calisthenics.
 Repo: D:\Ironvellum.
 Stack: Kotlin + Jetpack Compose + Room. Fully custom dark Solo-Leveling-style theme.

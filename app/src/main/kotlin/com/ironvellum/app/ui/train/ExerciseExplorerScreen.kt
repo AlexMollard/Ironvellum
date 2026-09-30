@@ -217,7 +217,7 @@ fun ExerciseExplorerScreen(
             if (history == null || history.isEmpty) {
                 InkPanel(Modifier.fillMaxWidth().padding(top = 10.dp)) {
                     Text(
-                        "No sets logged yet — train this exercise to open its record.",
+                        "The Chronicle holds no sets for this yet. Seal a trial with it and they appear.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.InkMuted,
                     )
@@ -231,7 +231,7 @@ fun ExerciseExplorerScreen(
                 RepsChart(history)
                 Spacer(Modifier.height(14.dp))
                 SetRecordPanel(ui.setRecords, history.exercise.metric == ExerciseMetric.HOLD)
-                SectionHeader("Set Log")
+                SectionHeader("Set Chronicle")
                 SetLog(history)
             }
         }
@@ -272,7 +272,7 @@ private fun StatGrid(history: ExerciseHistory) {
     val noSets = history.completedSets == 0
     val rows = listOf(
         listOf(
-            "WORKOUTS" to history.sessions.toString(),
+            "TRIALS" to history.sessions.toString(),
             "COMPLETED SETS" to history.completedSets.toString(),
         ),
         // A hold has no rep count and no rep-volume; reporting either invents
@@ -312,8 +312,8 @@ private fun StatGrid(history: ExerciseHistory) {
             "DAYS SINCE LAST" to (history.daysSinceLast?.toString() ?: "—"),
         ),
         listOf(
-            "FIRST LOGGED" to (history.firstLoggedAtMs?.let { formatDate(it) } ?: "—"),
-            "LAST LOGGED" to (history.lastLoggedAtMs?.let { formatDate(it) } ?: "—"),
+            "FIRST TRIAL" to (history.firstLoggedAtMs?.let { formatDate(it) } ?: "—"),
+            "LAST TRIAL" to (history.lastLoggedAtMs?.let { formatDate(it) } ?: "—"),
         ),
     )
     rows.forEach { pair ->
@@ -346,7 +346,7 @@ private fun ScoreChart(history: ExerciseHistory) {
     val values = history.series.map { it.bestSetScore }
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            "STRENGTH SCORE PER WORKOUT",
+            "STRENGTH SCORE PER TRIAL",
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
@@ -355,7 +355,7 @@ private fun ScoreChart(history: ExerciseHistory) {
         if (values.size < 2) {
             Spacer(Modifier.height(8.dp))
             Text(
-                "One workout logged — a trend needs at least two.",
+                "One trial written — a trend needs at least two.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -369,7 +369,7 @@ private fun ScoreChart(history: ExerciseHistory) {
             )
         }
         Text(
-            "best set score per workout · ${history.series.size} ${plural(history.series.size, "workout", "workouts")}",
+            "best set score per trial · ${history.series.size} ${plural(history.series.size, "trial", "trials")}",
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
         )
@@ -388,7 +388,7 @@ private fun RepsChart(history: ExerciseHistory) {
     val values = history.series.map { it.totalReps.toDouble() }
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            if (isHold) "TOTAL TIME HELD PER WORKOUT" else "TOTAL REPS PER WORKOUT",
+            if (isHold) "TOTAL TIME HELD PER TRIAL" else "TOTAL REPS PER TRIAL",
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
@@ -409,7 +409,7 @@ private fun RepsChart(history: ExerciseHistory) {
             )
         }
         Text(
-            if (isHold) "seconds held per workout · oldest to newest" else "completed reps per workout · oldest to newest",
+            if (isHold) "seconds held per trial · oldest to newest" else "completed reps per trial · oldest to newest",
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
         )
@@ -421,7 +421,7 @@ private fun RepsChart(history: ExerciseHistory) {
 private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean) {
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            "PER-SET RECORDS",
+            "PER-SET PEAKS",
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
@@ -430,7 +430,7 @@ private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean
         Spacer(Modifier.height(6.dp))
         if (records.isEmpty()) {
             Text(
-                "No completed sets yet — records appear once you train.",
+                "No completed sets yet — peaks appear once you seal a trial.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )

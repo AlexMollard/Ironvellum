@@ -344,7 +344,7 @@ fun FeedScreen(
                 // A failed refresh must not hide behind yesterday's rows: the
                 // banner rides above the list, rows stay in place.
                 if (ui.error != null) {
-                    SocialErrorBanner("The newest fetch failed — these workouts are the last synced board: ${ui.error}")
+                    SocialErrorBanner("The ink has faded — these tidings are from your last sync: ${ui.error}")
                     Spacer(Modifier.height(10.dp))
                 }
                 ui.allyError?.let {
@@ -374,7 +374,7 @@ fun FeedScreen(
 private fun LoadingPanel() {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
         Text(
-            "Scouting the frontline…",
+            "Reading the tidings…",
             style = MaterialTheme.typography.bodyMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -386,7 +386,7 @@ private fun LoadingPanel() {
 private fun EmptyFeed(onRefresh: () -> Unit) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
         Text(
-            "NOBODY HAS MARCHED YET",
+            "THE TIDINGS ARE BLANK",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -404,7 +404,7 @@ private fun EmptyFeed(onRefresh: () -> Unit) {
         )
         Spacer(Modifier.height(10.dp))
         Text(
-            "No public workouts yet. Set yours to public on the ALLIES tab and be first on the board.",
+            "No tidings yet. Set your trials public on ALLIES and be the first.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
@@ -440,7 +440,7 @@ internal fun SocialErrorBanner(message: String) {
 private fun ErrorPanel(reason: String, onRetry: () -> Unit) {
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
         Text(
-            "THE FEED STUTTERED",
+            "THE TIDINGS WENT DARK",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -478,7 +478,7 @@ private fun Feed(
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(
-            "Every lifter's public workouts, newest first",
+            "Every Ironbound's public trials, newest first",
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -543,7 +543,7 @@ private fun Feed(
         if (ui.pagingError != null) {
             item(key = "paging-error") {
                 Text(
-                    "Older workouts slipped away — keep pulling to try again.",
+                    "Older trials slipped away — keep pulling to try again.",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.DangerRed,
@@ -556,7 +556,7 @@ private fun Feed(
         if (ui.loadingMore) {
             item(key = "loading-more") {
                 Text(
-                    "Drawing in older workouts…",
+                    "Turning to older trials…",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -569,7 +569,7 @@ private fun Feed(
         if (ui.exhausted) {
             item(key = "end") {
                 Text(
-                    "You've reached the founding of the board.",
+                    "You've reached the first page of the tidings.",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -702,14 +702,14 @@ private fun FeedCard(
                 // moment it is picked; the VM reconciles or rolls back.
                 CountChip(
                     icon = (entry.myReaction ?: Reaction.SALUTE).glyph(),
-                    iconDescription = entry.myReaction?.let { "Your reaction: ${it.displayName()}" } ?: "React",
+                    iconDescription = entry.myReaction?.let { "Your tribute: ${it.displayName()}" } ?: "Pay tribute",
                     count = entry.likeCount,
                     lit = entry.myReaction != null || picking,
                     onClick = { picking = !picking },
                 )
                 CountChip(
                     icon = Icons.Outlined.ChatBubbleOutline,
-                    iconDescription = "Comments",
+                    iconDescription = "Remarks",
                     count = entry.commentCount,
                     lit = false,
                     onClick = { onOpenComments(entry) },
@@ -720,7 +720,7 @@ private fun FeedCard(
                 } else {
                     // Owner-only: who reacted is theirs to read.
                     Text(
-                        "WHO CHEERED",
+                        "WHO PAID TRIBUTE",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.EmeraldBright,
@@ -754,7 +754,7 @@ private fun FeedCard(
             Box(Modifier.fillMaxWidth().height(18.dp)) {
                 if (reactionError != null) {
                     Text(
-                        "Reaction not saved: $reactionError",
+                        "Tribute not saved: $reactionError",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.DangerRed,
@@ -775,7 +775,7 @@ private fun FeedCard(
         }) {
             InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
                 Text(
-                    "CHEERS FROM YOUR ALLIES",
+                    "TRIBUTES FROM YOUR ALLIES",
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.Bold,
@@ -785,7 +785,7 @@ private fun FeedCard(
                 Spacer(Modifier.height(10.dp))
                 when {
                     likers == null && likersError == null -> Text(
-                        "Summoning the cheers…",
+                        "Reading the tributes…",
                         style = MaterialTheme.typography.bodySmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
@@ -804,7 +804,7 @@ private fun FeedCard(
                         )
                     }
                     likers!!.isEmpty() -> Text(
-                        "No cheers yet — your deeds still speak for themselves.",
+                        "No tributes yet — your deeds still speak for themselves.",
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                     )
@@ -1004,13 +1004,13 @@ internal fun Reaction.glyph(): ImageVector = when (this) {
 }
 
 internal fun Reaction.displayName(): String = when (this) {
-    Reaction.SALUTE -> "Salute"
+    Reaction.SALUTE -> "Honour"
     Reaction.IRON -> "Iron"
     Reaction.FLAME -> "Flame"
 }
 
 /** What a workout is called on the comments screen and in the inbox. */
-internal fun FeedEntry.headline(): String = title.ifBlank { label }.ifBlank { "Workout" }
+internal fun FeedEntry.headline(): String = title.ifBlank { label }.ifBlank { "Trial" }
 
 /**
  * The entry as it reads once [next] replaces the lifter's reaction. like_count

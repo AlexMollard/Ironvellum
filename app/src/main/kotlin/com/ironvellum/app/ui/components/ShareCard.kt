@@ -71,7 +71,7 @@ fun ShareCardDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                "SHARE THIS WORKOUT",
+                "SHARE THIS TRIAL",
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -104,7 +104,7 @@ fun ShareCardDialog(
                         onClick = {
                             scope.launch {
                                 clipboard.setClipEntry(
-                                    ClipEntry(ClipData.newPlainText("Ironvellum workout", text)),
+                                    ClipEntry(ClipData.newPlainText("Ironvellum trial", text)),
                                 )
                             }
                             copied = true
@@ -119,7 +119,7 @@ fun ShareCardDialog(
                                 type = "text/plain"
                                 putExtra(Intent.EXTRA_TEXT, text)
                             }
-                            context.startActivity(Intent.createChooser(intent, "Share this workout"))
+                            context.startActivity(Intent.createChooser(intent, "Share this trial"))
                         },
                         modifier = Modifier.weight(1f),
                     )

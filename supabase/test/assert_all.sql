@@ -499,10 +499,10 @@ begin
     perform assert_true(value_as(gus, 'select count(*) from blocks')::int = 0,
         'the blocked lifter can see who blocked them');
     r := refusal(gus, format('insert into friendships (requester_id, addressee_id) values (%L, %L)', gus, dara));
-    perform assert_true(r = 'P0001: You can’t send an ally request to this lifter.',
+    perform assert_true(r = 'P0001: You can’t send an ally request to this Ironbound.',
         format('the blocked lifter can send the blocker an ally request (%s)', r));
     r := refusal(dara, format('insert into friendships (requester_id, addressee_id) values (%L, %L)', dara, gus));
-    perform assert_true(r = 'P0001: You can’t send an ally request to this lifter.',
+    perform assert_true(r = 'P0001: You can’t send an ally request to this Ironbound.',
         format('the blocker can send the blocked lifter an ally request (%s)', r));
 
     -- ------------------------------------------------ friend request rate
@@ -673,7 +673,7 @@ declare
     u8 uuid := 'a5500000-0000-4000-8000-000000000058';
     u9 uuid := 'a5500000-0000-4000-8000-000000000059';
     ux uuid := 'a5500000-0000-4000-8000-00000000005a';
-    neutral constant text := '^Lifter[0-9]{4}$';
+    neutral constant text := '^Ironbound[0-9]{4}$';
     r text;
     ok boolean;
     n int;
@@ -746,19 +746,19 @@ begin
            'authenticated', 'authenticated', 'fill' || x || '@m.test', '', now(), now()
     from generate_series(0, 9998) x;
     insert into profiles (id, display_name)
-    select ('a5500000-0000-4000-9000-' || lpad(to_hex(x), 12, '0'))::uuid, 'Lifter' || lpad(x::text, 4, '0')
+    select ('a5500000-0000-4000-9000-' || lpad(to_hex(x), 12, '0'))::uuid, 'Ironbound' || lpad(x::text, 4, '0')
     from generate_series(0, 9998) x;
     perform set_config('session_replication_role', 'origin', true);
     for g in 1..3 loop
         r := sign_up(u7, '{}');
-        perform assert_true(r = 'Lifter9999', format('the neutral handle probe did not find the one free handle (got %s)', r));
+        perform assert_true(r = 'Ironbound9999', format('the neutral handle probe did not find the one free handle (got %s)', r));
         delete from auth.users where id = u7;
     end loop;
     -- Every neutral handle taken: sign-up itself must still succeed.
     perform set_config('session_replication_role', 'replica', true);
     insert into auth.users (instance_id, id, aud, role, email, encrypted_password, created_at, updated_at)
     values ('00000000-0000-0000-0000-000000000000', u8, 'authenticated', 'authenticated', 'last@m.test', '', now(), now());
-    insert into profiles (id, display_name) values (u8, 'Lifter9999');
+    insert into profiles (id, display_name) values (u8, 'Ironbound9999');
     perform set_config('session_replication_role', 'origin', true);
     r := sign_up(u7, '{}');
     perform assert_true(r is null and exists (select 1 from auth.users where id = u7),
@@ -1518,7 +1518,7 @@ begin
     perform assert_true(
         value_as(nova, format(
             'select m->>''display_name'' from my_warband(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
-            finn::text)) = 'Lifter0055'
+            finn::text)) = 'Ironbound0055'
             and value_as(nova, format(
             'select (m->>''level'') is null and (m->>''current_title_id'') is null from my_warband(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
             finn::text)) = 'true'

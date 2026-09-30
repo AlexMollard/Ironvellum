@@ -66,11 +66,11 @@ class LiftBoardsTest {
     @Test
     fun tierNamesFollowTheLadder() {
         assertEquals("Initiate", LiftBoards.tierName(0))
-        assertEquals("Iron I", LiftBoards.tierName(1))
-        assertEquals("Iron II", LiftBoards.tierName(2))
-        assertEquals("Bronze I", LiftBoards.tierName(3))
+        assertEquals("Ash I", LiftBoards.tierName(1))
+        assertEquals("Ash II", LiftBoards.tierName(2))
+        assertEquals("Bone I", LiftBoards.tierName(3))
         assertEquals("Gold II", LiftBoards.tierName(8))
-        assertEquals("Mythic II", LiftBoards.tierName(10))
+        assertEquals("Umbral II", LiftBoards.tierName(10))
     }
 
     @Test
@@ -307,7 +307,7 @@ class LiftBoardsTest {
 
     @Test
     fun stepLabelNamesTheTierOrTheRung() {
-        assertEquals("Iron I", LiftBoards.stepLabel(Lift.SQUAT, 1))
+        assertEquals("Ash I", LiftBoards.stepLabel(Lift.SQUAT, 1))
         val rungs = LiftBoards.rungs(Lift.FRONT_LEVER)
         assertEquals(rungs[3].exercise, LiftBoards.stepLabel(Lift.FRONT_LEVER, 4))
         assertEquals("rung 4 of ${rungs.size}", LiftBoards.stepDetail(Lift.FRONT_LEVER, 4))

@@ -239,9 +239,9 @@ fun MuscleCoverageScreen(
             InkPanel(Modifier.fillMaxWidth()) {
                 Text(
                     if (view == CoverageView.PLANNED) {
-                        "No workouts yet. Build a routine and it will be mapped here."
+                        "No rites are written yet. Build a cycle and it will be mapped here."
                     } else {
-                        "Nothing logged in the last 7 days."
+                        "The Chronicle is blank for the last 7 days. Seal a trial and it is mapped here."
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -334,7 +334,7 @@ fun MuscleCoverageScreen(
             )
             Spacer(Modifier.height(8.dp))
             IronvellumButton(
-                label = "Generate one workout",
+                label = "Forge a Rite",
                 onClick = onGenerateSession,
                 modifier = Modifier.fillMaxWidth(),
             )

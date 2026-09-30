@@ -48,7 +48,7 @@ class PresetAutoFillTest {
 
     @Test
     fun beginningAPresetFillsTheSessionWithItsExercises() {
-        driver.tab("Train")
+        driver.tab("Rites")
 
         // "Heavy Pull" belongs to the starter week, which a fresh install no
         // longer imposes - TestProfile writes it for every UI test instead.
@@ -77,7 +77,7 @@ class PresetAutoFillTest {
 
         // Auto-filled sets are what the lifter then edits, so the session has
         // to arrive with set rows rather than an empty shell.
-        val conquered = driver.awaitAnyText { it.contains(" conquered") }
+        val conquered = driver.awaitAnyText { it.contains(" done") }
         val total = conquered.substringAfter('/').trim().takeWhile { it.isDigit() }.toIntOrNull() ?: 0
         assertTrue("an auto-filled session must contain sets, saw \"$conquered\"", total > 0)
     }

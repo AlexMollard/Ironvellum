@@ -204,7 +204,7 @@ class ProgramBuilderViewModel(
                     ((LocalDate.now().toEpochDay() - first) / 365.25 * 10).toLong() / 10.0
                 }
                 _strength.value = repo.strengthProfile()
-            }.onFailure { _error.value = "Could not read your training history: ${it.message}" }
+            }.onFailure { _error.value = "Could not read your Chronicle: ${it.message}" }
             // The suggestion lands once, from real history; after she touches
             // the control it is hers, and a later load cannot re-suggest.
             if (!tierTouched) {
@@ -300,9 +300,9 @@ class ProgramBuilderViewModel(
                             isolationWouldFill ->
                                 "Only isolation work would fill the gaps. Turn off Compound & skill only to add it."
                             sessionKind.value == SessionKind.AUTO ->
-                                "Your routine already reaches the target on every muscle. " +
-                                    "Pick Full body, Upper or Lower for an extra workout."
-                            else -> "The catalogue cannot fill this workout with your equipment."
+                                "Your cycle already reaches the target on every muscle. " +
+                                    "Pick Full body, Upper or Lower for an extra rite."
+                            else -> "The catalogue cannot fill this rite with your armoury."
                         }
                     }
                     RoutinePlan(listOf(preset))
@@ -319,7 +319,7 @@ class ProgramBuilderViewModel(
                     if (target == null) {
                         // Thrown, not set: the fold below owns the error line,
                         // and a returned null would clear it.
-                        throw IllegalArgumentException("Pick a workout to improve.")
+                        throw IllegalArgumentException("Pick a rite to temper.")
                     } else {
                         val rest = all.filterIndexed { i, _ -> i != index }
                         _improvement.value = ProgramGenerator.improve(
@@ -335,7 +335,7 @@ class ProgramBuilderViewModel(
                 _error.value = null
                 if (result != null) _plan.value = result
             },
-            onFailure = { _error.value = "Could not build the plan: ${it.message}" },
+            onFailure = { _error.value = "The Forge failed: ${it.message}" },
         )
     }
 
@@ -417,7 +417,7 @@ class ProgramBuilderViewModel(
                 alignProgressionMode()
             }.fold(
                 onSuccess = { _error.value = null; onDone() },
-                onFailure = { _error.value = "Could not add the workouts: ${it.message}. Nothing was written." },
+                onFailure = { _error.value = "Could not add the rites: ${it.message}. Nothing was written." },
             )
         }
     }
@@ -431,7 +431,7 @@ class ProgramBuilderViewModel(
                 alignProgressionMode()
             }.fold(
                 onSuccess = { _error.value = null; onDone() },
-                onFailure = { _error.value = "Could not replace the routine: ${it.message}. Nothing was written." },
+                onFailure = { _error.value = "Could not replace the cycle: ${it.message}. Nothing was written." },
             )
         }
     }
@@ -444,7 +444,7 @@ class ProgramBuilderViewModel(
                 rememberAnswers()
             }.fold(
                 onSuccess = { _error.value = null; onDone() },
-                onFailure = { _error.value = "Could not save the workout: ${it.message}. Nothing was written." },
+                onFailure = { _error.value = "Could not save the rite: ${it.message}. Nothing was written." },
             )
         }
     }
@@ -558,10 +558,10 @@ fun ProgramBuilderScreen(
         ) {
             Text(
                 when (mode) {
-                    "template" -> "FROM A TEMPLATE"
-                    "week" -> "GENERATE A ROUTINE"
-                    "session" -> "GENERATE ONE WORKOUT"
-                    else -> "IMPROVE A WORKOUT"
+                    "template" -> "FROM A PATTERN"
+                    "week" -> "FORGE A CYCLE"
+                    "session" -> "FORGE A RITE"
+                    else -> "TEMPER A RITE"
                 },
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
@@ -619,7 +619,7 @@ fun ProgramBuilderScreen(
         // The split is the headline choice; templates carry their own, so
         // there it is picked by picking the template below.
         if (mode == "week") {
-            QuestionPanel("HOW YOU SPLIT THE WEEK") {
+            QuestionPanel("HOW YOU DIVIDE THE WEEK") {
                 SplitPicker(split = split, days = daysPerWeek, onPick = viewModel::setSplit)
                 Spacer(Modifier.height(8.dp))
                 Caption(splitCaption(split, daysPerWeek))
@@ -638,7 +638,7 @@ fun ProgramBuilderScreen(
             Caption(volumeSuggestion(hasHistory, historyYears))
         }
 
-        QuestionPanel("WHAT YOU HAVE ACCESS TO") {
+        QuestionPanel("YOUR ARMOURY") {
             GearPicker(equipment = equipment, onChange = { viewModel.equipment.value = it })
         }
 
@@ -660,7 +660,7 @@ fun ProgramBuilderScreen(
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Text(
-                    "Max exercises per workout",
+                    "Max exercises per rite",
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -668,7 +668,7 @@ fun ProgramBuilderScreen(
                 )
                 TapPad(
                     label = "−",
-                    description = "Fewer exercises per workout, currently $maxExercises",
+                    description = "Fewer exercises per rite, currently $maxExercises",
                     onClick = {
                         viewModel.maxExercises.value =
                             (maxExercises - 1).coerceAtLeast(ProgramRules.MAX_EXERCISES_RANGE.first)
@@ -682,7 +682,7 @@ fun ProgramBuilderScreen(
                 )
                 TapPad(
                     label = "+",
-                    description = "More exercises per workout, currently $maxExercises",
+                    description = "More exercises per rite, currently $maxExercises",
                     onClick = {
                         viewModel.maxExercises.value =
                             (maxExercises + 1).coerceAtMost(ProgramRules.MAX_EXERCISES_RANGE.last)
@@ -701,7 +701,7 @@ fun ProgramBuilderScreen(
         }
 
         if (mode == "session") {
-            QuestionPanel("WHAT KIND OF WORKOUT") {
+            QuestionPanel("WHAT KIND OF RITE") {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     SessionKind.entries.chunked(2).forEach { chunk ->
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
@@ -718,7 +718,7 @@ fun ProgramBuilderScreen(
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                Caption("\"What my week is missing\" reads the rest of your routine and fills the gap.")
+                Caption("\"What my week is missing\" reads the rest of your cycle and fills the gap.")
             }
             QuestionPanel("SCHEDULE IT ON") {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
@@ -729,7 +729,7 @@ fun ProgramBuilderScreen(
                                     label = label,
                                     selected = sessionDay == day,
                                     modifier = Modifier.weight(1f),
-                                    description = label.takeIf { day != null } ?: "No scheduled day",
+                                    description = label.takeIf { day != null } ?: "No day in the cycle",
                                     onClick = { viewModel.setSessionDay(day) },
                                 )
                             }
@@ -740,10 +740,10 @@ fun ProgramBuilderScreen(
         }
 
         if (mode == "template") {
-            SectionHeader("Templates")
+            SectionHeader("Patterns")
             val templates = viewModel.matchingTemplates()
             if (templates.isEmpty()) {
-                Caption("No hand-authored template for this goal — generate a routine instead.")
+                Caption("No hand-written pattern for this goal — forge a cycle instead.")
             }
             templates.forEach { template ->
                 val selected = template.id == templateId
@@ -776,11 +776,11 @@ fun ProgramBuilderScreen(
                     )
                 }
             }
-            Caption("Adapted to your gear and weekly volume.")
+            Caption("Adapted to your armoury and weekly volume.")
         }
 
         if (mode == "improve") {
-            SectionHeader("Which workout")
+            SectionHeader("Which rite")
             presets.forEach { preset ->
                 val selected = preset.id == (selectedPresetId ?: presetId)
                 InkPanel(
@@ -820,7 +820,7 @@ fun ProgramBuilderScreen(
         if (mode == "improve") {
             val current = improvement
             if (current == null) {
-                Caption("Reading your workout against the evidence…")
+                Caption("Reading your rite against the evidence…")
             } else {
                 // The rest of the week feeds the volume read but is NOT
                 // listed: on a five-day split it buried the diff under every
@@ -832,7 +832,7 @@ fun ProgramBuilderScreen(
                 BeforeAfter(current, stillShort = ProgramRules.TRACKED.filter { (volume[it] ?: 0.0) < floor })
                 Spacer(Modifier.height(10.dp))
                 if (others.isNotEmpty()) {
-                    val noun = if (others.size == 1) "workout" else "workouts"
+                    val noun = if (others.size == 1) "rite" else "rites"
                     Caption("Weekly volume includes your ${others.size} other $noun.")
                 }
                 WeeklyVolumePanel(week, tier, focus, priorities)
@@ -875,7 +875,7 @@ fun ProgramBuilderScreen(
                 WeeklyVolumePanel(volumePresets, tier, focus, priorities)
                 if (mode == "session" && presets.isNotEmpty()) {
                     Spacer(Modifier.height(8.dp))
-                    val noun = if (presets.size == 1) "workout" else "workouts"
+                    val noun = if (presets.size == 1) "rite" else "rites"
                     Caption("Weekly volume includes your ${presets.size} existing $noun.")
                 }
             }
@@ -886,14 +886,14 @@ fun ProgramBuilderScreen(
             "week", "template" -> {
                 Column(Modifier.fillMaxWidth()) {
                     IronvellumButton(
-                        label = "Add to my routine",
+                        label = "Add to my cycle",
                         onClick = { viewModel.addPresets(onDone) },
                         enabled = plan != null && plan!!.presets.isNotEmpty(),
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(10.dp))
                     IronvellumButton(
-                        label = "Replace my routine",
+                        label = "Replace my cycle",
                         onClick = { confirmReplace = true },
                         enabled = plan != null && plan!!.presets.isNotEmpty(),
                         quiet = true,
@@ -909,7 +909,7 @@ fun ProgramBuilderScreen(
             }
             "session" -> {
                 IronvellumButton(
-                    label = "Add this workout",
+                    label = "Add this rite",
                     onClick = { viewModel.addSession(onDone) },
                     enabled = plan != null,
                     modifier = Modifier.fillMaxWidth(),
@@ -955,11 +955,11 @@ fun ProgramBuilderScreen(
             shape = MaterialTheme.shapes.medium,
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmReplace = false },
-            title = { Text("Replace your routine?") },
+            title = { Text("Replace your cycle?") },
             text = {
                 Text(
-                    "Your ${presets.size} current ${if (presets.size == 1) "workout" else "workouts"} will be deleted " +
-                        "and the generated routine takes their place. Your workout history is untouched." +
+                    "Your ${presets.size} current ${if (presets.size == 1) "rite" else "rites"} will be deleted " +
+                        "and the forged cycle takes their place. Your Chronicle is untouched." +
                         if (viewModel.switchesProgression()) " " + viewModel.progressionLine() else "",
                 )
             },
@@ -982,7 +982,7 @@ fun ProgramBuilderScreen(
 private fun volumeSuggestion(hasHistory: Boolean, years: Double?): String {
     // Selection-independent on purpose: a saved answer can preselect
     // Standard, and "starts low" would then contradict it.
-    if (!hasHistory || years == null) return "No history yet: pick what you can recover from."
+    if (!hasHistory || years == null) return "The Chronicle is blank: pick what you can recover from."
     return "Suggested from ${historySpan(years)} of training."
 }
 

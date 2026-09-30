@@ -38,16 +38,16 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
  */
 internal fun shareRoutineCode(context: Context, code: String) {
     val clipboard = context.getSystemService(ClipboardManager::class.java)
-    clipboard?.setPrimaryClip(ClipData.newPlainText("Ironvellum routine", code))
-    Toast.makeText(context, "Routine code copied", Toast.LENGTH_SHORT).show()
+    clipboard?.setPrimaryClip(ClipData.newPlainText("Ironvellum cycle", code))
+    Toast.makeText(context, "Cycle code copied", Toast.LENGTH_SHORT).show()
     val intent = Intent(Intent.ACTION_SEND).apply {
         type = "text/plain"
         putExtra(
             Intent.EXTRA_TEXT,
-            "Ironvellum routine \u2014 paste into Train \u203A New workout \u203A Import code\n$code",
+            "Ironvellum cycle \u2014 paste into Rites \u203A New Rite \u203A Import code\n$code",
         )
     }
-    context.startActivity(Intent.createChooser(intent, "Share routine"))
+    context.startActivity(Intent.createChooser(intent, "Share cycle"))
 }
 
 /** The one-line outcome shown under the Workouts header after an import. */
@@ -57,8 +57,8 @@ internal fun importSummary(result: Repository.ImportedRoutine, replaced: Boolean
     if (result.added == 0) {
         return "Nothing imported \u2014 none of those exercises are in your exercise list.$skippedText"
     }
-    val count = if (result.added == 1) "1 workout" else "${result.added} workouts"
-    val head = if (replaced) "Routine replaced with $count." else "Added $count."
+    val count = if (result.added == 1) "1 rite" else "${result.added} rites"
+    val head = if (replaced) "Cycle replaced with $count." else "Added $count."
     return head + skippedText
 }
 
@@ -122,7 +122,7 @@ internal fun ImportRoutineDialog(
                     shape = MaterialTheme.shapes.small,
                     value = text,
                     onValueChange = { text = it.take(RoutineCode.MAX_DECODED_BYTES) },
-                    label = { Text("Routine code") },
+                    label = { Text("Cycle code") },
                     minLines = 3,
                     maxLines = 5,
                     modifier = Modifier.fillMaxWidth(),
@@ -144,7 +144,7 @@ internal fun ImportRoutineDialog(
                 if (workouts != null) {
                     Spacer(Modifier.height(4.dp))
                     IronvellumButton(
-                        label = "Add as extra workouts",
+                        label = "Add as extra rites",
                         onClick = { onImport(workouts, false) },
                         modifier = Modifier.fillMaxWidth(),
                     )
@@ -152,7 +152,7 @@ internal fun ImportRoutineDialog(
                     // covers it, and a confirm about deleting 0 workouts is noise.
                     if (currentWorkouts > 0) {
                         IronvellumButton(
-                            label = "Replace my routine",
+                            label = "Replace my cycle",
                             onClick = { confirmReplace = true },
                             modifier = Modifier.fillMaxWidth(),
                             quiet = true,
@@ -172,12 +172,12 @@ internal fun ImportRoutineDialog(
             shape = MaterialTheme.shapes.medium,
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmReplace = false },
-            title = { DialogTitle("REPLACE MY ROUTINE?") },
+            title = { DialogTitle("REPLACE MY CYCLE?") },
             text = {
-                val now = if (currentWorkouts == 1) "your 1 workout" else "all $currentWorkouts of your workouts"
+                val now = if (currentWorkouts == 1) "your 1 rite" else "all $currentWorkouts of your rites"
                 Text(
                     "This deletes $now and their schedule, then adds the ${workouts.size} from this code. " +
-                        "Logged workouts are kept.",
+                        "Sealed trials stay in the Chronicle.",
                     style = MaterialTheme.typography.bodyMedium,
                 )
             },

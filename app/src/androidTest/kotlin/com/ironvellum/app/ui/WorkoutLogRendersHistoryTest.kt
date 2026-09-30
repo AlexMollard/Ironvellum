@@ -82,9 +82,9 @@ class WorkoutLogRendersHistoryTest {
 
     @Test
     fun theLogListsACompletedSessionUnderItsMonth() {
-        compose.onAllNodesWithContentDescription("Train").onFirst().performClick()
+        compose.onAllNodesWithContentDescription("Rites").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-        compose.onAllNodesWithText("FULL LOG", substring = true).onFirst().performClick()
+        compose.onAllNodesWithText("FULL CHRONICLE", substring = true).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         val onScreen = compose.onAllNodesWithText("", substring = true).fetchSemanticsNodes().size
@@ -112,9 +112,9 @@ class WorkoutLogRendersHistoryTest {
             plannedSetCount > 1,
         )
 
-        compose.onAllNodesWithContentDescription("Train").onFirst().performClick()
+        compose.onAllNodesWithContentDescription("Rites").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-        compose.onAllNodesWithText("FULL LOG", substring = true).onFirst().performClick()
+        compose.onAllNodesWithText("FULL CHRONICLE", substring = true).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         // The ledger pluralises its own label, so one set trained reads "SET".

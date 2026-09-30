@@ -255,7 +255,7 @@ private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls,
     val active = buildList<Pair<String, () -> Unit>> {
         f.group?.let { add(it.name to { controls.filters = controls.filters.copy(group = null) }) }
         f.category?.let { add(it.uppercase() to { controls.filters = controls.filters.copy(category = null) }) }
-        if (equipment != null && f.myGear) add("MY GEAR" to { controls.filters = controls.filters.copy(myGear = false) })
+        if (equipment != null && f.myGear) add("MY ARMOURY" to { controls.filters = controls.filters.copy(myGear = false) })
         f.facet?.let { add(it.label to { controls.filters = controls.filters.copy(facet = null) }) }
     }
     Column {
@@ -282,10 +282,10 @@ private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls,
                 }
             }
         }
-        FilterGroup("GEAR") {
+        FilterGroup("ARMOURY") {
             // Absent without saved equipment: nothing to filter by.
             if (equipment != null) {
-                FilterChip("MY GEAR", f.myGear) { controls.filters = f.copy(myGear = !f.myGear) }
+                FilterChip("MY ARMOURY", f.myGear) { controls.filters = f.copy(myGear = !f.myGear) }
             }
             EquipmentFacet.entries.forEach { facet ->
                 FilterChip(facet.label, f.facet == facet) {
@@ -392,9 +392,9 @@ private fun LazyListScope.exerciseRows(
             // its own line, because the fix (FILTERS) is not the words.
             Text(
                 when {
-                    gearHidAll -> "Nothing your gear covers — tap FILTERS to show all gear"
-                    query.isNotBlank() -> "No exercise matches \"$query\""
-                    else -> "No exercise matches the filters set"
+                    gearHidAll -> "Nothing your armoury covers — tap FILTERS to show everything"
+                    query.isNotBlank() -> "The Ledger holds no exercise matching \"$query\""
+                    else -> "The Ledger holds no exercise for these filters"
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -534,7 +534,7 @@ private fun PickerRow(
                     if (skill != null) {
                         append(" · ")
                         withStyle(SpanStyle(color = IronvellumColors.SystemGreen)) {
-                            append("skill ${Skills.tierLabel(skill.tier)} ${skill.line}")
+                            append("technique ${Skills.tierLabel(skill.tier)} ${skill.line}")
                         }
                     }
                 },

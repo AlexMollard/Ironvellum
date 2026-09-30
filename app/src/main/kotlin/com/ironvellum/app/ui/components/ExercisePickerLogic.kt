@@ -14,7 +14,7 @@ internal data class PickerFilters(
     /** Hide what the lifter's saved gear cannot do; ignored without saved gear. */
     val myGear: Boolean = false,
 ) {
-    /** Chips that narrow by content. "My gear" is a standing default, not a search step. */
+    /** Chips that narrow by content. "My armoury" is a standing default, not a search step. */
     val narrows: Boolean get() = group != null || category != null || facet != null
 }
 

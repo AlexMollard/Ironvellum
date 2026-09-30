@@ -71,7 +71,7 @@ fun MeasurementsPanel(
         // the grid is entirely empty; empty tiles show a muted dash.
         if (!anyReadings) {
             Text(
-                "Tap a site to take its first measurement.",
+                "Tap a site to take its first reading.",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(bottom = 6.dp),
@@ -98,7 +98,7 @@ fun MeasurementsPanel(
         }
         Spacer(Modifier.height(4.dp))
         Text(
-            "SEALED TO THIS DEVICE — body measurements never leave your phone. " +
+            "STAYS ON THIS DEVICE — your readings never leave this device. " +
                 "They are excluded from cloud sync by design; the JSON archive is yours alone.",
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,

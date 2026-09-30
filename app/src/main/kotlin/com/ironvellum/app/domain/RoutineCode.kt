@@ -92,7 +92,7 @@ object RoutineCode {
     }
 
     fun decode(text: String): Result<List<SharedWorkout>> {
-        if (text.length > MAX_TEXT_CHARS) return fail("That text is too long to be a routine code.")
+        if (text.length > MAX_TEXT_CHARS) return fail("That text is too long to be a cycle code.")
         val start = text.indexOf(PREFIX)
         if (start < 0) {
             // "IVR2:" from a newer app is a different failure from "not a code".
@@ -100,7 +100,7 @@ object RoutineCode {
             return if (other != null) {
                 fail("This code comes from a different version of Ironvellum. Update the app and try again.")
             } else {
-                fail("No routine code found. Paste the whole message — it starts with IVR1:")
+                fail("No cycle code found. Paste the whole message — it starts with IVR1:")
             }
         }
         // Chat apps put text on both sides; the code is the run of URL-safe
@@ -108,7 +108,7 @@ object RoutineCode {
         var end = start + PREFIX.length
         while (end < text.length && isCodeChar(text[end])) end++
         val body = text.substring(start + PREFIX.length, end)
-        if (body.isEmpty()) return fail("The routine code is empty.")
+        if (body.isEmpty()) return fail("The cycle code is empty.")
 
         val packed = try {
             Base64.getUrlDecoder().decode(body)
@@ -117,7 +117,7 @@ object RoutineCode {
         }
         val json = when (val result = inflate(packed)) {
             is Inflated.Ok -> result.text
-            Inflated.TooBig -> return fail("This routine is too large to import.")
+            Inflated.TooBig -> return fail("This cycle is too large to import.")
             Inflated.Corrupt -> return fail(CORRUPT)
         }
         return try {
@@ -131,7 +131,7 @@ object RoutineCode {
 
     private fun isCodeChar(c: Char) = c in 'A'..'Z' || c in 'a'..'z' || c in '0'..'9' || c == '-' || c == '_'
 
-    private const val CORRUPT = "The routine code is damaged or cut short. Copy it again and paste the whole thing."
+    private const val CORRUPT = "The cycle code is damaged or cut short. Copy it again and paste the whole thing."
 
     private fun fail(message: String): Result<List<SharedWorkout>> =
         Result.failure(IllegalArgumentException(message))
@@ -166,7 +166,7 @@ object RoutineCode {
 
     private class CodeException(message: String) : RuntimeException(message)
 
-    private fun bad(what: String): Nothing = throw CodeException("The routine code has $what. Ask for a fresh one.")
+    private fun bad(what: String): Nothing = throw CodeException("The cycle code has $what. Ask for a fresh one.")
 
     private fun read(json: String): List<SharedWorkout> {
         val root = Parser(json).parseDocument() as? Map<*, *> ?: bad("an unreadable layout")
@@ -174,23 +174,23 @@ object RoutineCode {
         if (version != FORMAT) {
             throw CodeException("This code comes from a different version of Ironvellum. Update the app and try again.")
         }
-        val workouts = root["w"] as? List<*> ?: bad("no workouts")
-        if (workouts.isEmpty()) bad("no workouts")
+        val workouts = root["w"] as? List<*> ?: bad("no rites")
+        if (workouts.isEmpty()) bad("no rites")
         if (workouts.size > MAX_WORKOUTS) {
-            throw CodeException("This routine has more than $MAX_WORKOUTS workouts, which is more than Ironvellum imports.")
+            throw CodeException("This cycle has more than $MAX_WORKOUTS rites, which is more than Ironvellum imports.")
         }
         return workouts.map { raw ->
-            val o = raw as? Map<*, *> ?: bad("an unreadable workout")
+            val o = raw as? Map<*, *> ?: bad("an unreadable rite")
             val name = (o["n"] as? String)?.trim().orEmpty()
-            if (name.isEmpty()) bad("a workout without a name")
+            if (name.isEmpty()) bad("a rite without a name")
             val day = when (val d = o["d"]) {
                 null -> null
                 is Double -> d.toInt().takeIf { it.toDouble() == d && it in 1..7 } ?: bad("an invalid day")
                 else -> bad("an invalid day")
             }
-            val entries = o["e"] as? List<*> ?: bad("a workout without exercises")
+            val entries = o["e"] as? List<*> ?: bad("a rite without exercises")
             if (entries.size > MAX_ENTRIES) {
-                throw CodeException("A workout in this routine has more than $MAX_ENTRIES exercises, which is more than Ironvellum imports.")
+                throw CodeException("A rite in this cycle has more than $MAX_ENTRIES exercises, which is more than Ironvellum imports.")
             }
             SharedWorkout(
                 name = name.take(NAME_MAX),

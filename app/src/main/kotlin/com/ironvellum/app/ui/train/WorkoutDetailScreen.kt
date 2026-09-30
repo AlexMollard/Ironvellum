@@ -164,7 +164,7 @@ fun WorkoutDetailScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "WORKOUT RECORD",
+                "TRIAL",
                 style = MaterialTheme.typography.labelLarge,
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = IronvellumTracking.ScreenTitle,
@@ -180,7 +180,7 @@ fun WorkoutDetailScreen(
                 }) {
                     Icon(
                         Icons.Outlined.IosShare,
-                        contentDescription = "Share this workout",
+                        contentDescription = "Share this trial",
                         tint = IronvellumColors.Emerald,
                     )
                 }
@@ -212,7 +212,7 @@ fun WorkoutDetailScreen(
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                     Text(
-                        "WORKOUT NOT FOUND",
+                        "TRIAL NOT FOUND",
                         style = MaterialTheme.typography.titleMedium,
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
@@ -220,7 +220,7 @@ fun WorkoutDetailScreen(
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "This workout may have been deleted.",
+                        "This trial may have been deleted.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.InkMuted,
                     )
@@ -233,7 +233,7 @@ fun WorkoutDetailScreen(
                 DetailHeader(session, ui.energy, showBasis) { showBasis = !showBasis }
                 AudiencePicker(session.audience, viewModel::setAudience)
                 if (session.note.isNotBlank()) {
-                    SectionHeader("FIELD NOTE · SHARED")
+                    SectionHeader("NOTE · SHARED WITH ALLIES")
                     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
                         Text(
                             session.note,
@@ -243,7 +243,7 @@ fun WorkoutDetailScreen(
                     }
                 }
                 if (session.privateNote.isNotBlank()) {
-                    SectionHeader("SEALED NOTE · PRIVATE")
+                    SectionHeader("PRIVATE NOTE")
                     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
@@ -283,15 +283,15 @@ fun WorkoutDetailScreen(
 /**
  * Who may see this one workout in the cloud. The stricter of this and the
  * profile visibility wins, so PROFILE is "whatever my profile says".
- * "PROFILE", not "PROFILE SETTING": a third of a 360dp row clipped the longer
+ * "FOLIO", not "FOLIO SETTING": a third of a 360dp row clipped the longer
  * label mid-word, and the line below names the setting it follows.
  */
 @Composable
 private fun AudiencePicker(audience: SessionAudience, onPick: (SessionAudience) -> Unit) {
-    SectionHeader("Who sees this workout")
+    SectionHeader("Who sees this trial")
     InkSegmented(
         options = listOf(
-            SessionAudience.PROFILE to "PROFILE",
+            SessionAudience.PROFILE to "FOLIO",
             SessionAudience.FRIENDS to "ALLIES",
             SessionAudience.PRIVATE to "ONLY ME",
         ),
@@ -301,8 +301,8 @@ private fun AudiencePicker(audience: SessionAudience, onPick: (SessionAudience) 
     Spacer(Modifier.height(6.dp))
     Text(
         when (audience) {
-            SessionAudience.PROFILE -> "Follows your profile visibility on the ALLIES tab."
-            SessionAudience.FRIENDS -> "Only allies see it, even on a public profile."
+            SessionAudience.PROFILE -> "Follows your folio's visibility on the ALLIES tab."
+            SessionAudience.FRIENDS -> "Only allies see it, even on a public folio."
             SessionAudience.PRIVATE -> "Only you see it."
         },
         style = MaterialTheme.typography.labelSmall,
@@ -376,7 +376,7 @@ private fun DetailHeader(
             energy.missing.forEach { name ->
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Log $name for a sharper estimate.",
+                    "Add a $name reading for a sharper estimate.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.SovereignGold,
                 )
@@ -395,7 +395,7 @@ private fun energyBasisCopy(energy: EnergyEstimate): String = when (energy.confi
     EnergyConfidence.MEASURED -> "Measured by Health Connect — not an estimate."
     EnergyConfidence.ESTIMATED -> "Estimated: ${energy.basis}. MET values come from the Compendium of Physical Activities."
     // Lifting logs reps, not minutes, so working time is inferred from set count.
-    EnergyConfidence.COARSE -> "Rough estimate: ${energy.basis}. Sets log no minutes, so working time is inferred from set count."
+    EnergyConfidence.COARSE -> "Rough estimate: ${energy.basis}. Sets carry no minutes, so working time is inferred from set count."
 }
 
 @Composable

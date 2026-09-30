@@ -99,6 +99,7 @@ import com.ironvellum.app.ui.theme.FIXED_FONT_SCALE
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -224,7 +225,7 @@ class DashboardViewModel(
     }
 
     fun beginPreset(presetId: Long, onStarted: (Long) -> Unit) {
-        viewModelScope.launchGuarded("begin preset") { onStarted(repo.startSessionFromPreset(presetId)) }
+        viewModelScope.launchGuarded("begin rite") { onStarted(repo.startSessionFromPreset(presetId)) }
     }
 }
 
@@ -354,7 +355,7 @@ fun DashboardScreen(
                             ) { onOpenCodex() },
                     ) {
                         Text(
-                            (profile?.name ?: "Lifter").uppercase(),
+                            (profile?.name ?: "Ironbound").uppercase(),
                             style = MaterialTheme.typography.headlineMedium,
                             fontFamily = ChakraPetch,
                             fontWeight = FontWeight.Bold,
@@ -364,25 +365,28 @@ fun DashboardScreen(
                             maxLines = 1,
                         )
                         val worn = profile?.currentTitleId?.let { Titles.byId(it)?.name }
+                        // Strength Rank and ascension are two labelled values,
+                        // never joined into one phrase.
                         Text(
-                            // "the " costs four characters and says nothing:
-                            // without it "Intermediate · Grand Marshal" holds
-                            // one line on a 320dp screen, where it used to wrap
-                            // under itself.
-                            "${Rank.forLevel(progress.level)} · " +
-                                ArmyClass.forLevel(progress.level).title.removePrefix("the "),
+                            "STRENGTH RANK · ${Rank.forLevel(progress.level)}",
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
-                            // No tracking: labelMedium's 2sp over
-                            // "Intermediate · Grand Marshal" is 56dp of pure
-                            // letter spacing, which wrapped the line in two at
-                            // 360dp and crowded the worn title underneath it.
+                            // No tracking: labelMedium's 2sp is pure letter
+                            // spacing that wrapped the line at 360dp and
+                            // crowded the worn title underneath it.
                             letterSpacing = 0.sp,
                             color = IronvellumColors.SystemGreen,
-                            // One line CLIPPED mid-word at a large font scale:
-                            // "Intermediate · Grand" instead of the full
-                            // "Intermediate · Grand Marshal". The class is
-                            // earned, so it wraps rather than vanishes.
+                            // Earned, so it wraps at a large font scale
+                            // rather than clipping mid-word.
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Text(
+                            "ASCENSION · ${ArmyClass.forLevel(progress.level).title}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = ChakraPetch,
+                            letterSpacing = 0.sp,
+                            color = IronvellumColors.SystemGreen,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -483,11 +487,11 @@ fun DashboardScreen(
                         )
                         StepsAsOf(ui.stepsSyncedAtMs, today)
                         GaugeStat(
-                            label = "STREAK",
+                            label = "OATH",
                             value = if (ui.streak > 0) "${ui.streak}d" else "—",
                             accent = if (ui.streak > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                             fraction = (ui.streak / 7f).coerceIn(0f, 1f),
-                            note = if (ui.streak > 0) null else "log a day to start it",
+                            note = if (ui.streak > 0) null else "seal a trial to swear it",
                         )
                     }
                 } else {
@@ -506,14 +510,14 @@ fun DashboardScreen(
                     }
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         GaugeStat(
-                            label = "STREAK",
+                            label = "OATH",
                             value = if (ui.streak > 0) "${ui.streak}d" else "—",
                             accent = if (ui.streak > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                             fraction = (ui.streak / 7f).coerceIn(0f, 1f),
-                            note = if (ui.streak > 0) null else "log a day to start it",
+                            note = if (ui.streak > 0) null else "seal a trial to swear it",
                         )
                         GaugeStat(
-                            label = "TITLES",
+                            label = "DEEDS",
                             value = "${ui.unlockedCount}/${Titles.ALL.size}",
                             accent = IronvellumColors.EmeraldBright,
                             fraction = (ui.unlockedCount.toFloat() / Titles.ALL.size).coerceIn(0f, 1f),
@@ -717,7 +721,7 @@ fun DashboardScreen(
                             )
                         }
                         Text(
-                            "QUEST COMPLETE",
+                            "SEALED",
                             style = MaterialTheme.typography.headlineSmall,
                             fontFamily = ChakraPetch,
                             fontWeight = FontWeight.Bold,
@@ -725,7 +729,7 @@ fun DashboardScreen(
                             letterSpacing = 1.sp,
                         )
                         Text(
-                            "The Ledger is satisfied. A new quest rises tomorrow.",
+                            "The ink is dry on today's trial. Tomorrow's page waits.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -851,8 +855,8 @@ fun DashboardScreen(
                         // continued, never offered as a fresh start.
                         label = when {
                             resume != null -> "Continue ${resume.label}"
-                            isTodaySelected -> "Accept Quest"
-                            else -> "Start Workout"
+                            isTodaySelected -> "Begin Trial"
+                            else -> "Begin Trial"
                         },
                         onClick = {
                             if (resume != null) onStartSession(resume.id)
@@ -866,7 +870,7 @@ fun DashboardScreen(
                 // day reads REST DAY and "pick another day above" dead-ends on
                 // the same card. Name the real state and offer the way out.
                 Text(
-                    "NO ROUTINE YET",
+                    "NO CYCLE YET",
                     style = MaterialTheme.typography.headlineSmall,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.Bold,
@@ -874,15 +878,15 @@ fun DashboardScreen(
                     letterSpacing = 1.sp,
                 )
                 Text(
-                    "Nothing is scheduled. Build a routine and it lands here.",
+                    "Your cycle is unwritten. Build one and its rites land here.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
                 Spacer(Modifier.weight(1f))
-                IronvellumButton(label = "Build a Routine", onClick = onOpenPresets, modifier = Modifier.fillMaxWidth())
+                IronvellumButton(label = "Build a Cycle", onClick = onOpenPresets, modifier = Modifier.fillMaxWidth())
             } else {
                 Text(
-                    "REST DAY",
+                    "RESPITE",
                     style = MaterialTheme.typography.headlineSmall,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.Bold,
@@ -891,7 +895,7 @@ fun DashboardScreen(
                 )
                 // Owner rule: a rest day keeps the streak and says so.
                 Text(
-                    if (ui.streak > 0) "Rest up — your ${ui.streak}-day streak is safe." else "Rest up.",
+                    if (ui.streak > 0) "Your oath holds through respite — ${plural(ui.streak, "1 day", "${ui.streak} days")} kept." else "A day of respite.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -953,7 +957,7 @@ fun DashboardScreen(
                     MaterialTheme.shapes.extraSmall,
                     1.dp,
                 )
-                .clickable(onClickLabel = "Open the Garrison") { onOpenGarrison() }
+                .clickable(onClickLabel = "Open the Veil") { onOpenGarrison() }
                 .heightIn(min = 54.dp)
                 .padding(start = 14.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -966,7 +970,7 @@ fun DashboardScreen(
                 modifier = Modifier.size(18.dp),
             )
             Text(
-                "GARRISON",
+                "THE VEIL",
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.Ink,
                 style = MaterialTheme.typography.labelMedium,
@@ -1011,9 +1015,9 @@ fun DashboardScreen(
     AchievementOverlay(
         items = owed.map { def ->
             Achievement(
-                // Noun contract: a title is unlocked; "deed claimed" is Codex
-                // language only, and this payout happens outside it.
-                banner = "TITLE UNLOCKED",
+                // Noun contract: a deed is earned; "Claim" belongs to
+                // technique mastery only.
+                banner = "DEED EARNED",
                 name = def.name,
                 subtitle = def.describeFor(sex).uppercase(),
             )

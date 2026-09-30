@@ -190,7 +190,7 @@ internal class CommentsViewModel(
         viewModelScope.launch {
             val row = cloud.friends().getOrNull()?.firstOrNull { it.userId == userId }
             _ui.value = _ui.value.copy(
-                owner = OwnerIdentity(userId, row?.displayName ?: "Lifter", row?.level, row?.currentTitleId),
+                owner = OwnerIdentity(userId, row?.displayName ?: "Ironbound", row?.level, row?.currentTitleId),
             )
         }
     }
@@ -314,7 +314,7 @@ internal fun CommentsScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        PushedHeader("WORKOUT", onBack)
+        PushedHeader("TRIAL", onBack)
 
         val err = ui.error
         LazyColumn(
@@ -329,7 +329,7 @@ internal fun CommentsScreen(
                     isMe = isMe,
                     onOpenLifter = {
                         val owner = ui.owner
-                        onOpenLifter(owner?.userId ?: lifterId, owner?.name ?: "Lifter")
+                        onOpenLifter(owner?.userId ?: lifterId, owner?.name ?: "Ironbound")
                     },
                     onRetry = { viewModel.loadWorkout(force = true) },
                 )
@@ -339,7 +339,7 @@ internal fun CommentsScreen(
                 if (workout.exercises.isEmpty()) {
                     item(key = "work-empty") {
                         Text(
-                            "No sets were shared with this workout.",
+                            "No sets were shared with this trial.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -349,7 +349,7 @@ internal fun CommentsScreen(
                     ExercisePanel(exercise)
                 }
             }
-            item(key = "reactions-header") { SectionHeader("REACTIONS") }
+            item(key = "reactions-header") { SectionHeader("TRIBUTES") }
             item(key = "reactions") {
                 ReactionsPanel(
                     ui = ui,
@@ -357,7 +357,7 @@ internal fun CommentsScreen(
                     onRetry = viewModel::loadReactions,
                 )
             }
-            item(key = "comments-header") { SectionHeader("COMMENTS") }
+            item(key = "comments-header") { SectionHeader("REMARKS") }
             when {
                 ui.loading && ui.comments.isEmpty() -> item(key = "comments-loading") {
                     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
@@ -383,7 +383,7 @@ internal fun CommentsScreen(
                 ui.comments.isEmpty() -> item(key = "comments-empty") {
                     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
                         Text(
-                            "No comments yet — say something first.",
+                            "No remarks yet — say something first.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -427,7 +427,7 @@ internal fun CommentsScreen(
                 shape = MaterialTheme.shapes.small,
                 value = ui.draft,
                 onValueChange = viewModel::onDraft,
-                label = { Text("Comment") },
+                label = { Text("Remark") },
                 maxLines = 4,
                 modifier = Modifier.weight(1f),
             )
@@ -451,7 +451,7 @@ internal fun CommentsScreen(
             shape = MaterialTheme.shapes.medium,
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmDelete = null },
-            title = { Text("Delete this comment?") },
+            title = { Text("Delete this remark?") },
             text = { Text("It disappears for everyone. This can't be undone.") },
             confirmButton = {
                 IronvellumButton(label = "Delete", onClick = {
@@ -503,7 +503,7 @@ private fun WorkoutHeaderPanel(
             Spacer(Modifier.height(10.dp))
         }
         Text(
-            workout?.headline?.ifBlank { null } ?: headline.ifBlank { "Workout" },
+            workout?.headline?.ifBlank { null } ?: headline.ifBlank { "Trial" },
             style = MaterialTheme.typography.headlineSmall,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -547,7 +547,7 @@ private fun WorkoutHeaderPanel(
             else -> {
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Reading the workout…",
+                    "Opening the trial…",
                     style = MaterialTheme.typography.bodySmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
@@ -696,7 +696,7 @@ private fun ReactionsPanel(ui: CommentsUi, onPick: (Reaction?) -> Unit, onRetry:
         ui.reactionError?.let {
             Spacer(Modifier.height(6.dp))
             Text(
-                "Reaction not saved: $it",
+                "Tribute not saved: $it",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.DangerRed,
@@ -710,19 +710,19 @@ private fun ReactionsPanel(ui: CommentsUi, onPick: (Reaction?) -> Unit, onRetry:
                 SocialRefreshLink(onClick = onRetry, label = "Try again")
             }
             likers == null -> Text(
-                "Reading the cheers…",
+                "Reading the tributes…",
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
             )
             likers.isEmpty() -> Text(
-                "No cheers yet.",
+                "No tributes yet.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
             else -> {
                 Text(
-                    "WHO CHEERED",
+                    "WHO PAID TRIBUTE",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.EmeraldBright,
@@ -779,7 +779,7 @@ private fun CommentRow(
             horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Text(
-                comment.authorName.ifBlank { "LIFTER" },
+                comment.authorName.ifBlank { "IRONBOUND" },
                 style = MaterialTheme.typography.labelLarge,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
@@ -790,7 +790,7 @@ private fun CommentRow(
                     .weight(1f, fill = false)
                     .heightIn(min = 44.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable(role = Role.Button, onClickLabel = "Open lifter") { onOpenLifter() }
+                    .clickable(role = Role.Button, onClickLabel = "Open folio") { onOpenLifter() }
                     .wrapContentHeight(),
             )
             Text(
@@ -881,7 +881,7 @@ internal fun ReportDialog(
         shape = MaterialTheme.shapes.medium,
         containerColor = Color(0xFF0D1110),
         onDismissRequest = onDismiss,
-        title = { Text("Report ${lifterName.ifBlank { "this lifter" }}") },
+        title = { Text("Report ${lifterName.ifBlank { "this Ironbound" }}") },
         text = {
             Column {
                 Text(

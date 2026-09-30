@@ -49,7 +49,7 @@ class SkillPracticeFlowTest {
     @Test
     fun aLoggedAttemptReachesTheJournal() {
         driver.tab("Codex")
-        driver.click(driver.awaitAnyText { it == "SKILL TREE" })
+        driver.click(driver.awaitAnyText { it == "PATHS" })
 
         // Dead Hang is the root of the PULL line, so it is always unlocked and
         // always the first practisable skill on a fresh profile.

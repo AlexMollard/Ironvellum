@@ -133,15 +133,15 @@ class PresetsViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun begin(presetId: Long, onStarted: (Long) -> Unit) {
-        viewModelScope.launchGuarded("begin preset") { onStarted(repo.startSessionFromPreset(presetId)) }
+        viewModelScope.launchGuarded("begin rite") { onStarted(repo.startSessionFromPreset(presetId)) }
     }
 
     fun beginQuick(onStarted: (Long) -> Unit) {
-        viewModelScope.launch { onStarted(repo.startFreeformSession("Quick Workout")) }
+        viewModelScope.launch { onStarted(repo.startFreeformSession("Open Trial")) }
     }
 
     fun shareRoutine(onCode: (String) -> Unit) {
-        viewModelScope.launchGuarded("share routine") { onCode(RoutineCode.encode(repo.sharedRoutine())) }
+        viewModelScope.launchGuarded("share cycle") { onCode(RoutineCode.encode(repo.sharedRoutine())) }
     }
 
     /** The write is one transaction, so a failure leaves the routine as it was. */
@@ -204,14 +204,14 @@ fun PresetsScreen(
         ) {
             Spacer(Modifier.height(20.dp))
             Text(
-                "TRAINING GROUNDS",
+                "YOUR RITES",
                 style = MaterialTheme.typography.labelLarge,
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = 6.sp,
             )
             Spacer(Modifier.height(12.dp))
             IronvellumButton(
-                label = "Quick Workout",
+                label = "Open Trial",
                 onClick = { viewModel.beginQuick(onQuickSession) },
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -237,16 +237,16 @@ fun PresetsScreen(
                     modifier = Modifier.weight(1f),
                 )
                 NavChip(
-                    label = "FULL LOG",
+                    label = "FULL CHRONICLE",
                     icon = Icons.Outlined.History,
                     onClick = onOpenLog,
                     modifier = Modifier.weight(1f),
                 )
             }
-            SectionHeader("Workouts")
+            SectionHeader("Rites")
             if (ui.presets.isEmpty()) {
                 Text(
-                    "No workouts yet. Build your first training day.",
+                    "No rites are written yet. Build your first one.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -388,7 +388,7 @@ fun PresetsScreen(
             if (ui.presets.isNotEmpty()) {
                 val context = androidx.compose.ui.platform.LocalContext.current
                 IronvellumButton(
-                    label = "Share routine",
+                    label = "Share cycle",
                     onClick = { viewModel.shareRoutine { code -> shareRoutineCode(context, code) } },
                     modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
                     quiet = true,
@@ -406,7 +406,7 @@ fun PresetsScreen(
                     .clickable(
                         interactionSource = remember { MutableInteractionSource() },
                         indication = null,
-                        onClickLabel = "New workout",
+                        onClickLabel = "New Rite",
                     ) { showNewChooser = true },
             ) {
                 Row(
@@ -421,7 +421,7 @@ fun PresetsScreen(
                     )
                     Spacer(Modifier.width(8.dp))
                     Text(
-                        "NEW WORKOUT",
+                        "NEW RITE",
                         style = MaterialTheme.typography.labelMedium,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.SystemGreen,
@@ -433,10 +433,10 @@ fun PresetsScreen(
             // Was "Activity Log", which collided head-on with the Stats
             // screen's ACTIVITY tab (steps and sleep) - the owner kept going
             // there hunting for his workouts.
-            SectionHeader("Recent Workouts")
+            SectionHeader("Recent Trials")
             if (ui.history.isEmpty()) {
                 Text(
-                    "No workouts logged yet — finish one and it lands here.",
+                    "The Chronicle is blank. Seal a trial and it lands here.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -486,7 +486,7 @@ fun PresetsScreen(
             onDismissRequest = { showNewChooser = false },
             title = {
                 Text(
-                    "NEW WORKOUT",
+                    "NEW RITE",
                     style = MaterialTheme.typography.labelLarge,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.SystemGreen,
@@ -496,15 +496,15 @@ fun PresetsScreen(
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     val options = buildList {
-                        add("Blank workout" to { showNewChooser = false; onNew() })
-                        add("Start from a template" to { showNewChooser = false; onGenerate("template", null) })
+                        add("Blank Rite" to { showNewChooser = false; onNew() })
+                        add("Start from a pattern" to { showNewChooser = false; onGenerate("template", null) })
                         add("Import code" to { showNewChooser = false; showImport = true })
-                        add("Generate a routine" to { showNewChooser = false; onGenerate("week", null) })
-                        add("Generate one workout" to { showNewChooser = false; onGenerate("session", null) })
+                        add("Forge a Cycle" to { showNewChooser = false; onGenerate("week", null) })
+                        add("Forge a Rite" to { showNewChooser = false; onGenerate("session", null) })
                         // Improving needs a target: nothing to improve on an
                         // empty board.
                         if (ui.presets.isNotEmpty()) {
-                            add("Improve a workout" to { showNewChooser = false; onGenerate("improve", null) })
+                            add("Temper a Rite" to { showNewChooser = false; onGenerate("improve", null) })
                         }
                     }
                     options.forEach { (label, action) ->
@@ -593,7 +593,7 @@ private fun WeeklyCoverageCard(
             }
             Text(
                 when {
-                    ui.plannedPresets.isEmpty() -> "NO ROUTINE YET"
+                    ui.plannedPresets.isEmpty() -> "NO CYCLE YET"
                     gaps == 0 -> "ALL COVERED"
                     else -> "$gaps SHORT OR MISSING"
                 },
@@ -606,7 +606,7 @@ private fun WeeklyCoverageCard(
         Spacer(Modifier.height(8.dp))
         if (ui.plannedPresets.isEmpty()) {
             Text(
-                "Build a routine to see which muscles it covers.",
+                "Build a cycle to see which muscles it covers.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

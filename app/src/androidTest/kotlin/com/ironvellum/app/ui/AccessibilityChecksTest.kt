@@ -344,7 +344,7 @@ class AccessibilityChecksTest {
     fun longScreensExposeTheirSectionsAsHeadings() {
         val without = mutableListOf<String>()
         // Muster is no longer a tab: it opens from Today's footer.
-        for (path in listOf(listOf("Stats"), listOf("Today", "GARRISON"), listOf("Train"))) {
+        for (path in listOf(listOf("Ledger"), listOf("Today", "THE VEIL"), listOf("Rites"))) {
             returnToNavigation()
             compose.onNodeWithContentDescription(path.first()).performClick()
             if (path.drop(1).any { !openSurface(it) }) {
@@ -363,7 +363,7 @@ class AccessibilityChecksTest {
         firstOrNull { it.key == key }?.value as? T
 
     private companion object {
-        val DESTINATIONS = listOf("Train", "Stats", "Codex", "Allies", "Today")
+        val DESTINATIONS = listOf("Rites", "Ledger", "Codex", "Allies", "Today")
 
         /**
          * Click paths: the destination's content description, then each label
@@ -371,33 +371,33 @@ class AccessibilityChecksTest {
          * never depends on a signed-in session.
          */
         val DEEPER_SURFACES = listOf(
-            listOf("Codex", "SKILL TREE"),
+            listOf("Codex", "PATHS"),
             listOf("Codex", "JOURNAL"),
-            listOf("Stats", "DETAIL"),
-            listOf("Stats", "TRAINING"),
-            listOf("Stats", "DAILY"),
-            listOf("Train", "EXERCISES"),
-            listOf("Train", "FULL LOG"),
+            listOf("Ledger", "DETAIL"),
+            listOf("Ledger", "TRAINING"),
+            listOf("Ledger", "DAILY"),
+            listOf("Rites", "EXERCISES"),
+            listOf("Rites", "FULL CHRONICLE"),
             // Two levels down, and the densest screens in the app: the skill
             // sheet and the preset editor are wall-to-wall glyph steppers,
             // which is exactly where an unannounceable control hides.
-            listOf("Codex", "SKILL TREE", "Dead Hang"),
+            listOf("Codex", "PATHS", "Dead Hang"),
             // The load stepper only composes once load is on: reach it through
             // its own entry point rather than leaving those glyphs unmeasured.
-            listOf("Codex", "SKILL TREE", "Dead Hang", "ADD LOAD"),
-            listOf("Train", "[ EDIT ]"),
+            listOf("Codex", "PATHS", "Dead Hang", "ADD LOAD"),
+            listOf("Rites", "[ EDIT ]"),
             // Settings and the Muster roll replace the nav bar, so they go late.
             listOf("Today", "Settings"),
-            listOf("Today", "GARRISON"),
+            listOf("Today", "THE VEIL"),
             // Truly last: starting a session leaves a live trial whose abandon
             // prompt sits between the sweep and the nav bar.
-            listOf("Train", "QUICK WORKOUT"),
+            listOf("Rites", "OPEN TRIAL"),
         )
 
         /** destination to the tab labels of one row inside it. */
         val TAB_ROWS = listOf(
-            "Codex" to listOf("DEEDS", "SKILL TREE", "JOURNAL"),
-            "Stats" to listOf("BODY", "TRAINING", "DAILY"),
+            "Codex" to listOf("DEEDS", "PATHS", "JOURNAL"),
+            "Ledger" to listOf("FRAME", "TRAINING", "DAILY"),
         )
         const val FRAME_BUDGET_MS = 1_200L
         const val MIN_TARGET_DP = 48f

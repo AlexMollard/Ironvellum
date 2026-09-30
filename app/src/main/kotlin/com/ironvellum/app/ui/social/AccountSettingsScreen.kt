@@ -110,7 +110,7 @@ fun AccountSettingsScreen(
         PushedHeader("ACCOUNT", onBack)
 
         SettingsGroup("PROFILE") {
-            TapRow(onClickLabel = "Edit display name", onClick = { editingName = true }) {
+            TapRow(onClickLabel = "Edit true name", onClick = { editingName = true }) {
                 Column(Modifier.weight(1f)) {
                     Text(
                         acct.displayName,
@@ -148,9 +148,9 @@ fun AccountSettingsScreen(
             Spacer(Modifier.height(8.dp))
             Text(
                 when (acct.visibility) {
-                    "public" -> "Every lifter on the board can read your workouts."
-                    "friends" -> "Only your allies can read your workouts."
-                    else -> "No one but you can read your workouts."
+                    "public" -> "Every Ironbound can read your trials."
+                    "friends" -> "Only your allies can read your trials."
+                    else -> "No one but you can read your trials."
                 },
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
@@ -169,10 +169,10 @@ fun AccountSettingsScreen(
                     val outcome = ui.lastSync
                     Text(
                         if (outcome == null) {
-                            "Uploads after each workout"
+                            "Uploads after each trial"
                         } else {
                             buildString {
-                                append("Pushed ${outcome.sessions} ${plural(outcome.sessions, "workout", "workouts")} · ")
+                                append("Pushed ${outcome.sessions} ${plural(outcome.sessions, "trial", "trials")} · ")
                                 append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
                                 append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
                                 if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
@@ -236,8 +236,8 @@ fun AccountSettingsScreen(
             var confirmRestore by remember { mutableStateOf(false) }
             if (confirmRestore) {
                 Text(
-                    "This replaces EVERYTHING logged on this phone — workouts, " +
-                        "titles, skills, stats and measurements — with the cloud " +
+                    "This replaces EVERYTHING logged on this phone — trials, " +
+                        "titles, techniques, stats and readings — with the cloud " +
                         "archive. Anything not in that archive is lost for good.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.DangerRed,
@@ -280,7 +280,7 @@ fun AccountSettingsScreen(
                 Spacer(Modifier.height(8.dp))
                 Text(
                     buildString {
-                        append("Restored ${outcome.sessions} ${plural(outcome.sessions, "workout", "workouts")} · ")
+                        append("Restored ${outcome.sessions} ${plural(outcome.sessions, "trial", "trials")} · ")
                         append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
                         append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
                         if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
@@ -305,7 +305,7 @@ fun AccountSettingsScreen(
                     // saying so beats a switch that looks live and never fires.
                     val blocked = allyAlerts && !notificationsAllowed
                     Text(
-                        if (blocked) "Allow notifications in system settings" else "Requests, comments and reactions",
+                        if (blocked) "Allow notifications in system settings" else "Requests, remarks and tributes",
                         style = MaterialTheme.typography.labelMedium,
                         color = if (blocked) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                     )
@@ -332,11 +332,11 @@ fun AccountSettingsScreen(
         SettingsGroup("PRIVACY") {
             var showBlocked by remember { mutableStateOf(false) }
             TapRow(
-                onClickLabel = if (showBlocked) "Hide blocked lifters" else "Show blocked lifters",
+                onClickLabel = if (showBlocked) "Hide blocked Ironbound" else "Show blocked Ironbound",
                 onClick = { showBlocked = !showBlocked },
             ) {
                 Text(
-                    "Blocked lifters",
+                    "Blocked Ironbound",
                     style = MaterialTheme.typography.titleSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.Ink,
@@ -359,7 +359,7 @@ fun AccountSettingsScreen(
             }
             Spacer(Modifier.height(10.dp))
             Text(
-                "Measurements and private notes never leave this device.",
+                "Readings and private notes never leave this device.",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -384,7 +384,7 @@ fun AccountSettingsScreen(
         Spacer(Modifier.height(20.dp))
         Text(
             if (confirmDelete) {
-                "This deletes your account, lifter, synced workouts, titles, allies " +
+                "This deletes your account, folio, synced trials, titles, allies " +
                     "and cloud backup for good, and signs you out. Training on this " +
                     "phone stays on this phone."
             } else {
@@ -501,14 +501,14 @@ private fun EditNameDialog(
         shape = MaterialTheme.shapes.medium,
         containerColor = Color(0xFF0D1110),
         onDismissRequest = { if (!busy) onDismiss() },
-        title = { Text("Display name") },
+        title = { Text("True name") },
         text = {
             Column {
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
                     value = name,
                     onValueChange = { name = it.take(24) },
-                    label = { Text("Lifter name (2–24)") },
+                    label = { Text("True name (2–24)") },
                     singleLine = true,
                     enabled = !busy,
                     isError = name.isNotBlank() && !valid,
@@ -552,7 +552,7 @@ private fun EditNameDialog(
 private fun BlockedList(blocked: List<BlockedLifter>, onUnblock: (String) -> Unit) {
     if (blocked.isEmpty()) {
         Text(
-            "Nobody blocked. Block a lifter from their page.",
+            "Nobody blocked. Block an Ironbound from their folio.",
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(vertical = 4.dp),
@@ -565,7 +565,7 @@ private fun BlockedList(blocked: List<BlockedLifter>, onUnblock: (String) -> Uni
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
-                lifter.displayName.ifBlank { "Hidden lifter" },
+                lifter.displayName.ifBlank { "Hidden Ironbound" },
                 style = MaterialTheme.typography.titleSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.Ink,

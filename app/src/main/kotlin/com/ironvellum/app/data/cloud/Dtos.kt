@@ -470,7 +470,7 @@ data class CommentDto(
         id = id,
         sessionId = sessionId,
         userId = userId,
-        authorName = authorName.ifBlank { "Hidden lifter" },
+        authorName = authorName.ifBlank { "Hidden Ironbound" },
         body = body,
         createdAtMs = Instant.parse(createdAt).toEpochMilli(),
     )
@@ -559,7 +559,7 @@ data class InboxRowDto(
      */
     internal fun toInboxItem(): InboxItem? {
         val at = Instant.parse(occurredAt).toEpochMilli()
-        val name = actorName?.takeIf { it.isNotBlank() } ?: "Hidden lifter"
+        val name = actorName?.takeIf { it.isNotBlank() } ?: "Hidden Ironbound"
         return when (kind) {
             "request" -> InboxItem.FriendRequest(at, actorId, name)
             "accepted" -> InboxItem.RequestAccepted(at, actorId, name)

@@ -108,7 +108,7 @@ internal class LifterViewModel(
 
     fun load(userId: String) {
         if (userId.isBlank()) {
-            _ui.value = LifterUi(loading = false, error = "No lifter selected.")
+            _ui.value = LifterUi(loading = false, error = "No Ironbound selected.")
             return
         }
         _ui.value = LifterUi(myUserId = accountRepo.account.value?.userId)
@@ -249,7 +249,7 @@ internal fun LifterScreen(
     var confirmRemove by remember { mutableStateOf(false) }
     var confirmBlock by remember { mutableStateOf(false) }
     var reporting by remember { mutableStateOf(false) }
-    val name = displayName.ifBlank { "this lifter" }
+    val name = displayName.ifBlank { "this Ironbound" }
 
     Column(
         Modifier
@@ -321,7 +321,7 @@ internal fun LifterScreen(
         when {
             ui.loading -> InkPanel(Modifier.fillMaxWidth()) {
                 Text(
-                    "Consulting the record…",
+                    "Opening the folio…",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -329,7 +329,7 @@ internal fun LifterScreen(
 
             ui.error != null -> InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
                 Text(
-                    "RECORD SEALED",
+                    "THE FOLIO WON'T OPEN",
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.DangerRed,
@@ -353,7 +353,7 @@ internal fun LifterScreen(
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "This lifter has no workouts you may read — either none are logged, " +
+                    "This Ironbound has no trials you may read — either none are sealed, " +
                         "or their visibility does not include you.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
@@ -394,7 +394,7 @@ internal fun LifterScreen(
                         horizontalArrangement = Arrangement.SpaceEvenly,
                     ) {
                         Stat(
-                            "LAST HUNT",
+                            "LAST TRIAL",
                             daysSince?.let { "${it}D AGO" } ?: "UNRECORDED",
                             IronvellumColors.SystemGreen,
                         )
@@ -417,7 +417,7 @@ internal fun LifterScreen(
                         TrendChart(strSeries, IronvellumColors.SystemGreen)
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            "${strSeries.size} ${plural(strSeries.size, "workout", "workouts")} on the line · best ${strSeries.max().toInt()}",
+                            "${strSeries.size} ${plural(strSeries.size, "trial", "trials")} on the line · best ${strSeries.max().toInt()}",
                             style = MaterialTheme.typography.labelSmall,
                             fontFamily = ChakraPetch,
                             color = IronvellumColors.InkMuted,
@@ -428,7 +428,7 @@ internal fun LifterScreen(
                         // A single hunt cannot draw a line — say so instead of
                         // leaving a blank canvas.
                         Text(
-                            "One hunt on record — the line begins with the next.",
+                            "One trial on record — the line begins with the next.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -438,7 +438,7 @@ internal fun LifterScreen(
                 // The signature hunt, framed gold so the record has a summit.
                 InkPanel(Modifier.fillMaxWidth().padding(bottom = 10.dp), accent = IronvellumColors.SovereignGold) {
                     Text(
-                        "STRONGEST HUNT",
+                        "STRONGEST TRIAL",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.SovereignGold,
@@ -466,7 +466,7 @@ internal fun LifterScreen(
                     )
                 }
 
-                SectionHeader("Recent workouts")
+                SectionHeader("Recent trials")
                 // Bounded at the source: CloudSync.friendSessions fetches at
                 // most 20 rows, so this plain Column never composes more.
                 ui.sessions.forEach { session ->
@@ -521,7 +521,7 @@ internal fun LifterScreen(
         // Last, after the record: these are rare, heavy actions, and at the top
         // they crowded out the training the screen exists to show.
         if (ui.myUserId != null && !isMe) {
-            SectionHeader("Manage lifter")
+            SectionHeader("Manage folio")
             InkPanel(Modifier.fillMaxWidth()) {
                 FlowRow(
                     Modifier.fillMaxWidth(),
@@ -544,7 +544,7 @@ internal fun LifterScreen(
                 }
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    "Mute hides their workouts, comments and reactions from you. They aren't told.",
+                    "Mute hides their trials, remarks and tributes from you. They aren't told.",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -573,7 +573,7 @@ internal fun LifterScreen(
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmRemove = false },
             title = { Text("Remove $name as an ally?") },
-            text = { Text("Their allies-only workouts leave your feed. Either of you can send a new request later.") },
+            text = { Text("Their allies-only trials leave your tidings. Either of you can send a new request later.") },
             confirmButton = {
                 IronvellumButton(label = "Remove", onClick = {
                     confirmRemove = false
@@ -594,7 +594,7 @@ internal fun LifterScreen(
             title = { Text("Block $name?") },
             text = {
                 Text(
-                    "You and $name will no longer see each other's workouts, comments or reactions, " +
+                    "You and $name will no longer see each other's trials, remarks or tributes, " +
                         "any alliance ends, and neither of you can send an ally request. Unblock any time under ALLIES.",
                 )
             },

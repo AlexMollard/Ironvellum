@@ -621,13 +621,13 @@ internal fun SplitPicker(
 /** What the picked split does with the week, in one line. */
 internal fun splitCaption(split: TrainingSplit, days: Int): String = when (split) {
     TrainingSplit.FULL_BODY ->
-        "Every muscle, every workout. Fewest days, longest workouts."
+        "Every muscle, every rite. Fewest days, longest rites."
     TrainingSplit.UPPER_LOWER ->
         "Upper, then lower, twice each. Every muscle twice a week."
     TrainingSplit.PUSH_PULL_LEGS -> if (days == 3) {
         "Each muscle once a week. Fine for growth, less practice per exercise."
     } else {
-        "Push, pull, legs twice over. Short workouts, every muscle twice a week."
+        "Push, pull, legs twice over. Short rites, every muscle twice a week."
     }
     TrainingSplit.UPPER_LOWER_PPL ->
         "Push, pull, legs, then upper and lower. Every muscle twice in five days."

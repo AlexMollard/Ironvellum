@@ -238,7 +238,7 @@ class SessionViewModel(
         _routineUpdate.value = null
         if (accepted.isEmpty()) return
         // The screen may leave straight after; the write must not die with it.
-        viewModelScope.launchGuarded("update routine") {
+        viewModelScope.launchGuarded("update rite") {
             withContext(NonCancellable) { repo.applyRoutineUpdate(offer.presetId, accepted) }
         }
     }
@@ -449,18 +449,18 @@ fun SessionScreen(
     if (session == null) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
             Spacer(Modifier.height(20.dp))
-            Text("Summoning the trial…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            Text("Opening the trial…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
         return
     }
 
     // Claimed in an earlier process (killed mid-victory): the XP is banked and
-    // the live trial must not come back with a Claim Victory that can only
+    // the live trial must not come back with a Seal the Trial that can only
     // fail. This claim's own result is still on its way while [claiming].
     if (session.completedAtMs != null && completion == null && !claiming) {
         Column(Modifier.fillMaxSize().padding(16.dp)) {
             Spacer(Modifier.height(20.dp))
-            Text("Trial already claimed.", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            Text("Trial already sealed.", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
         LaunchedEffect(session.id) { onExit() }
         return
@@ -518,7 +518,7 @@ fun SessionScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "$doneCount / ${ui.sets.size} ${plural(ui.sets.size, "set", "sets")} conquered",
+                "$doneCount / ${ui.sets.size} ${plural(ui.sets.size, "set", "sets")} done",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -770,7 +770,7 @@ fun SessionScreen(
         // the completion call is exactly the one the button made before.
         val claimHasty = doneCount * 2 < ui.sets.size && ui.sets.size > 2
         IronvellumButton(
-            label = "Claim Victory",
+            label = "Seal the Trial",
             gold = true,
             enabled = anyDone,
             onClick = { if (claimHasty) confirmClaim = true else viewModel.complete() },
@@ -778,7 +778,7 @@ fun SessionScreen(
         )
         if (!anyDone) {
             Text(
-                "Tick a set to claim victory",
+                "Tick a set to seal the trial",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
@@ -796,7 +796,7 @@ fun SessionScreen(
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmAbandon = false },
             title = { Text("Abandon this trial?") },
-            text = { Text("Unfinished trials grant no XP and are erased from the record.") },
+            text = { Text("Unsealed trials grant no XP and are erased from the Chronicle.") },
             // Staying is the filled action; abandoning is the quiet one, so a
             // reflex tap on the bright button never erases the trial.
             confirmButton = {
@@ -820,16 +820,16 @@ fun SessionScreen(
             shape = MaterialTheme.shapes.medium,
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmClaim = false },
-            title = { Text("Claim Victory?") },
+            title = { Text("Seal the Trial?") },
             text = {
                 val unticked = ui.sets.count { !it.done }
-                Text("$unticked ${plural(unticked, "set", "sets")} unticked — claim anyway?")
+                Text("$unticked ${plural(unticked, "set", "sets")} unticked — seal anyway?")
             },
             // Claiming is the deliberate action here, so it takes the confirm
             // slot; KEEP GOING is the safe default.
             confirmButton = {
                 IronvellumButton(
-                    "Claim",
+                    "Seal",
                     onClick = {
                         confirmClaim = false
                         viewModel.complete()
@@ -1066,8 +1066,8 @@ private fun awardsFor(result: Repository.CompletionResult, sex: Sex): List<Achie
     if (result.classAfter != result.classBefore) {
         add(
             Achievement(
-                banner = "CLASS UNLOCKED",
-                tagline = "PROMOTION",
+                banner = "ASCENDED",
+                tagline = "ASCENSION",
                 name = result.classAfter,
                 subtitle = "FROM ${result.classBefore.uppercase()}",
             ),
@@ -1076,7 +1076,7 @@ private fun awardsFor(result: Repository.CompletionResult, sex: Sex): List<Achie
     result.newTitles.forEach { title ->
         add(
             Achievement(
-                banner = "TITLE UNLOCKED",
+                banner = "DEED EARNED",
                 name = title.name,
                 subtitle = title.describeFor(sex).uppercase(),
             ),
@@ -1147,7 +1147,7 @@ private fun VictoryOverlay(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        "VICTORY",
+                        "SEALED",
                         style = MaterialTheme.typography.displaySmall,
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
@@ -1173,7 +1173,7 @@ private fun VictoryOverlay(
                     )
                     Spacer(Modifier.height(12.dp))
                     if (result.questBonus) {
-                        RewardRow("TODAY'S QUEST", "+${Xp.QUEST_BONUS} bonus")
+                        RewardRow("TODAY'S TRIAL", "+${Xp.QUEST_BONUS} bonus")
                         Spacer(Modifier.height(6.dp))
                     }
                     if (levelUp) {
@@ -1181,7 +1181,7 @@ private fun VictoryOverlay(
                         Spacer(Modifier.height(6.dp))
                     }
                     if (classUp) {
-                        RewardRow("CLASS UNLOCKED", result.classAfter)
+                        RewardRow("ASCENDED", result.classAfter)
                         Spacer(Modifier.height(6.dp))
                     }
                     result.newTitles.filter { it.name.isNotBlank() }.forEach { title ->
@@ -1546,7 +1546,7 @@ private fun SetDeltaBadge(delta: SetRecords.Delta?, displaySetNo: Int) {
         val record = delta.record
         if (record == null) {
             Text(
-                "Set $displaySetNo — first on record",
+                "Set $displaySetNo — first peak",
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -1555,24 +1555,24 @@ private fun SetDeltaBadge(delta: SetRecords.Delta?, displaySetNo: Int) {
         if (delta.isRecord) {
             Icon(
                 Icons.Filled.Bolt,
-                contentDescription = "New record",
+                contentDescription = "New peak",
                 tint = IronvellumColors.SovereignGold,
                 modifier = Modifier.size(12.dp),
             )
             Text(
-                "NEW PR",
+                "NEW PEAK",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SovereignGold,
             )
         }
         // Any set above its position's record says "was", the record it
-        // passed, whether or not an earlier set today already took NEW PR:
-        // equal sets read the same line, one of them with the gold mark. "PR"
+        // passed, whether or not an earlier set today already took NEW PEAK:
+        // equal sets read the same line, one of them with the gold mark. "PEAK"
         // stays for a set at or under the record it is chasing.
         val beaten = delta.deltaScore > 0.0
         Text(
-            (if (beaten) "was " else "PR ") + "${record.reps}×${prLoad(record.weightKg)}",
+            (if (beaten) "was " else "PEAK ") + "${record.reps}×${prLoad(record.weightKg)}",
             style = MaterialTheme.typography.labelSmall,
             color = IronvellumColors.InkMuted,
         )
@@ -1737,7 +1737,7 @@ private const val PUBLIC_NOTE_CAP = 500
 
 /**
  * Title + notes editor for the session. Lives at the foot of the active trial,
- * just above "Claim Victory", so annotations are written while the session is
+ * just above "Seal the Trial", so annotations are written while the session is
  * still open and are already persisted (and synced) by the time it completes.
  * Public and private notes are deliberately styled to clash: gold/emerald for
  * what the feed sees, muted + lock glyph for what never leaves the device.
@@ -1776,7 +1776,7 @@ private fun SessionNotesEditor(
             label = {
                 FieldLabel(
                     icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.SovereignGold) },
-                    text = if (signedIn) "TITLE · optional, shown on the feed" else "TITLE · optional",
+                    text = if (signedIn) "NAME · optional, shown in Tidings" else "NAME · optional",
                     color = IronvellumColors.SovereignGold,
                 )
             },
@@ -1797,7 +1797,7 @@ private fun SessionNotesEditor(
             label = {
                 FieldLabel(
                     icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.SystemGreen) },
-                    text = if (signedIn) "PUBLIC NOTE · every lifter on the feed can read this" else "NOTE · shared with allies once you sign in",
+                    text = if (signedIn) "PUBLIC NOTE · every Ironbound in Tidings can read this" else "NOTE · shared with allies once you sign in",
                     color = IronvellumColors.SystemGreen,
                 )
             },
@@ -2039,9 +2039,9 @@ private fun RoutineUpdateDialog(
                 )
                 Text(
                     if (shortDay) {
-                        "Today ran short — the plan keeps its sets; tick what else to take."
+                        "Today ran short — the cycle keeps its sets; tick what else to take."
                     } else {
-                        "Bring your routine in line with today's workout?"
+                        "Bring your rite in line with today's trial?"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
@@ -2139,12 +2139,12 @@ private fun RoutineUpdateDialog(
                 // Preset order, whatever order the toggles were flipped in.
                 val narrowed = offer.changes.mapNotNull { it.only(ticked[it].orEmpty()) }
                 IronvellumButton(
-                    "Update routine",
+                    "Update rite",
                     enabled = narrowed.isNotEmpty(),
                     onClick = { onUpdate(narrowed) },
                     modifier = Modifier.fillMaxWidth(),
                 )
-                IronvellumButton("Keep routine", quiet = true, onClick = onKeep, modifier = Modifier.fillMaxWidth())
+                IronvellumButton("Keep rite", quiet = true, onClick = onKeep, modifier = Modifier.fillMaxWidth())
             }
         },
     )

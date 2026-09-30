@@ -198,9 +198,9 @@ private fun CrestPlate(
         Spacer(Modifier.height(2.dp))
         Text(
             when {
-                isEquipped -> "EQUIPPED"
+                isEquipped -> "WORN"
                 isOwned -> "TAP TO WEAR"
-                else -> "NOT YET DRAWN"
+                else -> "NOT YET INSCRIBED"
             },
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,

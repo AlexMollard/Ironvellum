@@ -109,8 +109,8 @@ class WorkoutFlowTest {
         // Decide only once the day card has loaded. Sampled on the first
         // frame, a rest day had not rendered yet, so the walk was skipped and
         // the test then waited for a quest that never came.
-        awaitAnyText { it == "REST DAY" || isQuestCta(it) }
-        if (allText().none { it == "REST DAY" }) return
+        awaitAnyText { it == "RESPITE" || isQuestCta(it) }
+        if (allText().none { it == "RESPITE" }) return
         val rail = listOf("M", "T", "W", "T", "F", "S", "S")
         for (index in rail.indices) {
             val letters = compose.onAllNodesWithText(rail[index]).fetchSemanticsNodes()
@@ -118,7 +118,7 @@ class WorkoutFlowTest {
             compose.onAllNodesWithText(rail[index])[index.coerceAtMost(letters.size - 1)]
                 .performSemanticsAction(SemanticsActions.OnClick)
             settle()
-            if (allText().none { it == "REST DAY" }) return
+            if (allText().none { it == "RESPITE" }) return
         }
         error("no weekday offered a program; on screen: ${allText()}")
     }
@@ -180,17 +180,17 @@ class WorkoutFlowTest {
         // Invoke the button's own click action rather than a coordinate tap: it
         // sits at the end of a long scrolling session, so a synthetic tap after
         // scrolling lands on whatever moved under it. The wiring is the point.
-        compose.onAllNodesWithText("CLAIM VICTORY").onFirst()
+        compose.onAllNodesWithText("SEAL THE TRIAL").onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
-        // One logged set among many raises the unticked-sets confirm; claim
-        // through it. Exact "CLAIM" exists only in that dialog - the trial
-        // screen's button reads CLAIM VICTORY. The dialog composes a beat
+        // One logged set among many raises the unticked-sets confirm; seal
+        // through it. Exact "SEAL" exists only in that dialog - the trial
+        // screen's button reads SEAL THE TRIAL. The dialog composes a beat
         // after the tap, so poll instead of assuming it is already there.
         var claimed = false
         repeat(30) {
-            val node = compose.onAllNodesWithText("CLAIM").fetchSemanticsNodes().firstOrNull()
+            val node = compose.onAllNodesWithText("SEAL").fetchSemanticsNodes().firstOrNull()
             if (node != null) {
-                compose.onAllNodesWithText("CLAIM").onFirst()
+                compose.onAllNodesWithText("SEAL").onFirst()
                     .performSemanticsAction(SemanticsActions.OnClick)
                 claimed = true
             }
@@ -214,13 +214,13 @@ class WorkoutFlowTest {
 
     /** "0 / 17 sets conquered" -> 0 */
     private fun conqueredCount(): Int {
-        val line = allText().firstOrNull { it.contains(" conquered") }
+        val line = allText().firstOrNull { it.contains(" done") }
             ?: error("the session screen must show the conquered count")
         return line.substringBefore('/').trim().toInt()
     }
 
     private fun isQuestCta(label: String): Boolean =
-        label == "ACCEPT QUEST" || label == "START WORKOUT" || label.startsWith("RESUME")
+        label == "BEGIN TRIAL" || label == "BEGIN TRIAL" || label.startsWith("RESUME")
 
     /** Polls until some string matches, and returns it. */
     private fun awaitAnyText(attempts: Int = 60, predicate: (String) -> Boolean): String {

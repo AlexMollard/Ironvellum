@@ -89,7 +89,7 @@ class AccountRepository {
     suspend fun signUp(email: String, password: String, displayName: String): Result<SignUpOutcome> {
         val name = displayName.trim()
         if (name.length < WireLimits.DISPLAY_NAME_MIN || name.length > WireLimits.DISPLAY_NAME_MAX) {
-            return Result.failure(IllegalStateException("Display name must be 2 to 24 characters"))
+            return Result.failure(IllegalStateException("Your true name must be 2 to 24 characters"))
         }
         val client = requireClient().getOrElse { return failure(it) }
         return runCatching {
@@ -196,7 +196,7 @@ class AccountRepository {
         return when {
             cleaned.length >= WireLimits.DISPLAY_NAME_MAX -> cleaned.take(WireLimits.DISPLAY_NAME_MAX)
             cleaned.length >= WireLimits.DISPLAY_NAME_MIN -> cleaned
-            else -> "Lifter" + cleaned.ifEmpty { "0" }
+            else -> "Ironbound" + cleaned.ifEmpty { "0" }
         }
     }
 
@@ -207,11 +207,11 @@ class AccountRepository {
      */
     suspend fun updateDisplayName(raw: String): Result<Unit> {
         val current = _account.value
-            ?: return Result.failure(IllegalStateException("Sign in before claiming a name"))
+            ?: return Result.failure(IllegalStateException("Sign in before taking a true name"))
         val client = requireClient().getOrElse { return failure(it) }
         val name = sanitizeHandle(raw)
         if (name.length < WireLimits.DISPLAY_NAME_MIN) {
-            return Result.failure(IllegalStateException("Your name needs at least 2 characters"))
+            return Result.failure(IllegalStateException("Your true name needs at least 2 characters"))
         }
         return runCatching {
             client.postgrest.from("profiles").update(
@@ -226,7 +226,7 @@ class AccountRepository {
             val taken = error is io.github.jan.supabase.postgrest.exception.PostgrestRestException &&
                 error.code == "23505"
             throw IllegalStateException(
-                if (taken) "That name is already taken — another lifter got there first"
+                if (taken) "That true name is taken — another Ironbound got there first"
                 else Cloud.explain(error),
             )
         }
@@ -265,7 +265,7 @@ class AccountRepository {
         val client = requireClient().getOrElse { return failure(it) }
         return runCatching {
             val profile = loadAccount(current.userId, current.email)
-                ?: throw IllegalStateException("Your lifter profile could not be loaded")
+                ?: throw IllegalStateException("Your profile could not be loaded")
             _account.value = profile
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
@@ -327,8 +327,8 @@ class AccountRepository {
 /** A seeded handle the user has not replaced with a name of their own. */
 fun isUnclaimedHandle(name: String?): Boolean = name != null && UnclaimedHandle.matches(name)
 
-// "Hunter" matches handles seeded by older builds; new seeds use "Lifter".
-private val UnclaimedHandle = Regex("^(?:Hunter|Lifter)\\d{4}$")
+// "Hunter" and "Lifter" match handles seeded by older builds; new seeds use "Ironbound".
+private val UnclaimedHandle = Regex("^(?:Hunter|Lifter|Ironbound)\\d{4}$")
 
 
 /** Signed-out guard for cloud features that need an identity. */
@@ -342,7 +342,7 @@ internal fun requireAccount(account: AccountRepository): Result<Account> {
 }
 
 /** The display name was taken before sign-up; shown to the lifter as is. */
-private class NameTakenException : IllegalStateException("That display name is taken — pick another")
+private class NameTakenException : IllegalStateException("That true name is taken — pick another")
 
 /** A repeat sign-up of a registered email; shown to the lifter as is. */
 private class EmailTakenException : IllegalStateException(

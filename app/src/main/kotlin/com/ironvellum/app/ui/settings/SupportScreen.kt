@@ -76,9 +76,9 @@ fun SupportScreen() {
             )
             Spacer(Modifier.height(10.dp))
             Text(
-                "The shared cloud the Allies feed and the backups live on " +
+                "The shared cloud the Tidings and the backups live on " +
                     "costs real money every month — about \$25 for hosting. " +
-                    "The whole ledger is public: every invoice in, every " +
+                    "Every cost is public: every invoice in, every " +
                     "coin out.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
@@ -86,7 +86,7 @@ fun SupportScreen() {
             if (support) {
                 Spacer(Modifier.height(10.dp))
                 IronvellumButton(
-                    label = "View the Ledger",
+                    label = "View the costs",
                     onClick = { uriHandler.openUri(SupportLinks.COSTS_LEDGER) },
                     quiet = true,
                 )

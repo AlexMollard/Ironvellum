@@ -574,4 +574,33 @@ class MigrationForwardTest {
         }
         db.close()
     }
+
+    /**
+     * Schema 31 -> 32 renames the seeded default name "Lifter" to
+     * "Ironbound". A name the lifter typed must come through untouched, and
+     * the rename must not disturb anything else on the row.
+     */
+    @Test
+    fun upgradeTo32RenamesOnlyTheSeededDefaultName() = runTest {
+        helper.createDatabase(dbName, 31).use { old ->
+            old.execSQL("INSERT INTO profile (id, name, totalXp, currentTitleId, lifetimeStrength, trainingMode, sex, inkStyle, scoringVersion) VALUES (1, 'Lifter', 1234, NULL, 0, 'STRENGTH', 'MALE', 1, 0)")
+        }
+        helper.runMigrationsAndValidate(dbName, IronvellumDatabase.VERSION, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT name, totalXp FROM profile WHERE id = 1").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals("Ironbound", c.getString(0))
+                assertEquals("the rename must not touch XP", 1234, c.getInt(1))
+            }
+        }
+        helper.createDatabase("$dbName-named", 31).use { old ->
+            old.execSQL("INSERT INTO profile (id, name, totalXp, currentTitleId, lifetimeStrength, trainingMode, sex, inkStyle, scoringVersion) VALUES (1, 'Alex', 10, NULL, 0, 'STRENGTH', 'MALE', 1, 0)")
+        }
+        helper.runMigrationsAndValidate("$dbName-named", IronvellumDatabase.VERSION, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT name FROM profile WHERE id = 1").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals("a chosen name survives", "Alex", c.getString(0))
+            }
+        }
+        InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase("$dbName-named")
+    }
 }

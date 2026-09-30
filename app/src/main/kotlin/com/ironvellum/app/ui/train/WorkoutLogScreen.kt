@@ -123,7 +123,7 @@ fun WorkoutLogScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "WORKOUT LOG",
+                "CHRONICLE",
                 style = MaterialTheme.typography.labelLarge,
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = IronvellumTracking.ScreenTitle,
@@ -158,7 +158,7 @@ fun WorkoutLogScreen(
                     )
                     Spacer(Modifier.height(12.dp))
                     Text(
-                        "NO WORKOUTS LOGGED YET",
+                        "THE CHRONICLE IS BLANK",
                         style = MaterialTheme.typography.titleMedium,
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
@@ -166,7 +166,7 @@ fun WorkoutLogScreen(
                     )
                     Spacer(Modifier.height(6.dp))
                     Text(
-                        "Complete a workout and it will be carved into the record here.",
+                        "Seal a trial and it is written here.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.InkMuted,
                         textAlign = androidx.compose.ui.text.style.TextAlign.Center,
@@ -228,7 +228,7 @@ private fun LifetimeLedger(
 
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
         Text(
-            "LIFETIME RECORD",
+            "CHRONICLE TOTALS",
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SovereignGold,
@@ -237,7 +237,7 @@ private fun LifetimeLedger(
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             // Counts get explicit plural forms — appending "s" rendered "1 WORKOUTs".
-            LedgerStat("${sessions.size}", plural(sessions.size, "WORKOUT", "WORKOUTS"))
+            LedgerStat("${sessions.size}", plural(sessions.size, "TRIAL", "TRIALS"))
             LedgerStat("${doneSets.size}", plural(doneSets.size, "SET", "SETS"))
             LedgerStat("%,d".format(totals.reps), plural(totals.reps, "REP", "REPS"))
             if (totals.heldSeconds > 0) LedgerStat("%,d".format(totals.heldSeconds), "SEC HELD")
@@ -260,7 +260,7 @@ private fun LifetimeLedger(
         // sessions, say so instead of drawing it.
         if (series.size >= 3) {
             Text(
-                "STRENGTH · LAST ${series.size} WORKOUTS",
+                "STRENGTH · LAST ${series.size} TRIALS",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
@@ -269,7 +269,7 @@ private fun LifetimeLedger(
             TrendChart(values = series, color = IronvellumColors.Emerald)
         } else {
             Text(
-                "THE TREND LINE OPENS AT THREE WORKOUTS",
+                "THE TREND LINE OPENS AT THREE TRIALS",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
