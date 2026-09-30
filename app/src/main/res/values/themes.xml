@@ -4,6 +4,9 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
         <item name="android:windowLightStatusBar">false</item>
-        <item name="android:windowBackground">#0B0B12</item>
+        <!-- Cold-start background: the app's panel paper (Vault), not a bare
+             dark colour — a blue-black flash before the first frame read as
+             "another app" and flickered against the warm charcoal UI. -->
+        <item name="android:windowBackground">#171715</item>
     </style>
 </resources>

@@ -54,6 +54,33 @@ class CloudWireDtosTest {
     }
 
     @Test
+    fun `a warband decodes its roster with the neutral-name and bare-title fallbacks`() {
+        val dto = json.decodeFromString<WarbandDto>(
+            """{"id": "7c9e6a4e-0000-4000-8000-0000000000aa", "name": "North Gate",
+                "code": "K7M2PQ4X", "owner_id": "owner-1",
+                "members": [
+                  {"user_id": "owner-1", "display_name": "Nova", "level": 9,
+                   "current_title_id": "first-blood", "workouts_this_week": 2,
+                   "last_workout_at": "2026-09-28T07:45:00Z"},
+                  {"user_id": "u2", "display_name": "Lifterb042", "level": 1,
+                   "current_title_id": null, "workouts_this_week": 0}
+                ]}""",
+        )
+        val band = dto.toWarband()
+        assertEquals("K7M2PQ4X", band.code)
+        assertEquals("owner-1", band.ownerId)
+        assertEquals(2, band.members.size)
+        assertEquals("first-blood", band.members[0].titleId)
+        assertEquals(2, band.members[0].workoutsThisWeek)
+        assertEquals(1790581500000L, band.members[0].lastWorkoutAtMs)
+        // A missing profile row still lists, level defaulted, no timestamp.
+        assertNull(band.members[1].titleId)
+        assertNull(band.members[1].lastWorkoutAtMs)
+        assertEquals(0, band.members[1].workoutsThisWeek)
+        assertEquals(1, band.members[1].level)
+    }
+
+    @Test
     fun `a reaction kind this build does not know is skipped, never thrown`() {
         // Failure mode: a later server adds a kind. A typed map or a strict
         // valueOf would throw inside decodeList and blank the whole feed page

@@ -14,6 +14,9 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableIntStateOf
 import com.ironvellum.app.data.InboxNotifier
 import androidx.compose.runtime.Composable
@@ -24,11 +27,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.cloud.Cloud
+import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumTabPill
 
 private enum class GuildTab(val label: String) {
@@ -91,15 +96,44 @@ fun SocialScreen(
 
     // Opening the inbox is the moment ally notifications become relevant: clear
     // the one posted for it, and ask for the permission once, here, rather than
-    // at launch where the lifter has no reason to say yes.
+    // at launch where the lifter has no reason to say yes. Our own dialog comes
+    // first so the system prompt never lands without context; NOT NOW consumes
+    // the once-per-install ask exactly like ALLOW would.
     val context = LocalContext.current
+    var explainNotifications by rememberSaveable { mutableStateOf(false) }
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
     LaunchedEffect(tab) {
         if (tab != GuildTab.INBOX) return@LaunchedEffect
         InboxNotifier.cancel(context)
         if (InboxNotifier.takeFirstAsk(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            explainNotifications = true
         }
+    }
+    if (explainNotifications) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = { explainNotifications = false },
+            title = { Text("Ally notifications?") },
+            text = { Text("See ally requests, comments and reactions.") },
+            // ALLOW is the only path to the system prompt; NOT NOW just closes.
+            confirmButton = {
+                IronvellumButton(
+                    "Allow",
+                    onClick = {
+                        explainNotifications = false
+                        // The permission exists only from 33; older systems
+                        // grant notifications by default and need no prompt.
+                        if (Build.VERSION.SDK_INT >= 33) {
+                            askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    },
+                )
+            },
+            dismissButton = {
+                IronvellumButton("Not now", quiet = true, onClick = { explainNotifications = false })
+            },
+        )
     }
 
     // Every tab gets the same margins and starts at the same spot under the

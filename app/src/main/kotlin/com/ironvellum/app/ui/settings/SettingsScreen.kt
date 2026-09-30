@@ -612,6 +612,13 @@ class SettingsViewModel(
 
 }
 
+/**
+ * Heights are almost always whole centimetres: show "180", not "180.0".
+ * Falls back to the shared one-decimal format for a fractional reading.
+ */
+private fun formatHeightCm(cm: Double): String =
+    if (cm == kotlin.math.floor(cm)) cm.toLong().toString() else formatBodyValue(cm)
+
 @Composable
 fun SettingsScreen(
     onOpenSupport: () -> Unit = {},
@@ -658,7 +665,10 @@ fun SettingsScreen(
         }
     }
     val bodyProfile by viewModel.bodyProfile.collectAsStateWithLifecycle()
-    var heightInput by remember(bodyProfile.first) { mutableStateOf(bodyProfile.first?.toString() ?: "") }
+    // A whole-number height reads "180", not "180.0" — the decimal adds nothing.
+    var heightInput by remember(bodyProfile.first) {
+        mutableStateOf(bodyProfile.first?.let { formatHeightCm(it) } ?: "")
+    }
     val heightValid = BodyLimits.validHeight(heightInput.toDoubleOrNull())
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -972,6 +982,62 @@ fun SettingsScreen(
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        // The only bring-back mechanism the app has: one toggle, one evening
+        // nudge. High in the panel order, where a lifter setting the app up
+        // meets it before the archive and cloud plumbing.
+        InkPanel(Modifier.fillMaxWidth()) {
+            Text(
+                "DAILY REMINDER",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SystemGreen,
+                letterSpacing = 2.sp,
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "One nudge in the evening when today's quest is still open. No streak guilt, no noise.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
+            Spacer(Modifier.height(10.dp))
+            var remindersOn by remember { mutableStateOf(Reminders.enabled(context)) }
+            // Declined notifications must not wedge the toggle: the work is
+            // still scheduled, Android just drops the posts, and re-enabling
+            // re-asks through the system settings rather than a dead dialog.
+            val askNotifications = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission(),
+            ) { }
+            val deniedNotifications = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
+                PackageManager.PERMISSION_GRANTED
+            IronvellumButton(
+                // The label is the action, not the state: "Reminder on" read
+                // like a command to turn it on while it was already on.
+                label = if (remindersOn) "Turn reminders off" else "Turn reminders on",
+                quiet = true,
+                onClick = {
+                    if (remindersOn) {
+                        Reminders.disable(context)
+                        remindersOn = false
+                    } else {
+                        Reminders.enable(context)
+                        remindersOn = true
+                        if (deniedNotifications) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                },
+            )
+            if (remindersOn && deniedNotifications) {
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Notifications are muted in Android's settings — the reminder fires silently until you allow them.",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
         }
 
         Spacer(Modifier.height(14.dp))
@@ -1321,62 +1387,6 @@ fun SettingsScreen(
                 onClick = onOpenSupport,
                 quiet = true,
             )
-        }
-
-        Spacer(Modifier.height(14.dp))
-
-        // The only bring-back mechanism the app has: one toggle, one evening
-        // nudge. Lives beside the support panel, near where a lifter decides
-        // how much of themselves this app gets to keep.
-        InkPanel(Modifier.fillMaxWidth()) {
-            Text(
-                "DAILY REMINDER",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = 2.sp,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "One nudge in the evening when today's quest is still open. No streak guilt, no noise.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-            Spacer(Modifier.height(10.dp))
-            var remindersOn by remember { mutableStateOf(Reminders.enabled(context)) }
-            // Declined notifications must not wedge the toggle: the work is
-            // still scheduled, Android just drops the posts, and re-enabling
-            // re-asks through the system settings rather than a dead dialog.
-            val askNotifications = rememberLauncherForActivityResult(
-                ActivityResultContracts.RequestPermission(),
-            ) { }
-            val deniedNotifications = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
-                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED
-            IronvellumButton(
-                // The label is the action, not the state: "Reminder on" read
-                // like a command to turn it on while it was already on.
-                label = if (remindersOn) "Turn reminders off" else "Turn reminders on",
-                quiet = true,
-                onClick = {
-                    if (remindersOn) {
-                        Reminders.disable(context)
-                        remindersOn = false
-                    } else {
-                        Reminders.enable(context)
-                        remindersOn = true
-                        if (deniedNotifications) askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
-                    }
-                },
-            )
-            if (remindersOn && deniedNotifications) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Notifications are muted in Android's settings — the reminder fires silently until you allow them.",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
         }
 
         Spacer(Modifier.height(14.dp))

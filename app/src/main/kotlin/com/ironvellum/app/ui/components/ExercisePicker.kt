@@ -160,6 +160,20 @@ fun ExercisePickerSheet(
     val data by vm.data.collectAsStateWithLifecycle()
     val controls = remember { PickerControls(defaultMyGear) }
     val view = pickerView(exercises, controls, data)
+    // Only computed when the list is already empty: a second catalogue pass,
+    // run with MY GEAR off, is what proves the gear filter did the emptying.
+    val gearHidAll = view.count == 0 &&
+        remember(exercises, controls.query, controls.filters, data) {
+            controls.filters.myGear && data.equipment != null &&
+                buildPickerView(
+                    exercises,
+                    controls.query,
+                    controls.filters.copy(myGear = false),
+                    data.equipment,
+                    data.recentIds,
+                    data.favouriteIds,
+                ).count > 0
+        }
     InkPickerSheet(
         title = title,
         onDismiss = onDismiss,
@@ -173,7 +187,7 @@ fun ExercisePickerSheet(
             PickerFilterBar(exercises, controls, data.equipment)
             Spacer(Modifier.height(12.dp))
         }
-        exerciseRows(view, data, controls.query, browse = false, onPick, vm::setFavourite)
+        exerciseRows(view, data, controls.query, gearHidAll, browse = false, onPick, vm::setFavourite)
     }
 }
 
@@ -193,6 +207,19 @@ fun ExercisePickerPanel(
     val data by vm.data.collectAsStateWithLifecycle()
     val controls = remember { PickerControls(defaultMyGear) }
     val view = pickerView(exercises, controls, data)
+    // Same proof as the sheet: a second pass with MY GEAR off, only when empty.
+    val gearHidAll = view.count == 0 &&
+        remember(exercises, controls.query, controls.filters, data) {
+            controls.filters.myGear && data.equipment != null &&
+                buildPickerView(
+                    exercises,
+                    controls.query,
+                    controls.filters.copy(myGear = false),
+                    data.equipment,
+                    data.recentIds,
+                    data.favouriteIds,
+                ).count > 0
+        }
     Column(modifier.fillMaxWidth()) {
         Text(
             plural(view.count, "1 exercise", "${view.count} exercises"),
@@ -206,7 +233,7 @@ fun ExercisePickerPanel(
         PickerFilterBar(exercises, controls, data.equipment)
         Spacer(Modifier.height(12.dp))
         LazyColumn(Modifier.fillMaxWidth().weight(1f)) {
-            exerciseRows(view, data, controls.query, browse = true, onPick, vm::setFavourite)
+            exerciseRows(view, data, controls.query, gearHidAll, browse = true, onPick, vm::setFavourite)
         }
     }
 }
@@ -329,6 +356,7 @@ private fun LazyListScope.exerciseRows(
     view: PickerView,
     data: PickerData,
     query: String,
+    gearHidAll: Boolean,
     browse: Boolean,
     onPick: (Exercise) -> Unit,
     onFavourite: (Long, Boolean) -> Unit,
@@ -360,10 +388,14 @@ private fun LazyListScope.exerciseRows(
     }
     if (view.count == 0) {
         item(key = "empty") {
-            // Say WHY nothing matched: a blank query with the catalogue
-            // present means the filters did it, not the words.
+            // Say WHY nothing matched: the gear filter emptying the list gets
+            // its own line, because the fix (FILTERS) is not the words.
             Text(
-                if (query.isNotBlank()) "No exercise matches \"$query\"" else "No exercise matches the filters set",
+                when {
+                    gearHidAll -> "Nothing your gear covers — tap FILTERS to show all gear"
+                    query.isNotBlank() -> "No exercise matches \"$query\""
+                    else -> "No exercise matches the filters set"
+                },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(vertical = 12.dp),

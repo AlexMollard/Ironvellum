@@ -402,6 +402,7 @@ fun SessionScreen(
     val finish by viewModel.finish.collectAsStateWithLifecycle()
     val claiming by viewModel.claiming.collectAsStateWithLifecycle()
     var confirmAbandon by remember { mutableStateOf(false) }
+    var confirmClaim by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
     var editModifiersFor by remember { mutableStateOf<Long?>(null) }
     var musclesFor by remember { mutableStateOf<Long?>(null) }
@@ -764,11 +765,15 @@ fun SessionScreen(
         // Nothing ticked is nothing to claim: finishing an empty trial is an
         // abandon, and it must never mint the completion bonus.
         val anyDone = doneCount > 0
+        // Fewer than half the sets ticked (and more than two sets) is usually
+        // a claim tapped by accident mid-workout, so it asks first. Pure UI:
+        // the completion call is exactly the one the button made before.
+        val claimHasty = doneCount * 2 < ui.sets.size && ui.sets.size > 2
         IronvellumButton(
             label = "Claim Victory",
             gold = true,
             enabled = anyDone,
-            onClick = { viewModel.complete() },
+            onClick = { if (claimHasty) confirmClaim = true else viewModel.complete() },
             modifier = Modifier.fillMaxWidth(),
         )
         if (!anyDone) {
@@ -806,6 +811,33 @@ fun SessionScreen(
             },
             dismissButton = {
                 IronvellumButton("Keep going", onClick = { confirmAbandon = false })
+            },
+        )
+    }
+
+    if (confirmClaim) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = { confirmClaim = false },
+            title = { Text("Claim victory?") },
+            text = {
+                val unticked = ui.sets.count { !it.done }
+                Text("$unticked ${plural(unticked, "set", "sets")} unticked — claim anyway?")
+            },
+            // Claiming is the deliberate action here, so it takes the confirm
+            // slot; KEEP GOING is the safe default.
+            confirmButton = {
+                IronvellumButton(
+                    "Claim",
+                    onClick = {
+                        confirmClaim = false
+                        viewModel.complete()
+                    },
+                )
+            },
+            dismissButton = {
+                IronvellumButton("Keep going", quiet = true, onClick = { confirmClaim = false })
             },
         )
     }

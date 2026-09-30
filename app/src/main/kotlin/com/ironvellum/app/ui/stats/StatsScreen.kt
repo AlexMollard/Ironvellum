@@ -211,7 +211,7 @@ fun StatsScreen(
     Column(Modifier.fillMaxSize()) {
         Spacer(Modifier.height(20.dp))
         Text(
-            "STATUS WINDOW",
+            "YOUR NUMBERS",
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -267,7 +267,7 @@ fun StatsScreen(
                         onClick = if (latest == null) null else ({ drill = "FFMI" }),
                     ) {
                         MetricLabel("FFMI")
-                        MetricCaption("fat-free mass index")
+                        MetricCaption("muscle mass for your height")
                         val ffmi = latest?.let { s -> s.bodyFatPct?.let { BodyStats.ffmi(s.weightKg, s.heightCm, it) } }
                         MetricValue(
                             ffmi?.let { formatBodyValue(it) } ?: "—",

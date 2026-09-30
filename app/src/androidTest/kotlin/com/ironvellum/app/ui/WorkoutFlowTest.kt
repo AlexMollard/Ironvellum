@@ -182,6 +182,22 @@ class WorkoutFlowTest {
         // scrolling lands on whatever moved under it. The wiring is the point.
         compose.onAllNodesWithText("CLAIM VICTORY").onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
+        // One logged set among many raises the unticked-sets confirm; claim
+        // through it. Exact "CLAIM" exists only in that dialog - the trial
+        // screen's button reads CLAIM VICTORY. The dialog composes a beat
+        // after the tap, so poll instead of assuming it is already there.
+        var claimed = false
+        repeat(30) {
+            val node = compose.onAllNodesWithText("CLAIM").fetchSemanticsNodes().firstOrNull()
+            if (node != null) {
+                compose.onAllNodesWithText("CLAIM").onFirst()
+                    .performSemanticsAction(SemanticsActions.OnClick)
+                claimed = true
+            }
+            if (claimed) return@repeat
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+            Thread.sleep(POLL_MS)
+        }
         // Completion stacks celebrations: the victory screen, then one page per
         // award earned. Drain them by their own buttons.
         drainCelebrations()

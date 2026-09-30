@@ -560,6 +560,9 @@ private fun WeeklyCoverageCard(
     val gaps = coverageGaps(volume, goal).size
     InkPanel(
         modifier
+            // A min height keeps the tappable figure from shrinking to a strip
+            // on short panes; the card is the button that opens the full view.
+            .heightIn(min = 220.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -571,13 +574,23 @@ private fun WeeklyCoverageCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                "WEEKLY COVERAGE",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "WEEKLY COVERAGE",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.SystemGreen,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                )
+                // The chevron is the tap affordance: without it the card read
+                // as a static summary even though it opens the full screen.
+                Text(
+                    " ›",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.SystemGreen,
+                )
+            }
             Text(
                 when {
                     ui.plannedPresets.isEmpty() -> "NO ROUTINE YET"

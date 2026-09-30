@@ -331,6 +331,41 @@ class WireNamesMatchSchemaTest {
     }
 
     @Test
+    fun `the warband rpc returns exactly the columns the client decodes`() {
+        // my_warband() hands the band over; a column the client does not decode
+        // is a detail silently dropped, one it decodes that is not returned is
+        // a default shown as fact.
+        assertEquals(
+            functionReturnColumns(RPC_MY_WARBAND).sorted(),
+            serialNames(WarbandDto.serializer().descriptor).sorted(),
+        )
+        assertTrue("$RPC_MY_WARBAND() now takes arguments", functionParams(RPC_MY_WARBAND).isEmpty())
+        assertTrue("$RPC_LEAVE_WARBAND() now takes arguments", functionParams(RPC_LEAVE_WARBAND).isEmpty())
+    }
+
+    @Test
+    fun `warband rpc argument names match the function signatures`() {
+        for ((fn, dto) in listOf(
+            RPC_CREATE_WARBAND to CreateWarbandArgs.serializer().descriptor,
+            RPC_JOIN_WARBAND to JoinWarbandArgs.serializer().descriptor,
+        )) {
+            val params = functionParams(fn)
+            assertTrue("no parameters parsed for $fn — the parser is broken", params.isNotEmpty())
+            assertEquals(
+                "$fn() argument names drifted from the SQL signature",
+                params.sorted(),
+                dto.elementNames.sorted(),
+            )
+        }
+    }
+
+    @Test
+    fun `the create and join read-back matches the warbands table`() {
+        // create_warband/join_warband return a raw `warbands` row.
+        check("WarbandRowDto", WarbandRowDto.serializer().descriptor, tableColumns("warbands"))
+    }
+
+    @Test
     fun `lift marks and the lift board match the schema`() {
         // Failure mode: a drifted name decodes the default, so an ally's
         // tier shows as step 0 with no error anywhere.

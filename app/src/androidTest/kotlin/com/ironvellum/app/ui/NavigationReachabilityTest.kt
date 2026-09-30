@@ -68,7 +68,7 @@ class NavigationReachabilityTest {
         assertShows("STEPS")
 
         open("Train", "TRAINING GROUNDS")
-        open("Stats", "STATUS WINDOW")
+        open("Stats", "YOUR NUMBERS")
         open("Codex", "SKILL TREE")
         // Signed out (the test profile is), Allies is the account screen alone.
         open("Allies", "Cloud link for lifters")
