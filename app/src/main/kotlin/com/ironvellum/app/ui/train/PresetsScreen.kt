@@ -325,7 +325,6 @@ fun PresetsScreen(
                             RiteMusclesDialog(
                                 title = preset.name,
                                 entries = preset.toPlanned().entries,
-                                goal = CoverageGoal(ui.tier, ui.focus, ui.priorities),
                                 onDismiss = { showMuscles = false },
                             )
                         }

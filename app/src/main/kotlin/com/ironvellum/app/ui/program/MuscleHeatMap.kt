@@ -460,9 +460,9 @@ fun RiteMuscleMap(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(0.01, 1.0)), "FEWER SETS")
-            LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(1.0, 1.0)), "MORE SETS")
-            LegendKey(IronvellumColors.Bracket.copy(alpha = 0.55f), "NOT WORKED")
+            LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(0.01, 1.0)), "FEWER")
+            LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(1.0, 1.0)), "MORE")
+            LegendKey(IronvellumColors.Bracket.copy(alpha = 0.55f), "NONE")
         }
     }
 }

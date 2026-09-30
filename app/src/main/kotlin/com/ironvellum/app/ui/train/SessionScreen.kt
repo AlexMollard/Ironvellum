@@ -101,6 +101,7 @@ import androidx.compose.ui.window.DialogProperties
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.data.cloud.WireLimits
+import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LastLogged
@@ -149,6 +150,7 @@ import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.MuscleMap
+import com.ironvellum.app.ui.program.RiteMusclesDialog
 import com.ironvellum.app.ui.program.ShareLevel
 import com.ironvellum.app.ui.program.musclesAt
 
@@ -415,6 +417,7 @@ fun SessionScreen(
     var confirmClaim by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
     var editModifiersFor by remember { mutableStateOf<Long?>(null) }
+    var showRiteMuscles by remember { mutableStateOf(false) }
     var infoFor by remember { mutableStateOf<Long?>(null) }
     var editLoadFor by remember { mutableStateOf<SessionSet?>(null) }
 
@@ -498,7 +501,23 @@ fun SessionScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Column(Modifier.weight(1f)) {
-                Text(session.label, style = MaterialTheme.typography.headlineSmall, color = IronvellumColors.EmeraldBright)
+                // The whole trial's muscles, from the rows as they stand now.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        session.label,
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = IronvellumColors.EmeraldBright,
+                        modifier = Modifier.weight(1f, fill = false),
+                    )
+                    IconButton(onClick = { showRiteMuscles = true }, modifier = Modifier.size(44.dp)) {
+                        Icon(
+                            Icons.Outlined.Info,
+                            contentDescription = "Muscles in ${session.label}",
+                            tint = IronvellumColors.InkMuted,
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
+                }
                 Text(
                     "Started ${formatDate(session.startedAtMs)}",
                     style = MaterialTheme.typography.labelSmall,
@@ -938,6 +957,16 @@ fun SessionScreen(
         )
     }
 
+    if (showRiteMuscles) {
+        RiteMusclesDialog(
+            title = session.label,
+            entries = ui.sets.groupBy { it.exercisePosition }.toSortedMap().values.map { rows ->
+                val first = rows.first()
+                PlannedEntry(first.exerciseName, sets = rows.size, reps = first.reps, targetWeightKg = null, modifiers = first.modifiers)
+            },
+            onDismiss = { showRiteMuscles = false },
+        )
+    }
     editModifiersFor?.let { exerciseId ->
         val current = ui.sets.firstOrNull { it.exerciseId == exerciseId }
         ModifierPickerDialog(

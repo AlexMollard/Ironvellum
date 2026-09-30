@@ -36,11 +36,9 @@ import kotlin.math.roundToInt
  * it is deliberately unused, because a single rite is never judged against it.
  */
 @Composable
-@Suppress("UNUSED_PARAMETER")
 internal fun RiteMusclesDialog(
     title: String,
     entries: List<PlannedEntry>,
-    goal: CoverageGoal?,
     onDismiss: () -> Unit,
 ) {
     val sets = remember(title, entries) {
@@ -94,8 +92,7 @@ internal fun RiteMusclesDialog(
                             )
                             Text(
                                 riteSetsLabel(count),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontFamily = ChakraPetch,
+                                style = MaterialTheme.typography.bodyMedium,
                                 color = IronvellumColors.InkMuted,
                             )
                         }
