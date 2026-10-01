@@ -9,8 +9,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -34,7 +36,9 @@ import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Streak
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.LedgerContrast
 import com.ironvellum.app.ui.components.LedgerSpace
+import com.ironvellum.app.ui.components.rememberZoneId
 import com.ironvellum.app.ui.components.PanelLabel
 import com.ironvellum.app.ui.components.StatSize
 import com.ironvellum.app.ui.components.StatValue
@@ -51,8 +55,13 @@ import java.time.format.TextStyle
 import java.time.temporal.WeekFields
 import java.util.Locale
 
-/** Cells are about 40dp: a month of six weeks fits above the records board. */
-private val CellHeight = 40.dp
+/**
+ * A day cell is at least this tall: LedgerSpace.Target, so a sealed day is a
+ * proper touch target. Seven columns in a phone width leave them under 48dp
+ * wide; the height is what can honour the minimum. The cell grows with the
+ * font size rather than clipping its date.
+ */
+private val CellHeight = LedgerSpace.Target
 
 /**
  * First date the calendar marks a scheduled weekday: the lifter's first
@@ -113,7 +122,7 @@ internal fun TrainingCalendar(
     onMonth: (Int) -> Unit,
     onOpenTrial: (Long) -> Unit,
 ) {
-    val zone = remember { ZoneId.systemDefault() }
+    val zone = rememberZoneId()
     val locale = LocalConfiguration.current.locales[0]
     val byDay = remember(sessions, zone) { trialsByDay(sessions, zone) }
     val inMonth = remember(byDay, month, today) { trialsInMonth(byDay, month, today) }
@@ -170,7 +179,7 @@ internal fun TrainingCalendar(
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = if (canAdvance) "Next month" else "Next month, already at the current month",
-                    tint = if (canAdvance) IronvellumColors.SystemGreen else IronvellumColors.Bracket,
+                    tint = if (canAdvance) IronvellumColors.SystemGreen else LedgerContrast.Graphic,
                 )
             }
         }
@@ -237,7 +246,7 @@ private fun DayCell(
     Column(
         Modifier
             .fillMaxWidth()
-            .height(CellHeight)
+            .heightIn(min = CellHeight)
             .clip(MaterialTheme.shapes.extraSmall)
             // A day with a trial opens its latest one; the rest are not controls.
             .then(
@@ -252,8 +261,9 @@ private fun DayCell(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
+            // sizeIn, not size: at a large font a two-digit date widens the ring instead of overflowing it
             Modifier
-                .size(28.dp)
+                .sizeIn(minWidth = 28.dp, minHeight = 28.dp)
                 .inkBorder(IronvellumColors.Ink, InkCircleShape(7), if (isToday) 1.5.dp else 0.dp),
             contentAlignment = Alignment.Center,
         ) {
@@ -262,7 +272,7 @@ private fun DayCell(
                 style = MaterialTheme.typography.bodySmall,
                 color = when {
                     sealed || isToday -> IronvellumColors.Ink
-                    future -> IronvellumColors.InkMuted.copy(alpha = 0.5f)
+                    future -> LedgerContrast.FutureText
                     else -> IronvellumColors.InkMuted
                 },
             )

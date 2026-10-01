@@ -33,6 +33,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,9 +44,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -102,8 +105,16 @@ internal fun BodyTab(
     val bmi = latest?.let { Ledger.bmiOf(it, ui.profileHeight) }
     val heightKnown = (ui.profileHeight ?: 0.0) > 0.0 || (latest?.heightCm ?: 0.0) > 0.0
     val strength = remember(ui.sessions) { Ledger.strengthTrend(ui.sessions) }
-    val weeks = remember(ui.completedDates, today) { Ledger.weeklyCounts(ui.completedDates, today) }
-    val month = remember(ui.completedDates, today) { Ledger.sealedThisMonth(ui.completedDates, today) }
+    // The calendar's week start, so the strip and the grid cut the same weeks.
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val weekStart = remember(locale) { java.time.temporal.WeekFields.of(locale).firstDayOfWeek }
+    val weeks = remember(ui.completedDates, today, weekStart) {
+        Ledger.weeklyCounts(ui.completedDates, today, weekStart = weekStart)
+    }
+    // The calendar's own count (one per trial), so the two tabs never disagree.
+    val month = remember(ui.sessions, today, zone) {
+        trialsInMonth(trialsByDay(ui.sessions, zone), java.time.YearMonth.from(today), today)
+    }
     val daily = remember(ui.healthDays, today) { Ledger.dailyAverageSummary(ui.healthDays, today) }
 
     Column(
@@ -232,7 +243,7 @@ internal fun BodyTab(
         InkPanel(Modifier.fillMaxWidth()) {
             val logged = Measurements.latest(ui.measurements).size
             InkListRow(
-                label = "Tape measurements",
+                label = "Tape readings",
                 value = "$logged of ${MeasurementSite.entries.size} logged",
                 supporting = "stays on this device",
                 onClick = onOpenTape,
@@ -410,6 +421,9 @@ internal fun WeightHistoryPage(
             UndoBar("Reading deleted", onUndo, onUndoExpired, key = lastDeleted.id)
         }
     }
+    // The offer belongs to this page: leaving it lets the deletion stand, so
+    // coming back never shows an Undo for a reading deleted long ago.
+    DisposableEffect(Unit) { onDispose(onUndoExpired) }
 }
 
 @Composable
@@ -473,11 +487,18 @@ internal fun ArmedChoice(label: String, color: androidx.compose.ui.graphics.Colo
 /** A bottom strip that offers Undo for a few seconds, then lets the deletion stand. */
 @Composable
 internal fun UndoBar(message: String, onUndo: () -> Unit, onExpired: () -> Unit, key: Any) {
+    // Longer when the user's accessibility settings ask for more time to act.
+    val window = undoWindowMs(androidx.compose.ui.platform.LocalContext.current)
     LaunchedEffect(key) {
-        kotlinx.coroutines.delay(UNDO_WINDOW_MS)
+        kotlinx.coroutines.delay(window)
         onExpired()
     }
-    InkPanel(Modifier.fillMaxWidth().padding(horizontal = LedgerSpace.Gutter, vertical = LedgerSpace.Panel)) {
+    InkPanel(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = LedgerSpace.Gutter, vertical = LedgerSpace.Panel)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+    ) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 message,
@@ -503,3 +524,12 @@ internal fun UndoBar(message: String, onUndo: () -> Unit, onExpired: () -> Unit,
 }
 
 private const val UNDO_WINDOW_MS = 6_000L
+
+/** [UNDO_WINDOW_MS], stretched to the system's recommended timeout when accessibility services are on. */
+private fun undoWindowMs(context: android.content.Context): Long {
+    val manager = context.getSystemService(android.view.accessibility.AccessibilityManager::class.java)
+        ?: return UNDO_WINDOW_MS
+    val flags = android.view.accessibility.AccessibilityManager.FLAG_CONTENT_CONTROLS or
+        android.view.accessibility.AccessibilityManager.FLAG_CONTENT_TEXT
+    return manager.getRecommendedTimeoutMillis(UNDO_WINDOW_MS.toInt(), flags).toLong().coerceAtLeast(UNDO_WINDOW_MS)
+}
