@@ -1153,7 +1153,9 @@ class ProgramGeneratorTest {
         val plan = strengthPpl3(setOf(MuscleArea.BACK, MuscleArea.SHOULDERS))
         val volume = volumeOf(plan)
         val top = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.STRENGTH).endInclusive
-        assertEquals(top, volume[Muscle.LATS]!!, 1e-9)
+        // The lats can stop short of the top here: the shoulder priority's
+        // prone Y raises share the pull day's 75 minutes. The loop below
+        // holds them to "out of time, never spent on a helper".
         for (muscle in listOf(Muscle.LATS, Muscle.SIDE_DELTS)) {
             if ((volume[muscle] ?: 0.0) >= top - 1e-9) continue
             for (preset in plan.presets) {
@@ -1199,11 +1201,36 @@ class ProgramGeneratorTest {
         assertEquals(
             5, entriesOf(prioritised).filter { it.exerciseName == "Lateral Raise" }.sumOf { it.sets },
         )
-        // Across the week one archer push-up set gives way to one more
-        // shoulder-press set: front delts +1.0 - 0.7. No set is ever added
-        // for the front delts themselves (below).
-        assertEquals(volumeOf(plain)[Muscle.FRONT_DELTS]!! + 0.3, volume[Muscle.FRONT_DELTS]!!, 1e-9)
+        assertEquals(volumeOf(plain)[Muscle.FRONT_DELTS]!!, volume[Muscle.FRONT_DELTS]!!, 1e-9)
         assertTrue(entriesOf(prioritised).none { filledFor(it) == Muscle.FRONT_DELTS })
+    }
+
+    @Test
+    fun `a main-lift stand-in leads with the main lift's own muscle`() {
+        // Made compound, the triceps-led bench dip took the bench press slot
+        // from the incline push-up on every no-gear and dumbbell-only week.
+        // A stand-in must credit the lift's lead muscle as a prime mover.
+        val kits = listOf(
+            Equipment.NOTHING, Equipment(fullGym = false, gear = setOf(Gear.DUMBBELLS)), ownerKit,
+            Equipment(fullGym = false, gear = Gear.entries.toSet()), Equipment.FULL_GYM,
+        )
+        var standIns = 0
+        for (kit in kits) for (focus in TrainingFocus.entries) for (days in 2..6) for (compoundOnly in listOf(false, true)) {
+            val plan = ProgramGenerator.week(
+                ProgramRequest(focus, VolumeLevel.STANDARD, kit, days, compoundOnly = compoundOnly),
+                catalogue, strength,
+            )
+            for (entry in entriesOf(plan)) {
+                val main = Regex("^Your armoury's stand-in for the (.+?):").find(entry.why)?.groupValues?.get(1) ?: continue
+                standIns++
+                val lead = MuscleMap.profile(main)!!.muscles.entries.first { it.value == 1.0 }.key
+                assertEquals(
+                    "${entry.exerciseName} stands in for the $main ($focus, $days days, $kit)",
+                    1.0, MuscleMap.profile(entry)!!.muscles[lead] ?: 0.0, 1e-9,
+                )
+            }
+        }
+        assertTrue("fixture broken: no stand-ins", standIns > 0)
     }
 
     /** A name the owner's kit cannot express, per the gear brief. */

@@ -882,11 +882,18 @@ object ProgramGenerator {
         // one crediting fewer muscles the main lift does not train wins, not
         // the later name: a dumbbell kit's deadlift stand-in is the two-leg
         // RDL, not its single-leg twin with the abductors on top.
-        val trained = MuscleMap.profile(mainName)?.muscles.orEmpty().filterValues { it > 0.0 }.keys
+        // Ahead of all of that, the stand-in must credit the main lift's
+        // lead muscle as a prime mover: a triceps-led bench dip shares the
+        // bench press's pattern but is no chest press, so it never takes the
+        // slot from a push-up while one fits.
+        val mainProfile = MuscleMap.profile(mainName)
+        val lead = mainProfile?.let { dominantMuscle(it) }
+        val trained = mainProfile?.muscles.orEmpty().filterValues { it > 0.0 }.keys
         return pool
             .filter { profileOf(it).pattern == pattern && it.name !in session.names }
             .maxWithOrNull(
                 compareBy(
+                    { if (lead != null && (profileOf(it).muscles[lead] ?: 0.0) >= 1.0) 1 else 0 },
                     { if (profileOf(it).compound) 1 else 0 },
                     { calisthenicsRank(ctx, it) },
                     { -fitScore(it, ctx.request.equipment) },
