@@ -48,6 +48,7 @@ object GearRequirements {
         "one-arm negative" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "weighted pull-up" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "scapular pull" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
+        "negative pull-up" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "dead hang" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "active bar hang" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "one-arm hang" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
@@ -62,6 +63,8 @@ object GearRequirements {
         "ring muscle-up" to listOf(setOf(Gear.RINGS)),
         "ring row" to listOf(setOf(Gear.RINGS)),
         "ring dip" to listOf(setOf(Gear.RINGS)),
+        "rto support hold" to listOf(setOf(Gear.RINGS)),
+        "banded iron cross" to listOf(setOf(Gear.RINGS)),
         // Horizontal pulling under the bar: rings, or a bar set low in a rack.
         "inverted row" to listOf(setOf(Gear.RINGS), setOf(Gear.BARBELL)),
         "australian pull-up" to listOf(setOf(Gear.RINGS), setOf(Gear.BARBELL)),
@@ -73,6 +76,7 @@ object GearRequirements {
         "ab wheel rollout" to listOf(setOf(Gear.AB_WHEEL)),
         // Floor works too, hence the empty-set alternative.
         "l-sit" to listOf(setOf(Gear.PARALLETTES), setOf(Gear.DIP_BARS), emptySet()),
+        "tuck l-sit" to listOf(setOf(Gear.PARALLETTES), setOf(Gear.DIP_BARS), emptySet()),
         // Barbell free weights.
         "back squat" to listOf(setOf(Gear.BARBELL)),
         "front squat" to listOf(setOf(Gear.BARBELL)),

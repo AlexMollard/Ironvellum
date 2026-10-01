@@ -116,7 +116,12 @@ object Skills {
             why = "Horizontal pulling volume that builds the back before bodyweight verticals.",
         ),
         SkillDef(
-            "Pull-up", 3, "Pull", prerequisites = listOf("Australian Pull-up"),
+            "Negative Pull-up", 2, "Pull", prerequisites = listOf("Australian Pull-up"),
+            standard = "5 negatives, each 5s from chin over the bar to a dead hang",
+            why = "The lowering half of the pull-up, owned before the lift itself - the step between rows and the full rep.",
+        ),
+        SkillDef(
+            "Pull-up", 3, "Pull", prerequisites = listOf("Negative Pull-up"),
             standard = "8 clean reps, chin over bar, dead hang each rep",
             why = "The foundation every advanced pulling technique is measured against.",
         ),
@@ -131,9 +136,9 @@ object Skills {
             why = "Shifts load onto one arm — the honest halfway point to single-arm work.",
         ),
         SkillDef(
-            "Weighted Pull-up", 5, "Pull", prerequisites = listOf("Archer Pull-up"),
-            standard = "5 reps with +25 kg, chin over bar every rep",
-            why = "External load builds the absolute strength ceiling of the whole path.",
+            "Weighted Pull-up", 4, "Pull", prerequisites = listOf("Pull-up"),
+            standard = "5 reps with a third of your bodyweight added, chin over bar every rep",
+            why = "External load builds the absolute strength ceiling of the whole path, scaled to the body pulling it.",
         ),
         SkillDef(
             "One-Arm Negative", 4, "Pull", prerequisites = listOf("Archer Pull-up"),
@@ -198,7 +203,7 @@ object Skills {
         ),
         SkillDef(
             "Weighted Dip", 4, "Push", prerequisites = listOf("Parallel Bar Dip"),
-            standard = "5 reps with +20 kg, full depth every rep",
+            standard = "5 reps with a third of your bodyweight added, full depth every rep",
             why = "Overloaded pressing strength that carries into every ring and planche technique.",
         ),
         // HANDSTAND line — balance, press and its extremes
@@ -218,12 +223,22 @@ object Skills {
             why = "The vertical press pattern that scales into the handstand push-up.",
         ),
         SkillDef(
-            "Wall HSPU", 2, "Handstand", prerequisites = listOf("Pike Press", "Wall Handstand"),
+            "Elevated Pike Push-up", 3, "Handstand", prerequisites = listOf("Pike Press"),
+            standard = "8 reps, feet on a box at hip height, hips stacked over hands, head to floor",
+            why = "Raising the feet puts more of your bodyweight over the hands - the bridge from the pike to the wall.",
+        ),
+        SkillDef(
+            "Wall HSPU Negative", 3, "Handstand", prerequisites = listOf("Elevated Pike Push-up", "Wall Handstand"),
+            standard = "5 negatives, each 5s from locked arms to head on the floor, chest to the wall",
+            why = "Lowers the full bodyweight press under control before you have to press it back up.",
+        ),
+        SkillDef(
+            "Wall HSPU", 4, "Handstand", prerequisites = listOf("Wall HSPU Negative", "Wall Handstand"),
             standard = "5 reps against the wall, full range, head to floor",
             why = "Loads the press at near-full bodyweight without needing balance.",
         ),
         SkillDef(
-            "Crow → Handstand", 2, "Handstand", prerequisites = listOf("Crow Pose"),
+            "Crow → Handstand", 4, "Handstand", prerequisites = listOf("Freestanding Handstand", "Crow Pose"),
             standard = "3 controlled presses out of crow, no jump",
             why = "Teaches the press line and the hip-to-shoulder shift.",
         ),
@@ -264,7 +279,7 @@ object Skills {
             why = "Teaches the straight-arm pulling shape that levers are made of.",
         ),
         SkillDef(
-            "Tuck Front Lever", 2, "Lever", prerequisites = listOf("Front Row Hold"),
+            "Tuck Front Lever", 3, "Lever", prerequisites = listOf("Front Row Hold", "Pull-up", "Hollow Hold"),
             standard = "Hold 15s, knees tucked, back flat and horizontal",
             why = "First real straight-arm lat load; builds the scapular strength for the full lever.",
         ),
@@ -274,22 +289,22 @@ object Skills {
             why = "Doubles the lever arm — the real strength jump on the path.",
         ),
         SkillDef(
-            "One-Leg Front Lever", 3, "Lever", prerequisites = listOf("Advanced Tuck Front Lever"),
+            "One-Leg Front Lever", 4, "Lever", prerequisites = listOf("Advanced Tuck Front Lever"),
             standard = "Hold 10s, one leg extended, hips level",
             why = "Adds length asymmetrically so you can load closer to the full shape.",
         ),
         SkillDef(
             "Straddle Front Lever", 4, "Lever", prerequisites = listOf("One-Leg Front Lever"),
-            standard = "Hold 10s, legs wide, body flat",
+            standard = "Hold 8s, legs wide, body flat",
             why = "Last stop before the full lever; teaches keeping the line under real load.",
         ),
         SkillDef(
             "Front Lever", 5, "Lever", prerequisites = listOf("Straddle Front Lever"),
-            standard = "Hold 8s, body fully straight and horizontal",
+            standard = "Hold 5s, body fully straight and horizontal",
             why = "The benchmark straight-arm pull — few exercises demand more from lats and core.",
         ),
         SkillDef(
-            "Skin the Cat", 2, "Lever", prerequisites = listOf("One-Arm Hang"),
+            "Skin the Cat", 2, "Lever", prerequisites = listOf("German Hang"),
             standard = "3 reps, full rotation through German hang and back out",
             why = "Shoulder extension and rotation capacity that both lever paths feed on.",
         ),
@@ -304,7 +319,12 @@ object Skills {
             why = "Lengthens the lever arm under control on the back side.",
         ),
         SkillDef(
-            "Straddle Back Lever", 4, "Lever", prerequisites = listOf("Advanced Tuck Back Lever"),
+            "One-Leg Back Lever", 3, "Lever", prerequisites = listOf("Advanced Tuck Back Lever"),
+            standard = "Hold 10s, one leg extended, hips level",
+            why = "Lengthens one side of the back lever at a time - the half-step between the tucks and the straddle.",
+        ),
+        SkillDef(
+            "Straddle Back Lever", 4, "Lever", prerequisites = listOf("One-Leg Back Lever"),
             standard = "Hold 10s, legs wide, body flat",
             why = "Nearly the full back lever — the last safe staging ground.",
         ),
@@ -313,6 +333,11 @@ object Skills {
             standard = "Hold 8s, body fully straight and horizontal",
             why = "Full shoulder-extension strength few people ever own.",
         ),
+        SkillDef(
+            "One-Arm Front Lever", 5, "Lever", prerequisites = listOf("Front Lever"),
+            standard = "Hold 5s on one arm",
+            why = "Front lever strength stacked onto single-arm stability.",
+        ),
         // PLANCHE line — the straight-arm push summit
         SkillDef(
             "Frog Stand", 1, "Planche",
@@ -320,7 +345,17 @@ object Skills {
             why = "Introduces the forward lean the whole planche path depends on.",
         ),
         SkillDef(
-            "Tuck Planche", 2, "Planche", prerequisites = listOf("Frog Stand"),
+            "Planche Lean", 2, "Planche", prerequisites = listOf("Frog Stand", "Parallel Bar Support Hold"),
+            standard = "Hold 30s, arms locked, shoulders leaned well past the wrists, feet on the floor",
+            why = "The planche's straight-arm lean with the feet still down - the shoulder load arrives before the balance does.",
+        ),
+        SkillDef(
+            "Elbow Lever", 2, "Planche", prerequisites = listOf("Frog Stand"),
+            standard = "Hold 15s, body horizontal on bent arms, elbows set into the hips, feet off the floor",
+            why = "A horizontal balance on bent arms: the first time your whole body floats level over the hands.",
+        ),
+        SkillDef(
+            "Tuck Planche", 3, "Planche", prerequisites = listOf("Planche Lean"),
             standard = "Hold 15s, arms locked straight, knees tucked",
             why = "First locked-arm planche shape — trains the scapular protraction.",
         ),
@@ -330,8 +365,8 @@ object Skills {
             why = "Big load increase; where planche strength really starts to build.",
         ),
         SkillDef(
-            "One-Leg Planche", 3, "Planche", prerequisites = listOf("Advanced Tuck Planche"),
-            standard = "Hold 8s, one leg extended",
+            "One-Leg Planche", 4, "Planche", prerequisites = listOf("Advanced Tuck Planche"),
+            standard = "Hold 10s, one leg extended",
             why = "Bridges advanced tuck to straddle without wrecking the shape.",
         ),
         SkillDef(
@@ -356,6 +391,11 @@ object Skills {
             why = "Stabilises the shoulders on the unstable surface every ring technique needs.",
         ),
         SkillDef(
+            "RTO Support Hold", 2, "Rings", prerequisites = listOf("Ring Support Hold"),
+            standard = "Hold 30s with the rings turned fully out, palms forward, arms locked",
+            why = "Rings turned out (RTO) load the straight arm the way every cross and planche on rings will.",
+        ),
+        SkillDef(
             "Ring Row", 2, "Rings", prerequisites = listOf("Ring Support Hold"),
             standard = "3 sets of 12 reps, body horizontal, chest to rings",
             why = "Pulling volume on rings that teaches the stabiliser reflexes early.",
@@ -371,14 +411,14 @@ object Skills {
             why = "Links ring pulling and pressing through the hardest transition there is.",
         ),
         SkillDef(
-            "Iron Cross", 5, "Rings", prerequisites = listOf("Ring Muscle-up"),
-            standard = "Hold 5s on rings, arms fully horizontal",
-            why = "Ring strength icon — enormous demand on chest, lats and elbows.",
+            "Banded Iron Cross", 4, "Rings", prerequisites = listOf("RTO Support Hold", "Ring Dip"),
+            standard = "Hold 10s in a cross with a resistance band taking part of the load, arms straight",
+            why = "Rehearses the cross at a fraction of the load, so the elbows and chest meet it gradually.",
         ),
         SkillDef(
-            "One-Arm Front Lever", 5, "Rings", prerequisites = listOf("Front Lever"),
-            standard = "Hold 5s on one arm",
-            why = "Front lever strength stacked onto single-arm stability.",
+            "Iron Cross", 5, "Rings", prerequisites = listOf("Banded Iron Cross", "Ring Muscle-up"),
+            standard = "Hold 5s on rings, arms fully horizontal",
+            why = "Ring strength icon — enormous demand on chest, lats and elbows.",
         ),
         // MOVEMENT line — dynamic combinations
         SkillDef(
@@ -402,7 +442,12 @@ object Skills {
             why = "Spinal extension and shoulder flexibility welded to hand-balance control.",
         ),
         SkillDef(
-            "Human Flag", 4, "Movement", prerequisites = listOf("One-Arm Hang"),
+            "Tuck Human Flag", 3, "Movement", prerequisites = listOf("Pull-up", "Pike Press"),
+            standard = "Hold 8s, knees tucked, hips level with the hands on the pole",
+            why = "The flag's push-pull on the pole with the lever shortened - the top arm pulls, the bottom arm presses.",
+        ),
+        SkillDef(
+            "Human Flag", 4, "Movement", prerequisites = listOf("Tuck Human Flag"),
             standard = "Hold 8s, body horizontal beside the pole",
             why = "Lateral core and shoulder strength that nothing else trains.",
         ),
@@ -423,17 +468,27 @@ object Skills {
             why = "Staggers the stance to load one leg at a time with balance demands.",
         ),
         SkillDef(
+            "Bulgarian Split Squat", 2, "Legs", prerequisites = listOf("Split Squat"),
+            standard = "3 sets of 10 reps per leg, rear foot on a bench, front heel down",
+            why = "Most of the bodyweight on the front leg - the single-leg base the shrimp and the pistol build on.",
+        ),
+        SkillDef(
+            "Supported Pistol Squat", 2, "Legs", prerequisites = listOf("Bulgarian Split Squat"),
+            standard = "8 reps per leg to full depth, one hand on a post for balance",
+            why = "The pistol's depth and line with the balance taken off, so strength is the only thing being trained.",
+        ),
+        SkillDef(
             "Sissy Squat", 2, "Legs", prerequisites = listOf("Split Squat"),
             standard = "12 reps, knees forward, torso in line with thighs",
             why = "Loads the quads through the knee-forward range most people avoid.",
         ),
         SkillDef(
-            "Shrimp Squat", 3, "Legs", prerequisites = listOf("Sissy Squat"),
+            "Shrimp Squat", 3, "Legs", prerequisites = listOf("Bulgarian Split Squat"),
             standard = "8 reps per leg, rear knee kissing the floor",
             why = "Single-leg strength plus hip-flexor and quad length.",
         ),
         SkillDef(
-            "Pistol Squat", 3, "Legs", prerequisites = listOf("Shrimp Squat"),
+            "Pistol Squat", 3, "Legs", prerequisites = listOf("Supported Pistol Squat"),
             standard = "8 reps per leg, hamstring to calf, heel down",
             why = "The single-leg strength standard, plus ankle mobility.",
         ),
@@ -453,7 +508,7 @@ object Skills {
             why = "Builds the eccentric hamstring strength the full curl is made of.",
         ),
         SkillDef(
-            "Nordic Curl", 3, "Legs", prerequisites = listOf("Nordic Negative"),
+            "Nordic Curl", 4, "Legs", prerequisites = listOf("Nordic Negative"),
             standard = "3 reps lowering and pulling back up under control, no hands",
             why = "Eccentric hamstring strength; serious injury insurance.",
         ),
@@ -568,7 +623,12 @@ object Skills {
             why = "The foundational body line every lever, press and handstand passes through.",
         ),
         SkillDef(
-            "L-sit", 2, "Core", prerequisites = listOf("Hollow Hold"),
+            "Tuck L-sit", 1, "Core", prerequisites = listOf("Hollow Hold"),
+            standard = "Hold 20s, knees tucked to the chest, hips and feet off the floor",
+            why = "The L-sit's support and compression with the legs folded short - where the full L starts.",
+        ),
+        SkillDef(
+            "L-sit", 2, "Core", prerequisites = listOf("Tuck L-sit"),
             standard = "Hold 20s, legs straight and parallel to the floor",
             why = "Compression strength that unlocks V-sit, manna and press work.",
         ),
@@ -614,7 +674,7 @@ object Skills {
             why = "Restores the resting squat: ankle, hip and knee range in one position.",
         ),
         SkillDef(
-            "Pancake", 1, "Mobility",
+            "Pancake", 3, "Mobility",
             standard = "Chest flat to the floor in a straddle fold, hold 60s",
             why = "Straddle hip flexion that feeds straddle levers, planches and splits.",
         ),
@@ -624,7 +684,12 @@ object Skills {
             why = "Spinal extension that offsets years of pressing and hanging volume.",
         ),
         SkillDef(
-            "Front Split", 3, "Mobility", prerequisites = listOf("Pancake"),
+            "Half Split", 2, "Mobility",
+            standard = "Hold 60s per side, front leg straight, hips square, chest folding toward the knee",
+            why = "The front split's hamstring half, owned before the hips have to open as well.",
+        ),
+        SkillDef(
+            "Front Split", 3, "Mobility", prerequisites = listOf("Half Split"),
             standard = "Full split on the floor, both sides, hold 30s each",
             why = "End-range hip flexor and hamstring length that protects kicks and splits.",
         ),
@@ -699,7 +764,18 @@ object Skills {
      * farm). Entries are permanent - an old claim can surface from an
      * archive restore at any time.
      */
-    private val tierWhenUnstamped: Map<String, Int> = emptyMap()
+    private val tierWhenUnstamped: Map<String, Int> = mapOf(
+        // Re-tiered by the October 2026 progression audit.
+        "Weighted Pull-up" to 5,
+        "Wall HSPU" to 2,
+        "Crow → Handstand" to 2,
+        "Tuck Front Lever" to 2,
+        "One-Leg Front Lever" to 3,
+        "Tuck Planche" to 2,
+        "One-Leg Planche" to 3,
+        "Nordic Curl" to 3,
+        "Pancake" to 1,
+    )
 
     /**
      * The XP an unclaim of [name] must take back. [stampedXp] is what the

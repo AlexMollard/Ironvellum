@@ -149,12 +149,15 @@ object Seed {
         // Rings mixes straight-arm holds/presses with rows; these push, Ring Row
         // and Ring Muscle-up genuinely pull and stay on the line rule.
         "Ring Support Hold" to MuscleGroup.PUSH,
+        "RTO Support Hold" to MuscleGroup.PUSH,
+        "Banded Iron Cross" to MuscleGroup.PUSH,
         "Ring Dip" to MuscleGroup.PUSH,
         "Iron Cross" to MuscleGroup.PUSH,
         // Movement mixes hand-balance/core tricks with muscle-up pulls.
         "Kip-up" to MuscleGroup.CORE,
         "Handstand-to-Bridge" to MuscleGroup.CORE,
         "Human Flag" to MuscleGroup.CORE,
+        "Tuck Human Flag" to MuscleGroup.CORE,
     )
 
     private fun skillGroup(def: Skills.SkillDef): MuscleGroup =

@@ -61,6 +61,7 @@ class SkillsTest {
                 "Handstand-to-Bridge",
                 "Handstand Push-up",
                 "Inverted Muscle-up",
+                "Crow → Handstand",
             ),
             Skills.dependantsOf("Freestanding Handstand").map { it.name }.toSet(),
         )
@@ -93,6 +94,27 @@ class SkillsTest {
         assertEquals(240, Skills.claimRefund("Dead Hang", stampedXp = 240))
         assertEquals("unstamped, unchanged tier", 120, Skills.claimRefund("Dead Hang", stampedXp = 0))
         assertEquals(0, Skills.claimRefund("No Such Skill", stampedXp = 0))
+        // Re-tiered skills: an unstamped claim refunds the tier it was paid at.
+        assertEquals("Wall HSPU was claimed at II", 240, Skills.claimRefund("Wall HSPU", stampedXp = 0))
+        assertEquals(4, Skills.forName("Wall HSPU")!!.tier)
+        assertEquals("Weighted Pull-up was claimed at V", 600, Skills.claimRefund("Weighted Pull-up", stampedXp = 0))
+        assertEquals(4, Skills.forName("Weighted Pull-up")!!.tier)
+        assertEquals("a stamp wins over the old tier", 480, Skills.claimRefund("Wall HSPU", stampedXp = 480))
+    }
+
+    /** The front lever and planche lines climb one shared hold-time ladder. */
+    @Test
+    fun `front lever and planche share one hold ladder`() {
+        val ladder = listOf(15, 12, 10, 8, 5)
+        val lever = listOf("Tuck Front Lever", "Advanced Tuck Front Lever", "One-Leg Front Lever", "Straddle Front Lever", "Front Lever")
+        val planche = listOf("Tuck Planche", "Advanced Tuck Planche", "One-Leg Planche", "Straddle Planche", "Full Planche")
+        assertEquals(ladder, lever.map { Skills.forName(it)!!.target })
+        assertEquals(ladder, planche.map { Skills.forName(it)!!.target })
+        assertEquals(
+            "matching steps sit at matching tiers",
+            lever.map { Skills.forName(it)!!.tier },
+            planche.map { Skills.forName(it)!!.tier },
+        )
     }
 
     @Test

@@ -153,6 +153,7 @@ object MuscleMap {
         "shrimp squat", "dragon squat", "split squat", "bulgarian split squat", "cossack squat", "barbell lunge",
         "walking lunge", "barbell step-up", "dumbbell step-up", "archer pull-up", "archer push-up",
         "one-arm pull-up", "one-arm negative", "one-arm push-up", "one-arm negative push-up", "dumbbell row",
+        "supported pistol squat",
         "side-lying hip abduction", "dumbbell external rotation", "woodchop", "pallof press",
     )
 
@@ -363,6 +364,8 @@ object MuscleMap {
         // turn a near-maximal 10 s tuck lever into a fifth of a set while a
         // 3-rep pull-up set counted whole.
         put("l-sit", lSit(triceps = true))
+        // Knees folded in: the same support and compression on a shorter lever.
+        put("tuck l-sit", lSit(triceps = true))
         // Wider or higher legs load the same compression harder.
         put("straddle l-sit", lSit(triceps = true))
         put("v-sit", lSit())
@@ -397,6 +400,9 @@ object MuscleMap {
         put("advanced tuck back lever", backLever())
         put("straddle back lever", backLever())
         put("back lever", backLever())
+        put("one-leg back lever", backLever())
+        // The lean is the planche shape with the feet down: the same muscles, less load.
+        put("planche lean", planche())
         put("tuck planche", planche())
         put("advanced tuck planche", planche())
         put("one-leg planche", planche())
@@ -617,6 +623,8 @@ object MuscleMap {
             pattern = MovementPattern.VERTICAL_PULL, compound = false, stretchBias = true, noLeadByDesign = true,
         ))
         put("australian pull-up", row())
+        // The lowering half of a pull-up: the same muscles, worked eccentrically.
+        put("negative pull-up", verticalPull())
         // A pull-up held in an L: the pull-up's own credits plus the trunk
         // and hip flexors that hold the legs up.
         put("l-sit pull-up", verticalPull().let { pull ->
@@ -637,6 +645,9 @@ object MuscleMap {
         put("parallel bar dip", dip())
         put("pike press", verticalPress())
         put("wall hspu", verticalPress())
+        // The press family between the pike and the wall: same muscles, more of the body overhead.
+        put("elevated pike push-up", verticalPress())
+        put("wall hspu negative", verticalPress())
         put("90-degree push-up", ExerciseProfile(
             // Pressing out of a planche-lean: shoulder flexion work, the
             // clavicular chest's line rather than the sternal one.
@@ -683,6 +694,8 @@ object MuscleMap {
         ))
         put("bodyweight squat", deepSquat())
         put("split squat", squatProfile(MovementPattern.LUNGE))
+        // A pistol to full depth with a hand on a post: the pistol's own shares.
+        put("supported pistol squat", squatProfile(pattern = MovementPattern.LUNGE))
         put("sissy squat", ExerciseProfile(
             muscles = mapOf(Muscle.QUADS to 1.0),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
@@ -746,6 +759,7 @@ object MuscleMap {
         put("parallel bar support hold", supportHold())
         // Rings shake: the cuff and the biceps hold the arms turned out.
         put("ring support hold", supportHold(Muscle.ROTATOR_CUFF, Muscle.BICEPS))
+        put("rto support hold", supportHold(Muscle.ROTATOR_CUFF, Muscle.BICEPS))
         put("wall handstand", handstandHold())
         put("freestanding handstand", handstandHold(Muscle.ABS))
         put("one-arm handstand", handstandHold(Muscle.ABS, Muscle.OBLIQUES))
@@ -753,20 +767,27 @@ object MuscleMap {
         put("handstand walk", handstandHold(Muscle.ABS))
         put("crow pose", armBalance())
         put("frog stand", armBalance())
+        // Balanced level on the elbows: the bent-arm balance family.
+        put("elbow lever", armBalance())
         // Straight arms held out to the sides on rings: the lats and the
         // costal chest pull the arms down, the biceps and cuff hold the joint.
-        put("iron cross", hold(
-            Muscle.LATS to 1.0, Muscle.LOWER_CHEST to 0.5, Muscle.MID_CHEST to 0.5, Muscle.BICEPS to 0.5,
-            Muscle.ROTATOR_CUFF to 0.5, Muscle.FOREARMS to 0.5,
-            pattern = MovementPattern.VERTICAL_PULL,
-        ))
+        // A band under the arms takes part of the load, not the muscles.
+        for (name in listOf("iron cross", "banded iron cross")) {
+            put(name, hold(
+                Muscle.LATS to 1.0, Muscle.LOWER_CHEST to 0.5, Muscle.MID_CHEST to 0.5, Muscle.BICEPS to 0.5,
+                Muscle.ROTATOR_CUFF to 0.5, Muscle.FOREARMS to 0.5,
+                pattern = MovementPattern.VERTICAL_PULL,
+            ))
+        }
         // The body held sideways off a pole: the obliques lead, the top arm
-        // pulls, the bottom arm pushes.
-        put("human flag", hold(
-            Muscle.OBLIQUES to 1.0, Muscle.LATS to 0.5, Muscle.SIDE_DELTS to 0.5, Muscle.TRICEPS to 0.5,
-            Muscle.FOREARMS to 0.5,
-            pattern = MovementPattern.CORE,
-        ))
+        // pulls, the bottom arm pushes. The tuck shortens the same lever.
+        for (name in listOf("human flag", "tuck human flag")) {
+            put(name, hold(
+                Muscle.OBLIQUES to 1.0, Muscle.LATS to 0.5, Muscle.SIDE_DELTS to 0.5, Muscle.TRICEPS to 0.5,
+                Muscle.FOREARMS to 0.5,
+                pattern = MovementPattern.CORE,
+            ))
+        }
         // The deepest compression, hands pressing down behind the hips.
         put("manna", hold(
             Muscle.ABS to 1.0, Muscle.HIP_FLEXORS to 1.0, Muscle.REAR_DELTS to 0.5, Muscle.TRICEPS to 0.5,
@@ -790,6 +811,10 @@ object MuscleMap {
         put("bridge", hold(
             Muscle.LOWER_BACK to 1.0, Muscle.GLUTES to 0.5, Muscle.FRONT_DELTS to 0.5, Muscle.TRICEPS to 0.5,
             pattern = MovementPattern.CORE,
+        ))
+        put("half split", hold(
+            Muscle.HAMSTRINGS to 0.5, Muscle.CALVES to 0.25,
+            pattern = MovementPattern.HINGE, noLead = true,
         ))
         put("front split", hold(
             Muscle.HAMSTRINGS to 0.5, Muscle.HIP_FLEXORS to 0.5, Muscle.GLUTES to 0.5,

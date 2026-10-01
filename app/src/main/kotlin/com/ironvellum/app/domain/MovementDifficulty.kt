@@ -63,8 +63,8 @@ object MovementDifficulty {
         "pike push-up" to 2,
         "incline bench press" to 2,
         "scapular push-up" to 1, // isolation: blade protraction only, elbows locked
-        // Legs
-        "bulgarian split squat" to 2,
+        // Legs ("bulgarian split squat" is a Legs-line tree row now; the
+        // tree prices it, so its key left this table.)
         "single-leg glute bridge" to 2,
         "single-leg calf raise" to 1,
         "knee-to-wall dorsiflexion" to 1,
@@ -156,12 +156,12 @@ object MovementDifficulty {
 
     /**
      * Tree tiers that price the added load into the movement itself.
-     * "Weighted Pull-up" is tier V because *five reps with +25 kg* is an elite
-     * standard - but XP already multiplies by the kilos on the belt, so
-     * reading the tier straight would pay for that load twice. These score as
-     * their unloaded parent and let the real weight do the work: a
-     * +25 kg pull-up out-earns a bare one because it is heavier, not because
-     * of its name.
+     * "Weighted Pull-up" is tier IV because *five reps with a third of your
+     * bodyweight added* is an advanced standard - but XP already multiplies
+     * by the kilos on the belt, so reading the tier straight would pay for
+     * that load twice. These score as their unloaded parent and let the real
+     * weight do the work: a +25 kg pull-up out-earns a bare one because it
+     * is heavier, not because of its name.
      *
      * The gym progression lines (Back Squat through Triple-Bodyweight
      * Deadlift) are the same trap at every tier above I: the tier states the
