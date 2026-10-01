@@ -86,6 +86,7 @@ import com.ironvellum.app.domain.UnlockedTitle
 import com.ironvellum.app.domain.Circle
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.SessionAudience
+import com.ironvellum.app.domain.WeighIn
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.Relics
@@ -1370,6 +1371,22 @@ class Repository(
         )
         // A weigh-in is new information about work already done: sessions
         // completed before any measurement could not be scored at all.
+        rescoreUnweighedSessions()
+    }
+
+    /**
+     * Records the weight typed on a step that can be walked more than once:
+     * today's reading is corrected in place when there is one, otherwise a
+     * new one is added. Same validation as [addStat].
+     */
+    suspend fun logTodaysWeight(weightKg: Double) {
+        val latest = statDao.observeAll().first().firstOrNull()
+        if (latest == null || !WeighIn.sameDay(latest.takenAtMs, System.currentTimeMillis())) {
+            addStat(weightKg, null)
+            return
+        }
+        require(BodyLimits.validWeight(weightKg)) { "weight $weightKg kg is outside ${BodyLimits.WEIGHT_KG}" }
+        statDao.updateWeight(latest.id, weightKg, profileDao.get()?.heightCm ?: latest.heightCm)
         rescoreUnweighedSessions()
     }
 

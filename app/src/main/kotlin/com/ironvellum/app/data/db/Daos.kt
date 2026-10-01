@@ -286,6 +286,10 @@ interface StatDao {
     @Insert
     suspend fun insert(stat: StatEntity)
 
+    /** Corrects a reading's weight in place, restamping the height it is scored against. */
+    @Query("UPDATE stats SET weightKg = :weightKg, heightCm = :heightCm WHERE id = :id")
+    suspend fun updateWeight(id: Long, weightKg: Double, heightCm: Double)
+
     @Query("DELETE FROM stats WHERE id = :id")
     suspend fun delete(id: Long)
 
