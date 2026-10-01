@@ -67,10 +67,12 @@ import com.ironvellum.app.data.HealthSnapshot
 import com.ironvellum.app.data.CrashJournal
 import com.ironvellum.app.data.HealthSync
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.CloudConfig
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.data.cloud.ProbeResult
+import com.ironvellum.app.data.cloud.trueNameProblem
 import com.ironvellum.app.domain.CsvWorkoutReader
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
@@ -85,6 +87,7 @@ import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumHealthSync
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.ironvellumRepository
@@ -105,6 +108,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import com.ironvellum.app.ui.launchGuarded
 import kotlinx.coroutines.launch
@@ -184,6 +188,7 @@ class SettingsViewModel(
     private val repo: Repository,
     private val healthSync: HealthSync,
     private val cloudSync: CloudSync,
+    private val accountRepo: AccountRepository,
 ) : ViewModel() {
 
     private val _exporting = MutableStateFlow(false)
@@ -211,6 +216,20 @@ class SettingsViewModel(
 
     val profile = repo.observeProfile()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** Signed in, the name shown on Today is the cloud true name; this tells the caption which. */
+    val signedIn: StateFlow<Boolean> = accountRepo.account
+        .map { it != null }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), accountRepo.account.value != null)
+
+    private val _renameError = MutableStateFlow<String?>(null)
+    val renameError: StateFlow<String?> = _renameError.asStateFlow()
+    private val _renaming = MutableStateFlow(false)
+    val renaming: StateFlow<Boolean> = _renaming.asStateFlow()
+
+    fun clearRenameError() {
+        _renameError.value = null
+    }
 
     /** Profile-owned height and sex, edited in the BODY PROFILE window. */
     val bodyProfile: StateFlow<Pair<Double?, Sex>> = repo.observeBodyProfile()
@@ -429,10 +448,30 @@ class SettingsViewModel(
         }
     }
 
+    /**
+     * Signed in, the cloud true name is the source of truth: it is written
+     * first and the local name follows only on success, so a taken, invalid or
+     * offline rename leaves both names as they were. Signed out, local only.
+     */
     fun rename(name: String) {
         val trimmed = name.trim()
-        if (trimmed.isEmpty()) return
-        viewModelScope.launchGuarded("rename") { repo.rename(trimmed) }
+        if (trimmed.isEmpty() || _renaming.value) return
+        if (accountRepo.account.value == null) {
+            viewModelScope.launchGuarded("rename") { repo.rename(trimmed) }
+            return
+        }
+        trueNameProblem(trimmed)?.let { _renameError.value = it; return }
+        viewModelScope.launch {
+            _renaming.value = true
+            _renameError.value = null
+            accountRepo.updateDisplayName(trimmed)
+                .onSuccess {
+                    // The name the cloud actually kept (it drops punctuation), not what was typed.
+                    accountRepo.account.value?.let { repo.rename(it.displayName) }
+                }
+                .onFailure { _renameError.value = it.message ?: "Could not change your name" }
+            _renaming.value = false
+        }
     }
 
     fun setMode(mode: TrainingMode) {
@@ -629,7 +668,7 @@ fun SettingsScreen(
     viewModel: SettingsViewModel =
         viewModel(
             factory = viewModelFactory {
-                initializer { SettingsViewModel(ironvellumRepository(), ironvellumHealthSync(), ironvellumCloudSync()) }
+                initializer { SettingsViewModel(ironvellumRepository(), ironvellumHealthSync(), ironvellumCloudSync(), ironvellumAccount()) }
             },
         ),
 ) {
@@ -637,6 +676,9 @@ fun SettingsScreen(
     val sync by viewModel.sync.collectAsStateWithLifecycle()
     val importUi by viewModel.import.collectAsStateWithLifecycle()
     val profile by viewModel.profile.collectAsStateWithLifecycle()
+    val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
+    val renaming by viewModel.renaming.collectAsStateWithLifecycle()
+    val renameError by viewModel.renameError.collectAsStateWithLifecycle()
     val healthDays by viewModel.healthDays.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -830,8 +872,12 @@ fun SettingsScreen(
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
                     value = name,
-                    onValueChange = { name = it.take(24) },
+                    onValueChange = {
+                        name = it.take(24)
+                        if (renameError != null) viewModel.clearRenameError()
+                    },
                     label = { Text("Your name") },
+                    isError = renameError != null,
                     singleLine = true,
                     keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(keyboardType = KeyboardType.Text),
                     modifier = Modifier.weight(1f),
@@ -839,12 +885,17 @@ fun SettingsScreen(
                 IronvellumButton(
                     label = "Save",
                     onClick = { viewModel.rename(name) },
-                    enabled = name.trim().isNotEmpty() && name.trim() != profile?.name,
+                    enabled = !renaming && name.trim().isNotEmpty() && name.trim() != profile?.name,
                 )
             }
             Spacer(Modifier.height(4.dp))
+            renameError?.let {
+                Text(it, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed)
+                Spacer(Modifier.height(4.dp))
+            }
             Text(
-                "Your name shows in the Reckoning. You can change it any time.",
+                if (signedIn) "Your name shows on Today and in the Reckoning. You can change it any time."
+                else "Your name shows on Today. Sign in to take it to the Reckoning.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )

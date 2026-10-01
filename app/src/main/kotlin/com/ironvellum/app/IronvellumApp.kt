@@ -84,6 +84,15 @@ class IronvellumApp : Application() {
         }
         appScope.launch {
             repository.ensureSeeded()
+            // Signed in, the cloud name is the profile name. Started once the
+            // profile row exists, so the first account load cannot be dropped.
+            appScope.launch {
+                accountRepository.account.collect { acct ->
+                    if (acct != null) {
+                        runCatching { repository.adoptCloudName(acct.displayName, acct.profileLoaded) }
+                    }
+                }
+            }
             runCatching { repository.syncHealthHistory() }
             // Titles used to be awarded only at the moment a workout finished,
             // so anything satisfied by imported health data stayed locked.

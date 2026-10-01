@@ -88,9 +88,7 @@ class AccountRepository {
      */
     suspend fun signUp(email: String, password: String, displayName: String): Result<SignUpOutcome> {
         val name = displayName.trim()
-        if (name.length < WireLimits.DISPLAY_NAME_MIN || name.length > WireLimits.DISPLAY_NAME_MAX) {
-            return Result.failure(IllegalStateException("Your true name must be 2 to 24 characters"))
-        }
+        trueNameProblem(name)?.let { return Result.failure(IllegalStateException(it)) }
         val client = requireClient().getOrElse { return failure(it) }
         return runCatching {
             // Asked first: on a taken name the server quietly seeds a
@@ -209,10 +207,8 @@ class AccountRepository {
         val current = _account.value
             ?: return Result.failure(IllegalStateException("Sign in before taking a true name"))
         val client = requireClient().getOrElse { return failure(it) }
+        trueNameProblem(raw)?.let { return Result.failure(IllegalStateException(it)) }
         val name = sanitizeHandle(raw)
-        if (name.length < WireLimits.DISPLAY_NAME_MIN) {
-            return Result.failure(IllegalStateException("Your true name needs at least 2 characters"))
-        }
         return runCatching {
             client.postgrest.from("profiles").update(
                 {
@@ -326,6 +322,38 @@ class AccountRepository {
 }
 /** A seeded handle the user has not replaced with a name of their own. */
 fun isUnclaimedHandle(name: String?): Boolean = name != null && UnclaimedHandle.matches(name)
+
+/** Why [raw] cannot be the true name, or null when it can: 2..24 trimmed, as the profiles table checks. */
+fun trueNameProblem(raw: String): String? {
+    val trimmed = raw.trim()
+    return when {
+        trimmed.length !in WireLimits.DISPLAY_NAME_MIN..WireLimits.DISPLAY_NAME_MAX ->
+            "Your true name must be 2 to 24 characters"
+        // A claim keeps letters, digits and spaces only; "!!" would otherwise become a seeded-looking handle.
+        trimmed.count { it.isLetterOrDigit() } < WireLimits.DISPLAY_NAME_MIN ->
+            "Your true name needs at least 2 letters or digits"
+        else -> null
+    }
+}
+
+/**
+ * The cloud name is the source of truth when signed in. Returns what the local
+ * profile name should become when [cloud] loads, or null to leave it alone: a
+ * seeded handle (Ironbound####) is not a name anyone chose, so the local name
+ * stays; so does a profile that was never read from the server.
+ */
+fun localNameToAdopt(local: String?, cloud: String, profileLoaded: Boolean): String? {
+    val name = cloud.trim()
+    return if (!profileLoaded || name.isEmpty() || isUnclaimedHandle(name) || name == local) null else name
+}
+
+/** What the sign-up name field starts with: the local name, unless it is still the default. */
+fun signUpNamePrefill(local: String?): String {
+    val name = local?.trim().orEmpty()
+    return if (name.equals(DEFAULT_PROFILE_NAME, ignoreCase = true) || name.length > WireLimits.DISPLAY_NAME_MAX) "" else name
+}
+
+private const val DEFAULT_PROFILE_NAME = "Ironbound"
 
 // "Hunter" and "Lifter" match handles seeded by older builds; new seeds use "Ironbound".
 private val UnclaimedHandle = Regex("^(?:Hunter|Lifter|Ironbound)\\d{4}$")

@@ -37,6 +37,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -74,6 +75,7 @@ import com.ironvellum.app.data.cloud.FriendRow
 import com.ironvellum.app.data.cloud.SyncOutcome
 import com.ironvellum.app.data.cloud.SignUpOutcome
 import com.ironvellum.app.data.cloud.isUnclaimedHandle
+import com.ironvellum.app.data.cloud.signUpNamePrefill
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkSpinner
@@ -598,6 +600,14 @@ private fun AuthPanels(
     // One toggle shows both password fields: checking they match is the point.
     var showPassword by remember { mutableStateOf(false) }
     var displayName by remember { mutableStateOf("") }
+    // The name already on this phone is the natural true name; it fills an
+    // empty field once the profile loads, and never overwrites typing.
+    val app = LocalContext.current.applicationContext as IronvellumApp
+    val localName by remember(app) { app.repository.observeProfile() }
+        .collectAsStateWithLifecycle(initialValue = null)
+    LaunchedEffect(localName?.name) {
+        if (displayName.isEmpty()) displayName = signUpNamePrefill(localName?.name)
+    }
     var code by remember { mutableStateOf("") }
 
     val emailValid = android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()

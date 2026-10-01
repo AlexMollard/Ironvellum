@@ -77,6 +77,7 @@ import com.ironvellum.app.domain.StrengthIndex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.data.cloud.WireLimits
+import com.ironvellum.app.data.cloud.localNameToAdopt
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.UnlockedTitle
 import com.ironvellum.app.domain.Warband
@@ -1841,6 +1842,11 @@ class Repository(
     suspend fun rename(name: String) {
         require(name.isNotBlank()) { "Name cannot be blank" }
         profileDao.setName(name.trim().take(WireLimits.DISPLAY_NAME_MAX))
+    }
+
+    /** Signed in, the cloud name is the profile name; see [localNameToAdopt] for when it is not. */
+    suspend fun adoptCloudName(cloudName: String, profileLoaded: Boolean) {
+        localNameToAdopt(profileDao.get()?.name, cloudName, profileLoaded)?.let { profileDao.setName(it) }
     }
 
     // ---------------------------------------------------------------- export
