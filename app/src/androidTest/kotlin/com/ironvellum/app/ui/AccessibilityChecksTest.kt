@@ -211,16 +211,21 @@ class AccessibilityChecksTest {
      * shows neither, so a missing feature is skipped rather than failed.
      */
     private fun openSurface(label: String): Boolean {
-        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-        val byText = compose.onAllNodesWithText(label, substring = true)
-        if (byText.fetchSemanticsNodes().isNotEmpty()) {
-            byText.onFirst().performClick()
-            return true
-        }
-        val byDescription = compose.onAllNodesWithContentDescription(label, substring = true)
-        if (byDescription.fetchSemanticsNodes().isNotEmpty()) {
-            byDescription.onFirst().performClick()
-            return true
+        // Screens that wait for Room before drawing (the Ledger) answer on a
+        // real thread, not the paused compose clock: poll a little real time.
+        repeat(SURFACE_POLLS) {
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+            val byText = compose.onAllNodesWithText(label, substring = true)
+            if (byText.fetchSemanticsNodes().isNotEmpty()) {
+                byText.onFirst().performClick()
+                return true
+            }
+            val byDescription = compose.onAllNodesWithContentDescription(label, substring = true)
+            if (byDescription.fetchSemanticsNodes().isNotEmpty()) {
+                byDescription.onFirst().performClick()
+                return true
+            }
+            Thread.sleep(SURFACE_POLL_MS)
         }
         return false
     }
@@ -431,6 +436,8 @@ class AccessibilityChecksTest {
             "Ledger" to listOf("BODY", "LIFTS", "DAILY"),
         )
         const val FRAME_BUDGET_MS = 1_200L
+        const val SURFACE_POLLS = 10
+        const val SURFACE_POLL_MS = 200L
         const val MIN_TARGET_DP = 48f
         const val WCAG_FLOOR_DP = 24f
     }
