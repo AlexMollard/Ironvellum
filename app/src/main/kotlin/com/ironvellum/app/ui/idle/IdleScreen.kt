@@ -714,9 +714,10 @@ private fun RollStat(label: String, value: String, modifier: Modifier = Modifier
 @Composable
 private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
     val atFloor = inputs.sessionsLast7d == 0 && inputs.volumeLast7d == 0.0
-    // No history at all: zero recent sessions AND no skill unlocks means the
-    // lifter has never trained, so the decay line would read as nonsense.
-    val firstRun = atFloor && inputs.skillsUnlocked == 0
+    // No history at all: nothing sealed, ever, AND no skill unlocks means the
+    // lifter has never trained, so the decay line would read as nonsense. A
+    // lapsed lifter has sealed trials, just none this week: they get the decay copy.
+    val firstRun = atFloor && inputs.skillsUnlocked == 0 && inputs.sealedTrials == 0
     InkPanel(accent = if (atFloor) IronvellumColors.SovereignGold else IronvellumColors.Emerald) {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (firstRun) {
