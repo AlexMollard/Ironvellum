@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -729,6 +730,12 @@ val EquipmentSaver = listSaver<Equipment, Any>(
     },
 )
 
+/** [EquipmentSaver] for an answer that may still be unset (an empty list). */
+val OptionalEquipmentSaver = Saver<Equipment?, Any>(
+    save = { eq -> eq?.let { with(EquipmentSaver) { save(it) } } ?: emptyList<Any>() },
+    restore = { saved -> (saved as List<*>).takeIf { it.isNotEmpty() }?.let { EquipmentSaver.restore(it) } },
+)
+
 /**
  * The gear question, shared by onboarding and the builder so the two can
  * never drift: two preset cells (Full gym / Nothing) over a toggle grid of
@@ -740,21 +747,23 @@ val EquipmentSaver = listSaver<Equipment, Any>(
  */
 @Composable
 internal fun GearPicker(
-    equipment: Equipment,
+    equipment: Equipment?,
     onChange: (Equipment) -> Unit,
 ) {
+    // Null is "not answered yet": no cell lit, so the lifter has to choose.
+    val current = equipment ?: Equipment.NOTHING
     Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
             PickCell(
                 label = "Full gym",
-                selected = equipment.fullGym,
+                selected = equipment?.fullGym == true,
                 modifier = Modifier.weight(1f),
                 description = "Full gym: every machine and cable",
                 onClick = { onChange(Equipment.FULL_GYM) },
             )
             PickCell(
                 label = "Nothing",
-                selected = !equipment.fullGym && equipment.gear.isEmpty(),
+                selected = nothingSelected(equipment),
                 modifier = Modifier.weight(1f),
                 description = "Nothing: floor work only",
                 onClick = { onChange(Equipment.NOTHING) },
@@ -763,24 +772,24 @@ internal fun GearPicker(
         Gear.entries.chunked(2).forEach { chunk ->
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                 chunk.forEach { gear ->
-                    val on = gear in equipment.gear
+                    val on = gear in current.gear
                     PickCell(
                         label = gear.label,
                         selected = on,
                         modifier = Modifier.weight(1f),
                         description = "${gear.label}, ${if (on) "on" else "off"}",
                         onClick = {
-                            val gearSet = if (on) equipment.gear - gear else equipment.gear + gear
+                            val gearSet = if (on) current.gear - gear else current.gear + gear
                             // First dumbbell tap sets the max so the stepper has a number to edit.
-                            val maxKg = equipment.dumbbellMaxKg
+                            val maxKg = current.dumbbellMaxKg
                                 ?: if (gear == Gear.DUMBBELLS && !on) DEFAULT_DUMBBELL_KG else null
-                            onChange(Equipment(false, gearSet, maxKg, equipment.dumbbellPair))
+                            onChange(Equipment(false, gearSet, maxKg, current.dumbbellPair))
                         },
                     )
                 }
             }
         }
-        if (!equipment.fullGym && Gear.DUMBBELLS in equipment.gear) {
+        if (equipment != null && !equipment.fullGym && Gear.DUMBBELLS in equipment.gear) {
             val maxKg = equipment.dumbbellMaxKg ?: DEFAULT_DUMBBELL_KG
             Row(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
@@ -822,15 +831,21 @@ internal fun GearPicker(
                 )
             }
         }
-        Text(
-            gearCaption(equipment),
-            style = MaterialTheme.typography.labelSmall,
-            color = IronvellumColors.InkMuted,
-        )
+        if (equipment != null) {
+            Text(
+                gearCaption(equipment),
+                style = MaterialTheme.typography.labelSmall,
+                color = IronvellumColors.InkMuted,
+            )
+        }
     }
 }
 
 /** What the current answer opens up, in plain words. */
+/** The "Nothing" cell is lit only for an explicit empty answer, never for an unanswered one. */
+internal fun nothingSelected(equipment: Equipment?): Boolean =
+    equipment != null && !equipment.fullGym && equipment.gear.isEmpty()
+
 private fun gearCaption(equipment: Equipment): String = when {
     equipment.fullGym -> "Barbells, machines and cables."
     equipment.gear.isEmpty() -> "Floor work only."

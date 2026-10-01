@@ -82,7 +82,7 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.ironvellumRepository
-import com.ironvellum.app.ui.program.EquipmentSaver
+import com.ironvellum.app.ui.program.OptionalEquipmentSaver
 import com.ironvellum.app.ui.program.GearPicker
 import com.ironvellum.app.ui.program.ProposedDay
 import com.ironvellum.app.ui.program.SourcesPanel
@@ -362,7 +362,8 @@ fun OnboardingScreen(
     // Step 2 answers.
     var daysPerWeek by rememberSaveable { mutableIntStateOf(3) }
     var split by rememberSaveable { mutableStateOf(TrainingSplit.FULL_BODY) }
-    var equipment by rememberSaveable(stateSaver = EquipmentSaver) { mutableStateOf(Equipment.NOTHING) }
+    // No default: the armoury steers every cycle, so the lifter answers it.
+    var equipment by rememberSaveable(stateSaver = OptionalEquipmentSaver) { mutableStateOf<Equipment?>(null) }
     var focus by rememberSaveable { mutableStateOf(TrainingFocus.GENERAL) }
     var tier by rememberSaveable { mutableStateOf(VolumeLevel.LOW) }
 
@@ -457,7 +458,8 @@ fun OnboardingScreen(
                         viewModel = viewModel,
                         daysPerWeek = daysPerWeek,
                         split = split,
-                        equipment = equipment,
+                        // Step 3 is reachable only once the armoury is answered.
+                        equipment = equipment ?: Equipment.NOTHING,
                         focus = focus,
                         tier = tier,
                         sex = sex,
@@ -470,6 +472,7 @@ fun OnboardingScreen(
                 missing = missing,
                 profileValid = profileValid,
                 planReady = plan != null,
+                armouryPicked = equipment != null,
                 applyError = applyError,
                 onContinueProfile = {
                     // Only reachable when profileValid, so the !! is safe -
@@ -480,12 +483,15 @@ fun OnboardingScreen(
                 onBack = { step -= 1 },
                 onForward = { step = 2 },
                 onAccept = {
-                    viewModel.acceptRoutine(tier, focus, equipment, daysPerWeek, split)
+                    equipment?.let { viewModel.acceptRoutine(tier, focus, it, daysPerWeek, split) }
                 },
             )
         }
     }
 }
+
+/** Why Continue is off on the training step until the armoury is answered. */
+private const val ARMOURY_REQUIRED_CAPTION = "Pick your armoury to continue. Nothing means bodyweight only."
 
 /** Per-step title and one line of prose. "WELCOME, LIFTER" on every step was a bug, not a header. */
 private fun stepTitle(step: Int): String = when (step) {
@@ -604,6 +610,7 @@ private fun StepFooter(
     missing: List<String>,
     profileValid: Boolean,
     planReady: Boolean,
+    armouryPicked: Boolean,
     applyError: String?,
     onContinueProfile: () -> Unit,
     onBack: () -> Unit,
@@ -636,14 +643,25 @@ private fun StepFooter(
                     modifier = Modifier.fillMaxWidth(),
                 )
             }
-            1 -> Row(verticalAlignment = Alignment.CenterVertically) {
-                IronvellumButton(label = "Back", onClick = onBack, quiet = true)
-                Spacer(Modifier.width(10.dp))
-                IronvellumButton(
-                    label = "Continue",
-                    onClick = onForward,
-                    modifier = Modifier.weight(1f),
-                )
+            1 -> Column(Modifier.fillMaxWidth()) {
+                if (!armouryPicked) {
+                    Text(
+                        ARMOURY_REQUIRED_CAPTION,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IronvellumColors.InkMuted,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IronvellumButton(label = "Back", onClick = onBack, quiet = true)
+                    Spacer(Modifier.width(10.dp))
+                    IronvellumButton(
+                        label = "Continue",
+                        onClick = onForward,
+                        enabled = armouryPicked,
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
             else -> Row(verticalAlignment = Alignment.CenterVertically) {
                 IronvellumButton(label = "Back", onClick = onBack, quiet = true)
@@ -752,7 +770,7 @@ private fun TrainingStep(
     split: TrainingSplit,
     daysPerWeek: Int,
     onSplit: (TrainingSplit, Int) -> Unit,
-    equipment: Equipment,
+    equipment: Equipment?,
     onEquipment: (Equipment) -> Unit,
     focus: TrainingFocus,
     onFocus: (TrainingFocus) -> Unit,
