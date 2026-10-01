@@ -54,9 +54,9 @@ class BodyStatsTest {
     @Test
     fun `navy estimate of male reference body`() {
         // Hodgdon & Beckett male form: 495 / (1.0324 - 0.19077*log10(85-38)
-        // + 0.15456*log10(178)) - 450 = 16.43 -> 16.4
+        // + 0.15456*log10(178)) - 450 = 16.43 -> whole percent, 16
         assertEquals(
-            16.4,
+            16.0,
             BodyStats.estimateBodyFatNavy(Sex.MALE, heightCm = 178.0, neckCm = 38.0, waistCm = 85.0, hipCm = null)!!,
             0.05,
         )
@@ -64,9 +64,9 @@ class BodyStatsTest {
 
     @Test
     fun `navy estimate of female reference body uses hips`() {
-        // 495 / (1.29579 - 0.35004*log10(72+96-32) + 0.221*log10(165)) - 450 = 26.4
+        // 495 / (1.29579 - 0.35004*log10(72+96-32) + 0.221*log10(165)) - 450 = 26.4 -> 26
         assertEquals(
-            26.4,
+            26.0,
             BodyStats.estimateBodyFatNavy(Sex.FEMALE, heightCm = 165.0, neckCm = 32.0, waistCm = 72.0, hipCm = 96.0)!!,
             0.05,
         )
@@ -85,5 +85,54 @@ class BodyStatsTest {
     fun `navy estimate rejects geometrically impossible tape sets`() {
         // Male waist must exceed neck, or the log argument goes non-positive.
         assertNull(BodyStats.estimateBodyFatNavy(Sex.MALE, 178.0, 40.0, 38.0, null))
+    }
+
+    // ---- the one band table
+
+    @Test
+    fun `bmi bands switch exactly on their boundaries`() {
+        assertEquals("Underweight", BodyStats.bmiCategory(18.4))
+        assertEquals("Healthy range", BodyStats.bmiCategory(18.5))
+        assertEquals("Healthy range", BodyStats.bmiCategory(24.9))
+        assertEquals("Overweight", BodyStats.bmiCategory(25.0))
+        assertEquals("Overweight", BodyStats.bmiCategory(29.9))
+        assertEquals("Obese", BodyStats.bmiCategory(30.0))
+        assertEquals("Obese", BodyStats.bmiCategory(55.0))
+    }
+
+    @Test
+    fun `range text prints one decimal and reads in order`() {
+        val texts = Bands.BMI.bands.indices.map { Bands.rangeText(Bands.BMI, it) }
+        assertEquals(
+            listOf("below 18.5", "18.5 to under 25.0", "25.0 to under 30.0", "30.0 and over"),
+            texts,
+        )
+    }
+
+    @Test
+    fun `the category text and the band the dialog marks always agree`() {
+        for (sex in Sex.entries) {
+            val table = Bands.ffmi(sex)
+            var v = 8.0
+            while (v < 30.0) {
+                assertEquals(BodyStats.ffmiCategory(v, sex), Bands.bandOf(table, v).label)
+                v += 0.1
+            }
+        }
+        var b = 10.0
+        while (b < 45.0) {
+            assertEquals(BodyStats.bmiCategory(b), Bands.bandOf(Bands.BMI, b).label)
+            b += 0.1
+        }
+    }
+
+    @Test
+    fun `female ffmi bands sit lower than male and say so`() {
+        val male = Bands.ffmi(Sex.MALE).bands.map { it.upTo }.dropLast(1)
+        val female = Bands.ffmi(Sex.FEMALE).bands.map { it.upTo }.dropLast(1)
+        male.zip(female).forEach { (m, f) -> assertEquals(m - 3.5, f, 1e-9) }
+        assertEquals("Average (active female)", BodyStats.ffmiCategory(15.0, Sex.FEMALE))
+        assertEquals("Below average", BodyStats.ffmiCategory(15.0, Sex.MALE))
+        assertEquals(true, Bands.ffmi(Sex.FEMALE).note!!.contains("not a published"))
     }
 }

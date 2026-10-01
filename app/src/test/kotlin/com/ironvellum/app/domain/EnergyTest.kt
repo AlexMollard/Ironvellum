@@ -24,13 +24,13 @@ class EnergyTest {
 
     @Test
     fun `met equation matches hand-computed kcal`() {
-        // 8.3 x 3.5 x 72.5 / 200 x 31 min = 326.4
+        // net MET 7.3 x 3.5 x 72.5 / 200 x 31 min = 287.1
         val est = Energy.setKcal(
             ExerciseMetric.DURATION, "Running", "Cardio",
             durationSec = 31 * 60, distanceM = null, reps = 0,
             weightKg = null, bodyKg = 72.5,
         )!!
-        assertEquals(326, est.kcal)
+        assertEquals(287, est.kcal)
         assertEquals(EnergyConfidence.ESTIMATED, est.confidence)
     }
 
@@ -41,9 +41,9 @@ class EnergyTest {
             durationSec = durationSec, distanceM = 10_000.0, reps = 0,
             weightKg = null, bodyKg = 80.0,
         )!!.kcal
-        // 12 km/h = 50 min at MET 11.8 vs 7 km/h = ~86 min at MET 6.0
+        // 12 km/h = 50 min at net MET 10.8 vs 7 km/h = ~86 min at net MET 5.0
         assertTrue(run(50 * 60) > run(85 * 60 + 42))
-        assertEquals(826, run(50 * 60))
+        assertEquals(756, run(50 * 60))
     }
 
     @Test
@@ -86,8 +86,8 @@ class EnergyTest {
 
     @Test
     fun `stepsKcal uses measured distance when present`() {
-        // 5 km walk at MET 3.5, 80 kg: 3.5 x 3.5 x 80 / 200 x 60 min = 294
-        assertEquals(294, Energy.stepsKcal(8_000, 5.0, 80.0, null)!!.kcal)
+        // 5 km walk at net MET 2.5, 80 kg: 2.5 x 3.5 x 80 / 200 x 60 min = 210
+        assertEquals(210, Energy.stepsKcal(8_000, 5.0, 80.0, null)!!.kcal)
     }
 
     @Test
@@ -115,26 +115,26 @@ class EnergyTest {
         val est = Energy.sessionKcal(listOf(set, set.copy(setIndex = 1), set.copy(setIndex = 2)), emptyMap(), 80.0, 45)!!
         assertEquals(EnergyConfidence.COARSE, est.confidence)
         assertTrue(est.basis.contains("45 min"))
-        // MET 6.0 x 3.5 x 80 / 200 x 45 = 378
-        assertEquals(378, est.kcal)
+        // net MET 5.0 x 3.5 x 80 / 200 x 45 = 315
+        assertEquals(315, est.kcal)
     }
 
     @Test
     fun `sessionKcal set-count model without session minutes is coarse`() {
         val set = SessionSet(exerciseId = 1, setIndex = 0, reps = 10)
-        // MET 3.5 x 3.5 x 80 / 200 x (4 sets x 1.5 min = 6) = 29.4
+        // net MET 2.5 x 3.5 x 80 / 200 x (4 sets x 1.5 min = 6) = 21
         val est = Energy.sessionKcal(listOf(set, set.copy(setIndex = 1), set.copy(setIndex = 2), set.copy(setIndex = 3)), emptyMap(), 80.0, null)!!
         assertEquals(EnergyConfidence.COARSE, est.confidence)
-        assertEquals(29, est.kcal)
+        assertEquals(21, est.kcal)
     }
 
     @Test
     fun `sessionKcal timed activity sets are estimated not coarse`() {
         val set = SessionSet(exerciseId = 1, setIndex = 0, reps = 0, durationSec = 1800)
-        // MET 8.3 (run anchor, flat without distance) x 3.5 x 80 / 200 x 30 min = 348
+        // net MET 7.3 (run anchor, flat without distance) x 3.5 x 80 / 200 x 30 min = 306.6
         val est = Energy.sessionKcal(listOf(set.copy(exerciseName = "Run")), emptyMap(), 80.0, null)!!
         assertEquals(EnergyConfidence.ESTIMATED, est.confidence)
-        assertEquals(348, est.kcal)
+        assertEquals(306, est.kcal)
     }
 
     @Test
@@ -234,19 +234,19 @@ class EnergyTest {
         )
         val sets = listOf(set(1, "Pull-up", reps = 8), set(2, "Skipping", durationSec = 600))
         val est = Energy.sessionKcal(sets, exercises, 70.0, sessionMinutes = 30)!!
-        // Skipping 10 min at MET 11 = 134; the remaining 20 min of lifting at
-        // MET 6 = 6 * 3.5 * 70 / 200 * 20 = 147. Charging the full 30 min to
-        // lifting as well would give 220 on top.
-        assertEquals(134 + 147, est.kcal)
+        // Skipping 10 min at net MET 10 = 122; the remaining 20 min of lifting at
+        // net MET 5 = 5 * 3.5 * 70 / 200 * 20 = 122. Charging the full 30 min to
+        // lifting as well would give 183 on top.
+        assertEquals(122 + 122, est.kcal)
         assertEquals(EnergyConfidence.COARSE, est.confidence)
     }
 
     @Test
     fun `without measured distance the stride comes from height`() {
         // 10000 steps * (0.415 * 180 / 100) = 7470 m; at 5 km/h = 89.64 min;
-        // 3.5 * 3.5 * 70 / 200 * 89.64 = 384.3
+        // net 2.5 * 3.5 * 70 / 200 * 89.64 = 274.5
         val est = Energy.stepsKcal(steps = 10_000, distanceKm = null, bodyKg = 70.0, heightCm = 180.0)!!
-        assertEquals(384, est.kcal)
+        assertEquals(274, est.kcal)
         assertTrue("basis must disclose the derivation", est.basis.contains("stride from height"))
         assertTrue(
             "height was present and used, so nothing must be reported as missing",

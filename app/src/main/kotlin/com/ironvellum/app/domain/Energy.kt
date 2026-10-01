@@ -6,7 +6,8 @@ package com.ironvellum.app.domain
  * Sources:
  * - Resting: Katch-McArdle (1975), BMR = 370 + 21.6 x leanMassKg. Chosen because it
  *   needs NO age or sex, which the app does not store and we will not invent.
- * - Activity: MET equation, kcal = MET x 3.5 x kg / 200 x minutes
+ * - Activity: MET equation, kcal = (MET - 1) x 3.5 x kg / 200 x minutes - the net form,
+ *   so it is comparable with measured active calories
  *   (Ainsworth et al., Compendium of Physical Activities, 2011 update).
  * - Stride: strideM = 0.415 x heightCm / 100 (fitted from gait literature, e.g.
  *   School of Sport/Exercise gait analyses reporting stride ~= 0.41-0.43 x height).
@@ -135,8 +136,18 @@ object Energy {
         )
     }
 
+    /**
+     * Net MET (MET - 1): the Compendium MET includes the 1 MET of resting
+     * metabolism, and Health Connect's "active calories" - the measured figure
+     * these estimates sit beside - excludes it. Gross METs would make an
+     * estimated day read higher than the same day measured.
+     */
+    private fun netMet(met: Double): Double = (met - 1.0).coerceAtLeast(0.0)
+
+    private fun fmtMet(met: Double): String = String.format(java.util.Locale.US, "%.1f", netMet(met))
+
     private fun metKcal(met: Double, kg: Double, minutes: Double): Int =
-        (met * 3.5 * kg / 200.0 * minutes).toInt()
+        (netMet(met) * 3.5 * kg / 200.0 * minutes).toInt()
 
     /**
      * One activity set (real duration or distance+duration). Returns null rather
@@ -164,7 +175,7 @@ object Energy {
         return EnergyEstimate(
             kcal = metKcal(met, bodyKg, minutes),
             confidence = EnergyConfidence.ESTIMATED,
-            basis = "MET $met × $bodyKg kg × ${"%.0f".format(minutes)} min",
+            basis = "net MET ${fmtMet(met)} × $bodyKg kg × ${"%.0f".format(minutes)} min",
         )
     }
 
@@ -215,7 +226,7 @@ object Energy {
             // without it we can only assume moderate resistance per set.
             coarseKcal = metKcal(met, bodyKg, coarseMinutes)
             coarse = true
-            basis = StringBuilder("${untimedSets.size} sets × MET $met × $bodyKg kg × ${"%.0f".format(coarseMinutes)} min")
+            basis = StringBuilder("${untimedSets.size} sets × net MET ${fmtMet(met)} × $bodyKg kg × ${"%.0f".format(coarseMinutes)} min")
         }
         val total = timedKcal + coarseKcal
         if (total <= 0) return null
@@ -224,7 +235,7 @@ object Energy {
             confidence = if (coarse) EnergyConfidence.COARSE else EnergyConfidence.ESTIMATED,
             basis = listOfNotNull(
                 basis.toString().ifEmpty { null },
-                "timed sets MET × $bodyKg kg × ${"%.0f".format(timedMinutes)} min".takeIf { timedMinutes > 0.0 },
+                "timed sets net MET × $bodyKg kg × ${"%.0f".format(timedMinutes)} min".takeIf { timedMinutes > 0.0 },
             ).joinToString("; "),
         )
     }
@@ -256,7 +267,7 @@ object Energy {
         return EnergyEstimate(
             kcal = metKcal(3.5, bodyKg, minutes),
             confidence = EnergyConfidence.ESTIMATED,
-            basis = "MET 3.5 × $bodyKg kg × ${"%.0f".format(minutes)} min (${"%.2f".format(distanceKm)} km walked" +
+            basis = "net MET 2.5 × $bodyKg kg × ${"%.0f".format(minutes)} min (${"%.2f".format(distanceKm)} km walked" +
                 if (strideDerived) ", stride from height)" else ", measured)",
         )
     }

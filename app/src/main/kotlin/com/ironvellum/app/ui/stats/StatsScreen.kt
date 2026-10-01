@@ -98,6 +98,12 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.Band
+import com.ironvellum.app.domain.BandTable
+import com.ironvellum.app.domain.BandTone
+import com.ironvellum.app.domain.Bands
+import com.ironvellum.app.domain.Ledger
+import com.ironvellum.app.ui.dashboard.stepsAsOfCaption
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.ui.draw.alpha
@@ -111,9 +117,16 @@ import com.ironvellum.app.ui.components.TermInfo
 // place so they aren't scattered; everything else must reference IronvellumColors.
 private val CalendarConquered = Color(0xFF10B981)
 private val OnEmeraldInk = Color(0xFF06251B)
-private val BandNeutral = Color(0xFF5C6B63)
-private val BandObese = Color(0xFFEF5350)
-private val BandCeiling = Color(0xFFF59E0B)
+
+/** Band tones to theme tokens: gold stays for earned things, so no band is gold. */
+private fun toneColor(tone: BandTone): Color = when (tone) {
+    BandTone.LOW -> IronvellumColors.Bracket
+    BandTone.OK -> IronvellumColors.SystemGreen
+    BandTone.GOOD -> IronvellumColors.Emerald
+    BandTone.STRONG -> IronvellumColors.EmeraldBright
+    BandTone.WARN -> IronvellumColors.InkMuted
+    BandTone.DANGER -> IronvellumColors.DangerRed
+}
 
 data class StatsUi(
     val stats: List<StatEntry> = emptyList(),
@@ -126,6 +139,10 @@ data class StatsUi(
     val sessionSets: Map<Long, List<SessionSet>> = emptyMap(),
     /** Profile-owned height (Settings); null until the lifter sets it once. */
     val profileHeight: Double? = null,
+    /** Profile sex: picks the FFMI band table. */
+    val sex: Sex = Sex.MALE,
+    /** When Health Connect last returned days this process; null until it has. */
+    val healthSyncedAtMs: Long? = null,
 )
 
 class StatsViewModel(private val repo: Repository) : ViewModel() {
@@ -144,7 +161,8 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
         repo.observePresets(),
         repo.observeExercises(),
         repo.observeBodyProfile(),
-    ) { (stats, history, healthDays), presets, exercises, bodyProfile ->
+        repo.observeHealthSyncedAt(),
+    ) { (stats, history, healthDays), presets, exercises, bodyProfile, syncedAt ->
         StatsUi(
             stats = stats,
             completedDates = history.map {
@@ -157,6 +175,8 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
             exercises = exercises.associateBy { it.id },
             sessionSets = history.associate { it.first.id to it.second },
             profileHeight = bodyProfile.first,
+            sex = bodyProfile.second,
+            healthSyncedAtMs = syncedAt,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUi())
 
@@ -206,9 +226,16 @@ fun StatsScreen(
     // Saveable: a rotation mid-add used to slam the dialog shut and drop the weigh-in.
     var showAdd by rememberSaveable { mutableStateOf(false) }
     var drill by remember { mutableStateOf<String?>(null) }
-    var month by remember { mutableStateOf(YearMonth.now()) }
+    val today = rememberToday()
+    // Health Connect trails the watch: pull the last fortnight whenever the Ledger opens.
+    androidx.compose.runtime.LaunchedEffect(Unit) { viewModel.syncHealthHistory(14) }
+    var month by remember { mutableStateOf(YearMonth.from(today)) }
     var tab by remember { mutableStateOf(StatsTab.BODY) }
     val latest = ui.stats.firstOrNull()
+    val zone = remember { ZoneId.systemDefault() }
+    val ffmiReading = remember(ui.stats, ui.profileHeight) { Ledger.latestFfmi(ui.stats, ui.profileHeight) }
+    val bmiNow = latest?.let { Ledger.bmiOf(it, ui.profileHeight) }
+    val heightKnown = (ui.profileHeight ?: 0.0) > 0.0 || (latest?.heightCm ?: 0.0) > 0.0
 
     Column(Modifier.fillMaxSize()) {
         Spacer(Modifier.height(20.dp))
@@ -250,10 +277,9 @@ fun StatsScreen(
                         }
                         // Paired with FFMI's caption so the two cards stay level.
                         MetricCaption("body mass index")
-                        val bmi = latest?.let { BodyStats.bmi(it.weightKg, it.heightCm) }
                         MetricValue(
-                            bmi?.let { formatBodyValue(it) } ?: "—",
-                            bmi?.let { BodyStats.bmiCategory(it) }
+                            bmiNow?.let { formatBodyValue(it) } ?: "—",
+                            bmiNow?.let { BodyStats.bmiCategory(it) }
                                 ?: "set height in Settings",
                         )
                         Spacer(Modifier.height(6.dp))
@@ -278,13 +304,13 @@ fun StatsScreen(
                             TermInfo(Term.FFMI, Modifier.size(32.dp))
                         }
                         MetricCaption("muscle mass for your height")
-                        val ffmi = latest?.let { s -> s.bodyFatPct?.let { BodyStats.ffmi(s.weightKg, s.heightCm, it) } }
                         MetricValue(
-                            ffmi?.let { formatBodyValue(it) } ?: "—",
+                            ffmiReading?.let { formatBodyValue(it.value) } ?: "—",
                             // ffmi is also null when height is unset — a lifter
                             // who already logs body fat must not be told to log it.
-                            ffmi?.let { BodyStats.ffmiCategory(it) }
-                                ?: if ((latest?.heightCm ?: 0.0) <= 0.0) "set height in Settings" else "log body fat %",
+                            ffmiReading?.let {
+                                "${BodyStats.ffmiCategory(it.value, ui.sex)} · ${formatDate(it.takenAtMs, "d MMM")}"
+                            } ?: if (!heightKnown) "set height in Settings" else "log body fat %",
                         )
                         Spacer(Modifier.height(6.dp))
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -327,7 +353,7 @@ fun StatsScreen(
                     MetricLabel("BMI TREND")
                     val bmis = remember(ui.stats) {
                         ui.stats.sortedBy { it.takenAtMs }
-                            .mapNotNull { BodyStats.bmi(it.weightKg, it.heightCm) }
+                            .mapNotNull { Ledger.bmiOf(it, ui.profileHeight) }
                     }
                     // Was: a second "readings unlock the trend" hint below —
                     // WEIGHT card above already says it; the big "—" value from
@@ -398,12 +424,12 @@ fun StatsScreen(
                                     formatDate(stat.takenAtMs, "MMM d, yyyy · HH:mm"),
                                     style = MaterialTheme.typography.titleSmall,
                                 )
-                                val bmi = BodyStats.bmi(stat.weightKg, stat.heightCm)
+                                val bmi = Ledger.bmiOf(stat, ui.profileHeight)
                                 Text(
                                     buildString {
                                         append("${formatBodyValue(stat.weightKg)} kg")
                                         // 0.0 is the heightless sentinel, never a real height.
-                                        if (stat.heightCm > 0.0) append(" · ${formatBodyValue(stat.heightCm)} cm")
+                                        Ledger.heightFor(stat, ui.profileHeight)?.let { append(" · ${formatBodyValue(it)} cm") }
                                         stat.bodyFatPct?.let { append(" · ${formatBodyValue(it)}% bf") }
                                         bmi?.let { append(" · BMI ${formatBodyValue(it)}") }
                                     },
@@ -564,7 +590,7 @@ fun StatsScreen(
                     )
                     // Unbounded, the arrow paged into empty future months
                     // forever; the calendar stops at the current month.
-                    val canAdvance = month < YearMonth.now()
+                    val canAdvance = month < YearMonth.from(today)
                     Text(
                         "→",
                         style = MaterialTheme.typography.titleMedium,
@@ -581,13 +607,16 @@ fun StatsScreen(
                     )
                 }
                 Spacer(Modifier.height(10.dp))
-                CalendarGrid(month, ui.completedDates, ui.scheduledDays)
+                CalendarGrid(month, ui.completedDates, ui.scheduledDays, today)
                 Spacer(Modifier.height(24.dp))
             }
         } else {
             ActivityTab(
                 days = ui.healthDays,
-                latest = ui.stats.firstOrNull(),
+                today = today,
+                syncedAtMs = ui.healthSyncedAtMs,
+                profileHeight = ui.profileHeight,
+                stats = ui.stats,
                 sessions = ui.sessions,
                 sessionSets = ui.sessionSets,
                 exercises = ui.exercises,
@@ -617,15 +646,17 @@ fun StatsScreen(
     drill?.let { metric ->
         val series = ui.stats.sortedBy { it.takenAtMs }.mapNotNull {
             when (metric) {
-                "BMI" -> BodyStats.bmi(it.weightKg, it.heightCm)
-                else -> it.bodyFatPct?.let { bf -> BodyStats.ffmi(it.weightKg, it.heightCm, bf) }
+                "BMI" -> Ledger.bmiOf(it, ui.profileHeight)
+                else -> Ledger.ffmiOf(it, ui.profileHeight)
             }
         }
         val current = series.lastOrNull()
         StatDrillDialog(
             metric = metric,
+            table = if (metric == "BMI") Bands.BMI else Bands.ffmi(ui.sex),
             series = series,
             current = current,
+            asOf = if (metric == "BMI") null else ffmiReading?.let { formatDate(it.takenAtMs, "d MMM yyyy") },
             onDismiss = { drill = null },
         )
     }
@@ -636,44 +667,23 @@ private fun runningXp(sessions: List<WorkoutSession>): List<Double> {
     return sessions.map { total += it.xpAwarded; total.toDouble() }
 }
 
-private data class Band(val upTo: Double, val label: String, val color: Color)
-
 @Composable
 private fun StatDrillDialog(
     metric: String,
+    table: BandTable,
     series: List<Double>,
     current: Double?,
+    asOf: String?,
     onDismiss: () -> Unit,
 ) {
-    val isBmi = metric == "BMI"
-    val bands: List<Band> = if (isBmi) {
-        listOf(
-            Band(18.5, "Underweight", BandNeutral),
-            Band(25.0, "Healthy", IronvellumColors.Emerald),
-            Band(30.0, "Overweight", IronvellumColors.SovereignGold),
-            Band(40.0, "Obese", BandObese),
-        )
-    } else {
-        listOf(
-            Band(18.0, "Below average", BandNeutral),
-            Band(20.0, "Average (active male)", IronvellumColors.SystemGreen),
-            Band(22.0, "Above average (1-3 yrs)", IronvellumColors.Emerald),
-            Band(24.0, "Excellent (3-5 yrs)", IronvellumColors.SovereignGold),
-            Band(26.0, "Natural ceiling (~25)", BandCeiling),
-        )
-    }
-    val scaleMax = bands.last().upTo
-
-
-    val category = current?.let { v ->
-        bands.firstOrNull { v < it.upTo }?.label ?: bands.last().label
-    }
+    val bands = table.bands
+    val category = current?.let { Bands.categoryOf(table, it) }
 
     AlertDialog(
         // Material's dialog container is a 28dp rounded rect - the most
         // obviously stock surface in the app. Give it the ink shape.
         shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
+        containerColor = IronvellumColors.Vault,
         onDismissRequest = onDismiss,
         title = {
             Column {
@@ -703,7 +713,7 @@ private fun StatDrillDialog(
                         style = MaterialTheme.typography.displaySmall,
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
-                        color = IronvellumColors.SovereignGold,
+                        color = IronvellumColors.Ink,
                     )
                     Text(
                         category ?: "",
@@ -711,7 +721,7 @@ private fun StatDrillDialog(
                         color = IronvellumColors.SystemGreen,
                     )
                     Spacer(Modifier.height(10.dp))
-                    BandBar(value = current, bands = bands, scaleMax = scaleMax)
+                    BandBar(value = current, bands = bands, scaleMax = table.scaleMax)
                     Spacer(Modifier.height(12.dp))
                     if (series.size >= 2) {
                         TrendChart(series, IronvellumColors.SystemGreen, fromZero = false)
@@ -721,12 +731,23 @@ private fun StatDrillDialog(
                     }
                     Spacer(Modifier.height(8.dp))
                     bands.forEachIndexed { i, band ->
-                        val lower = if (i == 0) 0.0 else bands[i - 1].upTo
                         Text(
-                            "${band.label}: ${if (i == 0) "below" else "$lower –"}${band.upTo}",
+                            "${band.label}: ${Bands.rangeText(table, i)}",
                             style = MaterialTheme.typography.labelSmall,
                             color = IronvellumColors.InkMuted,
                         )
+                    }
+                    asOf?.let {
+                        Spacer(Modifier.height(6.dp))
+                        Text(
+                            "From your reading of $it, the newest with body fat.",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = IronvellumColors.InkMuted,
+                        )
+                    }
+                    table.note?.let {
+                        Spacer(Modifier.height(6.dp))
+                        Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                     }
                 }
             }
@@ -741,16 +762,16 @@ private fun BandBar(value: Double, bands: List<Band>, scaleMax: Double) {
         var low = 0.0
         bands.forEach { band ->
             val start = (low / scaleMax * size.width).toFloat()
-            val end = (band.upTo / scaleMax * size.width).toFloat()
-            drawRect(color = band.color, topLeft = Offset(start, 0f), size = androidx.compose.ui.geometry.Size(end - start, size.height))
-            low = band.upTo
+            val end = (band.upTo.coerceAtMost(scaleMax) / scaleMax * size.width).toFloat()
+            drawRect(color = toneColor(band.tone), topLeft = Offset(start, 0f), size = androidx.compose.ui.geometry.Size(end - start, size.height))
+            low = band.upTo.coerceAtMost(scaleMax)
         }
         val markerX = (value / scaleMax * size.width).toFloat().coerceIn(0f, size.width)
         // Where the reading falls on the scale: struck by hand, not ruled.
         inkStroke(
             from = Offset(markerX, -6f),
             to = Offset(markerX, size.height + 6f),
-            color = Color.White,
+            color = IronvellumColors.Ink,
             widthPx = 3.dp.toPx(),
             seed = markerX.toInt(),
             taperEnds = false,
@@ -822,8 +843,8 @@ private fun CalendarGrid(
     month: YearMonth,
     completedDates: Set<LocalDate>,
     scheduledDays: Set<Int>,
+    today: LocalDate,
 ) {
-    val today = LocalDate.now()
     val scheduleStart = remember(completedDates, today) { calendarScheduleStart(completedDates, today) }
     val firstDay = month.atDay(1)
     val leadingBlanks = firstDay.dayOfWeek.value - 1
@@ -1094,20 +1115,37 @@ private fun AddStatDialog(
 }
 
 
-/** Step aggregates derived once per data change rather than per frame. */
-private data class StepsDerived(
-    val byDate: Map<java.time.LocalDate, com.ironvellum.app.domain.HealthDay>,
-    val sorted: List<com.ironvellum.app.domain.HealthDay>,
-    val last7: List<com.ironvellum.app.domain.HealthDay>,
-    val avg7: Int,
-    val bestDay: com.ironvellum.app.domain.HealthDay,
-    val lifetime: Int,
-)
+/** Today's date, refreshed on resume and at midnight so the windows below never go stale. */
+@Composable
+private fun rememberToday(): LocalDate {
+    var today by remember { mutableStateOf(LocalDate.now()) }
+    androidx.compose.runtime.LaunchedEffect(today) {
+        val zone = ZoneId.systemDefault()
+        val untilMidnight = java.time.Duration.between(
+            java.time.ZonedDateTime.now(zone),
+            today.plusDays(1).atStartOfDay(zone),
+        ).toMillis()
+        kotlinx.coroutines.delay(untilMidnight.coerceAtLeast(1_000L) + 1_000L)
+        today = LocalDate.now()
+    }
+    val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(owner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) today = LocalDate.now()
+        }
+        owner.lifecycle.addObserver(observer)
+        onDispose { owner.lifecycle.removeObserver(observer) }
+    }
+    return today
+}
 
 @Composable
 private fun ActivityTab(
     days: List<HealthDay>,
-    latest: StatEntry?,
+    today: LocalDate,
+    syncedAtMs: Long?,
+    profileHeight: Double?,
+    stats: List<StatEntry>,
     sessions: List<WorkoutSession>,
     sessionSets: Map<Long, List<SessionSet>>,
     exercises: Map<Long, Exercise>,
@@ -1136,103 +1174,94 @@ private fun ActivityTab(
             return
         }
 
-        // One derivation per data change. Every line below walks the whole
-        // health history, and a scroll recomposes this section continuously.
-        val today = LocalDate.now()
-        val derived = remember(days) {
-            val sorted = days.sortedBy { it.date }
-            val last7 = sorted.filter { it.date > today.minusDays(7) }
-            StepsDerived(
-                byDate = days.associateBy { it.date },
-                sorted = sorted,
-                last7 = last7,
-                // Divided by 7, not last7.size: gap days have no HealthDay row,
-                // so averaging over days-with-data inflated the mean every time
-                // a sync day was missed — and the tile says "7-DAY AVERAGE".
-                avg7 = if (last7.isEmpty()) 0 else last7.sumOf { it.steps } / 7,
-                bestDay = days.maxBy { it.steps },
-                lifetime = days.sumOf { it.steps },
-            )
+        val zone = remember { ZoneId.systemDefault() }
+        val latest = stats.firstOrNull()
+        val weightKg = latest?.weightKg
+        val heightCm = latest?.let { Ledger.heightFor(it, profileHeight) } ?: profileHeight?.takeIf { it > 0.0 }
+        // One derivation per data change; every window is calendar dates ending on today.
+        val todayRow = Ledger.todayRow(days, today)
+        val steps14 = remember(days, today) { Ledger.slots(days, today, 14) { it.steps.toDouble() } }
+        val km30 = remember(days, today) { Ledger.slots(days, today, 30) { it.distanceKm } }
+        val avg7 = remember(days, today) { Ledger.average(days, today, 7, includeToday = false) { it.steps.toDouble() } }
+        val burns = remember(days, today, sessions, sessionSets, exercises, weightKg, heightCm) {
+            Ledger.burnSlots(days, today, 14, sessions, sessionSets, exercises, weightKg, heightCm, zone)
         }
-        val byDate = derived.byDate
-        val sorted = derived.sorted
-        val last7 = derived.last7
-        val avg7 = derived.avg7
-        val bestDay = derived.bestDay
-        val lifetime = derived.lifetime
+        val measuredDays = remember(days, today) { Ledger.tracked(Ledger.slots(days, today, 14) { it.activeKcal.toDouble() }) }
 
+        val todaySteps = todayRow?.steps?.takeIf { it > 0 }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ActivityTile("TODAY'S STEPS", fmtInt(byDate[today]?.steps ?: 0), today.toString(), Modifier.weight(1f))
-            // The owner must see why the number is low — a missed sync shrinks it.
             ActivityTile(
-                "7-DAY AVERAGE",
-                fmtInt(avg7),
-                if (last7.size >= 7) "steps per day" else "steps per day · ${last7.size} of 7 tracked",
+                "TODAY'S STEPS",
+                todaySteps?.let { fmtInt(it) } ?: "—",
+                if (todaySteps != null) stepsAsOfCaption(syncedAtMs, today) ?: "from Health Connect" else "not synced today",
                 Modifier.weight(1f),
             )
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ActivityTile("BEST DAY", fmtInt(bestDay.steps), bestDay.date.toString(), Modifier.weight(1f))
-            ActivityTile("LIFETIME", fmtInt(lifetime), "${days.size} ${plural(days.size, "day", "days")} tracked", Modifier.weight(1f))
+            // The owner must see why the number is low: a missed sync shrinks it.
+            ActivityTile(
+                "7-DAY AVERAGE",
+                avg7?.let { fmtInt(it.value.toInt()) } ?: "—",
+                avg7?.let { "steps/day · ${it.tracked} of ${it.of} days, today excluded" } ?: "no days tracked",
+                Modifier.weight(1f),
+            )
         }
 
         Spacer(Modifier.height(14.dp))
         InkPanel(Modifier.fillMaxWidth()) {
             MetricLabel("STEPS — LAST 14 DAYS")
-            val window = lastDays(sorted, today, 14)
-            TrendChart(window.map { it.steps.toDouble() }, goal = STEP_GOAL.toDouble())
-            val hits = window.count { it.steps >= STEP_GOAL }
-            // window.size is TRACKED days inside the period, not 14 — gap days
-            // have no HealthDay row, so the period and the coverage are stated
-            // separately ("3 of 14 days tracked · 2 hit the 10,000 goal").
-            ChartCaption("${window.size} of 14 days tracked · $hits hit the ${fmtInt(STEP_GOAL)} goal")
+            val tracked = Ledger.tracked(steps14)
+            TrendChart(steps14.filterNotNull(), goal = STEP_GOAL.toDouble())
+            val hits = steps14.count { (it ?: 0.0) >= STEP_GOAL }
+            ChartCaption("$tracked of 14 days tracked · $hits hit the ${fmtInt(STEP_GOAL)} goal")
         }
 
         Spacer(Modifier.height(10.dp))
         InkPanel(Modifier.fillMaxWidth()) {
             MetricLabel("DISTANCE (KM) — LAST 30 DAYS")
-            val window30 = lastDays(sorted, today, 30)
-            val km = window30.map { it.distanceKm }
-            if (km.count { it > 0.0 } >= 2) {
+            val km = km30.filterNotNull()
+            if (km.size >= 2) {
                 TrendChart(km, IronvellumColors.SystemGreen)
                 ChartCaption(
                     "best ${"%.1f".format(km.max())} km · total ${"%.0f".format(km.sum())} km · " +
-                        "${window30.size} of 30 days tracked",
+                        "${km.size} of 30 days tracked",
                 )
             } else {
                 ChartCaption("Distance appears once Health Connect reports it.")
             }
         }
 
-        EnergySection(lastDays(sorted, today, 14), latest, sessions, sessionSets, exercises)
+        EnergySection(burns, measuredDays, stats)
         Spacer(Modifier.height(14.dp))
         SectionHeader("Active calories — last 7 days")
-        val kcal7 = last7
-        if (kcal7.isEmpty()) {
+        val window7 = Ledger.window(today, 7).reversed()
+        val rowsByDate = days.associateBy { it.date }
+        val kcalRows = window7.mapNotNull { date ->
+            val row = rowsByDate[date]
+            val burn = Ledger.dayBurn(row, Ledger.sessionsOn(date, sessions, sessionSets, zone), exercises, weightKg, heightCm)
+            burn?.let { Triple(date, row, it) }
+        }
+        if (kcalRows.isEmpty()) {
             Text(
                 "Active calories are unwritten — Health Connect has reported none yet.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
         } else {
-            kcal7.reversed().forEach { day ->
-                val burn = dayBurn(day, sessionsOn(day.date, sessions, sessionSets), exercises, latest)
-                val measured = day.activeKcal > 0
-                val value = if (measured) "${fmtInt(day.activeKcal)} kcal" else burn?.let { "${fmtInt(it.kcal)} kcal (est.)" } ?: "—"
+            val best = kcalRows.maxOf { it.third.kcal }
+            kcalRows.forEach { (date, _, burn) ->
+                val measured = burn.confidence == EnergyConfidence.MEASURED
                 MetricRow(
-                    day.date.toString() + if (measured) "" else " · estimated",
-                    value,
-                    measured && day.activeKcal == kcal7.maxOf { it.activeKcal },
+                    date.toString() + if (measured) "" else " · estimated",
+                    "${fmtInt(burn.kcal)} kcal" + if (measured) "" else " (est.)",
+                    measured && burn.kcal == best,
                 )
             }
         }
 
         Spacer(Modifier.height(10.dp))
         SectionHeader("Sleep — last 7 nights")
-        // Calendar-day bound first: takeLast(7) over days-with-sleep silently
-        // stretched "7 nights" across weeks of gaps.
-        val sleep7 = sorted.filter { it.date > today.minusDays(7) && it.sleepMinutes > 0 }
+        val sleep7 = Ledger.window(today, 7).mapNotNull { date ->
+            rowsByDate[date]?.takeIf { it.sleepMinutes > 0 }
+        }
         if (sleep7.isEmpty()) {
             Text(
                 "Sleep is unwritten — Health Connect has reported none yet.",
@@ -1249,59 +1278,15 @@ private fun ActivityTab(
     }
 }
 
-/**
- * Calendar-day window, not entry-count: days with no Health Connect signal have
- * no row at all, so takeLast(N) over the sorted list silently stretched every
- * "last N days" window across weeks of gaps.
- */
-private fun lastDays(sorted: List<HealthDay>, today: LocalDate, n: Long): List<HealthDay> =
-    sorted.filter { it.date > today.minusDays(n) }
-
-/** Sessions completed on [date], with their logged sets. */
-private fun sessionsOn(
-    date: LocalDate,
-    sessions: List<WorkoutSession>,
-    sessionSets: Map<Long, List<SessionSet>>,
-): List<Pair<WorkoutSession, List<SessionSet>>> = sessions
-    .filter {
-        Instant.ofEpochMilli(it.completedAtMs ?: it.startedAtMs)
-            .atZone(ZoneId.systemDefault()).toLocalDate() == date
-    }
-    .map { it to sessionSets[it.id].orEmpty() }
-
-/**
- * One day's burn. Measured Health Connect active calories win outright — the
- * estimate for that day is never added on top of them (rule: never double-count).
- */
-private fun dayBurn(
-    day: HealthDay,
-    sessionsThatDay: List<Pair<WorkoutSession, List<SessionSet>>>,
-    exercises: Map<Long, Exercise>,
-    latest: StatEntry?,
-): EnergyEstimate? {
-    val stepsEst = if (day.steps > 0) {
-        Energy.stepsKcal(day.steps, day.distanceKm.takeIf { it > 0.0 }, latest?.weightKg, latest?.heightCm)
-    } else {
-        null
-    }
-    val sessionEsts = sessionsThatDay.mapNotNull { (session, sets) ->
-        val minutes = session.completedAtMs?.let { ((it - session.startedAtMs) / 60_000L).toInt().coerceAtLeast(0) }
-        Energy.sessionKcal(sets, exercises, latest?.weightKg, minutes)
-    }
-    return Energy.dayKcal(day.activeKcal.takeIf { it > 0 }, stepsEst, sessionEsts)
-}
-
 @Composable
 private fun EnergySection(
-    window: List<HealthDay>,
-    latest: StatEntry?,
-    sessions: List<WorkoutSession>,
-    sessionSets: Map<Long, List<SessionSet>>,
-    exercises: Map<Long, Exercise>,
+    burns: List<EnergyEstimate?>,
+    measuredDays: Int,
+    stats: List<StatEntry>,
 ) {
-    val burns = window.map { dayBurn(it, sessionsOn(it.date, sessions, sessionSets), exercises, latest) }
     val todayBurn = burns.lastOrNull()
-    val resting = Energy.restingKcalPerDay(latest?.weightKg, latest?.bodyFatPct)
+    val bfReading = Ledger.latestWithBodyFat(stats)
+    val resting = Energy.restingKcalPerDay(bfReading?.weightKg, bfReading?.bodyFatPct)
 
     Spacer(Modifier.height(14.dp))
     SectionHeader("Energy burn — last 14 days")
@@ -1326,46 +1311,33 @@ private fun EnergySection(
                 )
             }
         } else {
-            MetricValue("—", "no steps or trials logged today")
+            MetricValue("—", "not synced today, and no trial logged")
         }
 
         Spacer(Modifier.height(10.dp))
         MetricLabel("DAILY BURN · LAST 14 DAYS")
-        // A null estimate is "not estimable" (usually just a missing
-        // bodyweight), not 0 kcal — plotting zeros drew confident zero-burn
-        // days. TrendChart cannot draw gaps, so only estimable days are
-        // plotted and the caption states the real coverage.
-        val charted = window.zip(burns).mapNotNull { (day, burn) -> burn?.let { day.date to it.kcal } }
+        // A null slot is "not estimable or not synced", never 0 kcal.
+        val charted = burns.filterNotNull()
         if (charted.size >= 2) {
-            TrendChart(charted.map { it.second.toDouble() })
+            TrendChart(charted.map { it.kcal.toDouble() })
             Spacer(Modifier.height(6.dp))
             EnergyLegend()
-            val measuredCount = window.count { it.activeKcal > 0 }
             val measuredLine =
-                if (measuredCount == 0) {
+                if (measuredDays == 0) {
                     "all MET estimates — Health Connect has not reported active calories."
                 } else {
-                    "$measuredCount of ${window.size} days are measured by Health Connect. " +
+                    "$measuredDays of ${burns.size} days are measured by Health Connect. " +
                         "Estimates are never added on top of a measured day."
                 }
-            ChartCaption("${charted.size} of ${window.size} days estimable · $measuredLine")
+            ChartCaption("${charted.size} of ${burns.size} days estimable · $measuredLine")
         } else {
-            ChartCaption("Burn is estimable on ${charted.size} of ${window.size} days — log bodyweight or connect Health Connect to estimate more.")
+            ChartCaption("Burn is estimable on ${charted.size} of ${burns.size} days — log bodyweight or connect Health Connect to estimate more.")
         }
 
-        val missingPrompts = buildList {
-            // heightCm is a non-null Double using 0.0 as the "never set"
-            // sentinel, so `heightCm == null` was dead code: the prompt stayed
-            // hidden for exactly the lifter who needed it.
-            if (latest == null) add("Log your bodyweight to estimate activity burn.")
-            if (latest == null || latest.heightCm <= 0.0) {
-                add("Log your height to estimate steps when distance is missing.")
-            }
-        }
-        missingPrompts.forEach { prompt ->
+        if (stats.isEmpty()) {
             Spacer(Modifier.height(6.dp))
             Text(
-                prompt,
+                "Log your bodyweight to estimate activity burn.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
@@ -1393,7 +1365,7 @@ private fun EnergySection(
                 )
             }
             Spacer(Modifier.height(4.dp))
-            ChartCaption(resting.basis)
+            ChartCaption("${resting.basis} · from your ${formatDate(bfReading!!.takenAtMs, "d MMM")} reading")
         } else {
             Text(
                 "Log body fat to estimate resting burn.",
