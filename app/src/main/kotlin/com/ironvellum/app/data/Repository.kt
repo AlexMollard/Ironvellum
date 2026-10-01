@@ -367,6 +367,41 @@ class Repository(
 
     suspend fun deletePreset(presetId: Long) = presetDao.deletePreset(presetId)
 
+    /**
+     * Puts one exercise on the end of rite [presetId], or into a new rite
+     * named after it when [presetId] is null, and returns the rite's name.
+     * Appends a row rather than going through [savePreset], which rewrites
+     * every entry of the rite to add one.
+     */
+    suspend fun addExerciseToRite(
+        exerciseName: String,
+        presetId: Long?,
+        targetSets: Int,
+        targetReps: Int,
+    ): String = db.withTransaction {
+        val exerciseId = exerciseIdByName(exerciseName) ?: error("$exerciseName is not in the catalogue")
+        val (id, name, position) = if (presetId == null) {
+            Triple(presetDao.insertPreset(PresetEntity(name = exerciseName, note = "", scheduledDay = null)), exerciseName, 0)
+        } else {
+            val rite = presetDao.presetWithEntries(presetId) ?: error("Rite $presetId no longer exists")
+            Triple(presetId, rite.preset.name, (rite.entries.maxOfOrNull { it.position } ?: -1) + 1)
+        }
+        presetDao.insertEntries(
+            listOf(
+                PresetEntryEntity(
+                    presetId = id,
+                    exerciseId = exerciseId,
+                    targetSets = targetSets,
+                    targetReps = targetReps,
+                    targetWeightKg = null,
+                    modifiers = "",
+                    position = position,
+                ),
+            ),
+        )
+        name
+    }
+
     /** Zero presets means setup has never run; the UI uses this to tell an
      *  empty first-run from a configured lifter. */
     suspend fun presetCount(): Int = presetDao.count()
@@ -1625,16 +1660,19 @@ class Repository(
     fun observeSkillTrainingEvidence(): Flow<Map<String, SkillTrainingEvidence>> =
         combine(observeHistory(), observeStats(), observeExercises()) { history, stats, exercises ->
             val bodyweightAt = SetRecords.bodyweightLookup(stats)
-            val metricByName = exercises.associate { it.name.lowercase().trim() to it.metric }
+            val metricByName = exercises.associate { Titles.normaliseName(it.name) to it.metric }
             val best = SetRecords.records(history, bodyweightAt) { set ->
-                metricByName[set.exerciseName.lowercase().trim()]
+                metricByName[Titles.normaliseName(set.exerciseName)]
             }
             best.values
-                .groupBy { it.exerciseName.lowercase().trim() }
+                .groupBy { Titles.normaliseName(it.exerciseName) }
                 .mapValues { (_, records) ->
-                    // records() keys by set position; the lifter's best effort
-                    // is the strongest position, not the first one logged.
-                    val top = records.maxBy { it.score }
+                    // records() keys by set position. A technique's standard
+                    // is a count of reps or seconds, so the evidence is the
+                    // position with the most of them; the strength score only
+                    // breaks ties. Taking the top score let a short weighted
+                    // set hide a longer one that met the standard.
+                    val top = records.maxWith(compareBy({ it.reps }, { it.score }))
                     SkillTrainingEvidence(
                         value = top.reps,
                         weightKg = top.weightKg,
