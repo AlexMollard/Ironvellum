@@ -25,10 +25,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -60,7 +60,9 @@ import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.InkCircleShape
+import com.ironvellum.app.ui.theme.InkEdgeShape
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkBorder
 
 /** The node disc. Room around it is for the glow and the breathing ring. */
@@ -80,6 +82,9 @@ internal val LockedRowBg = Color(0xFF101512)
 
 /** A locked glyph: part of the silhouette, deliberately close to its disc. */
 internal val LockedGlyph = Color(0xFF3A3A36)
+
+private fun inkCorners(r: androidx.compose.ui.unit.Dp, salt: Int) =
+    InkEdgeShape(salt, CornerSize(r), CornerSize(r), CornerSize(r), CornerSize(r))
 
 /** What a node is, in shape, glyph and badge as well as colour. */
 private enum class NodeState { MASTERED, NEXT, LOCKED }
@@ -282,7 +287,8 @@ private fun SkillNode(
 ) {
     val shape = remember(skill.name) { InkCircleShape(skill.name.hashCode() and 0xFF) }
     val textH = with(LocalDensity.current) { (LabelLine * 2f).toDp() }
-    val plate = RoundedCornerShape(4.dp)
+    val chip = remember { inkCorners(3.dp, 13) }
+    val plate = remember { inkCorners(4.dp, 11) }
     // The whole cell is the touch target, so the node's hit area is well past 48dp.
     Column(
         modifier
@@ -301,22 +307,23 @@ private fun SkillNode(
                     val r = size.minDimension / 2f
                     when (state) {
                         // a soft halo, the gold of an earned thing
-                        NodeState.MASTERED -> drawCircle(
+                        NodeState.MASTERED -> drawRect(
                             Brush.radialGradient(
                                 0.62f to IronvellumColors.SovereignGold.copy(alpha = 0.42f),
                                 1f to Color.Transparent,
                                 center = center,
                                 radius = r * 1.55f,
                             ),
-                            radius = r * 1.55f,
+                            topLeft = Offset(-r, -r),
+                            size = androidx.compose.ui.geometry.Size(size.width + 2 * r, size.height + 2 * r),
                         )
                         // a ring that breathes outward from the disc
                         NodeState.NEXT -> {
                             val t = pulse.value
-                            drawCircle(
-                                IronvellumColors.SystemGreen.copy(alpha = 0.55f - 0.4f * t),
-                                radius = r + 2.dp.toPx() + 5.dp.toPx() * t,
-                                style = Stroke(1.5.dp.toPx()),
+                            inkArc(
+                                center, r + 2.dp.toPx() + 5.dp.toPx() * t, 0f, 360f,
+                                IronvellumColors.SystemGreen.copy(alpha = 0.55f - 0.4f * t), 1.5.dp.toPx(),
+                                seed = 3, taperEnds = false,
                             )
                         }
                         NodeState.LOCKED -> Unit
@@ -391,7 +398,7 @@ private fun SkillNode(
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .offset(x = (-5).dp, y = (-3).dp)
-                    .clip(RoundedCornerShape(3.dp))
+                    .clip(chip)
                     .background(if (state == NodeState.LOCKED) IronvellumColors.InkMuted else IronvellumColors.Ink)
                     .padding(horizontal = 3.dp, vertical = 1.dp),
             )

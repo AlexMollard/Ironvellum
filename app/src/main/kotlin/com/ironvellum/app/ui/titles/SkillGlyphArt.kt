@@ -10,6 +10,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import com.ironvellum.app.ui.theme.inkArc
+import com.ironvellum.app.ui.theme.inkDot
+import com.ironvellum.app.ui.theme.inkStroke
 
 /** A family's pictogram in a single colour, stroked on a 24-unit grid. */
 @Composable
@@ -21,10 +24,12 @@ private fun DrawScope.drawGlyph(family: GlyphFamily, color: Color) {
     val u = size.minDimension / 24f
     val pen = Stroke(width = 2.1f * u, cap = StrokeCap.Round, join = StrokeJoin.Round)
     fun p(x: Float, y: Float) = Offset(x * u, y * u)
+    var n = 0
     fun ln(x1: Float, y1: Float, x2: Float, y2: Float) =
-        drawLine(color, p(x1, y1), p(x2, y2), strokeWidth = pen.width, cap = StrokeCap.Round)
-    fun head(x: Float, y: Float, r: Float = 2.1f) = drawCircle(color, r * u, p(x, y))
-    fun ring(x: Float, y: Float, r: Float) = drawCircle(color, r * u, p(x, y), style = pen)
+        inkStroke(p(x1, y1), p(x2, y2), color, pen.width, seed = family.ordinal * 31 + n++, taperEnds = false)
+    fun head(x: Float, y: Float, r: Float = 2.1f) = inkDot(p(x, y), r * u, color, seed = family.ordinal)
+    fun ring(x: Float, y: Float, r: Float) =
+        inkArc(p(x, y), r * u, 0f, 360f, color, pen.width, seed = family.ordinal, taperEnds = false)
 
     when (family) {
         // plank on a floor, arm straight down
@@ -39,8 +44,8 @@ private fun DrawScope.drawGlyph(family: GlyphFamily, color: Color) {
         }
         // chin over the bar, elbows bent
         GlyphFamily.PULL -> {
-            ln(3f, 4f, 21f, 4f); ln(7.5f, 4f, 9.5f, 11f); ln(16.5f, 4f, 14.5f, 11f)
-            ln(9.5f, 11f, 14.5f, 11f); head(12f, 7.4f, 2f); ln(12f, 11.5f, 12f, 21f)
+            ln(3f, 4f, 21f, 4f); ln(6.5f, 4f, 4.5f, 9.5f); ln(4.5f, 9.5f, 9.5f, 12f); ln(17.5f, 4f, 19.5f, 9.5f)
+            ln(19.5f, 9.5f, 14.5f, 12f); head(12f, 8.4f, 2f); ln(12f, 12.5f, 12f, 21.5f)
         }
         // arms long and straight, head low
         GlyphFamily.HANG -> {
