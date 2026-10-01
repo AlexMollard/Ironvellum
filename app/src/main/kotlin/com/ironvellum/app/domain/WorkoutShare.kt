@@ -8,19 +8,15 @@ import java.util.Locale
 /**
  * A finished session as plain text worth pasting into a chat.
  *
- * Shaped after Wordle's share card: short, self-contained, no link, and laid
- * out with block characters rather than column padding — a messaging client
- * renders emoji at a fixed width but proportional text at whatever width it
- * likes, so aligned columns would arrive ragged.
+ * Short, self-contained and plain: no link, no emoji, no column padding (a
+ * messaging client renders proportional text at whatever width it likes, so
+ * aligned columns would arrive ragged). Only the sets done are listed and
+ * counted; skipped sets are simply absent.
  *
  * The private note is never included. It is the one field the app promises
  * stays on the device.
  */
 object WorkoutShare {
-
-    const val BAR_CELLS = 10
-    private const val FILLED = "\uD83D\uDFE9" // green square
-    private const val EMPTY = "\u2B1B" // black square
 
     private val dateFormat = DateTimeFormatter.ofPattern("d MMM yyyy", Locale.ENGLISH)
 
@@ -37,17 +33,11 @@ object WorkoutShare {
         val done = sets.filter { it.done }
         val at = session.completedAtMs ?: session.startedAtMs
 
-        append("\u2694\uFE0F IRONVELLUM \u00B7 ").append(session.title.ifBlank { session.label })
+        append(session.title.ifBlank { session.label }).append(" \u00B7 Ironvellum")
         append('\n')
         append(dateFormat.format(Instant.ofEpochMilli(at).atZone(zone)))
         durationMinutes(session)?.let { append(" \u00B7 ").append(it).append(" min") }
         append('\n')
-
-        if (sets.isNotEmpty()) {
-            append('\n').append(bar(done.size, sets.size))
-            append("  ").append(done.size).append('/').append(sets.size).append(" sets")
-            append('\n')
-        }
 
         val blocks = done
             .groupBy { it.exerciseId }
@@ -67,32 +57,29 @@ object WorkoutShare {
         // printed "140 reps" for a session that was 65 reps and 75 seconds of
         // hollow hold.
         val heldSeconds = done.filter { holdSet(exercises[it.exerciseId], it) }.sumOf { heldSeconds(it) }
-        val hasTotals = reps > 0 || heldSeconds > 0
-        if (hasTotals) {
-            append('\n')
-            val parts = buildList {
-                if (reps > 0) add("${format(reps)} reps")
-                if (heldSeconds > 0) add("${format(heldSeconds)}s held")
-                if (session.strengthScore > 0) add("${format(session.strengthScore)} STR")
-            }
-            append(parts.joinToString("  \u00B7  "))
-            append('\n')
+        // Kilograms moved counts only lifts whose load is the whole weight
+        // (a barbell, a dumbbell): a belt on a pull-up is added load on top of
+        // a bodyweight the card does not know, so it would undercount.
+        val moved = counted
+            .filter { exercises[it.exerciseId]?.isWeighted == true }
+            .sumOf { (it.weightKg ?: 0.0) * it.reps }
+            .toInt()
+        val effort = buildList {
+            if (done.isNotEmpty()) add("${done.size} ${if (done.size == 1) "set" else "sets"}")
+            if (reps > 0) add("${format(reps)} reps")
+            if (heldSeconds > 0) add("${format(heldSeconds)}s held")
         }
-        if (session.xpAwarded > 0) {
-            if (!hasTotals) append('\n')
-            append('+').append(format(session.xpAwarded)).append(" XP")
-            append('\n')
+        val load = buildList {
+            if (moved > 0) add("${format(moved)} kg moved")
+            if (session.strengthScore > 0) add("${format(session.strengthScore)} STR")
         }
+        if (effort.isNotEmpty() || load.isNotEmpty() || session.xpAwarded > 0) append('\n')
+        if (effort.isNotEmpty()) append(effort.joinToString(" \u00B7 ")).append('\n')
+        if (load.isNotEmpty()) append(load.joinToString(" \u00B7 ")).append('\n')
+        if (session.xpAwarded > 0) append('+').append(format(session.xpAwarded)).append(" XP").append('\n')
 
         if (session.note.isNotBlank()) append('\n').append('\u201C').append(session.note.trim()).append('\u201D').append('\n')
     }.trimEnd('\n')
-
-    /** Completion as fixed-width blocks — the one element that survives any renderer. */
-    fun bar(done: Int, total: Int): String {
-        if (total <= 0) return ""
-        val filled = (done.toDouble() / total * BAR_CELLS).toInt().coerceIn(0, BAR_CELLS)
-        return FILLED.repeat(filled) + EMPTY.repeat(BAR_CELLS - filled)
-    }
 
     private fun durationMinutes(session: WorkoutSession): Long? =
         session.completedAtMs?.let { ((it - session.startedAtMs) / 60_000L).coerceAtLeast(1) }

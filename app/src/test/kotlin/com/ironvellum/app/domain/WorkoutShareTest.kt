@@ -224,9 +224,9 @@ class WorkoutShareTest {
         assertFalse(card, card.contains("101 reps"))
     }
 
-    /** Unfinished sets stay out of the movement list but still shape the bar. */
+    /** Unfinished sets stay out of the movement list and the set count. */
     @Test
-    fun `the bar shows completion and skipped sets are not claimed`() {
+    fun `skipped sets are not claimed`() {
         val card = WorkoutShare.format(
             session(),
             listOf(
@@ -237,16 +237,33 @@ class WorkoutShareTest {
             mapOf(1L to exercise(1, "Push-up")),
             zone,
         )
-        assertTrue(card, card.contains("2/3 sets"))
+        assertTrue(card, card.contains("2 sets · 24 reps"))
+        assertFalse(card, card.contains("3 sets"))
         assertTrue(card, card.contains("Push-up \u00B7 2\u00D712"))
     }
 
     @Test
-    fun `the bar fills in proportion and always spans its full width`() {
-        assertEquals(WorkoutShare.BAR_CELLS, WorkoutShare.bar(3, 7).codePointCount(0, WorkoutShare.bar(3, 7).length))
-        assertEquals("", WorkoutShare.bar(0, 0))
-        val full = WorkoutShare.bar(4, 4)
-        assertEquals(full, WorkoutShare.bar(9, 9))
+    fun `the card opens with the session name and carries no emoji`() {
+        val card = WorkoutShare.format(session(), listOf(set(1, "Push-up", 0, 12)), mapOf(1L to exercise(1, "Push-up")), zone)
+        assertTrue(card, card.startsWith("Push Day · Ironvellum\n"))
+        assertFalse(card, card.codePoints().anyMatch { it >= 0x2190 })
+    }
+
+    /** Kilograms moved counts barbell and dumbbell work only, never added load on a bodyweight move. */
+    @Test
+    fun `kilograms moved sums loaded lifts and skips belts`() {
+        val squat = Exercise(id = 2, name = "Back Squat", muscleGroup = MuscleGroup.LEGS, isWeighted = true)
+        val card = WorkoutShare.format(
+            session(),
+            listOf(
+                set(2, "Back Squat", 0, 5, weightKg = 100.0),
+                set(2, "Back Squat", 1, 5, weightKg = 100.0),
+                set(1, "Pull-up", 0, 5, weightKg = 20.0, position = 1),
+            ),
+            mapOf(1L to exercise(1, "Pull-up"), 2L to squat),
+            zone,
+        )
+        assertTrue(card, card.contains("1,000 kg moved · 1,204 STR"))
     }
 
     @Test
