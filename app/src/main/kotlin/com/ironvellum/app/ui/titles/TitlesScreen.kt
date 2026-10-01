@@ -3,8 +3,6 @@ package com.ironvellum.app.ui.titles
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -68,7 +66,8 @@ import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.ironvellumRepository
-import com.ironvellum.app.ui.components.IronvellumTabPill
+import com.ironvellum.app.ui.components.IronvellumTabBar
+import com.ironvellum.app.ui.components.IronvellumTabItem
 import com.ironvellum.app.ui.components.InkPickerSheet
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.domain.ExerciseSearch
@@ -384,15 +383,11 @@ fun TitlesScreen(
         Spacer(Modifier.height(12.dp))
         // One persistent selector row: the three tabs. The technique line is
         // chosen from the bar below, which opens the shared picker sheet.
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IronvellumTabPill("DEEDS", tab == TitlesTab.DEEDS) { tab = TitlesTab.DEEDS }
-            IronvellumTabPill("PATHS", tab == TitlesTab.TREE) { tab = TitlesTab.TREE }
-            IronvellumTabPill("JOURNAL", tab == TitlesTab.JOURNAL) { tab = TitlesTab.JOURNAL }
-        }
+        IronvellumTabBar(
+            items = listOf(IronvellumTabItem("DEEDS"), IronvellumTabItem("PATHS"), IronvellumTabItem("JOURNAL")),
+            selectedIndex = tab.ordinal,
+            onSelect = { tab = TitlesTab.entries[it] },
+        )
 
         if (tab == TitlesTab.JOURNAL) {
             SkillJournal(
