@@ -1225,7 +1225,7 @@ private fun WarbandBannerLine() {
 
     var band by remember(account?.userId) { mutableStateOf<Warband?>(null) }
     LaunchedEffect(account?.userId) {
-        band = app.cloudSync.warband().getOrNull()
+        band = app.circleBonus.read().getOrNull()?.circle
     }
     band?.let { b ->
         val total = b.members.sumOf { it.workoutsThisWeek }

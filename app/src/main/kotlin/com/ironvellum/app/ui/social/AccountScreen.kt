@@ -39,6 +39,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -424,11 +425,15 @@ fun AccountScreen(
     // Column never sees the drag.
     if (cloudConfigured && ui.account != null) {
         val pullState = rememberPullToRefreshState()
+        // A pull also forces a fresh circle read: the circle section owns its
+        // own view model, so the pull reaches it as a bumped counter.
+        var circleRefresh by remember { mutableIntStateOf(0) }
         PullToRefreshBox(
             isRefreshing = ui.friendsLoading,
             onRefresh = {
                 viewModel.refreshFriends()
                 viewModel.refreshBlocked(force = true)
+                circleRefresh++
             },
             state = pullState,
             modifier = Modifier.fillMaxSize(),
@@ -460,6 +465,7 @@ fun AccountScreen(
                     onRequest = viewModel::requestFriend,
                     onClaim = viewModel::claimName,
                     onSkipClaim = viewModel::skipClaim,
+                    circleRefreshSignal = circleRefresh,
                 )
                 // Clears the bottom nav bar: 28.dp left the last ally row half
                 // hidden behind it at the end of the scroll.
@@ -804,6 +810,7 @@ private fun SignedInPanels(
     onRequest: (String) -> Unit,
     onClaim: (String) -> Unit,
     onSkipClaim: () -> Unit,
+    circleRefreshSignal: Int,
 ) {
     val acct = ui.account ?: return
 
@@ -838,7 +845,7 @@ private fun SignedInPanels(
     }
 
     SectionHeader("Circle")
-    WarbandSection(onOpenLifter = onOpenLifter)
+    WarbandSection(onOpenLifter = onOpenLifter, refreshSignal = circleRefreshSignal)
 
     SectionHeader(if (accepted.isEmpty()) "Allies" else "Allies · ${accepted.size}")
     AlliesPanel(

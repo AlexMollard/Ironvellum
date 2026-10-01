@@ -2,6 +2,8 @@ package com.ironvellum.app
 
 import android.app.Application
 import android.os.StrictMode
+import com.ironvellum.app.data.CircleBonus
+import com.ironvellum.app.data.CirclePayoutStore
 import com.ironvellum.app.data.DbSnapshot
 import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.Cloud
@@ -36,6 +38,11 @@ class IronvellumApp : Application() {
      */
     val accountRepository: AccountRepository by lazy { AccountRepository() }
     val cloudSync: CloudSync by lazy { CloudSync(repository, accountRepository) }
+
+    /** Every circle read goes through this, so the weekly bonus is settled wherever the circle is read. */
+    val circleBonus: CircleBonus by lazy {
+        CircleBonus(cloudSync, accountRepository, repository, CirclePayoutStore.from(this))
+    }
 
     private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 

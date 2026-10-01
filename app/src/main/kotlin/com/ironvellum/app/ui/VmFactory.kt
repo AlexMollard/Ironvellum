@@ -3,6 +3,7 @@ package com.ironvellum.app.ui
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.data.CircleBonus
 import com.ironvellum.app.data.HealthSync
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.AccountRepository
@@ -24,3 +25,6 @@ fun CreationExtras.ironvellumAccount(): AccountRepository =
 
 fun CreationExtras.ironvellumCloudSync(): CloudSync =
     (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as IronvellumApp).cloudSync
+
+fun CreationExtras.ironvellumCircleBonus(): CircleBonus =
+    (this[ViewModelProvider.AndroidViewModelFactory.APPLICATION_KEY] as IronvellumApp).circleBonus

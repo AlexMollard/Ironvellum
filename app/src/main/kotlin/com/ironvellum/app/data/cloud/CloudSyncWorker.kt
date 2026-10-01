@@ -44,6 +44,9 @@ class CloudSyncWorker(context: Context, params: WorkerParameters) :
                     // when the inbox screen itself was visited. Best effort —
                     // a refused inbox must not turn a good push into a retry.
                     runCatching { app.cloudSync.inbox(force = true) }
+                    // A circle read settles the weekly bonus, so a lifter who
+                    // never opens ALLIES before the Monday reset is still paid.
+                    runCatching { app.circleBonus.read(force = true) }
                     Result.success()
                 },
                 // transient network errors are worth one retry, then let the

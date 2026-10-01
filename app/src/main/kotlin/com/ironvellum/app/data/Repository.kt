@@ -100,6 +100,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Evidence from real training, not practice: a completed session's best set of
@@ -2712,39 +2714,44 @@ class Repository(
     private fun IdleStateEntity.toIdleState() =
         IdleState(essence = essence, figures = shadows, relicMultiplier = relicMultiplier, lastCollectedAtMs = lastCollectedAtMs)
 
+    /** Serialises the circle bonus: two concurrent reads must not both see "unpaid". */
+    private val circlePayoutMutex = Mutex()
+
     /**
-     * Pays the band's weekly-goal bonus when it is owed: the XP lands in the
+     * Pays the circle's weekly-goal bonus when it is owed: the XP lands in the
      * local profile through the same [Xp] plumbing a completed session uses
-     * (zero server writes), and the once-per-band+week flag flips in the same
-     * call, so a re-read or re-render can never pay twice. Returns the XP
-     * paid, or null when nothing is owed.
+     * (zero server writes). The once-per-lifter+week flag is written BEFORE
+     * the XP and under a lock, so two concurrent circle reads (the ALLIES tab
+     * and the Veil banner both fire on launch) cannot both pay; if the XP
+     * cannot be added the flag is taken back. Returns the XP paid, or null
+     * when nothing is owed.
      */
     suspend fun maybePayBandGoalBonus(
         band: Warband,
         myUserId: String,
-        payoutStore: WarbandGoalPayoutStore,
-    ): Int? {
-        val weekKey = WarbandGoalPayout.isoWeekKey()
+        payoutStore: CirclePayoutStore,
+    ): Int? = circlePayoutMutex.withLock {
+        payoutStore.adoptLegacy(myUserId)
+        val weekKey = CirclePayout.weekKey()
         val mine = band.members.firstOrNull { it.userId == myUserId }?.workoutsThisWeek ?: 0
         val total = band.members.sumOf { it.workoutsThisWeek }
-        if (!WarbandGoalPayout.owes(
-                bandId = band.id,
-                weekKey = weekKey,
+        if (!CirclePayout.owes(
                 total = total,
                 goal = band.weeklyGoal,
                 contributed = mine,
-                paidKeys = if (payoutStore.hasPaid(band.id, weekKey)) {
-                    setOf(WarbandGoalPayout.payoutKey(band.id, weekKey))
-                } else {
-                    emptySet()
-                },
+                alreadyPaid = payoutStore.hasPaid(myUserId, weekKey),
             )
         ) {
-            return null
+            return@withLock null
         }
-        profileDao.addXp(WarbandGoalPayout.BONUS_XP.toLong())
-        payoutStore.markPaid(band.id, weekKey)
-        return WarbandGoalPayout.BONUS_XP
+        payoutStore.markPaid(myUserId, weekKey)
+        try {
+            profileDao.addXp(CirclePayout.BONUS_XP.toLong())
+        } catch (e: Throwable) {
+            payoutStore.unmark(myUserId, weekKey)
+            throw e
+        }
+        CirclePayout.BONUS_XP
     }
 
     companion object {
