@@ -97,9 +97,13 @@ def gradle(tasks: list[str], serial: str | None) -> int:
     env = dict(os.environ)
     if serial:
         env["ANDROID_SERIAL"] = serial
-    # gradlew.bat, via cmd, is how this repo is driven on Windows.
+    # gradlew.bat, via cmd, is how this repo is driven on Windows. cmd will not
+    # find it by bare name when NoDefaultCurrentDirectoryInExePath=1, so call it
+    # by absolute path and drop the variable from the child env.
+    env.pop("NoDefaultCurrentDirectoryInExePath", None)
     joined = " ".join(tasks)
-    return run(f'cmd /c "gradlew.bat {joined} --console=plain"', env=env, shell=True)
+    gradlew = os.path.join(ROOT, "gradlew.bat")
+    return run(f'cmd /c ""{gradlew}" {joined} --console=plain"', env=env, shell=True)
 
 
 def backend() -> int:
