@@ -29,6 +29,9 @@ data class TrialDraft(val blocks: List<Block>) {
 
     val tickedCount: Int get() = blocks.sumOf { b -> b.sets.count { it.done } }
 
+    /** True when two blocks name one movement and cannot be folded: it cannot be saved. */
+    val hasRepeatedMovement: Boolean get() = blocks.map { it.exerciseId }.distinct().size != blocks.size
+
     fun updateSet(block: Int, set: Int, change: (DraftSet) -> DraftSet): TrialDraft =
         replaceBlock(block) { b -> b.copy(sets = b.sets.mapIndexed { i, s -> if (i == set) change(s) else s }) }
 
@@ -77,27 +80,42 @@ data class TrialDraft(val blocks: List<Block>) {
         private const val DEFAULT_REPS = 10
 
         /** Groups a trial's stored sets into blocks, in trial order. */
-        fun of(sets: List<SessionSet>): TrialDraft = TrialDraft(
-            sets.groupBy { it.exercisePosition }.toSortedMap().values.map { rows ->
-                val ordered = rows.sortedBy { it.setIndex }
-                val first = ordered.first()
-                Block(
-                    exerciseId = first.exerciseId,
-                    exerciseName = first.exerciseName,
-                    modifiers = first.modifiers,
-                    sets = ordered.map {
-                        DraftSet(
-                            reps = it.reps,
-                            weightKg = it.weightKg,
-                            durationSec = it.durationSec,
-                            distanceM = it.distanceM,
-                            grade = it.grade,
-                            done = it.done,
-                        )
-                    },
-                )
-            },
-        )
+        fun of(sets: List<SessionSet>): TrialDraft {
+            // Position alone is not an identity: archives written before
+            // positions were exported restore every set at 0. A block is one
+            // (position, movement) pair; the sort is stable, so equal
+            // positions keep their first-seen order.
+            val blocks = sets.groupBy { it.exercisePosition to it.exerciseId }
+                .entries.sortedBy { it.key.first }
+                .map { (_, rows) ->
+                    val ordered = rows.sortedBy { it.setIndex }
+                    val first = ordered.first()
+                    Block(
+                        exerciseId = first.exerciseId,
+                        exerciseName = first.exerciseName,
+                        modifiers = first.modifiers,
+                        sets = ordered.map {
+                            DraftSet(
+                                reps = it.reps,
+                                weightKg = it.weightKg,
+                                durationSec = it.durationSec,
+                                distanceM = it.distanceM,
+                                grade = it.grade,
+                                done = it.done,
+                            )
+                        },
+                    )
+                }
+            // A rite may list one movement twice. The cloud keys sets on
+            // (movement, index), so such entries fold into one block when they
+            // are described alike; [hasRepeatedMovement] flags the rest.
+            val merged = mutableListOf<Block>()
+            for (b in blocks) {
+                val at = merged.indexOfFirst { it.exerciseId == b.exerciseId && it.modifiers == b.modifiers }
+                if (at >= 0) merged[at] = merged[at].copy(sets = merged[at].sets + b.sets) else merged += b
+            }
+            return TrialDraft(merged)
+        }
 
         /** One set carried across a metric change: the new metric's figure is always set. */
         internal fun reshape(set: DraftSet, to: ExerciseMetric): DraftSet = when (to) {

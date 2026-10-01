@@ -55,4 +55,46 @@ class TrialDraftTest {
         val removed = draft.removeSet(1, 0)
         assertEquals(listOf(1L), removed.blocks.map { it.exerciseId })
     }
-}
+
+    @Test
+    fun `sets of several movements stored at one position stay separate blocks`() {
+        val restored = TrialDraft.of(
+            listOf(
+                SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 0, setIndex = 0, reps = 8, done = true),
+                SessionSet(exerciseId = 2, exerciseName = "Plank", exercisePosition = 0, setIndex = 0, reps = 0, durationSec = 40, done = true),
+                SessionSet(exerciseId = 3, exerciseName = "Push-up", exercisePosition = 0, setIndex = 0, reps = 12, done = true),
+                SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 0, setIndex = 1, reps = 6, done = true),
+            ),
+        )
+        assertEquals(listOf(1L, 2L, 3L), restored.blocks.map { it.exerciseId })
+        assertEquals(listOf("Bench Press", "Plank", "Push-up"), restored.blocks.map { it.exerciseName })
+        assertEquals(listOf(8, 6), restored.blocks[0].sets.map { it.reps })
+        assertEquals(40, restored.blocks[1].sets.single().durationSec)
+        assertFalse(restored.hasRepeatedMovement)
+    }
+
+    @Test
+    fun `a movement listed twice in a rite folds into one block`() {
+        val twice = TrialDraft.of(
+            listOf(
+                SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 0, setIndex = 0, reps = 8, done = true),
+                SessionSet(exerciseId = 2, exerciseName = "Plank", exercisePosition = 1, setIndex = 0, reps = 0, durationSec = 40, done = true),
+                SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 2, setIndex = 0, reps = 5, done = true),
+            ),
+        )
+        assertEquals(listOf(1L, 2L), twice.blocks.map { it.exerciseId })
+        assertEquals(listOf(8, 5), twice.blocks[0].sets.map { it.reps })
+        assertFalse(twice.hasRepeatedMovement)
+    }
+
+    @Test
+    fun `a repeated movement described differently is flagged rather than merged`() {
+        val apart = TrialDraft.of(
+            listOf(
+                SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 0, setIndex = 0, reps = 8, modifiers = "paused", done = true),
+                SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 1, setIndex = 0, reps = 5, done = true),
+            ),
+        )
+        assertEquals(2, apart.blocks.size)
+        assertEquals(true, apart.hasRepeatedMovement)
+    }}
