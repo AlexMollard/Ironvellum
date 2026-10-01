@@ -5,6 +5,16 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+/** Retired words from the glossary's Never columns that cannot be innocent. */
+internal val RETIRED_WORDS: List<Regex> = listOf(
+    "quests?", "lifters?", "lifter's", "routines?", "warbands?", "garrison", "vessel",
+    "hunts?", "cheers?", "cheered", "streaks?", "marshal", "soldiers?", "recruit",
+    "mustering", "muster", "marched", "marching", "legion", "conquered", "victory",
+    "presets?", "workout log", "full log", "skill tree", "leaderboard", "inbox",
+    "epic", "equip", "equipped", "stand fast", "frontline", "scouting", "summoning",
+    "workouts?",
+).map { Regex("""(?i)(?<![\w'])$it(?![\w'])""") }
+
 /**
  * docs/GLOSSARY.md gives every concept one name. The words it retired drifted
  * back the last time nothing checked them, so this scans every string literal
@@ -22,15 +32,7 @@ class GlossaryTest {
     private val sources: List<File> =
         root.walkTopDown().filter { it.isFile && it.extension == "kt" }.toList()
 
-    /** Retired words from the glossary's Never columns that cannot be innocent. */
-    private val retired = listOf(
-        "quests?", "lifters?", "lifter's", "routines?", "warbands?", "garrison", "vessel",
-        "hunts?", "cheers?", "cheered", "streaks?", "marshal", "soldiers?", "recruit",
-        "mustering", "muster", "marched", "marching", "legion", "conquered", "victory",
-        "presets?", "workout log", "full log", "skill tree", "leaderboard", "inbox",
-        "epic", "equip", "equipped", "stand fast", "frontline", "scouting", "summoning",
-        "workouts?",
-    ).map { Regex("""(?i)(?<![\w'])$it(?![\w'])""") }
+    private val retired = RETIRED_WORDS
 
     /** Files whose literals are data formats, not copy. */
     private val exemptFiles = mapOf(
