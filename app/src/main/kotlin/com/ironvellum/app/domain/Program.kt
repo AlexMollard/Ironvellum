@@ -121,8 +121,8 @@ enum class Muscle(val label: String) {
     QUADS("Quads"),
     HAMSTRINGS("Hamstrings"),
     GLUTES("Glutes"),
-    ADDUCTORS("Adductors"),
-    ABDUCTORS("Abductors"),
+    ADDUCTORS("Adductors (inner thigh)"),
+    ABDUCTORS("Abductors (outer hip)"),
     CALVES("Calves"),
     TIBIALIS("Tibialis"),
 }
