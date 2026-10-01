@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -57,6 +58,7 @@ fun NotificationBlockedNotice(
         Spacer(Modifier.height(6.dp))
         IronvellumButton(
             label = "Open notification settings",
+            modifier = Modifier.fillMaxWidth(),
             quiet = true,
             onClick = {
                 runCatching { context.startActivity(Notifications.settingsIntent(context, channelId, access)) }
