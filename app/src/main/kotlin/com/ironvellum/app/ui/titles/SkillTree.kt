@@ -80,7 +80,7 @@ private fun rows(line: String): List<Row> {
     val inLine = skills.map { it.name }.toSet()
     // A technique hangs under its first prerequisite on this path; one whose
     // prerequisites all sit on other paths is a root here.
-    val parentOf = skills.associate { it.name to it.prerequisites().firstOrNull { p -> p in inLine } }
+    val parentOf = skills.associate { it.name to it.prerequisites.firstOrNull { p -> p in inLine } }
     val childrenOf = skills.groupBy { parentOf[it.name] }
     val roots = skills.filter { parentOf[it.name] == null }
         .sortedBy { it.tier }
@@ -163,6 +163,9 @@ fun SkillTreeGraph(
     modifier: Modifier = Modifier,
     /** Best logged effort per technique, for the "best 40/60s" cue on open rows. */
     best: Map<String, SkillGuidance.Effort> = emptyMap(),
+    /** The lifter, so a load-bearing standard is judged against their bodyweight. */
+    bodyweightKg: Double? = null,
+    female: Boolean = false,
 ) {
     val treeRows = remember(line) { rows(line) }
     // The first open, unmastered technique in drawing order: where the eye
@@ -186,7 +189,7 @@ fun SkillTreeGraph(
                 unlocked = Skills.unlocked(row.skill, mastered),
                 next = SkillGuidance.isFrontier(row.skill, mastered),
                 needs = row.skill.firstUnmetPrerequisite(mastered),
-                cue = if (isMastered) null else SkillGuidance.progressCue(row.skill, best[row.skill.name]),
+                cue = if (isMastered) null else SkillGuidance.progressCue(row.skill, best[row.skill.name], bodyweightKg, female),
                 paint = RailPaint(
                     passing = row.openRails.mapValues { (_, below) -> railColor(below, mastered) },
                     intoRow = railColor(listOf(row.skill.name) + row.laterSiblings, mastered),
