@@ -1,16 +1,12 @@
 package com.ironvellum.app.ui.social
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
@@ -31,9 +27,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import android.Manifest
@@ -53,9 +47,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.cloud.BlockedLifter
-import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.SettingsGroup
+import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
@@ -448,36 +443,6 @@ fun AccountSettingsScreen(
             onDismiss = { editingName = false },
         )
     }
-}
-
-/** A short section label over one InkPanel: the only grouping the screen uses. */
-@Composable
-private fun SettingsGroup(label: String, content: @Composable ColumnScope.() -> Unit) {
-    Spacer(Modifier.height(20.dp))
-    Text(
-        label,
-        style = MaterialTheme.typography.labelMedium,
-        fontFamily = ChakraPetch,
-        color = IronvellumColors.SystemGreen,
-        letterSpacing = IronvellumTracking.InlineLabel,
-    )
-    Spacer(Modifier.height(8.dp))
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune, content = content)
-}
-
-/** One tappable settings row, at least 48dp tall. */
-@Composable
-private fun TapRow(onClickLabel: String, onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
-            .clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        content = content,
-    )
 }
 
 /**
