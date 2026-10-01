@@ -281,4 +281,25 @@ class SkillsTest {
         assertEquals(3, Skills.forName("Straddle L-sit")!!.tier)
         assertEquals(listOf("Straddle L-sit"), Skills.forName("V-Sit")!!.prerequisites)
     }
+
+    /**
+     * Every gym-line rung is a barbell lift. Seeding them unweighted hid them
+     * from the weighted picker facet, let the gear filter offer a 2x
+     * bodyweight deadlift to a lifter with no bar, and made the last-logged
+     * line read the bar as "added" load.
+     */
+    @Test
+    fun `gym-line rungs seed weighted and need the bar`() {
+        val rows = Seed.exercises.associateBy { it.name }
+        Skills.ALL.filter { it.line in Skills.GYM_LINES }.forEach { skill ->
+            assertTrue("${skill.name} must seed weighted", rows.getValue(skill.name).isWeighted)
+            assertTrue("${skill.name} needs a gear row", GearRequirements.hasEntry(skill.name))
+            assertTrue(
+                "${skill.name} needs a barbell",
+                GearRequirements.needs(skill.name).all { Gear.BARBELL in it },
+            )
+        }
+        assertFalse(rows.getValue("Pull-up").isWeighted)
+        assertTrue(rows.getValue("Weighted Pull-up").isWeighted)
+    }
 }

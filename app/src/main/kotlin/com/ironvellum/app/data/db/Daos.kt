@@ -27,6 +27,10 @@ interface ExerciseDao {
     /** Case-insensitive name lookup — import resolves exercises by name, not id. */
     @Query("SELECT * FROM exercises WHERE name = :name COLLATE NOCASE LIMIT 1")
     suspend fun byName(name: String): ExerciseEntity?
+
+    /** Marks the named rows weighted; returns how many were still unweighted. */
+    @Query("UPDATE exercises SET isWeighted = 1 WHERE name COLLATE NOCASE IN (:names) AND isWeighted = 0")
+    suspend fun markWeighted(names: List<String>): Int
 }
 
 @Dao
