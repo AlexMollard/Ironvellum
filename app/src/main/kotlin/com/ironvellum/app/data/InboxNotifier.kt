@@ -44,9 +44,13 @@ object InboxNotifier {
         Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
 
-    /** True when a notification would actually be shown: preference on, permission granted, not blocked in system settings. */
+    /**
+     * True when a notification would actually be shown: preference on,
+     * permission granted, notifications on for the app and the Allies channel
+     * not blocked on its own.
+     */
     fun canNotify(context: Context): Boolean =
-        enabled(context) && hasPermission(context) && NotificationManagerCompat.from(context).areNotificationsEnabled()
+        enabled(context) && Notifications.access(context, Notifications.CHANNEL_ALLIES).canPost
 
     /**
      * True exactly once per install, and only when asking could change the

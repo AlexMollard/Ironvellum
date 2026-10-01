@@ -44,6 +44,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.platform.LocalContext
 import com.ironvellum.app.data.InboxNotifier
+import com.ironvellum.app.data.Notifications
+import com.ironvellum.app.ui.components.NotificationBlockedNotice
+import com.ironvellum.app.ui.components.rememberNotificationAccess
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -94,10 +97,9 @@ fun AccountSettingsScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     val context = LocalContext.current
     var allyAlerts by remember { mutableStateOf(InboxNotifier.enabled(context)) }
-    var notificationsAllowed by remember { mutableStateOf(InboxNotifier.hasPermission(context)) }
-    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-        notificationsAllowed = it
-    }
+    // Re-read on every resume: a block lifted in system settings shows at once.
+    val allyAccess = rememberNotificationAccess(Notifications.CHANNEL_ALLIES)
+    val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     Column(
         Modifier
@@ -301,13 +303,10 @@ fun AccountSettingsScreen(
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.Ink,
                     )
-                    // A blocked permission is the one state where ON does nothing;
-                    // saying so beats a switch that looks live and never fires.
-                    val blocked = allyAlerts && !notificationsAllowed
                     Text(
-                        if (blocked) "Allow notifications in system settings" else "Requests, remarks and tributes",
+                        "Requests, remarks and tributes",
                         style = MaterialTheme.typography.labelMedium,
-                        color = if (blocked) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                        color = IronvellumColors.InkMuted,
                     )
                 }
                 Box(Modifier.width(120.dp)) {
@@ -326,6 +325,17 @@ fun AccountSettingsScreen(
                         },
                     )
                 }
+            }
+            // ON while Android drops every post is the one state where the
+            // switch lies: the grant, the app-wide toggle or the Allies channel
+            // is off. Say which way out, not just that something is wrong.
+            if (allyAlerts) {
+                NotificationBlockedNotice(
+                    channelId = Notifications.CHANNEL_ALLIES,
+                    access = allyAccess,
+                    blockedText = "Ally activity won't arrive until you allow notifications.",
+                    modifier = Modifier.padding(top = 8.dp),
+                )
             }
         }
 
