@@ -1214,6 +1214,7 @@ class Repository(
         imported = imported,
         audience = SessionAudience.fromWire(audience),
         editedAtMs = editedAtMs,
+        sealedXp = sealedXp,
     )
 
     // ---------------------------------------------------------------- stats
@@ -1756,6 +1757,8 @@ class Repository(
                 xpAwarded = plan.settlement.xpAwarded,
                 strengthScore = plan.strengthScore,
                 editedAtMs = nowMs,
+                // Recorded once, by the first amendment: the cap's base.
+                sealedXp = plan.session.sealedXp ?: plan.session.xpAwarded,
             ),
         )
         if (plan.settlement.applied != 0) profileDao.addXp(plan.settlement.applied.toLong())
@@ -1825,6 +1828,7 @@ class Repository(
         val scoring = SessionScoring(catalogue)
         val settlement = SealedEdit.settle(
             xpAwarded = session.xpAwarded,
+            sealedXp = session.sealedXp ?: session.xpAwarded,
             oldSetsXp = scoring.xp(sessionDao.setsFor(sessionId), bodyweight),
             newSetsXp = scoring.xp(rows, bodyweight),
             totalXp = profileDao.get()?.totalXp ?: 0L,
@@ -2118,6 +2122,7 @@ class Repository(
                             imported = session.imported,
                             audience = session.audience.wire,
                             editedAtMs = session.editedAtMs,
+                            sealedXp = session.sealedXp,
                         ),
                     )
                     restoredSets += sessionDao.insertSets(

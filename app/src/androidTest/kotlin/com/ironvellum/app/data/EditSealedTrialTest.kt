@@ -153,6 +153,19 @@ class EditSealedTrialTest {
     }
 
     @Test
+    fun repeatedRaisesNeverTakeTheTrialPastDoubleWhatItWasSealedAt() = runBlocking {
+        val id = sealedBench(sets = 2)
+        val sealed = db.sessionDao().byId(id)!!.xpAwarded
+        val xp = totalXp()
+        repo.editSealedTrial(id, draftOf(id).updateSet(0, 0) { it.copy(reps = 60, weightKg = 140.0) })
+        repo.editSealedTrial(id, draftOf(id).updateSet(0, 1) { it.copy(reps = 60, weightKg = 140.0) })
+        val after = db.sessionDao().byId(id)!!
+        assertEquals("the cap's base is the sealed figure", sealed, after.sealedXp)
+        assertTrue("never past double", after.xpAwarded <= 2 * sealed)
+        assertEquals(xp + (after.xpAwarded - sealed), totalXp())
+    }
+
+    @Test
     fun anAmendmentNeedsAtLeastOneTickedSet() = runBlocking {
         val id = sealedBench(sets = 2)
         val before = db.sessionDao().setsFor(id)

@@ -10,8 +10,8 @@ class SealedEditTest {
     private val sealedAt = 1_790_000_000_000L
     private val hour = 60L * 60 * 1000
 
-    private fun settle(xpAwarded: Int, old: Int, new: Int, total: Long = 10_000, afterMs: Long = hour) =
-        SealedEdit.settle(xpAwarded, old, new, total, sealedAt, sealedAt + afterMs)
+    private fun settle(xpAwarded: Int, old: Int, new: Int, total: Long = 10_000, afterMs: Long = hour, sealed: Int = xpAwarded) =
+        SealedEdit.settle(xpAwarded, sealed, old, new, total, sealedAt, sealedAt + afterMs)
 
     @Test
     fun `an untouched set list moves nothing`() {
@@ -48,6 +48,30 @@ class SealedEditTest {
         assertTrue(SealedEdit.withinWindow(sealedAt, sealedAt + SealedEdit.WINDOW_MS))
         assertFalse(SealedEdit.withinWindow(sealedAt, sealedAt + SealedEdit.WINDOW_MS + 1))
         assertTrue(SealedEdit.withinWindow(sealedAt, sealedAt - hour))
+    }
+
+    @Test
+    fun `repeated raises never take the trial past double what it was sealed at`() {
+        // Each amendment re-prices from the last one, so a cap on the CURRENT
+        // figure would ratchet 100 -> 200 -> 400. The sealed figure holds it.
+        val first = settle(xpAwarded = 100, old = 90, new = 400, sealed = 100)
+        assertEquals(200, first.xpAwarded)
+        val second = settle(xpAwarded = first.xpAwarded, old = 400, new = 900, sealed = 100)
+        assertEquals(0, second.applied)
+        assertEquals(200, second.xpAwarded)
+        assertTrue(second.raiseCapped)
+    }
+
+    @Test
+    fun `a cut can be restored inside the window but not past double`() {
+        val cut = settle(xpAwarded = 100, old = 90, new = 30, sealed = 100)
+        assertEquals(40, cut.xpAwarded)
+        val restored = settle(xpAwarded = cut.xpAwarded, old = 30, new = 90, sealed = 100)
+        assertEquals("the slip is undone", 100, restored.xpAwarded)
+        val greedy = settle(xpAwarded = 40, old = 30, new = 1_000, sealed = 100)
+        assertEquals("one raise is at most the sealed figure", 140, greedy.xpAwarded)
+        val again = settle(xpAwarded = greedy.xpAwarded, old = 1_000, new = 2_000, sealed = 100)
+        assertEquals(200, again.xpAwarded)
     }
 
     @Test

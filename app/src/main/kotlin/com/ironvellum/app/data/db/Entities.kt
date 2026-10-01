@@ -83,6 +83,13 @@ data class SessionEntity(
      * existing row reads as unamended.
      */
     val editedAtMs: Long? = null,
+    /**
+     * What the trial paid when it was sealed, recorded by its first
+     * amendment so the in-window raise is capped against the original and
+     * repeated amendments cannot ratchet it. Null until first amended;
+     * device-only, it never syncs.
+     */
+    val sealedXp: Int? = null,
 )
 
 @Entity(

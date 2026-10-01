@@ -93,6 +93,8 @@ data class WorkoutSession(
     val audience: SessionAudience = SessionAudience.PROFILE,
     /** When the sealed trial was last amended; null when it never was. */
     val editedAtMs: Long? = null,
+    /** What the trial paid when sealed; recorded by its first amendment, device-only. */
+    val sealedXp: Int? = null,
 )
 
 /**

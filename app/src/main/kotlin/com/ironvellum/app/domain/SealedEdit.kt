@@ -6,8 +6,9 @@ package com.ironvellum.app.domain
  * edit at the same bodyweight, so an untouched set list moves nothing, and
  * only the difference is applied:
  *
- * - Within [WINDOW_MS] of sealing an upward delta is capped at what the
- *   trial currently holds, so one amendment can at most double it.
+ * - Within [WINDOW_MS] of sealing an upward delta is capped against what
+ *   the trial paid when SEALED: the trial can never hold more than double
+ *   that, however many amendments raise it, and a cut can be restored.
  * - After the window an edit can only lower XP: a raise clamps to 0.
  * - A cut never takes more than the trial holds, nor more than the ledger
  *   holds, and the trial row and the ledger move by the same amount so the
@@ -40,6 +41,8 @@ object SealedEdit {
     fun settle(
         /** The trial's stored xpAwarded, quest bonus included. */
         xpAwarded: Int,
+        /** What the trial paid when it was sealed, before any amendment. */
+        sealedXp: Int,
         /** The stored sets re-priced before the edit. */
         oldSetsXp: Int,
         /** The draft re-priced, at the same bodyweight as [oldSetsXp]. */
@@ -50,10 +53,13 @@ object SealedEdit {
         nowMs: Long,
     ): Settlement {
         val held = xpAwarded.coerceAtLeast(0)
+        val sealed = sealedXp.coerceAtLeast(0)
         val within = withinWindow(completedAtMs, nowMs)
         val raw = newSetsXp - oldSetsXp
+        // Room left under double the sealed figure; never negative.
+        val headroom = (2 * sealed - held).coerceAtLeast(0)
         val applied = when {
-            raw > 0 && within -> minOf(raw, held)
+            raw > 0 && within -> minOf(raw, sealed, headroom)
             raw > 0 -> 0
             // A cut: bounded by the trial's own XP, then by the ledger.
             else -> -minOf(-raw.toLong(), held.toLong(), totalXp.coerceAtLeast(0)).toInt()
@@ -63,7 +69,7 @@ object SealedEdit {
             xpAwarded = held + applied,
             withinWindow = within,
             raiseRefused = raw > 0 && !within,
-            raiseCapped = raw > 0 && within && raw > held,
+            raiseCapped = raw > 0 && within && raw > applied,
         )
     }
 }

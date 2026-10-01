@@ -80,12 +80,14 @@ abstract class IronvellumDatabase : RoomDatabase() {
         const val VERSION = 33
 
         /**
-         * When a sealed trial was amended. Nullable with no default: every
-         * existing trial was never amended, and no row is read or rewritten.
+         * When a sealed trial was amended, and what it paid when sealed (the
+         * amendment cap's base). Nullable with no default: every existing
+         * trial was never amended, and no row is read or rewritten.
          */
         private val MIGRATION_32_33 = object : Migration(32, 33) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE sessions ADD COLUMN editedAtMs INTEGER")
+                db.execSQL("ALTER TABLE sessions ADD COLUMN sealedXp INTEGER")
             }
         }
 

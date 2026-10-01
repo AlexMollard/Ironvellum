@@ -67,7 +67,7 @@ internal fun TrialAmendEditor(
 
     SectionHeader("AMEND THE TRIAL")
     Text(
-        "Fix what was logged. Within 48 h a correction can raise XP up to double; after that it can only lower it.",
+        "Fix what was logged. Within 48 h of sealing, a correction can raise XP to at most double what the trial first paid; after that it can only lower it.",
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
     )
@@ -263,7 +263,7 @@ private fun AmendLoadDialog(
  * make, said plainly, including the cases where the sets moved but XP cannot.
  */
 internal fun amendXpLine(settlement: SealedEdit.Settlement): String = when {
-    settlement.applied > 0 && settlement.raiseCapped -> "+${settlement.applied} XP (capped at double the trial)"
+    settlement.applied > 0 && settlement.raiseCapped -> "+${settlement.applied} XP (capped at double what it first paid)"
     settlement.applied > 0 -> "+${settlement.applied} XP"
     settlement.applied < 0 -> "−${-settlement.applied} XP"
     settlement.raiseRefused -> "XP unchanged — edits after 48 h can't raise it"

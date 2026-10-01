@@ -619,12 +619,13 @@ class MigrationForwardTest {
             )
         }
         helper.runMigrationsAndValidate(dbName, IronvellumDatabase.VERSION, true, *IronvellumDatabase.MIGRATIONS).use { db ->
-            db.query("SELECT xpAwarded, strengthScore, audience, editedAtMs FROM sessions WHERE id = 5").use { c ->
+            db.query("SELECT xpAwarded, strengthScore, audience, editedAtMs, sealedXp FROM sessions WHERE id = 5").use { c ->
                 assertTrue(c.moveToFirst())
                 assertEquals(210, c.getInt(0))
                 assertEquals(480, c.getInt(1))
                 assertEquals("friends", c.getString(2))
                 assertTrue("an existing trial reads as never amended", c.isNull(3))
+                assertTrue("no amendment cap is recorded before the first amendment", c.isNull(4))
             }
             db.execSQL("UPDATE sessions SET editedAtMs = 1789790000000 WHERE id = 5")
             db.query("SELECT editedAtMs FROM sessions WHERE id = 5").use { c ->

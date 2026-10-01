@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 33,
-    "identityHash": "12b48d4355bd7b9c17fdd8c1a984d419",
+    "identityHash": "bd8bdb70cf4f334940ae79d95f552159",
     "entities": [
       {
         "tableName": "exercises",
@@ -172,7 +172,7 @@
       },
       {
         "tableName": "sessions",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `presetId` INTEGER, `label` TEXT NOT NULL, `startedAtMs` INTEGER NOT NULL, `completedAtMs` INTEGER, `xpAwarded` INTEGER NOT NULL, `strengthScore` INTEGER NOT NULL, `title` TEXT NOT NULL, `note` TEXT NOT NULL, `privateNote` TEXT NOT NULL, `imported` INTEGER NOT NULL, `audience` TEXT NOT NULL, `editedAtMs` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `presetId` INTEGER, `label` TEXT NOT NULL, `startedAtMs` INTEGER NOT NULL, `completedAtMs` INTEGER, `xpAwarded` INTEGER NOT NULL, `strengthScore` INTEGER NOT NULL, `title` TEXT NOT NULL, `note` TEXT NOT NULL, `privateNote` TEXT NOT NULL, `imported` INTEGER NOT NULL, `audience` TEXT NOT NULL, `editedAtMs` INTEGER, `sealedXp` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -247,6 +247,11 @@
           {
             "fieldPath": "editedAtMs",
             "columnName": "editedAtMs",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "sealedXp",
+            "columnName": "sealedXp",
             "affinity": "INTEGER"
           }
         ],
@@ -827,7 +832,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '12b48d4355bd7b9c17fdd8c1a984d419')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bd8bdb70cf4f334940ae79d95f552159')"
     ]
   }
 }

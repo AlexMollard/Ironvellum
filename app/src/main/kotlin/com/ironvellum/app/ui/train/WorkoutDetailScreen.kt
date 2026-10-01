@@ -150,6 +150,14 @@ class WorkoutDetailViewModel(
     private val _amendError = MutableStateFlow<String?>(null)
     val amendError: StateFlow<String?> = _amendError.asStateFlow()
 
+    /** Deeds an in-window amendment newly earned, to announce once. */
+    private val _earnedDeeds = MutableStateFlow<List<String>>(emptyList())
+    val earnedDeeds: StateFlow<List<String>> = _earnedDeeds.asStateFlow()
+
+    fun dismissEarnedDeeds() {
+        _earnedDeeds.value = emptyList()
+    }
+
     fun startAmend() {
         val sets = ui.value.sets
         if (ui.value.session?.completedAtMs != null && sets.isNotEmpty()) _draft.value = TrialDraft.of(sets)
@@ -183,8 +191,9 @@ class WorkoutDetailViewModel(
         _pendingSave.value = null
         viewModelScope.launch {
             runCatching { repo.editSealedTrial(sessionId, draft) }
-                .onSuccess {
+                .onSuccess { result ->
                     _draft.value = null
+                    _earnedDeeds.value = result.newTitles.map { it.name }
                     CloudSyncWorker.pushNow(appContext)
                 }
                 .onFailure { _amendError.value = it.message ?: "The trial could not be amended" }
@@ -220,6 +229,7 @@ fun WorkoutDetailScreen(
     val draft by viewModel.draft.collectAsStateWithLifecycle()
     val pendingSave by viewModel.pendingSave.collectAsStateWithLifecycle()
     val amendError by viewModel.amendError.collectAsStateWithLifecycle()
+    val earnedDeeds by viewModel.earnedDeeds.collectAsStateWithLifecycle()
     var shareText by remember { mutableStateOf<String?>(null) }
     // Back while amending discards the draft, as Cancel does, rather than
     // leaving the screen with the edit silently lost.
@@ -381,6 +391,16 @@ fun WorkoutDetailScreen(
             title = { Text("Not amended") },
             text = { Text(message) },
             confirmButton = { IronvellumButton("OK", onClick = viewModel::dismissAmendError) },
+        )
+    }
+    if (earnedDeeds.isNotEmpty()) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = viewModel::dismissEarnedDeeds,
+            title = { Text(if (earnedDeeds.size == 1) "Deed earned" else "Deeds earned") },
+            text = { Text(earnedDeeds.joinToString(", ")) },
+            confirmButton = { IronvellumButton("OK", onClick = viewModel::dismissEarnedDeeds) },
         )
     }
 }

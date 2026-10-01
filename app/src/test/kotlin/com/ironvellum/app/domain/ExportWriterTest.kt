@@ -259,14 +259,17 @@ class ExportWriterTest {
             healthDays = emptyList(),
             exportedAtMs = 1,
         )
-        val amended = write(WorkoutSession(id = 4, label = "S", startedAtMs = 1, completedAtMs = 2, editedAtMs = 1_790_000_000_000))
-        assertEquals(
-            1_790_000_000_000,
-            ExportReader.read(amended).getOrThrow().sessions.single().first.editedAtMs,
+        val amended = write(
+            WorkoutSession(id = 4, label = "S", startedAtMs = 1, completedAtMs = 2, editedAtMs = 1_790_000_000_000, sealedXp = 120),
         )
+        val restored = ExportReader.read(amended).getOrThrow().sessions.single().first
+        assertEquals(1_790_000_000_000, restored.editedAtMs)
+        assertEquals("a restore keeps the amendment cap where it was", 120, restored.sealedXp)
         // Never-amended trials keep the archive byte-identical to before.
         val plain = write(WorkoutSession(id = 4, label = "S", startedAtMs = 1, completedAtMs = 2))
         assertFalse(plain.contains("editedAtMs"))
+        assertFalse(plain.contains("sealedXp"))
         assertNull(ExportReader.read(plain).getOrThrow().sessions.single().first.editedAtMs)
+        assertNull(ExportReader.read(plain).getOrThrow().sessions.single().first.sealedXp)
     }
 }

@@ -255,6 +255,8 @@ object ExportWriter {
             }
             // Same rule: only an amended trial carries the stamp.
             session.editedAtMs?.let { append(",\"editedAtMs\":").append(it) }
+            // Carried so a restore keeps the amendment cap where it was.
+            session.sealedXp?.let { append(",\"sealedXp\":").append(it) }
             append(",\"sets\":[")
             sets.forEachIndexed { ti, set ->
                 if (ti > 0) append(",")

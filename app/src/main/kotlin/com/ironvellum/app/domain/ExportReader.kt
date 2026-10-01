@@ -139,6 +139,7 @@ object ExportReader {
         // Absent from archives before amending existed and for every
         // trial never amended.
         editedAtMs = o.long("editedAtMs"),
+        sealedXp = o.int("sealedXp"),
     ) to (o.arr("sets") ?: emptyList()).map { s ->
         val set = s as Obj
         SessionSet(
