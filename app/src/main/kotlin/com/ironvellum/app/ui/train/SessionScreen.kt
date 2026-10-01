@@ -136,6 +136,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -189,6 +190,14 @@ class SessionViewModel(
 
     val exercises: StateFlow<List<Exercise>> =
         repo.observeExercises().stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /**
+     * Why a movement's load or reps moved since last trial, by exercise: the
+     * progression engine's own reason, for the changes only. History does not
+     * change while a trial is live, so it is read once.
+     */
+    val reasons: StateFlow<Map<Long, String>> = flow { emit(repo.trialReasons(sessionId)) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** Each exercise's top set of its last sealed trial, for the info dialog. */
     val lastLogged: StateFlow<Map<Long, LastLogged>> =
@@ -415,6 +424,7 @@ fun SessionScreen(
     val finish by viewModel.finish.collectAsStateWithLifecycle()
     val claiming by viewModel.claiming.collectAsStateWithLifecycle()
     val lastLogged by viewModel.lastLogged.collectAsStateWithLifecycle()
+    val reasons by viewModel.reasons.collectAsStateWithLifecycle()
     var confirmAbandon by remember { mutableStateOf(false) }
     var confirmClaim by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
@@ -728,6 +738,16 @@ fun SessionScreen(
                             )
                         }
                     }
+                }
+                // Why the load moved, so a deload or a step up is never a
+                // surprise: only where the engine changed the prescription.
+                reasons[exerciseId]?.let { reason ->
+                    Text(
+                        reason,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    )
                 }
                 sets.sortedBy { it.setIndex }.forEachIndexed { position, set ->
                     SetRow(

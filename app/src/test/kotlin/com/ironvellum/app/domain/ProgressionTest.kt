@@ -123,4 +123,17 @@ class ProgressionTest {
         assertEquals(1.25, Progression.weightStepKg("PULL", "Wrist Curl"), 0.0001)
         assertEquals(1.25, Progression.weightStepKg("LEGS", "Single-Leg Calf Raise"), 0.0001)
     }
+
+    @Test
+    fun `only a moved prescription is marked changed`() {
+        val failed = List(3) { Progression.Attempt(80.0, 3) }
+        // First attempt and a repeat have nothing to explain.
+        assertEquals(false, Progression.next(TrainingMode.STRENGTH, 5, 0, 3, false, 20.0, null).changed)
+        assertEquals(false, Progression.fromSessions(TrainingMode.STRENGTH, 5, 3, listOf(failed)).changed)
+        // Cleared work adds load; three failures at one load back it off.
+        assertEquals(true, Progression.fromSets(TrainingMode.STRENGTH, 5, 5, List(5) { Progression.Attempt(20.0, 5) }).changed)
+        val deload = Progression.fromSessions(TrainingMode.STRENGTH, 5, 3, listOf(failed, failed, failed))
+        assertEquals(true, deload.changed)
+        assertEquals(true, deload.deload)
+    }
 }

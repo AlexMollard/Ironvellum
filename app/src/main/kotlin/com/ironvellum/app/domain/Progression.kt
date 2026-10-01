@@ -40,6 +40,12 @@ object Progression {
         val restSeconds: Int = 120,
         /** True when the engine backed the load off after repeated stalls. */
         val deload: Boolean = false,
+        /**
+         * True when the prescription differs from last time (the load or the
+         * reps moved), so [reason] has something to explain. A first attempt
+         * or a repeat is not news and stays quiet.
+         */
+        val changed: Boolean = false,
     )
 
     /**
@@ -114,6 +120,7 @@ object Progression {
                     "Stalled ${stalls + 1} trials — deload to $backedOff kg, rebuild from ${band.first} reps",
                     rest,
                     deload = true,
+                    changed = true,
                 )
             }
             return Recommendation(
@@ -128,7 +135,7 @@ object Progression {
         // lifter may not own, prescribed on a lift they never loaded.
         if (weight == null || weight <= 0.0) {
             val nextReps = lastReps + REP_STEP
-            return Recommendation(weight, nextReps, "Target cleared — climb to $nextReps reps", rest)
+            return Recommendation(weight, nextReps, "Target cleared — climb to $nextReps reps", rest, changed = true)
         }
         val loaded = nextLoad(weight, step)
         val addedLabel = kgLabel(loaded - weight)
@@ -140,6 +147,7 @@ object Progression {
                     nextReps,
                     "Target cleared — add $addedLabel kg, drop to $nextReps reps",
                     rest,
+                    changed = true,
                 )
             }
             TrainingMode.HYPERTROPHY ->
@@ -149,10 +157,11 @@ object Progression {
                         targetReps,
                         "Rep ceiling reached — add $addedLabel kg, back to $targetReps reps",
                         rest,
+                        changed = true,
                     )
                 } else {
                     val nextReps = (lastReps + REP_STEP).coerceAtMost(band.last)
-                    Recommendation(weight, nextReps, "Same load — climb to $nextReps reps", rest)
+                    Recommendation(weight, nextReps, "Same load — climb to $nextReps reps", rest, changed = true)
                 }
         }
     }
