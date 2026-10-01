@@ -1126,14 +1126,17 @@ object ProgramGenerator {
      * sits at its set ceiling ([ProgramRules.maxSetsPerEntry]) a second variant is the only way to add
      * volume, so it stops being redundant - that is how a leg day carries
      * both a standing and a seated calf raise (Kinoshita 2023: they load
-     * different heads).
+     * different heads). A profile with no lead by design (a mobility drill,
+     * the half-credit seated calf raise) has no main muscle to share, so it
+     * never makes a real calf raise redundant.
      */
     private fun redundantIn(session: Draft, candidate: Exercise): Boolean {
         val profile = profileOf(candidate)
+        if (profile.noLeadByDesign) return false
         val main = dominantMuscle(profile)
         return session.entries.any { entry ->
             val existing = MuscleMap.profile(entry.exerciseName) ?: return@any false
-            existing.pattern == profile.pattern && dominantMuscle(existing) == main &&
+            !existing.noLeadByDesign && existing.pattern == profile.pattern && dominantMuscle(existing) == main &&
                 entry.sets < ProgramRules.maxSetsPerEntry(entry.exerciseName)
         }
     }
@@ -1700,7 +1703,10 @@ object ProgramGenerator {
             }
 
             val dominant = dominantMuscle(newProfile)
-            val signature = dominant?.let { it to newProfile.pattern }
+            // No lead by design, no main muscle: a knee-to-wall drill's 0.25
+            // calf credit once made the lifter's calf raise "redundant", so
+            // every pass removed and re-added it.
+            val signature = dominant?.takeIf { !newProfile.noLeadByDesign }?.let { it to newProfile.pattern }
             val firstSets = signature?.let { dominantSeen[it] }
             if (firstSets != null && firstSets < ProgramRules.maxSetsPerEntry(signatureName.getValue(signature!!))) {
                 // Redundant beyond need: the session already owns this
