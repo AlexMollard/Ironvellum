@@ -193,7 +193,7 @@ object MuscleMap {
         ))
         // ---- Base catalogue: legs ----
         put("pistol squat", squatProfile(pattern = MovementPattern.LUNGE))
-        put("back squat", squatProfile(MovementPattern.SQUAT))
+        put("back squat", deepSquat())
         put("bulgarian split squat", squatProfile(MovementPattern.LUNGE))
         put("single-leg glute bridge", ExerciseProfile(
             // One leg: the glute med holds the pelvis level against the drop.
@@ -209,8 +209,12 @@ object MuscleMap {
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
         ))
         put("knee-to-wall dorsiflexion", ExerciseProfile(
-            // Driving the knee over the toes is active dorsiflexion.
-            muscles = mapOf(Muscle.CALVES to 0.5, Muscle.TIBIALIS to 0.5),
+            // Driving the knee over the toes is active dorsiflexion against
+            // nothing but the shin, and the calves are stretched, not loaded:
+            // a mobility drill, so 0.25 each. It is the one mobility drill
+            // the generator can prescribe, and at the helper 0.5 it filled
+            // calf deficits "at full stretch" as if it were a calf raise.
+            muscles = mapOf(Muscle.CALVES to 0.25, Muscle.TIBIALIS to 0.25),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
         ))
         put("glute bridge", ExerciseProfile(
@@ -263,8 +267,10 @@ object MuscleMap {
             // still extend the hip from full stretch. The glute med holds the
             // pelvis level over one foot, as in every single-leg movement. The
             // erectors keep their helper share - they still hold the torso -
-            // though the spine carries less than a bilateral pull; the scale
-            // has no step below 0.5.
+            // though the spine carries less than a bilateral pull. Not the
+            // minor 0.25: no trial measured it, and the generator's
+            // lower-back tie-break would then hand the RDL's slots to this
+            // balance-limited twin.
             muscles = mapOf(
                 Muscle.HAMSTRINGS to 1.0, Muscle.GLUTES to 1.0, Muscle.ABDUCTORS to 0.5, Muscle.ADDUCTORS to 0.5,
                 Muscle.LOWER_BACK to 0.5, Muscle.TRAPS to 0.5, Muscle.FOREARMS to 0.5,
@@ -273,7 +279,10 @@ object MuscleMap {
         ))
         put("front squat", squatProfile(MovementPattern.SQUAT, glutes = 0.5))
         put("hip thrust", ExerciseProfile(
-            muscles = mapOf(Muscle.GLUTES to 1.0, Muscle.HAMSTRINGS to 0.5, Muscle.ADDUCTORS to 0.5),
+            // Adductors 0.25: the thrust extends the hip short of the deep
+            // flexion that lengthens the adductor magnus, and Plotkin 2023
+            // grew the adductors more with the squat than with the thrust.
+            muscles = mapOf(Muscle.GLUTES to 1.0, Muscle.HAMSTRINGS to 0.5, Muscle.ADDUCTORS to 0.25),
             pattern = MovementPattern.HINGE, compound = true, stretchBias = false,
         ))
         // ---- Base catalogue: core ----
@@ -456,7 +465,7 @@ object MuscleMap {
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
         ))
         put("dumbbell shrug", shrug())
-        put("goblet squat", squatProfile(MovementPattern.SQUAT))
+        put("goblet squat", deepSquat())
         put("walking lunge", squatProfile(MovementPattern.LUNGE))
         put("dumbbell step-up", stepUp())
         put("triceps kickback", ExerciseProfile(
@@ -557,7 +566,7 @@ object MuscleMap {
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
         ))
         // ---- Gym floor: Smith machine ----
-        put("smith machine squat", squatProfile(MovementPattern.SQUAT))
+        put("smith machine squat", deepSquat())
         put("smith machine bench press", pressFamily(MovementPattern.HORIZONTAL_PUSH))
         put("smith machine overhead press", verticalPress())
         put("smith machine row", row())
@@ -634,7 +643,7 @@ object MuscleMap {
             muscles = mapOf(Muscle.LOWER_BACK to 1.0, Muscle.FRONT_DELTS to 0.5, Muscle.GLUTES to 0.5),
             pattern = MovementPattern.CORE, compound = false, stretchBias = true,
         ))
-        put("bodyweight squat", squatProfile(MovementPattern.SQUAT))
+        put("bodyweight squat", deepSquat())
         put("split squat", squatProfile(MovementPattern.LUNGE))
         put("sissy squat", ExerciseProfile(
             muscles = mapOf(Muscle.QUADS to 1.0),
@@ -658,7 +667,7 @@ object MuscleMap {
         put("weighted pull-up", verticalPull())
         put("weighted dip", dip())
         for (name in listOf("pause squat", "heavy squat", "double-bodyweight squat", "triple-bodyweight squat")) {
-            put(name, squatProfile(MovementPattern.SQUAT))
+            put(name, deepSquat())
         }
         for (name in listOf(
             "volume bench press", "paused bench press", "heavy bench press", "double-bodyweight bench press",
@@ -1117,17 +1126,28 @@ object MuscleMap {
     )
 
     /**
+     * Bilateral free squats taken to depth (the guides ask for thighs at
+     * least parallel): ADDUCTORS 0.75. Kubo 2019's full squat grew the
+     * adductors about as much as the glutes, its half squat well under
+     * half that; parallel-or-deeper sits between, so the worked-hard step
+     * and not a lead. The leg press and hack squat keep 0.5 (the pad limits
+     * depth), the front squat too (its upright torso is also why its glutes
+     * are 0.5), and the single-leg squats 0.5 (no trial measured them).
+     */
+    private fun deepSquat() = squatProfile(MovementPattern.SQUAT, adductors = 0.75)
+
+    /**
      * Squat-pattern shares per Kubo 2019: large quad/glute/adductor growth,
      * HAMSTRINGS EXPLICITLY ZERO - squatting did not meaningfully grow them,
      * so hinge or leg-curl work is the only honest hamstring source. The
      * single-leg (LUNGE) versions add ABDUCTORS 0.5: the glute med holds the
      * pelvis level over one foot.
      */
-    private fun squatProfile(pattern: MovementPattern, glutes: Double = 1.0) = ExerciseProfile(
+    private fun squatProfile(pattern: MovementPattern, glutes: Double = 1.0, adductors: Double = 0.5) = ExerciseProfile(
         muscles = buildMap {
             put(Muscle.QUADS, 1.0)
             put(Muscle.GLUTES, glutes)
-            put(Muscle.ADDUCTORS, 0.5)
+            put(Muscle.ADDUCTORS, adductors)
             put(Muscle.HAMSTRINGS, 0.0)
             if (pattern == MovementPattern.LUNGE) put(Muscle.ABDUCTORS, 0.5)
         },

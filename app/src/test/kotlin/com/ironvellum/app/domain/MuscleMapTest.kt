@@ -126,6 +126,20 @@ class MuscleMapTest {
     }
 
     @Test
+    fun `quarter steps follow the squat and hip thrust trials`() {
+        // Kubo 2019: squats to depth grew the adductors nearly as much as
+        // the glutes; machines that cap depth keep the helper share.
+        for (name in listOf("Back Squat", "Goblet Squat", "Smith Machine Squat", "Bodyweight Squat", "Pause Squat")) {
+            assertEquals(name, 0.75, MuscleMap.profile(name)!!.muscles[Muscle.ADDUCTORS] ?: 0.0, 1e-9)
+        }
+        for (name in listOf("Leg Press", "Hack Squat", "Front Squat")) {
+            assertEquals(name, 0.5, MuscleMap.profile(name)!!.muscles[Muscle.ADDUCTORS] ?: 0.0, 1e-9)
+        }
+        // Plotkin 2023: the squat grew the adductors more than the hip thrust.
+        assertEquals(0.25, MuscleMap.profile("Hip Thrust")!!.muscles[Muscle.ADDUCTORS] ?: 0.0, 1e-9)
+    }
+
+    @Test
     fun `stretch bias marks exactly the long-length twins`() {
         // Maeo 2021: seated (long) beats lying (short) leg curl.
         assertTrue(MuscleMap.profile("Seated Leg Curl")!!.stretchBias)
