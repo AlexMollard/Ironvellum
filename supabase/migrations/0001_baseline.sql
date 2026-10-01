@@ -352,23 +352,34 @@ alter table lift_marks add constraint lift_marks_lift check (lift in (
 -- stranger cannot join without the code.
 create table if not exists warbands (
     id          uuid primary key default gen_random_uuid(),
-    -- A band name is a small shouty HUD label, bounded like a title.
-    name        text not null check (char_length(name) between 1 and 24),
+    -- A band name is a small shouty HUD label, bounded like a title, and
+    -- stored trimmed: the create RPC trims, and a direct rename (the owner
+    -- holds update(name)) must not be able to put padding back.
+    name        text not null,
     -- 8 chars, no 0/O/1/I/L: a code read aloud off a phone screen must be
     -- unambiguous. Keep in step with InviteCodeAlphabet in domain/Warbands.kt.
     invite_code text not null unique check (invite_code ~ '^[2-9A-HJ-NP-Z]{8}$'),
-    owner_id    uuid not null references auth.users (id) on delete cascade,
+    -- The Keeper. SET NULL, not CASCADE: deleting the owner's account must
+    -- hand the band over (warband_members_handover below), never take every
+    -- other member's band with it. Null only while a handover is in flight.
+    owner_id    uuid references auth.users (id) on delete set null,
     -- The band's weekly challenge: the owner sets how many workouts the band
     -- should total this week. Bounded so a stray 999 cannot sit on the banner.
     weekly_goal int not null default 12 check (weekly_goal between 5 and 50),
-    created_at  timestamptz default now()
+    created_at  timestamptz default now(),
+    constraint warbands_name_trimmed
+        check (name = btrim(name) and char_length(name) between 1 and 24)
 );
+create index if not exists warbands_owner_idx on warbands (owner_id);
 
 create table if not exists warband_members (
     warband_id uuid references warbands (id) on delete cascade,
     user_id    uuid primary key references auth.users (id) on delete cascade,
     joined_at  timestamptz default now()
 );
+-- Roster reads and handovers walk a band's members oldest first.
+create index if not exists warband_members_band_joined_idx
+    on warband_members (warband_id, joined_at, user_id);
 
 -- Membership test used by the band policies below. SECURITY DEFINER or the two
 -- policies recurse through each other's sub-selects on warband_members. Closed
@@ -407,17 +418,18 @@ create policy warbands_read on warbands
     for select to authenticated
     using (in_my_warband(id));
 
--- Only the owner renames or deletes the band.
+-- Only the owner renames or deletes the band, and only while still a member:
+-- ownership without membership is a state the handover trigger never leaves.
 drop policy if exists warbands_update on warbands;
 create policy warbands_update on warbands
     for update to authenticated
-    using (owner_id = auth.uid())
-    with check (owner_id = auth.uid());
+    using (owner_id = auth.uid() and in_my_warband(id))
+    with check (owner_id = auth.uid() and in_my_warband(id));
 
 drop policy if exists warbands_delete on warbands;
 create policy warbands_delete on warbands
     for delete to authenticated
-    using (owner_id = auth.uid());
+    using (owner_id = auth.uid() and in_my_warband(id));
 
 -- Your own membership row, plus your bandmates'. No write policies at all:
 -- create_warband/join_warband/leave_warband below are the only writers.
@@ -425,6 +437,47 @@ drop policy if exists warband_members_read on warband_members;
 create policy warband_members_read on warband_members
     for select to authenticated
     using (user_id = auth.uid() or in_my_warband(warband_id));
+
+-- A membership row going away, however it goes (leave_warband, a removal, the
+-- lifter deleting their account, the cascade from auth.users), must never
+-- leave the band ownerless or empty: the keys pass to the longest-standing
+-- remaining member (joined_at, then user id as the tiebreak), and the band is
+-- deleted when nobody remains. A trigger rather than leave_warband's body so
+-- every way a membership can end is covered. When the band row itself is
+-- going (cascade), it is already gone here and there is nothing to do.
+create or replace function public.warband_members_handover()
+returns trigger
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+    w    warbands;
+    next uuid;
+begin
+    select * into w from warbands where id = old.warband_id;
+    if not found then
+        return old;
+    end if;
+    select m.user_id into next
+    from warband_members m
+    where m.warband_id = old.warband_id
+    order by m.joined_at, m.user_id
+    limit 1;
+    if next is null then
+        delete from warbands where id = old.warband_id;
+    elsif w.owner_id is null or w.owner_id = old.user_id then
+        update warbands set owner_id = next where id = old.warband_id;
+    end if;
+    return old;
+end;
+$$;
+revoke execute on function public.warband_members_handover() from public, anon, authenticated;
+
+drop trigger if exists warband_members_handover on warband_members;
+create trigger warband_members_handover
+    after delete on warband_members
+    for each row execute function public.warband_members_handover();
 
 -- ================================================================ visibility functions
 
@@ -1509,6 +1562,12 @@ begin
     if me is null then
         raise exception 'requires a signed-in lifter' using errcode = '42501';
     end if;
+    -- Leave the band first, while the account still exists: the band is handed
+    -- to its longest-standing member (or ends with its last one) by an
+    -- ordinary leave, not left to the cascade below.
+    if exists (select 1 from warband_members m where m.user_id = me) then
+        perform public.leave_warband();
+    end if;
     delete from auth.users where id = me;
 end;
 $$;
@@ -1622,7 +1681,10 @@ as $$
 
         -- A lifter joined the caller's warband: the roster is the feed's peer,
         -- so its door opening is inbox-worthy like a request or an acceptance.
-        -- Identity follows profile visibility, as the roster shows it.
+        -- Only a TRUE join: someone who arrived after the caller did. Without
+        -- that, a lifter who has just joined would be told that everyone
+        -- already in the band had "just joined". Identity follows profile
+        -- visibility, as the roster shows it.
         select 'band_join', m.joined_at, m.user_id,
                case when can_view(m.user_id) then p.display_name
                     else 'Ironbound' || right(m.user_id::text, 4) end,
@@ -1630,11 +1692,10 @@ as $$
         from warband_members m
         join warbands w on w.id = m.warband_id
         left join profiles p on p.id = m.user_id
-        join me on exists (
-            select 1 from warband_members mine
-            where mine.warband_id = m.warband_id and mine.user_id = me.id
-        )
+        join me on true
+        join warband_members mine on mine.warband_id = m.warband_id and mine.user_id = me.id
         where m.user_id <> me.id
+          and m.joined_at > mine.joined_at
 
         union all
 
@@ -1688,6 +1749,10 @@ grant execute on function public.my_inbox() to authenticated;
 -- collision is absorbed by the unique index and another draw. SECURITY DEFINER
 -- because it writes two tables in one statement; every branch is pinned to
 -- auth.uid(), so it can only ever act on the caller.
+--
+-- The messages the lifter can read are written in the app's own words (see
+-- docs/GLOSSARY.md): the client shows a P0001 message as it is, and GlossaryTest
+-- scans these bodies for the words the glossary retired.
 create or replace function public.create_warband(p_name text)
 returns warbands
 language plpgsql
@@ -1703,14 +1768,14 @@ declare
     i        int;
 begin
     if me is null then
-        raise exception 'requires a signed-in lifter' using errcode = '42501';
+        raise exception 'Sign in to use a circle' using errcode = '42501';
     end if;
     if char_length(trim(p_name)) not between 1 and 24 then
-        raise exception 'a warband name is 1-24 characters';
+        raise exception 'A circle name is 1-24 characters';
     end if;
     -- One band per lifter: an existing membership wins before any insert.
     if exists (select 1 from warband_members m where m.user_id = me) then
-        raise exception 'already in a warband — leave it first';
+        raise exception 'You are already in a circle — leave it first';
     end if;
     loop
         begin
@@ -1738,10 +1803,19 @@ $$;
 revoke execute on function public.create_warband(text) from public, anon;
 grant execute on function public.create_warband(text) to authenticated;
 
--- Joins by code, case-insensitively, while there is room (max 8). SECURITY
+-- Joins by code, case-insensitively, while there is room (max 8), and answers
+-- with a STATUS rather than raising: 'joined', 'no_such_code', 'full' or
+-- 'throttled'. A refusal that raised would roll back the attempt it had just
+-- logged, and the throttle below would never count anything. Only misuse that
+-- is not a guess (signed out, already in a band) still raises. SECURITY
 -- DEFINER for the same reason as create_warband.
+--
+-- Return type changed in schema 27 (it returned the warbands row): create or
+-- replace cannot change a return type, so the old shape goes first. The
+-- function holds no data.
+drop function if exists public.join_warband(text);
 create or replace function public.join_warband(p_code text)
-returns warbands
+returns text
 language plpgsql
 security definer
 set search_path = pg_catalog, public
@@ -1752,41 +1826,42 @@ declare
     n  int;
 begin
     if me is null then
-        raise exception 'requires a signed-in lifter' using errcode = '42501';
+        raise exception 'Sign in to use a circle' using errcode = '42501';
     end if;
     if exists (select 1 from warband_members m where m.user_id = me) then
-        raise exception 'already in a warband — leave it first';
+        raise exception 'You are already in a circle — leave it first';
     end if;
     -- Throttle the one guessable door: failed attempts only, 50 a day, the
     -- same rolling-window pattern as ally requests.
     delete from warband_join_log l where l.user_id = me and l.tried_at <= now() - interval '1 day';
     select count(*) into n from warband_join_log l where l.user_id = me;
     if n >= 50 then
-        raise exception 'Too many code attempts today — try again tomorrow.';
+        return 'throttled';
     end if;
-    select * into w from warbands where invite_code = upper(trim(p_code));
+    -- Lock the band row: the cap check and the insert must read as one step,
+    -- or two simultaneous joins at seven can land both at nine, and a leave
+    -- cannot delete the band between the lookup and the insert. Leaves take the
+    -- same lock first.
+    select * into w from warbands where invite_code = upper(trim(p_code)) for update;
     if not found then
         insert into warband_join_log (user_id) values (me);
-        raise exception 'no warband with that code';
+        return 'no_such_code';
     end if;
-    -- Serialise joins per band: the cap check and the insert must read as one
-    -- step, or two simultaneous joins at seven can land both at nine.
-    perform pg_advisory_xact_lock(hashtextextended(w.id::text, 0));
     select count(*) into n from warband_members where warband_id = w.id;
     if n >= 8 then
         insert into warband_join_log (user_id) values (me);
-        raise exception 'that warband is full';
+        return 'full';
     end if;
     insert into warband_members (warband_id, user_id) values (w.id, me);
-    return w;
+    return 'joined';
 end;
 $$;
 revoke execute on function public.join_warband(text) from public, anon;
 grant execute on function public.join_warband(text) to authenticated;
 
--- Leaves the band. If the owner leaves while others remain, ownership moves to
--- the oldest remaining member (joined_at, then user id as the tiebreak); the
--- last member leaving deletes the band.
+-- Leaves the band. The band row is locked first (joins take the same lock), then
+-- the membership row goes, and warband_members_handover passes the keys to the
+-- longest-standing remaining member, or deletes the band with its last one.
 create or replace function public.leave_warband()
 returns void
 language plpgsql
@@ -1794,39 +1869,28 @@ security definer
 set search_path = pg_catalog, public
 as $$
 declare
-    me     uuid := auth.uid();
-    band   uuid;
-    owner  uuid;
-    next   uuid;
+    me   uuid := auth.uid();
+    band uuid;
 begin
     if me is null then
-        raise exception 'requires a signed-in lifter' using errcode = '42501';
+        raise exception 'Sign in to use a circle' using errcode = '42501';
     end if;
     select warband_id into band from warband_members where user_id = me;
     if band is null then
-        raise exception 'not in a warband';
+        raise exception 'You are not in a circle';
     end if;
-    select owner_id into owner from warbands where id = band;
+    perform 1 from warbands where id = band for update;
     delete from warband_members where user_id = me;
-    if not exists (select 1 from warband_members where warband_id = band) then
-        delete from warbands where id = band;
-    elsif owner = me then
-        select user_id into next
-        from warband_members
-        where warband_id = band
-        order by joined_at, user_id
-        limit 1;
-        update warbands set owner_id = next where id = band;
-    end if;
 end;
 $$;
 revoke execute on function public.leave_warband() from public, anon;
 grant execute on function public.leave_warband() to authenticated;
 
--- The owner sets the band's weekly challenge. Owner-only (a member is refused
--- with 42501, the same code a revoked grant gives) and bounded to 5..50: the
--- band's whole weekly pace hangs off this one number. SECURITY DEFINER like the
--- other warband RPCs; it writes the warbands row, which has no update grant.
+-- The owner sets the band's weekly challenge. Owner-only, and only while a
+-- member (a non-owner is refused with 42501, the same code a revoked grant
+-- gives) and bounded to 5..50: the band's whole weekly pace hangs off this one
+-- number. SECURITY DEFINER like the other warband RPCs; it writes the warbands
+-- row, which has no update grant.
 create or replace function public.set_warband_goal(p_goal int)
 returns void
 language plpgsql
@@ -1836,13 +1900,18 @@ as $$
 declare
     band uuid;
 begin
-    select w.id into band from warbands w where w.owner_id = auth.uid();
+    select w.id into band
+    from warbands w
+    where w.owner_id = auth.uid()
+      and exists (select 1 from warband_members m
+                  where m.warband_id = w.id and m.user_id = w.owner_id)
+    for update;
     if band is null then
-        raise exception 'only the warband owner sets the weekly goal'
+        raise exception 'Only the Keeper sets the circle''s goal'
             using errcode = '42501';
     end if;
     if p_goal is null or p_goal not between 5 and 50 then
-        raise exception 'a weekly goal is 5-50 workouts';
+        raise exception 'A weekly goal is 5-50 trials';
     end if;
     update warbands set weekly_goal = p_goal where id = band;
 end;
@@ -1913,7 +1982,7 @@ grant execute on function public.my_warband() to authenticated;
 -- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
 -- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 26 $$;
+language sql stable as $$ select 27 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

@@ -282,7 +282,7 @@ begin
     where t.schemaname = 'public'
       and t.tablename in ('profiles','friendships','sessions','session_sets','earned_titles','level_ups','session_likes',
                           'blocks','mutes','session_comments','inbox_seen','reports','friend_request_log','cloud_archives','lift_marks',
-                          'warbands','warband_members')
+                          'warbands','warband_members','warband_join_log')
       and not t.rowsecurity;
     perform assert_true(n = 0, format('%s public table(s) have RLS disabled', n));
 
@@ -1302,12 +1302,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 26,
-        format('schema_version() reports %s, not 26 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 27,
+        format('schema_version() reports %s, not 27 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 26,
+        (select public.schema_version()) = 27,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -1413,6 +1413,9 @@ begin
 
     -- Create: happy path, code in the unambiguous alphabet, roster of one.
     perform must_run(nova, 'select public.create_warband(''North Gate'')', 'create_warband refuses its own owner');
+    -- Everything in this block runs in one transaction, so every membership
+    -- would carry the same joined_at: give the roster a real order.
+    update warband_members set joined_at = now() - interval '3 days' where user_id = nova;
     code := value_as(nova, 'select code from my_warband()');
     perform assert_true(
         code ~ '^[2-9A-HJ-NP-Z]{8}$',
@@ -1451,9 +1454,27 @@ begin
         'my_warband() did not report the goal the owner set'
     );
 
-    -- Join: by code, case-insensitively; unknown codes refuse.
-    perform must_run(rey, format('select public.join_warband(%L)', lower(code)), 'join_warband refused a valid code');
-    perform must_run(sol, format('select public.join_warband(%L)', code), 'join_warband refused a second joiner');
+    -- A name is stored trimmed: a direct rename (the owner holds update(name))
+    -- cannot put padding back, nor empty it, nor outgrow 24.
+    perform assert_true(
+        refused_as(nova, 'update warbands set name = '' padded ''', array['23514'])
+            and refused_as(nova, 'update warbands set name = ''''', array['23514'])
+            and refused_as(nova, format('update warbands set name = %L', repeat('x', 25)), array['23514']),
+        'a warband name accepted padding, nothing, or more than 24 characters'
+    );
+    perform must_run(nova, 'update warbands set name = ''North Gate''', 'the owner could not rename the band');
+
+    -- Join: by code, case-insensitively; unknown codes answer with a status.
+    perform assert_true(
+        value_as(rey, format('select public.join_warband(%L)', lower(code))) = 'joined',
+        'join_warband did not answer joined for a valid code'
+    );
+    perform assert_true(
+        value_as(sol, format('select public.join_warband(%L)', code)) = 'joined',
+        'join_warband did not answer joined for a second joiner'
+    );
+    update warband_members set joined_at = now() - interval '2 days' where user_id = rey;
+    update warband_members set joined_at = now() - interval '1 day' where user_id = sol;
     perform assert_true(
         value_as(nova, 'select jsonb_array_length(members) from my_warband()') = '3',
         'the roster did not grow to the two joiners'
@@ -1464,29 +1485,46 @@ begin
         value_as(nova, 'select count(*) from my_inbox() where kind = ''band_join''') = '2',
         'band joins did not reach the owner''s inbox'
     );
+    -- Only TRUE joins: Rey joined before Sol, so Rey hears of Sol alone, and
+    -- Sol, the newest, hears of nobody. Everyone already in the band at the
+    -- time is not "someone who just joined".
     perform assert_true(
-        refused_as(ron, 'select public.join_warband(''ZZZZZZZZ'')', array['P0001']),
-        'an unknown code joined a band'
+        value_as(rey, 'select count(*) from my_inbox() where kind = ''band_join''') = '1'
+            and value_as(rey, 'select actor_id::text from my_inbox() where kind = ''band_join''') = sol::text
+            and value_as(sol, 'select count(*) from my_inbox() where kind = ''band_join''') = '0',
+        'a lifter was told that members already in the band when they arrived had just joined'
+    );
+    perform assert_true(
+        value_as(ron, 'select public.join_warband(''ZZZZZZZZ'')') = 'no_such_code'
+            and value_as(ron, 'select count(*) from warband_members') = '0',
+        'an unknown code joined a band, or did not say so'
     );
 
-    -- The code door is throttled: fifty failed attempts a day per lifter.
-    -- refused_as cannot grow the log (its handler rolls each attempt back),
-    -- so the fifty failures are seeded directly; the door must then shut by
-    -- message even for a real code, which shares P0001 with unknown codes.
-    insert into warband_join_log (user_id) select pax from generate_series(1, 50);
-    begin
-        perform set_config('probe.uid', pax::text, true);
-        execute 'set local role authenticated';
-        execute 'select public.join_warband(''AAAAAAAA'')';
-        execute 'reset role';
-        raise exception 'expected the join throttle, saw a join';
-    exception
-        when raise_exception then
-            execute 'reset role';
-            if sqlerrm not like 'Too many code attempts%' then
-                raise exception 'the 51st code attempt failed on something else: %', sqlerrm;
-            end if;
-    end;
+    -- The code door is throttled: fifty failed attempts a day per lifter, and
+    -- the attempts are REAL calls. An earlier version raised on a failure, which
+    -- rolled back the very row it had just logged, so nothing was ever counted
+    -- and the test had to seed the fifty rows by hand. The status return commits
+    -- the log row; the 51st call is refused by status, even for a real code.
+    for n in 1..50 loop
+        perform assert_true(
+            value_as(pax, 'select public.join_warband(''AAAAAAAA'')') = 'no_such_code',
+            format('failed code attempt %s did not answer no_such_code', n)
+        );
+    end loop;
+    perform assert_true(
+        (select count(*) from warband_join_log where user_id = pax) = 50,
+        'fifty failed code attempts did not leave fifty rows in the attempt log'
+    );
+    perform assert_true(
+        value_as(pax, 'select public.join_warband(''AAAAAAAA'')') = 'throttled'
+            and value_as(pax, format('select public.join_warband(%L)', code)) = 'throttled'
+            and value_as(pax, 'select count(*) from warband_members') = '0',
+        'the 51st code attempt was not throttled, or joined a band while throttled'
+    );
+    perform assert_true(
+        (select count(*) from warband_join_log where user_id = pax) = 50,
+        'a throttled attempt grew the log'
+    );
     delete from warband_join_log where user_id = pax;
 
     -- RLS on, no policies: the attempt log answers no client role at all.
@@ -1527,8 +1565,9 @@ begin
         'a5500000-0000-4000-8000-000000000057',
         'a5500000-0000-4000-8000-000000000058']::uuid[]) u;
     perform assert_true(
-        refused_as(ivo, format('select public.join_warband(%L)', code), array['P0001']),
-        'a ninth lifter joined a full warband'
+        value_as(ivo, format('select public.join_warband(%L)', code)) = 'full'
+            and value_as(ivo, 'select count(*) from warband_members') = '0',
+        'a ninth lifter joined a full warband, or was not told it is full'
     );
 
     -- Identity follows profile visibility inside the band too: a bandmate who
@@ -1680,6 +1719,64 @@ begin
     perform must_run(ash, 'select public.leave_warband()', 'ash could not leave');
     delete from auth.users where id in (ash, bram, cole);
 end $rp$;
+
+-- ------------------------------------------------------- circle safety (schema 27)
+do $sf$
+declare
+    kay  uuid := 'a5588888-0000-4000-8000-000000000001';
+    lou  uuid := 'a5588888-0000-4000-8000-000000000002';
+    mac  uuid := 'a5588888-0000-4000-8000-000000000003';
+    code text;
+    band uuid;
+begin
+    perform assert_true(
+        to_regclass('public.warband_members_band_joined_idx') is not null
+            and to_regclass('public.warbands_owner_idx') is not null,
+        'the roster or owner index is missing'
+    );
+    perform assert_true(
+        exists (select 1 from pg_constraint where conname = 'warbands_name_trimmed'),
+        'the trimmed-name check is missing'
+    );
+
+    perform sign_up(kay, '{"display_name": "Kayden"}');
+    perform sign_up(lou, '{"display_name": "Louis"}');
+    perform sign_up(mac, '{"display_name": "Mackenzie"}');
+    perform must_run(kay, 'select public.create_warband(''Keeper Test'')', 'the handover fixture could not form a band');
+    code := value_as(kay, 'select code from my_warband()');
+    perform assert_true(value_as(lou, format('select public.join_warband(%L)', code)) = 'joined', 'the handover fixture could not join');
+    perform assert_true(value_as(mac, format('select public.join_warband(%L)', code)) = 'joined', 'the handover fixture could not join');
+    update warband_members set joined_at = now() - interval '3 days' where user_id = kay;
+    update warband_members set joined_at = now() - interval '2 days' where user_id = lou;
+    update warband_members set joined_at = now() - interval '1 day' where user_id = mac;
+    band := (select warband_id from warband_members where user_id = kay);
+
+    -- The Keeper's account goes (the cascade path, e.g. from the dashboard):
+    -- the band survives and the longest-standing member holds the keys.
+    delete from auth.users where id = kay;
+    perform assert_true(
+        exists (select 1 from warbands where id = band)
+            and (select owner_id from warbands where id = band) = lou
+            and (select count(*) from warband_members where warband_id = band) = 2,
+        'deleting the Keeper took the band, or did not hand it to the longest-standing member'
+    );
+
+    -- delete_my_account() leaves first: the new Keeper deletes theirs and the
+    -- keys pass on again.
+    perform must_run(lou, 'select public.delete_my_account()', 'the Keeper could not delete their account');
+    perform assert_true(
+        (select owner_id from warbands where id = band) = mac
+            and (select count(*) from warband_members where warband_id = band) = 1,
+        'delete_my_account did not hand the band over'
+    );
+
+    -- The last member's account ends the band.
+    perform must_run(mac, 'select public.delete_my_account()', 'the last member could not delete their account');
+    perform assert_true(
+        not exists (select 1 from warbands where id = band),
+        'a band outlived its last member''s account'
+    );
+end $sf$;
 
 drop function if exists assert_true(boolean, text);
 drop function if exists refused_as(uuid, text, text[]);

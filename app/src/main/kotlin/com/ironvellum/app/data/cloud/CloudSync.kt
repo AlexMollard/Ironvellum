@@ -5,6 +5,7 @@ import com.ironvellum.app.data.cloud.Cloud.failure
 import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.Warband
+import com.ironvellum.app.domain.JoinStatus
 import com.ironvellum.app.domain.isValidInviteCode
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SessionSet
@@ -772,7 +773,10 @@ class CloudSync(
             return failure(IllegalArgumentException("That code is not the right shape"))
         }
         return runCatching {
-            client.postgrest.rpc(RPC_JOIN_WARBAND, rpcArgs(JoinWarbandArgs(code = cleaned)))
+            val status = JoinStatus.parse(
+                client.postgrest.rpc(RPC_JOIN_WARBAND, rpcArgs(JoinWarbandArgs(code = cleaned))).data,
+            )
+            JoinStatus.refusal(status)?.let { throw IllegalStateException(it) }
             cache.invalidate(CloudReadCache.KEY_WARBAND)
             fetchWarband(client)
                 ?: throw IllegalStateException("The circle did not appear — pull to refresh")

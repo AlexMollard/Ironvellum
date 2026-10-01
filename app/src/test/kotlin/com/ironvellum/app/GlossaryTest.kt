@@ -83,6 +83,49 @@ class GlossaryTest {
         )
     }
 
+    /**
+     * The circle functions raise messages the app shows word for word
+     * (Cloud.explain passes a P0001 through), so they are copy too. Scoped to
+     * the functions named for the circle: other functions' messages are
+     * developer-facing refusals (a revoked grant, a bad argument) that the
+     * client replaces, and rewording them is not this test's business.
+     */
+    @Test
+    fun `no retired glossary word reaches an error the circle functions raise`() {
+        val sql = baselineSql()
+        val functions = Regex("""create or replace function public\.(\w+)\(.*?\n\$\$;""", RegexOption.DOT_MATCHES_ALL)
+            .findAll(sql)
+            .filter { it.groupValues[1].let { name -> "warband" in name || "circle" in name } }
+            .toList()
+        assertTrue("no circle function found in the baseline; the scan would pass vacuously", functions.size >= 5)
+        val raise = Regex("""raise\s+exception\s+'((?:[^']|'')*)'""")
+        val hits = mutableListOf<String>()
+        var messages = 0
+        for (fn in functions) {
+            for (m in raise.findAll(fn.value)) {
+                messages++
+                val text = m.groupValues[1].replace("''", "'")
+                retired.firstOrNull { it.containsMatchIn(text) }?.let {
+                    hits += "${fn.groupValues[1]}: \"$text\"  (${it.find(text)!!.value})"
+                }
+            }
+        }
+        assertTrue("no raise exception found in the circle functions; the scan is broken", messages >= 5)
+        assertEquals(
+            "A circle function raises a message with a word docs/GLOSSARY.md retired:\n" + hits.joinToString("\n"),
+            0,
+            hits.size,
+        )
+    }
+
+    private fun baselineSql(): String {
+        var dir: File? = File("").absoluteFile
+        while (dir != null && !File(dir, "supabase/migrations").isDirectory) dir = dir.parentFile
+        val found = dir?.let { File(it, "supabase/migrations/0001_baseline.sql") }
+        requireNotNull(found) { "supabase/migrations/0001_baseline.sql not found from ${File("").absolutePath}" }
+        return found.readText()
+    }
+
     @Test
     fun `the literal scanner sees through templates and comments`() {
         val src = """
