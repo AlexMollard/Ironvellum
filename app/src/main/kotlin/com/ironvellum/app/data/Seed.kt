@@ -277,7 +277,7 @@ object Seed {
                     ExerciseEntity(
                         name = skill.name,
                         muscleGroup = skillGroup(skill).name,
-                        isWeighted = skill.name.contains("Weighted"),
+                        isWeighted = Skills.isWeighted(skill),
                     )
                 }
         ).map(::withMetric) + activities

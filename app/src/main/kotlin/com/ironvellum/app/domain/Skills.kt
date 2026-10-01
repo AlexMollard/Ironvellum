@@ -651,6 +651,16 @@ object Skills {
 
     val LINES: List<String> = ALL.map { it.line }.distinct()
 
+    /** The barbell lines: every rung is a loaded lift, whatever its name says. */
+    val GYM_LINES: Set<String> = setOf("Squat", "Bench", "Press", "Deadlift")
+
+    /**
+     * Whether a skill's movement is done with external load. A weighted
+     * calisthenics milestone says so in its name; a barbell line's rungs
+     * (Pause Squat, Heavy Deadlift) never do, so the line decides those.
+     */
+    fun isWeighted(def: SkillDef): Boolean = def.name.contains("Weighted") || def.line in GYM_LINES
+
     fun tierLabel(tier: Int): String = when (tier) {
         1 -> "I"
         2 -> "II"

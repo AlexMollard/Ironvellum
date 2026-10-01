@@ -162,6 +162,15 @@ class Repository(
         if (missing.isNotEmpty()) {
             exerciseDao.insertAll(missing)
         }
+        // Gym-line rungs above tier I (Pause Squat .. Triple-Bodyweight
+        // Deadlift) were once seeded unweighted, and the insert above never
+        // touches an existing row. Re-stamp exactly those names on every
+        // launch: idempotent, a no-op once repaired, and it also mends rows
+        // an older archive restores. Scoring never reads the flag (XP and the
+        // strength index take the logged kilos), so no history restates.
+        exerciseDao.markWeighted(
+            Skills.ALL.filter { it.line in Skills.GYM_LINES && Skills.isWeighted(it) }.map { it.name },
+        )
         // Presets are NOT seeded here any more. A fresh install used to wake
         // up owning somebody else's training week; setup now asks a few
         // questions and writes a plan through applyRoutine, or applies

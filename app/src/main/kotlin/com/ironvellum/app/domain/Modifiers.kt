@@ -24,8 +24,9 @@ package com.ironvellum.app.domain
 fun applicableModifiers(exercise: Exercise): List<String> {
     if (exercise.metric != ExerciseMetric.REPS || exercise.category.isNotEmpty()) return emptyList()
     val name = exercise.name.trim().lowercase()
-    // The gym lines' upper tiers are seeded unweighted, but they are barbell
-    // lifts: the load-priced flag is what says so.
+    // The gym lines' upper tiers are barbell lifts. They are seeded weighted
+    // now, and the load-priced flag also says so for any row an older build
+    // seeded unweighted.
     val bodyweight = !exercise.isWeighted && !MovementDifficulty.isLoadPriced(exercise.name)
     val pattern = MuscleMap.profile(exercise.name)?.pattern
     val offered = mutableSetOf("tempo", "paused")
