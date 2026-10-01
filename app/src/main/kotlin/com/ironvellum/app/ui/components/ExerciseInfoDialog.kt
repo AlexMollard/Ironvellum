@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.ExerciseGuides
 import com.ironvellum.app.domain.GearRequirements
 import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.LiftKind
@@ -30,9 +31,8 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
 
 /**
  * Facts about one exercise, all read from data the app already holds: the
- * muscle profile, gear table, skill tree and ally boards. Sections without
- * data are left out; the catalogue has no descriptions or cues, so none are
- * shown. [onPick] null hides the confirm button; otherwise it labels itself
+ * muscle profile, how-to guide, gear table, skill tree and ally boards.
+ * Sections without data are left out. [onPick] null hides the confirm button; otherwise it labels itself
  * [confirmLabel] and picks the exercise the way tapping the card does.
  * [modifiers] reshape the muscles as they do in the trial (a deficit
  * push-up works the chest at stretch).
@@ -50,6 +50,7 @@ internal fun ExerciseInfoDialog(
     val gear = GearRequirements.needs(exercise.name)
         .joinToString(" or ") { set -> set.joinToString(" + ") { it.label.lowercase() } }
     val skill = Skills.forName(exercise.name)
+    val guide = ExerciseGuides.forName(exercise.name)
     val boards = LiftBoards.boardsFor(exercise.name)
 
     AlertDialog(
@@ -87,6 +88,19 @@ internal fun ExerciseInfoDialog(
                 } else {
                     InfoHeading("MUSCLES")
                     InfoBody("The Ledger holds no muscle data for this exercise yet.", IronvellumColors.InkMuted)
+                }
+                if (guide != null) {
+                    InfoHeading("HOW TO")
+                    InfoBody(guide.setup, IronvellumColors.InkMuted)
+                    guide.steps.forEachIndexed { i, step -> InfoBody("${i + 1}. $step") }
+                    if (guide.cues.isNotEmpty()) {
+                        InfoHeading("CUES")
+                        guide.cues.forEach { InfoBody("• $it") }
+                    }
+                    if (guide.commonMistakes.isNotEmpty()) {
+                        InfoHeading("COMMON MISTAKES")
+                        guide.commonMistakes.forEach { InfoBody("• $it", IronvellumColors.InkMuted) }
+                    }
                 }
                 if (gear.isNotEmpty()) {
                     InfoHeading("ARMOURY")
