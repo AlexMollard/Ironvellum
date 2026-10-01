@@ -95,6 +95,11 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
+import android.os.SystemClock
+import com.ironvellum.app.data.RestClock
+import com.ironvellum.app.domain.RestTimer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -269,12 +274,31 @@ class SessionViewModel(
         _routineUpdate.value = null
     }
 
+    /** This trial's rest between sets, while one runs; shared with the trial service. */
+    val rest: StateFlow<RestTimer?> = RestClock.timer
+        .map { it?.takeIf { t -> t.sessionId == sessionId } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun extendRest() = RestClock.extend(sessionId)
+
+    fun skipRest() = RestClock.cancel(sessionId)
+
+    /** A set ticked done, with sets still waiting, starts its movement's prescribed rest. */
+    private fun noteTick(setId: Long, done: Boolean) {
+        val sets = ui.value.sets
+        if (!RestTimer.startsRest(sets, setId, done)) return
+        val set = sets.first { it.id == setId }
+        RestClock.start(sessionId, RestTimer.restSeconds(set.exerciseName, focus.value))
+    }
+
     fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) {
+        noteTick(setId, done)
         viewModelScope.launch { repo.updateSet(setId, reps, weightKg, done) }
     }
 
     /** A hold's figure is seconds; writing it as reps is the bug this replaces. */
     fun updateHoldSet(setId: Long, seconds: Int, weightKg: Double?, done: Boolean) {
+        noteTick(setId, done)
         viewModelScope.launch { repo.updateHoldSet(setId, seconds, weightKg, done) }
     }
 
@@ -293,6 +317,7 @@ class SessionViewModel(
         weightKg: Double?,
         done: Boolean,
     ) {
+        noteTick(setId, done)
         viewModelScope.launch { repo.updateActivitySet(setId, reps, durationSec, distanceM, grade, weightKg, done) }
     }
 
@@ -356,6 +381,7 @@ class SessionViewModel(
         viewModelScope.launch {
             runCatching { repo.completeSession(sessionId) }
                 .onSuccess {
+                    RestClock.cancel(sessionId)
                     // Completion is the moment a daily user's work becomes
                     // feed/leaderboard-visible; don't wait for a manual push.
                     CloudSyncWorker.pushNow(appContext)
@@ -383,6 +409,7 @@ class SessionViewModel(
 
     fun abandon(onDone: () -> Unit) {
         viewModelScope.launch {
+            RestClock.cancel(sessionId)
             repo.abandonSession(sessionId)
             onDone()
         }
@@ -410,6 +437,8 @@ private fun rememberSessionViewModel(sessionId: Long): SessionViewModel {
 fun SessionScreen(
     sessionId: Long,
     onExit: () -> Unit,
+    /** Bumped by the trial notification's Seal action: open with the seal prompt. */
+    sealRequest: Int = 0,
     viewModel: SessionViewModel = rememberSessionViewModel(sessionId),
 ) {
     val records by viewModel.records.collectAsStateWithLifecycle()
@@ -425,6 +454,7 @@ fun SessionScreen(
     val claiming by viewModel.claiming.collectAsStateWithLifecycle()
     val lastLogged by viewModel.lastLogged.collectAsStateWithLifecycle()
     val reasons by viewModel.reasons.collectAsStateWithLifecycle()
+    val rest by viewModel.rest.collectAsStateWithLifecycle()
     var confirmAbandon by remember { mutableStateOf(false) }
     var confirmClaim by remember { mutableStateOf(false) }
     var showExercisePicker by remember { mutableStateOf(false) }
@@ -489,6 +519,16 @@ fun SessionScreen(
         }
         LaunchedEffect(session.id) { onExit() }
         return
+    }
+
+    // The notification's Seal action: the same confirmation the button gives,
+    // since sealing pays out and shows the victory here, not in the shade.
+    // Waits for the sets, and only offers what the button would allow.
+    var servedSealRequest by rememberSaveable { mutableIntStateOf(0) }
+    LaunchedEffect(sealRequest, ui.sets.isNotEmpty()) {
+        if (sealRequest <= servedSealRequest || ui.sets.isEmpty()) return@LaunchedEffect
+        servedSealRequest = sealRequest
+        if (ui.sets.any { it.done } && completion == null && !claiming) confirmClaim = true
     }
 
     Column(
@@ -566,6 +606,9 @@ fun SessionScreen(
                 modifier = Modifier.weight(1f),
             )
             SessionElapsed(session.startedAtMs)
+        }
+        rest?.let { timer ->
+            RestBar(timer, onExtend = viewModel::extendRest, onSkip = viewModel::skipRest)
         }
         if (ui.sets.isNotEmpty()) {
             val estimate = remember(ui.sets, exercises, focus, pace) {
@@ -884,7 +927,13 @@ fun SessionScreen(
             title = { Text("Seal the Trial?") },
             text = {
                 val unticked = ui.sets.count { !it.done }
-                Text("$unticked ${plural(unticked, "set is", "sets are")} unticked and won't count. Seal anyway?")
+                Text(
+                    if (unticked == 0) {
+                        "Every set is ticked. Seal it now?"
+                    } else {
+                        "$unticked ${plural(unticked, "set is", "sets are")} unticked and won't count. Seal anyway?"
+                    },
+                )
             },
             // Claiming is the deliberate action here, so it takes the confirm
             // slot; KEEP GOING is the safe default.
@@ -1924,6 +1973,39 @@ internal fun fieldColors(accent: Color) = OutlinedTextFieldDefaults.colors(
  * the screen is started, and is its own composable so the tick recomposes
  * this text alone, not the whole session.
  */
+/**
+ * The rest between sets, counting down under the trial's progress line, with
+ * the two things a lifter does to it: a little more, or none at all. Hidden
+ * the moment it runs out; the trial service buzzes for that.
+ */
+@Composable
+private fun RestBar(timer: RestTimer, onExtend: () -> Unit, onSkip: () -> Unit) {
+    var now by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
+    LaunchedEffect(timer) {
+        while (!timer.isOver(now)) {
+            delay(250)
+            now = SystemClock.elapsedRealtime()
+        }
+    }
+    if (timer.isOver(now)) return
+    Row(
+        Modifier.fillMaxWidth().padding(top = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Text(
+            "REST ${timer.label(now)}",
+            style = MaterialTheme.typography.titleSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.EmeraldBright,
+            letterSpacing = IronvellumTracking.InlineLabel,
+            modifier = Modifier.weight(1f),
+        )
+        IronvellumButton("+${RestTimer.EXTEND_SECONDS}s", onClick = onExtend, quiet = true)
+        IronvellumButton("Skip", onClick = onSkip, quiet = true)
+    }
+}
+
 @Composable
 private fun SessionElapsed(startedAtMs: Long) {
     val lifecycleOwner = LocalLifecycleOwner.current

@@ -133,10 +133,16 @@ object Routes {
         "comments/${Uri.encode(sessionId)}?owner=${Uri.encode(ownerId)}&headline=${Uri.encode(headline)}"
 }
 
+/**
+ * A tap on the live trial's notification. [serial] grows per tap so two taps
+ * in a row both land; [seal] asks the trial to open with its seal prompt.
+ */
+data class TrialRequest(val serial: Int, val sessionId: Long, val seal: Boolean)
+
 private data class BottomDestination(val route: String, val label: String, val icon: ImageVector)
 
 @Composable
-fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0) {
+fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: TrialRequest? = null) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -227,6 +233,27 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0) {
                 navController.navigate(Routes.DASHBOARD) {
                     popUpTo(Routes.DASHBOARD) { inclusive = true }
                     launchSingleTop = true
+                }
+            }
+        }
+        // A tapped trial notification reopens the live trial; its Seal action
+        // also asks the trial for its seal prompt. The serial the trial has
+        // served is saveable, so a rotation does not reopen the prompt.
+        var servedTrialRequest by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+        var sealFor by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableLongStateOf(0L) }
+        var sealSerial by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+        androidx.compose.runtime.LaunchedEffect(trialRequest?.serial) {
+            val request = trialRequest ?: return@LaunchedEffect
+            if (request.serial <= servedTrialRequest) return@LaunchedEffect
+            servedTrialRequest = request.serial
+            if (request.seal) {
+                sealFor = request.sessionId
+                sealSerial++
+            }
+            lifecycle.withStarted {
+                // Already on the trial (or the launch resume put it there): stay.
+                if (navController.currentDestination?.route != Routes.SESSION) {
+                    navController.navigate(Routes.session(request.sessionId)) { launchSingleTop = true }
                 }
             }
         }
@@ -463,9 +490,11 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0) {
                     Routes.SESSION,
                     arguments = listOf(navArgument("sessionId") { type = NavType.LongType }),
                 ) { entry ->
+                    val id = entry.arguments?.getLong("sessionId") ?: 0L
                     SessionScreen(
-                        sessionId = entry.arguments?.getLong("sessionId") ?: 0L,
+                        sessionId = id,
                         onExit = { navController.popBackStack() },
+                        sealRequest = if (sealFor == id) sealSerial else 0,
                     )
                 }
                 composable(Routes.STATS) {

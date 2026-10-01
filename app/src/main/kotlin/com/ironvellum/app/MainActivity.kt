@@ -3,6 +3,7 @@ package com.ironvellum.app
 import android.content.Intent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.ironvellum.app.data.Notifications
 import android.content.Context
@@ -15,6 +16,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import android.graphics.Color
 import com.ironvellum.app.ui.IronvellumRoot
+import com.ironvellum.app.ui.TrialRequest
 import com.ironvellum.app.ui.theme.IronvellumTheme
 
 class MainActivity : ComponentActivity() {
@@ -57,10 +59,18 @@ class MainActivity : ComponentActivity() {
         } else {
             inboxRequest = savedInstanceState.getInt(KEY_INBOX_REQUEST)
             todayRequest = savedInstanceState.getInt(KEY_TODAY_REQUEST)
+            val serial = savedInstanceState.getInt(KEY_TRIAL_SERIAL)
+            if (serial > 0) {
+                trialRequest = TrialRequest(
+                    serial = serial,
+                    sessionId = savedInstanceState.getLong(KEY_TRIAL_SESSION),
+                    seal = savedInstanceState.getBoolean(KEY_TRIAL_SEAL),
+                )
+            }
         }
         setContent {
             IronvellumTheme {
-                IronvellumRoot(inboxRequest = inboxRequest, todayRequest = todayRequest)
+                IronvellumRoot(inboxRequest = inboxRequest, todayRequest = todayRequest, trialRequest = trialRequest)
             }
         }
     }
@@ -76,6 +86,16 @@ class MainActivity : ComponentActivity() {
         when (intent?.getStringExtra(Notifications.EXTRA_OPEN_TAB)) {
             Notifications.TAB_INBOX -> inboxRequest++
             Notifications.TAB_TODAY -> todayRequest++
+            Notifications.TAB_TRIAL -> {
+                val id = intent.getLongExtra(Notifications.EXTRA_SESSION_ID, -1L)
+                if (id > 0L) {
+                    trialRequest = TrialRequest(
+                        serial = (trialRequest?.serial ?: 0) + 1,
+                        sessionId = id,
+                        seal = intent.getBooleanExtra(Notifications.EXTRA_SEAL, false),
+                    )
+                }
+            }
         }
     }
 
@@ -87,15 +107,24 @@ class MainActivity : ComponentActivity() {
      */
     private var inboxRequest by mutableIntStateOf(0)
     private var todayRequest by mutableIntStateOf(0)
+    private var trialRequest by mutableStateOf<TrialRequest?>(null)
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putInt(KEY_INBOX_REQUEST, inboxRequest)
         outState.putInt(KEY_TODAY_REQUEST, todayRequest)
+        trialRequest?.let {
+            outState.putInt(KEY_TRIAL_SERIAL, it.serial)
+            outState.putLong(KEY_TRIAL_SESSION, it.sessionId)
+            outState.putBoolean(KEY_TRIAL_SEAL, it.seal)
+        }
     }
 
     private companion object {
         const val KEY_INBOX_REQUEST = "inbox_request"
         const val KEY_TODAY_REQUEST = "today_request"
+        const val KEY_TRIAL_SERIAL = "trial_serial"
+        const val KEY_TRIAL_SESSION = "trial_session"
+        const val KEY_TRIAL_SEAL = "trial_seal"
     }
 }
