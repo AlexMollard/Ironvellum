@@ -338,4 +338,42 @@ class SkillsTest {
         assertFalse(rows.getValue("Pull-up").isWeighted)
         assertTrue(rows.getValue("Weighted Pull-up").isWeighted)
     }
+
+    /**
+     * A loaded standard is judged on the load as well as the reps, as a
+     * share of bodyweight: a third of an 81 kg lifter is 27 kg on the belt,
+     * a double-bodyweight deadlift is 162 kg on the bar.
+     */
+    @Test
+    fun `a loaded standard is judged against a share of bodyweight`() {
+        val wpu = Skills.forName("Weighted Pull-up")!!
+        assertEquals(true, Skills.meetsStandard(wpu, value = 5, weightKg = 27.0, bodyweightKg = 81.0))
+        assertEquals("plate-step slack", true, Skills.meetsStandard(wpu, value = 5, weightKg = 26.6, bodyweightKg = 81.0))
+        assertEquals(false, Skills.meetsStandard(wpu, value = 5, weightKg = 20.0, bodyweightKg = 81.0))
+        assertEquals("reps still count", false, Skills.meetsStandard(wpu, value = 4, weightKg = 40.0, bodyweightKg = 81.0))
+        assertEquals("no bodyweight, no verdict", null, Skills.meetsStandard(wpu, value = 5, weightKg = 27.0, bodyweightKg = null))
+
+        val pull = Skills.forName("Double-Bodyweight Deadlift")!!
+        assertEquals(true, Skills.meetsStandard(pull, value = 1, weightKg = 162.0, bodyweightKg = 81.0))
+        assertEquals(false, Skills.meetsStandard(pull, value = 1, weightKg = 150.0, bodyweightKg = 81.0))
+        assertEquals(
+            "a female lifter is judged on her own bar",
+            true,
+            Skills.meetsStandard(pull, value = 1, weightKg = 100.0, bodyweightKg = 65.0, female = true),
+        )
+
+        val hang = Skills.forName("Dead Hang")!!
+        assertEquals("unloaded standards ignore bodyweight", true, Skills.meetsStandard(hang, 60, null, null))
+    }
+
+    /** Every standard that names a bodyweight load carries its share as data. */
+    @Test
+    fun `every bodyweight-loaded standard states its share`() {
+        Skills.ALL.filter { it.line in Skills.GYM_LINES || it.name.startsWith("Weighted") }.forEach {
+            assertTrue("${it.name} has no load bar", Skills.loadBar(it.name) != null)
+            assertTrue("${it.name} has no load bar", Skills.loadBar(it.name, female = true) != null)
+        }
+        assertEquals(null, Skills.loadBar("Pull-up"))
+        assertTrue(Skills.loadBar("Deadlift", female = true)!!.share < Skills.loadBar("Deadlift")!!.share)
+    }
 }

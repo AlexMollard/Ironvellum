@@ -843,4 +843,72 @@ object Skills {
      * this informs the lifter, it never gates or spends anything.
      */
     fun femaleStandard(name: String): String? = femaleBars[name]
+
+    /**
+     * The load a standard asks for, as a share of the lifter's bodyweight:
+     * on the bar for the gym lines ([added] false), on the belt for the
+     * weighted calisthenics milestones ([added] true). Stated here as data
+     * because the prose spells multiples in words ("four fifths", "a third
+     * of your bodyweight added") that no parser should have to guess at.
+     */
+    data class LoadBar(val share: Double, val added: Boolean)
+
+    private val loadBars: Map<String, LoadBar> = mapOf(
+        "Weighted Pull-up" to LoadBar(1.0 / 3.0, added = true),
+        "Weighted Dip" to LoadBar(1.0 / 3.0, added = true),
+        "Back Squat" to LoadBar(1.0, added = false),
+        "Pause Squat" to LoadBar(1.25, added = false),
+        "Heavy Squat" to LoadBar(1.75, added = false),
+        "Double-Bodyweight Squat" to LoadBar(2.25, added = false),
+        "Triple-Bodyweight Squat" to LoadBar(2.75, added = false),
+        "Bench Press" to LoadBar(0.75, added = false),
+        "Volume Bench Press" to LoadBar(1.0, added = false),
+        "Paused Bench Press" to LoadBar(1.25, added = false),
+        "Heavy Bench Press" to LoadBar(1.5, added = false),
+        "Double-Bodyweight Bench Press" to LoadBar(2.0, added = false),
+        "Overhead Press" to LoadBar(0.5, added = false),
+        "Volume Overhead Press" to LoadBar(0.65, added = false),
+        "Bodyweight Overhead Press" to LoadBar(0.8, added = false),
+        "Heavy Overhead Press" to LoadBar(1.0, added = false),
+        "Half-Again Overhead Press" to LoadBar(1.25, added = false),
+        "Deadlift" to LoadBar(1.0, added = false),
+        "Volume Deadlift" to LoadBar(1.5, added = false),
+        "Double-Bodyweight Deadlift" to LoadBar(2.0, added = false),
+        "Heavy Deadlift" to LoadBar(2.5, added = false),
+        "Triple-Bodyweight Deadlift" to LoadBar(3.0, added = false),
+    )
+
+    /**
+     * The load [name]'s standard asks for; null when it asks for none. A
+     * female lifter's gym-line bar is her published one ([femaleStandard]).
+     */
+    fun loadBar(name: String, female: Boolean = false): LoadBar? {
+        val bar = loadBars[name] ?: return null
+        if (!female) return bar
+        val share = femaleBars[name]?.substringBefore('x')?.trim()?.toDoubleOrNull() ?: return bar
+        return bar.copy(share = share)
+    }
+
+    /**
+     * Whether one effort meets [def]'s claim standard: [value] reaches the
+     * target, and for a loaded standard [weightKg] (bar load, or added load
+     * for a weighted milestone) reaches the bodyweight share. Null when the
+     * standard is loaded but the bodyweight is unknown - the load cannot be
+     * judged, which is not the same as failing it.
+     */
+    fun meetsStandard(
+        def: SkillDef,
+        value: Int,
+        weightKg: Double?,
+        bodyweightKg: Double?,
+        female: Boolean = false,
+    ): Boolean? {
+        if (value < def.target) return false
+        val bar = loadBar(def.name, female) ?: return true
+        val bodyweight = bodyweightKg?.takeIf { it > 0.0 } ?: return null
+        // Half a kilo of slack: plates come in steps, and 80 kg x 1/3 is not a loadable number.
+        return (weightKg ?: 0.0) >= bar.share * bodyweight - LOAD_SLACK_KG
+    }
+
+    private const val LOAD_SLACK_KG = 0.5
 }
