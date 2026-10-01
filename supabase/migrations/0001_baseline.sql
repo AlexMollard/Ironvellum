@@ -1590,20 +1590,23 @@ as $$
         -- A remark in a thread the caller joined on someone else's workout:
         -- anything said after the caller's first remark there, by anyone but
         -- the caller. Only while the workout is still visible to the caller,
-        -- exactly as the comments read policy would allow.
+        -- exactly as the comments read policy would allow. Driven from the
+        -- caller's own remarks (session_comments_user_idx), then each thread
+        -- (session_comments_session_idx), never a scan of everyone's.
         select 'reply', c.created_at, c.user_id, c.author_name,
                s.id, coalesce(nullif(s.title, ''), s.label), c.id, c.body, null
-        from session_comments c
-        join sessions s on s.id = c.session_id
-        join me on s.user_id <> me.id
-        where c.user_id <> me.id
-          and can_view_session(s.user_id, s.audience)
-          and exists (
-              select 1 from session_comments mine
-              where mine.session_id = c.session_id
-                and mine.user_id = me.id
-                and mine.created_at < c.created_at
-          )
+        from me
+        join lateral (
+            select mine.session_id, min(mine.created_at) as first_at
+            from session_comments mine
+            where mine.user_id = me.id
+            group by mine.session_id
+        ) joined on true
+        join sessions s on s.id = joined.session_id and s.user_id <> me.id
+        join session_comments c on c.session_id = joined.session_id
+                               and c.created_at > joined.first_at
+                               and c.user_id <> me.id
+        where can_view_session(s.user_id, s.audience)
 
         union all
 

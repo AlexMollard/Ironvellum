@@ -439,6 +439,8 @@ fun SessionScreen(
     onExit: () -> Unit,
     /** Bumped by the trial notification's Seal action: open with the seal prompt. */
     sealRequest: Int = 0,
+    /** The request above was taken, shown or not: the next visit must not repeat it. */
+    onSealRequestServed: () -> Unit = {},
     viewModel: SessionViewModel = rememberSessionViewModel(sessionId),
 ) {
     val records by viewModel.records.collectAsStateWithLifecycle()
@@ -528,6 +530,7 @@ fun SessionScreen(
     LaunchedEffect(sealRequest, ui.sets.isNotEmpty()) {
         if (sealRequest <= servedSealRequest || ui.sets.isEmpty()) return@LaunchedEffect
         servedSealRequest = sealRequest
+        onSealRequestServed()
         if (ui.sets.any { it.done } && completion == null && !claiming) confirmClaim = true
     }
 
