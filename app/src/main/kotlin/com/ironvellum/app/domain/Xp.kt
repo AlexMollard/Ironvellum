@@ -46,7 +46,7 @@ object Xp {
     const val COMPLETION_BONUS = 25
     const val QUEST_BONUS = 25
 
-    /** Paid once per band+week when the band's weekly goal is met and this lifter contributed. */
+    /** Paid once per lifter and week when the server settles the circle's week as met and this lifter trained in it. */
     const val CIRCLE_GOAL_BONUS = 40
 
     /** Reps in one set that pay full rate. */

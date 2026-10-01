@@ -828,6 +828,9 @@ private fun SignedInPanels(
         )
     }
 
+    SectionHeader("Circle")
+    CircleSection(onOpenLifter = onOpenLifter, refreshSignal = circleRefreshSignal)
+
     Spacer(Modifier.height(14.dp))
     AddAllyPanel(loading = ui.friendsLoading, onRequest = onRequest)
     // Right under the input: a refused invite (unknown name, rate limit) is
@@ -843,9 +846,6 @@ private fun SignedInPanels(
         SectionHeader("Requests")
         RequestsPanel(incoming = incoming, onAccept = onAccept, onDecline = onDecline)
     }
-
-    SectionHeader("Circle")
-    CircleSection(onOpenLifter = onOpenLifter, refreshSignal = circleRefreshSignal)
 
     SectionHeader(if (accepted.isEmpty()) "Allies" else "Allies · ${accepted.size}")
     AlliesPanel(

@@ -341,6 +341,7 @@ class WireNamesMatchSchemaTest {
         )
         assertTrue("$RPC_MY_CIRCLE() now takes arguments", functionParams(RPC_MY_CIRCLE).isEmpty())
         assertTrue("$RPC_LEAVE_CIRCLE() now takes arguments", functionParams(RPC_LEAVE_CIRCLE).isEmpty())
+        assertTrue("$RPC_ROTATE_CIRCLE_CODE() now takes arguments", functionParams(RPC_ROTATE_CIRCLE_CODE).isEmpty())
     }
 
     @Test
@@ -365,6 +366,8 @@ class WireNamesMatchSchemaTest {
             RPC_CREATE_CIRCLE to CreateCircleArgs.serializer().descriptor,
             RPC_JOIN_CIRCLE to JoinCircleArgs.serializer().descriptor,
             RPC_SET_CIRCLE_GOAL to SetCircleGoalArgs.serializer().descriptor,
+            RPC_SET_CIRCLE_NAME to SetCircleNameArgs.serializer().descriptor,
+            RPC_KICK_CIRCLE_MEMBER to KickCircleMemberArgs.serializer().descriptor,
         )) {
             val params = functionParams(fn)
             assertTrue("no parameters parsed for $fn — the parser is broken", params.isNotEmpty())

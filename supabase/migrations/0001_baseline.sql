@@ -372,8 +372,8 @@ alter table lift_marks add constraint lift_marks_lift check (lift in (
 create table if not exists circles (
     id          uuid primary key default gen_random_uuid(),
     -- A circle name is a small shouty HUD label, bounded like a title, and
-    -- stored trimmed: the create RPC trims, and a direct rename (the owner
-    -- holds update(name)) must not be able to put padding back.
+    -- stored trimmed: create_circle and set_circle_name trim, and the check holds
+    -- the line for anything else that ever writes the column.
     name        text not null,
     -- 8 chars, no 0/O/1/I/L: a code read aloud off a phone screen must be
     -- unambiguous. Keep in step with InviteCodeAlphabet in domain/Circles.kt.
@@ -442,6 +442,24 @@ create table if not exists circle_week_members (
 );
 create index if not exists circle_week_members_user_idx on circle_week_members (user_id, week);
 
+-- Missives about the roster: someone left, the keys passed to you, you were
+-- removed. One row per recipient, written only by the definer functions below
+-- (circle_notify) and read only through my_inbox(). Kept 30 days, the same
+-- window the inbox shows; the writer prunes what is older.
+create table if not exists circle_events (
+    id          bigint generated always as identity primary key,
+    user_id     uuid not null references auth.users (id) on delete cascade,
+    kind        text not null
+        constraint circle_events_kind_check
+        check (kind in ('circle_left', 'circle_keeper', 'circle_removed')),
+    actor_id    uuid not null references auth.users (id) on delete cascade,
+    circle_name text not null,
+    occurred_at timestamptz not null default now()
+);
+create index if not exists circle_events_user_idx on circle_events (user_id, occurred_at desc);
+create index if not exists circle_events_actor_idx on circle_events (actor_id);
+create index if not exists circle_events_at_idx on circle_events (occurred_at);
+
 -- Membership test used by the circle policies below. SECURITY DEFINER or the two
 -- policies recurse through each other's sub-selects on circle_members. Closed
 -- to every client role: it answers about ANY (circle, user) pair — an oracle over
@@ -479,18 +497,13 @@ create policy circles_read on circles
     for select to authenticated
     using (in_my_circle(id));
 
--- Only the owner renames or deletes the circle, and only while still a member:
--- ownership without membership is a state the handover trigger never leaves.
+-- Nobody writes the circles row directly: rename, code rotation, removal and the
+-- goal are Keeper-only RPCs (set_circle_name, rotate_circle_code,
+-- kick_circle_member, set_circle_goal), and a circle ends by its last member
+-- leaving, never by a delete from a client. These policies existed while the
+-- Keeper held update(name) and delete; schema 27 closes both doors.
 drop policy if exists circles_update on circles;
-create policy circles_update on circles
-    for update to authenticated
-    using (owner_id = auth.uid() and in_my_circle(id))
-    with check (owner_id = auth.uid() and in_my_circle(id));
-
 drop policy if exists circles_delete on circles;
-create policy circles_delete on circles
-    for delete to authenticated
-    using (owner_id = auth.uid() and in_my_circle(id));
 
 -- Your own membership row, plus your fellow members'. No write policies at all:
 -- create_circle/join_circle/leave_circle below are the only writers.
@@ -498,6 +511,79 @@ drop policy if exists circle_members_read on circle_members;
 create policy circle_members_read on circle_members
     for select to authenticated
     using (user_id = auth.uid() or in_my_circle(circle_id));
+
+-- Writes one missive per recipient and prunes what is past the inbox's window.
+-- The actor must still exist (an account being deleted is leaving, and its
+-- missives go with it by cascade). Closed to every client role.
+create or replace function public.circle_notify(p_users uuid[], p_kind text, p_actor uuid, p_circle text)
+returns void
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+begin
+    delete from circle_events e where e.occurred_at < now() - interval '30 days';
+    insert into circle_events (user_id, kind, actor_id, circle_name)
+    select u.id, p_kind, p_actor, p_circle
+    from auth.users u
+    where u.id = any (p_users)
+      and exists (select 1 from auth.users a where a.id = p_actor);
+end;
+$$;
+revoke execute on function public.circle_notify(uuid[], text, uuid, text) from public, anon, authenticated;
+
+-- One draw of an invite code: five random bytes mapped to eight 5-bit glyphs
+-- over the 31-glyph alphabet (31^8 exactly covers 2^40). random() is
+-- documented as unfit for secrets. Uniqueness is the caller's: a collision is
+-- absorbed by the unique index and another draw. Keep the alphabet in step with
+-- InviteCodeAlphabet in domain/Circles.kt and the check on circles.invite_code.
+create or replace function public.circle_draw_code()
+returns text
+language plpgsql
+volatile
+set search_path = pg_catalog, public
+as $$
+declare
+    alphabet text := '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+    v        bigint := ('x' || encode(gen_random_bytes(5), 'hex'))::bit(40)::bigint;
+    code     text := '';
+    i        int;
+begin
+    for i in 1..8 loop
+        code := code || substr(alphabet, 1 + (v % 31)::int, 1);
+        v := v >> 5;
+    end loop;
+    return code;
+end;
+$$;
+revoke execute on function public.circle_draw_code() from public, anon, authenticated;
+
+-- The caller's circle, locked, when they are its Keeper and still a member; any
+-- other caller is refused with 42501, the code a revoked grant gives. [what] ends
+-- the message: "Only the Keeper <what>". The lock is the one joins and leaves
+-- take, so a Keeper action reads the roster as one step.
+create or replace function public.circle_keeper_lock(p_what text)
+returns uuid
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+    cid uuid;
+begin
+    select w.id into cid
+    from circles w
+    where w.owner_id = auth.uid()
+      and exists (select 1 from circle_members m
+                  where m.circle_id = w.id and m.user_id = w.owner_id)
+    for update;
+    if cid is null then
+        raise exception 'Only the Keeper %', p_what using errcode = '42501';
+    end if;
+    return cid;
+end;
+$$;
+revoke execute on function public.circle_keeper_lock(text) from public, anon, authenticated;
 
 -- Before a membership row goes, bring the circle's weeks up to date: settle the
 -- weeks that have closed and open this one, so the roster the week opened with
@@ -563,6 +649,9 @@ begin
         delete from circles where id = old.circle_id;
     elsif w.owner_id is null or w.owner_id = old.user_id then
         update circles set owner_id = next where id = old.circle_id;
+        -- Tell the new Keeper; the missive names who held the keys before them
+        -- (themselves when that account is already gone).
+        perform public.circle_notify(array[next], 'circle_keeper', coalesce(w.owner_id, next), w.name);
     end if;
     return old;
 end;
@@ -720,6 +809,7 @@ alter table circles           enable row level security;
 alter table circle_members    enable row level security;
 alter table circle_weeks      enable row level security;
 alter table circle_week_members enable row level security;
+alter table circle_events      enable row level security;
 
 -- profiles: readable per visibility, writable only by the owner. There is NO
 -- insert policy: the row is created server-side on sign-up, never by a client.
@@ -1008,17 +1098,16 @@ grant insert (user_id, lift, step, recent_step, recent_at) on lift_marks to auth
 grant update (user_id, lift, step, recent_step, recent_at) on lift_marks to authenticated;
 
 -- circles: created only by create_circle(), membership only by the RPCs, so
--- no insert grant on either table. The owner may rename the circle and nothing
--- else: invite_code, owner_id and created_at are the server's.
+-- no insert grant on either table. Members read; every write (rename, code,
+-- goal, removal, the circle itself) is a definer RPC.
 revoke all on circles from anon, authenticated;
-revoke update on circles from authenticated;
-grant select, delete on circles to authenticated;
-grant update (name) on circles to authenticated;
+grant select on circles to authenticated;
 revoke all on circle_members from anon, authenticated;
 grant select on circle_members to authenticated;
 -- The week records are the definer RPCs' alone: row security on, no policy, no grant.
 revoke all on circle_weeks from anon, authenticated;
 revoke all on circle_week_members from anon, authenticated;
+revoke all on circle_events from anon, authenticated;
 
 -- ================================================================ triggers
 
@@ -2060,6 +2149,19 @@ as $$
                             and cw.members >= 2 and cw.goal > 0
         join lateral circle_week_days(c.id, cw.week) g on g.n = cw.goal
         left join profiles p on p.id = g.user_id
+
+        union all
+
+        -- Roster missives (circle_events): someone left, the keys passed to the
+        -- caller, the caller was removed. The circle's name rides in body.
+        select e.kind, e.occurred_at, e.actor_id,
+               case when e.actor_id = me.id or can_view(e.actor_id)
+                    then coalesce(p.display_name, 'Ironbound' || right(e.actor_id::text, 4))
+                    else 'Ironbound' || right(e.actor_id::text, 4) end,
+               null, null, null, e.circle_name, null
+        from circle_events e
+        join me on e.user_id = me.id
+        left join profiles p on p.id = e.actor_id
     )
     select i.kind, i.occurred_at, i.actor_id, i.actor_name, i.session_id,
            i.session_headline, i.comment_id, i.body, i.reaction
@@ -2094,16 +2196,12 @@ set search_path = pg_catalog, public
 as $$
 declare
     me       uuid := auth.uid();
-    alphabet text := '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
     w        circles;
-    v        bigint;
-    code     text;
-    i        int;
 begin
     if me is null then
         raise exception 'Sign in to use a circle' using errcode = '42501';
     end if;
-    if char_length(trim(p_name)) not between 1 and 24 then
+    if p_name is null or char_length(trim(p_name)) not between 1 and 24 then
         raise exception 'A circle name is 1-24 characters';
     end if;
     -- One circle per lifter: an existing membership wins before any insert.
@@ -2112,17 +2210,8 @@ begin
     end if;
     loop
         begin
-            -- A secret-quality draw: five random bytes mapped to eight 5-bit
-            -- glyphs over the 31-glyph alphabet (31^8 exactly covers 2^40).
-            -- random() is documented as unfit for secrets.
-            v := ('x' || encode(gen_random_bytes(5), 'hex'))::bit(40)::bigint;
-            code := '';
-            for i in 1..8 loop
-                code := code || substr(alphabet, 1 + (v % 31)::int, 1);
-                v := v >> 5;
-            end loop;
             insert into circles (name, invite_code, owner_id)
-            values (trim(p_name), code, me)
+            values (trim(p_name), public.circle_draw_code(), me)
             returning * into w;
             exit;
         exception when unique_violation then
@@ -2137,8 +2226,8 @@ revoke execute on function public.create_circle(text) from public, anon;
 grant execute on function public.create_circle(text) to authenticated;
 
 -- Joins by code, case-insensitively, while there is room (max 8), and answers
--- with a STATUS rather than raising: 'joined', 'no_such_code', 'full' or
--- 'throttled'. A refusal that raised would roll back the attempt it had just
+-- with a STATUS rather than raising: 'joined', 'no_such_code', 'full', 'closed'
+-- (a member is blocked either way with the caller) or 'throttled'. A refusal that raised would roll back the attempt it had just
 -- logged, and the throttle below would never count anything. Only misuse that
 -- is not a guess (signed out, already in a circle) still raises. SECURITY
 -- DEFINER for the same reason as create_circle.
@@ -2180,6 +2269,14 @@ begin
         insert into circle_join_log (user_id) values (me);
         return 'no_such_code';
     end if;
+    -- A circle holding someone the caller blocked, or who blocked the caller, is
+    -- closed to them: the same neutral answer either way, so it says nothing of
+    -- who blocked whom. It counts as an attempt, like any other refusal.
+    if exists (select 1 from circle_members m
+               where m.circle_id = w.id and blocked_between(me, m.user_id)) then
+        insert into circle_join_log (user_id) values (me);
+        return 'closed';
+    end if;
     select count(*) into n from circle_members where circle_id = w.id;
     if n >= 8 then
         insert into circle_join_log (user_id) values (me);
@@ -2213,6 +2310,9 @@ begin
         raise exception 'You are not in a circle';
     end if;
     perform 1 from circles where id = circle for update;
+    perform public.circle_notify(
+        array(select m.user_id from circle_members m where m.circle_id = circle and m.user_id <> me),
+        'circle_left', me, (select c.name from circles c where c.id = circle));
     delete from circle_members where user_id = me;
 end;
 $$;
@@ -2242,16 +2342,7 @@ declare
     cid uuid;
     cur int;
 begin
-    select w.id, w.per_member into cid, cur
-    from circles w
-    where w.owner_id = auth.uid()
-      and exists (select 1 from circle_members m
-                  where m.circle_id = w.id and m.user_id = w.owner_id)
-    for update;
-    if cid is null then
-        raise exception 'Only the Keeper sets the circle''s goal'
-            using errcode = '42501';
-    end if;
+    cid := public.circle_keeper_lock('sets the circle''s goal');
     if p_per_member is null or p_per_member not between 1 and 7 then
         raise exception 'A weekly goal is 1-7 days';
     end if;
@@ -2264,6 +2355,84 @@ end;
 $$;
 revoke execute on function public.set_circle_goal(int) from public, anon;
 grant execute on function public.set_circle_goal(int) to authenticated;
+
+-- Renames the circle. Keeper-only; the name is stored trimmed, 1-24 characters.
+create or replace function public.set_circle_name(p_name text)
+returns void
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+    cid uuid;
+begin
+    cid := public.circle_keeper_lock('renames the circle');
+    if p_name is null or char_length(trim(p_name)) not between 1 and 24 then
+        raise exception 'A circle name is 1-24 characters';
+    end if;
+    update circles set name = trim(p_name) where id = cid;
+end;
+$$;
+revoke execute on function public.set_circle_name(text) from public, anon;
+grant execute on function public.set_circle_name(text) to authenticated;
+
+-- Draws a fresh invite code and retires the old one: the way to close the door
+-- on a code that travelled further than intended. Keeper-only; answers the new
+-- code. Existing members are untouched.
+create or replace function public.rotate_circle_code()
+returns text
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+    cid  uuid;
+    code text;
+begin
+    cid := public.circle_keeper_lock('changes the circle code');
+    loop
+        begin
+            update circles set invite_code = public.circle_draw_code()
+            where id = cid
+            returning invite_code into code;
+            exit;
+        exception when unique_violation then
+            null; -- code already drawn: try another
+        end;
+    end loop;
+    return code;
+end;
+$$;
+revoke execute on function public.rotate_circle_code() from public, anon;
+grant execute on function public.rotate_circle_code() to authenticated;
+
+-- Removes a member. Keeper-only, and never the Keeper themselves (they leave).
+-- The removed lifter is told, and may rejoin with the code: rotate it first to
+-- keep them out. Their days this week still count, as for anyone who leaves.
+create or replace function public.kick_circle_member(p_user uuid)
+returns void
+language plpgsql
+security definer
+set search_path = pg_catalog, public
+as $$
+declare
+    me  uuid := auth.uid();
+    cid uuid;
+begin
+    cid := public.circle_keeper_lock('removes members');
+    if p_user is null or p_user = me then
+        raise exception 'The Keeper cannot be removed — leave the circle instead';
+    end if;
+    if not exists (select 1 from circle_members m where m.circle_id = cid and m.user_id = p_user) then
+        raise exception 'That Ironbound is not in your circle';
+    end if;
+    perform public.circle_notify(array[p_user], 'circle_removed', me,
+                                 (select c.name from circles c where c.id = cid));
+    delete from circle_members where user_id = p_user;
+end;
+$$;
+revoke execute on function public.kick_circle_member(uuid) from public, anon;
+grant execute on function public.kick_circle_member(uuid) to authenticated;
 
 -- The caller's circle and roster, or no rows when they are in none. VOLATILE:
 -- reading the circle brings its weeks up to date (circle_roll), which is how a

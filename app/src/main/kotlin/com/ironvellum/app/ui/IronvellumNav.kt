@@ -529,7 +529,18 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         MeasurementDetailScreen(site = site, onBack = { navController.popBackStack() })
                     }
                 }
-                composable(Routes.IDLE) { IdleScreen(onBack = { navController.popBackStack() }) }
+                composable(Routes.IDLE) {
+                    IdleScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenCircle = {
+                            navController.navigate(Routes.SOCIAL) {
+                                popUpTo(Routes.DASHBOARD) { saveState = false }
+                                launchSingleTop = true
+                                restoreState = false
+                            }
+                        },
+                    )
+                }
                 composable(Routes.SOCIAL) {
                     SocialScreen(
                         onOpenLifter = { userId, name ->

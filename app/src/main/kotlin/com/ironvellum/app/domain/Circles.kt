@@ -109,6 +109,8 @@ object JoinStatus {
         JOINED -> null
         "no_such_code" -> "No circle answers to that code"
         "full" -> "That circle is full"
+        // Deliberately neutral: it says nothing of who blocked whom.
+        "closed" -> "That circle is closed to you"
         "throttled" -> "Too many code attempts today — try again tomorrow."
         else -> "The circle did not take you in — try again"
     }

@@ -48,6 +48,11 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Intent
 import android.widget.Toast
+import android.os.Build
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Circle
 import com.ironvellum.app.domain.CircleMember
@@ -71,8 +76,12 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import java.time.DayOfWeek
-import java.time.LocalDate
+import java.time.Instant
+import java.time.ZoneId
 import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
+import java.time.temporal.TemporalAdjusters
+import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -80,11 +89,9 @@ import kotlinx.coroutines.launch
 /**
  * One snapshot of the lifter's circle for the ALLIES tab.
  *
- * Week anchor: the server counts a member's workouts in the Monday-start week
- * of `date_trunc('week', now())` evaluated in UTC, so the header's "Week of"
- * date is derived from the same UTC Monday — using the device's local Monday
- * could label the band's week a day off for lifters west of UTC around the
- * rollover.
+ * Week anchor: the server's week is Monday-start in UTC and closes at the next
+ * UTC Monday 00:00. The reset is shown in the lifter's own clock
+ * ([circleResetLabel]), so it never reads a day off for lifters west of UTC.
  */
 data class CircleUiState(
     val signedIn: Boolean = false,
@@ -92,13 +99,13 @@ data class CircleUiState(
     /** The signed-in lifter's id — decides who sees the goal EDIT affordance. */
     val myUserId: String? = null,
     val loading: Boolean = false,
-    /** Failure of the band READ; the panel offers a retry. */
+    /** Failure of the circle READ; the panel offers a retry. */
     val error: String? = null,
-    /** A reload that failed while a band was already on screen: the roster shown is the last good read. */
+    /** A reload that failed while a circle was already on screen: the roster shown is the last good read. */
     val refreshFailed: Boolean = false,
     /** A create/join/leave call in flight — the buttons wait for the server. */
     val actionBusy: Boolean = false,
-    /** A server REFUSAL of the last action (full band, already in one, bad code) — inline, never a toast-only. */
+    /** A server REFUSAL of the last action (full circle, already in one, bad code) — inline, never a toast-only. */
     val actionError: String? = null,
     /** The bonus just paid for a settled week — shown once, then cleared. */
     val paid: CircleBonusPaid? = null,
@@ -142,7 +149,7 @@ class CircleViewModel(
             gateway.read(force)
                 .onSuccess { read -> onRead(read) }
                 .onFailure { failure ->
-                    // Over a band already on screen a failed reload must say so:
+                    // Over a circle already on screen a failed reload must say so:
                     // the roster is then the last good read, not the current one.
                     _ui.value = _ui.value.copy(
                         error = failure.reason(),
@@ -154,7 +161,7 @@ class CircleViewModel(
     }
 
     /**
-     * Records the band; any bonus the read paid shows once through
+     * Records the circle; any bonus the read paid shows once through
      * [CircleUiState.paid]. The pay itself happens in the gateway, so
      * every circle read settles it, not only this screen's.
      */
@@ -175,7 +182,13 @@ class CircleViewModel(
 
     fun leave() = act { gateway.leave() }
 
-    // create/join return the band, leave returns Unit — the reconciliation
+    fun rename(name: String, onDone: () -> Unit = {}) = act(onDone) { gateway.rename(name) }
+
+    fun newCode(onDone: () -> Unit = {}) = act(onDone) { gateway.rotateCode() }
+
+    fun remove(userId: String, onDone: () -> Unit = {}) = act(onDone) { gateway.removeMember(userId) }
+
+    // create/join return the circle, leave returns Unit — the reconciliation
     // (a fresh circle read) is identical, so one runner takes either.
     // [onDone] runs only when the server accepted the action, so a dialog
     // stays open, with its inline error, when the answer is a refusal.
@@ -212,7 +225,7 @@ class CircleViewModel(
 
 /**
  * The CIRCLE block of the ALLIES tab: the pitch and create/join when the
- * lifter is bandless, the band roster and its invite code when they are not.
+ * lifter is circle-less, the circle roster and its invite code when they are not.
  * 2-8 members is enforced server-side; refusals come back as [CircleUiState.actionError]
  * and render inline under the buttons.
  */
@@ -243,8 +256,8 @@ fun CircleSection(
     }
     if (!ui.signedIn) return
     // Locals, not the delegated property: the leave dialog and the error
-    // branch need a stable, smart-castable band/error for one composition.
-    val band = ui.circle
+    // branch need a stable, smart-castable circle/error for one composition.
+    val circle = ui.circle
     val loadError = ui.error
     val actionError = ui.actionError
 
@@ -252,9 +265,12 @@ fun CircleSection(
     var showJoin by rememberSaveable { mutableStateOf(false) }
     var confirmLeave by rememberSaveable { mutableStateOf(false) }
     var showGoalEditor by rememberSaveable { mutableStateOf(false) }
+    var showRename by rememberSaveable { mutableStateOf(false) }
+    var confirmRotate by rememberSaveable { mutableStateOf(false) }
+    var removeId by rememberSaveable { mutableStateOf<String?>(null) }
 
     when {
-        band == null && ui.loading -> InkPanel(Modifier.fillMaxWidth()) {
+        circle == null && ui.loading -> InkPanel(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 InkSpinner()
                 Text(
@@ -265,13 +281,13 @@ fun CircleSection(
                 )
             }
         }
-        band == null && loadError != null -> Column(Modifier.fillMaxWidth()) {
+        circle == null && loadError != null -> Column(Modifier.fillMaxWidth()) {
             SocialErrorBanner(loadError)
             Spacer(Modifier.height(4.dp))
             SocialRefreshLink(onClick = vm::load, label = "Try again")
         }
         else -> {
-            if (band == null) {
+            if (circle == null) {
                 CirclePitch(
                     busy = ui.actionBusy,
                     error = actionError,
@@ -280,27 +296,92 @@ fun CircleSection(
                 )
             } else {
                 CircleRoster(
-                    band = band,
+                    circle = circle,
                     refreshFailed = ui.refreshFailed,
                     busy = ui.actionBusy,
                     error = actionError,
-                    isOwner = band.ownerId == ui.myUserId,
+                    isOwner = circle.ownerId == ui.myUserId,
                     onOpenLifter = onOpenLifter,
                     onLeave = { confirmLeave = true },
                     onEditGoal = { showGoalEditor = true },
+                    onRename = { showRename = true },
+                    onRotate = { confirmRotate = true },
+                    onRemove = { removeId = it },
                 )
             }
         }
     }
 
     if (showCreate) {
-        CreateCircleDialog(
+        CircleNameDialog(
+            title = "Form a circle",
+            confirmLabel = "Create",
+            initial = "",
             busy = ui.actionBusy,
             error = actionError,
-            onCreate = { name -> vm.create(name) { showCreate = false } },
+            onConfirm = { name -> vm.create(name) { showCreate = false } },
             onDismiss = {
                 vm.dismissActionError()
                 showCreate = false
+            },
+        )
+    }
+    if (showRename && circle != null) {
+        CircleNameDialog(
+            title = "Rename the circle",
+            confirmLabel = "Save",
+            initial = circle.name,
+            busy = ui.actionBusy,
+            error = actionError,
+            onConfirm = { name -> vm.rename(name) { showRename = false } },
+            onDismiss = {
+                vm.dismissActionError()
+                showRename = false
+            },
+        )
+    }
+    if (confirmRotate) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = { confirmRotate = false },
+            title = { Text("New circle code?") },
+            text = {
+                Text(
+                    "The current code stops working at once. Members stay; anyone holding " +
+                        "the old code can no longer join.",
+                )
+            },
+            confirmButton = {
+                IronvellumButton(label = "New code", enabled = !ui.actionBusy, onClick = {
+                    vm.newCode { confirmRotate = false }
+                })
+            },
+            dismissButton = {
+                IronvellumButton(label = "Keep", onClick = { confirmRotate = false }, quiet = true)
+            },
+        )
+    }
+    val removing = circle?.members?.firstOrNull { it.userId == removeId }
+    if (removing != null) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = { removeId = null },
+            title = { Text("Remove ${removing.displayName}?") },
+            text = {
+                Text(
+                    "They are told, and their days this week still count. They can rejoin " +
+                        "with the code unless you change it first.",
+                )
+            },
+            confirmButton = {
+                IronvellumButton(label = "Remove", enabled = !ui.actionBusy, onClick = {
+                    vm.remove(removing.userId) { removeId = null }
+                })
+            },
+            dismissButton = {
+                IronvellumButton(label = "Keep", onClick = { removeId = null }, quiet = true)
             },
         )
     }
@@ -320,10 +401,10 @@ fun CircleSection(
             shape = MaterialTheme.shapes.medium,
             containerColor = Color(0xFF0D1110),
             onDismissRequest = { confirmLeave = false },
-            title = { Text("Leave ${band?.name ?: "the circle"}?") },
+            title = { Text("Leave ${circle?.name ?: "the circle"}?") },
             text = {
                 Text(
-                    if ((band?.members?.size ?: 0) > 1) {
+                    if ((circle?.members?.size ?: 0) > 1) {
                         "You leave the circle and its shared week. If you are the Keeper, the longest-standing remaining member takes over."
                     } else {
                         "You are the last member — leaving deletes the circle and its code."
@@ -341,11 +422,11 @@ fun CircleSection(
             },
         )
     }
-    if (showGoalEditor && band != null) {
+    if (showGoalEditor && circle != null) {
         GoalEditorDialog(
             busy = ui.actionBusy,
             error = actionError,
-            perMember = band.pendingPerMember ?: band.perMember,
+            perMember = circle.pendingPerMember ?: circle.perMember,
             // Closes only once the server accepted it: a refusal stays on
             // the dialog, in its inline error.
             onSave = { perMember -> vm.setGoal(perMember) { showGoalEditor = false } },
@@ -360,7 +441,7 @@ fun CircleSection(
             items = listOf(
                 Achievement(
                     banner = "CIRCLE'S GOAL MET",
-                    name = paid.circleName ?: band?.name ?: "The circle",
+                    name = paid.circleName ?: circle?.name ?: "The circle",
                     tagline = "The circle met its weekly goal and you carried your share.",
                     xp = paid.xp,
                 ),
@@ -403,7 +484,7 @@ private fun CirclePitch(
 
 @Composable
 private fun CircleRoster(
-    band: Circle,
+    circle: Circle,
     refreshFailed: Boolean,
     busy: Boolean,
     error: String?,
@@ -411,6 +492,9 @@ private fun CircleRoster(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onLeave: () -> Unit,
     onEditGoal: () -> Unit,
+    onRename: () -> Unit,
+    onRotate: () -> Unit,
+    onRemove: (userId: String) -> Unit,
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
@@ -418,17 +502,17 @@ private fun CircleRoster(
 
     // The server's canonical total: summing what the viewer was handed could
     // differ from the next member's sum and split GOAL MET between phones.
-    val total = band.total
+    val total = circle.total
     // Goal 0: fewer than two members were on the roster when the week opened,
     // so there is nothing to meet yet (a warm-up week).
-    val goal = band.goal
+    val goal = circle.goal
     val hasGoal = goal > 0
     val met = hasGoal && total >= goal
-    val monday = remember { weekMondayLabel() }
+    val resets = remember { circleResetLabel(Instant.now(), ZoneId.systemDefault(), Locale.getDefault()) }
 
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
         Text(
-            band.name,
+            circle.name,
             style = MaterialTheme.typography.titleMedium,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
@@ -446,7 +530,7 @@ private fun CircleRoster(
             )
         }
         Spacer(Modifier.height(6.dp))
-        // The weekly challenge: the band's progress toward the owner's goal.
+        // The weekly challenge: the circle's progress toward the owner's goal.
         // At goal the rail reads full and the mark turns gold — the moment the
         // payout overlay fires for contributors.
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -454,7 +538,7 @@ private fun CircleRoster(
                 fraction = if (hasGoal) (total.toFloat() / goal).coerceIn(0f, 1f) else 0f,
                 modifier = Modifier.weight(1f),
                 height = 8.dp,
-                seed = band.id.hashCode(),
+                seed = circle.id.hashCode(),
             )
             Text(
                 if (met) "GOAL MET" else if (hasGoal) "$total / $goal this week" else "WARM-UP WEEK",
@@ -467,13 +551,13 @@ private fun CircleRoster(
             if (isOwner) {
                 // 44dp minimum touch target via TapPad; the label is announced
                 // with the current goal so a screen reader hears what it edits.
-                TapPad("EDIT", "Change the weekly goal, currently ${band.perMember} days each") { onEditGoal() }
+                TapPad("EDIT", "Change the weekly goal, currently ${circle.perMember} days each") { onEditGoal() }
             }
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
-                "CIRCLE CODE ${band.code}",
+                "CIRCLE CODE ${circle.code}",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
@@ -481,28 +565,38 @@ private fun CircleRoster(
             )
             RowAction("COPY", IronvellumColors.SystemGreen) {
                 scope.launch {
-                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Ironvellum circle code", band.code)))
+                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Ironvellum circle code", circle.code)))
                 }
-                Toast.makeText(context, "Circle code copied", Toast.LENGTH_SHORT).show()
+                // Android 13+ shows its own confirmation; a second toast would double it.
+                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+                    Toast.makeText(context, "Circle code copied", Toast.LENGTH_SHORT).show()
+                }
             }
             RowAction("SHARE", IronvellumColors.SystemGreen) {
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(
                         Intent.EXTRA_TEXT,
-                        "Join my Ironvellum circle ${band.name} — code ${band.code}",
+                        "Join my Ironvellum circle ${circle.name} — code ${circle.code}",
                     )
                 }
                 context.startActivity(Intent.createChooser(intent, "Share circle"))
             }
         }
+        if (isOwner) {
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                RowAction("RENAME", IronvellumColors.SystemGreen, onRename)
+                RowAction("NEW CODE", IronvellumColors.SystemGreen, onRotate)
+            }
+        }
         Spacer(Modifier.height(8.dp))
         Text(
             buildString {
-                append("Week of $monday · $total ${plural(total, "day", "days")} trained")
-                if (hasGoal) append(" · ${band.perMember} each")
-                band.pendingPerMember?.let { append(" · $it from next week") }
-                append(" · weeks met: ${band.weeksMet}")
+                append("$total ${plural(total, "day", "days")} trained")
+                if (hasGoal) append(" · ${circle.perMember} each")
+                circle.pendingPerMember?.let { append(" · $it from next week") }
+                append(" · weeks met: ${circle.weeksMet}")
+                append(" · resets $resets")
             },
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
@@ -511,12 +605,17 @@ private fun CircleRoster(
         )
         Spacer(Modifier.height(8.dp))
         // Members render oldest first (the server's order), the owner wears a mark.
-        band.members.forEach { member ->
+        circle.members.forEach { member ->
             CircleMemberRow(
                 member = member,
-                isOwner = member.userId == band.ownerId,
-                perMember = band.perMember,
+                isOwner = member.userId == circle.ownerId,
+                perMember = circle.perMember,
                 onOpenLifter = onOpenLifter,
+                onRemove = if (isOwner && member.userId != circle.ownerId) {
+                    { onRemove(member.userId) }
+                } else {
+                    null
+                },
             )
         }
         Spacer(Modifier.height(12.dp))
@@ -531,6 +630,7 @@ private fun CircleMemberRow(
     isOwner: Boolean,
     perMember: Int,
     onOpenLifter: (userId: String, displayName: String) -> Unit,
+    onRemove: (() -> Unit)?,
 ) {
     Row(
         Modifier
@@ -591,18 +691,23 @@ private fun CircleMemberRow(
                     letterSpacing = IronvellumTracking.InlineLabel,
                 )
             }
+            onRemove?.let { RowAction("REMOVE", IronvellumColors.DangerRed, it) }
         }
     }
 }
 
+/** Forms or renames a circle: one name field, mirroring the server's 1-24 check. */
 @Composable
-private fun CreateCircleDialog(
+private fun CircleNameDialog(
+    title: String,
+    confirmLabel: String,
+    initial: String,
     busy: Boolean,
     error: String?,
-    onCreate: (name: String) -> Unit,
+    onConfirm: (name: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var name by rememberSaveable { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf(initial) }
     // Mirror the server check exactly: 1..24 characters, no length games.
     val cleaned = name.trim()
     val valid = cleaned.length in 1..24
@@ -611,7 +716,7 @@ private fun CreateCircleDialog(
         shape = MaterialTheme.shapes.medium,
         containerColor = Color(0xFF0D1110),
         onDismissRequest = onDismiss,
-        title = { Text("Form a circle") },
+        title = { Text(title) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -634,8 +739,8 @@ private fun CreateCircleDialog(
         },
         confirmButton = {
             IronvellumButton(
-                label = "Create",
-                onClick = { onCreate(cleaned) },
+                label = confirmLabel,
+                onClick = { onConfirm(cleaned) },
                 enabled = valid && !busy,
             )
         },
@@ -692,6 +797,11 @@ private fun JoinCircleDialog(
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Text(
+                    "Your days count toward the circle's goal from next Monday.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
                 InlineActionError(error)
             }
         },
@@ -711,7 +821,7 @@ private fun JoinCircleDialog(
 /**
  * The Keeper's weekly-goal editor: a 1–7 stepper, no free-text field, so the
  * value can never leave the server's accepted range. A refused save comes
- * back through [error] and renders inline, like the other band dialogs.
+ * back through [error] and renders inline, like the other circle dialogs.
  */
 @Composable
 private fun GoalEditorDialog(
@@ -739,7 +849,7 @@ private fun GoalEditorDialog(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    TapPad("−", "Lower the weekly goal, currently $value") {
+                    TapPad("−", "Lower the weekly goal, currently $value", minSize = 48.dp) {
                         value = (value - 1).coerceIn(GOAL_RANGE.first, GOAL_RANGE.last)
                     }
                     Text(
@@ -748,10 +858,16 @@ private fun GoalEditorDialog(
                         fontFamily = ChakraPetch,
                         fontWeight = FontWeight.Bold,
                         color = IronvellumColors.Ink,
-                        modifier = Modifier.widthIn(min = 48.dp),
+                        modifier = Modifier
+                            .widthIn(min = 48.dp)
+                            // Announced as it changes, so a screen reader hears the new goal.
+                            .semantics {
+                                liveRegion = LiveRegionMode.Polite
+                                contentDescription = "$value ${plural(value, "day", "days")} per week"
+                            },
                         textAlign = TextAlign.Center,
                     )
-                    TapPad("+", "Raise the weekly goal, currently $value") {
+                    TapPad("+", "Raise the weekly goal, currently $value", minSize = 48.dp) {
                         value = (value + 1).coerceIn(GOAL_RANGE.first, GOAL_RANGE.last)
                     }
                 }
@@ -774,10 +890,16 @@ private fun GoalEditorDialog(
 /** The server's accepted goal range (CloudSync.setCircleGoal mirrors it). */
 private val GOAL_RANGE = Circle.PER_MEMBER_RANGE
 
-/** The UTC Monday the band's week started on, in the header's short form. */
-internal fun weekMondayLabel(): String {
-    val monday = LocalDate.now(ZoneOffset.UTC).with(DayOfWeek.MONDAY)
-    return monday.format(java.time.format.DateTimeFormatter.ofPattern("MMM d"))
+/**
+ * When the circle's week closes, in the lifter's own clock. The server's week
+ * ends at the next UTC Monday 00:00, which is a different weekday and hour
+ * almost everywhere else on earth.
+ */
+internal fun circleResetLabel(now: Instant, zone: ZoneId, locale: Locale): String {
+    val nextMonday = now.atZone(ZoneOffset.UTC).toLocalDate().with(TemporalAdjusters.next(DayOfWeek.MONDAY))
+    return nextMonday.atStartOfDay(ZoneOffset.UTC)
+        .withZoneSameInstant(zone)
+        .format(DateTimeFormatter.ofPattern("EEE d MMM, HH:mm", locale))
 }
 
 /** The inline refusal line under the create/join/leave controls. */

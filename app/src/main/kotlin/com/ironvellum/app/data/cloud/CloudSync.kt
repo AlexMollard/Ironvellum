@@ -840,6 +840,32 @@ class CloudSync(
         }
     }
 
+    /** The Keeper renames the circle; the server refuses anyone else. */
+    suspend fun renameCircle(name: String): Result<Unit> {
+        val trimmed = name.trim()
+        if (trimmed.length !in 1..24) return failure(IllegalArgumentException("A circle name is 1-24 characters"))
+        return circleWrite { it.postgrest.rpc(RPC_SET_CIRCLE_NAME, rpcArgs(SetCircleNameArgs(name = trimmed))) }
+            .map { }
+    }
+
+    /** The Keeper retires the invite code for a fresh one; answers the new code. */
+    suspend fun rotateCircleCode(): Result<String> =
+        circleWrite { JoinStatus.parse(it.postgrest.rpc(RPC_ROTATE_CIRCLE_CODE).data) }
+
+    /** The Keeper removes a member (never themselves); the server refuses anyone else. */
+    suspend fun removeCircleMember(userId: String): Result<Unit> =
+        circleWrite { it.postgrest.rpc(RPC_KICK_CIRCLE_MEMBER, rpcArgs(KickCircleMemberArgs(userId = userId))) }
+            .map { }
+
+    /** One Keeper write: signed in, configured, the circle read dropped on success, errors in the app's words. */
+    private suspend fun <T> circleWrite(call: suspend (io.github.jan.supabase.SupabaseClient) -> T): Result<T> {
+        requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching { call(client) }
+            .onSuccess { cache.invalidate(CloudReadCache.KEY_CIRCLE) }
+            .recoverCatching { error -> throw IllegalStateException(Cloud.explain(error)) }
+    }
+
     /**
      * The weekly bonus the lifter is owed, from the server's SETTLED record:
      * the weeks they were on the roster of a circle that met its goal. Reading

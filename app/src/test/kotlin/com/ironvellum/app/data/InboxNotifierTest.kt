@@ -1,5 +1,6 @@
 package com.ironvellum.app.data
 
+import com.ironvellum.app.data.cloud.CircleChange
 import com.ironvellum.app.data.cloud.InboxItem
 import com.ironvellum.app.data.cloud.InboxRowDto
 import com.ironvellum.app.data.cloud.Reaction
@@ -44,5 +45,23 @@ class InboxNotifierTest {
             kind = "band_goal", occurredAt = "2026-10-01T18:00:00Z", actorId = "rey", actorName = "Rey", body = "North Gate",
         ).toInboxItem()
         assertEquals(InboxItem.CircleGoalMet(goal!!.occurredAtMs, "rey", "Rey", "North Gate"), goal)
+        // The server's wire kinds keep their old spelling; a later circle_* spelling parses too.
+        val renamed = InboxRowDto(
+            kind = "circle_goal", occurredAt = "2026-10-01T18:00:00Z", actorId = "rey", actorName = "Rey", body = "North Gate",
+        ).toInboxItem()
+        assertEquals(goal, renamed)
+    }
+
+    @Test
+    fun `roster missives parse into circle notices`() {
+        fun notice(kind: String) = InboxRowDto(
+            kind = kind, occurredAt = "2026-10-01T18:00:00Z", actorId = "rey", actorName = "Rey", body = "North Gate",
+        ).toInboxItem()
+        val at = notice("circle_left")!!.occurredAtMs
+        assertEquals(InboxItem.CircleNotice(at, "rey", "Rey", "North Gate", CircleChange.LEFT), notice("circle_left"))
+        assertEquals(InboxItem.CircleNotice(at, "rey", "Rey", "North Gate", CircleChange.KEEPER), notice("circle_keeper"))
+        assertEquals(InboxItem.CircleNotice(at, "rey", "Rey", "North Gate", CircleChange.REMOVED), notice("circle_removed"))
+        // A kind a later server adds is dropped, never thrown.
+        assertEquals(null, notice("circle_something_new"))
     }
 }
