@@ -73,6 +73,9 @@ import com.ironvellum.app.ui.components.InkPickerSheet
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.domain.ExerciseSearch
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.foundation.layout.wrapContentHeight
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -99,6 +102,10 @@ data class TitlesUi(
     /** Best logged training set per normalised movement name - evidence the lifter never had to re-log. */
     val training: Map<String, SkillTrainingEvidence> = emptyMap(),
     val sex: Sex = Sex.MALE,
+    /** Best logged effort per technique name, practice or training, for the tree's progress cue. */
+    val bestEffort: Map<String, SkillGuidance.Effort> = emptyMap(),
+    /** Every rite as id to name, for "Train it". */
+    val rites: List<Pair<Long, String>> = emptyList(),
 )
 
 class TitlesViewModel(private val repo: Repository) : ViewModel() {
@@ -170,8 +177,30 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
             ),
             training = training,
             sex = bodyProfile.second,
+            bestEffort = bestEfforts(practices, training),
+            rites = presets.map { it.id to it.name },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TitlesUi())
+
+    /** Why the last "Train it" failed, or which rite it landed in; null when nothing to show. */
+    private val _trainResult = MutableStateFlow<String?>(null)
+    val trainResult: StateFlow<String?> = _trainResult.asStateFlow()
+
+    /**
+     * Adds [skillName] to rite [presetId], or to a new rite named after it
+     * when null: three sets at the standard's own figure (seconds for a
+     * hold, as the seeded rites store them).
+     */
+    fun addToRite(skillName: String, presetId: Long?) {
+        val def = Skills.forName(skillName) ?: return
+        viewModelScope.launchGuarded("add to rite") {
+            val rite = repo.addExerciseToRite(skillName, presetId, targetSets = 3, targetReps = def.target.coerceAtLeast(1))
+            _trainResult.value = "$skillName is in $rite."
+        }
+    }
+    fun dismissTrainResult() {
+        _trainResult.value = null
+    }
 
     fun equip(titleId: String) {
         viewModelScope.launchGuarded("wear title") { repo.equipTitle(titleId) }
@@ -211,6 +240,20 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }
 }
 
+/** Best practice or training effort per technique, by the reps or seconds it reached. */
+internal fun bestEfforts(
+    practices: List<SkillPractice>,
+    training: Map<String, SkillTrainingEvidence>,
+): Map<String, SkillGuidance.Effort> {
+    val practiceBest = practices.filterNot { it.claimed }
+        .groupBy { it.skillName }
+        .mapValues { (_, list) -> list.maxBy { it.value }.let { SkillGuidance.Effort(it.value, it.weightKg) } }
+    return Skills.ALL.mapNotNull { def ->
+        val trained = training[Titles.normaliseName(def.name)]?.let { SkillGuidance.Effort(it.value, it.weightKg) }
+        listOfNotNull(practiceBest[def.name], trained).maxByOrNull { it.value }?.let { def.name to it }
+    }.toMap()
+}
+
 /**
  * The lifter-facing text for a refused unclaim: the repository's own sentence
  * ("<skill> paid N XP but only M XP is left - it stays claimed"), with its
@@ -228,27 +271,71 @@ fun TitlesScreen(
     val claimResult by viewModel.claim.collectAsStateWithLifecycle()
     val mastered = ui.claimedSkills
     var tab by remember { mutableStateOf(TitlesTab.DEEDS) }
-    var treeLine by remember { mutableStateOf(Skills.LINES.first()) }
+    // Null until chosen: the tree opens on the path of the most recent attempt
+    // or claim once the log arrives, and a pick by hand always wins after that.
+    var pickedLine by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(ui.log.isNotEmpty()) {
+        if (pickedLine == null) pickedLine = SkillGuidance.initialLine(ui.log)
+    }
+    val treeLine = pickedLine ?: Skills.LINES.first()
     var openSkill by remember { mutableStateOf<String?>(null) }
+    var trainSkill by remember { mutableStateOf<String?>(null) }
 
     openSkill?.let { name ->
         Skills.forName(name)?.let { def ->
+            val entries = remember(ui.log, name) { ui.log.filter { it.skillName == name } }
             SkillDetailDialog(
                 skill = def,
                 mastered = name in mastered,
                 unlocked = Skills.unlocked(def, mastered),
-                entries = ui.log.filter { it.skillName == name },
-                training = ui.training[name.lowercase().trim()],
+                entries = entries,
+                training = ui.training[Titles.normaliseName(name)],
                 sexBar = if (ui.sex == Sex.FEMALE) Skills.femaleStandard(name) else null,
+                masteredSkills = mastered,
                 onLogPractice = { value, load ->
                     viewModel.practice(name, value, load)
                     openSkill = null
                 },
-                onClaim = { viewModel.claim(name) },
+                // Close on claim: the overlay plays next, and coming back from
+                // it to this dialog, now reading MASTERED, was a stale stop.
+                onClaim = {
+                    viewModel.claim(name)
+                    openSkill = null
+                },
                 onUnclaim = { viewModel.unclaim(name) },
                 onDismiss = { openSkill = null },
+                onOpenSkill = { openSkill = it },
+                onTrain = {
+                    trainSkill = name
+                    openSkill = null
+                },
             )
         }
+    }
+
+    trainSkill?.let { name ->
+        RiteChoiceDialog(
+            skillName = name,
+            rites = ui.rites,
+            onPick = { presetId ->
+                viewModel.addToRite(name, presetId)
+                trainSkill = null
+            },
+            onDismiss = { trainSkill = null },
+        )
+    }
+    val trainResult by viewModel.trainResult.collectAsStateWithLifecycle()
+    trainResult?.let { message ->
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = viewModel::dismissTrainResult,
+            title = { Text("Added") },
+            text = { Text(message) },
+            confirmButton = {
+                IronvellumButton(label = "OK", onClick = viewModel::dismissTrainResult, quiet = true)
+            },
+        )
     }
 
     // Unclaim refused (the XP it paid is already spent): say so rather than
@@ -312,7 +399,7 @@ fun TitlesScreen(
                 claimed = ui.claimedSkills,
                 practiceCounts = ui.practiceCounts,
                 onOpenLine = { line ->
-                    treeLine = line
+                    pickedLine = line
                     tab = TitlesTab.TREE
                 },
                 onSelect = { openSkill = it },
@@ -344,7 +431,7 @@ fun TitlesScreen(
                 line = treeLine,
                 selected = treeLine,
                 mastered = mastered,
-                onPick = { treeLine = it },
+                onPick = { pickedLine = it },
             )
             Spacer(Modifier.height(10.dp))
             SkillTreeGraph(
@@ -352,6 +439,7 @@ fun TitlesScreen(
                 mastered = mastered,
                 onSelect = { openSkill = it },
                 modifier = Modifier.fillMaxWidth(),
+                best = ui.bestEffort,
             )
             Spacer(Modifier.height(28.dp))
             return@Column
@@ -414,6 +502,15 @@ fun TitlesScreen(
                 }
             },
             onDone = { viewModel.dismissClaim() },
+            // Only the mastery page has notes: each names a technique it opened.
+            onNote = { item, index ->
+                if (item.banner == "TECHNIQUE MASTERED") {
+                    result.unlockedNext.getOrNull(index)?.let { opened ->
+                        viewModel.dismissClaim()
+                        openSkill = opened.name
+                    }
+                }
+            },
         )
     }
 
@@ -437,9 +534,10 @@ private fun LinePickerBar(line: String, selected: String, mastered: Set<String>,
             .clip(MaterialTheme.shapes.small)
             .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
             .inkBorder(IronvellumColors.SovereignGold, MaterialTheme.shapes.small, 1.dp)
-            .clickable(onClickLabel = "Choose a path") { open = true }
+            .clickable(role = Role.Button, onClickLabel = "Choose a path") { open = true }
             .padding(horizontal = 14.dp),
     ) {
+        val (done, total) = remember(line, mastered) { SkillGuidance.lineProgress(line, mastered) }
         Text(
             "PATH",
             style = MaterialTheme.typography.labelSmall,
@@ -456,6 +554,15 @@ private fun LinePickerBar(line: String, selected: String, mastered: Set<String>,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
+        )
+        Text(
+            "$done/$total",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.Ink,
+            modifier = Modifier
+                .padding(horizontal = 8.dp)
+                .semantics { contentDescription = "$done of $total mastered" },
         )
         Icon(
             Icons.Filled.KeyboardArrowDown,
@@ -514,6 +621,66 @@ private fun LinePickerBar(line: String, selected: String, mastered: Set<String>,
             }
         }
     }
+}
+
+/**
+ * Where "Train it" puts a technique: one of the rites, or a new rite named
+ * after it. Appends to the chosen rite rather than opening its editor, which
+ * cannot be handed an exercise to start with.
+ */
+@Composable
+private fun RiteChoiceDialog(
+    skillName: String,
+    rites: List<Pair<Long, String>>,
+    onPick: (presetId: Long?) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        shape = MaterialTheme.shapes.medium,
+        containerColor = Color(0xFF0D1110),
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                "Train $skillName",
+                style = MaterialTheme.typography.titleMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.Ink,
+            )
+        },
+        text = {
+            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+                Text(
+                    "Add it to the end of a rite, three sets at the standard.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+                Spacer(Modifier.height(8.dp))
+                rites.forEach { (id, name) ->
+                    RiteChoiceRow(name) { onPick(id) }
+                }
+                RiteChoiceRow("New rite · $skillName", accent = IronvellumColors.SystemGreen) { onPick(null) }
+            }
+        },
+        confirmButton = {
+            IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true)
+        },
+    )
+}
+
+@Composable
+private fun RiteChoiceRow(label: String, accent: Color = IronvellumColors.Ink, onClick: () -> Unit) {
+    Text(
+        label,
+        style = MaterialTheme.typography.bodyMedium,
+        color = accent,
+        maxLines = 2,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .clickable(role = Role.Button) { onClick() }
+            .wrapContentHeight(),
+    )
 }
 
 // No line art on the tree's pills. Six of the ten lines had a mark and four did

@@ -13,6 +13,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
@@ -28,6 +29,7 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.program.ExerciseMuscles
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.ui.titles.prerequisites
 
 /**
  * Facts about one exercise, all read from data the app already holds: the
@@ -46,11 +48,7 @@ internal fun ExerciseInfoDialog(
     confirmLabel: String = "ADD",
     modifiers: String = "",
 ) {
-    val shares = MuscleMap.profile(exercise.name, modifiers)?.muscles.orEmpty()
-    val gear = GearRequirements.needs(exercise.name)
-        .joinToString(" or ") { set -> set.joinToString(" + ") { it.label.lowercase() } }
     val skill = Skills.forName(exercise.name)
-    val guide = ExerciseGuides.forName(exercise.name)
     val boards = LiftBoards.boardsFor(exercise.name)
 
     AlertDialog(
@@ -80,38 +78,15 @@ internal fun ExerciseInfoDialog(
         },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState())) {
-                if (shares.isNotEmpty()) {
-                    InfoHeading("MUSCLES")
-                    // The coverage screen's figure and MAIN / ASSIST lines, so
-                    // an exercise reads the same wherever the lifter asks.
-                    ExerciseMuscles(shares, Modifier.fillMaxWidth(), figureHeight = 180.dp)
-                } else {
-                    InfoHeading("MUSCLES")
-                    InfoBody("The Ledger holds no muscle data for this exercise yet.", IronvellumColors.InkMuted)
-                }
-                if (guide != null) {
-                    InfoHeading("HOW TO")
-                    InfoBody(guide.setup, IronvellumColors.InkMuted)
-                    guide.steps.forEachIndexed { i, step -> InfoBody("${i + 1}. $step") }
-                    if (guide.cues.isNotEmpty()) {
-                        InfoHeading("CUES")
-                        guide.cues.forEach { InfoBody("• $it") }
-                    }
-                    if (guide.commonMistakes.isNotEmpty()) {
-                        InfoHeading("COMMON MISTAKES")
-                        guide.commonMistakes.forEach { InfoBody("• $it", IronvellumColors.InkMuted) }
-                    }
-                }
-                if (gear.isNotEmpty()) {
-                    InfoHeading("ARMOURY")
-                    InfoBody(gear.replaceFirstChar { it.uppercase() })
-                }
+                ExerciseFacts(exercise.name, modifiers, showMissingMuscles = true)
                 if (skill != null) {
                     InfoHeading("TECHNIQUE")
                     InfoBody("${Skills.tierLabel(skill.tier)} · ${skill.line}", IronvellumColors.SystemGreen)
                     InfoBody("Claim: ${skill.standard}")
                     if (skill.why.isNotBlank()) InfoBody(skill.why, IronvellumColors.InkMuted)
-                    skill.requires?.let { InfoBody("Needs $it first", IronvellumColors.InkMuted) }
+                    skill.prerequisites().takeIf { it.isNotEmpty() }?.let {
+                        InfoBody("Needs ${it.joinToString(" and ")} first", IronvellumColors.InkMuted)
+                    }
                 }
                 if (boards.isNotEmpty()) {
                     InfoHeading("THE RECKONING")
@@ -140,6 +115,50 @@ internal fun ExerciseInfoDialog(
             IronvellumButton(label = "CLOSE", quiet = true, onClick = onDismiss, modifier = Modifier.widthIn(min = 96.dp).heightIn(min = 44.dp))
         },
     )
+}
+
+/**
+ * The how-to half of an exercise's facts: muscle figure, HOW TO, CUES, COMMON
+ * MISTAKES and ARMOURY, each left out when the app holds no data for it.
+ * Shared by this dialog and the technique detail so the two always agree.
+ * It does not scroll: both callers already sit in a scrolling column.
+ * [showMissingMuscles] says so when there is no muscle profile instead of
+ * leaving the section out.
+ */
+@Composable
+internal fun ExerciseFacts(name: String, modifiers: String = "", showMissingMuscles: Boolean = false) {
+    val shares = remember(name, modifiers) { MuscleMap.profile(name, modifiers)?.muscles.orEmpty() }
+    val gear = remember(name) {
+        GearRequirements.needs(name)
+            .joinToString(" or ") { set -> set.joinToString(" + ") { it.label.lowercase() } }
+    }
+    val guide = remember(name) { ExerciseGuides.forName(name) }
+    if (shares.isNotEmpty()) {
+        InfoHeading("MUSCLES")
+        // The coverage screen's figure and MAIN / ASSIST lines, so
+        // an exercise reads the same wherever the lifter asks.
+        ExerciseMuscles(shares, Modifier.fillMaxWidth(), figureHeight = 180.dp)
+    } else if (showMissingMuscles) {
+        InfoHeading("MUSCLES")
+        InfoBody("The Ledger holds no muscle data for this exercise yet.", IronvellumColors.InkMuted)
+    }
+    if (guide != null) {
+        InfoHeading("HOW TO")
+        InfoBody(guide.setup, IronvellumColors.InkMuted)
+        guide.steps.forEachIndexed { i, step -> InfoBody("${i + 1}. $step") }
+        if (guide.cues.isNotEmpty()) {
+            InfoHeading("CUES")
+            guide.cues.forEach { InfoBody("• $it") }
+        }
+        if (guide.commonMistakes.isNotEmpty()) {
+            InfoHeading("COMMON MISTAKES")
+            guide.commonMistakes.forEach { InfoBody("• $it", IronvellumColors.InkMuted) }
+        }
+    }
+    if (gear.isNotEmpty()) {
+        InfoHeading("ARMOURY")
+        InfoBody(gear.replaceFirstChar { it.uppercase() })
+    }
 }
 
 @Composable
