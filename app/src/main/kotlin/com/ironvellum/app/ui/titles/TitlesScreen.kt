@@ -1,8 +1,7 @@
 package com.ironvellum.app.ui.titles
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -11,31 +10,23 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -69,16 +60,10 @@ import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.components.IronvellumTabBar
 import com.ironvellum.app.ui.components.IronvellumTabItem
-import com.ironvellum.app.ui.components.InkPickerSheet
 import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.plural
-import com.ironvellum.app.domain.ExerciseSearch
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.wrapContentHeight
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -275,13 +260,12 @@ fun TitlesScreen(
     val claimResult by viewModel.claim.collectAsStateWithLifecycle()
     val mastered = ui.claimedSkills
     var tab by remember { mutableStateOf(TitlesTab.DEEDS) }
-    // Null until chosen: the tree opens on the path of the most recent attempt
-    // or claim once the log arrives, and a pick by hand always wins after that.
-    var pickedLine by remember { mutableStateOf<String?>(null) }
-    LaunchedEffect(ui.log.isNotEmpty()) {
-        if (pickedLine == null) pickedLine = SkillGuidance.initialLine(ui.log)
-    }
-    val treeLine = pickedLine ?: Skills.LINES.first()
+    // The path opened from the grid, null while the grid shows. Saveable so it
+    // survives a tab switch and a rotation: PATHS reopens where it was left.
+    var openLine by rememberSaveable { mutableStateOf<String?>(null) }
+    // The grid marks the path of the most recent attempt or claim; it never opens it.
+    val recentLine = remember(ui.log) { SkillGuidance.initialLine(ui.log) }
+    BackHandler(enabled = tab == TitlesTab.TREE && openLine != null) { openLine = null }
     var openSkill by remember { mutableStateOf<String?>(null) }
     var trainSkill by remember { mutableStateOf<String?>(null) }
     var pendingOpen by remember { mutableStateOf<String?>(null) }
@@ -367,10 +351,13 @@ fun TitlesScreen(
     // height — which crashed the Codex outright. So DEEDS gets a non-scrolling
     // shell while the other tabs keep the scrolling one.
     val deedsTab = tab == TitlesTab.DEEDS
+    // A fresh scroll for each path, so the graph opens at its own top (and its
+    // next node) rather than wherever the grid was scrolled to.
+    val pageScroll = key(openLine) { rememberScrollState() }
     Column(
         Modifier
             .fillMaxSize()
-            .then(if (deedsTab) Modifier else Modifier.verticalScroll(rememberScrollState()))
+            .then(if (deedsTab) Modifier else Modifier.verticalScroll(pageScroll))
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
@@ -389,8 +376,8 @@ fun TitlesScreen(
             color = IronvellumColors.SystemGreen,
         )
         Spacer(Modifier.height(12.dp))
-        // One persistent selector row: the three tabs. The technique line is
-        // chosen from the bar below, which opens the shared picker sheet.
+        // One persistent selector row: the three tabs. Paths are chosen from
+        // the grid below.
         IronvellumTabBar(
             items = listOf(IronvellumTabItem("DEEDS"), IronvellumTabItem("PATHS"), IronvellumTabItem("JOURNAL")),
             selectedIndex = tab.ordinal,
@@ -403,7 +390,7 @@ fun TitlesScreen(
                 claimed = ui.claimedSkills,
                 practiceCounts = ui.practiceCounts,
                 onOpenLine = { line ->
-                    pickedLine = line
+                    openLine = line
                     tab = TitlesTab.TREE
                 },
                 onSelect = { openSkill = it },
@@ -414,39 +401,42 @@ fun TitlesScreen(
 
 
         if (tab == TitlesTab.TREE) {
-            // No "Skill Tree" heading: the selected pill above already says it.
-            // The tally is the line worth keeping here.
+            val line = openLine
             Spacer(Modifier.height(12.dp))
-            Text(
-                "${mastered.count { it in Skills.BY_NAME }} of ${Skills.ALL.size} techniques mastered",
-                style = MaterialTheme.typography.labelMedium,
-                color = IronvellumColors.InkMuted,
-            )
-            Spacer(Modifier.height(4.dp))
-            // The roman tier numerals on every node read as noise without one
-            // line of explanation.
-            Text(
-                "Tiers I — V · a higher numeral is a harder standard",
-                style = MaterialTheme.typography.labelMedium,
-                color = IronvellumColors.InkMuted,
-            )
-            Spacer(Modifier.height(10.dp))
-            LinePickerBar(
-                line = treeLine,
-                selected = treeLine,
-                mastered = mastered,
-                onPick = { pickedLine = it },
-            )
-            Spacer(Modifier.height(10.dp))
-            SkillTreeGraph(
-                line = treeLine,
-                mastered = mastered,
-                onSelect = { openSkill = it },
-                modifier = Modifier.fillMaxWidth(),
-                best = ui.bestEffort,
-                bodyweightKg = ui.bodyweightKg,
-                female = ui.sex == Sex.FEMALE,
-            )
+            if (line == null) {
+                // No "Skill Tree" heading: the selected pill above already says it.
+                // The tally is the line worth keeping here.
+                Text(
+                    "${mastered.count { it in Skills.BY_NAME }} of ${Skills.ALL.size} techniques mastered",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = IronvellumColors.InkMuted,
+                )
+                Spacer(Modifier.height(10.dp))
+                PathGrid(
+                    mastered = mastered,
+                    recentLine = recentLine,
+                    onOpen = { openLine = it },
+                )
+            } else {
+                PathHeader(line = line, mastered = mastered, onBack = { openLine = null })
+                // The roman tier numerals down the left read as noise without
+                // one line of explanation.
+                Text(
+                    "Tiers I — V · a higher numeral is a harder standard",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = IronvellumColors.InkMuted,
+                )
+                Spacer(Modifier.height(10.dp))
+                SkillTreeGraph(
+                    line = line,
+                    mastered = mastered,
+                    onSelect = { openSkill = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    best = ui.bestEffort,
+                    bodyweightKg = ui.bodyweightKg,
+                    female = ui.sex == Sex.FEMALE,
+                )
+            }
             Spacer(Modifier.height(28.dp))
             return@Column
         }
@@ -525,118 +515,6 @@ fun TitlesScreen(
 }
 
 private enum class TitlesTab { DEEDS, TREE, JOURNAL }
-
-/**
- * The line selector as one bar: tapping it opens the shared picker sheet,
- * the same pattern as the boards' lift picker. A toggle hiding a rail of
- * pills made the tree's primary navigation feel like a buried filter.
- */
-@Composable
-private fun LinePickerBar(line: String, selected: String, mastered: Set<String>, onPick: (String) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clip(MaterialTheme.shapes.small)
-            .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
-            .inkBorder(IronvellumColors.SovereignGold, MaterialTheme.shapes.small, 1.dp)
-            .clickable(role = Role.Button, onClickLabel = "Choose a path") { open = true }
-            .padding(horizontal = 14.dp),
-    ) {
-        val (done, total) = remember(line, mastered) { SkillGuidance.lineProgress(line, mastered) }
-        Text(
-            "PATH",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.width(12.dp))
-        Text(
-            line.uppercase(),
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            "$done/$total",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.Ink,
-            modifier = Modifier
-                .padding(horizontal = 8.dp)
-                .semantics { contentDescription = "$done of $total mastered" },
-        )
-        Icon(
-            Icons.Filled.KeyboardArrowDown,
-            contentDescription = null,
-            tint = IronvellumColors.SovereignGold,
-        )
-    }
-    if (!open) return
-
-    var query by remember { mutableStateOf("") }
-    // A line matches its own name and the names of its techniques, so
-    // "lever" finds the Lever line via Front Lever and friends.
-    val lines = Skills.LINES.mapNotNull { candidate ->
-        val names = listOf(candidate) + Skills.ALL.filter { it.line == candidate }.map { it.name }
-        names.mapNotNull { ExerciseSearch.rank(it, query) }.minOrNull()?.let { candidate to it }
-    }
-    val shown = if (query.isBlank()) lines.map { it.first } else lines.sortedBy { it.second }.map { it.first }
-    InkPickerSheet(
-        title = "CHOOSE A PATH",
-        onDismiss = { open = false },
-        query = query,
-        onQueryChange = { query = it },
-        searchLabel = "Search paths",
-        count = shown.size,
-    ) {
-        shown.forEachIndexed { index, candidate ->
-            val skills = Skills.ALL.filter { it.line == candidate }
-            val done = skills.count { it.name in mastered }
-            item(key = candidate) {
-                Column {
-                    if (index > 0) {
-                        Box(Modifier.fillMaxWidth().height(1.dp).background(IronvellumColors.Rune.copy(alpha = 0.6f)))
-                    }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 56.dp)
-                            .clip(MaterialTheme.shapes.small)
-                            .selectable(selected = candidate == selected, role = Role.RadioButton) {
-                                open = false
-                                onPick(candidate)
-                            }
-                            .padding(horizontal = 8.dp, vertical = 8.dp),
-                    ) {
-                        Text(
-                            candidate,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (candidate == selected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (candidate == selected) IronvellumColors.SovereignGold else IronvellumColors.Ink,
-                            modifier = Modifier.weight(1f),
-                        )
-                        // The same done/total the PATH bar shows, so one figure has one format.
-                        Text(
-                            "$done/${skills.size}",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.InkMuted,
-                            modifier = Modifier.semantics { contentDescription = "$done of ${skills.size} mastered" },
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
 
 /**
  * Where "Train it" puts a technique: one of the rites, or a new rite named

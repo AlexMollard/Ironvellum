@@ -396,7 +396,9 @@ class AccessibilityChecksTest {
          * never depends on a signed-in session.
          */
         val DEEPER_SURFACES = listOf(
+            // The grid of paths, then one path's node graph opened from it.
             listOf("Codex", "PATHS"),
+            listOf("Codex", "PATHS", "Pull"),
             listOf("Codex", "JOURNAL"),
             // The BMI chip opens its band dialog even with no readings, so it
             // exists on an empty install. The two panes replace the tabs and
@@ -412,10 +414,10 @@ class AccessibilityChecksTest {
             // Two levels down, and the densest screens in the app: the skill
             // sheet and the preset editor are wall-to-wall glyph steppers,
             // which is exactly where an unannounceable control hides.
-            listOf("Codex", "PATHS", "Dead Hang"),
+            listOf("Codex", "PATHS", "Pull", "Dead Hang"),
             // The load stepper only composes once load is on: reach it through
             // its own entry point rather than leaving those glyphs unmeasured.
-            listOf("Codex", "PATHS", "Dead Hang", "ADD LOAD"),
+            listOf("Codex", "PATHS", "Pull", "Dead Hang", "ADD LOAD"),
             listOf("Rites", "[ EDIT ]"),
             // Settings and the Muster roll replace the nav bar, so they go late.
             listOf("Today", "Settings"),
