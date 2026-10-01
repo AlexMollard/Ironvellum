@@ -224,11 +224,11 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
 }
 
 /**
- * BODY / LIFTS / DAILY. DAILY, not ACTIVITY: the Train screen's workout history
+ * BODY / TRAINING / DAILY. DAILY, not ACTIVITY: the Train screen's workout history
  * was called the "Activity Log", so one word named both a step count and a
  * training record. BODY, not FRAME: the tab holds the body.
  */
-private enum class StatsTab(val label: String) { BODY("BODY"), LIFTS("LIFTS"), DAILY("DAILY") }
+private enum class StatsTab(val label: String) { BODY("BODY"), TRAINING("TRAINING"), DAILY("DAILY") }
 
 /** Panes inside the Ledger. They replace the tabs and answer to Back, so they need no routes. */
 private enum class LedgerPage { MAIN, HISTORY, TAPE }
@@ -257,7 +257,7 @@ fun StatsScreen(
     val page = LedgerPage.entries[pageIndex]
     val range = LedgerRange.entries[rangeIndex]
     val bodyScroll = rememberScrollState()
-    val liftsScroll = rememberScrollState()
+    val trainingScroll = rememberScrollState()
     val dailyScroll = rememberScrollState()
     var lastDeleted by remember { mutableStateOf<StatEntry?>(null) }
 
@@ -348,17 +348,17 @@ fun StatsScreen(
                         onRange = { rangeIndex = it.ordinal },
                         onDrill = { drill = it },
                         onLogWeight = { showAdd = true },
-                        onOpenLifts = { tabIndex = StatsTab.LIFTS.ordinal },
+                        onOpenTraining = { tabIndex = StatsTab.TRAINING.ordinal },
                         onOpenTape = { pageIndex = LedgerPage.TAPE.ordinal },
                         onOpenDaily = { tabIndex = StatsTab.DAILY.ordinal },
                         onOpenHistory = { pageIndex = LedgerPage.HISTORY.ordinal },
                     )
-                    StatsTab.LIFTS -> LiftsTab(
+                    StatsTab.TRAINING -> TrainingTab(
                         ui = ui,
                         today = today,
                         month = YearMonth.from(today).minusMonths(monthsBack.toLong()),
                         onMonth = { monthsBack = (monthsBack - it).coerceAtLeast(0) },
-                        scroll = liftsScroll,
+                        scroll = trainingScroll,
                         onOpenLog = onOpenLog,
                     )
                     StatsTab.DAILY -> ActivityTab(
@@ -506,11 +506,11 @@ private fun LiftRecordRow(record: LiftRecord, fresh: Boolean) {
 }
 
 /**
- * LIFTS: the calendar leads (the owner opens this tab to see whether he
+ * TRAINING: the calendar leads (the owner opens this tab to see whether he
  * trained), then the way to the full chronicle and the per-trial strength line.
  */
 @Composable
-private fun LiftsTab(
+private fun TrainingTab(
     ui: StatsUi,
     today: LocalDate,
     month: YearMonth,

@@ -407,7 +407,7 @@ class AccessibilityChecksTest {
             listOf("Ledger", "Tape measurements"),
             // (The History link only exists once a weight is logged, and the
             // test profile has none, so the pane is not on the sweep.)
-            listOf("Ledger", "LIFTS"),
+            listOf("Ledger", "TRAINING"),
             listOf("Ledger", "DAILY"),
             listOf("Rites", "EXERCISES"),
             listOf("Rites", "FULL CHRONICLE"),
@@ -435,7 +435,7 @@ class AccessibilityChecksTest {
         /** destination to the tab labels of one row inside it. */
         val TAB_ROWS = listOf(
             "Codex" to listOf("DEEDS", "PATHS", "JOURNAL"),
-            "Ledger" to listOf("BODY", "LIFTS", "DAILY"),
+            "Ledger" to listOf("BODY", "TRAINING", "DAILY"),
         )
         const val FRAME_BUDGET_MS = 1_200L
         const val SURFACE_POLLS = 10
