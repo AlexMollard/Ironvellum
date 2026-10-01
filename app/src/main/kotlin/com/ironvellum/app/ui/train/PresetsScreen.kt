@@ -143,8 +143,12 @@ class PresetsViewModel(
         viewModelScope.launch { onStarted(repo.startFreeformSession("Open Trial")) }
     }
 
-    fun shareRoutine(onCode: (String) -> Unit) {
-        viewModelScope.launchGuarded("share cycle") { onCode(RoutineCode.encode(repo.sharedRoutine())) }
+    fun shareRoutine(onRefused: (String) -> Unit, onCode: (String) -> Unit) {
+        viewModelScope.launchGuarded("share cycle") {
+            val routine = repo.sharedRoutine()
+            val refusal = RoutineCode.shareRefusal(routine)
+            if (refusal != null) onRefused(refusal) else onCode(RoutineCode.encode(routine))
+        }
     }
 
     /** The write is one transaction, so a failure leaves the routine as it was. */
@@ -197,6 +201,7 @@ fun PresetsScreen(
     // Survives only the composition: a stale "Added 3 workouts" after leaving
     // and returning to Train would read as a fresh import.
     var importResult by remember { mutableStateOf<String?>(null) }
+    var shareRefusal by remember { mutableStateOf<String?>(null) }
 
     Box(Modifier.fillMaxSize()) {
         Column(
@@ -415,10 +420,21 @@ fun PresetsScreen(
                 val context = androidx.compose.ui.platform.LocalContext.current
                 IronvellumButton(
                     label = "Share cycle",
-                    onClick = { viewModel.shareRoutine { code -> shareRoutineCode(context, code) } },
+                    onClick = {
+                        shareRefusal = null
+                        viewModel.shareRoutine(onRefused = { shareRefusal = it }) { code -> shareRoutineCode(context, code) }
+                    },
                     modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
                     quiet = true,
                 )
+                shareRefusal?.let { line ->
+                    Text(
+                        line,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.DangerRed,
+                        modifier = Modifier.padding(bottom = 10.dp),
+                    )
+                }
             }
 
             // "New Workout" used to float over the list, and it parked itself on

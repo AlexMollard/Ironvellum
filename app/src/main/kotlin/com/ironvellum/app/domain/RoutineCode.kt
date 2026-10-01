@@ -53,6 +53,20 @@ object RoutineCode {
         val entries: List<SharedEntry>,
     )
 
+    /**
+     * Why [workouts] cannot go out as a code, or null when they can. [encode]
+     * writes any list, but [decode] refuses more than [MAX_WORKOUTS] rites or
+     * [MAX_ENTRIES] exercises in one, so the sender hears it before the
+     * receiver gets a code the app will not import.
+     */
+    fun shareRefusal(workouts: List<SharedWorkout>): String? {
+        if (workouts.size > MAX_WORKOUTS) {
+            return "A shared cycle holds at most $MAX_WORKOUTS rites and yours has ${workouts.size}. Remove some rites, then share again."
+        }
+        val long = workouts.firstOrNull { it.entries.size > MAX_ENTRIES } ?: return null
+        return "A shared rite holds at most $MAX_ENTRIES exercises and \"${long.name}\" has ${long.entries.size}. Trim it, then share again."
+    }
+
     fun encode(workouts: List<SharedWorkout>): String {
         val json = StringBuilder()
         json.append("{\"v\":").append(FORMAT).append(",\"w\":[")

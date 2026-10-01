@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -218,9 +219,11 @@ fun MuscleCoverageScreen(
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier
+                    .heightIn(min = 48.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
                     .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
                     .clickable { onBack() }
+                    .wrapContentHeight(Alignment.CenterVertically)
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }
