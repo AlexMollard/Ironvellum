@@ -45,6 +45,18 @@ class RestTimerTest {
     }
 
     @Test
+    fun `ticking the last set of an exercise still rests while another exercise has sets waiting`() {
+        fun set(id: Long, exerciseId: Long, done: Boolean) =
+            SessionSet(id = id, exerciseId = exerciseId, exerciseName = "Lift $exerciseId", setIndex = 0, reps = 8, done = done)
+        val twoExercises = listOf(set(1, exerciseId = 1, done = false), set(2, exerciseId = 2, done = false))
+        // Set 1 is the only set of its exercise, but exercise 2 is still to do.
+        assertTrue(RestTimer.startsRest(twoExercises, setId = 1, nowDone = true))
+        // Once the other exercise is finished, the closing set has nothing to rest for.
+        val onlyOneLeft = listOf(set(1, exerciseId = 1, done = false), set(2, exerciseId = 2, done = true))
+        assertFalse(RestTimer.startsRest(onlyOneLeft, setId = 1, nowDone = true))
+    }
+
+    @Test
     fun `rest follows the prescription for the movement and the focus`() {
         assertEquals(ProgramRules.restSeconds(TrainingFocus.STRENGTH, compound = true), RestTimer.restSeconds("Unprofiled Lift", TrainingFocus.STRENGTH))
         assertEquals(ProgramRules.restSeconds(TrainingFocus.MUSCLE, compound = true), RestTimer.restSeconds("Unprofiled Lift", TrainingFocus.MUSCLE))
