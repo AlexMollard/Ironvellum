@@ -167,7 +167,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
-                    cloudUi.probe?.let { result ->
+                    cloudUi.probeFor(cloudUrl, cloudKey)?.let { result ->
                         Spacer(Modifier.height(6.dp))
                         Text(
                             when (result) {
@@ -204,7 +204,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                             onClick = { confirmCloudSwitch = true },
                             // Saving an unprobed backend would strand the lifter on
                             // a project that cannot hold their data — TEST first.
-                            enabled = cloudInputValid && cloudUi.probe is ProbeResult.Ready,
+                            enabled = cloudInputValid && cloudUi.canSave(cloudUrl, cloudKey),
                             modifier = Modifier.weight(1f),
                         )
                     }
@@ -234,7 +234,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                                 // Same file route as the export: twenty stack traces
                                 // is not 0.9 MB, but there is no reason for two
                                 // sharing paths with different failure modes.
-                                shareExport(context, "Share Ironvellum crash log", "ironvellum_crash_log.txt", text)
+                                shareExport(context, "Share Ironvellum crash log", "ironvellum_crash_log.txt", text, "text/plain")
                             }
                         },
                         modifier = Modifier.weight(1f),

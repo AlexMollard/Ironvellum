@@ -16,7 +16,8 @@ fun decimalKeyboard(imeAction: ImeAction = ImeAction.Done): KeyboardOptions =
 /**
  * The soft keyboard for a whole-number field (reps, sets, seconds, codes).
  * Some keyboards still show a point on this numpad, so pair the field's
- * onValueChange with `DecimalInput.sanitizeWhole`, which drops it.
+ * onValueChange with `DecimalInput.sanitizeWhole`, which drops it. A code is
+ * not a number: use `DecimalInput.sanitizeCode`, which keeps leading zeros.
  */
 fun wholeKeyboard(imeAction: ImeAction = ImeAction.Done): KeyboardOptions =
     KeyboardOptions(keyboardType = KeyboardType.Number, imeAction = imeAction)
