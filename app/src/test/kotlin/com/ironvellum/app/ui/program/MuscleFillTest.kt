@@ -34,11 +34,15 @@ class MuscleFillTest {
     }
 
     @Test
-    fun `rite sets label rounds to halves and never to nothing`() {
+    fun `rite sets label rounds to one decimal and never to nothing`() {
         assertEquals("6 sets", riteSetsLabel(6.0))
-        assertEquals("4.5 sets", riteSetsLabel(4.4))
+        assertEquals("4.4 sets", riteSetsLabel(4.4))
+        // Three sets at the 0.75 step and one helper set.
+        assertEquals("2.8 sets", riteSetsLabel(3 * 0.75 + 0.5))
+        assertEquals("1.8 sets", riteSetsLabel(3 * 0.6))
+        assertEquals("0.8 sets", riteSetsLabel(0.75))
         assertEquals("1 set", riteSetsLabel(1.0))
-        assertEquals("0.5 sets", riteSetsLabel(0.2))
+        assertEquals("0.1 sets", riteSetsLabel(0.01))
     }
 
     @Test

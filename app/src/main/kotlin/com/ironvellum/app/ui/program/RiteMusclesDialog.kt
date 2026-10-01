@@ -113,11 +113,12 @@ internal fun riteMuscleRows(sets: Map<Muscle, Double>): List<Pair<Muscle, Double
         .sortedWith(compareByDescending<Pair<Muscle, Double>> { it.second }.thenBy { it.first.label })
 
 /**
- * "6 sets", "4.5 sets", "1 set": fractional credits (an assisting muscle gets
- * half a set per set) rounded to the nearest half, never down to nothing.
+ * "6 sets", "3.8 sets", "1 set": fractional credits (a share can be any
+ * value from 0 to 1, so 3 sets at 0.75 and 1 at 0.6 sum to 2.85) rounded to
+ * one decimal, as the generator's notes print them, never down to nothing.
  */
 internal fun riteSetsLabel(sets: Double): String {
-    val half = maxOf(1, (sets * 2).roundToInt()) / 2.0
-    val number = if (half == half.toLong().toDouble()) half.toLong().toString() else half.toString()
-    return if (half == 1.0) "$number set" else "$number sets"
+    val tenths = maxOf(1, (sets * 10).roundToInt())
+    val number = if (tenths % 10 == 0) "${tenths / 10}" else "${tenths / 10}.${tenths % 10}"
+    return if (tenths == 10) "$number set" else "$number sets"
 }
