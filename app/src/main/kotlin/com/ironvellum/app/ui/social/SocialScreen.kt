@@ -34,7 +34,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.IronvellumTabPill
+import com.ironvellum.app.ui.components.IronvellumTabBar
+import com.ironvellum.app.ui.components.IronvellumTabItem
 
 private enum class GuildTab(val label: String) {
     FEED("TIDINGS"),
@@ -140,21 +141,13 @@ fun SocialScreen(
     // pills; the tabs themselves add no outer padding or screen title.
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(18.dp))
-        // Scrollable as a safety net only: four pills plus an unread count
-        // fill a 360dp row almost exactly.
-        Row(
-            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            GuildTab.entries.forEach { entry ->
-                val label = if (entry == GuildTab.INBOX && unread > 0) {
-                    "${entry.label} ${if (unread > 99) "99+" else unread.toString()}"
-                } else {
-                    entry.label
-                }
-                IronvellumTabPill(label, entry == tab) { tab = entry }
-            }
-        }
+        IronvellumTabBar(
+            items = GuildTab.entries.map {
+                IronvellumTabItem(it.label, if (it == GuildTab.INBOX) unread else 0)
+            },
+            selectedIndex = tab.ordinal,
+            onSelect = { tab = GuildTab.entries[it] },
+        )
         Spacer(Modifier.height(14.dp))
 
         when (tab) {
