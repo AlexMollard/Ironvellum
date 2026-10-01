@@ -9,6 +9,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -66,7 +70,12 @@ data class Achievement(
  * when several unlock at once.
  */
 @Composable
-fun AchievementOverlay(items: List<Achievement>, onDone: () -> Unit) {
+fun AchievementOverlay(
+    items: List<Achievement>,
+    onDone: () -> Unit,
+    /** Makes each note a button; null keeps notes as plain text. Given the item and the note's index. */
+    onNote: ((item: Achievement, noteIndex: Int) -> Unit)? = null,
+) {
     if (items.isEmpty()) return
     var page by remember(items) { mutableIntStateOf(0) }
     val item = items[page.coerceIn(0, items.lastIndex)]
@@ -203,13 +212,22 @@ fun AchievementOverlay(items: List<Achievement>, onDone: () -> Unit) {
                         color = IronvellumColors.SovereignGold,
                     )
                 }
-                item.notes.forEach { note ->
+                item.notes.forEachIndexed { index, note ->
                     Spacer(Modifier.height(6.dp))
                     Text(
                         note,
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.SystemGreen,
                         textAlign = TextAlign.Center,
+                        textDecoration = if (onNote != null) TextDecoration.Underline else null,
+                        modifier = if (onNote != null) {
+                            Modifier
+                                .heightIn(min = 48.dp)
+                                .clickable(role = Role.Button, onClickLabel = "Open") { onNote(item, index) }
+                                .wrapContentHeight()
+                        } else {
+                            Modifier
+                        },
                     )
                 }
                 Spacer(Modifier.height(26.dp))
