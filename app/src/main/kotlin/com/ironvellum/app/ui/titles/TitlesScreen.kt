@@ -280,6 +280,7 @@ fun TitlesScreen(
     val treeLine = pickedLine ?: Skills.LINES.first()
     var openSkill by remember { mutableStateOf<String?>(null) }
     var trainSkill by remember { mutableStateOf<String?>(null) }
+    var pendingOpen by remember { mutableStateOf<String?>(null) }
 
     openSkill?.let { name ->
         Skills.forName(name)?.let { def ->
@@ -501,14 +502,16 @@ fun TitlesScreen(
                     )
                 }
             },
-            onDone = { viewModel.dismissClaim() },
+            onDone = {
+                viewModel.dismissClaim()
+                // A technique tapped on the way opens once every page is seen.
+                pendingOpen?.let { openSkill = it }
+                pendingOpen = null
+            },
             // Only the mastery page has notes: each names a technique it opened.
             onNote = { item, index ->
                 if (item.banner == "TECHNIQUE MASTERED") {
-                    result.unlockedNext.getOrNull(index)?.let { opened ->
-                        viewModel.dismissClaim()
-                        openSkill = opened.name
-                    }
+                    result.unlockedNext.getOrNull(index)?.let { pendingOpen = it.name }
                 }
             },
         )

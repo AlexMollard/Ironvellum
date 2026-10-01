@@ -113,6 +113,24 @@ data class SkillTrainingEvidence(
     val achievedAtMs: Long,
 )
 
+private val addedLoadClause = Regex("""\+\s*\d+(?:\.\d+)?\s*kg""", RegexOption.IGNORE_CASE)
+
+/**
+ * Which set-position record stands as a movement's evidence. [SetRecords.records]
+ * keeps one per set position. A count-only technique standard ("Hang 60s")
+ * wants the most reps or seconds, with score only breaking ties: the top
+ * score let a short weighted set hide a longer one that met it. A standard
+ * with a load in it ("+25 kg", "at double bodyweight"), and any movement
+ * that is no technique, keeps the top score, so a heavy set is never traded
+ * for a light warm-up with more reps.
+ */
+internal fun techniqueEvidence(records: List<SetRecords.Record>, skill: Skills.SkillDef?): SetRecords.Record {
+    val countOnly = skill != null &&
+        !skill.standard.contains("bodyweight", ignoreCase = true) &&
+        !addedLoadClause.containsMatchIn(skill.standard)
+    return if (countOnly) records.maxWith(compareBy({ it.reps }, { it.score })) else records.maxBy { it.score }
+}
+
 class Repository(
     private val db: IronvellumDatabase,
     private val health: HealthSync? = null,
@@ -1661,18 +1679,14 @@ class Repository(
         combine(observeHistory(), observeStats(), observeExercises()) { history, stats, exercises ->
             val bodyweightAt = SetRecords.bodyweightLookup(stats)
             val metricByName = exercises.associate { Titles.normaliseName(it.name) to it.metric }
+            val skillByName = Skills.ALL.associateBy { Titles.normaliseName(it.name) }
             val best = SetRecords.records(history, bodyweightAt) { set ->
                 metricByName[Titles.normaliseName(set.exerciseName)]
             }
             best.values
                 .groupBy { Titles.normaliseName(it.exerciseName) }
-                .mapValues { (_, records) ->
-                    // records() keys by set position. A technique's standard
-                    // is a count of reps or seconds, so the evidence is the
-                    // position with the most of them; the strength score only
-                    // breaks ties. Taking the top score let a short weighted
-                    // set hide a longer one that met the standard.
-                    val top = records.maxWith(compareBy({ it.reps }, { it.score }))
+                .mapValues { (name, records) ->
+                    val top = techniqueEvidence(records, skillByName[name])
                     SkillTrainingEvidence(
                         value = top.reps,
                         weightKg = top.weightKg,

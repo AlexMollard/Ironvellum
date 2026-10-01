@@ -171,7 +171,9 @@ fun SkillTreeGraph(
         SkillGuidance.frontier(treeRows.map { it.skill }, mastered).firstOrNull()?.name
     }
     val nextRequester = remember { BringIntoViewRequester() }
-    LaunchedEffect(line) {
+    // Keyed on the target too: the mastered set can arrive after the first
+    // frame, and a claim moves the frontier on.
+    LaunchedEffect(line, firstNext) {
         if (firstNext != null) nextRequester.bringIntoView()
     }
 
