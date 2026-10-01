@@ -4,6 +4,7 @@ import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.CircleBonusDto
 import com.ironvellum.app.data.cloud.CloudSync
 import com.ironvellum.app.domain.Circle
+import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
@@ -80,7 +81,7 @@ class CircleBonus(
         return runCatching {
             val owed = cloud.circleBonuses().getOrThrow().map(CircleBonusDto::toWeek)
             repository.payCircleBonus(me, owed, store)
-        }.getOrNull()
+        }.onFailure { if (it is CancellationException) throw it }.getOrNull()
     }
 
     private companion object {

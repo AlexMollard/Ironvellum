@@ -222,10 +222,11 @@ class TitleEngineTest {
         // grade rule: flips on recognised grades of equal or higher rank
         val v1 = TitleRule.HardestGrade("V1")
         assertTrue(Titles.satisfied(v1, full().copy(hardestGrade = "V1")))
-        assertTrue(Titles.satisfied(v1, full().copy(hardestGrade = "7A"))) // 7A ≈ V4, harder
+        assertTrue(Titles.satisfied(v1, full().copy(hardestGrade = "7A"))) // 7A = V6, harder
         assertFalse(Titles.satisfied(v1, full().copy(hardestGrade = "V0")))
         assertFalse(Titles.satisfied(v1, full().copy(hardestGrade = "garbage")))
-        assertTrue(Titles.satisfied(TitleRule.HardestGrade("6B"), full().copy(hardestGrade = "V1")))
+        assertTrue(Titles.satisfied(TitleRule.HardestGrade("6B"), full().copy(hardestGrade = "V4")))
+        assertFalse(Titles.satisfied(TitleRule.HardestGrade("6B"), full().copy(hardestGrade = "V1")))
         check(TitleRule.ActiveKcalInDay(500), 500) { l, v -> l.copy(activeKcalBestDay = v.toInt()) }
         check(TitleRule.SleepMinutesInNight(480), 480) { l, v -> l.copy(sleepBestMinutes = v.toInt()) }
         check(TitleRule.StepGoalDays(10), 10) { l, v -> l.copy(stepGoalDays = v.toInt()) }
@@ -330,15 +331,18 @@ class TitleEngineTest {
         assertTrue(GradeRank.rank("V4")!! < GradeRank.rank("V5")!!)
         // Font internally
         assertTrue(GradeRank.rank("6A")!! < GradeRank.rank("6B")!!)
-        assertTrue(GradeRank.rank("6B")!! < GradeRank.rank("6B+")!!)
+        // the chart gives 6B and 6B+ the same V, so only a whole step must differ
+        assertTrue(GradeRank.rank("6B")!! <= GradeRank.rank("6B+")!!)
+        assertTrue(GradeRank.rank("6B+")!! < GradeRank.rank("6C")!!)
         assertTrue(GradeRank.rank("7C+")!! < GradeRank.rank("8A")!!)
         // YDS internally
         assertTrue(GradeRank.rank("5.9")!! < GradeRank.rank("5.10a")!!)
         assertTrue(GradeRank.rank("5.13b")!! < GradeRank.rank("5.13c")!!)
-        // Cross-system anchors: 6A ≈ V0, 7A ≈ V4, 8A ≈ V8
-        assertEquals(GradeRank.rank("V0"), GradeRank.rank("6A"))
-        assertEquals(GradeRank.rank("V4"), GradeRank.rank("7A"))
-        assertEquals(GradeRank.rank("V8"), GradeRank.rank("8A"))
+        // Cross-system anchors from the Font chart: 6A = V3, 7A = V6, 7B = V8, 8A = V11
+        assertEquals(GradeRank.rank("V3"), GradeRank.rank("6A"))
+        assertEquals(GradeRank.rank("V6"), GradeRank.rank("7A"))
+        assertEquals(GradeRank.rank("V8"), GradeRank.rank("7B"))
+        assertEquals(GradeRank.rank("V11"), GradeRank.rank("8A"))
         // YDS vs V: 5.12a sits between V5 and V8
         assertTrue(GradeRank.rank("V5")!! < GradeRank.rank("5.12a")!!)
         assertTrue(GradeRank.rank("5.12a")!! < GradeRank.rank("V8")!!)

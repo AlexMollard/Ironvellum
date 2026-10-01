@@ -30,6 +30,7 @@ import com.ironvellum.app.data.db.SetLogEntity
 import com.ironvellum.app.data.db.SkillPracticeDao
 import com.ironvellum.app.data.db.SkillPracticeEntity
 import com.ironvellum.app.data.db.StatDao
+import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.data.db.StatEntity
 import com.ironvellum.app.data.db.SyncStateDao
 import com.ironvellum.app.data.db.SyncStateEntity
@@ -77,13 +78,32 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 33
+        const val VERSION = 34
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
          * amendment cap's base). Nullable with no default: every existing
          * trial was never amended, and no row is read or rewritten.
          */
+        /**
+         * Level-up inscriptions are paid once per level ever reached. Existing
+         * lifters start with their current level as already paid: every level
+         * up to it paid (or was knowingly forgone) under the old rules.
+         */
+        private val MIGRATION_33_34 = object : Migration(33, 34) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE gacha_state ADD COLUMN rollLevelMark INTEGER NOT NULL DEFAULT 0")
+                val totalXp = db.query("SELECT totalXp FROM profile LIMIT 1").use { c ->
+                    if (c.moveToFirst()) c.getLong(0) else 0L
+                }
+                db.execSQL(
+                    "INSERT OR IGNORE INTO gacha_state (id, rolls, equippedFrame, figureStreak, rollLevelMark) " +
+                        "VALUES (1, 0, NULL, 0, 0)",
+                )
+                db.execSQL("UPDATE gacha_state SET rollLevelMark = ${Xp.levelFor(totalXp)} WHERE id = 1")
+            }
+        }
+
         private val MIGRATION_32_33 = object : Migration(32, 33) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE sessions ADD COLUMN editedAtMs INTEGER")
@@ -470,6 +490,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_30_31,
             MIGRATION_31_32,
             MIGRATION_32_33,
+            MIGRATION_33_34,
         )
 
         const val NAME = "ironvellum.db"

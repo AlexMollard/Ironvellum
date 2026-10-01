@@ -394,8 +394,8 @@ object Titles {
         TitleDef(
             "grandmaster_of_all",
             "Grandmaster of All",
-            "Master all 84 techniques. Every path is yours.",
-            TitleRule.SkillsMastered(84),
+            "Master all ${Skills.ALL.size} techniques. Every path is yours.",
+            TitleRule.SkillsMastered(Skills.ALL.size),
             TitleRarity.Masterwork,
         ),
         // Practice attempts
@@ -602,6 +602,11 @@ object Titles {
         val bestHoldSeconds: Int = 0,
     )
 
+    private val RUN_NAMES = setOf("run", "running", "trail running", "treadmill")
+
+    /** True for the movements a run deed counts, by normalised catalogue name. */
+    fun isRunName(name: String?): Boolean = name != null && normaliseName(name) in RUN_NAMES
+
     /** Catalogue names drift in case and padding between screens; keys never do. */
     fun normaliseName(name: String): String = name.lowercase().trim()
 
@@ -650,11 +655,14 @@ object Titles {
         val claimed = practices.filter { it.claimed }
         // Best single-session distance per category, so a 10 km run inside a
         // mixed session still counts as a 10 km run.
-        fun bestSessionKm(category: String): Double =
+        fun bestSessionKm(category: String, include: (SessionSet) -> Boolean = { true }): Double =
             history.maxOfOrNull { (_, sets) ->
-                sets.filter { it.done && categoryOf(it) == category }
+                sets.filter { it.done && categoryOf(it) == category && include(it) }
                     .sumOf { it.distanceM ?: 0.0 }
             }?.div(1000.0) ?: 0.0
+        // Cardio also holds cycling, rowing, hiking and walking; only running
+        // earns a run deed.
+        val isRun: (SessionSet) -> Boolean = { isRunName(exercises[it.exerciseId]?.name) }
         // ---- strength milestones ----
         // The marked kilo is the load the deed is about (bar load for the
         // free-weight band; machines pass through loadFactor like every other
@@ -713,7 +721,7 @@ object Titles {
             activityMinutes = activitySets.sumOf { (it.durationSec ?: 0) }.div(60),
             activityDistanceKm = activitySets.sumOf { it.distanceM ?: 0.0 }.div(1000.0),
             distinctActivities = activitySets.map { it.exerciseId }.distinct().size,
-            bestRunKm = bestSessionKm("Cardio"),
+            bestRunKm = bestSessionKm("Cardio", isRun),
             bestSwimKm = bestSessionKm("Water"),
             // Only recognised grades can hold the record — garbage text can
             // never take the hardest-climb crown or award a deed.
@@ -917,8 +925,9 @@ object Titles {
 /**
  * Cross-system climbing-grade ordering. Grades are free text, so this parses
  * V-scale, Font and YDS into one approximate hardness index (higher = harder).
- * Anchors follow common conversion charts: 6A ≈ V0, 7A ≈ V4, 8A ≈ V8;
- * YDS is anchored 5.11a ≈ V2 (5.12a ≈ V6); each YDS step ≈ one V-grade. The index is
+ * Font reads from [FONT_TO_V], the standard bouldering chart (6A = V3,
+ * 7A = V6, 7B = V8, 8A = V11); a formula cannot follow it, because the chart
+ * is uneven. YDS is anchored 5.11a ≈ V2 (5.12a ≈ V6); each YDS step ≈ one V-grade. The index is
  * only ever used to order a single "hardest send" — never for scoring.
  *
  * Unrecognised text (anything that doesn't parse, e.g. "insane", "5.crap",
@@ -926,6 +935,22 @@ object Titles {
  * wins hardestGrade, and never satisfies a HardestGrade deed.
  */
 object GradeRank {
+    /**
+     * Font boulder grade to its V equivalent (V-scale rank = V + 1, as VB = 0).
+     * Grades are listed per number in the order A, A+, B, B+, C, C+; where a
+     * chart gives one V for neighbours both carry it. Font 4 sits at VB.
+     */
+    private val FONT_TO_V: Map<String, Int> = buildMap {
+        fun row(number: Int, vs: List<Int>) {
+            listOf("A", "A+", "B", "B+", "C", "C+").forEachIndexed { i, step -> put("$number$step", vs[i]) }
+        }
+        row(4, listOf(-1, -1, -1, -1, -1, -1))
+        row(5, listOf(0, 0, 1, 1, 2, 2))
+        row(6, listOf(3, 3, 4, 4, 5, 5))
+        row(7, listOf(6, 7, 8, 8, 9, 10))
+        row(8, listOf(11, 12, 13, 14, 15, 16))
+    }
+
     fun rank(text: String): Int? {
         val g = text.trim().uppercase()
         // V-scale: VB, V0..V17
@@ -934,12 +959,7 @@ object GradeRank {
             val n = m.groupValues[1].toInt()
             return if (n in 0..17) n + 1 else null
         }
-        Regex("^([4-8])([ABC])(\\+)?$").find(g)?.let { m ->
-            val idx = (m.groupValues[1].toInt() - 4) * 4 +
-                (m.groupValues[2][0] - 'A') +
-                (if (m.groupValues[3] == "+") 1 else 0)
-            return idx - 7 // 6A -> V0
-        }
+        FONT_TO_V[g]?.let { return it + 1 }
         // YDS: 5.0 through 5.15 with optional a-d
         Regex("^5\\.(\\d{1,2})([ABCD])?$").find(g)?.let { m ->
             val minor = m.groupValues[1].toInt()
