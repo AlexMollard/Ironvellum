@@ -51,6 +51,7 @@ class CatalogueExport {
             append(",\"pattern\":").append(profile?.let { str(it.pattern.name) } ?: "null")
             append(",\"compound\":").append(profile?.compound?.toString() ?: "null")
             append(",\"stretchBias\":").append(profile?.stretchBias?.toString() ?: "null")
+            append(",\"noLeadByDesign\":").append(profile?.noLeadByDesign?.toString() ?: "null")
             append(",\"muscles\":{")
             append(profile?.muscles.orEmpty().entries.joinToString(",") { "${str(it.key.name)}:${it.value}" })
             append("},\"modifiers\":[")

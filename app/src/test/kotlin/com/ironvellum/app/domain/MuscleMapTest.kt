@@ -126,6 +126,28 @@ class MuscleMapTest {
     }
 
     @Test
+    fun `every profile leads with a full share unless it has no lead by design`() {
+        // The figure marks a muscle as main from its share; a training move
+        // with none at 1.0 read "no main muscle". Activities, mobility
+        // drills and the holds no muscle takes near failure opt out, and
+        // say so in the flag the atlas reads.
+        val activityGroups = setOf(
+            MuscleGroup.SPORT, MuscleGroup.CARDIO, MuscleGroup.CLIMBING, MuscleGroup.WATER, MuscleGroup.MOBILITY,
+        )
+        for (exercise in catalogue) {
+            val profile = MuscleMap.profile(exercise.name) ?: continue
+            val leads = profile.muscles.values.any { it == 1.0 }
+            if (exercise.muscleGroup in activityGroups) {
+                assertTrue("${exercise.name} is an activity", profile.noLeadByDesign)
+            }
+            assertTrue(
+                "${exercise.name}: a lead at 1.0 or no lead by design, never both or neither",
+                leads != profile.noLeadByDesign,
+            )
+        }
+    }
+
+    @Test
     fun `quarter steps follow the squat and hip thrust trials`() {
         // Kubo 2019: squats to depth grew the adductors nearly as much as
         // the glutes; machines that cap depth keep the helper share.
