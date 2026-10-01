@@ -31,7 +31,7 @@ internal val GlyphByLine: Map<String, GlyphFamily> = mapOf(
 internal fun glyphFamily(skill: Skills.SkillDef): GlyphFamily {
     val n = skill.name
     return when {
-        n.contains("Hang") && skill.line != "Core" -> GlyphFamily.HANG
+        n.contains("Hang") || n == "Toes-to-Bar" -> GlyphFamily.HANG
         (n.contains("Dip") || n.contains("Support Hold")) && skill.line != "Rings" -> GlyphFamily.DIP
         n == "Skin the Cat" -> GlyphFamily.HANG
         n == "Crow Pose" || n.contains("Human Flag") -> GlyphFamily.HOLD
