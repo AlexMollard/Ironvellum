@@ -368,12 +368,6 @@ class WireNamesMatchSchemaTest {
     }
 
     @Test
-    fun `the create and join read-back matches the warbands table`() {
-        // create_warband/join_warband return a raw `warbands` row.
-        check("WarbandRowDto", WarbandRowDto.serializer().descriptor, tableColumns("warbands"))
-    }
-
-    @Test
     fun `lift marks and the lift board match the schema`() {
         // Failure mode: a drifted name decodes the default, so an ally's
         // tier shows as step 0 with no error anywhere.

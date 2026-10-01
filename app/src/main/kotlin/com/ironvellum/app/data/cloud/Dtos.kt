@@ -840,19 +840,6 @@ data class WarbandDto(
     )
 }
 
-/**
- * Read-back of `create_warband`/`join_warband`: a raw `warbands` row, whose
- * code column is invite_code — a different shape from my_warband(), so it
- * decodes separately and the roster is fetched right after.
- */
-@Serializable
-data class WarbandRowDto(
-    @SerialName("id") val id: String,
-    @SerialName("name") val name: String,
-    @SerialName("invite_code") val inviteCode: String,
-    @SerialName("owner_id") val ownerId: String,
-)
-
 /** RPC names, declared once so the guard test and the call sites cannot drift. */
 const val RPC_PUSH_AGGREGATES = "push_aggregates"
 const val RPC_FIND_HUNTER = "find_hunter"

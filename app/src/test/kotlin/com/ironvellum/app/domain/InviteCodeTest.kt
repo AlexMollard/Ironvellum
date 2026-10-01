@@ -2,6 +2,7 @@ package com.ironvellum.app.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -76,5 +77,31 @@ class InviteCodeTest {
         assertFalse(isValidInviteCode("K7M2PQ0X")) // 0 is not drawable
         assertFalse(isValidInviteCode("K7M2PQIX")) // I is not drawable
         assertFalse(isValidInviteCode(""))
+    }
+
+    @Test
+    fun `a circle named Strength does not steal the code from the share text`() {
+        // "STRENGTH" is eight glyphs of the alphabet, so a bare scan reads the
+        // NAME as the code. The share text puts the name before the code.
+        val share = "Join my Ironvellum circle Strength — code K7M2PQ4X"
+        assertEquals("K7M2PQ4X", extractInviteCode(share))
+        assertEquals("K7M2PQ4X", extractInviteCode("code: k7m2pq4x, circle Strength"))
+        assertEquals("STRENGTH", extractInviteCode("Join my circle X — code Strength"))
+    }
+
+    @Test
+    fun `without the word code only a token with a digit is taken`() {
+        assertEquals("K7M2PQ4X", extractInviteCode("here you go K7M2PQ4X thanks"))
+        // A bare eight-letter word is a name far more often than a code.
+        assertNull(extractInviteCode("Strength"))
+        assertNull(extractInviteCode("see you at the gym"))
+        assertNull(extractInviteCode(""))
+    }
+
+    @Test
+    fun `a code is never sliced out of a longer token`() {
+        assertNull(extractInviteCode("K7M2PQ4XYZ"))
+        assertNull(extractInviteCode("AK7M2PQ4X"))
+        assertNull(extractInviteCode("K7M2PQ0X")) // 0 is not drawable
     }
 }

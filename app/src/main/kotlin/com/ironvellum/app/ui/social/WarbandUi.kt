@@ -18,10 +18,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -48,10 +51,10 @@ import android.widget.Toast
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Warband
 import com.ironvellum.app.domain.WarbandMember
-import com.ironvellum.app.data.Repository
-import com.ironvellum.app.data.WarbandGoalPayoutStore
-import com.ironvellum.app.data.cloud.CloudSync
-import com.ironvellum.app.data.cloud.AccountRepository
+import com.ironvellum.app.domain.extractInviteCode
+import com.ironvellum.app.data.CircleGateway
+import com.ironvellum.app.data.CircleRead
+import com.ironvellum.app.data.CloudCircleGateway
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.InkPanel
@@ -61,7 +64,7 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
-import com.ironvellum.app.ui.ironvellumRepository
+import com.ironvellum.app.ui.ironvellumCircleBonus
 import com.ironvellum.app.ui.program.TapPad
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -90,6 +93,8 @@ data class WarbandUiState(
     val loading: Boolean = false,
     /** Failure of the band READ; the panel offers a retry. */
     val error: String? = null,
+    /** A reload that failed while a band was already on screen: the roster shown is the last good read. */
+    val refreshFailed: Boolean = false,
     /** A create/join/leave call in flight — the buttons wait for the server. */
     val actionBusy: Boolean = false,
     /** A server REFUSAL of the last action (full band, already in one, bad code) — inline, never a toast-only. */
@@ -99,79 +104,93 @@ data class WarbandUiState(
 )
 
 class WarbandViewModel(
-    private val cloudSync: CloudSync,
-    private val accountRepo: AccountRepository,
-    private val repository: Repository,
-    private val payoutStore: WarbandGoalPayoutStore,
+    private val gateway: CircleGateway,
 ) : ViewModel() {
 
-    private val _ui = MutableStateFlow(WarbandUiState(signedIn = accountRepo.account.value != null, myUserId = accountRepo.account.value?.userId))
+    private val _ui = MutableStateFlow(WarbandUiState(signedIn = gateway.currentUserId() != null, myUserId = gateway.currentUserId()))
     val ui = _ui.asStateFlow()
 
     private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
 
     init {
         // Signing in happens on a sibling tab after this view model may already
-        // exist, so a one-shot read of account.value would strand the section;
+        // exist, so a one-shot read of the account would strand the section;
         // observe and load the moment a session appears.
         viewModelScope.launch {
-            accountRepo.account.collect { account ->
+            gateway.userId.collect { userId ->
                 val was = _ui.value.signedIn
-                _ui.value = _ui.value.copy(signedIn = account != null, myUserId = account?.userId)
+                _ui.value = _ui.value.copy(signedIn = userId != null, myUserId = userId)
                 when {
-                    account != null && !was -> load()
-                    account == null -> _ui.value = WarbandUiState(signedIn = false)
+                    userId != null && !was -> load()
+                    userId == null -> _ui.value = WarbandUiState(signedIn = false)
                 }
             }
         }
         if (_ui.value.signedIn) load()
     }
 
-    /** The band read is cached in CloudSync; mutations invalidate, so this stays honest. */
-    fun load() {
+    /**
+     * Reads the circle. [force] skips the 30s read cache: pull-to-refresh and
+     * coming back to the app ask for it, so a roster is never frozen at its
+     * first load. A read already in flight is not doubled up.
+     */
+    fun load(force: Boolean = false) {
+        if (_ui.value.loading) return
+        _ui.value = _ui.value.copy(loading = true, error = null)
         viewModelScope.launch {
-            _ui.value = _ui.value.copy(loading = true, error = null)
-            cloudSync.warband()
-                .onSuccess { band -> onBand(band) }
-                .onFailure { _ui.value = _ui.value.copy(error = it.reason()) }
+            gateway.read(force)
+                .onSuccess { read -> onRead(read) }
+                .onFailure { failure ->
+                    // Over a band already on screen a failed reload must say so:
+                    // the roster is then the last good read, not the current one.
+                    _ui.value = _ui.value.copy(
+                        error = failure.reason(),
+                        refreshFailed = _ui.value.warband != null,
+                    )
+                }
             _ui.value = _ui.value.copy(loading = false)
         }
     }
 
     /**
-     * Records the band and, when this lifter contributed to a met weekly goal,
-     * pays the once-per-band+week bonus; the overlay reads [WarbandUiState.payoutXp].
+     * Records the band; any bonus the read paid shows once through
+     * [WarbandUiState.payoutXp]. The pay itself happens in the gateway, so
+     * every circle read settles it, not only this screen's.
      */
-    private suspend fun onBand(band: Warband?) {
-        _ui.value = _ui.value.copy(warband = band)
-        val me = band?.members?.firstOrNull { it.userId == _ui.value.myUserId } ?: return
-        repository.maybePayBandGoalBonus(band, me.userId, payoutStore)?.let { xp ->
-            _ui.value = _ui.value.copy(payoutXp = xp)
-        }
+    private fun onRead(read: CircleRead) {
+        _ui.value = _ui.value.copy(
+            warband = read.circle,
+            error = null,
+            refreshFailed = false,
+            payoutXp = read.paidXp ?: _ui.value.payoutXp,
+        )
     }
 
-    fun setGoal(goal: Int) = act { cloudSync.setWarbandGoal(goal) }
+    fun setGoal(goal: Int, onDone: () -> Unit = {}) = act(onDone) { gateway.setGoal(goal) }
 
-    fun create(name: String) = act { cloudSync.createWarband(name) }
+    fun create(name: String, onDone: () -> Unit = {}) = act(onDone) { gateway.create(name) }
 
-    fun join(code: String) = act { cloudSync.joinWarband(code) }
+    fun join(code: String, onDone: () -> Unit = {}) = act(onDone) { gateway.join(code) }
 
-    fun leave() = act { cloudSync.leaveWarband() }
+    fun leave() = act { gateway.leave() }
 
     // create/join return the band, leave returns Unit — the reconciliation
-    // (a fresh warband read) is identical, so one runner takes either.
-    private fun act(call: suspend () -> Result<*>) {
+    // (a fresh circle read) is identical, so one runner takes either.
+    // [onDone] runs only when the server accepted the action, so a dialog
+    // stays open, with its inline error, when the answer is a refusal.
+    private fun act(onDone: () -> Unit = {}, call: suspend () -> Result<*>) {
         if (_ui.value.actionBusy) return
         _ui.value = _ui.value.copy(actionBusy = true, actionError = null)
         viewModelScope.launch {
             call()
                 .onSuccess {
+                    onDone()
                     // The server's answer is the truth: the refetch reconciles
                     // membership (and ownership after a handover) exactly. A
                     // failed refetch must not leave the pre-action roster up
                     // as if the action never happened.
-                    cloudSync.warband(force = true)
-                        .onSuccess { fresh -> onBand(fresh) }
+                    gateway.read(force = true)
+                        .onSuccess { read -> onRead(read) }
                         .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
                 }
                 .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
@@ -199,25 +218,28 @@ class WarbandViewModel(
 @Composable
 fun WarbandSection(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
+    /** Bumped by the host's pull-to-refresh; each bump forces a fresh circle read. */
+    refreshSignal: Int = 0,
     viewModel: WarbandViewModel? = null,
 ) {
-    val app = LocalContext.current.applicationContext
-    // The store needs an application context, which a CreationExtras factory
-    // cannot see — the caller may inject a view model (previews, tests), so
-    // the default is built here where the context is composable-readable.
+    // The caller may inject a view model (previews, tests); the default is
+    // built over the app-scoped cloud objects.
     val vm = viewModel ?: viewModel(
         factory = viewModelFactory {
             initializer {
                 WarbandViewModel(
-                    ironvellumCloudSync(),
-                    ironvellumAccount(),
-                    ironvellumRepository(),
-                    WarbandGoalPayoutStore.from(app),
+                    CloudCircleGateway(ironvellumCloudSync(), ironvellumAccount(), ironvellumCircleBonus()),
                 )
             }
         },
     )
     val ui by vm.ui.collectAsStateWithLifecycle()
+    // Coming back to the app reads the circle again (the read cache keeps a
+    // quick flip cheap), and a pull on the host forces one.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { vm.load() }
+    LaunchedEffect(refreshSignal) {
+        if (refreshSignal > 0) vm.load(force = true)
+    }
     if (!ui.signedIn) return
     // Locals, not the delegated property: the leave dialog and the error
     // branch need a stable, smart-castable band/error for one composition.
@@ -225,10 +247,10 @@ fun WarbandSection(
     val loadError = ui.error
     val actionError = ui.actionError
 
-    var showCreate by remember { mutableStateOf(false) }
-    var showJoin by remember { mutableStateOf(false) }
-    var confirmLeave by remember { mutableStateOf(false) }
-    var showGoalEditor by remember { mutableStateOf(false) }
+    var showCreate by rememberSaveable { mutableStateOf(false) }
+    var showJoin by rememberSaveable { mutableStateOf(false) }
+    var confirmLeave by rememberSaveable { mutableStateOf(false) }
+    var showGoalEditor by rememberSaveable { mutableStateOf(false) }
 
     when {
         band == null && ui.loading -> InkPanel(Modifier.fillMaxWidth()) {
@@ -258,6 +280,7 @@ fun WarbandSection(
             } else {
                 WarbandRoster(
                     band = band,
+                    refreshFailed = ui.refreshFailed,
                     busy = ui.actionBusy,
                     error = actionError,
                     isOwner = band.ownerId == ui.myUserId,
@@ -273,7 +296,7 @@ fun WarbandSection(
         CreateWarbandDialog(
             busy = ui.actionBusy,
             error = actionError,
-            onCreate = vm::create,
+            onCreate = { name -> vm.create(name) { showCreate = false } },
             onDismiss = {
                 vm.dismissActionError()
                 showCreate = false
@@ -284,7 +307,7 @@ fun WarbandSection(
         JoinWarbandDialog(
             busy = ui.actionBusy,
             error = actionError,
-            onJoin = vm::join,
+            onJoin = { code -> vm.join(code) { showJoin = false } },
             onDismiss = {
                 vm.dismissActionError()
                 showJoin = false
@@ -322,10 +345,9 @@ fun WarbandSection(
             busy = ui.actionBusy,
             error = actionError,
             goal = band.weeklyGoal,
-            onSave = {
-                showGoalEditor = false
-                vm.setGoal(it)
-            },
+            // Closes only once the server accepted it: a refusal stays on
+            // the dialog, in its inline error.
+            onSave = { goal -> vm.setGoal(goal) { showGoalEditor = false } },
             onDismiss = {
                 vm.dismissActionError()
                 showGoalEditor = false
@@ -381,6 +403,7 @@ private fun WarbandPitch(
 @Composable
 private fun WarbandRoster(
     band: Warband,
+    refreshFailed: Boolean,
     busy: Boolean,
     error: String?,
     isOwner: Boolean,
@@ -408,6 +431,17 @@ private fun WarbandRoster(
             fontWeight = FontWeight.Bold,
             color = IronvellumColors.Ink,
         )
+        if (refreshFailed) {
+            // The roster below is the last good read; say so rather than let a
+            // stale week pass for the current one.
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Could not refresh — pull down to try again.",
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+            )
+        }
         Spacer(Modifier.height(6.dp))
         // The weekly challenge: the band's progress toward the owner's goal.
         // At goal the rail reads full and the mark turns gold — the moment the
@@ -558,7 +592,7 @@ private fun CreateWarbandDialog(
     onCreate: (name: String) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var name by remember { mutableStateOf("") }
+    var name by rememberSaveable { mutableStateOf("") }
     // Mirror the server check exactly: 1..24 characters, no length games.
     val cleaned = name.trim()
     val valid = cleaned.length in 1..24
@@ -615,7 +649,7 @@ private fun JoinWarbandDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
-    var code by remember { mutableStateOf("") }
+    var code by rememberSaveable { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         if (code.isBlank()) {
@@ -623,9 +657,7 @@ private fun JoinWarbandDialog(
                 context.getSystemService(ClipboardManager::class.java)
                     ?.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString()
             }.getOrNull()
-            clip?.let { text ->
-                CODE_CANDIDATE.findAll(text.uppercase()).firstOrNull()?.let { code = it.value }
-            }
+            clip?.let { text -> extractInviteCode(text)?.let { code = it } }
         }
     }
 
@@ -679,7 +711,7 @@ private fun GoalEditorDialog(
     onSave: (goal: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var value by remember { mutableStateOf(goal) }
+    var value by rememberSaveable { mutableStateOf(goal) }
 
     AlertDialog(
         shape = MaterialTheme.shapes.medium,
@@ -731,9 +763,6 @@ private fun GoalEditorDialog(
 
 /** The server's accepted goal range (CloudSync.setWarbandGoal mirrors it). */
 private val GOAL_RANGE = 5..50
-
-/** The server's alphabet is unambiguous (no 0/O/1/I/L), so a run of 8 of those is a code. */
-private val CODE_CANDIDATE = Regex("[2-9A-HJ-NP-Z]{8}")
 
 /** The UTC Monday the band's week started on, in the header's short form. */
 internal fun weekMondayLabel(): String {

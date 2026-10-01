@@ -158,6 +158,7 @@ fun SocialScreen(
             GuildTab.INBOX -> InboxScreen(
                 onOpenLifter = onOpenLifter,
                 onOpenComments = onOpenComments,
+                onOpenCircle = { tab = GuildTab.ALLIES },
             )
             GuildTab.BOARD -> LeaderboardScreen(onOpenFriend = onOpenLifter)
             GuildTab.ALLIES -> AccountScreen(

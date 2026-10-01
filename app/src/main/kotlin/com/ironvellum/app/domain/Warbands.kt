@@ -41,3 +41,25 @@ const val InviteCodeLength = 8
 /** True when [code] is exactly a valid invite code (case already folded by the caller). */
 fun isValidInviteCode(code: String): Boolean =
     code.length == InviteCodeLength && code.all { it in InviteCodeAlphabet }
+
+private const val CODE_CLASS = "[$InviteCodeAlphabet]{$InviteCodeLength}"
+
+/** The token the share text puts after the word "code". */
+private val CODE_AFTER_WORD = Regex("""\bCODE\b\W{0,3}($CODE_CLASS)(?![A-Z0-9])""")
+
+/** A whole-token run of alphabet glyphs, never a slice of a longer word. */
+private val CODE_BARE = Regex("""(?<![A-Z0-9])$CODE_CLASS(?![A-Z0-9])""")
+
+/**
+ * The invite code in [text] (a clipboard), or null. The share text reads
+ * "Join my Ironvellum circle <name> — code <CODE>", and a circle named
+ * "Strength" is itself eight glyphs from the alphabet, so the token after the
+ * word "code" wins. Without that word only a token with a digit is taken: a
+ * bare eight-letter word is far more likely a name than a code, and a wrong
+ * guess pre-filled into the join box costs a throttled attempt.
+ */
+fun extractInviteCode(text: String): String? {
+    val up = text.uppercase()
+    CODE_AFTER_WORD.find(up)?.let { return it.groupValues[1] }
+    return CODE_BARE.findAll(up).map { it.value }.firstOrNull { token -> token.any(Char::isDigit) }
+}

@@ -157,6 +157,8 @@ internal class InboxViewModel(
 internal fun InboxScreen(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onOpenComments: (sessionId: String, ownerId: String, headline: String) -> Unit,
+    /** A circle missive opens the circle itself, not the member's profile. */
+    onOpenCircle: () -> Unit,
     viewModel: InboxViewModel = viewModel(
         factory = viewModelFactory { initializer { InboxViewModel(ironvellumCloudSync(), ironvellumAccount()) } },
     ),
@@ -223,6 +225,7 @@ internal fun InboxScreen(
                                 answering = item.actorId in ui.answering,
                                 answered = ui.answered[item.actorId],
                                 onOpenLifter = { onOpenLifter(item.actorId, item.actorName) },
+                                onOpenCircle = onOpenCircle,
                                 onOpenComments = { sessionId, headline, mine ->
                                     // Remarks and tributes are on the caller's own trials, so
                                     // the caller is the owner. A reply sits on someone else's:
@@ -270,6 +273,7 @@ private fun InboxRow(
     answering: Boolean,
     answered: RequestAnswer?,
     onOpenLifter: () -> Unit,
+    onOpenCircle: () -> Unit,
     onOpenComments: (sessionId: String, headline: String, mine: Boolean) -> Unit,
     onAccept: () -> Unit,
     onDecline: () -> Unit,
@@ -287,6 +291,7 @@ private fun InboxRow(
         is InboxItem.NewComment -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
         is InboxItem.NewReply -> { { onOpenComments(item.sessionId, item.sessionHeadline.ifBlank { "a trial" }, false) } }
         is InboxItem.NewReaction -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
+        is InboxItem.NewBandmate, is InboxItem.CircleGoalMet -> onOpenCircle
         else -> onOpenLifter
     }
     InkPanel(
