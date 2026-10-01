@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.core.content.ContextCompat
@@ -819,6 +820,7 @@ fun SessionScreen(
                         // every row printed the same two words 36 times in an
                         // 18-set session, on top of identical steppers.
                         showColumnLabels = position == 0,
+                        reserveDeltaLine = position < sets.lastIndex,
                         // A PR must also beat this exercise's earlier done sets
                         // today, or a repeat of set 2 as set 3 reads NEW PR twice.
                         bestEarlierThisWorkout = bodyweight?.takeIf { blockMetric.isStrength }?.let { bw ->
@@ -904,12 +906,12 @@ fun SessionScreen(
             onDismissRequest = { confirmAbandon = false },
             title = { Text("Abandon this trial?") },
             text = { Text("Unsealed trials grant no XP and are erased from the Chronicle.") },
-            // Staying is the filled action; abandoning is the quiet one, so a
+            // Staying is the filled action; abandoning wears the danger style, so a
             // reflex tap on the bright button never erases the trial.
             confirmButton = {
                 IronvellumButton(
                     "Abandon",
-                    quiet = true,
+                    danger = true,
                     onClick = {
                         confirmAbandon = false
                         viewModel.abandon(onExit)
@@ -1360,6 +1362,12 @@ internal fun SetRow(
     /** Best score of this exercise's earlier done sets today; a PR must beat it too. */
     bestEarlierThisWorkout: Double? = null,
     showColumnLabels: Boolean = true,
+    /**
+     * Keep the PR line's height even while it is empty, so ticking a set does
+     * not nudge the rows beneath it. The block's last row has nothing beneath,
+     * so it passes false and the card ends at the steppers.
+     */
+    reserveDeltaLine: Boolean = true,
     onRemove: (() -> Unit)? = null,
     onChange: (Int, Double?, Boolean) -> Unit,
     /** Opens the typed-load dialog; the stepper's ± only walk the plate grid. */
@@ -1452,7 +1460,11 @@ internal fun SetRow(
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
-            modifier = Modifier.padding(end = 2.dp),
+            // Fixed width and centred: Chakra Petch's digits are proportional, so
+            // a bare "1" was narrower than "2" and shifted every column of the
+            // ticked row about 5px against the unticked one.
+            textAlign = TextAlign.Center,
+            modifier = Modifier.widthIn(min = 14.dp),
         )
         if (metric.isStrength) {
             // LOAD gets the wider share: "102.5kg" is the longest figure in the
@@ -1617,7 +1629,7 @@ internal fun SetRow(
                 bestEarlierThisWorkout = bestEarlierThisWorkout,
             )
         }
-        SetDeltaBadge(delta, displaySetNo = setIndex + 1)
+        if (reserveDeltaLine || delta != null) SetDeltaBadge(delta, displaySetNo = setIndex + 1)
     }
 }
 
@@ -1886,7 +1898,7 @@ private fun SessionNotesEditor(
             },
             placeholder = { Text("Name this trial…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
             trailingIcon = { CharCounter(title.length, TITLE_CAP, IronvellumColors.SovereignGold) },
-            colors = fieldColors(accent = IronvellumColors.SovereignGold),
+            colors = fieldColors(accent = IronvellumColors.SovereignGold, focusedBorder = NOTE_FOCUS, unfocusedBorder = NOTE_REST),
             modifier = Modifier
                 .fillMaxWidth()
                 .onFocusChanged { if (!it.isFocused) viewModel.setSessionTitle(title.trim()) },
@@ -1907,7 +1919,7 @@ private fun SessionNotesEditor(
             },
             placeholder = { Text("How did the trial go? Share it…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
             trailingIcon = { CharCounter(publicNote.length, PUBLIC_NOTE_CAP, IronvellumColors.SystemGreen) },
-            colors = fieldColors(accent = IronvellumColors.SystemGreen),
+            colors = fieldColors(accent = IronvellumColors.SystemGreen, focusedBorder = NOTE_FOCUS, unfocusedBorder = NOTE_REST),
             modifier = Modifier
                 .fillMaxWidth()
                 .onFocusChanged { if (!it.isFocused) viewModel.setSessionNote(publicNote.trim()) },
@@ -1927,13 +1939,17 @@ private fun SessionNotesEditor(
                 )
             },
             placeholder = { Text("For your eyes only…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
-            colors = fieldColors(accent = IronvellumColors.InkMuted),
+            colors = fieldColors(accent = IronvellumColors.InkMuted, focusedBorder = NOTE_FOCUS, unfocusedBorder = NOTE_REST),
             modifier = Modifier
                 .fillMaxWidth()
                 .onFocusChanged { if (!it.isFocused) viewModel.setSessionPrivateNote(privateNote) },
         )
     }
 }
+
+/** One border pair for the three NAME & NOTES fields; only the label and icon say which is which. */
+private val NOTE_FOCUS = IronvellumColors.SystemGreen
+private val NOTE_REST = IronvellumColors.Rune
 
 @Composable
 private fun FieldLabel(
@@ -1960,9 +1976,13 @@ private fun CharCounter(length: Int, cap: Int, accent: Color) {
     )
 }
 @Composable
-internal fun fieldColors(accent: Color) = OutlinedTextFieldDefaults.colors(
-    focusedBorderColor = accent,
-    unfocusedBorderColor = accent.copy(alpha = 0.4f),
+internal fun fieldColors(
+    accent: Color,
+    focusedBorder: Color = accent,
+    unfocusedBorder: Color = accent.copy(alpha = 0.4f),
+) = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = focusedBorder,
+    unfocusedBorderColor = unfocusedBorder,
     focusedLabelColor = accent,
     unfocusedLabelColor = IronvellumColors.InkMuted,
     cursorColor = accent,
