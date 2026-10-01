@@ -159,12 +159,12 @@ begin
     perform assert_true(to_regproc('public.my_inbox') is not null, 'my_inbox missing: the baseline did not apply completely');
     perform assert_true(to_regproc('public.handle_new_user') is not null, 'handle_new_user missing: the baseline did not apply completely');
     perform assert_true(to_regproc('public.display_name_available') is not null, 'display_name_available missing: the baseline did not apply completely');
-    perform assert_true(to_regclass('public.warbands') is not null, 'warbands missing: the baseline did not apply completely');
-    perform assert_true(to_regclass('public.warband_members') is not null, 'warband_members missing: the baseline did not apply completely');
-    perform assert_true(to_regproc('public.create_warband') is not null, 'create_warband missing: the baseline did not apply completely');
-    perform assert_true(to_regproc('public.join_warband') is not null, 'join_warband missing: the baseline did not apply completely');
-    perform assert_true(to_regproc('public.leave_warband') is not null, 'leave_warband missing: the baseline did not apply completely');
-    perform assert_true(to_regproc('public.my_warband') is not null, 'my_warband missing: the baseline did not apply completely');
+    perform assert_true(to_regclass('public.circles') is not null, 'circles missing: the baseline did not apply completely');
+    perform assert_true(to_regclass('public.circle_members') is not null, 'circle_members missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.create_circle') is not null, 'create_circle missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.join_circle') is not null, 'join_circle missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.leave_circle') is not null, 'leave_circle missing: the baseline did not apply completely');
+    perform assert_true(to_regproc('public.my_circle') is not null, 'my_circle missing: the baseline did not apply completely');
     perform assert_true(
         exists (select 1 from pg_trigger t where t.tgrelid = 'auth.users'::regclass and t.tgname = 'on_auth_user_created' and not t.tgisinternal),
         'on_auth_user_created is not on auth.users: no profile is made at sign-up');
@@ -282,7 +282,7 @@ begin
     where t.schemaname = 'public'
       and t.tablename in ('profiles','friendships','sessions','session_sets','earned_titles','level_ups','session_likes',
                           'blocks','mutes','session_comments','inbox_seen','reports','friend_request_log','cloud_archives','lift_marks',
-                          'warbands','warband_members','warband_join_log')
+                          'circles','circle_members','circle_join_log','circle_weeks','circle_week_members')
       and not t.rowsecurity;
     perform assert_true(n = 0, format('%s public table(s) have RLS disabled', n));
 
@@ -1338,9 +1338,9 @@ begin
     raise notice 'ALL BACKEND ASSERTIONS PASSED';
 end $$;
 
--- ---------------------------------------------------------------- 1.6 warbands
--- The band path: anon is blind, membership is the only key, the code is the
--- only way in, the band caps at 8, and leaving hands the band over or ends it.
+-- ---------------------------------------------------------------- 1.6 circles
+-- The circle path: anon is blind, membership is the only key, the code is the
+-- only way in, the circle caps at 8, and leaving hands the circle over or ends it.
 do $wb$
 declare
     nova uuid := 'a5500000-0000-4000-8000-000000000051';
@@ -1351,11 +1351,11 @@ declare
     ivo  uuid := 'a5500000-0000-4000-8000-000000000046';
     pax  uuid := 'a5500000-0000-4000-8000-000000000056';
     filler uuid;
-    band text;
+    circle text;
     code text;
     n int;
 begin
-    -- Fixtures: five bandmates plus the outsider Ivo (already signed up above).
+    -- Fixtures: five fellow members plus the outsider Ivo (already signed up above).
     -- Names deliberately differ from the 1.4 block's roster: the display-name
     -- unique index is global, not per-fixture-family.
     delete from auth.users where id in (
@@ -1380,124 +1380,134 @@ begin
         ('a5500000-0000-4000-8000-000000000058', 'Wade', 'public')
     on conflict (id) do update set display_name = excluded.display_name, visibility = excluded.visibility;
     delete from sessions where id in (
-        'a5566666-0000-4000-8000-000000000001', 'a5566666-0000-4000-8000-000000000002');
-    delete from warbands where id in (select warband_id from warband_members where user_id in (nova, rey, sol, ron, finn));
+        'a5566666-0000-4000-8000-000000000001', 'a5566666-0000-4000-8000-000000000002',
+        'a5566666-0000-4000-8000-000000000003');
+    delete from circles where id in (select circle_id from circle_members where user_id in (nova, rey, sol, ron, finn));
 
     -- Grants: the four RPCs answer authenticated only; the tables answer no
     -- client write at all (membership moves only through the RPCs).
     perform assert_true(
-        not has_function_privilege('anon', 'public.create_warband(text)', 'execute')
-            and not has_function_privilege('anon', 'public.join_warband(text)', 'execute')
-            and not has_function_privilege('anon', 'public.leave_warband()', 'execute')
-            and not has_function_privilege('anon', 'public.my_warband()', 'execute')
-            and not has_function_privilege('anon', 'public.set_warband_goal(int)', 'execute')
-            and not has_function_privilege('anon', 'public.warband_member(uuid, uuid)', 'execute')
-            and not has_function_privilege('authenticated', 'public.warband_member(uuid, uuid)', 'execute')
-            and has_function_privilege('authenticated', 'public.in_my_warband(uuid)', 'execute')
-            and has_function_privilege('authenticated', 'public.create_warband(text)', 'execute')
-            and has_function_privilege('authenticated', 'public.join_warband(text)', 'execute')
-            and has_function_privilege('authenticated', 'public.leave_warband()', 'execute')
-            and has_function_privilege('authenticated', 'public.my_warband()', 'execute')
-            and has_function_privilege('authenticated', 'public.set_warband_goal(int)', 'execute'),
-        'warband functions are callable beyond their intended callers'
+        not has_function_privilege('anon', 'public.create_circle(text)', 'execute')
+            and not has_function_privilege('anon', 'public.join_circle(text)', 'execute')
+            and not has_function_privilege('anon', 'public.leave_circle()', 'execute')
+            and not has_function_privilege('anon', 'public.my_circle()', 'execute')
+            and not has_function_privilege('anon', 'public.set_circle_goal(int)', 'execute')
+            and not has_function_privilege('anon', 'public.circle_member(uuid, uuid)', 'execute')
+            and not has_function_privilege('authenticated', 'public.circle_member(uuid, uuid)', 'execute')
+            and has_function_privilege('authenticated', 'public.in_my_circle(uuid)', 'execute')
+            and has_function_privilege('authenticated', 'public.create_circle(text)', 'execute')
+            and has_function_privilege('authenticated', 'public.join_circle(text)', 'execute')
+            and has_function_privilege('authenticated', 'public.leave_circle()', 'execute')
+            and has_function_privilege('authenticated', 'public.my_circle()', 'execute')
+            and has_function_privilege('authenticated', 'public.set_circle_goal(int)', 'execute'),
+        'circle functions are callable beyond their intended callers'
     );
     perform assert_true(
-        refused_as(rey, format('select public.warband_member(%L, %L)', 'a5500000-0000-4000-8000-000000000051', rey), array['42501']),
-        'warband_member() answers a signed-in lifter'
+        refused_as(rey, format('select public.circle_member(%L, %L)', 'a5500000-0000-4000-8000-000000000051', rey), array['42501']),
+        'circle_member() answers a signed-in lifter'
     );
     perform assert_true(
-        refused_as_anon('select count(*) from warbands', array['42501'])
-            and refused_as_anon('select count(*) from warband_members', array['42501']),
-        'the shipped publishable key can read a warband table'
+        refused_as_anon('select count(*) from circles', array['42501'])
+            and refused_as_anon('select count(*) from circle_members', array['42501']),
+        'the shipped publishable key can read a circle table'
     );
 
     -- Create: happy path, code in the unambiguous alphabet, roster of one.
-    perform must_run(nova, 'select public.create_warband(''North Gate'')', 'create_warband refuses its own owner');
+    perform must_run(nova, 'select public.create_circle(''North Gate'')', 'create_circle refuses its own owner');
     -- Everything in this block runs in one transaction, so every membership
     -- would carry the same joined_at: give the roster a real order.
-    update warband_members set joined_at = now() - interval '3 days' where user_id = nova;
-    code := value_as(nova, 'select code from my_warband()');
+    -- The Keeper is on this week's roster only if they were in before Monday.
+    update circle_members set joined_at = circle_week_start(now()) - interval '3 weeks' where user_id = nova;
+    code := value_as(nova, 'select code from my_circle()');
     perform assert_true(
         code ~ '^[2-9A-HJ-NP-Z]{8}$',
-        format('create_warband drew a code outside the alphabet: %s', coalesce(code, '(null)'))
+        format('create_circle drew a code outside the alphabet: %s', coalesce(code, '(null)'))
     );
     perform assert_true(
-        value_as(nova, 'select jsonb_array_length(members) from my_warband()') = '1',
-        'a fresh warband does not list exactly its owner'
-    );
-
-    -- One band per lifter.
-    perform assert_true(
-        refused_as(nova, 'select public.create_warband(''Other'')', array['P0001']),
-        'a lifter in a band created a second one'
+        value_as(nova, 'select jsonb_array_length(members) from my_circle()') = '1',
+        'a fresh circle does not list exactly its owner'
     );
 
-    -- Weekly goal: fresh bands ship the default, the owner sets it, a member
-    -- and the range bounds are both refused, and my_warband() reports it back.
+    -- One circle per lifter.
     perform assert_true(
-        value_as(nova, 'select weekly_goal from my_warband()') = '12',
-        'a fresh warband did not default its weekly_goal to 12'
+        refused_as(nova, 'select public.create_circle(''Other'')', array['P0001']),
+        'a lifter in a circle created a second one'
+    );
+
+    -- Weekly goal: days each member aims to train, 1-7, three by default. The
+    -- Keeper's change is PARKED for next week (this week's goal is frozen when
+    -- it opens), a member and the range bounds are refused.
+    perform assert_true(
+        value_as(nova, 'select per_member from my_circle()') = '3'
+            and value_as(nova, 'select pending_per_member is null from my_circle()') = 'true',
+        'a fresh circle did not default to three days each, with nothing parked'
     );
     perform assert_true(
-        refused_as(rey, 'select public.set_warband_goal(12)', array['42501']),
-        'a band member set the weekly goal'
+        refused_as(rey, 'select public.set_circle_goal(3)', array['42501']),
+        'a circle member set the weekly goal'
     );
     perform assert_true(
-        refused_as(nova, 'select public.set_warband_goal(4)', array['P0001'])
-            and refused_as(nova, 'select public.set_warband_goal(51)', array['P0001'])
-            and refused_as(nova, 'select public.set_warband_goal(null)', array['P0001']),
-        'set_warband_goal accepted an out-of-range or null goal'
+        refused_as(nova, 'select public.set_circle_goal(0)', array['P0001'])
+            and refused_as(nova, 'select public.set_circle_goal(8)', array['P0001'])
+            and refused_as(nova, 'select public.set_circle_goal(null)', array['P0001']),
+        'set_circle_goal accepted an out-of-range or null target'
     );
-    perform must_run(nova, 'select public.set_warband_goal(9)', 'the owner could not set the weekly goal');
+    perform must_run(nova, 'select public.set_circle_goal(5)', 'the Keeper could not set the weekly goal');
     perform assert_true(
-        value_as(nova, 'select weekly_goal from my_warband()') = '9',
-        'my_warband() did not report the goal the owner set'
+        value_as(nova, 'select per_member from my_circle()') = '3'
+            and value_as(nova, 'select pending_per_member from my_circle()') = '5',
+        'a change of target moved this week''s goal instead of parking for next week'
+    );
+    perform must_run(nova, 'select public.set_circle_goal(3)', 'the Keeper could not set the weekly goal back');
+    perform assert_true(
+        value_as(nova, 'select pending_per_member is null from my_circle()') = 'true',
+        'setting the target the week already has did not clear the parked change'
     );
 
     -- A name is stored trimmed: a direct rename (the owner holds update(name))
     -- cannot put padding back, nor empty it, nor outgrow 24.
     perform assert_true(
-        refused_as(nova, 'update warbands set name = '' padded ''', array['23514'])
-            and refused_as(nova, 'update warbands set name = ''''', array['23514'])
-            and refused_as(nova, format('update warbands set name = %L', repeat('x', 25)), array['23514']),
-        'a warband name accepted padding, nothing, or more than 24 characters'
+        refused_as(nova, 'update circles set name = '' padded ''', array['23514'])
+            and refused_as(nova, 'update circles set name = ''''', array['23514'])
+            and refused_as(nova, format('update circles set name = %L', repeat('x', 25)), array['23514']),
+        'a circle name accepted padding, nothing, or more than 24 characters'
     );
-    perform must_run(nova, 'update warbands set name = ''North Gate''', 'the owner could not rename the band');
+    perform must_run(nova, 'update circles set name = ''North Gate''', 'the owner could not rename the circle');
 
     -- Join: by code, case-insensitively; unknown codes answer with a status.
     perform assert_true(
-        value_as(rey, format('select public.join_warband(%L)', lower(code))) = 'joined',
-        'join_warband did not answer joined for a valid code'
+        value_as(rey, format('select public.join_circle(%L)', lower(code))) = 'joined',
+        'join_circle did not answer joined for a valid code'
     );
     perform assert_true(
-        value_as(sol, format('select public.join_warband(%L)', code)) = 'joined',
-        'join_warband did not answer joined for a second joiner'
+        value_as(sol, format('select public.join_circle(%L)', code)) = 'joined',
+        'join_circle did not answer joined for a second joiner'
     );
-    update warband_members set joined_at = now() - interval '2 days' where user_id = rey;
-    update warband_members set joined_at = now() - interval '1 day' where user_id = sol;
+    update circle_members set joined_at = now() - interval '2 days' where user_id = rey;
+    update circle_members set joined_at = now() - interval '1 day' where user_id = sol;
     perform assert_true(
-        value_as(nova, 'select jsonb_array_length(members) from my_warband()') = '3',
+        value_as(nova, 'select jsonb_array_length(members) from my_circle()') = '3',
         'the roster did not grow to the two joiners'
     );
     -- And both joins knocked on the owner's inbox, like a request or an
     -- acceptance: the 30-minute worker turns them into phone notifications.
     perform assert_true(
         value_as(nova, 'select count(*) from my_inbox() where kind = ''band_join''') = '2',
-        'band joins did not reach the owner''s inbox'
+        'circle joins did not reach the owner''s inbox'
     );
     -- Only TRUE joins: Rey joined before Sol, so Rey hears of Sol alone, and
-    -- Sol, the newest, hears of nobody. Everyone already in the band at the
+    -- Sol, the newest, hears of nobody. Everyone already in the circle at the
     -- time is not "someone who just joined".
     perform assert_true(
         value_as(rey, 'select count(*) from my_inbox() where kind = ''band_join''') = '1'
             and value_as(rey, 'select actor_id::text from my_inbox() where kind = ''band_join''') = sol::text
             and value_as(sol, 'select count(*) from my_inbox() where kind = ''band_join''') = '0',
-        'a lifter was told that members already in the band when they arrived had just joined'
+        'a lifter was told that members already in the circle when they arrived had just joined'
     );
     perform assert_true(
-        value_as(ron, 'select public.join_warband(''ZZZZZZZZ'')') = 'no_such_code'
-            and value_as(ron, 'select count(*) from warband_members') = '0',
-        'an unknown code joined a band, or did not say so'
+        value_as(ron, 'select public.join_circle(''ZZZZZZZZ'')') = 'no_such_code'
+            and value_as(ron, 'select count(*) from circle_members') = '0',
+        'an unknown code joined a circle, or did not say so'
     );
 
     -- The code door is throttled: fifty failed attempts a day per lifter, and
@@ -1507,148 +1517,176 @@ begin
     -- the log row; the 51st call is refused by status, even for a real code.
     for n in 1..50 loop
         perform assert_true(
-            value_as(pax, 'select public.join_warband(''AAAAAAAA'')') = 'no_such_code',
+            value_as(pax, 'select public.join_circle(''AAAAAAAA'')') = 'no_such_code',
             format('failed code attempt %s did not answer no_such_code', n)
         );
     end loop;
     perform assert_true(
-        (select count(*) from warband_join_log where user_id = pax) = 50,
+        (select count(*) from circle_join_log where user_id = pax) = 50,
         'fifty failed code attempts did not leave fifty rows in the attempt log'
     );
     perform assert_true(
-        value_as(pax, 'select public.join_warband(''AAAAAAAA'')') = 'throttled'
-            and value_as(pax, format('select public.join_warband(%L)', code)) = 'throttled'
-            and value_as(pax, 'select count(*) from warband_members') = '0',
-        'the 51st code attempt was not throttled, or joined a band while throttled'
+        value_as(pax, 'select public.join_circle(''AAAAAAAA'')') = 'throttled'
+            and value_as(pax, format('select public.join_circle(%L)', code)) = 'throttled'
+            and value_as(pax, 'select count(*) from circle_members') = '0',
+        'the 51st code attempt was not throttled, or joined a circle while throttled'
     );
     perform assert_true(
-        (select count(*) from warband_join_log where user_id = pax) = 50,
+        (select count(*) from circle_join_log where user_id = pax) = 50,
         'a throttled attempt grew the log'
     );
-    delete from warband_join_log where user_id = pax;
+    delete from circle_join_log where user_id = pax;
 
     -- RLS on, no policies: the attempt log answers no client role at all.
     -- The definer RPCs keep writing it, proven by the throttle above.
     perform assert_true(
-        refused_as_anon('select count(*) from warband_join_log', array['42501'])
-            and refused_as(rey, 'select count(*) from warband_join_log', array['42501']),
-        'the warband attempt log is readable by a client role'
+        refused_as_anon('select count(*) from circle_join_log', array['42501'])
+            and refused_as(rey, 'select count(*) from circle_join_log', array['42501']),
+        'the circle attempt log is readable by a client role'
     );
 
     -- trained-this-week: a count of DAYS trained, canonical for every viewer.
-    -- Rey's public trial and Sol's PRIVATE one count alike (visibility is not a
-    -- condition of the count), each needs a set to count, and only the time of
-    -- the trial still follows the feed's visibility. Completed NOW, so the
-    -- Monday-start anchor cannot drift across a week boundary mid-run.
+    -- Only the roster the week OPENED with counts (Nova, who was in before
+    -- Monday): Rey and Sol joined this week, so they count from the next one.
+    -- Whatever the audience of a trial, it counts alike, each needs a set to
+    -- count, and only the time of a trial still follows the feed's visibility.
+    -- Nova's trial is stamped exactly at the week's start and the others now,
+    -- so the Monday anchor cannot drift across a week boundary mid-run.
     insert into sessions (id, user_id, local_id, label, started_at, completed_at, audience) values
+        ('a5566666-0000-4000-8000-000000000003', nova, 1, 'Push', circle_week_start(now()) - interval '1 hour', circle_week_start(now()), 'profile'),
         ('a5566666-0000-4000-8000-000000000001', rey, 1, 'Pull', now() - interval '1 hour', now(), 'profile'),
         ('a5566666-0000-4000-8000-000000000002', sol, 1, 'Legs', now() - interval '1 hour', now(), 'private');
     perform assert_true(
-        value_as(nova, 'select band_total from my_warband()') = '0',
-        'trials without a set counted toward the band''s week'
+        value_as(nova, 'select circle_total from my_circle()') = '0',
+        'trials without a set counted toward the circle''s week'
     );
     insert into session_sets (session_id, exercise_name, set_index, reps) values
+        ('a5566666-0000-4000-8000-000000000003', 'Press', 0, 5),
         ('a5566666-0000-4000-8000-000000000001', 'Row', 0, 8),
         ('a5566666-0000-4000-8000-000000000002', 'Squat', 0, 5);
     perform assert_true(
-        value_as(nova, 'select members->1->>''workouts_this_week'' from my_warband()') = '1'
-            and value_as(nova, 'select members->2->>''workouts_this_week'' from my_warband()') = '1'
-            and value_as(nova, 'select members->0->>''workouts_this_week'' from my_warband()') = '0',
-        'a member''s days trained follow the audience of their trials, or an empty member is not zero'
+        value_as(nova, 'select circle_total from my_circle()') = '1'
+            and value_as(nova, 'select roster from my_circle()') = '1'
+            and value_as(nova, 'select goal from my_circle()') = '0',
+        'a lifter who joined this week counted toward its goal, or a circle of one has a goal'
     );
     perform assert_true(
-        value_as(nova, 'select band_total from my_warband()') = '2'
-            and value_as(rey, 'select band_total from my_warband()') = '2'
-            and value_as(sol, 'select band_total from my_warband()') = '2',
-        'two bandmates read different totals for the same week'
+        value_as(nova, 'select members->0->>''days_this_week'' from my_circle()') = '1'
+            and value_as(nova, 'select members->0->>''counts'' from my_circle()') = 'true'
+            and value_as(nova, 'select members->1->>''days_this_week'' from my_circle()') = '1'
+            and value_as(nova, 'select members->1->>''counts'' from my_circle()') = 'false'
+            and value_as(nova, 'select members->2->>''days_this_week'' from my_circle()') = '1'
+            and value_as(nova, 'select members->2->>''counts'' from my_circle()') = 'false',
+        'a member''s days follow the audience of their trials, or the roster flag is wrong'
     );
     perform assert_true(
-        value_as(nova, 'select (members->1->>''last_workout_at'') is not null from my_warband()') = 'true'
-            and value_as(nova, 'select (members->2->>''last_workout_at'') is null from my_warband()') = 'true',
+        value_as(nova, 'select circle_total from my_circle()') = '1'
+            and value_as(rey, 'select circle_total from my_circle()') = '1'
+            and value_as(sol, 'select circle_total from my_circle()') = '1',
+        'two fellow members read different totals for the same week'
+    );
+    perform assert_true(
+        value_as(nova, 'select (members->1->>''last_workout_at'') is not null from my_circle()') = 'true'
+            and value_as(nova, 'select (members->2->>''last_workout_at'') is null from my_circle()') = 'true',
         'last_workout_at is null behind a visible trial, or hands over the time of a private one'
     );
     perform assert_true(
-        not has_function_privilege('anon', 'public.warband_week_days(uuid, timestamptz)', 'execute')
-            and not has_function_privilege('authenticated', 'public.warband_week_days(uuid, timestamptz)', 'execute'),
-        'warband_week_days is callable by a client role: an oracle on anyone''s training days'
+        not has_function_privilege('anon', 'public.circle_week_days(uuid, date)', 'execute')
+            and not has_function_privilege('authenticated', 'public.circle_week_days(uuid, date)', 'execute')
+            and not has_function_privilege('authenticated', 'public.circle_member_days(uuid, timestamptz, timestamptz)', 'execute')
+            and not has_function_privilege('authenticated', 'public.circle_roll(uuid)', 'execute')
+            and not has_function_privilege('authenticated', 'public.circle_open_week(uuid, date)', 'execute')
+            and not has_function_privilege('authenticated', 'public.circle_settle_week(uuid, date)', 'execute')
+            and not has_function_privilege('anon', 'public.circle_roll(uuid)', 'execute')
+            and not has_function_privilege('anon', 'public.circle_member_days(uuid, timestamptz, timestamptz)', 'execute'),
+        'an internal circle function is callable by a client role: an oracle on anyone''s training days'
+    );
+    perform assert_true(
+        has_function_privilege('authenticated', 'public.circle_bonuses()', 'execute')
+            and not has_function_privilege('anon', 'public.circle_bonuses()', 'execute')
+            and refused_as_anon('select count(*) from circle_weeks', array['42501'])
+            and refused_as(rey, 'select count(*) from circle_weeks', array['42501'])
+            and refused_as(rey, 'select count(*) from circle_week_members', array['42501']),
+        'the week records or the bonus are reachable beyond their intended callers'
     );
 
     -- The cap: fill to 8 server-side, the ninth joiner refuses. Ivo is still
     -- bandless here, so the refusal can only come from the cap, never from the
-    -- one-band rule.
-    band := value_as(nova, 'select id::text from my_warband()');
+    -- one-circle rule.
+    circle := value_as(nova, 'select id::text from my_circle()');
     perform assert_true(
-        refused_as(nova, format('insert into warband_members (warband_id, user_id) values (%L, %L)', band, ron), array['42501']),
-        'an insert grant lets a client add a bandmate silently'
+        refused_as(nova, format('insert into circle_members (circle_id, user_id) values (%L, %L)', circle, ron), array['42501']),
+        'an insert grant lets a client add a fellow member silently'
     );
-    insert into warband_members (warband_id, user_id)
-    select band::uuid, u from unnest(array[ron, finn,
+    insert into circle_members (circle_id, user_id)
+    select circle::uuid, u from unnest(array[ron, finn,
         'a5500000-0000-4000-8000-000000000056',
         'a5500000-0000-4000-8000-000000000057',
         'a5500000-0000-4000-8000-000000000058']::uuid[]) u;
     perform assert_true(
-        value_as(ivo, format('select public.join_warband(%L)', code)) = 'full'
-            and value_as(ivo, 'select count(*) from warband_members') = '0',
-        'a ninth lifter joined a full warband, or was not told it is full'
+        value_as(ivo, format('select public.join_circle(%L)', code)) = 'full'
+            and value_as(ivo, 'select count(*) from circle_members') = '0',
+        'a ninth lifter joined a full circle, or was not told it is full'
     );
 
-    -- Identity follows profile visibility inside the band too: a bandmate who
+    -- Identity follows profile visibility inside the circle too: a fellow member who
     -- went private lists under the neutral handle with level and worn title
-    -- withheld, while a public bandmate reads as themselves.
+    -- withheld, while a public fellow member reads as themselves.
     update profiles set visibility = 'private' where id = finn;
     perform assert_true(
         value_as(nova, format(
-            'select m->>''display_name'' from my_warband(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
+            'select m->>''display_name'' from my_circle(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
             finn::text)) = 'Ironbound0055'
             and value_as(nova, format(
-            'select (m->>''level'') is null and (m->>''current_title_id'') is null from my_warband(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
+            'select (m->>''level'') is null and (m->>''current_title_id'') is null from my_circle(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
             finn::text)) = 'true'
             and value_as(nova, format(
-            'select m->>''display_name'' from my_warband(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
+            'select m->>''display_name'' from my_circle(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
             rey::text)) = 'Rey',
-        'a private bandmate leaked a name, level or title'
+        'a private fellow member leaked a name, level or title'
     );
     update profiles set visibility = 'public' where id = finn;
 
-    -- RLS: a member reads their band and roster; an outsider reads nothing.
-    perform must_run(ivo, 'select public.create_warband(''Ivo Cell'')', 'ivo could not create his own band');
+    -- RLS: a member reads their circle and roster; an outsider reads nothing.
+    perform must_run(ivo, 'select public.create_circle(''Ivo Cell'')', 'ivo could not create his own circle');
     perform assert_true(
-        value_as(nova, 'select count(*) from warbands') = '1'
-            and value_as(ivo, 'select count(*) from warbands') = '1',
-        'a warband is readable from outside its roster'
+        value_as(nova, 'select count(*) from circles') = '1'
+            and value_as(ivo, 'select count(*) from circles') = '1',
+        'a circle is readable from outside its roster'
     );
     perform assert_true(
-        value_as(ivo, 'select count(*) from warband_members') = '1',
-        'warband_members leaks rows to a non-member'
+        value_as(ivo, 'select count(*) from circle_members') = '1',
+        'circle_members leaks rows to a non-member'
     );
 
     -- Leaving: ownership hands to the oldest remaining member...
-    perform must_run(nova, 'select public.leave_warband()', 'the owner could not leave');
+    perform must_run(nova, 'select public.leave_circle()', 'the owner could not leave');
     perform assert_true(
-        value_as(rey, 'select owner_id::text from my_warband()') = rey::text,
+        value_as(rey, 'select owner_id::text from my_circle()') = rey::text,
         'leaving did not hand ownership to the oldest remaining member'
     );
-    -- ...and the last member leaving deletes the band.
-    perform must_run(rey, 'select public.leave_warband()', 'rey could not leave');
-    perform must_run(sol, 'select public.leave_warband()', 'sol could not leave');
-    perform must_run(ron, 'select public.leave_warband()', 'ron could not leave');
-    perform must_run(finn, 'select public.leave_warband()', 'finn could not leave');
+    -- ...and the last member leaving deletes the circle.
+    perform must_run(rey, 'select public.leave_circle()', 'rey could not leave');
+    perform must_run(sol, 'select public.leave_circle()', 'sol could not leave');
+    perform must_run(ron, 'select public.leave_circle()', 'ron could not leave');
+    perform must_run(finn, 'select public.leave_circle()', 'finn could not leave');
     foreach filler in array array['a5500000-0000-4000-8000-000000000056',
                                   'a5500000-0000-4000-8000-000000000057',
                                   'a5500000-0000-4000-8000-000000000058']::uuid[] loop
-        perform must_run(filler, 'select public.leave_warband()', 'a filler could not leave');
+        perform must_run(filler, 'select public.leave_circle()', 'a filler could not leave');
     end loop;
     perform assert_true(
-        value_as(ron, 'select count(*) from warbands') = '0',
-        'the band outlived its last member'
+        value_as(ron, 'select count(*) from circles') = '0',
+        'the circle outlived its last member'
     );
-    -- Ivo's separate band is untouched by all of the above.
-    perform must_run(ivo, 'select public.leave_warband()', 'ivo could not leave');
-    select count(*) into n from warbands;
-    perform assert_true(n = 0, format('%s warband(s) survived the fixture teardown', n));
+    -- Ivo's separate circle is untouched by all of the above.
+    perform must_run(ivo, 'select public.leave_circle()', 'ivo could not leave');
+    select count(*) into n from circles;
+    perform assert_true(n = 0, format('%s circle(s) survived the fixture teardown', n));
 
     delete from sessions where id in (
-        'a5566666-0000-4000-8000-000000000001', 'a5566666-0000-4000-8000-000000000002');
+        'a5566666-0000-4000-8000-000000000001', 'a5566666-0000-4000-8000-000000000002',
+        'a5566666-0000-4000-8000-000000000003');
     delete from auth.users where id in (
         nova, rey, sol, ron, finn,
         'a5500000-0000-4000-8000-000000000056',
@@ -1659,8 +1697,8 @@ end $wb$;
 -- ------------------------------------------------------- inbox: replies, goals
 -- Replies: a remark after the caller's own, in a thread on someone else's
 -- workout, reaches the caller while that workout stays visible to them.
--- Goals: the band's weekly goal falling is one inbox row per member, at the
--- workout that crossed it, counted the way my_warband() counts the banner.
+-- Goals: the circle's weekly goal falling is one inbox row per member, at the
+-- workout that crossed it, counted the way my_circle() counts the banner.
 do $rp$
 declare
     ash  uuid := 'a5577777-0000-4000-8000-000000000001';
@@ -1711,57 +1749,59 @@ begin
     );
     delete from sessions where id = w_ash;
 
-    perform must_run(ash, 'select public.create_warband(''Ember Ring'')', 'the replies fixture could not form a band');
-    code := value_as(ash, 'select code from my_warband()');
-    perform must_run(bram, format('select public.join_warband(%L)', code), 'the replies fixture could not join the band');
-    perform must_run(ash, 'select public.set_warband_goal(5)', 'the replies fixture could not set the goal');
-    -- Days trained, so the goal needs five DAYS: the previous week is complete,
-    -- always inside the inbox window, and gives five distinct days at any hour.
-    -- Both joined well before it opened.
-    update warband_members set joined_at = now() - interval '21 days' where user_id = ash;
-    update warband_members set joined_at = now() - interval '20 days' where user_id = bram;
+    perform must_run(ash, 'select public.create_circle(''Ember Ring'')', 'the replies fixture could not form a circle');
+    code := value_as(ash, 'select code from my_circle()');
+    perform must_run(bram, format('select public.join_circle(%L)', code), 'the replies fixture could not join the circle');
+    -- The goal is days x the roster the week OPENED with: two members at the
+    -- default three days is six. The circle formed weeks ago, so last week
+    -- (complete, and always inside the inbox window) was opened with both.
+    update circles set created_at = now() - interval '40 days'
+    where id = (select circle_id from circle_members where user_id = ash);
+    update circle_members set joined_at = now() - interval '30 days' where user_id in (ash, bram);
+    delete from circle_weeks where circle_id = (select circle_id from circle_members where user_id = ash);
+    perform circle_roll((select circle_id from circle_members where user_id = ash));
     insert into sessions (user_id, local_id, label, started_at, completed_at)
-    select case when n % 2 = 0 then ash else bram end, 100 + n, 'Goal',
-           prev + make_interval(days => n - 1, hours => 9), prev + make_interval(days => n - 1, hours => 10)
-    from generate_series(1, 4) n;
+    select case when n % 2 = 0 then bram else ash end, 100 + n, 'Goal',
+           prev + make_interval(days => n, hours => 9), prev + make_interval(days => n, hours => 10)
+    from generate_series(0, 4) n;
     insert into session_sets (session_id, exercise_name, set_index, reps)
     select s.id, 'Press', 0, 5 from sessions s where s.label = 'Goal' and s.user_id in (ash, bram);
     perform assert_true(
         value_as(ash, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 0,
-        'a band four days short of a five-day goal reads as having met it'
+        'a circle five days short of a six-day goal reads as having met it'
     );
     -- A second trial on a day already counted is no new day.
     insert into sessions (user_id, local_id, label, started_at, completed_at)
-    values (bram, 104, 'Goal', prev + interval '10 hours', prev + interval '11 hours');
+    values (bram, 110, 'Goal', prev + interval '10 hours', prev + interval '11 hours');
     insert into session_sets (session_id, exercise_name, set_index, reps)
-    select s.id, 'Press', 0, 5 from sessions s where s.user_id = bram and s.local_id = 104;
+    select s.id, 'Press', 0, 5 from sessions s where s.user_id = bram and s.local_id = 110;
     perform assert_true(
         value_as(ash, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 0,
         'a second trial on the same day counted as another day toward the goal'
     );
     insert into sessions (user_id, local_id, label, started_at, completed_at)
-    values (bram, 105, 'Goal', prev + interval '4 days 9 hours', prev + interval '4 days 10 hours');
+    values (ash, 105, 'Goal', prev + interval '5 days 9 hours', prev + interval '5 days 10 hours');
     insert into session_sets (session_id, exercise_name, set_index, reps)
-    select s.id, 'Press', 0, 5 from sessions s where s.user_id = bram and s.local_id = 105;
+    select s.id, 'Press', 0, 5 from sessions s where s.user_id = ash and s.local_id = 105;
     perform assert_true(
         value_as(ash, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 1
             and value_as(bram, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 1
-            and value_as(ash, 'select actor_id::text from my_inbox() where kind = ''band_goal''') = bram::text
+            and value_as(ash, 'select actor_id::text from my_inbox() where kind = ''band_goal''') = ash::text
             and value_as(ash, 'select body from my_inbox() where kind = ''band_goal''') = 'Ember Ring',
-        'the band''s goal falling is not one row per member, at the crossing day, naming the band'
+        'the circle''s goal falling is not one row per member, at the crossing day, naming the circle'
     );
     perform assert_true(
         value_as(cole, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 0,
-        'a lifter outside the band is told its goal fell'
+        'a lifter outside the circle is told its goal fell'
     );
 
-    perform must_run(bram, 'select public.leave_warband()', 'bram could not leave');
-    perform must_run(ash, 'select public.leave_warband()', 'ash could not leave');
+    perform must_run(bram, 'select public.leave_circle()', 'bram could not leave');
+    perform must_run(ash, 'select public.leave_circle()', 'ash could not leave');
     delete from auth.users where id in (ash, bram, cole);
 end $rp$;
 
 -- ------------------------------------------------------------- circle counting
--- warband_week_days() on a fixed past week (Monday 2024-01-01, UTC), so every
+-- circle_week_days() on a fixed past week (Monday 2024-01-01, UTC), so every
 -- boundary is exact and no assertion depends on the day the suite runs. The
 -- end-to-end parity (every viewer reads the same total) uses the current week.
 create or replace function circle_test_trial(uid uuid, at timestamptz, with_sets boolean, aud text)
@@ -1784,11 +1824,14 @@ declare
     ann uuid := 'a5599999-0000-4000-8000-000000000001';
     bob uuid := 'a5599999-0000-4000-8000-000000000002';
     cat uuid := 'a5599999-0000-4000-8000-000000000003';
-    ws  timestamptz := '2024-01-01 00:00:00+00';
-    ws2 timestamptz := '2024-01-08 00:00:00+00';
-    band uuid;
+    wk  date := '2024-01-01';
+    wk2 date := '2024-01-08';
+    ws0 timestamptz := circle_week_start(now());
+    cur date := (circle_week_start(now()) at time zone 'utc')::date;
+    cid uuid;
     code text;
     before_n int;
+    settled timestamptz;
     v text;
 begin
     perform sign_up(ann, '{"display_name": "Annika"}');
@@ -1797,13 +1840,21 @@ begin
     update profiles set visibility = 'public'  where id = ann;
     update profiles set visibility = 'private' where id = bob;
     update profiles set visibility = 'friends' where id = cat;
-    perform must_run(ann, 'select public.create_warband(''Count Ring'')', 'the counting fixture could not form a band');
-    code := value_as(ann, 'select code from my_warband()');
-    perform assert_true(value_as(bob, format('select public.join_warband(%L)', code)) = 'joined', 'bob could not join');
-    perform assert_true(value_as(cat, format('select public.join_warband(%L)', code)) = 'joined', 'cat could not join');
-    band := (select warband_id from warband_members where user_id = ann);
-    update warband_members set joined_at = '2023-12-01 00:00:00+00' where user_id in (ann, bob);
-    update warband_members set joined_at = '2024-01-03 12:00:00+00' where user_id = cat;
+    perform must_run(ann, 'select public.create_circle(''Count Ring'')', 'the counting fixture could not form a circle');
+    code := (select invite_code from circles c join circle_members m on m.circle_id = c.id where m.user_id = ann);
+    perform assert_true(value_as(bob, format('select public.join_circle(%L)', code)) = 'joined', 'bob could not join');
+    perform assert_true(value_as(cat, format('select public.join_circle(%L)', code)) = 'joined', 'cat could not join');
+    cid := (select circle_id from circle_members where user_id = ann);
+    update circle_members set joined_at = '2023-12-01 00:00:00+00' where user_id in (ann, bob);
+    update circle_members set joined_at = '2024-01-03 12:00:00+00' where user_id = cat;
+    -- Freeze the week as it would have been: Ann and Bob were in; Cat joined on the Wednesday.
+    perform circle_open_week(cid, wk);
+    perform assert_true(
+        (select members from circle_weeks where circle_id = cid and week = wk) = 2
+            and (select goal from circle_weeks where circle_id = cid and week = wk) = 6
+            and not exists (select 1 from circle_week_members where circle_id = cid and week = wk and user_id = cat),
+        'the week did not freeze a roster of the two who were in before it began, with a goal of three days each'
+    );
 
     -- Ann: two trials on Monday are one day; Wednesday; Sunday at 23:59:59 is the last second of the week.
     perform circle_test_trial(ann, '2024-01-01 08:00:00+00', true, 'profile');
@@ -1813,65 +1864,112 @@ begin
     -- Bob: a PRIVATE trial counts; one with no sets does not.
     perform circle_test_trial(bob, '2024-01-02 09:00:00+00', true, 'private');
     perform circle_test_trial(bob, '2024-01-04 09:00:00+00', false, 'profile');
-    -- Cat joined Wednesday noon: Monday's trial predates it, Wednesday afternoon counts, and a trial
-    -- at exactly the next Monday 00:00:00 belongs to the NEXT week.
-    perform circle_test_trial(cat, '2024-01-01 09:00:00+00', true, 'friends');
+    -- Cat joined after the week opened: nothing of Cat's counts in it, and a trial at exactly the
+    -- next Monday 00:00:00 belongs to the NEXT week, where Cat is on the roster.
     perform circle_test_trial(cat, '2024-01-03 13:00:00+00', true, 'friends');
     perform circle_test_trial(cat, '2024-01-08 00:00:00+00', true, 'friends');
 
-    perform assert_true((select count(*) from warband_week_days(band, ws)) = 5, 'the week did not count 5 days');
+    perform assert_true((select count(*) from circle_week_days(cid, wk)) = 4, 'the week did not count 4 days');
     perform assert_true(
-        (select count(*) from warband_week_days(band, ws) where user_id = ann) = 3
-            and (select count(*) from warband_week_days(band, ws) where user_id = bob) = 1
-            and (select count(*) from warband_week_days(band, ws) where user_id = cat) = 1,
-        'a member''s days were not one per UTC day, with a set, after joining, inside the week'
+        (select count(*) from circle_week_days(cid, wk) where user_id = ann) = 3
+            and (select count(*) from circle_week_days(cid, wk) where user_id = bob) = 1
+            and (select count(*) from circle_week_days(cid, wk) where user_id = cat) = 0,
+        'a member''s days were not one per UTC day with a set, or a lifter off the roster counted'
     );
     perform assert_true(
-        (select array_agg(n order by n) from warband_week_days(band, ws)) = array[1, 2, 3, 4, 5]
-            and (select user_id from warband_week_days(band, ws) where n = 1) = ann,
+        (select array_agg(n order by n) from circle_week_days(cid, wk)) = array[1, 2, 3, 4]
+            and (select user_id from circle_week_days(cid, wk) where n = 1) = ann,
         'the counted days are not numbered in the order they happened'
     );
     -- The boundary trial is counted once, in the week it falls in: not in both, not in neither.
+    perform circle_open_week(cid, wk2);
     perform assert_true(
-        (select count(*) from warband_week_days(band, ws2)) = 1
-            and (select user_id from warband_week_days(band, ws2)) = cat,
+        (select members from circle_weeks where circle_id = cid and week = wk2) = 3
+            and (select count(*) from circle_week_days(cid, wk2)) = 1
+            and (select user_id from circle_week_days(cid, wk2)) = cat,
         'the trial at the week boundary was counted in the wrong week, or twice'
+    );
+    -- Opening a week that is already open changes nothing.
+    perform circle_open_week(cid, wk);
+    perform assert_true((select count(*) from circle_week_members where circle_id = cid and week = wk) = 2, 'reopening a week rewrote its roster');
+
+    -- A member's days are capped at their share: three days each, however many they train.
+    perform circle_test_trial(ann, '2024-01-02 10:00:00+00', true, 'profile');
+    perform circle_test_trial(ann, '2024-01-04 10:00:00+00', true, 'profile');
+    perform assert_true(
+        (select count(*) from circle_week_days(cid, wk) where user_id = ann) = 3
+            and (select count(*) from circle_week_days(cid, wk)) = 4
+            and not exists (select 1 from circle_week_days(cid, wk) where user_id = ann and day = '2024-01-07'),
+        'one lifter carried more than their share, or the cap kept the latest days instead of the earliest'
+    );
+    -- A member who left counts up to the moment they left and no further.
+    update circle_week_members set left_at = '2024-01-02 12:00:00+00' where circle_id = cid and week = wk and user_id = ann;
+    perform assert_true(
+        (select count(*) from circle_week_days(cid, wk) where user_id = ann) = 2,
+        'days after a member left still counted for them'
+    );
+    update circle_week_members set left_at = null where circle_id = cid and week = wk and user_id = ann;
+
+    -- Settlement: Bob trains his share too, so the six-day goal is met by exactly the six days.
+    perform circle_test_trial(bob, '2024-01-05 09:00:00+00', true, 'private');
+    perform circle_test_trial(bob, '2024-01-06 09:00:00+00', true, 'private');
+    perform circle_settle_week(cid, wk);
+    perform assert_true(
+        (select met from circle_weeks where circle_id = cid and week = wk)
+            and (select total from circle_weeks where circle_id = cid and week = wk) = 6
+            and (select settled_at from circle_weeks where circle_id = cid and week = wk) is not null
+            and (select days from circle_week_members where circle_id = cid and week = wk and user_id = ann) = 3
+            and (select days from circle_week_members where circle_id = cid and week = wk and user_id = bob) = 3,
+        'a week in which every member trained their share did not settle as met'
+    );
+    -- Settled once: more trials and another settle leave the record exactly as it was.
+    settled := (select settled_at from circle_weeks where circle_id = cid and week = wk);
+    perform circle_test_trial(bob, '2024-01-07 09:00:00+00', true, 'private');
+    perform circle_settle_week(cid, wk);
+    perform assert_true(
+        (select settled_at from circle_weeks where circle_id = cid and week = wk) = settled
+            and (select total from circle_weeks where circle_id = cid and week = wk) = 6,
+        'a settled week was settled again'
+    );
+    -- A week one member short is not met.
+    perform circle_settle_week(cid, wk2);
+    perform assert_true(
+        (select met from circle_weeks where circle_id = cid and week = wk2) is false
+            and (select total from circle_weeks where circle_id = cid and week = wk2) = 1,
+        'a week with one lifter''s one day settled as met'
     );
 
     -- The future never counts: a trial stamped half a day ahead leaves the current week's count alone.
-    select count(*) into before_n
-    from warband_week_days(band, (date_trunc('week', now() at time zone 'utc')) at time zone 'utc');
+    perform circle_open_week(cid, cur);
+    select count(*) into before_n from circle_week_days(cid, cur);
     perform circle_test_trial(ann, now() + interval '12 hours', true, 'profile');
     perform assert_true(
-        (select count(*) from warband_week_days(band, (date_trunc('week', now() at time zone 'utc')) at time zone 'utc')) = before_n,
+        (select count(*) from circle_week_days(cid, cur)) = before_n,
         'a trial stamped in the future counted toward the week'
     );
     delete from sessions where user_id = ann and completed_at > now();
 
-    -- Parity: each viewer reads the same total and the same per-member days for the
-    -- current week, whether the trials behind them are public or private, and
-    -- whether or not the viewer may see the member's profile.
-    perform circle_test_trial(ann, now(), true, 'profile');
-    perform circle_test_trial(bob, now(), true, 'private');
-    perform assert_true(
-        value_as(ann, 'select band_total from my_warband()') = '2'
-            and value_as(bob, 'select band_total from my_warband()') = '2'
-            and value_as(cat, 'select band_total from my_warband()') = '2',
-        'bandmates read different totals for the same week'
-    );
+    -- Parity: each viewer reads the same total and the same per-member days for the current
+    -- week, whether the trials behind them are public, friends-only or private, and whether or
+    -- not the viewer may see the member's profile. The week was opened above with all three on
+    -- the roster (Cat joined weeks before it).
+    perform circle_test_trial(ann, ws0, true, 'profile');
+    perform circle_test_trial(bob, ws0, true, 'private');
+    perform circle_test_trial(cat, ws0, true, 'friends');
     foreach v in array array[ann::text, bob::text, cat::text] loop
         perform assert_true(
-            value_as(v::uuid, 'select members->0->>''workouts_this_week'' from my_warband()') = '1'
-                and value_as(v::uuid, 'select members->1->>''workouts_this_week'' from my_warband()') = '1'
-                and value_as(v::uuid, 'select members->2->>''workouts_this_week'' from my_warband()') = '0',
-            'a viewer read a different per-member breakdown'
+            value_as(v::uuid, 'select circle_total from my_circle()') = '3'
+                and value_as(v::uuid, 'select members->0->>''days_this_week'' from my_circle()') = '1'
+                and value_as(v::uuid, 'select members->1->>''days_this_week'' from my_circle()') = '1'
+                and value_as(v::uuid, 'select members->2->>''days_this_week'' from my_circle()') = '1',
+            'a viewer read a different total or per-member breakdown for the same week'
         );
     end loop;
 
     delete from sessions where user_id in (ann, bob, cat);
-    perform must_run(cat, 'select public.leave_warband()', 'cat could not leave');
-    perform must_run(bob, 'select public.leave_warband()', 'bob could not leave');
-    perform must_run(ann, 'select public.leave_warband()', 'ann could not leave');
+    perform must_run(cat, 'select public.leave_circle()', 'cat could not leave');
+    perform must_run(bob, 'select public.leave_circle()', 'bob could not leave');
+    perform must_run(ann, 'select public.leave_circle()', 'ann could not leave');
     delete from auth.users where id in (ann, bob, cat);
 end $cnt$;
 
@@ -1882,56 +1980,287 @@ declare
     lou  uuid := 'a5588888-0000-4000-8000-000000000002';
     mac  uuid := 'a5588888-0000-4000-8000-000000000003';
     code text;
-    band uuid;
+    circle uuid;
 begin
     perform assert_true(
-        to_regclass('public.warband_members_band_joined_idx') is not null
-            and to_regclass('public.warbands_owner_idx') is not null,
+        to_regclass('public.circle_members_circle_joined_idx') is not null
+            and to_regclass('public.circles_owner_idx') is not null,
         'the roster or owner index is missing'
     );
     perform assert_true(
-        exists (select 1 from pg_constraint where conname = 'warbands_name_trimmed'),
+        exists (select 1 from pg_constraint where conname = 'circles_name_trimmed'),
         'the trimmed-name check is missing'
     );
 
     perform sign_up(kay, '{"display_name": "Kayden"}');
     perform sign_up(lou, '{"display_name": "Louis"}');
     perform sign_up(mac, '{"display_name": "Mackenzie"}');
-    perform must_run(kay, 'select public.create_warband(''Keeper Test'')', 'the handover fixture could not form a band');
-    code := value_as(kay, 'select code from my_warband()');
-    perform assert_true(value_as(lou, format('select public.join_warband(%L)', code)) = 'joined', 'the handover fixture could not join');
-    perform assert_true(value_as(mac, format('select public.join_warband(%L)', code)) = 'joined', 'the handover fixture could not join');
-    update warband_members set joined_at = now() - interval '3 days' where user_id = kay;
-    update warband_members set joined_at = now() - interval '2 days' where user_id = lou;
-    update warband_members set joined_at = now() - interval '1 day' where user_id = mac;
-    band := (select warband_id from warband_members where user_id = kay);
+    perform must_run(kay, 'select public.create_circle(''Keeper Test'')', 'the handover fixture could not form a circle');
+    code := value_as(kay, 'select code from my_circle()');
+    perform assert_true(value_as(lou, format('select public.join_circle(%L)', code)) = 'joined', 'the handover fixture could not join');
+    perform assert_true(value_as(mac, format('select public.join_circle(%L)', code)) = 'joined', 'the handover fixture could not join');
+    update circle_members set joined_at = now() - interval '3 days' where user_id = kay;
+    update circle_members set joined_at = now() - interval '2 days' where user_id = lou;
+    update circle_members set joined_at = now() - interval '1 day' where user_id = mac;
+    circle := (select circle_id from circle_members where user_id = kay);
 
     -- The Keeper's account goes (the cascade path, e.g. from the dashboard):
-    -- the band survives and the longest-standing member holds the keys.
+    -- the circle survives and the longest-standing member holds the keys.
     delete from auth.users where id = kay;
     perform assert_true(
-        exists (select 1 from warbands where id = band)
-            and (select owner_id from warbands where id = band) = lou
-            and (select count(*) from warband_members where warband_id = band) = 2,
-        'deleting the Keeper took the band, or did not hand it to the longest-standing member'
+        exists (select 1 from circles where id = circle)
+            and (select owner_id from circles where id = circle) = lou
+            and (select count(*) from circle_members where circle_id = circle) = 2,
+        'deleting the Keeper took the circle, or did not hand it to the longest-standing member'
     );
 
     -- delete_my_account() leaves first: the new Keeper deletes theirs and the
     -- keys pass on again.
     perform must_run(lou, 'select public.delete_my_account()', 'the Keeper could not delete their account');
     perform assert_true(
-        (select owner_id from warbands where id = band) = mac
-            and (select count(*) from warband_members where warband_id = band) = 1,
-        'delete_my_account did not hand the band over'
+        (select owner_id from circles where id = circle) = mac
+            and (select count(*) from circle_members where circle_id = circle) = 1,
+        'delete_my_account did not hand the circle over'
     );
 
-    -- The last member's account ends the band.
+    -- The last member's account ends the circle.
     perform must_run(mac, 'select public.delete_my_account()', 'the last member could not delete their account');
     perform assert_true(
-        not exists (select 1 from warbands where id = band),
-        'a band outlived its last member''s account'
+        not exists (select 1 from circles where id = circle),
+        'a circle outlived its last member''s account'
     );
 end $sf$;
+
+-- ------------------------------------------------------- circle weeks: settlement, bonus, farming
+-- The weekly bonus must be settled once on the server, the same for every
+-- member, and impossible to collect by shuffling membership. Every week here
+-- is relative to the current one, from fixtures backdated the way real time
+-- would have left them, so nothing depends on the day the suite runs. The
+-- weeks used for settlement are at least two back: a closed week settles a
+-- day after it closes, so the previous one may or may not be due yet.
+do $wk$
+declare
+    ava uuid := 'a55aaaaa-0000-4000-8000-000000000001';
+    ben uuid := 'a55aaaaa-0000-4000-8000-000000000002';
+    cy  uuid := 'a55aaaaa-0000-4000-8000-000000000003';
+    dee uuid := 'a55aaaaa-0000-4000-8000-000000000004';
+    eli uuid := 'a55aaaaa-0000-4000-8000-000000000005';
+    fay uuid := 'a55aaaaa-0000-4000-8000-000000000006';
+    gus uuid := 'a55aaaaa-0000-4000-8000-000000000007';
+    ws0 timestamptz := circle_week_start(now());
+    ws1 timestamptz := circle_week_start(now()) - interval '7 days';
+    ws2 timestamptz := circle_week_start(now()) - interval '14 days';
+    ws3 timestamptz := circle_week_start(now()) - interval '21 days';
+    cur date := (circle_week_start(now()) at time zone 'utc')::date;
+    cid uuid;
+    solo uuid;
+    gone uuid;
+    code text;
+    k int;
+    v text;
+    settled timestamptz;
+begin
+    perform sign_up(ava, '{"display_name": "Avalon"}');
+    perform sign_up(ben, '{"display_name": "Benedict"}');
+    perform sign_up(cy,  '{"display_name": "Cyrus"}');
+    perform sign_up(dee, '{"display_name": "Delphine"}');
+    perform sign_up(eli, '{"display_name": "Elio"}');
+    perform sign_up(fay, '{"display_name": "Fabian"}');
+    perform sign_up(gus, '{"display_name": "Gustav"}');
+    update profiles set visibility = 'public' where id in (ava, ben, cy, dee, eli, fay, gus);
+
+    -- A circle of three that has been going for five weeks.
+    perform must_run(ava, 'select public.create_circle(''Week Ring'')', 'the weeks fixture could not form a circle');
+    cid := (select circle_id from circle_members where user_id = ava);
+    code := (select invite_code from circles where id = cid);
+    perform assert_true(value_as(ben, format('select public.join_circle(%L)', code)) = 'joined', 'ben could not join');
+    perform assert_true(value_as(cy, format('select public.join_circle(%L)', code)) = 'joined', 'cy could not join');
+    update circles set created_at = ws0 - interval '5 weeks' where id = cid;
+    update circle_members set joined_at = ws0 - interval '5 weeks' where circle_id = cid;
+
+    -- Three weeks back: all three trained three days. Two back: the same, and Ava
+    -- trained a fourth day. Last week: Cy did not train.
+    foreach v in array array[ava::text, ben::text, cy::text] loop
+        for k in 0..2 loop
+            perform circle_test_trial(v::uuid, ws3 + make_interval(days => k, hours => 10), true, 'profile');
+            perform circle_test_trial(v::uuid, ws2 + make_interval(days => k, hours => 10), true, 'profile');
+            if v::uuid <> cy then
+                perform circle_test_trial(v::uuid, ws1 + make_interval(days => k, hours => 10), true, 'profile');
+            end if;
+        end loop;
+    end loop;
+    perform circle_test_trial(ava, ws2 + interval '3 days 10 hours', true, 'profile');
+
+    -- The first read after the weeks closed settles them, for everyone.
+    perform value_as(ava, 'select id from my_circle()');
+    perform assert_true(
+        (select met from circle_weeks where circle_id = cid and week = cur - 21)
+            and (select met from circle_weeks where circle_id = cid and week = cur - 14)
+            and (select members from circle_weeks where circle_id = cid and week = cur - 14) = 3
+            and (select goal from circle_weeks where circle_id = cid and week = cur - 14) = 9
+            and (select total from circle_weeks where circle_id = cid and week = cur - 14) = 9
+            and (select days from circle_week_members where circle_id = cid and week = cur - 14 and user_id = ava) = 3,
+        'weeks in which every member trained their share did not settle as met (or Ava''s fourth day counted)'
+    );
+    perform assert_true(
+        not exists (select 1 from circle_weeks where circle_id = cid and week < cur - 21 and met)
+            and (select met from circle_weeks where circle_id = cid and week = cur - 35) is false
+            and (select members from circle_weeks where circle_id = cid and week = cur - 35) = 0,
+        'a week with nobody on it settled as met, or the circle''s first week had a roster'
+    );
+    perform assert_true(
+        (select met is not true from circle_weeks where circle_id = cid and week = cur - 7),
+        'a week one member short of their share was met'
+    );
+    perform assert_true(
+        value_as(ava, 'select weeks_met from my_circle()') = '2'
+            and value_as(ben, 'select weeks_met from my_circle()') = '2',
+        'weeks met is not the number of weeks settled as met, the same for every member'
+    );
+    -- The same answer for everyone, settled once.
+    settled := (select settled_at from circle_weeks where circle_id = cid and week = cur - 14);
+    perform value_as(ben, 'select id from my_circle()');
+    perform value_as(cy, 'select id from my_circle()');
+    perform assert_true(
+        (select settled_at from circle_weeks where circle_id = cid and week = cur - 14) = settled,
+        'another member''s read settled the week again'
+    );
+
+    -- The bonus: from the settled record, for the weeks that closed most recently, with
+    -- the lifter's own counted days. Three weeks back is out of reach; two back is owed.
+    foreach v in array array[ava::text, ben::text, cy::text] loop
+        perform assert_true(
+            value_as(v::uuid, 'select count(*) from circle_bonuses()') = '1'
+                and value_as(v::uuid, 'select week::text from circle_bonuses()') = (cur - 14)::text
+                and value_as(v::uuid, 'select days from circle_bonuses()') = '3'
+                and value_as(v::uuid, 'select circle_name from circle_bonuses()') = 'Week Ring',
+            'the settled week did not owe each rostered member their bonus exactly once'
+        );
+    end loop;
+
+    -- Joining a circle that has already met its goal pays nothing: Dee was not on any roster.
+    perform assert_true(value_as(dee, format('select public.join_circle(%L)', code)) = 'joined', 'dee could not join');
+    perform assert_true(
+        value_as(dee, 'select count(*) from circle_bonuses()') = '0',
+        'a lifter who joined a circle that had met its goal was paid for it'
+    );
+
+    -- This week: Ava and Cy trained, and so did Dee, who joined this week and so counts from
+    -- next Monday: the roster the week opened with is Ava, Ben and Cy.
+    perform circle_test_trial(ava, ws0, true, 'profile');
+    perform circle_test_trial(cy, ws0, true, 'profile');
+    perform circle_test_trial(dee, now(), true, 'profile');
+    perform assert_true(
+        value_as(ava, 'select circle_total from my_circle()') = '2'
+            and value_as(dee, 'select circle_total from my_circle()') = '2'
+            and value_as(ava, 'select roster from my_circle()') = '3'
+            and value_as(ava, 'select goal from my_circle()') = '9'
+            and value_as(dee, format('select m->>''counts'' from my_circle(), jsonb_array_elements(members) m where m->>''user_id'' = %L', dee::text)) = 'false'
+            and value_as(dee, format('select m->>''days_this_week'' from my_circle(), jsonb_array_elements(members) m where m->>''user_id'' = %L', dee::text)) = '1',
+        'a lifter who joined this week counted toward its goal, or the roster is not the one the week opened with'
+    );
+
+    -- A member who leaves mid-week still counts for the week (up to the moment they left).
+    perform must_run(cy, 'select public.leave_circle()', 'cy could not leave');
+    perform assert_true(
+        value_as(ava, 'select circle_total from my_circle()') = '2'
+            and value_as(ava, 'select roster from my_circle()') = '3'
+            and value_as(ava, 'select goal from my_circle()') = '9'
+            and value_as(ava, 'select jsonb_array_length(members) from my_circle()') = '3'
+            and (select left_at from circle_week_members where circle_id = cid and week = cur and user_id = cy) is not null,
+        'a member who left mid-week took their days, or the week''s goal, with them'
+    );
+    -- Trials after leaving do not count, and leaving does not lose last week's bonus.
+    perform circle_test_trial(cy, now(), true, 'profile');
+    perform assert_true(
+        value_as(ava, 'select circle_total from my_circle()') = '2',
+        'a trial sealed after leaving counted for the circle'
+    );
+    perform assert_true(
+        value_as(cy, 'select count(*) from circle_bonuses()') = '1',
+        'a lifter who left a circle straight after a met week could not collect it'
+    );
+    -- Rejoining does not put them back on the roster, nor back in the week.
+    perform assert_true(value_as(cy, format('select public.join_circle(%L)', code)) = 'joined', 'cy could not rejoin');
+    perform assert_true(
+        value_as(ava, 'select circle_total from my_circle()') = '2'
+            and value_as(ava, 'select roster from my_circle()') = '3'
+            and value_as(cy, format('select m->>''counts'' from my_circle(), jsonb_array_elements(members) m where m->>''user_id'' = %L', cy::text)) = 'false',
+        'leaving and rejoining put a lifter back into a week they had already left'
+    );
+
+    -- A circle of one never has a goal and never pays, however much its member trains.
+    perform must_run(eli, 'select public.create_circle(''Solo Ring'')', 'eli could not form a circle');
+    solo := (select circle_id from circle_members where user_id = eli);
+    update circles set created_at = ws0 - interval '5 weeks' where id = solo;
+    update circle_members set joined_at = ws0 - interval '5 weeks' where circle_id = solo;
+    for k in 0..6 loop
+        perform circle_test_trial(eli, ws2 + make_interval(days => k, hours => 10), true, 'profile');
+    end loop;
+    perform value_as(eli, 'select id from my_circle()');
+    perform assert_true(
+        (select members from circle_weeks where circle_id = solo and week = cur - 14) = 1
+            and (select total from circle_weeks where circle_id = solo and week = cur - 14) = 3
+            and (select met from circle_weeks where circle_id = solo and week = cur - 14) is false
+            and value_as(eli, 'select goal from my_circle()') = '0'
+            and value_as(eli, 'select count(*) from circle_bonuses()') = '0',
+        'a circle of one was given a goal, met it, or paid its member'
+    );
+    -- Leaving it and joining another circle the same week is not a second chance at a bonus.
+    perform must_run(eli, 'select public.leave_circle()', 'eli could not leave');
+    perform assert_true(value_as(eli, format('select public.join_circle(%L)', code)) = 'joined', 'eli could not join');
+    perform assert_true(
+        value_as(eli, 'select count(*) from circle_bonuses()') = '0'
+            and value_as(eli, format('select m->>''counts'' from my_circle(), jsonb_array_elements(members) m where m->>''user_id'' = %L', eli::text)) = 'false',
+        'a lifter who switched circles was paid, or put on the new circle''s roster, in the week they arrived'
+    );
+
+    -- The Keeper cannot move this week's goal. A change parks for next week and
+    -- is applied when that week opens; setting the current value clears it.
+    perform must_run(ava, 'select public.set_circle_goal(1)', 'the Keeper could not set the target');
+    perform assert_true(
+        value_as(ava, 'select per_member from my_circle()') = '3'
+            and value_as(ava, 'select goal from my_circle()') = '9'
+            and value_as(ava, 'select pending_per_member from my_circle()') = '1',
+        'lowering the target changed this week''s goal'
+    );
+    perform must_run(ava, 'select public.set_circle_goal(5)', 'the Keeper could not change the target');
+    -- Next week opens: simulate it by taking this week's record away and reading again.
+    delete from circle_weeks where circle_id = cid and week = cur;
+    perform assert_true(
+        value_as(ava, 'select per_member from my_circle()') = '5'
+            and value_as(ava, 'select pending_per_member is null from my_circle()') = 'true'
+            and value_as(ava, 'select roster from my_circle()') = '2'
+            and value_as(ava, 'select goal from my_circle()') = '10',
+        'a parked target did not apply when the week opened, or the new goal is not target x roster'
+    );
+
+    -- A lifter whose account is deleted while the week is being opened must not break it:
+    -- the roster is made from the members who are still there.
+    perform must_run(fay, 'select public.create_circle(''Gone Ring'')', 'fay could not form a circle');
+    gone := (select circle_id from circle_members where user_id = fay);
+    perform assert_true(
+        value_as(gus, format('select public.join_circle(%L)', (select invite_code from circles where id = gone))) = 'joined',
+        'gus could not join'
+    );
+    update circle_members set joined_at = ws0 - interval '2 weeks' where circle_id = gone;
+    delete from circle_weeks where circle_id = gone;
+    delete from auth.users where id = fay;
+    perform assert_true(
+        (select owner_id from circles where id = gone) = gus
+            and (select members from circle_weeks where circle_id = gone and week = cur) = 1,
+        'deleting an account while its week was being opened broke the handover or put a ghost on the roster'
+    );
+
+    delete from sessions where user_id in (ava, ben, cy, dee, eli, fay, gus);
+    delete from auth.users where id in (ava, ben, cy, dee, eli, fay, gus);
+    perform assert_true(
+        (select count(*) from circles) = 0
+            and (select count(*) from circle_weeks) = 0
+            and (select count(*) from circle_week_members) = 0,
+        'circle fixtures survived the teardown'
+    );
+end $wk$;
 
 drop function if exists assert_true(boolean, text);
 drop function if exists refused_as(uuid, text, text[]);

@@ -70,45 +70,54 @@ class CloudWireDtosTest {
     }
 
     @Test
-    fun `a warband decodes its roster with the neutral-name and bare-title fallbacks`() {
-        val dto = json.decodeFromString<WarbandDto>(
+    fun `a circle decodes its roster with the neutral-name and bare-title fallbacks`() {
+        val dto = json.decodeFromString<CircleDto>(
             """{"id": "7c9e6a4e-0000-4000-8000-0000000000aa", "name": "North Gate",
-                "code": "K7M2PQ4X", "owner_id": "owner-1", "weekly_goal": 9,
-                "band_total": 5,
+                "code": "K7M2PQ4X", "owner_id": "owner-1", "week": "2026-09-28",
+                "per_member": 4, "pending_per_member": 2, "goal": 8,
+                "circle_total": 5, "roster": 2, "weeks_met": 3,
                 "members": [
                   {"user_id": "owner-1", "display_name": "Nova", "level": 9,
-                   "current_title_id": "first-blood", "workouts_this_week": 2,
+                   "current_title_id": "first-blood", "days_this_week": 2, "counts": true,
                    "last_workout_at": "2026-09-28T07:45:00Z"},
                   {"user_id": "u2", "display_name": "Lifterb042", "level": 1,
-                   "current_title_id": null, "workouts_this_week": 0}
+                   "current_title_id": null, "days_this_week": 0, "counts": false}
                 ]}""",
         )
-        val band = dto.toWarband()
-        assertEquals("K7M2PQ4X", band.code)
-        assertEquals("owner-1", band.ownerId)
-        assertEquals(9, band.weeklyGoal)
+        val circle = dto.toCircle()
+        assertEquals("K7M2PQ4X", circle.code)
+        assertEquals("owner-1", circle.ownerId)
+        assertEquals(4, circle.perMember)
+        assertEquals(2, circle.pendingPerMember)
+        assertEquals(8, circle.goal)
         // The canonical total is the server's number, not the sum of what this viewer was handed.
-        assertEquals(5, band.total)
-        // A server older than schema 27 sends none: fall back to the members' own counts.
-        assertEquals(2, json.decodeFromString<WarbandDto>(
-            """{"id": "7c9e6a4e-0000-4000-8000-0000000000aa", "name": "North Gate",
-                "code": "K7M2PQ4X", "owner_id": "owner-1",
-                "members": [{"user_id": "a", "display_name": "A", "workouts_this_week": 2}]}""",
-        ).toWarband().total)
-        // A band row from before the goal shipped decodes the server default.
-        assertEquals(12, json.decodeFromString<WarbandDto>(
+        assertEquals(5, circle.total)
+        assertEquals(2, circle.roster)
+        assertEquals(3, circle.weeksMet)
+        // A row with none of the week fields decodes the neutral defaults: no goal, no pending change.
+        val bare = json.decodeFromString<CircleDto>(
             """{"id": "7c9e6a4e-0000-4000-8000-0000000000aa", "name": "North Gate",
                 "code": "K7M2PQ4X", "owner_id": "owner-1"}""",
-        ).toWarband().weeklyGoal)
-        assertEquals(2, band.members.size)
-        assertEquals("first-blood", band.members[0].titleId)
-        assertEquals(2, band.members[0].workoutsThisWeek)
-        assertEquals(1790581500000L, band.members[0].lastWorkoutAtMs)
+        ).toCircle()
+        assertEquals(com.ironvellum.app.domain.Circle.DEFAULT_PER_MEMBER, bare.perMember)
+        assertNull(bare.pendingPerMember)
+        assertEquals(0, bare.goal)
+        // A circle mid-handover has no Keeper row: the oldest member holds the keys.
+        assertEquals("a", json.decodeFromString<CircleDto>(
+            """{"id": "7c9e6a4e-0000-4000-8000-0000000000aa", "name": "North Gate",
+                "code": "K7M2PQ4X", "owner_id": null,
+                "members": [{"user_id": "a", "display_name": "A"}]}""",
+        ).toCircle().ownerId)
+        assertEquals(2, circle.members.size)
+        assertEquals("first-blood", circle.members[0].titleId)
+        assertEquals(2, circle.members[0].daysThisWeek)
+        assertEquals(1790581500000L, circle.members[0].lastWorkoutAtMs)
         // A missing profile row still lists, level defaulted, no timestamp.
-        assertNull(band.members[1].titleId)
-        assertNull(band.members[1].lastWorkoutAtMs)
-        assertEquals(0, band.members[1].workoutsThisWeek)
-        assertEquals(1, band.members[1].level)
+        assertNull(circle.members[1].titleId)
+        assertNull(circle.members[1].lastWorkoutAtMs)
+        assertEquals(0, circle.members[1].daysThisWeek)
+        assertEquals(false, circle.members[1].counts)
+        assertEquals(1, circle.members[1].level)
     }
 
     @Test

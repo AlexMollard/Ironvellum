@@ -19,7 +19,7 @@ Owner decisions (2026-09-29):
 |---|---|---|
 | 1.4 | Talk | Comments, themed reactions, inbox, per-workout audience, block / mute / report, remove ally, server rate limits |
 | 1.4 | Fair fight | Ally boards per lift — calisthenics skill ladders first, bodyweight-relative tiers behind them (score computed on device, only the step leaves it); routine sharing as a pasteable text code; the ally workout view; inbox notifications |
-| post-1.4 | Warbands | Invite-code groups of 3-8, pooled Garrison banner line, weekly group challenge, trained-this-week marks. Skill witnessing deferred: claims are device-local and need their own design |
+| post-1.4 | Circles (first built as Warbands) | Invite-code groups of 2-8, pooled Veil banner line, weekly group challenge, trained-this-week marks. Skill witnessing deferred: claims are device-local and need their own design |
 | Later | Community | Public audience and discovery, public Warbands, auto-hide after repeated reports, push (UnifiedPush, not FCM), media if asked for |
 
 Triggers for "Later": friends of friends asking to join, or people asking for

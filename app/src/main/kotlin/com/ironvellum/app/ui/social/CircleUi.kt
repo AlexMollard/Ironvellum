@@ -49,9 +49,10 @@ import android.content.ClipboardManager
 import android.content.Intent
 import android.widget.Toast
 import com.ironvellum.app.domain.Titles
-import com.ironvellum.app.domain.Warband
-import com.ironvellum.app.domain.WarbandMember
+import com.ironvellum.app.domain.Circle
+import com.ironvellum.app.domain.CircleMember
 import com.ironvellum.app.domain.extractInviteCode
+import com.ironvellum.app.data.CircleBonusPaid
 import com.ironvellum.app.data.CircleGateway
 import com.ironvellum.app.data.CircleRead
 import com.ironvellum.app.data.CloudCircleGateway
@@ -77,7 +78,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * One snapshot of the lifter's warband for the ALLIES tab.
+ * One snapshot of the lifter's circle for the ALLIES tab.
  *
  * Week anchor: the server counts a member's workouts in the Monday-start week
  * of `date_trunc('week', now())` evaluated in UTC, so the header's "Week of"
@@ -85,9 +86,9 @@ import kotlinx.coroutines.launch
  * could label the band's week a day off for lifters west of UTC around the
  * rollover.
  */
-data class WarbandUiState(
+data class CircleUiState(
     val signedIn: Boolean = false,
-    val warband: Warband? = null,
+    val circle: Circle? = null,
     /** The signed-in lifter's id — decides who sees the goal EDIT affordance. */
     val myUserId: String? = null,
     val loading: Boolean = false,
@@ -99,15 +100,15 @@ data class WarbandUiState(
     val actionBusy: Boolean = false,
     /** A server REFUSAL of the last action (full band, already in one, bad code) — inline, never a toast-only. */
     val actionError: String? = null,
-    /** XP just paid for the band's weekly goal — shown once, then cleared. */
-    val payoutXp: Int? = null,
+    /** The bonus just paid for a settled week — shown once, then cleared. */
+    val paid: CircleBonusPaid? = null,
 )
 
-class WarbandViewModel(
+class CircleViewModel(
     private val gateway: CircleGateway,
 ) : ViewModel() {
 
-    private val _ui = MutableStateFlow(WarbandUiState(signedIn = gateway.currentUserId() != null, myUserId = gateway.currentUserId()))
+    private val _ui = MutableStateFlow(CircleUiState(signedIn = gateway.currentUserId() != null, myUserId = gateway.currentUserId()))
     val ui = _ui.asStateFlow()
 
     private fun Throwable.reason(): String = message ?: this::class.simpleName ?: "Unknown failure"
@@ -122,7 +123,7 @@ class WarbandViewModel(
                 _ui.value = _ui.value.copy(signedIn = userId != null, myUserId = userId)
                 when {
                     userId != null && !was -> load()
-                    userId == null -> _ui.value = WarbandUiState(signedIn = false)
+                    userId == null -> _ui.value = CircleUiState(signedIn = false)
                 }
             }
         }
@@ -145,7 +146,7 @@ class WarbandViewModel(
                     // the roster is then the last good read, not the current one.
                     _ui.value = _ui.value.copy(
                         error = failure.reason(),
-                        refreshFailed = _ui.value.warband != null,
+                        refreshFailed = _ui.value.circle != null,
                     )
                 }
             _ui.value = _ui.value.copy(loading = false)
@@ -154,19 +155,19 @@ class WarbandViewModel(
 
     /**
      * Records the band; any bonus the read paid shows once through
-     * [WarbandUiState.payoutXp]. The pay itself happens in the gateway, so
+     * [CircleUiState.paid]. The pay itself happens in the gateway, so
      * every circle read settles it, not only this screen's.
      */
     private fun onRead(read: CircleRead) {
         _ui.value = _ui.value.copy(
-            warband = read.circle,
+            circle = read.circle,
             error = null,
             refreshFailed = false,
-            payoutXp = read.paidXp ?: _ui.value.payoutXp,
+            paid = read.paid ?: _ui.value.paid,
         )
     }
 
-    fun setGoal(goal: Int, onDone: () -> Unit = {}) = act(onDone) { gateway.setGoal(goal) }
+    fun setGoal(perMember: Int, onDone: () -> Unit = {}) = act(onDone) { gateway.setGoal(perMember) }
 
     fun create(name: String, onDone: () -> Unit = {}) = act(onDone) { gateway.create(name) }
 
@@ -205,29 +206,29 @@ class WarbandViewModel(
 
     /** The payout overlay is a one-shot moment: dismissed once acknowledged. */
     fun dismissPayout() {
-        _ui.value = _ui.value.copy(payoutXp = null)
+        _ui.value = _ui.value.copy(paid = null)
     }
 }
 
 /**
- * The WARBAND block of the ALLIES tab: the pitch and create/join when the
+ * The CIRCLE block of the ALLIES tab: the pitch and create/join when the
  * lifter is bandless, the band roster and its invite code when they are not.
- * 3-8 members is enforced server-side; refusals come back as [WarbandUiState.actionError]
+ * 2-8 members is enforced server-side; refusals come back as [CircleUiState.actionError]
  * and render inline under the buttons.
  */
 @Composable
-fun WarbandSection(
+fun CircleSection(
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     /** Bumped by the host's pull-to-refresh; each bump forces a fresh circle read. */
     refreshSignal: Int = 0,
-    viewModel: WarbandViewModel? = null,
+    viewModel: CircleViewModel? = null,
 ) {
     // The caller may inject a view model (previews, tests); the default is
     // built over the app-scoped cloud objects.
     val vm = viewModel ?: viewModel(
         factory = viewModelFactory {
             initializer {
-                WarbandViewModel(
+                CircleViewModel(
                     CloudCircleGateway(ironvellumCloudSync(), ironvellumAccount(), ironvellumCircleBonus()),
                 )
             }
@@ -243,7 +244,7 @@ fun WarbandSection(
     if (!ui.signedIn) return
     // Locals, not the delegated property: the leave dialog and the error
     // branch need a stable, smart-castable band/error for one composition.
-    val band = ui.warband
+    val band = ui.circle
     val loadError = ui.error
     val actionError = ui.actionError
 
@@ -271,14 +272,14 @@ fun WarbandSection(
         }
         else -> {
             if (band == null) {
-                WarbandPitch(
+                CirclePitch(
                     busy = ui.actionBusy,
                     error = actionError,
                     onCreate = { showCreate = true },
                     onJoin = { showJoin = true },
                 )
             } else {
-                WarbandRoster(
+                CircleRoster(
                     band = band,
                     refreshFailed = ui.refreshFailed,
                     busy = ui.actionBusy,
@@ -293,7 +294,7 @@ fun WarbandSection(
     }
 
     if (showCreate) {
-        CreateWarbandDialog(
+        CreateCircleDialog(
             busy = ui.actionBusy,
             error = actionError,
             onCreate = { name -> vm.create(name) { showCreate = false } },
@@ -304,7 +305,7 @@ fun WarbandSection(
         )
     }
     if (showJoin) {
-        JoinWarbandDialog(
+        JoinCircleDialog(
             busy = ui.actionBusy,
             error = actionError,
             onJoin = { code -> vm.join(code) { showJoin = false } },
@@ -344,24 +345,24 @@ fun WarbandSection(
         GoalEditorDialog(
             busy = ui.actionBusy,
             error = actionError,
-            goal = band.weeklyGoal,
+            perMember = band.pendingPerMember ?: band.perMember,
             // Closes only once the server accepted it: a refusal stays on
             // the dialog, in its inline error.
-            onSave = { goal -> vm.setGoal(goal) { showGoalEditor = false } },
+            onSave = { perMember -> vm.setGoal(perMember) { showGoalEditor = false } },
             onDismiss = {
                 vm.dismissActionError()
                 showGoalEditor = false
             },
         )
     }
-    ui.payoutXp?.let { xp ->
+    ui.paid?.let { paid ->
         AchievementOverlay(
             items = listOf(
                 Achievement(
                     banner = "CIRCLE'S GOAL MET",
-                    name = band?.name ?: "The circle",
+                    name = paid.circleName ?: band?.name ?: "The circle",
                     tagline = "The circle met its weekly goal and you carried your share.",
-                    xp = xp,
+                    xp = paid.xp,
                 ),
             ),
             onDone = vm::dismissPayout,
@@ -370,7 +371,7 @@ fun WarbandSection(
 }
 
 @Composable
-private fun WarbandPitch(
+private fun CirclePitch(
     busy: Boolean,
     error: String?,
     onCreate: () -> Unit,
@@ -401,8 +402,8 @@ private fun WarbandPitch(
 }
 
 @Composable
-private fun WarbandRoster(
-    band: Warband,
+private fun CircleRoster(
+    band: Circle,
     refreshFailed: Boolean,
     busy: Boolean,
     error: String?,
@@ -418,9 +419,11 @@ private fun WarbandRoster(
     // The server's canonical total: summing what the viewer was handed could
     // differ from the next member's sum and split GOAL MET between phones.
     val total = band.total
-    // Goal absent (an older server answer) falls back to the Warband default silently.
-    val goal = band.weeklyGoal.coerceAtLeast(1)
-    val met = total >= goal
+    // Goal 0: fewer than two members were on the roster when the week opened,
+    // so there is nothing to meet yet (a warm-up week).
+    val goal = band.goal
+    val hasGoal = goal > 0
+    val met = hasGoal && total >= goal
     val monday = remember { weekMondayLabel() }
 
     InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
@@ -448,13 +451,13 @@ private fun WarbandRoster(
         // payout overlay fires for contributors.
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             InkRail(
-                fraction = (total.toFloat() / goal).coerceIn(0f, 1f),
+                fraction = if (hasGoal) (total.toFloat() / goal).coerceIn(0f, 1f) else 0f,
                 modifier = Modifier.weight(1f),
                 height = 8.dp,
                 seed = band.id.hashCode(),
             )
             Text(
-                if (met) "GOAL MET" else "$total / $goal this week",
+                if (met) "GOAL MET" else if (hasGoal) "$total / $goal this week" else "WARM-UP WEEK",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
@@ -464,7 +467,7 @@ private fun WarbandRoster(
             if (isOwner) {
                 // 44dp minimum touch target via TapPad; the label is announced
                 // with the current goal so a screen reader hears what it edits.
-                TapPad("EDIT", "Change the weekly goal, currently $goal") { onEditGoal() }
+                TapPad("EDIT", "Change the weekly goal, currently ${band.perMember} days each") { onEditGoal() }
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -495,7 +498,12 @@ private fun WarbandRoster(
         }
         Spacer(Modifier.height(8.dp))
         Text(
-            "Week of $monday · $total ${plural(total, "trial", "trials")} across the circle",
+            buildString {
+                append("Week of $monday · $total ${plural(total, "day", "days")} trained")
+                if (hasGoal) append(" · ${band.perMember} each")
+                band.pendingPerMember?.let { append(" · $it from next week") }
+                append(" · weeks met: ${band.weeksMet}")
+            },
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
@@ -504,10 +512,10 @@ private fun WarbandRoster(
         Spacer(Modifier.height(8.dp))
         // Members render oldest first (the server's order), the owner wears a mark.
         band.members.forEach { member ->
-            WarbandMemberRow(
+            CircleMemberRow(
                 member = member,
                 isOwner = member.userId == band.ownerId,
-                goal = goal,
+                perMember = band.perMember,
                 onOpenLifter = onOpenLifter,
             )
         }
@@ -518,10 +526,10 @@ private fun WarbandRoster(
 }
 
 @Composable
-private fun WarbandMemberRow(
-    member: WarbandMember,
+private fun CircleMemberRow(
+    member: CircleMember,
     isOwner: Boolean,
-    goal: Int,
+    perMember: Int,
     onOpenLifter: (userId: String, displayName: String) -> Unit,
 ) {
     Row(
@@ -541,26 +549,28 @@ private fun WarbandMemberRow(
             modifier = Modifier.weight(1f),
         )
         Column(horizontalAlignment = Alignment.End) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                if (member.workoutsThisWeek >= 1) {
+            // A member who has not trained shows nothing: a row of zeroes is
+            // guilt, not information. A check marks those who have.
+            if (member.daysThisWeek >= 1) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                     Icon(
                         Icons.Outlined.CheckCircle,
                         contentDescription = "Trained this week",
                         tint = IronvellumColors.SystemGreen,
                         modifier = Modifier.size(14.dp),
                     )
+                    Text(
+                        "${member.daysThisWeek} of $perMember",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.SystemGreen,
+                    )
                 }
-                Text(
-                    "${member.workoutsThisWeek} this week",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = if (member.workoutsThisWeek >= 1) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
-                )
             }
             // The member's share of the week's goal, on the same rail language
-            // as the band's own progress — a slim stroke, not a second counter.
+            // as the circle's own progress — a slim stroke, not a second counter.
             InkRail(
-                fraction = (member.workoutsThisWeek.toFloat() / goal).coerceIn(0f, 1f),
+                fraction = (member.daysThisWeek.toFloat() / perMember).coerceIn(0f, 1f),
                 modifier = Modifier.width(96.dp),
                 height = 3.dp,
                 seed = member.userId.hashCode(),
@@ -586,7 +596,7 @@ private fun WarbandMemberRow(
 }
 
 @Composable
-private fun CreateWarbandDialog(
+private fun CreateCircleDialog(
     busy: Boolean,
     error: String?,
     onCreate: (name: String) -> Unit,
@@ -642,7 +652,7 @@ private fun CreateWarbandDialog(
  * focused window) and an unambiguous-looking 8-character run pre-fills.
  */
 @Composable
-private fun JoinWarbandDialog(
+private fun JoinCircleDialog(
     busy: Boolean,
     error: String?,
     onJoin: (code: String) -> Unit,
@@ -699,7 +709,7 @@ private fun JoinWarbandDialog(
 }
 
 /**
- * The owner's weekly-goal editor: a 5–50 stepper, no free-text field, so the
+ * The Keeper's weekly-goal editor: a 1–7 stepper, no free-text field, so the
  * value can never leave the server's accepted range. A refused save comes
  * back through [error] and renders inline, like the other band dialogs.
  */
@@ -707,21 +717,21 @@ private fun JoinWarbandDialog(
 private fun GoalEditorDialog(
     busy: Boolean,
     error: String?,
-    goal: Int,
-    onSave: (goal: Int) -> Unit,
+    perMember: Int,
+    onSave: (perMember: Int) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    var value by rememberSaveable { mutableStateOf(goal) }
+    var value by rememberSaveable { mutableStateOf(perMember) }
 
     AlertDialog(
         shape = MaterialTheme.shapes.medium,
         containerColor = Color(0xFF0D1110),
         onDismissRequest = onDismiss,
-        title = { Text("Weekly goal") },
+        title = { Text("Weekly goal per member") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Trials the whole circle aims for this week.",
+                    "Days each member aims to train per week. A change starts next Monday.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
@@ -761,8 +771,8 @@ private fun GoalEditorDialog(
     )
 }
 
-/** The server's accepted goal range (CloudSync.setWarbandGoal mirrors it). */
-private val GOAL_RANGE = 5..50
+/** The server's accepted goal range (CloudSync.setCircleGoal mirrors it). */
+private val GOAL_RANGE = Circle.PER_MEMBER_RANGE
 
 /** The UTC Monday the band's week started on, in the header's short form. */
 internal fun weekMondayLabel(): String {

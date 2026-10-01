@@ -12,8 +12,8 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import java.time.Instant
 import com.ironvellum.app.domain.Lift
-import com.ironvellum.app.domain.Warband
-import com.ironvellum.app.domain.WarbandMember
+import com.ironvellum.app.domain.Circle
+import com.ironvellum.app.domain.CircleMember
 
 /*
  * Wire types for the Supabase REST API. Every @SerialName must match the
@@ -563,23 +563,23 @@ sealed interface InboxItem {
         val reaction: Reaction,
     ) : InboxItem
 
-    /** A lifter joined the caller's warband; [bandName] carries the band. */
-    data class NewBandmate(
+    /** A lifter joined the caller's circle; [circleName] carries the circle. */
+    data class NewCircleMember(
         override val occurredAtMs: Long,
         override val actorId: String,
         override val actorName: String,
-        val bandName: String,
+        val circleName: String,
     ) : InboxItem
 
     /**
      * The caller's circle reached its weekly goal; [actorId] sealed the trial
-     * that crossed it, and [bandName] carries the circle.
+     * that crossed it, and [circleName] carries the circle.
      */
     data class CircleGoalMet(
         override val occurredAtMs: Long,
         override val actorId: String,
         override val actorName: String,
-        val bandName: String,
+        val circleName: String,
     ) : InboxItem
 }
 
@@ -637,17 +637,21 @@ data class InboxRowDto(
                 sessionHeadline = sessionHeadline.orEmpty(),
                 reaction = Reaction.fromWire(reaction) ?: return null,
             )
-            "band_join" -> InboxItem.NewBandmate(
+            // The wire kinds keep their original spelling: builds already installed
+            // parse "band_join" and "band_goal", so the server still sends those.
+            // The circle_* spellings are accepted too, so a later server can
+            // rename them without stranding this build.
+            "band_join", "circle_join" -> InboxItem.NewCircleMember(
                 occurredAtMs = at,
                 actorId = actorId,
                 actorName = name,
-                bandName = body.orEmpty(),
+                circleName = body.orEmpty(),
             )
-            "band_goal" -> InboxItem.CircleGoalMet(
+            "band_goal", "circle_goal" -> InboxItem.CircleGoalMet(
                 occurredAtMs = at,
                 actorId = actorId,
                 actorName = name,
-                bandName = body.orEmpty(),
+                circleName = body.orEmpty(),
             )
             else -> null
         }
@@ -774,77 +778,101 @@ data class FindHunterArgs(
     @SerialName("name") val name: String,
 )
 
-/** Arguments of `create_warband` (supabase/migrations/0001_baseline.sql). */
+/** Arguments of `create_circle` (supabase/migrations/0001_baseline.sql). */
 @Serializable
-data class CreateWarbandArgs(
+data class CreateCircleArgs(
     @SerialName("p_name") val name: String,
 )
 
-/** Arguments of `join_warband` (supabase/migrations/0001_baseline.sql). */
+/** Arguments of `join_circle` (supabase/migrations/0001_baseline.sql). */
 @Serializable
-data class JoinWarbandArgs(
+data class JoinCircleArgs(
     @SerialName("p_code") val code: String,
 )
 
-/** Args of `set_warband_goal(int)`: the band's weekly workout goal, 5..50. */
+/** Args of `set_circle_goal(int)`: days each member aims to train per week, 1..7. */
 @Serializable
-data class SetWarbandGoalArgs(
-    @SerialName("p_goal") val goal: Int,
+data class SetCircleGoalArgs(
+    @SerialName("p_per_member") val perMember: Int,
 )
 
 /**
- * One bandmate as `my_warband()` reports them. A bandmate whose profile row is
+ * One member as `my_circle()` reports them. A member whose profile row is
  * missing still lists — the server already substituted the neutral
- * "Lifter" + short-id handle, so no client-side fallback is needed.
+ * "Ironbound" + short-id handle, so no client-side fallback is needed.
  */
 @Serializable
-data class WarbandMemberDto(
+data class CircleMemberDto(
     @SerialName("user_id") val userId: String,
     @SerialName("display_name") val displayName: String,
-    // Null when the bandmate's profile is hidden from the caller.
+    // Null when the member's profile is hidden from the caller.
     @SerialName("level") val level: Int? = null,
     @SerialName("current_title_id") val currentTitleId: String? = null,
     // Days trained in the current Monday-start week (UTC anchor): distinct UTC
-    // days with a trial that has a set, counted server-side, the same for every
-    // viewer whatever the audience of the trials behind it.
-    @SerialName("workouts_this_week") val workoutsThisWeek: Int = 0,
+    // days with a trial that has a set, capped at the member's share, counted
+    // server-side, the same for every viewer whatever the audience of the
+    // trials behind it.
+    @SerialName("days_this_week") val daysThisWeek: Int = 0,
+    // Whether the member is on this week's roster; false for a lifter who
+    // joined this week and counts from next Monday.
+    @SerialName("counts") val counts: Boolean = true,
     @SerialName("last_workout_at") val lastWorkoutAt: String? = null,
 )
 
-/** One row of `my_warband()`: the caller's band and roster, oldest member first. */
+/** One row of `my_circle()`: the caller's circle and roster, oldest member first. */
 @Serializable
-data class WarbandDto(
+data class CircleDto(
     @SerialName("id") val id: String,
     @SerialName("name") val name: String,
     @SerialName("code") val code: String,
-    @SerialName("owner_id") val ownerId: String,
-    // The owner's weekly challenge for the band; server default 12.
-    @SerialName("weekly_goal") val weeklyGoal: Int = 12,
-    // Days trained by the whole band this week: ONE canonical number, the same
-    // for every viewer. Absent only from a server older than schema 27, where
-    // the members' own counts are all there is to sum.
-    @SerialName("band_total") val bandTotal: Int? = null,
-    @SerialName("members") val members: List<WarbandMemberDto> = emptyList(),
+    @SerialName("owner_id") val ownerId: String? = null,
+    @SerialName("week") val week: String = "",
+    @SerialName("per_member") val perMember: Int = Circle.DEFAULT_PER_MEMBER,
+    @SerialName("pending_per_member") val pendingPerMember: Int? = null,
+    @SerialName("goal") val goal: Int = 0,
+    @SerialName("circle_total") val circleTotal: Int = 0,
+    @SerialName("roster") val roster: Int = 0,
+    @SerialName("weeks_met") val weeksMet: Int = 0,
+    @SerialName("members") val members: List<CircleMemberDto> = emptyList(),
 ) {
-    fun toWarband(): Warband = Warband(
+    fun toCircle(): Circle = Circle(
         id = id,
         name = name,
         code = code,
-        ownerId = ownerId,
-        weeklyGoal = weeklyGoal,
-        total = bandTotal ?: members.sumOf { it.workoutsThisWeek },
+        // Null only while a handover is in flight; the oldest member holds the keys then.
+        ownerId = ownerId ?: members.firstOrNull()?.userId.orEmpty(),
+        week = week,
+        perMember = perMember,
+        pendingPerMember = pendingPerMember,
+        goal = goal,
+        total = circleTotal,
+        roster = roster,
+        weeksMet = weeksMet,
         members = members.map {
-            WarbandMember(
+            CircleMember(
                 userId = it.userId,
                 displayName = it.displayName,
                 level = it.level,
                 titleId = it.currentTitleId,
-                workoutsThisWeek = it.workoutsThisWeek,
+                daysThisWeek = it.daysThisWeek,
+                counts = it.counts,
                 lastWorkoutAtMs = it.lastWorkoutAt?.let { at -> Instant.parse(at).toEpochMilli() },
             )
         },
     )
 }
+
+/**
+ * One row of `circle_bonuses()`: a week the lifter was on the roster of a
+ * circle that met its goal, as the server settled it. The client pays each
+ * (lifter, week) once.
+ */
+@Serializable
+data class CircleBonusDto(
+    @SerialName("week") val week: String,
+    @SerialName("days") val days: Int = 0,
+    @SerialName("circle_name") val circleName: String? = null,
+)
 
 /** RPC names, declared once so the guard test and the call sites cannot drift. */
 const val RPC_PUSH_AGGREGATES = "push_aggregates"
@@ -852,11 +880,12 @@ const val RPC_FIND_HUNTER = "find_hunter"
 const val RPC_MY_INBOX = "my_inbox"
 const val RPC_MARK_INBOX_SEEN = "mark_inbox_seen"
 const val RPC_DISPLAY_NAME_AVAILABLE = "display_name_available"
-const val RPC_CREATE_WARBAND = "create_warband"
-const val RPC_JOIN_WARBAND = "join_warband"
-const val RPC_LEAVE_WARBAND = "leave_warband"
-const val RPC_SET_WARBAND_GOAL = "set_warband_goal"
-const val RPC_MY_WARBAND = "my_warband"
+const val RPC_CREATE_CIRCLE = "create_circle"
+const val RPC_JOIN_CIRCLE = "join_circle"
+const val RPC_LEAVE_CIRCLE = "leave_circle"
+const val RPC_SET_CIRCLE_GOAL = "set_circle_goal"
+const val RPC_MY_CIRCLE = "my_circle"
+const val RPC_CIRCLE_BONUSES = "circle_bonuses"
 
 /**
  * Encodes a typed RPC argument shape into the JsonObject the pinned

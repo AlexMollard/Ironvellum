@@ -4,16 +4,18 @@ import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.ironvellum.app.domain.Xp
-import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.ZoneOffset
 import java.time.temporal.ChronoField
 import java.time.temporal.IsoFields
-import java.time.temporal.TemporalAdjusters
 
 /**
  * The weekly circle-goal bonus: a small XP award on the lifter's own phone,
  * landing in the local profile exactly like the daily quest bonus.
+ *
+ * What is owed is the SERVER's decision, read from its settled record of the
+ * week (`circle_bonuses()`): the server counts the days, freezes the goal and
+ * the roster when the week opens, and settles the week once, the same for every
+ * member. This side only turns that record into XP, once.
  *
  * The once-a-week guard is keyed on the LIFTER and the week, never on the
  * circle: a lifter who leaves and re-forms a circle, or joins one that has
@@ -23,54 +25,30 @@ import java.time.temporal.TemporalAdjusters
 object CirclePayout {
 
     /** Stated in the payout overlay; small on purpose, beside [Xp.QUEST_BONUS]. */
-    const val BONUS_XP = Xp.BAND_GOAL_BONUS
+    const val BONUS_XP = Xp.CIRCLE_GOAL_BONUS
+
+    /** One lifter's flag for one week lives under this key; [week] is the server's week (a UTC Monday, ISO date). */
+    fun payoutKey(userId: String, week: String): String = "$userId:$week"
 
     /**
-     * The week bucket: the UTC Monday that opens [today]'s week, as an ISO
-     * date. It is the same Monday the server counts the circle's week from
-     * (UTC anchor), so the client's "paid this week" flag flips at the same
-     * rollover the roster's counts reset on, and it names the week
-     * unambiguously (an ISO week number repeats every year).
+     * The weeks in [bonuses] this lifter has not been paid for, each once and
+     * oldest first. A week with no days of the lifter's own is never owed: the
+     * server only lists weeks the lifter trained in, and this is the same rule
+     * stated where the money moves. [isPaid] answers for one week.
      */
-    fun weekKey(today: LocalDate = LocalDate.now(ZoneOffset.UTC)): String =
-        today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).toString()
-
-    /** One lifter's flag for one week lives under this key. */
-    fun payoutKey(userId: String, weekKey: String): String = "$userId:$weekKey"
-
-    /**
-     * True when this lifter is owed the payout right now: the circle total
-     * has crossed the goal, this lifter contributed at least one workout
-     * toward it, and this lifter+week has not been paid yet.
-     */
-    fun owes(
-        total: Int,
-        goal: Int,
-        contributed: Int,
-        alreadyPaid: Boolean,
-    ): Boolean = !alreadyPaid && contributed >= 1 && total >= goal
-
-    /**
-     * Pure decision over a set of already-paid keys. [userId] and [weekKey]
-     * must compose through [payoutKey]: a week key that failed to vary per
-     * week would collapse every week onto one flag and the lifter would be
-     * paid once a year, which is exactly the regression [CirclePayoutTest]
-     * exists to catch.
-     */
-    fun owes(
-        userId: String,
-        weekKey: String,
-        total: Int,
-        goal: Int,
-        contributed: Int,
-        paidKeys: Set<String>,
-    ): Boolean = owes(total, goal, contributed, payoutKey(userId, weekKey) in paidKeys)
+    fun owedWeeks(bonuses: List<CircleBonusWeek>, isPaid: (week: String) -> Boolean): List<String> =
+        bonuses.filter { it.days >= 1 }
+            .map { it.week }
+            .distinct()
+            .sorted()
+            .filterNot(isPaid)
 
     private val LEGACY_KEY = Regex("""^.+:(\d{4})-W(\d{2})$""")
 
     /**
-     * The week key of a flag written by the band-keyed store this one replaced
-     * (`<bandId>:<iso year>-W<iso week>`), or null for anything else.
+     * The week of a flag written by the band-keyed store this one replaced
+     * (`<bandId>:<iso year>-W<iso week>`) as the server writes weeks (the UTC
+     * Monday), or null for anything else.
      */
     fun legacyWeekKey(oldKey: String): String? {
         val match = LEGACY_KEY.matchEntire(oldKey) ?: return null
@@ -84,6 +62,12 @@ object CirclePayout {
     }
 }
 
+/** One settled week the server says the lifter is owed the bonus for. */
+data class CircleBonusWeek(val week: String, val days: Int, val circleName: String?)
+
+/** What a payout paid: the XP and the circle to name in the overlay. */
+data class CircleBonusPaid(val xp: Int, val circleName: String?)
+
 /**
  * The persisted once-per-lifter+week flags, over SharedPreferences. Writes are
  * synchronous: the flag has to be on disk before the XP it guards is added,
@@ -94,16 +78,27 @@ class CirclePayoutStore(
     private val legacy: SharedPreferences? = null,
 ) {
 
-    fun hasPaid(userId: String, weekKey: String): Boolean =
-        prefs.getBoolean(CirclePayout.payoutKey(userId, weekKey), false)
+    fun hasPaid(userId: String, week: String): Boolean =
+        prefs.getBoolean(CirclePayout.payoutKey(userId, week), false)
 
-    fun markPaid(userId: String, weekKey: String) {
-        prefs.edit(commit = true) { putBoolean(CirclePayout.payoutKey(userId, weekKey), true) }
+    fun markPaid(userId: String, week: String) {
+        prefs.edit(commit = true) { putBoolean(CirclePayout.payoutKey(userId, week), true) }
     }
 
     /** Takes a flag back when the XP it guarded could not be added. */
-    fun unmark(userId: String, weekKey: String) {
-        prefs.edit(commit = true) { remove(CirclePayout.payoutKey(userId, weekKey)) }
+    fun unmark(userId: String, week: String) {
+        prefs.edit(commit = true) { remove(CirclePayout.payoutKey(userId, week)) }
+    }
+
+    /**
+     * Whether this lifter has ever been seen in a circle on this phone. Only a
+     * hint: a lifter who has never joined one needs no bonus lookup, while one
+     * who has joined and since left may still be owed the week they left in.
+     */
+    fun wasInCircle(userId: String): Boolean = prefs.getBoolean("seen:$userId", false)
+
+    fun markInCircle(userId: String) {
+        if (!wasInCircle(userId)) prefs.edit(commit = true) { putBoolean("seen:$userId", true) }
     }
 
     /**

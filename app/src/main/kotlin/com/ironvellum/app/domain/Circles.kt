@@ -1,37 +1,64 @@
 package com.ironvellum.app.domain
 
 /*
- * An invite-code warband: 3-8 allies sharing a weekly challenge, a
- * trained-this-week mark and a pooled banner line. The server owns the roster
- * (data/cloud/CloudSync.warband); this is the read-only shape the UI renders.
+ * An invite-code circle: 2-8 allies sharing a weekly goal of days trained. The
+ * server owns the roster, the counting and the settlement
+ * (data/cloud/CloudSync.circle); this is the read-only shape the UI renders.
  */
-data class Warband(
+data class Circle(
     val id: String,
     val name: String,
     val code: String,
     val ownerId: String,
-    /** The owner's weekly challenge: total band workouts aimed for this week. */
-    val weeklyGoal: Int = 12,
-    /** Days trained by the whole band this week: one canonical number, identical for every viewer. */
+    /** The UTC Monday that opens the week these figures are for, as an ISO date. */
+    val week: String = "",
+    /** Days each member aims to train this week (1-7): frozen when the week opened. */
+    val perMember: Int = DEFAULT_PER_MEMBER,
+    /** The Keeper's parked change, applied when next week opens; null when none. */
+    val pendingPerMember: Int? = null,
+    /**
+     * Days the whole circle aims for this week: [perMember] times the roster the
+     * week opened with. 0 while that roster holds fewer than two members: a
+     * circle needs two before it has a goal.
+     */
+    val goal: Int = 0,
+    /** Days trained by the roster so far this week: one canonical number, identical for every viewer. */
     val total: Int = 0,
+    /** Members on this week's roster (those in the circle before the week began). */
+    val roster: Int = 0,
+    /** Weeks the circle has settled as met, over its whole life. */
+    val weeksMet: Int = 0,
     /** Oldest member first — the server's order, kept as handed over. */
-    val members: List<WarbandMember>,
-)
+    val members: List<CircleMember>,
+) {
+    companion object {
+        const val DEFAULT_PER_MEMBER = 3
 
-/** One bandmate. [workoutsThisWeek] counts days trained in the current Monday-start week (UTC anchor, server-computed, the same for every viewer).
- *  [level] and [titleId] are null when the bandmate's profile is hidden from the caller. */
-data class WarbandMember(
+        /** The server's accepted target: days per member per week. */
+        val PER_MEMBER_RANGE = 1..7
+    }
+}
+
+/**
+ * One member. [daysThisWeek] counts days trained in the current Monday-start
+ * week (UTC anchor, server-computed, capped at the member's share).
+ * [counts] says whether they are on this week's roster: a lifter who joined
+ * this week is not, and counts from next Monday. [level] and [titleId] are null
+ * when the member's profile is hidden from the caller.
+ */
+data class CircleMember(
     val userId: String,
     val displayName: String,
     val level: Int?,
     /** The worn title id, null when bare; names resolve locally via Titles.byId. */
     val titleId: String?,
-    val workoutsThisWeek: Int,
+    val daysThisWeek: Int,
+    val counts: Boolean = true,
     val lastWorkoutAtMs: Long?,
 )
 
 /**
- * The invite-code alphabet create_warband() draws from: digits 2-9 and letters
+ * The invite-code alphabet create_circle() draws from: digits 2-9 and letters
  * minus I, L and O — 31 unambiguous glyphs, so a code read aloud off a phone
  * screen survives. MUST stay in step with the alphabet literal and the
  * `invite_code ~ '^[2-9A-HJ-NP-Z]{8}$'` check in
@@ -67,7 +94,7 @@ fun extractInviteCode(text: String): String? {
 }
 
 /**
- * What `join_warband` answers. A status, not an error: a refusal that raised
+ * What `join_circle` answers. A status, not an error: a refusal that raised
  * would roll back the failed attempt the server had just logged for its
  * throttle. Only "joined" is a success; the rest read as the lifter's refusal.
  */

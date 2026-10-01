@@ -202,7 +202,7 @@ object InboxNotifier {
         }
         is InboxItem.FriendRequest -> "${item.actorName} wants to ally with you"
         is InboxItem.RequestAccepted -> "${item.actorName} accepted your request"
-        is InboxItem.NewBandmate -> "${item.actorName} joined your circle ${item.bandName}"
-        is InboxItem.CircleGoalMet -> "Your circle ${item.bandName} met its weekly goal"
+        is InboxItem.NewCircleMember -> "${item.actorName} joined your circle ${item.circleName}"
+        is InboxItem.CircleGoalMet -> "Your circle ${item.circleName} met its weekly goal"
     }
 }

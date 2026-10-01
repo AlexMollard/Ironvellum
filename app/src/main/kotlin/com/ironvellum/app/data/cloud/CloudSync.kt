@@ -4,7 +4,7 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.Cloud.failure
 import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.PlayerProfile
-import com.ironvellum.app.domain.Warband
+import com.ironvellum.app.domain.Circle
 import com.ironvellum.app.data.db.SyncStateEntity
 import com.ironvellum.app.domain.JoinStatus
 import com.ironvellum.app.domain.isValidInviteCode
@@ -747,30 +747,30 @@ class CloudSync(
     }
 
     /**
-     * The caller's warband, or null when they are in none. TTL 30s like the
+     * The caller's circle, or null when they are in none. TTL 30s like the
      * friends list; create/join/leave invalidate it at once.
      */
-    suspend fun warband(force: Boolean = false): Result<Warband?> {
+    suspend fun circle(force: Boolean = false): Result<Circle?> {
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         return runCatching {
             cache.getOrFetch(
-                key = CloudReadCache.KEY_WARBAND,
+                key = CloudReadCache.KEY_CIRCLE,
                 ttlMs = 30_000,
                 force = force,
                 userId = me.userId,
             ) {
-                fetchWarband(client)
+                fetchCircle(client)
             }
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
     }
 
-    private suspend fun fetchWarband(client: io.github.jan.supabase.SupabaseClient): Warband? =
-        client.postgrest.rpc(RPC_MY_WARBAND).decodeList<WarbandDto>().singleOrNull()?.toWarband()
+    private suspend fun fetchCircle(client: io.github.jan.supabase.SupabaseClient): Circle? =
+        client.postgrest.rpc(RPC_MY_CIRCLE).decodeList<CircleDto>().singleOrNull()?.toCircle()
 
-    suspend fun createWarband(name: String): Result<Warband> {
+    suspend fun createCircle(name: String): Result<Circle> {
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         val trimmed = name.trim()
@@ -778,16 +778,16 @@ class CloudSync(
             return failure(IllegalArgumentException("Give the circle a name"))
         }
         return runCatching {
-            client.postgrest.rpc(RPC_CREATE_WARBAND, rpcArgs(CreateWarbandArgs(name = trimmed)))
-            cache.invalidate(CloudReadCache.KEY_WARBAND)
-            fetchWarband(client)
+            client.postgrest.rpc(RPC_CREATE_CIRCLE, rpcArgs(CreateCircleArgs(name = trimmed)))
+            cache.invalidate(CloudReadCache.KEY_CIRCLE)
+            fetchCircle(client)
                 ?: throw IllegalStateException("The circle did not appear — pull to refresh")
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
     }
 
-    suspend fun joinWarband(code: String): Result<Warband> {
+    suspend fun joinCircle(code: String): Result<Circle> {
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         val cleaned = code.trim().uppercase()
@@ -796,42 +796,61 @@ class CloudSync(
         }
         return runCatching {
             val status = JoinStatus.parse(
-                client.postgrest.rpc(RPC_JOIN_WARBAND, rpcArgs(JoinWarbandArgs(code = cleaned))).data,
+                client.postgrest.rpc(RPC_JOIN_CIRCLE, rpcArgs(JoinCircleArgs(code = cleaned))).data,
             )
             JoinStatus.refusal(status)?.let { throw IllegalStateException(it) }
-            cache.invalidate(CloudReadCache.KEY_WARBAND)
-            fetchWarband(client)
+            cache.invalidate(CloudReadCache.KEY_CIRCLE)
+            fetchCircle(client)
                 ?: throw IllegalStateException("The circle did not appear — pull to refresh")
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
     }
 
-    suspend fun leaveWarband(): Result<Unit> {
+    suspend fun leaveCircle(): Result<Unit> {
         val me = requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         return runCatching {
-            client.postgrest.rpc(RPC_LEAVE_WARBAND)
+            client.postgrest.rpc(RPC_LEAVE_CIRCLE)
             Unit
         }.onSuccess {
-            cache.invalidate(CloudReadCache.KEY_WARBAND)
+            cache.invalidate(CloudReadCache.KEY_CIRCLE)
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
     }
 
-    /** The owner sets the band's weekly goal; the server refuses anyone else. */
-    suspend fun setWarbandGoal(goal: Int): Result<Unit> {
+    /**
+     * The Keeper sets how many days each member aims to train per week; the
+     * server refuses anyone else, and applies the change from next week.
+     */
+    suspend fun setCircleGoal(perMember: Int): Result<Unit> {
         requireAccount(account).getOrElse { return failure(it) }
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
-        if (goal !in 5..50) {
-            return failure(IllegalArgumentException("A weekly goal is 5-50 trials"))
+        if (perMember !in Circle.PER_MEMBER_RANGE) {
+            return failure(IllegalArgumentException("A weekly goal is 1-7 days"))
         }
         return runCatching {
-            client.postgrest.rpc(RPC_SET_WARBAND_GOAL, rpcArgs(SetWarbandGoalArgs(goal = goal)))
+            client.postgrest.rpc(RPC_SET_CIRCLE_GOAL, rpcArgs(SetCircleGoalArgs(perMember = perMember)))
             Unit
         }.onSuccess {
-            cache.invalidate(CloudReadCache.KEY_WARBAND)
+            cache.invalidate(CloudReadCache.KEY_CIRCLE)
+        }.recoverCatching { error ->
+            throw IllegalStateException(Cloud.explain(error))
+        }
+    }
+
+    /**
+     * The weekly bonus the lifter is owed, from the server's SETTLED record:
+     * the weeks they were on the roster of a circle that met its goal. Reading
+     * it also settles whatever is due, so it is the call every circle read
+     * makes (CircleBonus). Never cached: a stale answer would pay late.
+     */
+    suspend fun circleBonuses(): Result<List<CircleBonusDto>> {
+        requireAccount(account).getOrElse { return failure(it) }
+        val client = Cloud.requireConfigured.getOrElse { return failure(it) }
+        return runCatching {
+            client.postgrest.rpc(RPC_CIRCLE_BONUSES).decodeList<CircleBonusDto>()
         }.recoverCatching { error ->
             throw IllegalStateException(Cloud.explain(error))
         }
@@ -1556,7 +1575,7 @@ private class CloudReadCache {
         const val KEY_LEADERBOARD = "leaderboard"
         const val KEY_SHADOW_BOARD = "shadow_board"
         const val KEY_FRIENDS = "friends"
-        const val KEY_WARBAND = "warband"
+        const val KEY_CIRCLE = "circle"
         const val KEY_FEED_FIRST_PAGE = "feed:first"
         const val KEY_LIKERS = "likers"
         const val KEY_COMMENTS = "comments"

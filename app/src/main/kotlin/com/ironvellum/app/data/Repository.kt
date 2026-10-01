@@ -83,7 +83,7 @@ import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.data.cloud.localNameToAdopt
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.UnlockedTitle
-import com.ironvellum.app.domain.Warband
+import com.ironvellum.app.domain.Circle
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.WorkoutSession
@@ -2728,40 +2728,31 @@ class Repository(
     private val circlePayoutMutex = Mutex()
 
     /**
-     * Pays the circle's weekly-goal bonus when it is owed: the XP lands in the
-     * local profile through the same [Xp] plumbing a completed session uses
-     * (zero server writes). The once-per-lifter+week flag is written BEFORE
-     * the XP and under a lock, so two concurrent circle reads (the ALLIES tab
-     * and the Veil banner both fire on launch) cannot both pay; if the XP
-     * cannot be added the flag is taken back. Returns the XP paid, or null
-     * when nothing is owed.
+     * Pays the weekly circle bonus for every settled week the server lists and
+     * this lifter has not been paid for. The XP lands in the local profile
+     * through the same [Xp] plumbing a completed session uses (zero server
+     * writes). Each once-per-lifter+week flag is written BEFORE the XP and under
+     * a lock, so two concurrent circle reads (the ALLIES tab and the Veil banner
+     * both fire on launch) cannot both pay; if the XP cannot be added the flags
+     * are taken back. Returns what was paid, or null when nothing is owed.
      */
-    suspend fun maybePayBandGoalBonus(
-        band: Warband,
+    suspend fun payCircleBonus(
         myUserId: String,
+        bonuses: List<CircleBonusWeek>,
         payoutStore: CirclePayoutStore,
-    ): Int? = circlePayoutMutex.withLock {
+    ): CircleBonusPaid? = circlePayoutMutex.withLock {
         payoutStore.adoptLegacy(myUserId)
-        val weekKey = CirclePayout.weekKey()
-        val mine = band.members.firstOrNull { it.userId == myUserId }?.workoutsThisWeek ?: 0
-        val total = band.total
-        if (!CirclePayout.owes(
-                total = total,
-                goal = band.weeklyGoal,
-                contributed = mine,
-                alreadyPaid = payoutStore.hasPaid(myUserId, weekKey),
-            )
-        ) {
-            return@withLock null
-        }
-        payoutStore.markPaid(myUserId, weekKey)
+        val owed = CirclePayout.owedWeeks(bonuses) { payoutStore.hasPaid(myUserId, it) }
+        if (owed.isEmpty()) return@withLock null
+        owed.forEach { payoutStore.markPaid(myUserId, it) }
+        val xp = CirclePayout.BONUS_XP * owed.size
         try {
-            profileDao.addXp(CirclePayout.BONUS_XP.toLong())
+            profileDao.addXp(xp.toLong())
         } catch (e: Throwable) {
-            payoutStore.unmark(myUserId, weekKey)
+            owed.forEach { payoutStore.unmark(myUserId, it) }
             throw e
         }
-        CirclePayout.BONUS_XP
+        CircleBonusPaid(xp, bonuses.lastOrNull { it.week == owed.last() }?.circleName)
     }
 
     companion object {

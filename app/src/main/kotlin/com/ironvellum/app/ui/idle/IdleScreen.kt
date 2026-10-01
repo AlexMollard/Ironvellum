@@ -111,7 +111,7 @@ import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.cloud.Cloud
-import com.ironvellum.app.domain.Warband
+import com.ironvellum.app.domain.Circle
 
 
 /** What the figures earned while the app was closed, shown once on arrival. */
@@ -241,7 +241,7 @@ fun IdleScreen(
 
         // The band's pooled week, one line under the header. Refreshes on screen
         // open only — no worker keeps it ticking while the lifter is elsewhere.
-        WarbandBannerLine()
+        CircleBannerLine()
 
         if (snapshot == null || inputs == null) {
             // Brief empty frame while the flows warm up; never fake numbers.
@@ -1208,33 +1208,33 @@ private fun rarityAccent(rarity: RewardRarity): Color = when (rarity) {
 private const val VAULT_ROWS = 12
 
 /**
- * The band's pooled week on the Garrison screen: "WARBAND · <name> · N / goal
+ * The band's pooled week on the Garrison screen: "CIRCLE · <name> · N / goal
  * this week" over the same progress rail the ALLIES header uses, at a smaller
- * stroke. Summed from the members' counts exactly like that header, and a
+ * stroke. The server's canonical total, as that header shows it, and a
  * crossed goal adds the gold GOAL MET mark. Hidden when signed out or
  * bandless; a failed read hides the line — it is decoration here, and the
  * ALLIES tab carries the honest error state.
  * One read per screen entry; nothing keeps it fresh while the screen is closed.
  */
 @Composable
-private fun WarbandBannerLine() {
+private fun CircleBannerLine() {
     val app = LocalContext.current.applicationContext as IronvellumApp
     val configured = Cloud.config.collectAsStateWithLifecycle().value != null
     val account by app.accountRepository.account.collectAsStateWithLifecycle()
     if (!configured || account == null) return
 
-    var band by remember(account?.userId) { mutableStateOf<Warband?>(null) }
+    var band by remember(account?.userId) { mutableStateOf<Circle?>(null) }
     LaunchedEffect(account?.userId) {
         band = app.circleBonus.read().getOrNull()?.circle
     }
     band?.let { b ->
         val total = b.total
-        // Goal absent (an older server answer) falls back to the Warband default silently.
-        val goal = b.weeklyGoal.coerceAtLeast(1)
-        val met = total >= goal
+        // Goal 0: no two-member roster yet this week, so nothing to measure.
+        val goal = b.goal
+        val met = goal > 0 && total >= goal
         Column(Modifier.padding(top = 2.dp)) {
             Text(
-                "CIRCLE · ${b.name} · $total / $goal this week" + if (met) " · GOAL MET" else "",
+                "CIRCLE · ${b.name}" + if (goal > 0) " · $total / $goal this week" + if (met) " · GOAL MET" else "" else "",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
@@ -1242,7 +1242,7 @@ private fun WarbandBannerLine() {
                 letterSpacing = IronvellumTracking.InlineLabel,
             )
             InkRail(
-                fraction = (total.toFloat() / goal).coerceIn(0f, 1f),
+                fraction = if (goal > 0) (total.toFloat() / goal).coerceIn(0f, 1f) else 0f,
                 modifier = Modifier.padding(top = 3.dp),
                 height = 3.dp,
                 seed = b.id.hashCode(),
