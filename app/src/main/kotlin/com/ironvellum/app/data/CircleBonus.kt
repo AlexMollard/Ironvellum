@@ -48,19 +48,38 @@ interface CircleGateway {
  * ([CloudSync.circleBonuses]); [Repository.payCircleBonus] pays each
  * (lifter, week) once, atomically.
  */
-class CircleBonus(
-    private val cloud: CloudSync,
-    private val accounts: AccountRepository,
-    private val repository: Repository,
+class CircleBonus internal constructor(
+    private val readCircle: suspend (force: Boolean) -> Result<Circle?>,
+    private val myUserId: () -> String?,
+    private val owedWeeks: suspend () -> Result<List<CircleBonusWeek>>,
+    private val pay: suspend (me: String, owed: List<CircleBonusWeek>) -> CircleBonusPaid?,
     private val store: CirclePayoutStore,
-    private val clock: () -> Long = System::currentTimeMillis,
+    private val clock: () -> Long,
 ) {
+    // The app's wiring. The primary constructor takes the four calls this class
+    // makes, so a unit test can stand in for the cloud, the account and the
+    // repository without a database or a network.
+    constructor(
+        cloud: CloudSync,
+        accounts: AccountRepository,
+        repository: Repository,
+        store: CirclePayoutStore,
+        clock: () -> Long = System::currentTimeMillis,
+    ) : this(
+        readCircle = { force -> cloud.circle(force) },
+        myUserId = { accounts.account.value?.userId },
+        owedWeeks = { cloud.circleBonuses().map { weeks -> weeks.map(CircleBonusDto::toWeek) } },
+        pay = { me, owed -> repository.payCircleBonus(me, owed, store) },
+        store = store,
+        clock = clock,
+    )
+
     @Volatile
     private var lastCheckedMs = 0L
 
     suspend fun read(force: Boolean = false): Result<CircleRead> {
-        val circle = cloud.circle(force).getOrElse { return Result.failure(it) }
-        val me = accounts.account.value?.userId
+        val circle = readCircle(force).getOrElse { return Result.failure(it) }
+        val me = myUserId()
         val paid = if (me != null) settle(me, circle != null, force) else null
         return Result.success(CircleRead(circle, paid))
     }
@@ -78,13 +97,11 @@ class CircleBonus(
         if (!force && now - lastCheckedMs < CHECK_EVERY_MS) return null
         lastCheckedMs = now
         // A failed bonus lookup or local write must not hide the circle that was read.
-        return runCatching {
-            val owed = cloud.circleBonuses().getOrThrow().map(CircleBonusDto::toWeek)
-            repository.payCircleBonus(me, owed, store)
-        }.onFailure { if (it is CancellationException) throw it }.getOrNull()
+        return runCatching { pay(me, owedWeeks().getOrThrow()) }
+            .onFailure { if (it is CancellationException) throw it }.getOrNull()
     }
 
-    private companion object {
+    internal companion object {
         const val CHECK_EVERY_MS = 30_000L
     }
 }
