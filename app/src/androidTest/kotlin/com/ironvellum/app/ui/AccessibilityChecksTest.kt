@@ -388,6 +388,11 @@ class AccessibilityChecksTest {
             listOf("Rites", "[ EDIT ]"),
             // Settings and the Muster roll replace the nav bar, so they go late.
             listOf("Today", "Settings"),
+            // One level into the Settings hub: the sub-screens with fields,
+            // segmented controls and the gear grid.
+            listOf("Today", "Settings", "Profile"),
+            listOf("Today", "Settings", "Armoury"),
+            listOf("Today", "Settings", "Advanced"),
             listOf("Today", "THE VEIL"),
             // Truly last: starting a session leaves a live trial whose abandon
             // prompt sits between the sweep and the nav bar.

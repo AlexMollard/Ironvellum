@@ -1,0 +1,193 @@
+package com.ironvellum.app.ui.settings
+
+import android.content.Context
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
+import androidx.core.content.FileProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.ui.components.InkSpinner
+import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.SettingsCaption
+import com.ironvellum.app.ui.components.SettingsGroup
+import com.ironvellum.app.ui.theme.IronvellumColors
+import java.io.File
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+/**
+ * Export and the two imports. Restoring an archive replaces everything, so it
+ * sits in its own red panel below the safe actions and keeps its confirm.
+ */
+@Composable
+internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
+    val exporting by viewModel.exporting.collectAsStateWithLifecycle()
+    val importUi by viewModel.import.collectAsStateWithLifecycle()
+    val importReview by viewModel.importReview.collectAsStateWithLifecycle()
+    val catalogueExercises by viewModel.catalogueExercises.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var confirmImport by remember { mutableStateOf(false) }
+
+    // Import replaces everything, so the picker only fires after the confirm dialog.
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                // stream reads can stall on slow providers — never block the main thread
+                val json = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)
+                        ?.use { stream -> stream.readBytes().toString(Charsets.UTF_8) }
+                        .orEmpty()
+                }
+                if (json.isNotBlank()) viewModel.importArchive(json)
+            }
+        }
+    }
+
+    // CSV import: providers mislabel CSVs wildly, so offer every mime that
+    // could be one and let the header sniff decide.
+    val csvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            scope.launch {
+                val csv = withContext(Dispatchers.IO) {
+                    context.contentResolver.openInputStream(uri)
+                        ?.use { stream -> stream.readBytes().toString(Charsets.UTF_8) }
+                        .orEmpty()
+                }
+                if (csv.isNotBlank()) viewModel.startCsvImport(csv)
+            }
+        }
+    }
+
+    if (confirmImport) {
+        SettingsConfirmDialog(
+            title = "Restore this archive?",
+            text = "Replaces your rites and cycle, Chronicle, readings, deeds and Journal on this device. This cannot be undone.",
+            confirmLabel = "Restore",
+            dismissLabel = "Keep local data",
+            danger = true,
+            onConfirm = {
+                confirmImport = false
+                importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+            },
+            onDismiss = { confirmImport = false },
+        )
+    }
+
+    SettingsPage(SettingsSection.DATA.title, onBack) {
+        SettingsGroup("EXPORT", topSpace = 12.dp) {
+            SettingsCaption("A full JSON archive of everything on this device.")
+            Spacer(Modifier.height(10.dp))
+            if (exporting) {
+                InkSpinner()
+            } else {
+                IronvellumButton(
+                    label = "Export Archive",
+                    onClick = {
+                        viewModel.exportJson { json ->
+                            scope.launch { shareExport(context, "Export Ironvellum data", "ironvellum_export.json", json) }
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        }
+
+        SettingsGroup("IMPORT") {
+            SettingsCaption("Adds trials from a Strong or Hevy CSV export.")
+            Spacer(Modifier.height(10.dp))
+            IronvellumButton(
+                label = "Import From Another App",
+                onClick = {
+                    csvLauncher.launch(
+                        arrayOf(
+                            "text/csv",
+                            "text/comma-separated-values",
+                            "application/csv",
+                            "application/vnd.ms-excel",
+                            "text/plain",
+                            "*/*",
+                        ),
+                    )
+                },
+                quiet = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
+
+        SettingsGroup("RESTORE", topSpace = 28.dp, accent = IronvellumColors.DangerRed) {
+            SettingsCaption("Replaces all data on this device with an archive.", color = IronvellumColors.DangerRed)
+            Spacer(Modifier.height(10.dp))
+            if (importUi.importing) {
+                InkSpinner()
+            } else {
+                IronvellumButton(
+                    label = "Import Archive",
+                    onClick = { confirmImport = true },
+                    danger = true,
+                    enabled = !exporting,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+            importUi.summary?.let {
+                Spacer(Modifier.height(6.dp))
+                SettingsCaption(it)
+            }
+            importUi.problems?.let {
+                Spacer(Modifier.height(4.dp))
+                SettingsCaption(it)
+            }
+        }
+    }
+
+    importReview?.let { review ->
+        ImportReviewOverlay(
+            ui = review,
+            exercises = catalogueExercises,
+            onPick = viewModel::chooseImportMapping,
+            onUnitPick = viewModel::setImportUnit,
+            onImport = viewModel::confirmCsvImport,
+            onDismiss = viewModel::dismissImportReview,
+        )
+    }
+}
+
+/**
+ * Shares the export as a FILE, not as an intent extra.
+ *
+ * Measured: five years of training exports ~0.9 MB of JSON, and binder caps a
+ * transaction near 1 MB — `EXTRA_TEXT` would throw TransactionTooLargeException
+ * on the one action whose whole purpose is getting a lifter's data out. Staged
+ * in the cache directory the FileProvider exposes, so the receiving app reads it
+ * through a content:// URI instead.
+ */
+internal suspend fun shareExport(context: Context, title: String, fileName: String, text: String) {
+    val uri = withContext(Dispatchers.IO) {
+        val dir = File(context.cacheDir, "exports").apply { mkdirs() }
+        // One name, overwritten: the cache is not an archive, and a stale
+        // export left behind is a copy of everything the lifter has done.
+        val file = File(dir, fileName)
+        file.writeText(text)
+        FileProvider.getUriForFile(context, "${context.packageName}.exports", file)
+    }
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "application/json"
+        putExtra(Intent.EXTRA_TITLE, fileName)
+        putExtra(Intent.EXTRA_STREAM, uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+    }
+    context.startActivity(Intent.createChooser(intent, title))
+}
