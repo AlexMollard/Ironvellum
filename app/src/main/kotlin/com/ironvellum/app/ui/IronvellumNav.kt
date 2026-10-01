@@ -59,6 +59,9 @@ import com.ironvellum.app.ui.onboarding.OnboardingViewModel
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.dashboard.DashboardScreen
 import com.ironvellum.app.ui.settings.SettingsScreen
+import com.ironvellum.app.ui.settings.SettingsSection
+import com.ironvellum.app.ui.settings.SettingsSectionScreen
+import com.ironvellum.app.ui.settings.settingsViewModel
 import com.ironvellum.app.ui.settings.SupportScreen
 import com.ironvellum.app.ui.social.AccountSettingsScreen
 import com.ironvellum.app.ui.social.SocialScreen
@@ -95,6 +98,7 @@ object Routes {
     const val TITLES = "titles"
     const val IDLE = "idle"
     const val SETTINGS = "settings"
+    const val SETTINGS_SECTION = "settings/{section}"
     const val SUPPORT = "support"
     const val SOCIAL = "social"
     const val ACCOUNT = "account"
@@ -115,6 +119,8 @@ object Routes {
         if (presetId == null) "preset_editor" else "preset_editor?presetId=$presetId"
 
     fun session(sessionId: Long): String = "session/$sessionId"
+
+    fun settingsSection(section: SettingsSection): String = "settings/${section.key}"
 
     fun workoutDetail(sessionId: Long): String = "workout/$sessionId"
 
@@ -428,6 +434,12 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                             }
                         },
                         onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                        onSetHeight = {
+                            // Hub first, so BACK from Profile lands on Settings
+                            // and the sub-screen finds the hub's view model.
+                            navController.navigate(Routes.SETTINGS)
+                            navController.navigate(Routes.settingsSection(SettingsSection.PROFILE))
+                        },
                         onOpenLedger = {
                             navController.navigate(Routes.STATS) {
                                 popUpTo(Routes.DASHBOARD) { saveState = true }
@@ -509,11 +521,42 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     )
                 }
                 composable(Routes.TITLES) { TitlesScreen() }
-                composable(Routes.SETTINGS) {
+                composable(Routes.SETTINGS) { entry ->
                     SettingsScreen(
+                        viewModel = settingsViewModel(entry),
+                        onOpenSection = { navController.navigate(Routes.settingsSection(it)) },
+                        onOpenAccount = { navController.navigate(Routes.ACCOUNT) },
+                        onOpenSignIn = {
+                            // Signed out, Allies is the sign-in screen: open it as its tab.
+                            navController.navigate(Routes.SOCIAL) {
+                                popUpTo(Routes.DASHBOARD) { saveState = false }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
                         onOpenSupport = { navController.navigate(Routes.SUPPORT) },
                         onBack = { navController.popBackStack() },
                     )
+                }
+                composable(
+                    Routes.SETTINGS_SECTION,
+                    arguments = listOf(navArgument("section") { type = NavType.StringType }),
+                ) { entry ->
+                    val section = SettingsSection.fromKey(entry.arguments?.getString("section"))
+                    // Sub-screens share the hub's view model, so the hub is always
+                    // pushed first (Today's SET HEIGHT does so too) and is on the stack.
+                    val hub = remember(entry) {
+                        runCatching { navController.getBackStackEntry(Routes.SETTINGS) }.getOrDefault(entry)
+                    }
+                    if (section == null) {
+                        navController.popBackStack()
+                    } else {
+                        SettingsSectionScreen(
+                            section = section,
+                            onBack = { navController.popBackStack() },
+                            viewModel = settingsViewModel(hub),
+                        )
+                    }
                 }
                 composable(Routes.SUPPORT) { SupportScreen() }
                 composable(

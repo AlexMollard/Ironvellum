@@ -290,6 +290,8 @@ fun DashboardScreen(
     onOpenLedger: () -> Unit,
     onOpenGarrison: () -> Unit,
     onOpenWorkout: (Long) -> Unit,
+    /** SET HEIGHT: straight to Settings → Profile, where height lives. */
+    onSetHeight: () -> Unit = onOpenSettings,
     viewModel: DashboardViewModel =
         viewModel(factory = viewModelFactory {
             // The saved answers sit behind a Context only a composable can read;
@@ -660,7 +662,7 @@ fun DashboardScreen(
         bodyGap?.let { gap ->
             BodyGapStrip(
                 gap = gap,
-                onFix = if (gap == BodyGap.WEIGHT) onOpenLedger else onOpenSettings,
+                onFix = if (gap == BodyGap.WEIGHT) onOpenLedger else onSetHeight,
             )
             Spacer(Modifier.height(10.dp))
         }
