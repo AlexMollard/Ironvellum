@@ -990,6 +990,7 @@ fun ProgramBuilderScreen(
                         confirmReplace = false
                         viewModel.replacePresets(onDone)
                     },
+                    danger = true,
                 )
             },
             dismissButton = {

@@ -249,6 +249,7 @@ fun AccountSettingsScreen(
                         },
                         enabled = !ui.busy,
                         modifier = Modifier.weight(1f),
+                        danger = true,
                     )
                     IronvellumButton(
                         label = "Keep mine",
@@ -410,6 +411,7 @@ fun AccountSettingsScreen(
                     },
                     enabled = !ui.busy,
                     modifier = Modifier.weight(1f),
+                    danger = true,
                 )
                 IronvellumButton(
                     label = "Keep it",

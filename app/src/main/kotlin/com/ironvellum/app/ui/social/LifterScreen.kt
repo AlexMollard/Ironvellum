@@ -578,7 +578,7 @@ internal fun LifterScreen(
                 IronvellumButton(label = "Remove", onClick = {
                     confirmRemove = false
                     viewModel.removeAlly(userId)
-                })
+                }, danger = true)
             },
             dismissButton = {
                 IronvellumButton(label = "Keep", onClick = { confirmRemove = false }, quiet = true)
