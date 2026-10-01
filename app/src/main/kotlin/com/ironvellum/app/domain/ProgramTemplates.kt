@@ -158,7 +158,8 @@ object ProgramTemplates {
                     entry("Romanian Deadlift", 3, 8),
                     entry("Leg Press", 4, 10),
                     entry("Seated Leg Curl", 3, 12),
-                    entry("Standing Calf Raise", 6, 12),
+                    entry("Standing Calf Raise", 4, 12),
+                    entry("Seated Calf Raise", 4, 15),
                     entry("Hanging Leg Raise", 3, 10),
                     entry("Ab Wheel Rollout", 3, 10),
                 )),
@@ -178,7 +179,8 @@ object ProgramTemplates {
                     entry("Hack Squat", 4, 10),
                     entry("Hip Thrust", 2, 10),
                     entry("Seated Leg Curl", 3, 12),
-                    entry("Standing Calf Raise", 6, 12),
+                    entry("Standing Calf Raise", 4, 12),
+                    entry("Seated Calf Raise", 4, 15),
                     entry("Hanging Knee Raise", 3, 10),
                     entry("Ab Wheel Rollout", 3, 10),
                 )),
@@ -234,7 +236,7 @@ object ProgramTemplates {
                     entry("Bench Press", 4, 8),
                     entry("Overhead Press", 3, 8),
                     entry("Incline Dumbbell Press", 3, 10),
-                    entry("Lateral Raise", 5, 12),
+                    entry("Lateral Raise", 4, 12),
                     entry("Triceps Pushdown", 3, 12),
                     entry("Overhead Cable Extension", 3, 12),
                     entry("Woodchop", 3, 12),
@@ -246,14 +248,17 @@ object ProgramTemplates {
                     entry("Lat Pulldown", 4, 10),
                     entry("Face Pull", 4, 12),
                     entry("Cable Curl", 4, 12),
+                    // Calves at four sets a block need a third block to
+                    // reach this level's floor without a fifth set anywhere.
+                    entry("Standing Calf Raise", 3, 12),
                 )),
                 day("Legs A", 4, listOf(
                     entry("Back Squat", 4, 8),
                     entry("Romanian Deadlift", 3, 8),
                     entry("Leg Press", 5, 10),
                     entry("Seated Leg Curl", 4, 12),
-                    entry("Standing Calf Raise", 5, 12),
-                    entry("Seated Calf Raise", 6, 15),
+                    entry("Standing Calf Raise", 4, 12),
+                    entry("Seated Calf Raise", 4, 15),
                     entry("Hanging Leg Raise", 4, 10),
                 )),
                 day("Push B", 5, listOf(
@@ -261,7 +266,7 @@ object ProgramTemplates {
                     entry("Dumbbell Bench Press", 3, 10),
                     entry("Cable Fly", 3, 12),
                     entry("Pec Deck", 3, 12),
-                    entry("Lateral Raise", 5, 12),
+                    entry("Lateral Raise", 4, 12),
                     entry("Overhead Cable Extension", 3, 12),
                 )),
                 day("Pull B", 6, listOf(
@@ -278,8 +283,8 @@ object ProgramTemplates {
                     entry("Hip Thrust", 3, 8),
                     entry("Hack Squat", 3, 10),
                     entry("Seated Leg Curl", 4, 12),
-                    entry("Standing Calf Raise", 5, 12),
-                    entry("Seated Calf Raise", 6, 15),
+                    entry("Standing Calf Raise", 4, 12),
+                    entry("Seated Calf Raise", 4, 15),
                     entry("Hanging Knee Raise", 3, 10),
                 )),
             ),
@@ -331,7 +336,9 @@ object ProgramTemplates {
             val used = mutableSetOf<String>()
             val entries = day.entries.mapNotNull { entry ->
                 val profile = MuscleMap.profile(entry.exerciseName)
-                var exercise = pool.firstOrNull { it.name.equals(entry.exerciseName, ignoreCase = true) }
+                // A movement an earlier entry's substitute already took is
+                // substituted in turn: one exercise appears once per day.
+                var exercise = pool.firstOrNull { it.name.equals(entry.exerciseName, ignoreCase = true) && it.name !in used }
                 var substituted = false
                 if (exercise == null) {
                     if (profile == null) return@mapNotNull entry.copy(targetWeightKg = null)
@@ -393,11 +400,14 @@ object ProgramTemplates {
             // template's goal and volume; the summary stays on the template.
             val scaled = day.copy(
                 entries = entries.map { entry ->
-                    entry.copy(sets = kotlin.math.round(entry.sets * factor).toInt().coerceIn(2, maxOf(5, entry.sets)))
+                    entry.copy(
+                        sets = kotlin.math.round(entry.sets * factor).toInt()
+                            .coerceIn(2, ProgramRules.maxSetsPerEntry(entry.exerciseName)),
+                    )
                 },
                 note = ProgramGenerator.presetNote(volume, template.focus),
             )
-            scaled to entries.map { maxOf(5, it.sets) }
+            scaled to entries.map { ProgramRules.maxSetsPerEntry(it.exerciseName) }
         }
         val cap = maxExercises.coerceIn(ProgramRules.MAX_EXERCISES_RANGE)
         val work = presets.map { (day, caps) -> day.entries.toMutableList() to caps.toMutableList() }
@@ -459,9 +469,10 @@ object ProgramTemplates {
      * time: every day is trimmed to the session time budget (taking sets
      * from whatever keeps the most spare volume), then - for MUSCLE templates
      * - muscles under the floor gain sets on their most direct movement where
-     * a day has time, and muscles over the top of the range give sets back
-     * where that leaves every muscle at its floor. [caps] bounds each entry
-     * (5, or its authored count when higher). Uniform scaling alone rounded
+     * a day has time and the session's muscle ceiling allows
+     * ([ProgramRules.sessionMuscleRoom]), and muscles over the top of the
+     * range give sets back where that leaves every muscle at its floor.
+     * [caps] bounds each entry ([ProgramRules.maxSetsPerEntry]). Uniform scaling alone rounded
      * 2- and 3-set entries away and left hamstrings at 11 of 12; the authored
      * upper/lower days ran 90 minutes.
      */
@@ -476,8 +487,7 @@ object ProgramTemplates {
         fun week() = ProgramRules.weeklyVolume(work.map { PlannedPreset("", "", null, it) })
         fun share(e: PlannedEntry, m: Muscle) = MuscleMap.profile(e.exerciseName)?.muscles?.get(m) ?: 0.0
         fun seconds(d: Int) = ProgramRules.sessionSeconds(work[d], focus)
-        fun setCost(e: PlannedEntry) =
-            ProgramRules.setSeconds(focus, MuscleMap.profile(e.exerciseName)?.compound ?: true)
+        fun setCost(e: PlannedEntry) = ProgramRules.setSeconds(focus, e.exerciseName)
         fun mains(e: PlannedEntry) = ProgramRules.TRACKED.filter { share(e, it) >= 0.5 }
         // Spare volume a one-set cut leaves on the entry's most-strained muscle.
         fun surplusAfterCut(e: PlannedEntry, vol: Map<Muscle, Double>): Double =
@@ -507,6 +517,7 @@ object ProgramTemplates {
             fun growable(d: Int, i: Int): Boolean {
                 val e = work[d][i]
                 return share(e, muscle) >= 0.5 && e.sets < caps[d][i] &&
+                    ProgramRules.sessionMuscleRoom(work[d], e.exerciseName, 1) &&
                     ProgramRules.TRACKED.none { (vol[it] ?: 0.0) + share(e, it) > range.endInclusive + 1e-9 }
             }
             val all = work.indices.flatMap { d -> work[d].indices.map { d to it } }

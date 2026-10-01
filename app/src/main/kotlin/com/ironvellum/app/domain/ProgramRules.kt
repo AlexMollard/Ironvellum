@@ -393,6 +393,59 @@ object ProgramRules {
         minOf(sessionCap(tier), maxExercises.coerceIn(MAX_EXERCISES_RANGE))
 
     /**
+     * Most sets one entry may carry: [COMPOUND_MAX_SETS] for bilateral
+     * compound and trunk work, [SMALL_MAX_SETS] for single-joint and
+     * unilateral work (a set of single-leg calf raises is a set per leg).
+     * Trunk work is not single-joint, the same line
+     * [MovementDifficulty.isIsolation] draws: bracing the whole chain is not
+     * a limb moving about one joint. Unprofiled movements count as compounds. Every generator, improve and template
+     * path clamps and grows through this, so no path can stack a sixth set
+     * of calf raises to chase a weekly target.
+     *
+     * PRACTICAL HEURISTIC, not a measured dose: per-session volume shows
+     * diminishing returns well before a muscle's whole weekly dose
+     * (Remmert 2025: ~11 fractional sets per session for hypertrophy), and
+     * the position stand doses multiple sets per exercise, 1-3 for novices
+     * and 3-6 for advanced lifters (ACSM 2009). Five keeps the compounds
+     * inside that; small muscles and one-side-at-a-time work fatigue
+     * fastest and cost twice the clock, so they stop a set earlier and the
+     * rest of the weekly dose moves to another movement or day, or the plan
+     * says the muscle is short.
+     */
+    fun maxSetsPerEntry(exerciseName: String): Int {
+        val profile = MuscleMap.profile(exerciseName) ?: return COMPOUND_MAX_SETS
+        val singleJoint = !profile.compound && profile.pattern != MovementPattern.CORE
+        return if (singleJoint || profile.unilateral) SMALL_MAX_SETS else COMPOUND_MAX_SETS
+    }
+
+    const val COMPOUND_MAX_SETS = 5
+    const val SMALL_MAX_SETS = 4
+
+    /**
+     * Fractional sets one session may credit a tracked muscle before growth
+     * stops adding to it there: one under the ~11-set point past which more
+     * per-session volume showed no detectable extra growth (Remmert 2025).
+     * A gate on GROWTH only - the backbone and the lifter's own entries are
+     * never cut for it - so a deficit the gate refuses moves to another
+     * session, or lands in the plan note as short.
+     */
+    const val SESSION_MUSCLE_CEILING = 10.0
+
+    /**
+     * Whether [sets] more sets of [exerciseName] keep every tracked muscle
+     * it trains at or under [SESSION_MUSCLE_CEILING] in the session [entries].
+     */
+    fun sessionMuscleRoom(entries: List<PlannedEntry>, exerciseName: String, sets: Int): Boolean {
+        val profile = MuscleMap.profile(exerciseName) ?: return true
+        return TRACKED.all { muscle ->
+            val share = profile.muscles[muscle] ?: 0.0
+            if (share <= 0.0) return@all true
+            val now = entries.sumOf { (MuscleMap.profile(it)?.muscles?.get(muscle) ?: 0.0) * it.sets }
+            now + sets * share <= SESSION_MUSCLE_CEILING + 1e-9
+        }
+    }
+
+    /**
      * Time under load for one working set, added to the prescribed rest to
      * give the clock time a set costs. 8-12 reps at a controlled tempo.
      */
@@ -401,6 +454,17 @@ object ProgramRules {
     /** Clock time one working set costs: work plus its prescribed rest. */
     fun setSeconds(focus: TrainingFocus, compound: Boolean): Int =
         restSeconds(focus, compound) + SET_WORK_SECONDS
+
+    /**
+     * [setSeconds] for a named movement: a unilateral set works each side in
+     * turn, so it pays the work twice and the rest once. Unprofiled
+     * movements count as bilateral compounds.
+     */
+    fun setSeconds(focus: TrainingFocus, exerciseName: String): Int {
+        val profile = MuscleMap.profile(exerciseName)
+        val sides = if (profile?.unilateral == true) 2 else 1
+        return restSeconds(focus, profile?.compound ?: true) + sides * SET_WORK_SECONDS
+    }
 
     /**
      * Session time ceiling, warm-up excluded. PRACTICAL HEURISTIC: the brief
@@ -417,5 +481,5 @@ object ProgramRules {
 
     /** Estimated clock time of a session; unprofiled movements count as compounds. */
     fun sessionSeconds(entries: List<PlannedEntry>, focus: TrainingFocus): Int =
-        entries.sumOf { it.sets * setSeconds(focus, MuscleMap.profile(it.exerciseName)?.compound ?: true) }
+        entries.sumOf { it.sets * setSeconds(focus, it.exerciseName) }
 }

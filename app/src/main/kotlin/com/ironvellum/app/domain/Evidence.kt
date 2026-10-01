@@ -17,6 +17,11 @@ enum class Evidence(val label: String, val citation: String, val doi: String) {
         "Pelland JC, Remmert JF, Robinson ZP, Hinson SR, Zourdos MC (2026). The Resistance Training Dose Response. Sports Medicine 56(2):481-505.",
         "10.1007/s40279-025-02344-w",
     ),
+    REMMERT_2025(
+        "Remmert 2025",
+        "Remmert JF, Pelland JC, Robinson ZP, Hinson SR, Zourdos MC (2025). Is There Too Much of a Good Thing? Meta-Regressions of the Effect of Per-Session Volume on Hypertrophy and Strength. SportRxiv preprint.",
+        "10.51224/SRXIV.537",
+    ),
     SCHONFELD_VOL_2017(
         "Schoenfeld 2017",
         "Schoenfeld BJ, Ogborn D, Krieger JW (2017). Dose-response relationship between weekly resistance training volume and increases in muscle mass. J Sports Sciences 35(11):1073-82.",
