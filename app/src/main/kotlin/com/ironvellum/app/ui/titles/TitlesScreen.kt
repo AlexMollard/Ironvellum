@@ -21,6 +21,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
+import com.ironvellum.app.ui.components.InfoNotice
 import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -273,7 +274,7 @@ fun TitlesScreen(
     openSkill?.let { name ->
         Skills.forName(name)?.let { def ->
             val entries = remember(ui.log, name) { ui.log.filter { it.skillName == name } }
-            SkillDetailDialog(
+            SkillDetailSheet(
                 skill = def,
                 mastered = name in mastered,
                 unlocked = Skills.unlocked(def, mastered),
@@ -318,32 +319,14 @@ fun TitlesScreen(
     }
     val trainResult by viewModel.trainResult.collectAsStateWithLifecycle()
     trainResult?.let { message ->
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
-            onDismissRequest = viewModel::dismissTrainResult,
-            title = { Text("Added") },
-            text = { Text(message) },
-            confirmButton = {
-                IronvellumButton(label = "OK", onClick = viewModel::dismissTrainResult, quiet = true)
-            },
-        )
+        InfoNotice("Added", message, onDismiss = viewModel::dismissTrainResult)
     }
 
     // Unclaim refused (the XP it paid is already spent): say so rather than
     // leave the confirm row sitting there with nothing happening.
     val unclaimRefusal by viewModel.unclaimRefusal.collectAsStateWithLifecycle()
     unclaimRefusal?.let { message ->
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
-            onDismissRequest = viewModel::dismissUnclaimRefusal,
-            title = { Text("Still claimed") },
-            text = { Text(message) },
-            confirmButton = {
-                IronvellumButton(label = "OK", onClick = viewModel::dismissUnclaimRefusal, quiet = true)
-            },
-        )
+        InfoNotice("Still claimed", message, onDismiss = viewModel::dismissUnclaimRefusal)
     }
 
     // The deeds board owns a LazyColumn so a growing catalogue stays lazy, and

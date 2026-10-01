@@ -315,7 +315,7 @@ private fun ConsistencyRow(weeks: List<Int>, sealedThisMonth: Int, onClick: () -
     ) {
         InkListRow(
             label = "Consistency",
-            value = "$sealedThisMonth ${plural(sealedThisMonth, "session", "sessions")} this month",
+            value = "$sealedThisMonth ${plural(sealedThisMonth, "trial", "trials")} this month",
             supporting = "sealed days per week, last 12 weeks",
             onClick = null,
         )

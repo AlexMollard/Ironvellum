@@ -802,9 +802,26 @@ object Titles {
     }
 
     /** How far along a rule is: current value, target, and the unit's name. */
-    data class Progress(val current: Long, val target: Long, val unit: String) {
+    data class Progress(
+        val current: Long,
+        val target: Long,
+        val unit: String,
+        /** [current], [target] and [remaining] count 1/[scale] of the unit: 10 means tenths of a km. */
+        val scale: Int = 1,
+    ) {
         val fraction: Float get() = if (target <= 0) 1f else (current.toFloat() / target).coerceIn(0f, 1f)
         val remaining: Long get() = (target - current).coerceAtLeast(0)
+    }
+
+    /**
+     * Tenths of a kilometre, for distances whose bar is not a whole number
+     * (a 21.1 km run). Floored while unearned and capped one tenth short of the
+     * bar, so the line can never read "21.1 / 21.1" on a deed that is not won.
+     */
+    private fun kmProgress(best: Double, bar: Double, unit: String): Progress {
+        val target = Math.round(bar * 10)
+        val current = if (best >= bar) target else Math.floor(best * 10 + 1e-9).toLong().coerceIn(0, target - 1)
+        return Progress(current, target, unit, scale = 10)
     }
 
     fun progress(rule: TitleRule, ledger: Ledger): Progress = when (rule) {
@@ -841,12 +858,13 @@ object Titles {
         is TitleRule.DistinctActivities ->
             Progress(ledger.distinctActivities.toLong(), rule.count.toLong(), "activities tried")
         is TitleRule.LongestRun ->
-            // Floored, deliberately. Rounding read "5 of 5 km" for a 4.9 km
-            // run on a title that is NOT earned — a progress line claiming
-            // completion is a worse lie than one a kilometre short.
-            Progress(ledger.bestRunKm.toLong(), rule.km.toLong(), "km in one run")
+            // Tenths, floored: rounding read "5 of 5 km" for a 4.9 km run on a
+            // title that is NOT earned, and whole km read "21 / 21" for a
+            // 21.1 km bar. A line claiming completion is a worse lie than one
+            // a tenth short.
+            kmProgress(ledger.bestRunKm, rule.km, "km in one run")
         is TitleRule.LongestSwim ->
-            Progress(ledger.bestSwimKm.toLong(), rule.km.toLong(), "km in one swim")
+            kmProgress(ledger.bestSwimKm, rule.km, "km in one swim")
         is TitleRule.HardestGrade ->
             Progress(
                 (GradeRank.rank(ledger.hardestGrade) ?: 0).toLong(),

@@ -63,7 +63,7 @@ import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.program.BodyHeatMap
 import com.ironvellum.app.ui.program.CoverageGoal
-import com.ironvellum.app.ui.program.RiteMusclesDialog
+import com.ironvellum.app.ui.program.RiteMusclesSheet
 import com.ironvellum.app.ui.program.coverageGaps
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.ironvellumRepository
@@ -322,7 +322,7 @@ fun PresetsScreen(
                             )
                         }
                         if (showMuscles) {
-                            RiteMusclesDialog(
+                            RiteMusclesSheet(
                                 title = preset.name,
                                 entries = preset.toPlanned().entries,
                                 onDismiss = { showMuscles = false },

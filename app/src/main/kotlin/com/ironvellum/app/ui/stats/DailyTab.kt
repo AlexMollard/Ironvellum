@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +32,9 @@ import com.ironvellum.app.domain.STEP_GOAL
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.BarChart
+import com.ironvellum.app.ui.components.InfoAction
+import com.ironvellum.app.ui.components.InfoSheet
+import com.ironvellum.app.ui.components.InfoSheetSize
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkListRow
 import com.ironvellum.app.ui.components.InkPanel
@@ -259,34 +261,30 @@ private fun TodayNumber(label: String, value: String, caption: String, modifier:
 private fun EnergyMethodDialog(stats: List<StatEntry>, onDismiss: () -> Unit) {
     val bf = Ledger.latestWithBodyFat(stats)
     val resting = Energy.restingKcalPerDay(bf?.weightKg, bf?.bodyFatPct)
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = IronvellumColors.Vault,
-        onDismissRequest = onDismiss,
-        title = { Text("How energy is estimated", style = MaterialTheme.typography.titleLarge) },
-        text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    "A measured active-calorie figure from Health Connect always wins, and an estimate is never added on top of it.",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    "Estimates use net MET: the Compendium MET minus 1, because Health Connect's active calories leave resting burn out. " +
-                        "Walking is costed at 2.5 net MET, lifting by session time.",
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-                Text(
-                    if (resting != null) {
-                        "Resting burn (Katch-McArdle): ${fmtInt(resting.kcal)} kcal/day, ${resting.basis}."
-                    } else {
-                        "Log body fat to see a resting burn (Katch-McArdle)."
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                )
-            }
-        },
-        confirmButton = { IronvellumButton(label = "Close", onClick = onDismiss, quiet = true) },
-    )
+    InfoSheet(
+        title = "How energy is estimated",
+        onDismiss = onDismiss,
+        size = InfoSheetSize.Compact,
+        actions = listOf(InfoAction("Close", onDismiss, quiet = true)),
+    ) {
+        text(
+            "MEASURED FIRST",
+            "A measured active-calorie figure from Health Connect always wins, and an estimate is never added on top of it.",
+        )
+        text(
+            "ESTIMATES",
+            "Estimates use net MET: the Compendium MET minus 1, because Health Connect's active calories leave resting burn out. " +
+                "Walking is costed at 2.5 net MET, lifting by trial time.",
+        )
+        text(
+            "RESTING BURN",
+            if (resting != null) {
+                "Katch-McArdle: ${fmtInt(resting.kcal)} kcal/day, ${resting.basis}."
+            } else {
+                "Log body fat to see a resting burn (Katch-McArdle)."
+            },
+        )
+    }
 }
 
 private fun confidenceWord(confidence: EnergyConfidence): String = when (confidence) {

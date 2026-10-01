@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -41,7 +41,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -747,62 +752,83 @@ private fun LadderCard(
     }
 }
 
-/** One marker per rung: earned, the one to win next, or still locked. Each opens its deed. */
-@OptIn(ExperimentalLayoutApi::class)
+/**
+ * One marker per rung: earned, the one to win next, or still locked. A tap on a
+ * marker opens that rung's deed.
+ *
+ * Seven 48dp targets are 336dp, wider than a 360dp phone's panel, so they used
+ * to wrap their last rung onto a second row. The markers are small now and the
+ * strip is ONE target, 48dp tall and the full width: a tap picks the rung under
+ * the finger. Screen readers get a single control with one action per rung.
+ */
 @Composable
 private fun RungStrip(ladder: DeedLadder, earnedIds: Set<String>, onOpenDeed: (String) -> Unit) {
     val states = ladder.states(earnedIds)
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        // Share the width evenly, but never squeeze a marker under the 48dp
-        // target: seven rungs on a 360dp phone wrap to a second row instead.
-        val slot = maxOf(LedgerSpace.Target, maxWidth / ladder.rungs.size)
-        FlowRow(Modifier.fillMaxWidth()) {
-        ladder.rungs.forEachIndexed { i, rung ->
-            val state = states[i]
-            val word = when (state) {
-                RungState.Earned -> "earned"
-                RungState.Next -> "next to earn"
-                RungState.Locked -> "locked"
+    val count = ladder.rungs.size
+    val summary = ladder.rungs.indices.joinToString(", ") { i ->
+        "${ladder.rungs[i].name} ${states[i].word()}"
+    }
+    val next = ladder.next(earnedIds) ?: ladder.rungs.last()
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = LedgerSpace.Target)
+            .pointerInput(ladder) {
+                detectTapGestures { at ->
+                    val i = (at.x / size.width * count).toInt().coerceIn(0, count - 1)
+                    onOpenDeed(ladder.rungs[i].id)
+                }
             }
-            Box(
-                Modifier
-                    .width(slot)
-                    .heightIn(min = LedgerSpace.Target)
-                    .semantics(mergeDescendants = true) {
-                        contentDescription = "Rung ${i + 1} of ${ladder.rungs.size}: ${rung.name}, ${rung.rarity.label}, $word"
+            .semantics(mergeDescendants = true) {
+                contentDescription = "$count rungs. $summary"
+                role = Role.Button
+                onClick(label = "Open ${next.name}") {
+                    onOpenDeed(next.id)
+                    true
+                }
+                customActions = ladder.rungs.map { rung ->
+                    CustomAccessibilityAction("Open ${rung.name}") {
+                        onOpenDeed(rung.id)
+                        true
                     }
-                    .clickable(onClickLabel = "Open ${rung.name}", role = Role.Button) { onOpenDeed(rung.id) },
-                contentAlignment = Alignment.Center,
-            ) {
-                RungMarker(state)
-            }
-        }
+                }
+            },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        states.forEach { state ->
+            Box(Modifier.weight(1f), contentAlignment = Alignment.Center) { RungMarker(state) }
         }
     }
+}
+
+private fun RungState.word(): String = when (this) {
+    RungState.Earned -> "earned"
+    RungState.Next -> "next to earn"
+    RungState.Locked -> "locked"
 }
 
 @Composable
 private fun RungMarker(state: RungState) {
     when (state) {
         RungState.Earned -> Box(
-            Modifier.size(22.dp).clip(InkCircleShape(7)).background(IronvellumColors.SovereignGold),
+            Modifier.size(18.dp).clip(InkCircleShape(7)).background(IronvellumColors.SovereignGold),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
                 Icons.Filled.Check,
                 contentDescription = null,
                 tint = IronvellumColors.Abyss,
-                modifier = Modifier.size(14.dp),
+                modifier = Modifier.size(12.dp),
             )
         }
         RungState.Next -> Box(
-            Modifier.size(22.dp).inkBorder(IronvellumColors.SystemGreen, InkCircleShape(7), 2.dp),
+            Modifier.size(18.dp).inkBorder(IronvellumColors.SystemGreen, InkCircleShape(7), 2.dp),
             contentAlignment = Alignment.Center,
         ) {
             Box(Modifier.size(8.dp).clip(InkCircleShape(7)).background(IronvellumColors.SystemGreen))
         }
         RungState.Locked -> Box(
-            Modifier.size(22.dp).inkBorder(IronvellumColors.Bracket, InkCircleShape(7), 1.5.dp),
+            Modifier.size(18.dp).inkBorder(IronvellumColors.Bracket, InkCircleShape(7), 1.5.dp),
         )
     }
 }
