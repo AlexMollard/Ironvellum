@@ -1105,7 +1105,7 @@ private fun awardsFor(result: Repository.CompletionResult, sex: Sex): List<Achie
         add(
             Achievement(
                 banner = "LEVEL UP",
-                tagline = "STRENGTH RANK",
+                tagline = "XP LEVEL",
                 name = "Level ${result.levelAfter}",
                 subtitle = "${result.totalXp} XP TOTAL",
                 accent = IronvellumColors.SystemGreen,
