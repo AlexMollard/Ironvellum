@@ -10,7 +10,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.intl.Locale as ComposeLocale
 import androidx.compose.ui.unit.dp
 import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -22,7 +21,7 @@ import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import java.util.Locale
+import com.ironvellum.app.domain.fmt
 
 /**
  * Connect & Sync asks for the reads, then pulls today and the activity history.
@@ -74,8 +73,8 @@ internal fun HealthConnectSettings(viewModel: SettingsViewModel, onBack: () -> U
                 Spacer(Modifier.height(8.dp))
                 Reading(
                     "${healthDays.size} days synced · " +
-                        "${String.format(numberLocale(), "%,d", healthDays.sumOf { it.steps })} steps · " +
-                        "${"%.0f".format(healthDays.sumOf { it.distanceKm })} km",
+                        "${"%,d".fmt(healthDays.sumOf { it.steps })} steps · " +
+                        "${"%.0f".fmt(healthDays.sumOf { it.distanceKm })} km",
                 )
             }
             sync.message?.let {
@@ -100,10 +99,3 @@ private fun Reading(text: String) {
     )
 }
 
-/**
- * The reader's locale, read through Compose's own locale state rather than
- * `Locale.getDefault()`, so formatted numbers recompose when the device locale
- * changes instead of keeping the value captured at first composition.
- */
-@Composable
-private fun numberLocale(): Locale = ComposeLocale.current.platformLocale

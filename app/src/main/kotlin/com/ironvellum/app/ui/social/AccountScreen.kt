@@ -86,10 +86,12 @@ import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.components.InkSegmented
+import com.ironvellum.app.ui.components.wholeKeyboard
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Xp
+import com.ironvellum.app.domain.DecimalInput
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
@@ -656,10 +658,10 @@ private fun AuthPanels(
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
                 value = code,
-                onValueChange = { typed -> code = typed.filter { it.isDigit() }.take(10) },
+                onValueChange = { typed -> code = DecimalInput.sanitizeWhole(typed, 10) },
                 label = { Text("Code from email") },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                keyboardOptions = wholeKeyboard(),
                 modifier = Modifier.fillMaxWidth(),
             )
         }

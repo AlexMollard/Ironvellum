@@ -23,6 +23,7 @@ import com.ironvellum.app.domain.Ledger
 import com.ironvellum.app.domain.MeasurementEntry
 import com.ironvellum.app.domain.MeasurementSite
 import com.ironvellum.app.domain.Measurements
+import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkListRow
 import com.ironvellum.app.ui.components.InkPanel
@@ -59,7 +60,7 @@ internal fun TapePage(
                     val reading = latest[site]
                     InkListRow(
                         label = site.label,
-                        value = reading?.let { "%.1f cm".format(it.valueCm) } ?: "\u2014",
+                        value = reading?.let { "%.1f cm".fmt(it.valueCm) } ?: "\u2014",
                         supporting = reading?.let { r ->
                             val delta = Measurements.deltaCm(entries, site, days = 30)
                             formatDate(r.takenAtMs, "d MMM") +

@@ -41,7 +41,7 @@ class LoadEntryTest {
 
     @Test
     fun `nonsense and out-of-range loads are refused`() {
-        listOf("abc", "-5", "7.7.1", "501", "NaN").forEach { input ->
+        listOf("abc", "-5", "7.7.1", "501", "NaN", ".", "1..2", "1e2").forEach { input ->
             assertTrue("accepted $input", parseLoadKg(input).isFailure)
         }
     }

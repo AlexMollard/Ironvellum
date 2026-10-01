@@ -35,6 +35,7 @@ import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.ImportAliases
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrainingMode
+import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.ironvellumAccount
@@ -222,7 +223,7 @@ class SettingsViewModel(
     fun setHeight(raw: String) {
         val trimmed = raw.trim()
         if (trimmed.isEmpty()) return
-        val cm = trimmed.toDoubleOrNull()
+        val cm = DecimalInput.parse(trimmed)
         if (!BodyLimits.validHeight(cm)) {
             _heightStatus.value = FieldStatus(
                 error = "Height must be ${BodyLimits.HEIGHT_CM.start.toInt()}–${BodyLimits.HEIGHT_CM.endInclusive.toInt()} cm",

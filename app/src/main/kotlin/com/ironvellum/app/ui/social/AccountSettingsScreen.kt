@@ -59,6 +59,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import java.text.DateFormat
 import java.util.Date
+import com.ironvellum.app.domain.fmt
 
 /**
  * Everything about the account that is not social: name, visibility, cloud
@@ -557,4 +558,4 @@ private fun BlockedList(blocked: List<BlockedLifter>, onUnblock: (String) -> Uni
 
 /** Bytes to a short human label for the backup-freshness line. */
 private fun formatBytes(bytes: Int): String =
-    if (bytes < 1024) "$bytes B" else "%.1f KB".format(bytes / 1024f)
+    if (bytes < 1024) "$bytes B" else "%.1f KB".fmt(bytes / 1024f)
