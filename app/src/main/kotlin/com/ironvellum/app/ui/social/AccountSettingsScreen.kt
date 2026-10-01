@@ -235,7 +235,7 @@ fun AccountSettingsScreen(
             if (confirmRestore) {
                 Text(
                     "This replaces EVERYTHING logged on this phone — trials, " +
-                        "titles, techniques, stats and readings — with the cloud " +
+                        "titles, techniques and readings — with the cloud " +
                         "archive. Anything not in that archive is lost for good.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.DangerRed,

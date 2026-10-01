@@ -872,7 +872,7 @@ private fun TrainingStep(
                 options = listOf(
                     TrainingFocus.STRENGTH to "Power",
                     TrainingFocus.MUSCLE to "Muscle",
-                    TrainingFocus.SKILL to "Skills",
+                    TrainingFocus.SKILL to "Techniques",
                     // "All-round" clipped to "All-roun" at 360dp: four equal
                     // segments leave ~72dp each. Keep every label short.
                     TrainingFocus.GENERAL to "Mixed",

@@ -205,7 +205,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }
 
     fun claim(skillName: String) {
-        viewModelScope.launchGuarded("claim skill") {
+        viewModelScope.launchGuarded("claim technique") {
             val result = repo.claimSkill(skillName)
             // Inscriptions are banked inside the claim's own transaction.
             _claim.value = result
@@ -213,7 +213,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }
 
     fun unclaim(skillName: String) {
-        viewModelScope.launchGuarded("unclaim skill") {
+        viewModelScope.launchGuarded("unclaim technique") {
             try {
                 repo.unclaimSkill(skillName)
             } catch (refused: IllegalStateException) {

@@ -251,7 +251,7 @@ fun ProposedEntryRow(
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.weight(1f, fill = false),
                     )
-                    if ("1-rep max" in line) TermInfo(Term.ONE_REP_MAX, Modifier.size(32.dp))
+                    if ("1-rep max" in line) TermInfo(Term.ONE_REP_MAX)
                 }
             }
             if (editable) {

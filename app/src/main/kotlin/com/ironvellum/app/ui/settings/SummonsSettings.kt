@@ -55,7 +55,7 @@ internal fun SummonsSettings(onBack: () -> Unit) {
                 },
             )
             Spacer(Modifier.height(8.dp))
-            SettingsCaption("One evening reminder on days a rite is scheduled and not yet begun.")
+            SettingsCaption("One evening reminder on days your cycle holds a rite you have not begun.")
             if (remindersOn) {
                 NotificationBlockedNotice(
                     channelId = Notifications.CHANNEL_SUMMONS,

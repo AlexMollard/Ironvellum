@@ -196,7 +196,7 @@ object LiftBoards {
     private val LADDERS: Map<Lift, List<Rung>> = LADDER_EXERCISES.mapValues { (lift, names) ->
         require(names.size in 1..MAX_STEP) { "${lift.wire} needs 1..$MAX_STEP rungs" }
         names.map { name ->
-            val skill = requireNotNull(Skills.forName(name)) { "${lift.wire}: no skill named $name" }
+            val skill = requireNotNull(Skills.forName(name)) { "${lift.wire}: no technique named $name" }
             Rung(name, skill.metric, skill.target)
         }
     }

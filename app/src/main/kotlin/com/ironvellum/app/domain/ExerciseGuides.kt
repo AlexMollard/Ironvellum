@@ -1636,7 +1636,7 @@ object ExerciseGuides {
                     "Pull your shoulder blades down and slightly back so your shoulders move away from your ears.",
                     "Keep your ribs down and your legs still.",
                     "Hold for the planned time, then step down.",
-                    "Add time each session before making it harder.",
+                    "Add time each trial before making it harder.",
                 ),
                 cues = listOf(
                     "Shoulders away from ears",
@@ -2192,7 +2192,7 @@ object ExerciseGuides {
                     "Pull your shoulders gently down and away from your ears.",
                     "Breathe steadily and keep your body still.",
                     "Stop when your grip starts to slip.",
-                    "Add time each session before adding any weight.",
+                    "Add time each trial before adding any weight.",
                 ),
                 cues = listOf(
                     "Squeeze the bar hard",
@@ -4788,9 +4788,9 @@ object ExerciseGuides {
                 setup = "Set the saddle so your knee is slightly bent at the bottom of the pedal stroke.",
                 steps = listOf(
                     "Warm up for 5 to 10 minutes at an easy pace first.",
-                    "Start in an easy gear and spin at a steady rhythm.",
+                    "Start with light resistance and spin at a steady rhythm.",
                     "Push and pull through the whole pedal circle.",
-                    "Raise the gear or pace for harder efforts.",
+                    "Raise the resistance or pace for harder efforts.",
                     "Keep your hands light on the bars.",
                     "Cool down for 5 minutes and log your time.",
                 ),
@@ -4800,7 +4800,7 @@ object ExerciseGuides {
                 ),
                 commonMistakes = listOf(
                     "Saddle too low or too high",
-                    "Grinding a gear that is too heavy",
+                    "Grinding against resistance that is too heavy",
                 ),
             ),
         )
@@ -5051,7 +5051,7 @@ object ExerciseGuides {
                     "Warm up for 5 to 10 minutes at an easy pace first.",
                     "Start with light resistance and a steady rhythm.",
                     "Add resistance for climbs and ease off for recovery.",
-                    "Stay seated for most of the session.",
+                    "Stay seated for most of the trial.",
                     "Keep your upper body relaxed.",
                     "Cool down for 5 minutes and log your time.",
                 ),
@@ -5112,7 +5112,7 @@ object ExerciseGuides {
         put(
             "water polo",
             ExerciseGuide(
-                setup = "Join a game or drill session with a ball, in water deep enough to tread.",
+                setup = "Join a game or drill with a ball, in water deep enough to tread.",
                 steps = listOf(
                     "Warm up for 5 to 10 minutes at an easy pace first.",
                     "Tread water with an egg-beater kick to stay high.",
@@ -5158,7 +5158,7 @@ object ExerciseGuides {
                 setup = "Wear climbing shoes and a harness and check your knot and partner.",
                 steps = listOf(
                     "Warm up on easy routes first.",
-                    "Plan the route from the ground.",
+                    "Read the route from the ground.",
                     "Climb with straight arms, resting on good holds.",
                     "Clip each draw calmly.",
                     "Rest between routes.",
@@ -5179,7 +5179,7 @@ object ExerciseGuides {
                 setup = "Wear climbing shoes and a harness and check the knot and belayer.",
                 steps = listOf(
                     "Warm up on an easy route.",
-                    "Plan your moves from the ground.",
+                    "Work out your moves from the ground.",
                     "Climb with straight arms and push with your legs.",
                     "Tell your belayer when you want to be lowered.",
                     "Rest between climbs.",
@@ -5572,7 +5572,7 @@ object ExerciseGuides {
                 ),
                 commonMistakes = listOf(
                     "Skipping shoulder warm-up",
-                    "Surfing beyond your skill",
+                    "Surfing beyond your ability",
                 ),
             ),
         )

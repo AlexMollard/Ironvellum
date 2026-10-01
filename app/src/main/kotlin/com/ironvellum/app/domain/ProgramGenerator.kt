@@ -1610,7 +1610,7 @@ object ProgramGenerator {
             if (index in standIns) {
                 val standIn = standIns[index]
                 if (standIn != null) {
-                    swapNote = "Swapped for ${standIn.name}: compound & skill only, and it trains the same " +
+                    swapNote = "Swapped for ${standIn.name}: compound & technique only, and it trains the same " +
                         "muscles - Gentil 2015"
                     name = standIn.name
                     // The isolation load says nothing about the stand-in.
@@ -1619,7 +1619,7 @@ object ProgramGenerator {
                 } else if (dropAllowed) {
                     changes += PlanChange(
                         PlanChange.Kind.REMOVED, entry.exerciseName,
-                        "Removed: with Compound & skill only on, nothing replaces its muscles - Gentil 2015",
+                        "Removed: with Compound & technique only on, nothing replaces its muscles - Gentil 2015",
                     )
                     continue
                 }

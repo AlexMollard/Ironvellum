@@ -37,7 +37,7 @@ Features:
   and your armoury, from a full gym to a pull-up bar and one dumbbell; a
   forged cycle or single rite; or a tempered version of a rite you already
   have, shown before and after. Cap the exercises per rite (5 by default) or
-  keep to compound and skill work only. Every exercise explains why it was
+  keep to compound and technique work only. Every exercise explains why it was
   picked, citing 2020-2026 research.
 - Weekly muscle coverage: a body map of the sets each muscle gets, planned or
   from the last seven days, with a floor for the helper muscles your other

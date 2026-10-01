@@ -29,7 +29,9 @@
 --      word for word.
 --   5. my_inbox() keeps the circle's goal-met missive for a member who muted or
 --      blocked whoever trained the day it fell (the actor is only left unnamed).
---   6. schema_version() reports 28, so an app build that needs this patch
+--   6. The future-timestamp guard (sessions_no_future_timestamps) says "trial"
+--      where it said "session", because the app shows the message word for word.
+--   7. schema_version() reports 28, so an app build that needs this patch
 --      refuses a project that has not had it.
 --
 -- What an older installed build does against the patched project: nothing
@@ -495,7 +497,24 @@ $$;
 revoke execute on function public.my_inbox() from public, anon;
 grant execute on function public.my_inbox() to authenticated;
 
--- ---------------------------------------------------------------- 6. the version beacon
+-- ---------------------------------------------------------------- 6. future-timestamp message
+-- A phone clock more than a day ahead trips this guard, and the app shows its
+-- text as is. Only the message changes; the trigger already points at it.
+create or replace function sessions_no_future_timestamps()
+returns trigger
+language plpgsql
+set search_path = pg_catalog, public
+as $$
+begin
+    if new.started_at > now() + interval '1 day'
+       or (new.completed_at is not null and new.completed_at > now() + interval '1 day') then
+        raise exception 'trial timestamps cannot be in the future';
+    end if;
+    return new;
+end;
+$$;
+
+-- ---------------------------------------------------------------- 7. the version beacon
 -- The version beacon. The app probes schema_version() as anon before pointing a
 -- lifter's training at a custom backend (Settings -> CLOUD, TEST), so a
 -- half-set-up project is reported before any data is sent to it. The anon

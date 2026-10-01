@@ -522,7 +522,7 @@ internal fun targetCaption(volume: VolumeLevel, focus: TrainingFocus, target: Cl
     val sets = "${trimSets(target.start)}-${trimSets(target.endInclusive)} sets per muscle a week"
     return when (focus) {
         TrainingFocus.STRENGTH -> "Strength target: $sets"
-        TrainingFocus.SKILL -> "Skill target: $sets"
+        TrainingFocus.SKILL -> "Technique target: $sets"
         else -> "Muscle target, ${volume.label.lowercase()} volume: $sets"
     }
 }

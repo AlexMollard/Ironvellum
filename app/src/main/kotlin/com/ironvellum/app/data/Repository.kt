@@ -1773,7 +1773,7 @@ class Repository(
      * no mastery: claiming is a separate, deliberate act.
      */
     suspend fun logSkillPractice(skillName: String, value: Int, weightKg: Double? = null) {
-        require(Skills.forName(skillName) != null) { "Unknown skill $skillName" }
+        require(Skills.forName(skillName) != null) { "Unknown technique $skillName" }
         require(value >= 0) { "Practice value cannot be negative" }
         skillPracticeDao.insert(
             SkillPracticeEntity(
@@ -1790,7 +1790,7 @@ class Repository(
      * Level-up inscriptions are banked here, in the claim's own transaction.
      */
     suspend fun claimSkill(skillName: String): SkillClaimResult = db.withTransaction {
-        val def = Skills.forName(skillName) ?: error("Unknown skill $skillName")
+        val def = Skills.forName(skillName) ?: error("Unknown technique $skillName")
         check(skillPracticeDao.claim(skillName) == null) { "$skillName already mastered" }
         // The prerequisite check lives here, not just in the UI: this call mints
         // tier x 120 XP — 600 at the top of the tree — and an import restore or
@@ -1852,7 +1852,7 @@ class Repository(
      * deliberately kept: a title once earned is not taken back.
      */
     suspend fun unclaimSkill(skillName: String) = db.withTransaction {
-        Skills.forName(skillName) ?: error("Unknown skill $skillName")
+        Skills.forName(skillName) ?: error("Unknown technique $skillName")
         val claim = skillPracticeDao.claim(skillName) ?: return@withTransaction
         // A claimed skill that others REQUIRE cannot stand down while they
         // stand on it: dropping Dead Hang would leave Scapular Pull claimed
@@ -1889,7 +1889,7 @@ class Repository(
     suspend fun deleteWorkout(sessionId: Long) = db.withTransaction {
         val session = sessionDao.byId(sessionId) ?: return@withTransaction
         check(session.completedAtMs != null) {
-            "Session $sessionId is still live - abandon it instead"
+            "Trial $sessionId is still live - abandon it instead"
         }
         // Clamped so a ledger since spent down cannot go negative.
         val total = profileDao.get()?.totalXp ?: 0L
@@ -2345,7 +2345,7 @@ class Repository(
                             val exerciseId = resolveExercise(s.exerciseName)
                             if (exerciseId == null) {
                                 problems.add(
-                                    "session \"${session.label}\" set dropped: no exercise name",
+                                    "trial \"${session.label}\" set dropped: no exercise name",
                                 )
                                 return@mapNotNull null
                             }

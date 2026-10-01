@@ -1480,7 +1480,7 @@ class ProgramGeneratorTest {
         assertTrue(
             "the lateral raise left without a reason line: ${improvement.changes}",
             improvement.changes.any {
-                it.detail.contains("compound & skill only", ignoreCase = true) &&
+                it.detail.contains("compound & technique only", ignoreCase = true) &&
                     (it.exerciseName == "Lateral Raise" || it.detail.contains("Lateral Raise"))
             },
         )

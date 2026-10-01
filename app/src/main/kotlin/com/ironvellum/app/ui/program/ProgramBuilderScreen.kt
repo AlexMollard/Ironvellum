@@ -301,7 +301,7 @@ class ProgramBuilderViewModel(
                         ) != null
                         when {
                             isolationWouldFill ->
-                                "Only isolation work would fill the gaps. Turn off Compound & skill only to add it."
+                                "Only isolation work would fill the gaps. Turn off Compound & technique only to add it."
                             sessionKind.value == SessionKind.AUTO ->
                                 "Your cycle already reaches the target on every muscle. " +
                                     "Pick Full body, Upper or Lower for an extra rite."
@@ -602,7 +602,7 @@ fun ProgramBuilderScreen(
                     listOf(
                         TrainingFocus.STRENGTH to "Power",
                         TrainingFocus.MUSCLE to "Muscle",
-                        TrainingFocus.SKILL to "Skills",
+                        TrainingFocus.SKILL to "Techniques",
                         TrainingFocus.GENERAL to "Mixed",
                     )
                 },
@@ -653,10 +653,10 @@ fun ProgramBuilderScreen(
         QuestionPanel("EXERCISES") {
             // The same drawn toggle cell as the gear items: gold when on.
             PickCell(
-                label = "Compound & skill only",
+                label = "Compound & technique only",
                 selected = compoundOnly,
                 modifier = Modifier.fillMaxWidth(),
-                description = "Compound & skill only, ${if (compoundOnly) "on" else "off"}",
+                description = "Compound & technique only, ${if (compoundOnly) "on" else "off"}",
                 onClick = { viewModel.compoundOnly.value = !compoundOnly },
             )
             Spacer(Modifier.height(8.dp))

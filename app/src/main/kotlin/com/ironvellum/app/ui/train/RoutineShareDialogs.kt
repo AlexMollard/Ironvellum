@@ -176,7 +176,7 @@ internal fun ImportRoutineDialog(
             text = {
                 val now = if (currentWorkouts == 1) "your 1 rite" else "all $currentWorkouts of your rites"
                 Text(
-                    "This deletes $now and their schedule, then adds the ${workouts.size} from this code. " +
+                    "This deletes $now and your cycle, then adds the ${workouts.size} from this code. " +
                         "Sealed trials stay in the Chronicle.",
                     style = MaterialTheme.typography.bodyMedium,
                 )

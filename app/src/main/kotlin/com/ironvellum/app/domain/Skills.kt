@@ -302,7 +302,7 @@ object Skills {
         SkillDef(
             "Skin the Cat", 2, "Lever", prerequisites = listOf("German Hang"),
             standard = "3 reps, full rotation through German hang and back out",
-            why = "Shoulder extension and rotation capacity that both lever paths feed on.",
+            why = "Shoulder extension and rotation capacity that both lever paths build on.",
         ),
         SkillDef(
             "Tuck Back Lever", 2, "Lever", prerequisites = listOf("Skin the Cat"),
