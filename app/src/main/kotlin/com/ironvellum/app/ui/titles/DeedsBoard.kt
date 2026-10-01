@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -195,45 +196,35 @@ fun DeedsBoard(
         // and search are refinements: five more chips plus a text field ahead of
         // the content was a screen of controls before a screen of deeds.
         item(key = "rail") {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.Top,
+            // A deliberate 3x2 grid: the five filters and the refine toggle share
+            // the row width equally, so nothing is orphaned at 360dp (a
+            // scrolling rail clipped "LOCKE", and a free wrap left two chips
+            // alone on row two with the toggle floating beside row one).
+            FlowRow(
+                Modifier.fillMaxWidth().padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
+                maxItemsInEachRow = 3,
             ) {
-                // The chips wrap instead of scrolling: at 360dp a scrolling
-                // rail clipped the last chip mid-word ("LOCKE") at the edge.
-                FlowRow(
-                    Modifier.weight(1f).padding(top = 8.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    DeedFilter.entries.forEach { f ->
-                        // No count in the label: every section header below
-                        // carries its own tally, and the counts made five chips
-                        // long enough to need scrolling to reach the last one.
-                        DeedFilterChip(
-                            label = f.label,
-                            selected = filter == f,
-                            onClick = { filter = f },
-                        )
-                    }
-                }
-                // The toggle sits outside the chips so it never wraps away
-                // from the right edge, where it is expected.
-                Box(
-                    Modifier
-                        .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                        .clickable(
-                            role = Role.Button,
-                            onClickLabel = if (showRefine) "Hide deed refinements" else "Refine deeds",
-                        ) { refineOpen = !refineOpen },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.Filled.Tune,
-                        contentDescription = if (showRefine) "Hide deed refinements" else "Refine deeds",
-                        tint = if (showRefine) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                DeedFilter.entries.forEach { f ->
+                    // No count in the label: every section header below
+                    // carries its own tally, and the counts made five chips
+                    // long enough to need scrolling to reach the last one.
+                    DeedFilterChip(
+                        label = f.label,
+                        selected = filter == f,
+                        onClick = { filter = f },
+                        modifier = Modifier.weight(1f),
                     )
                 }
+                // The sixth cell, so the grid closes as a rectangle.
+                DeedFilterChip(
+                    label = if (showRefine) "Hide deed refinements" else "Refine deeds",
+                    selected = showRefine,
+                    onClick = { refineOpen = !refineOpen },
+                    modifier = Modifier.weight(1f),
+                    icon = Icons.Filled.Tune,
+                )
             }
         }
         if (showRefine) {
@@ -483,9 +474,16 @@ private fun DeedSearchField(query: TextFieldValue, onQueryChange: (TextFieldValu
 }
 
 @Composable
-private fun DeedFilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun DeedFilterChip(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    /** Draws this icon instead of the label text; the label then names it for semantics. */
+    icon: ImageVector? = null,
+) {
     Box(
-        Modifier
+        modifier
             .background(
                 if (selected) {
                     Brush.verticalGradient(listOf(Color(0xFF2C7A5A), Color(0xFF1B4D3A)))
@@ -502,6 +500,7 @@ private fun DeedFilterChip(label: String, selected: Boolean, onClick: () -> Unit
             .semantics {
                 role = Role.Checkbox
                 this.selected = selected
+                if (icon != null) contentDescription = label
             }
             // 32dp matched the Material chip but sat under the app-wide 44dp
             // touch floor; the min height is the target, the padding only
@@ -512,6 +511,14 @@ private fun DeedFilterChip(label: String, selected: Boolean, onClick: () -> Unit
             .padding(horizontal = 7.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center,
     ) {
+        if (icon != null) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (selected) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+            )
+            return@Box
+        }
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
