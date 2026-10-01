@@ -336,28 +336,33 @@ class AccessibilityChecksTest {
     }
 
     /**
-     * Filter chips narrow a list rather than moving between screens, so they
-     * read as checkboxes — but the question is the same one: which filters are
-     * on? Tapping a chip must flip exactly that chip's reported state.
+     * The To do / Earned / All range inside a Deeds category narrows a list
+     * rather than moving between screens, but the question is the same one:
+     * which option is on? Tapping one must flip exactly that option's state.
      */
     @Test
-    fun filterChipsSayWhetherTheyAreOn() {
+    fun deedRangeChipsSayWhetherTheyAreOn() {
         returnToNavigation()
         compose.onNodeWithContentDescription("Codex").performClick()
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        compose.onAllNodesWithText("DEEDS", substring = true).onFirst().performClick()
+        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        // Categories are the board's only way in: no filter lives on the board itself.
+        compose.onAllNodesWithText("Trials", substring = true).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         fun chipSelected(label: String): Boolean =
             compose.onAllNodesWithText(label, substring = true).fetchSemanticsNodes()
                 .any { it.config.valueOrNull(SemanticsProperties.Selected) == true }
 
-        // The board opens on IN PROGRESS, so its state is known before any tap.
-        assertEquals("the default deed filter must report itself on", true, chipSelected("IN PROGRESS"))
-        assertEquals("a filter that is off must say so", false, chipSelected("LOCKED"))
+        // A category opens on To do, so its state is known before any tap.
+        assertEquals("the default range must report itself on", true, chipSelected("To do"))
+        assertEquals("a range that is off must say so", false, chipSelected("Earned"))
 
-        compose.onAllNodesWithText("LOCKED", substring = true).onFirst().performClick()
+        compose.onAllNodesWithText("Earned", substring = true).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-        assertEquals("the tapped filter must report itself on", true, chipSelected("LOCKED"))
-        assertEquals("the previous filter must report itself off", false, chipSelected("IN PROGRESS"))
+        assertEquals("the tapped range must report itself on", true, chipSelected("Earned"))
+        assertEquals("the previous range must report itself off", false, chipSelected("To do"))
     }
 
     /**
@@ -400,6 +405,8 @@ class AccessibilityChecksTest {
             listOf("Codex", "PATHS"),
             listOf("Codex", "PATHS", "Pull"),
             listOf("Codex", "JOURNAL"),
+            // A Deeds category: ladder rows, rung markers and the range chips.
+            listOf("Codex", "DEEDS", "Trials"),
             // The BMI chip opens its band dialog even with no readings, so it
             // exists on an empty install. The two panes replace the tabs and
             // are left again by the sweep's own exit step below.
