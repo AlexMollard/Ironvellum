@@ -526,7 +526,7 @@ fun PresetsScreen(
                     val options = buildList {
                         add(Triple("Forge a Cycle", "A full week built from your answers.") { showNewChooser = false; onGenerate("week", null) })
                         add(Triple("Forge a Rite", "One rite, built for today.") { showNewChooser = false; onGenerate("session", null) })
-                        add(Triple("Start from a pattern", "A hand-written weekly plan to adjust.") { showNewChooser = false; onGenerate("template", null) })
+                        add(Triple("Start from a pattern", "A hand-written weekly cycle to adjust.") { showNewChooser = false; onGenerate("template", null) })
                         // Improving needs a target: nothing to improve on an
                         // empty board.
                         if (ui.presets.isNotEmpty()) {

@@ -237,7 +237,7 @@ fun IdleScreen(
                     .padding(top = 18.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
                     .clickable { onBack() }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 12.dp, vertical = 14.dp),
             )
         }
 
@@ -723,7 +723,7 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
                 Text(
                     "The Veil gathers essence while you're away. " +
                         "Seal trials to raise the pace — your echoes and " +
-                        "history will fill in as you train.",
+                        "Chronicle will fill in as you train.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
                     maxLines = 3,

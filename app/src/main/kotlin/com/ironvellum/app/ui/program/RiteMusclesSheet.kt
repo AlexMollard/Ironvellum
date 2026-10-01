@@ -45,7 +45,7 @@ internal fun RiteMusclesSheet(
                 InfoFigures(
                     listOf(
                         InfoFigure("MUSCLES", "${worked.size}"),
-                        InfoFigure("SETS", riteSetsLabel(worked.sumOf { it.second }).substringBefore(' ')),
+                        InfoFigure("SETS", entries.sumOf { it.sets }.toString()),
                     ),
                 )
             }
