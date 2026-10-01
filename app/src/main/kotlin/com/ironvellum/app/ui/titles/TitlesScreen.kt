@@ -167,7 +167,11 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
             training = training,
             sex = bodyProfile.second,
             bodyweightKg = SetRecords.bodyweightLookup(stats)(Long.MAX_VALUE).takeIf { it > 0.0 },
-            bestEffort = bestEfforts(practices, training),
+            bestEffort = bestEfforts(
+                practices, training,
+                bodyweightKg = SetRecords.bodyweightLookup(stats)(Long.MAX_VALUE).takeIf { it > 0.0 },
+                female = bodyProfile.second == Sex.FEMALE,
+            ),
             rites = presets.map { it.id to it.name },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TitlesUi())
@@ -230,17 +234,23 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     }
 }
 
-/** Best practice or training effort per technique, by the reps or seconds it reached. */
+/**
+ * Best practice or training effort per technique: the reps or seconds it
+ * reached, or on a loaded standard the effort that clears it ([SkillGuidance.bestEffort]).
+ */
 internal fun bestEfforts(
     practices: List<SkillPractice>,
     training: Map<String, SkillTrainingEvidence>,
+    bodyweightKg: Double? = null,
+    female: Boolean = false,
 ): Map<String, SkillGuidance.Effort> {
-    val practiceBest = practices.filterNot { it.claimed }
+    val practiced = practices.filterNot { it.claimed }
         .groupBy { it.skillName }
-        .mapValues { (_, list) -> list.maxBy { it.value }.let { SkillGuidance.Effort(it.value, it.weightKg) } }
+        .mapValues { (_, list) -> list.map { SkillGuidance.Effort(it.value, it.weightKg) } }
     return Skills.ALL.mapNotNull { def ->
         val trained = training[Titles.normaliseName(def.name)]?.let { SkillGuidance.Effort(it.value, it.weightKg) }
-        listOfNotNull(practiceBest[def.name], trained).maxByOrNull { it.value }?.let { def.name to it }
+        val efforts = practiced[def.name].orEmpty() + listOfNotNull(trained)
+        SkillGuidance.bestEffort(def, efforts, bodyweightKg, female)?.let { def.name to it }
     }.toMap()
 }
 
@@ -260,16 +270,18 @@ fun TitlesScreen(
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val claimResult by viewModel.claim.collectAsStateWithLifecycle()
     val mastered = ui.claimedSkills
-    var tab by remember { mutableStateOf(TitlesTab.DEEDS) }
+    // Saveable like openLine: a rotation must not drop the lifter off their tab,
+    // out of the technique sheet or the rite picker.
+    var tab by rememberSaveable { mutableStateOf(TitlesTab.DEEDS) }
     // The path opened from the grid, null while the grid shows. Saveable so it
     // survives a tab switch and a rotation: PATHS reopens where it was left.
     var openLine by rememberSaveable { mutableStateOf<String?>(null) }
     // The grid marks the path of the most recent attempt or claim; it never opens it.
     val recentLine = remember(ui.log) { SkillGuidance.initialLine(ui.log) }
     BackHandler(enabled = tab == TitlesTab.TREE && openLine != null) { openLine = null }
-    var openSkill by remember { mutableStateOf<String?>(null) }
-    var trainSkill by remember { mutableStateOf<String?>(null) }
-    var pendingOpen by remember { mutableStateOf<String?>(null) }
+    var openSkill by rememberSaveable { mutableStateOf<String?>(null) }
+    var trainSkill by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingOpen by rememberSaveable { mutableStateOf<String?>(null) }
 
     openSkill?.let { name ->
         Skills.forName(name)?.let { def ->
@@ -377,6 +389,8 @@ fun TitlesScreen(
                     tab = TitlesTab.TREE
                 },
                 onSelect = { openSkill = it },
+                bodyweightKg = ui.bodyweightKg,
+                female = ui.sex == Sex.FEMALE,
             )
             Spacer(Modifier.height(28.dp))
             return@Column

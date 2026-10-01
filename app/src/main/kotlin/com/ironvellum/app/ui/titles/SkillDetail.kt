@@ -26,6 +26,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -72,6 +74,13 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import com.ironvellum.app.ui.components.TermChip
 import com.ironvellum.app.ui.components.termsIn
 
@@ -108,10 +117,10 @@ fun SkillDetailSheet(
     /** Puts this technique into a rite. */
     onTrain: () -> Unit = {},
 ) {
-    var confirmUnclaim by remember { mutableStateOf(false) }
+    var confirmUnclaim by rememberSaveable { mutableStateOf(false) }
     val practiced = remember(entries) { entries.filterNot { it.claimed } }
     val bestEntry = remember(practiced) { practiced.maxByOrNull { it.value } }
-    val recent = remember(entries) { entries.sortedByDescending { it.practicedAtMs }.take(6) }
+    val recent = remember(entries) { entries.sortedByDescending { it.practicedAtMs } }
     val best = bestEntry?.value ?: 0
     // The standard is judged on the better of practice and real training: a
     // lifter who already hit it in a session must not read "to go".
@@ -129,12 +138,20 @@ fun SkillDetailSheet(
     val terms = remember(skill, sexBar) { termsIn("${skill.name} ${sexBar ?: skill.standard} ${skill.why}") }
     // Starts on the last attempt, or zero. Logging stays off until the value
     // is set by hand, so one tap can never record a hold nobody did.
-    var attempt by remember(skill.name) { mutableIntStateOf(SkillGuidance.defaultAttempt(entries)) }
-    var touched by remember(skill.name) { mutableStateOf(false) }
-    var load by remember(skill.name) {
-        mutableDoubleStateOf(entries.firstOrNull { it.weightKg != null }?.weightKg ?: 0.0)
+    // Saveable, so a rotation keeps what was typed into the form.
+    var attempt by rememberSaveable(skill.name) { mutableIntStateOf(SkillGuidance.defaultAttempt(entries)) }
+    var touched by rememberSaveable(skill.name) { mutableStateOf(false) }
+    // The last load used, else the load the standard asks for, so a barbell
+    // lift starts near its figure instead of 40 taps away from it.
+    var load by rememberSaveable(skill.name) {
+        mutableDoubleStateOf(
+            entries.firstOrNull { it.weightKg != null }?.weightKg
+                ?: SkillGuidance.requiredKg(skill, bodyweightKg, female)?.let { roundToPlate(it) }
+                ?: 0.0,
+        )
     }
-    var showLoad by remember(skill.name) { mutableStateOf(false) }
+    var showLoad by rememberSaveable(skill.name) { mutableStateOf(false) }
+    val barLoad = Skills.loadBar(skill.name, female)?.added == false
 
     val hasEvidence = best > 0 || trained != null
     val standardWord = run {
@@ -189,7 +206,8 @@ fun SkillDetailSheet(
         chips = buildList {
             add(InfoChip("Tier ${Skills.tierLabel(skill.tier)}", IronvellumColors.SystemGreen))
             add(InfoChip(skill.line))
-            if (hasEvidence || mastered) add(InfoChip("+${skill.xp} XP", IronvellumColors.SovereignGold))
+            // A mastered technique shows what the claim paid, which is what giving it back removes.
+            if (hasEvidence || mastered) add(InfoChip("+${if (mastered) refundXp else skill.xp} XP", IronvellumColors.SovereignGold))
             if (mastered) add(InfoChip("Mastered", IronvellumColors.SovereignGold))
             else if (!unlocked) add(InfoChip("Locked", IronvellumColors.DangerRed))
         },
@@ -243,6 +261,7 @@ fun SkillDetailSheet(
                     touched = touched,
                     load = load,
                     showLoad = showLoad,
+                    barLoad = barLoad,
                     onAttempt = {
                         attempt = it
                         touched = true
@@ -266,17 +285,20 @@ fun SkillDetailSheet(
             )
         }
         if (entries.isNotEmpty()) {
+            // Every attempt for this technique, newest first: the sheet folds the
+            // list past six with its own "Show more". The Journal timeline only
+            // holds the last fortnight, so this is the full record.
             rows(
-                "RECENT ATTEMPTS",
+                "ATTEMPTS",
                 recent.map { entry ->
                     formatDate(entry.practicedAtMs, "EEE d MMM · HH:mm") to when {
                         entry.claimed -> "CLAIMED"
-                        entry.weightKg != null -> "${entry.value}${skill.unit} @ ${formatLoad(entry.weightKg)}kg"
-                        else -> "${entry.value}${skill.unit}"
+                        entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${formatLoad(entry.weightKg)}kg"
+                        else -> SkillGuidance.withUnit(entry.value, skill)
                     }
                 },
+                collapseAfter = 6,
             )
-            if (entries.size > 6) text(null, "+${entries.size - 6} earlier — full list in JOURNAL", IronvellumColors.InkMuted)
         }
         // How to do it, what it works and what it needs: the same
         // facts the exercise info card shows.
@@ -292,6 +314,7 @@ private fun AttemptLogger(
     touched: Boolean,
     load: Double,
     showLoad: Boolean,
+    barLoad: Boolean,
     onAttempt: (Int) -> Unit,
     onLoad: (Double) -> Unit,
     onShowLoad: () -> Unit,
@@ -312,7 +335,7 @@ private fun AttemptLogger(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StepGlyph("−", "Fewer") { onAttempt((attempt - attemptStep(skill)).coerceAtLeast(0)) }
+        StepGlyph("−", "Fewer") { onAttempt((attempt - stepDown(skill, attempt)).coerceAtLeast(0)) }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 attempt.toString(),
@@ -333,7 +356,7 @@ private fun AttemptLogger(
                 letterSpacing = 2.sp,
             )
         }
-        StepGlyph("+", "More") { onAttempt(attempt + attemptStep(skill)) }
+        StepGlyph("+", "More") { onAttempt(attempt + stepUp(skill, attempt)) }
     }
 
     Spacer(Modifier.height(8.dp))
@@ -352,7 +375,7 @@ private fun AttemptLogger(
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         quickValues(skill).forEach { v ->
             QuickChip(
-                label = "$v${skill.unit}",
+                label = SkillGuidance.withUnit(v, skill),
                 selected = attempt == v,
                 modifier = Modifier.weight(1f),
             ) { onAttempt(v) }
@@ -366,11 +389,12 @@ private fun AttemptLogger(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            MiniLabel("ADDED LOAD")
+            // A barbell lift logs the whole bar; a weighted bodyweight move, what hangs on top.
+            MiniLabel(if (barLoad) "BAR LOAD" else "ADDED LOAD")
             Row(verticalAlignment = Alignment.CenterVertically) {
                 StepGlyph("−", "Less added load") { onLoad((load - 2.5).coerceAtLeast(0.0)) }
                 Text(
-                    if (load <= 0.0) "BW" else "${formatLoad(load)}kg",
+                    if (load <= 0.0) (if (barLoad) "0kg" else "BW") else "${formatLoad(load)}kg",
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.Bold,
@@ -381,7 +405,7 @@ private fun AttemptLogger(
         }
     } else {
         Text(
-            "+ ADD LOAD",
+            if (barLoad) "+ ADD BAR LOAD" else "+ ADD LOAD",
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
@@ -416,9 +440,21 @@ private fun MiniLabel(text: String) {
     )
 }
 
-/** Step size follows the metric: seconds move in 5s, reps and metres in 1. */
-private fun attemptStep(skill: Skills.SkillDef): Int =
-    if (skill.metric == Skills.Metric.SECONDS) 5 else 1
+/**
+ * Step size follows the metric: reps and metres move in 1; seconds in 1 up to
+ * 20 and 5 beyond, so an 8s, 11s or 15s hold can be entered exactly and a
+ * minute is still a few taps. Going up from 20 gives 25, going down gives 19.
+ */
+internal fun stepUp(skill: Skills.SkillDef, from: Int): Int =
+    if (skill.metric == Skills.Metric.SECONDS && from >= SECONDS_FINE_LIMIT) 5 else 1
+
+internal fun stepDown(skill: Skills.SkillDef, from: Int): Int =
+    if (skill.metric == Skills.Metric.SECONDS && from > SECONDS_FINE_LIMIT) 5 else 1
+
+private const val SECONDS_FINE_LIMIT = 20
+
+/** A load to the nearest 2.5 kg plate step. */
+internal fun roundToPlate(kg: Double): Double = Math.round(kg / 2.5) * 2.5
 
 /** Plate-stepped load: whole kilograms drop the ".0"; anything else keeps its decimals. */
 internal fun formatLoad(kg: Double): String =
@@ -487,7 +523,7 @@ private fun PrerequisiteChip(name: String, met: Boolean, onClick: () -> Unit) {
             modifier = Modifier.size(14.dp),
         )
         Text(
-            "$name  ·  ${if (met) "cleared" else "not yet mastered"}",
+            "$name  ·  ${if (met) "mastered" else "not yet mastered"}",
             style = MaterialTheme.typography.bodySmall,
             color = color,
             modifier = Modifier.padding(start = 6.dp),
@@ -497,16 +533,42 @@ private fun PrerequisiteChip(name: String, met: Boolean, onClick: () -> Unit) {
 
 /** Chunky ± target: 48dp of tappable area, not a text glyph you have to hunt. */
 @Composable
-private fun StepGlyph(symbol: String, label: String, onClick: () -> Unit) {
+private fun StepGlyph(symbol: String, label: String, step: () -> Unit) {
+    // Held down, it repeats: a barbell load or a long hold is not 40 separate taps.
+    val current by rememberUpdatedState(step)
+    val scope = rememberCoroutineScope()
     Box(
         Modifier
             .size(48.dp)
             .background(Color(0xFF16201C), MaterialTheme.shapes.small)
             .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
-            .clickable(role = Role.Button) { onClick() }
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onPress = {
+                        current()
+                        val repeat = scope.launch {
+                            delay(450)
+                            while (true) {
+                                current()
+                                delay(90)
+                            }
+                        }
+                        tryAwaitRelease()
+                        repeat.cancel()
+                    },
+                )
+            }
             // The glyph is announced as a bare character: "−" says nothing
-            // about what it steps. The label carries the meaning instead.
-            .semantics { contentDescription = label },
+            // about what it steps. The label carries the meaning instead; the
+            // press handler above is invisible to TalkBack, so it gets its own click.
+            .semantics {
+                contentDescription = label
+                role = Role.Button
+                onClick(label) {
+                    current()
+                    true
+                }
+            },
         contentAlignment = Alignment.Center,
     ) {
         Text(

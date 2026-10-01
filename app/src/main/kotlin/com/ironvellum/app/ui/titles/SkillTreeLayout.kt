@@ -327,6 +327,21 @@ internal fun TreeLayout.crossings(): Int {
     return count
 }
 
-/** The first available, unmastered technique in the graph's reading order; null when the path is done. */
+/**
+ * The first prerequisite on another path that holds this path back: the first
+ * unmastered technique, in reading order, whose cross-path need is not yet
+ * mastered. Null when nothing here waits on another path.
+ */
+internal fun TreeLayout.firstBlocker(mastered: Set<String>): CrossNeed? =
+    nodes.firstNotNullOfOrNull { n ->
+        if (n.skill.name in mastered) null
+        else crossNeeds[n.skill.name]?.firstOrNull { it.skill !in mastered }
+    }
+
+/**
+ * The first available, unmastered technique in the graph's reading order; null
+ * when none is open - the path is done, or what is left waits on another path
+ * (see [firstBlocker]).
+ */
 internal fun TreeLayout.firstNext(mastered: Set<String>): Skills.SkillDef? =
     nodes.firstOrNull { SkillGuidance.isFrontier(it.skill, mastered) }?.skill

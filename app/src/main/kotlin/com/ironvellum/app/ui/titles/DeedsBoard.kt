@@ -393,18 +393,22 @@ private fun NearRow(def: TitleDef, progress: Titles.Progress, ledger: Titles.Led
     }
 }
 
+/**
+ * A full-width rail with how far to go under it. Beside the rail the text took
+ * the whole row at 360dp ("600,000 / 1,000,000 - 400,000 steps to go") and
+ * squeezed the rail to nothing, or clipped at a larger font; under it, it wraps.
+ */
 @Composable
 private fun BarWithToGo(fraction: Float, toGo: String) {
-    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.weight(1f)) {
-            InkRail(fraction = fraction, height = 4.dp, fill = railFill(earned = false), seed = 9)
-        }
-        Spacer(Modifier.width(12.dp))
+    Column(Modifier.fillMaxWidth()) {
+        InkRail(fraction = fraction, height = 4.dp, fill = railFill(earned = false), seed = 9)
+        Spacer(Modifier.height(4.dp))
         Text(
             toGo,
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.Ink,
-            maxLines = 1,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -674,7 +678,7 @@ private fun LadderCard(
 
     val sentence = buildString {
         append(ladder.title).append(". ")
-        if (series) append("$held of ${ladder.rungs.size} rungs earned. ")
+        if (series) append("$held of ${ladder.rungs.size} deeds earned. ")
         if (next != null) {
             if (series) append("Next: ${next.name}, ${next.rarity.label}. ")
             append(next.describeFor(sex)).append(' ')
@@ -740,7 +744,7 @@ private fun LadderCard(
             } else {
                 val whenEarned = unlocked[target.id]?.let { formatDate(it, "d MMM yyyy") }
                 Text(
-                    if (series) "All ${ladder.rungs.size} rungs earned" else "Earned ${whenEarned.orEmpty()}".trim(),
+                    if (series) "All ${ladder.rungs.size} deeds earned" else "Earned ${whenEarned.orEmpty()}".trim(),
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.SovereignGold,
                 )
@@ -780,7 +784,7 @@ private fun RungStrip(ladder: DeedLadder, earnedIds: Set<String>, onOpenDeed: (S
                 }
             }
             .semantics(mergeDescendants = true) {
-                contentDescription = "$count rungs. $summary"
+                contentDescription = "$count deeds. $summary"
                 role = Role.Button
                 onClick(label = "Open ${next.name}") {
                     onOpenDeed(next.id)
@@ -800,6 +804,12 @@ private fun RungStrip(ladder: DeedLadder, earnedIds: Set<String>, onOpenDeed: (S
         }
     }
 }
+
+/** The ring of a deed still locked: 3:1 or better against the panel, dimmer than the green and gold of the others. */
+internal val LockedRung = Color(0xFF7A776F)
+
+/** The panel's lightest tone, where the ring has the least contrast. */
+internal val RungPanelTop = Color(0xFF1A1A18)
 
 private fun RungState.word(): String = when (this) {
     RungState.Earned -> "earned"
@@ -828,7 +838,7 @@ private fun RungMarker(state: RungState) {
             Box(Modifier.size(8.dp).clip(InkCircleShape(7)).background(IronvellumColors.SystemGreen))
         }
         RungState.Locked -> Box(
-            Modifier.size(18.dp).inkBorder(IronvellumColors.Bracket, InkCircleShape(7), 1.5.dp),
+            Modifier.size(18.dp).inkBorder(LockedRung, InkCircleShape(7), 1.5.dp),
         )
     }
 }
