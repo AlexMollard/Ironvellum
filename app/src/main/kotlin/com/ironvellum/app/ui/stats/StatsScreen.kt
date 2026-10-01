@@ -28,7 +28,6 @@ import com.ironvellum.app.ui.components.LedgerSpace
 import com.ironvellum.app.domain.MeasurementEntry
 import com.ironvellum.app.domain.Measurements
 import kotlinx.coroutines.flow.Flow
-import androidx.compose.material3.AlertDialog
 import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,7 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -112,6 +110,11 @@ import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.LiftRecord
 import com.ironvellum.app.domain.LiftRecords
 import androidx.compose.foundation.layout.width
+import com.ironvellum.app.ui.components.InfoAction
+import com.ironvellum.app.ui.components.InfoChip
+import com.ironvellum.app.ui.components.InfoFigure
+import com.ironvellum.app.ui.components.InfoFigures
+import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.domain.Band
 import com.ironvellum.app.domain.BandTable
@@ -403,7 +406,7 @@ fun StatsScreen(
         }
         val series = readings.map { it.second }
         val current = series.lastOrNull()
-        StatDrillDialog(
+        StatDrillSheet(
             metric = metric,
             table = if (metric == "BMI") Bands.BMI else Bands.ffmi(ui.sex),
             series = series,
@@ -581,7 +584,7 @@ private fun TrainingTab(
 }
 
 @Composable
-private fun StatDrillDialog(
+private fun StatDrillSheet(
     metric: String,
     table: BandTable,
     series: List<Double>,
@@ -593,95 +596,52 @@ private fun StatDrillDialog(
     val bands = table.bands
     val category = current?.let { Bands.categoryOf(table, it) }
 
-    AlertDialog(
-        // Material's dialog container is a 28dp rounded rect - the most
-        // obviously stock surface in the app. Give it the ink shape.
-        shape = MaterialTheme.shapes.medium,
-        containerColor = IronvellumColors.Vault,
-        onDismissRequest = onDismiss,
-        title = {
-            Column {
-                Text(
-                    "$metric — frame rating",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.Ink,
-                )
-                Text(
-                    "The Ledger rates your frame",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
+    InfoSheet(
+        title = metric,
+        subtitle = "The Ledger rates your frame",
+        onDismiss = onDismiss,
+        chips = listOfNotNull(category?.let { InfoChip(it, IronvellumColors.SystemGreen) }),
+        summary = current?.let { value ->
+            {
+                InfoFigures(listOf(InfoFigure("YOUR READING", formatBodyValue(value))))
+                Spacer(Modifier.height(10.dp))
+                BandBar(
+                    value = value,
+                    bands = bands,
+                    scaleMax = table.scaleMax,
+                    description = "$metric ${formatBodyValue(value)}, $category, on a scale of " +
+                        bands.indices.joinToString("; ") { "${bands[it].label} ${Bands.rangeText(table, it)}" },
                 )
             }
         },
-        text = {
-            Column {
-                if (current == null) {
-                    Text(
-                        "This page is still blank. Log readings to fill it.",
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                } else {
-                    Text(
-                        formatBodyValue(current),
-                        style = MaterialTheme.typography.displaySmall,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = IronvellumColors.Ink,
-                    )
-                    Text(
-                        category ?: "",
-                        // titleSmall: labelLarge's wide tracking wrapped long band names onto two lines
-                        style = MaterialTheme.typography.titleSmall,
-                        color = IronvellumColors.SystemGreen,
-                    )
-                    Spacer(Modifier.height(10.dp))
-                    BandBar(
-                        value = current,
-                        bands = bands,
-                        scaleMax = table.scaleMax,
-                        description = "$metric ${formatBodyValue(current)}, $category, on a scale of " +
-                            bands.indices.joinToString("; ") { "${bands[it].label} ${Bands.rangeText(table, it)}" },
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    if (series.size >= 2) {
-                        TrendChart(
-                            series,
-                            IronvellumColors.Emerald,
-                            fromZero = false,
-                            recordMarker = false,
-                            valueText = { "$metric ${formatBodyValue(it)}" },
-                            dateText = { seriesDates[it] },
-                        )
-                        ChartCaption("${series.size} readings in the Ledger")
-                    } else {
-                        ChartCaption("Two readings draw the line.")
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    bands.forEachIndexed { i, band ->
-                        Text(
-                            "${band.label}: ${Bands.rangeText(table, i)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = IronvellumColors.InkMuted,
-                        )
-                    }
-                    asOf?.let {
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            "From your reading of $it, the newest with body fat.",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = IronvellumColors.InkMuted,
-                        )
-                    }
-                    table.note?.let {
-                        Spacer(Modifier.height(6.dp))
-                        Text(it, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
-                    }
-                }
+        actions = listOf(InfoAction("Close", onDismiss, quiet = true)),
+    ) {
+        if (current == null) {
+            text(null, "This page is still blank. Log readings to fill it.", IronvellumColors.InkMuted)
+            return@InfoSheet
+        }
+        section("TREND") {
+            if (series.size >= 2) {
+                TrendChart(
+                    series,
+                    IronvellumColors.Emerald,
+                    fromZero = false,
+                    recordMarker = false,
+                    valueText = { "$metric ${formatBodyValue(it)}" },
+                    dateText = { seriesDates[it] },
+                )
+                ChartCaption("${series.size} readings in the Ledger")
+            } else {
+                ChartCaption("Two readings draw the line.")
             }
-        },
-        confirmButton = { IronvellumButton(label = "Close", onClick = onDismiss, quiet = true) },
-    )
+        }
+        rows("BANDS", bands.indices.map { i -> bands[i].label to Bands.rangeText(table, i) }, collapseAfter = 6)
+        val about = listOfNotNull(
+            asOf?.let { "From your reading of $it, the newest with body fat." },
+            table.note,
+        ).joinToString(" ")
+        if (about.isNotEmpty()) text("ABOUT THIS RATING", about, IronvellumColors.InkMuted)
+    }
 }
 
 @Composable

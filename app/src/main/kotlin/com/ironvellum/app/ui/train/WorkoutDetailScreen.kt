@@ -18,7 +18,6 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -54,6 +53,10 @@ import com.ironvellum.app.domain.EnergyEstimate
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.SealedEdit
 import com.ironvellum.app.domain.TrialDraft
+import com.ironvellum.app.ui.components.InfoAction
+import com.ironvellum.app.ui.components.InfoNotice
+import com.ironvellum.app.ui.components.InfoSheet
+import com.ironvellum.app.ui.components.InfoSheetSize
 import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.lifecycle.ViewModelProvider
 import com.ironvellum.app.data.cloud.CloudSyncWorker
@@ -385,24 +388,18 @@ fun WorkoutDetailScreen(
         AmendConfirmDialog(settlement, onConfirm = viewModel::confirmSave, onDismiss = viewModel::dismissSave)
     }
     amendError?.let { message ->
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
-            onDismissRequest = viewModel::dismissAmendError,
-            title = { Text("Not amended") },
-            text = { Text(message) },
-            confirmButton = { IronvellumButton("OK", onClick = viewModel::dismissAmendError) },
-        )
+        InfoNotice("Not amended", message, onDismiss = viewModel::dismissAmendError)
     }
     if (earnedDeeds.isNotEmpty()) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
-            onDismissRequest = viewModel::dismissEarnedDeeds,
-            title = { Text(if (earnedDeeds.size == 1) "Deed earned" else "Deeds earned") },
-            text = { Text(earnedDeeds.joinToString(", ")) },
-            confirmButton = { IronvellumButton("OK", onClick = viewModel::dismissEarnedDeeds) },
-        )
+        InfoSheet(
+            title = if (earnedDeeds.size == 1) "Deed earned" else "Deeds earned",
+            onDismiss = viewModel::dismissEarnedDeeds,
+            size = InfoSheetSize.Compact,
+            titleColor = IronvellumColors.SovereignGold,
+            actions = listOf(InfoAction("OK", viewModel::dismissEarnedDeeds, quiet = true)),
+        ) {
+            bullets(null, earnedDeeds)
+        }
     }
 }
 

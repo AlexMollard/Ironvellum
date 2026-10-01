@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -19,13 +18,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.Rank
-import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
@@ -187,27 +184,12 @@ fun TermChip(term: Term, modifier: Modifier = Modifier) {
 
 @Composable
 private fun TermDialog(term: Term, onDismiss: () -> Unit) {
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
-        onDismissRequest = onDismiss,
-        title = {
-            Text(
-                term.title,
-                style = MaterialTheme.typography.titleMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.Ink,
-            )
-        },
-        text = {
-            Text(
-                term.definition,
-                style = MaterialTheme.typography.bodyMedium,
-                color = IronvellumColors.Ink,
-            )
-        },
-        confirmButton = {
-            IronvellumButton(label = "Close", onClick = onDismiss, quiet = true)
-        },
-    )
+    InfoSheet(
+        title = term.title,
+        onDismiss = onDismiss,
+        size = InfoSheetSize.Compact,
+        actions = listOf(InfoAction("Close", onDismiss, quiet = true)),
+    ) {
+        text(null, term.definition)
+    }
 }

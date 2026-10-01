@@ -62,7 +62,6 @@ import androidx.compose.ui.draw.alpha
 import com.ironvellum.app.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -77,7 +76,8 @@ import com.ironvellum.app.data.cloud.FriendRow
 import com.ironvellum.app.data.cloud.Liker
 import com.ironvellum.app.data.cloud.Reaction
 import com.ironvellum.app.domain.Titles
-import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.InfoAction
+import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.ironvellumAccount
@@ -771,46 +771,29 @@ private fun FeedCard(
     if (showLikers) {
         // Dismissal evicts the cached failure so the next open retries fresh
         // instead of showing the same error forever.
-        Dialog(onDismissRequest = {
+        val close = {
             showLikers = false
             onLikersClosed(entry.sessionId)
-        }) {
-            InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
-                Text(
-                    "TRIBUTES FROM YOUR ALLIES",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = IronvellumColors.SovereignGold,
-                    letterSpacing = IronvellumTracking.SectionHeader,
-                )
-                Spacer(Modifier.height(10.dp))
-                when {
-                    likers == null && likersError == null -> Text(
-                        "Reading the tributes…",
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                    )
-                    likersError != null -> Column {
-                        Text(
-                            "The Ledger refused: $likersError",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = IronvellumColors.DangerRed,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        IronvellumButton(
-                            label = "TRY AGAIN",
-                            onClick = { onRetryLikers(entry.sessionId) },
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                    likers!!.isEmpty() -> Text(
-                        "No tributes yet — your deeds still speak for themselves.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.InkMuted,
-                    )
-                    else -> likers.forEach { liker ->
+        }
+        InfoSheet(
+            title = "Tributes",
+            subtitle = "From your allies",
+            onDismiss = close,
+            actions = buildList {
+                if (likersError != null) add(InfoAction("TRY AGAIN", { onRetryLikers(entry.sessionId) }))
+                add(InfoAction("Close", close, quiet = true))
+            },
+        ) {
+            val list = likers
+            when {
+                list == null && likersError == null ->
+                    text(null, "Reading the tributes…", IronvellumColors.InkMuted)
+                likersError != null ->
+                    text(null, "The Ledger refused: $likersError", IronvellumColors.DangerRed)
+                list.isNullOrEmpty() ->
+                    text(null, "No tributes yet — your deeds still speak for themselves.", IronvellumColors.InkMuted)
+                else -> section(null) {
+                    list.forEach { liker ->
                         Row(
                             Modifier
                                 .fillMaxWidth()
@@ -843,18 +826,9 @@ private fun FeedCard(
                         }
                     }
                 }
-                Spacer(Modifier.height(12.dp))
-                IronvellumButton(
-                    label = "Close",
-                    onClick = {
-                        showLikers = false
-                        onLikersClosed(entry.sessionId)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                )
             }
-    }
         }
+    }
 }
 
 /**

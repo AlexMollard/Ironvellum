@@ -3,24 +3,10 @@ package com.ironvellum.app.ui.titles
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -28,20 +14,18 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.TitleRarity
 import com.ironvellum.app.domain.TitleRule
 import com.ironvellum.app.domain.Titles
-import com.ironvellum.app.ui.components.InkDivider
-import com.ironvellum.app.ui.components.InkListRow
-import com.ironvellum.app.ui.components.InkRail
-import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.PanelLabel
+import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.components.InfoAction
+import com.ironvellum.app.ui.components.InfoChip
+import com.ironvellum.app.ui.components.InfoProgress
+import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.InkCircleShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import java.util.Locale
@@ -80,15 +64,48 @@ internal fun railFill(earned: Boolean): Brush =
 
 internal fun formatCount(n: Long): String = String.format(Locale.US, "%,d", n)
 
+/** A progress figure in the units the bar counts: whole numbers, or one decimal for tenths of a km. */
+internal fun formatProgress(value: Long, scale: Int): String =
+    if (scale == 1) formatCount(value) else "%.1f".fmt(value.toDouble() / scale)
+
 /** How far along a deed is, worded for a row, a sheet and a screen reader alike. */
 internal data class DeedProgressText(
     /** "12 / 25" */
     val counts: String,
-    /** "13 to go", or "complete" once earned. */
+    /** "13 trials to go", or "complete" once earned. */
     val toGo: String,
     /** What the numbers count: "trials", "steps lifetime". */
     val caption: String,
 )
+
+/**
+ * The word a deed's remaining amount is counted in, so "to go" never floats
+ * without a unit: "32 min to go", "1,200 steps to go", "0.4 km to go". Lift deeds
+ * count whole percent of bodyweight and attach the sign instead.
+ */
+internal fun toGoUnit(rule: TitleRule, amount: Long): String {
+    fun noun(one: String, many: String) = if (amount == 1L) one else many
+    return when (rule) {
+        TitleRule.FirstWorkout, is TitleRule.Workouts, is TitleRule.WorkoutsInWeek, is TitleRule.SportSessions ->
+            noun("trial", "trials")
+        is TitleRule.ReachLevel -> noun("level", "levels")
+        is TitleRule.SetsLogged -> noun("set", "sets")
+        is TitleRule.RepsLogged, is TitleRule.SessionReps -> noun("rep", "reps")
+        is TitleRule.SessionStrength, is TitleRule.LifetimeStrength -> "strength"
+        is TitleRule.StepsInDay, is TitleRule.StepsLifetime -> noun("step", "steps")
+        is TitleRule.DistanceKmLifetime, is TitleRule.ActivityDistanceKm,
+        is TitleRule.LongestRun, is TitleRule.LongestSwim -> "km"
+        is TitleRule.ActiveKcalInDay -> "kcal"
+        is TitleRule.SleepMinutesInNight, is TitleRule.ActivityMinutes -> "min"
+        is TitleRule.StepGoalDays, is TitleRule.TrainingStreak -> noun("day", "days")
+        is TitleRule.SkillsMastered -> noun("technique", "techniques")
+        is TitleRule.PracticeAttempts -> noun("attempt", "attempts")
+        is TitleRule.DistinctActivities -> noun("activity", "activities")
+        is TitleRule.LongestHold -> "s"
+        is TitleRule.LiftMultiple -> "%"
+        is TitleRule.HardestGrade -> noun("grade", "grades")
+    }
+}
 
 internal fun deedProgressText(
     def: TitleDef,
@@ -103,7 +120,7 @@ internal fun deedProgressText(
         val gap = if (earned) 0L else progress.remaining
         return DeedProgressText(
             counts = "$best / ${rule.grade}",
-            toGo = if (earned) "complete" else "${formatCount(gap)} ${if (gap == 1L) "grade" else "grades"} to go",
+            toGo = if (earned) "complete" else "${formatCount(gap)} ${toGoUnit(rule, gap)} to go",
             caption = "hardest climb sent",
         )
     }
@@ -111,9 +128,14 @@ internal fun deedProgressText(
     val suffix = if (rule is TitleRule.LiftMultiple) "%" else ""
     val current = if (earned) progress.target else progress.current
     val remaining = if (earned) 0L else progress.remaining
+    val left = formatProgress(remaining, progress.scale)
     return DeedProgressText(
-        counts = "${formatCount(current)}$suffix / ${formatCount(progress.target)}$suffix",
-        toGo = if (earned) "complete" else "${formatCount(remaining)}$suffix to go",
+        counts = "${formatProgress(current, progress.scale)}$suffix / ${formatProgress(progress.target, progress.scale)}$suffix",
+        toGo = when {
+            earned -> "complete"
+            rule is TitleRule.LiftMultiple -> "$left% to go"
+            else -> "$left ${toGoUnit(rule, remaining)} to go"
+        },
         caption = progress.unit.removePrefix("% "),
     )
 }
@@ -135,7 +157,6 @@ internal fun earnPointer(category: String): String = when (category) {
  * it, and the one thing to do next. Earned deeds offer to be worn; the rest
  * point at where they are earned.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun DeedDetailSheet(
     def: TitleDef,
@@ -148,90 +169,35 @@ internal fun DeedDetailSheet(
     onDismiss: () -> Unit,
 ) {
     val earned = earnedAtMs != null
-    val text = deedProgressText(def, progress, ledger, earned)
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
-        shape = MaterialTheme.shapes.large,
-        containerColor = Color(0xFF0D1110),
-        contentColor = IronvellumColors.Ink,
-        // The stock handle is a machined pill; scrim tap, drag and back all dismiss.
-        dragHandle = null,
-    ) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
-                .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 24.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    def.name,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = if (earned) IronvellumColors.SovereignGold else IronvellumColors.Ink,
-                    modifier = Modifier.weight(1f),
-                )
-                if (earned) {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = "Earned",
-                        tint = IronvellumColors.SovereignGold,
-                    )
-                }
-            }
-            RarityMark(def.rarity, Modifier.padding(top = 4.dp))
-            Spacer(Modifier.height(12.dp))
-            Text(
-                def.describeFor(sex),
-                style = MaterialTheme.typography.bodyMedium,
-                color = IronvellumColors.Ink,
-            )
-            Spacer(Modifier.height(16.dp))
-            InkRail(
+    val progressText = deedProgressText(def, progress, ledger, earned)
+    InfoSheet(
+        title = def.name,
+        onDismiss = onDismiss,
+        titleColor = if (earned) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+        chips = buildList {
+            add(InfoChip(def.rarity.label, rarityColor(def.rarity)))
+            add(InfoChip(Titles.category(def.rule)))
+            if (earned) add(InfoChip("Earned", IronvellumColors.SovereignGold))
+        },
+        summary = {
+            InfoProgress(
                 fraction = if (earned) 1f else progress.fraction,
-                height = 10.dp,
+                line = "${progressText.counts} · ${progressText.toGo}",
+                caption = progressText.caption,
                 fill = railFill(earned),
-                seed = 5,
             )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "${text.counts} · ${text.toGo}",
-                style = MaterialTheme.typography.titleSmall,
-                color = IronvellumColors.Ink,
-            )
-            Text(
-                text.caption,
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Spacer(Modifier.height(8.dp))
-            InkDivider()
-            InkListRow(
-                label = "Earned",
-                value = earnedAtMs?.let { formatDate(it, "d MMM yyyy") } ?: "Not yet",
-            )
-            InkDivider()
-            Spacer(Modifier.height(16.dp))
-            if (earned) {
-                IronvellumButton(
-                    label = if (worn) "Worn now" else "Wear title",
-                    onClick = onWear,
-                    enabled = !worn,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                )
-            } else {
-                PanelLabel("HOW TO EARN IT")
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    earnPointer(Titles.category(def.rule)),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
+        },
+        actions = if (earned) {
+            listOf(InfoAction(if (worn) "Worn now" else "Wear title", onWear, enabled = !worn))
+        } else {
+            emptyList()
+        },
+    ) {
+        text("THE DEED", def.describeFor(sex))
+        if (earnedAtMs != null) {
+            text("EARNED", formatDate(earnedAtMs, "d MMM yyyy"))
+        } else {
+            text("HOW TO EARN IT", earnPointer(Titles.category(def.rule)), IronvellumColors.InkMuted)
         }
     }
 }

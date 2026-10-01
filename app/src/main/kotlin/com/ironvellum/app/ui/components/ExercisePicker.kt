@@ -602,7 +602,7 @@ private fun PickerRow(
         )
     }
     if (showInfo) {
-        ExerciseInfoDialog(
+        ExerciseInfoSheet(
             exercise = exercise,
             lastLine = lastLine,
             onDismiss = { showInfo = false },

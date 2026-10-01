@@ -121,7 +121,7 @@ import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.ShareCardDialog
-import com.ironvellum.app.ui.components.ExerciseInfoDialog
+import com.ironvellum.app.ui.components.ExerciseInfoSheet
 import com.ironvellum.app.ui.components.ExercisePickerSheet
 import com.ironvellum.app.ui.components.lastLoggedLine
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -160,7 +160,7 @@ import com.ironvellum.app.domain.WEIGHTED_MODIFIER
 import com.ironvellum.app.domain.applicableModifiers
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.domain.DecimalInput
-import com.ironvellum.app.ui.program.RiteMusclesDialog
+import com.ironvellum.app.ui.program.RiteMusclesSheet
 import com.ironvellum.app.ui.program.ShareLevel
 import com.ironvellum.app.ui.program.musclesAt
 
@@ -1043,7 +1043,7 @@ fun SessionScreen(
     }
 
     if (showRiteMuscles) {
-        RiteMusclesDialog(
+        RiteMusclesSheet(
             title = session.label,
             entries = ui.sets.groupBy { it.exercisePosition }.toSortedMap().values.map { rows ->
                 val first = rows.first()
@@ -1072,7 +1072,7 @@ fun SessionScreen(
         // The block can vanish under an open dialog (last set deleted); then
         // there is nothing to show and the dialog simply does not draw.
         if (exercise != null && current != null) {
-            ExerciseInfoDialog(
+            ExerciseInfoSheet(
                 exercise = exercise,
                 // Sealed trials only: the live one is never its own "last".
                 lastLine = lastLogged[exerciseId]?.let { lastLoggedLine(it, exercise, System.currentTimeMillis()) },
