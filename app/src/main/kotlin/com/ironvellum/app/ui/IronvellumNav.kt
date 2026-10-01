@@ -495,6 +495,10 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         sessionId = id,
                         onExit = { navController.popBackStack() },
                         sealRequest = if (sealFor == id) sealSerial else 0,
+                        // Served once: leaving and reopening the trial (a new
+                        // back stack entry, with its own served count) must
+                        // not raise the prompt again.
+                        onSealRequestServed = { sealFor = 0L },
                     )
                 }
                 composable(Routes.STATS) {
