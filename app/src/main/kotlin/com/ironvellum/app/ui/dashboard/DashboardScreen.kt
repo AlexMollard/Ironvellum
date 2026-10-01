@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -139,7 +141,36 @@ class DashboardUi(
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
     /** The lifter's own seconds per set; times the quest estimate. */
     val pace: SessionClock.Pace = SessionClock.Pace(),
+    /** Weekdays (1 = Monday) whose scheduled rite was sealed this week. */
+    val weekDone: Set<Int> = emptySet(),
 )
+
+/**
+ * Weekdays of the week containing [today] whose scheduled rite has a SEALED
+ * trial on that day. Only completed trials count, from the whole history, so
+ * a long cycle cannot push Monday's tick out and an unsealed trial cannot
+ * light one.
+ */
+internal fun weekDoneDays(
+    sessions: List<WorkoutSession>,
+    presets: List<WorkoutPreset>,
+    today: LocalDate,
+    zone: ZoneId,
+): Set<Int> {
+    val monday = today.with(java.time.DayOfWeek.MONDAY)
+    return presets.mapNotNull { preset ->
+        val day = preset.scheduledDay ?: return@mapNotNull null
+        val date = monday.plusDays((day - 1).toLong())
+        val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
+        val end = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
+        day.takeIf {
+            sessions.any { s ->
+                val at = s.completedAtMs
+                s.presetId == preset.id && at != null && at >= start && at < end
+            }
+        }
+    }.toSet()
+}
 
 class DashboardViewModel(
     private val repo: Repository,
@@ -203,6 +234,7 @@ class DashboardViewModel(
             stepsSyncedAtMs = values[7] as Long?,
             focus = SessionClock.focusFor(savedFocus, profile?.trainingMode),
             pace = SessionClock.pace(history),
+            weekDone = weekDoneDays(history.map { it.first }, presets, today, ZoneId.systemDefault()),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
 
@@ -580,18 +612,7 @@ fun DashboardScreen(
         // day's scheduled workout get logged this week. It used to light for
         // any workout logged that weekday, so a lifter who ran a different
         // workout saw a bright tick above a quest still offering to start.
-        val weekZone = ZoneId.systemDefault()
-        val weekMonday = today.with(java.time.DayOfWeek.MONDAY)
-        fun questDoneFor(day: Int): Boolean {
-            val preset = ui.presets.firstOrNull { it.scheduledDay == day } ?: return false
-            val date = weekMonday.plusDays((day - 1).toLong())
-            val start = date.atStartOfDay(weekZone).toInstant().toEpochMilli()
-            val end = date.plusDays(1).atStartOfDay(weekZone).toInstant().toEpochMilli()
-            return ui.recent.any { session ->
-                val at = session.completedAtMs ?: session.startedAtMs
-                session.presetId == preset.id && at >= start && at < end
-            }
-        }
+        fun questDoneFor(day: Int): Boolean = day in ui.weekDone
 
         // Week rail: a hairline, not a fourth card.
         AnimatedVisibility(shown, enter = fadeIn(tween(300, delayMillis = 140))) {
@@ -614,8 +635,15 @@ fun DashboardScreen(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
                             ) { viewModel.selectDay(day) }
+                            .heightIn(min = 48.dp)
+                            .semantics(mergeDescendants = true) {
+                                contentDescription = java.time.DayOfWeek.of(day)
+                                    .getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.getDefault()) +
+                                    if (isDone) ", done" else ""
+                            }
                             .padding(vertical = 2.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                     ) {
                         Text(
                             label.take(1) + if (isDone) "\u2713" else "",
@@ -1272,7 +1300,7 @@ private fun BodyGapStrip(gap: BodyGap, onFix: () -> Unit) {
                 when (gap) {
                     BodyGap.BOTH -> "Add your height and weight to unlock your scores."
                     BodyGap.HEIGHT -> "Add your height to unlock BMI, FFMI and your scores."
-                    BodyGap.WEIGHT -> "Log your weight to unlock your scores."
+                    BodyGap.WEIGHT -> "Add a weight reading to unlock your scores."
                 },
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.Ink,
@@ -1280,7 +1308,7 @@ private fun BodyGapStrip(gap: BodyGap, onFix: () -> Unit) {
             )
             Spacer(Modifier.width(10.dp))
             IronvellumButton(
-                label = if (gap == BodyGap.WEIGHT) "Log weight" else "Set height",
+                label = if (gap == BodyGap.WEIGHT) "Add reading" else "Set height",
                 onClick = onFix,
                 quiet = true,
             )
