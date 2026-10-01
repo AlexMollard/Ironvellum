@@ -46,6 +46,7 @@ fun SettingsScreen(
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val bodyProfile by viewModel.bodyProfile.collectAsStateWithLifecycle()
     val renameError by viewModel.renameError.collectAsStateWithLifecycle()
+    val heightStatus by viewModel.heightStatus.collectAsStateWithLifecycle()
     val signedIn by viewModel.signedIn.collectAsStateWithLifecycle()
     val healthLink by viewModel.healthLink.collectAsStateWithLifecycle()
     val healthDays by viewModel.healthDays.collectAsStateWithLifecycle()
@@ -73,9 +74,11 @@ fun SettingsScreen(
         SettingsGroup("YOU", topSpace = 4.dp) {
             SettingsValueRow(
                 "Profile",
-                // A name the cloud refused after leaving Profile must not pass silently.
+                // A name or height refused on leaving Profile must not pass silently.
                 if (renameError != null) {
                     "Name not saved"
+                } else if (heightStatus.error != null) {
+                    "Height not saved"
                 } else {
                     SettingsSummaries.profile(profile?.name, bodyProfile.first, bodyProfile.second)
                 },
