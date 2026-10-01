@@ -20,6 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.ArmyClass
+import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.Rank
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 
@@ -62,10 +64,14 @@ enum class Term(val title: String, val definition: String) {
     ),
     RANKS(
         "Strength Rank and Ascension",
-        "Both follow your level, which rises with the XP each trial earns. Strength Rank: " +
-            "Untrained, then Novice from level 10, Intermediate from 30, Advanced from 50 and " +
-            "Elite from 80. Ascension: " +
-            ArmyClass.LADDER.joinToString(", ") { "${it.title} at ${it.level}" } + ".",
+        "Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or " +
+            "Elite, the strength-standard bands. Each squat, bench press, deadlift, overhead " +
+            "press, pull-up and dip you sealed in the last ${Rank.WINDOW_DAYS} days counts its " +
+            "best estimated 1-rep max against your bodyweight, and the rank is their average, " +
+            "rounded down. It can fall if you stop training a lift. Until " +
+            "you log your bodyweight and seal one of those lifts at ${ProgramRules.MAX_E1RM_REPS} reps or fewer, you are " +
+            "Unranked. Ascension follows your level, which rises with the XP each trial " +
+            "earns: " + ArmyClass.LADDER.joinToString(", ") { "${it.title} at ${it.level}" } + ".",
     ),
 }
 

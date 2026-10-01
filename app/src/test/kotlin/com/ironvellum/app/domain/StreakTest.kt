@@ -76,20 +76,3 @@ class ArmyClassTest {
         assertEquals(null, ArmyClass.nextFor(70))
     }
 }
-
-
-class RankTest {
-
-    @Test
-    fun `rank bands match the strength ladder`() {
-        assertEquals(Rank.UNTRAINED, Rank.forLevel(1))
-        assertEquals(Rank.UNTRAINED, Rank.forLevel(9))
-        assertEquals(Rank.NOVICE, Rank.forLevel(10))
-        assertEquals(Rank.NOVICE, Rank.forLevel(29))
-        assertEquals(Rank.INTERMEDIATE, Rank.forLevel(30))
-        assertEquals(Rank.INTERMEDIATE, Rank.forLevel(49))
-        assertEquals(Rank.ADVANCED, Rank.forLevel(50))
-        assertEquals(Rank.ADVANCED, Rank.forLevel(79))
-        assertEquals(Rank.ELITE, Rank.forLevel(80))
-    }
-}
