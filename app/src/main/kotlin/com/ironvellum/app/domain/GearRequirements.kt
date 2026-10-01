@@ -55,10 +55,11 @@ object GearRequirements {
         "hanging leg raise" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "hanging knee raise" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         "toes-to-bar" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
-        "inverted muscle-up" to listOf(setOf(Gear.PULL_UP_BAR), setOf(Gear.RINGS)),
         // Fixed implements.
         "muscle-up" to listOf(setOf(Gear.PULL_UP_BAR)),
         "strict muscle-up" to listOf(setOf(Gear.PULL_UP_BAR)),
+        // The standard ends in a handstand ON the bar.
+        "inverted muscle-up" to listOf(setOf(Gear.PULL_UP_BAR)),
         "skin the cat" to listOf(setOf(Gear.RINGS)),
         "ring muscle-up" to listOf(setOf(Gear.RINGS)),
         "ring row" to listOf(setOf(Gear.RINGS)),

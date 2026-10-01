@@ -214,13 +214,13 @@ object Skills {
         ),
         SkillDef(
             "Crow Pose", 1, "Handstand",
-            standard = "Hold 30s, knees on arms, feet off floor",
+            standard = "Hold 30s, knees high on the upper arms, arms as straight as you can, feet off floor",
             why = "First taste of carrying bodyweight on your hands — teaches wrist load and balance.",
         ),
         SkillDef(
             "Pike Press", 2, "Handstand", prerequisites = listOf("Crow Pose"),
             standard = "10 reps, feet on floor, hips stacked over hands, head to floor",
-            why = "The vertical press pattern that scales into the handstand push-up.",
+            why = "A pike push-up, despite the name - a vertical press with the feet down, not a press to handstand. The pattern that scales into the handstand push-up.",
         ),
         SkillDef(
             "Elevated Pike Push-up", 3, "Handstand", prerequisites = listOf("Pike Press"),
@@ -276,7 +276,7 @@ object Skills {
         SkillDef(
             "Front Row Hold", 1, "Lever",
             standard = "Hold 20s, body horizontal, feet supported",
-            why = "Teaches the straight-arm pulling shape that levers are made of.",
+            why = "A bent-arm row held at the top: shoulder blades pulled back and a rigid body line before any straight-arm lever.",
         ),
         SkillDef(
             "Tuck Front Lever", 3, "Lever", prerequisites = listOf("Front Row Hold", "Pull-up", "Hollow Hold"),
@@ -285,7 +285,7 @@ object Skills {
         ),
         SkillDef(
             "Advanced Tuck Front Lever", 3, "Lever", prerequisites = listOf("Tuck Front Lever"),
-            standard = "Hold 12s with an open hip angle, back rounded flat",
+            standard = "Hold 12s with an open hip angle, back flat",
             why = "Doubles the lever arm — the real strength jump on the path.",
         ),
         SkillDef(
@@ -341,7 +341,7 @@ object Skills {
         // PLANCHE line — the straight-arm push summit
         SkillDef(
             "Frog Stand", 1, "Planche",
-            standard = "Hold 30s, arms straight-ish, feet off floor",
+            standard = "Hold 30s, elbows bent, knees resting on the elbows, feet off floor",
             why = "Introduces the forward lean the whole planche path depends on.",
         ),
         SkillDef(
@@ -407,7 +407,7 @@ object Skills {
         ),
         SkillDef(
             "Ring Muscle-up", 4, "Rings", prerequisites = listOf("Ring Dip", "Ring Row"),
-            standard = "3 reps, false grip, slow controlled transition",
+            standard = "3 reps from a dead hang, false grip, slow controlled transition, no swing",
             why = "Links ring pulling and pressing through the hardest transition there is.",
         ),
         SkillDef(
@@ -635,11 +635,11 @@ object Skills {
         SkillDef(
             "Straddle L-sit", 3, "Core", prerequisites = listOf("L-sit"),
             standard = "Hold 15s, legs wide and above parallel to the floor",
-            why = "Widening the legs shortens the lever - the honest half-step to the V-sit.",
+            why = "Legs above parallel ask the abs and hip flexors to compress harder than the L - the honest half-step to the V-sit.",
         ),
         SkillDef(
             "V-Sit", 4, "Core", prerequisites = listOf("Straddle L-sit"),
-            standard = "Hold 10s, legs above horizontal",
+            standard = "Hold 10s on your hands, hips off the floor, legs above horizontal",
             why = "Extreme compression — the step toward manna.",
         ),
         SkillDef(
