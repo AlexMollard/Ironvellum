@@ -301,7 +301,7 @@ object LiftBoards {
                 val added = (set.weightKg ?: 0.0).coerceAtLeast(0.0)
                 val load = if (lift in BODYWEIGHT_LIFTS) bodyweight + added else added
                 if (load <= 0.0) continue
-                val e1rm = load * (1.0 + set.reps / 30.0)
+                val e1rm = ProgramRules.epley(load, set.reps)
                 record(lift, stepFor(lift, sex, e1rm / bodyweight), workoutAt, isRecent)
             }
         }

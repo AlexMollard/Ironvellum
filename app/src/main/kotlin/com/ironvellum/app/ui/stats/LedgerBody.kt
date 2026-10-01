@@ -322,7 +322,7 @@ private fun WeekStrip(weeks: List<Int>) {
 
 /** The standard pane bar: a 48dp back target and the title. */
 @Composable
-internal fun LedgerTopBar(title: String, onBack: () -> Unit) {
+internal fun LedgerTopBar(title: String, onBack: () -> Unit, backDescription: String = "Back to Ledger") {
     Row(
         Modifier.fillMaxWidth().padding(top = 12.dp, start = 4.dp, end = LedgerSpace.Gutter),
         verticalAlignment = Alignment.CenterVertically,
@@ -330,7 +330,7 @@ internal fun LedgerTopBar(title: String, onBack: () -> Unit) {
         IconButton(onClick = onBack) {
             Icon(
                 Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back to Ledger",
+                contentDescription = backDescription,
                 tint = IronvellumColors.SystemGreen,
             )
         }
@@ -423,7 +423,7 @@ private fun HistoryRow(stat: StatEntry, profileHeight: Double?, onDelete: () -> 
 }
 
 @Composable
-private fun ArmedChoice(label: String, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
+internal fun ArmedChoice(label: String, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
     Text(
         label,
         style = MaterialTheme.typography.labelMedium,

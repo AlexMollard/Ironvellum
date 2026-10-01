@@ -227,6 +227,19 @@ object Ledger {
     fun sealedThisMonth(sealedDays: Set<LocalDate>, today: LocalDate): Int =
         sealedDays.count { it.year == today.year && it.month == today.month && it <= today }
 
+    /**
+     * 0..1 positions for readings on [dates] (oldest first), spaced by the
+     * days between them rather than by index. A single day, or all on one
+     * day, sits mid-chart.
+     */
+    fun datePositions(dates: List<LocalDate>): List<Double> {
+        if (dates.isEmpty()) return emptyList()
+        val first = dates.first()
+        val span = java.time.temporal.ChronoUnit.DAYS.between(first, dates.last())
+        if (span <= 0L) return dates.map { 0.5 }
+        return dates.map { java.time.temporal.ChronoUnit.DAYS.between(first, it) / span.toDouble() }
+    }
+
     // ------------------------------------------------------------ summary text
 
     /** 8240 -> "8.2k", 950 -> "950": a step count short enough for a row. */

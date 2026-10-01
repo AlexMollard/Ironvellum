@@ -196,4 +196,13 @@ class LedgerMathTest {
         assertNull(Ledger.dailySummary(day(0)))
         assertNull(Ledger.dailySummary(null))
     }
+
+    @Test
+    fun `readings are placed by the days between them`() {
+        val d = LocalDate.of(2026, 9, 1)
+        assertEquals(listOf(0.0, 0.1, 1.0), Ledger.datePositions(listOf(d, d.plusDays(3), d.plusDays(30))))
+        assertEquals(listOf(0.5), Ledger.datePositions(listOf(d)))
+        assertEquals(listOf(0.5, 0.5), Ledger.datePositions(listOf(d, d)))
+        assertEquals(emptyList<Double>(), Ledger.datePositions(emptyList()))
+    }
 }
