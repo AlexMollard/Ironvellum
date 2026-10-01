@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.social
 
+import com.ironvellum.app.domain.fmt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -414,7 +415,12 @@ internal fun LifterScreen(
                     )
                     Spacer(Modifier.height(6.dp))
                     if (strSeries.size >= 2) {
-                        TrendChart(strSeries, IronvellumColors.SystemGreen)
+                        TrendChart(
+                            strSeries,
+                            IronvellumColors.SystemGreen,
+                            valueText = { "%.0f strength".fmt(it) },
+                            dateText = { chrono[it].completedAtMs?.let { ms -> formatDate(ms, "d MMM") } },
+                        )
                         Spacer(Modifier.height(4.dp))
                         Text(
                             "${strSeries.size} ${plural(strSeries.size, "trial", "trials")} on the line · best ${strSeries.max().toInt()}",

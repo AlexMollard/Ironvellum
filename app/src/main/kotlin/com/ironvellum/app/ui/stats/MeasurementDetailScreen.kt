@@ -182,6 +182,8 @@ fun MeasurementDetailScreen(
                             startLabel = formatDate(oldestFirst.first().takenAtMs, "d MMM"),
                             endLabel = formatDate(oldestFirst.last().takenAtMs, "d MMM"),
                             recordMarker = false,
+                            valueText = { "%.1f cm".fmt(it) },
+                            dateText = { formatDate(oldestFirst[it].takenAtMs, "d MMM") },
                         )
                     } else {
                         Text(

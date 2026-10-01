@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
@@ -20,7 +21,9 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.theme.InkStyle
 import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.inkStroke
@@ -56,6 +59,12 @@ fun TrendChart(
     description: String? = null,
     /** Mark the best value gold. Off for measurements, where the highest weight is not an achievement. */
     recordMarker: Boolean = true,
+    /** The value in the scrub readout, with its unit. */
+    valueText: (Double) -> String = ::scrubNumber,
+    /** The date of point [index] for the scrub readout; none when null. */
+    dateText: ((index: Int) -> String?)? = null,
+    /** Off for sparklines too small to hold a readout. */
+    scrub: Boolean = true,
 ) {
     val present = values.filterNotNull()
     if (present.isEmpty()) return
@@ -69,9 +78,27 @@ fun TrendChart(
     val lastIndex = values.indexOfLast { it != null }
     val bestIndex = values.indexOfLast { it != null && it == present.max() }
     val spoken = description ?: chartSummary(values, startLabel, endLabel)
+    val scrubState = remember { ScrubState() }
+    val measurer = rememberTextMeasurer()
+    val readoutStyle = MaterialTheme.typography.labelMedium.copy(color = IronvellumColors.Ink)
 
     Column(Modifier.fillMaxWidth()) {
-        Canvas(modifier.semantics { contentDescription = spoken }) {
+        Canvas(
+            modifier
+                .semantics { contentDescription = spoken }
+                .then(
+                    if (scrub) {
+                        Modifier.scrubGesture(scrubState) { x, width ->
+                            nearestIndex(
+                                List(values.size) { i -> if (values[i] == null) null else trendX(i, values.size, positions, width) },
+                                x,
+                            )
+                        }
+                    } else {
+                        Modifier
+                    },
+                ),
+        ) {
             // inset so the extreme points and their dots sit inside the frame, not on its edge
             val inset = 6.dp.toPx()
             // a flat series (every reading equal) rides the middle, not the floor
@@ -79,11 +106,7 @@ fun TrendChart(
             fun yFor(v: Double): Float =
                 if (flat) size.height / 2f
                 else (inset + (size.height - 2 * inset) * (1.0 - ((v - floor) / span))).toFloat()
-            fun xFor(i: Int): Float = when {
-                positions != null -> (positions[i] * size.width).toFloat()
-                values.size == 1 -> size.width / 2f
-                else -> i * size.width / (values.size - 1)
-            }
+            fun xFor(i: Int): Float = trendX(i, values.size, positions, size.width)
 
             // two quiet gridlines, a third of the way in from each edge
             repeat(2) { i ->
@@ -173,6 +196,16 @@ fun TrendChart(
             }
             val endColor = if (recordMarker && bestIndex == lastIndex) gold else IronvellumColors.Ink
             inkDot(Offset(xFor(lastIndex), yFor(values[lastIndex]!!)), 5.5f, endColor, seed = lastIndex)
+
+            val at = scrubState.index
+            val atValue = values.getOrNull(at)
+            if (scrub && atValue != null) {
+                drawScrub(
+                    measurer, readoutStyle,
+                    scrubReadout(valueText(atValue), dateText?.invoke(at)),
+                    xFor(at), yFor(atValue), seed = at,
+                )
+            }
         }
         if (startLabel != null || endLabel != null) {
             // measurements get their span in the middle, since the chart has no y axis
@@ -183,6 +216,15 @@ fun TrendChart(
 }
 
 private fun chartNum(v: Double) = String.format(Locale.US, "%.1f", v)
+
+/** The default readout number: one decimal, "." always. */
+internal fun scrubNumber(v: Double): String = "%.1f".fmt(v)
+
+/** The default readout for counts: whole, thousands-separated. */
+internal fun scrubWhole(v: Double): String = "%,d".fmt(Math.round(v))
+
+/** Value on the first line, date (when known) on the second. */
+internal fun scrubReadout(value: String, date: String?): String = if (date == null) value else value + "\n" + date
 
 /**
  * Bars for per-day counts. A null slot is a visible gap (a hairline stub), so
@@ -198,15 +240,26 @@ fun BarChart(
     startLabel: String? = null,
     endLabel: String? = null,
     description: String? = null,
+    /** The value in the scrub readout, with its unit. */
+    valueText: (Double) -> String = ::scrubWhole,
+    /** The date of slot [index] for the scrub readout; none when null. */
+    dateText: ((index: Int) -> String?)? = null,
 ) {
     if (values.isEmpty()) return
     val present = values.filterNotNull()
     val top = (listOfNotNull(present.maxOrNull(), goal).maxOrNull() ?: 0.0).takeIf { it > 0.0 } ?: 1.0
     val gold = IronvellumColors.SovereignGold
     val spoken = description ?: chartSummary(values, startLabel, endLabel)
+    val scrubState = remember { ScrubState() }
+    val measurer = rememberTextMeasurer()
+    val readoutStyle = MaterialTheme.typography.labelMedium.copy(color = IronvellumColors.Ink)
 
     Column(Modifier.fillMaxWidth()) {
-        Canvas(modifier.semantics { contentDescription = spoken }) {
+        Canvas(
+            modifier
+                .semantics { contentDescription = spoken }
+                .scrubGesture(scrubState) { x, width -> slotIndex(x, width, values.size) },
+        ) {
             // bars stand on a baseline just inside the frame so they never touch the date labels
             val pad = 4.dp.toPx()
             val base = size.height - pad
@@ -240,6 +293,18 @@ fun BarChart(
                     )
                     x += dash
                 }
+            }
+
+            val at = scrubState.index
+            if (at in values.indices) {
+                val v = values[at]
+                drawScrub(
+                    measurer, readoutStyle,
+                    scrubReadout(if (v == null) "no data" else valueText(v), dateText?.invoke(at)),
+                    barCenterX(at, values.size, size.width),
+                    v?.let { yFor(it).coerceAtMost(base - 2.dp.toPx()) },
+                    seed = at,
+                )
             }
         }
         if (startLabel != null || endLabel != null) {

@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.domain.fmt
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -366,6 +367,8 @@ private fun ScoreChart(history: ExerciseHistory) {
                 color = IronvellumColors.SovereignGold,
                 fromZero = false,
                 modifier = Modifier.fillMaxWidth().height(110.dp).padding(top = 8.dp),
+                valueText = { "%.1f score".fmt(it) },
+                dateText = { formatDate(history.series[it].atMs, "d MMM") },
             )
         }
         Text(
@@ -406,6 +409,8 @@ private fun RepsChart(history: ExerciseHistory) {
             TrendChart(
                 values,
                 modifier = Modifier.fillMaxWidth().height(110.dp).padding(top = 8.dp),
+                valueText = { "%,d".fmt(Math.round(it)) + if (isHold) " s" else " reps" },
+                dateText = { formatDate(history.series[it].atMs, "d MMM") },
             )
         }
         Text(

@@ -121,6 +121,8 @@ internal fun ActivityTab(
             Ledger.average(days, today, 7, includeToday = true) { it.restingHr?.toDouble() }
         }
         val startLabel = shortDate(today.minusDays(n - 1L))
+        // Slot i is the day i places from the oldest of the n shown.
+        val slotDate: (Int) -> String = { shortDate(today.minusDays(n - 1L - it)) }
 
         // Three numbers for today. Steps trail the watch, so they carry their age.
         val todaySteps = todayRow?.steps?.takeIf { it > 0 }
@@ -174,7 +176,14 @@ internal fun ActivityTab(
                 color = IronvellumColors.InkMuted,
             )
             Spacer(Modifier.height(8.dp))
-            BarChart(steps, goal = STEP_GOAL.toDouble(), startLabel = startLabel, endLabel = "today")
+            BarChart(
+                steps,
+                goal = STEP_GOAL.toDouble(),
+                startLabel = startLabel,
+                endLabel = "today",
+                valueText = { "%,d steps".fmt(Math.round(it)) },
+                dateText = slotDate,
+            )
             val hits = steps.count { (it ?: 0.0) >= STEP_GOAL }
             Text(
                 "$hits of $n days hit ${fmtInt(STEP_GOAL)}",
@@ -191,7 +200,14 @@ internal fun ActivityTab(
                 color = IronvellumColors.InkMuted,
             )
             Spacer(Modifier.height(8.dp))
-            BarChart(sleep, IronvellumColors.SystemGreen, startLabel = startLabel, endLabel = "today")
+            BarChart(
+                sleep,
+                IronvellumColors.SystemGreen,
+                startLabel = startLabel,
+                endLabel = "today",
+                valueText = { Ledger.sleepText(it.toInt()) },
+                dateText = slotDate,
+            )
         }
 
         if (anyBurn) InkPanel(Modifier.fillMaxWidth()) {
@@ -208,6 +224,8 @@ internal fun ActivityTab(
                 faded = burns.map { it != null && it.confidence != EnergyConfidence.MEASURED },
                 startLabel = startLabel,
                 endLabel = "today",
+                valueText = { "%,d kcal".fmt(Math.round(it)) },
+                dateText = slotDate,
             )
         }
 
