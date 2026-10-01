@@ -27,69 +27,73 @@ private fun DrawScope.drawGlyph(family: GlyphFamily, color: Color) {
     var n = 0
     fun ln(x1: Float, y1: Float, x2: Float, y2: Float) =
         inkStroke(p(x1, y1), p(x2, y2), color, pen.width, seed = family.ordinal * 31 + n++, taperEnds = false)
-    fun head(x: Float, y: Float, r: Float = 2.1f) = inkDot(p(x, y), r * u, color, seed = family.ordinal)
+    fun head(x: Float, y: Float) = inkDot(p(x, y), 2.2f * u, color, seed = family.ordinal)
     fun ring(x: Float, y: Float, r: Float) =
         inkArc(p(x, y), r * u, 0f, 360f, color, pen.width, seed = family.ordinal, taperEnds = false)
 
+    // Every figure is a stick person drawn to one scale (head radius 2.2, pen 2.1) and
+    // centred on the 24-unit grid by its own extent, so a row of them reads as one set.
     when (family) {
-        // plank on a floor, arm straight down
+        // plank, arm straight down
         GlyphFamily.PUSH -> {
-            ln(4.5f, 19f, 18f, 12f); ln(16.5f, 13f, 16.5f, 21f); head(20.5f, 9.4f)
+            ln(2.5f, 17.7f, 15.5f, 11.1f); ln(16f, 11.1f, 16f, 17.7f); head(19.3f, 8.5f)
         }
-        // pressing up between parallel bars
+        // front view, straight arms pressing on two parallel bars
         GlyphFamily.DIP -> {
-            head(12f, 4.6f); ln(12f, 8f, 12f, 16f); ln(11.5f, 9.5f, 7.5f, 12.8f); ln(12.5f, 9.5f, 16.5f, 12.8f)
-            ln(4.5f, 13.2f, 10f, 13.2f); ln(14f, 13.2f, 19.5f, 13.2f)
-            ln(7.5f, 13.2f, 7.5f, 21f); ln(16.5f, 13.2f, 16.5f, 21f)
+            head(12f, 4.4f); ln(12f, 8.4f, 12f, 16.6f); ln(12f, 8.6f, 7.6f, 13.4f); ln(12f, 8.6f, 16.4f, 13.4f)
+            ln(3f, 13.4f, 9f, 13.4f); ln(15f, 13.4f, 21f, 13.4f); ln(4.4f, 13.4f, 4.4f, 21.8f); ln(19.6f, 13.4f, 19.6f, 21.8f)
+            ln(12f, 16.6f, 9.8f, 21.8f); ln(12f, 16.6f, 14.2f, 21.8f)
         }
-        // chin over the bar, elbows bent
+        // chin over the bar, elbows bent out
         GlyphFamily.PULL -> {
-            ln(3f, 4f, 21f, 4f); ln(6.5f, 4f, 4.5f, 9.5f); ln(4.5f, 9.5f, 9.5f, 12f); ln(17.5f, 4f, 19.5f, 9.5f)
-            ln(19.5f, 9.5f, 14.5f, 12f); head(12f, 8.4f, 2f); ln(12f, 12.5f, 12f, 21.5f)
+            ln(2.5f, 6.1f, 21.5f, 6.1f); head(12f, 3.1f)
+            ln(4.8f, 6.1f, 4.6f, 12.3f); ln(4.6f, 12.3f, 9.8f, 8.9f)
+            ln(19.2f, 6.1f, 19.4f, 12.3f); ln(19.4f, 12.3f, 14.2f, 8.9f)
+            ln(12f, 8.5f, 12f, 18.3f); ln(12f, 18.3f, 9.6f, 23.1f); ln(12f, 18.3f, 14.4f, 23.1f)
         }
-        // arms long and straight, head low
+        // arms long and straight, head between them
         GlyphFamily.HANG -> {
-            ln(3f, 3f, 21f, 3f); ln(9f, 3f, 10.5f, 10.5f); ln(15f, 3f, 13.5f, 10.5f)
-            head(12f, 13.2f, 2.1f); ln(12f, 15.6f, 12f, 22f)
+            ln(2.5f, 1.8f, 21.5f, 1.8f); ln(6f, 1.8f, 9.6f, 10f); ln(18f, 1.8f, 14.4f, 10f); head(12f, 5.4f)
+            ln(12f, 9.4f, 12f, 18f); ln(12f, 18f, 9.6f, 22.2f); ln(12f, 18f, 14.4f, 22.2f)
         }
-        // upside down on the hands
+        // upside down on the hands, legs split, head low
         GlyphFamily.INVERSION -> {
-            ln(6f, 21.5f, 18f, 21.5f); ln(12f, 21.5f, 12f, 12f); ln(12f, 12f, 12f, 4.5f)
-            ln(12f, 4.5f, 9f, 1.8f); ln(12f, 4.5f, 15f, 1.8f); head(15.6f, 16.5f, 1.9f)
+            ln(7.4f, 22f, 14.4f, 22f); ln(10.9f, 22f, 10.9f, 6.2f)
+            ln(10.9f, 6.2f, 8.7f, 2f); ln(10.9f, 6.2f, 13.1f, 2f); head(14.3f, 16.8f)
         }
-        // body level, held on straight arms
+        // body level, held clear of the floor on straight arms
         GlyphFamily.HOLD -> {
-            ln(3f, 21f, 12f, 21f); ln(8.5f, 21f, 8.5f, 13f); ln(6.5f, 13f, 22f, 13f); head(3.8f, 11.4f, 2f)
+            ln(2.6f, 18.3f, 13.1f, 18.3f); ln(9.6f, 18.3f, 7.4f, 10.3f); ln(7.4f, 10.3f, 22.1f, 10.3f); head(4.2f, 7.9f)
         }
-        // an L: torso up, legs out, hands planted
+        // an L: torso up, legs out, arm planted
         GlyphFamily.CORE -> {
-            head(8f, 4.5f); ln(8f, 7.8f, 8f, 15.5f); ln(8f, 15.5f, 21.5f, 15.5f)
-            ln(5.5f, 10f, 5.5f, 21f); ln(2.5f, 21f, 9f, 21f)
+            head(8.3f, 4.9f); ln(8.3f, 8.5f, 8.3f, 16.1f); ln(8.3f, 16.1f, 21.8f, 16.1f)
+            ln(8.3f, 9.5f, 5f, 15.9f); ln(5f, 15.9f, 5f, 21.3f); ln(2.3f, 21.3f, 7.8f, 21.3f)
         }
         // seated deep, arms forward
         GlyphFamily.SQUAT -> {
-            head(9f, 4.5f); ln(9.5f, 7.5f, 8f, 14f); ln(8f, 14f, 14.5f, 14.5f)
-            ln(14.5f, 14.5f, 13f, 21f); ln(13f, 21f, 18f, 21f); ln(10f, 9.5f, 17.5f, 10f)
+            head(9f, 5f); ln(8.2f, 8.8f, 6.8f, 16.4f); ln(6.8f, 16.4f, 13.8f, 13.4f)
+            ln(13.8f, 13.4f, 12.2f, 21.2f); ln(12.2f, 21.2f, 17.2f, 21.2f); ln(8.5f, 9.8f, 16f, 10.6f)
         }
-        // folded at the hip over a loaded bar
+        // folded at the hip over a loaded plate
         GlyphFamily.HINGE -> {
-            head(5.5f, 7.2f); ln(8f, 8.6f, 15.5f, 12f); ln(15.5f, 12f, 14.5f, 21f)
-            ln(14.5f, 21f, 18.5f, 21f); ln(10f, 10f, 10f, 17.5f); ln(4.5f, 17.5f, 15.5f, 17.5f)
-            ln(4.5f, 14.8f, 4.5f, 20.2f); ln(15.5f, 14.8f, 15.5f, 20.2f)
+            head(5.5f, 5.7f); ln(8.5f, 7.3f, 17.3f, 9.7f); ln(8.5f, 7.3f, 8.5f, 13.7f); ring(8.5f, 16.5f, 3f)
+            ln(17.3f, 9.7f, 15.3f, 14.7f); ln(15.3f, 14.7f, 16.5f, 19.7f); ln(16.5f, 19.7f, 20.7f, 19.7f)
         }
-        // a back-bend arch
+        // a back-bend: feet and hands down, head dropped back
         GlyphFamily.MOBILITY -> {
             val arch = Path().apply {
-                moveTo(5f * u, 19f * u)
-                cubicTo(5.5f * u, 1.5f * u, 18.5f * u, 1.5f * u, 19f * u, 19f * u)
+                moveTo(2.1f * u, 20.5f * u)
+                cubicTo(1.6f * u, 3.5f * u, 15.6f * u, 3.5f * u, 17.1f * u, 14f * u)
             }
             drawPath(arch, color, style = pen)
-            ln(2.5f, 20f, 7.5f, 20f); ln(16.5f, 20f, 21.5f, 20f)
+            ln(17.1f, 14f, 17.6f, 20.5f); head(20.2f, 11.1f)
         }
-        // two rings on straps
+        // arms out to two rings on straps: the cross
         GlyphFamily.RINGS -> {
-            ln(4f, 3f, 20f, 3f); ln(7f, 3f, 7f, 10.4f); ln(17f, 3f, 17f, 10.4f)
-            ring(7f, 14.6f, 3.9f); ring(17f, 14.6f, 3.9f)
+            ln(2.5f, 1.5f, 21.5f, 1.5f); ln(4f, 1.5f, 4f, 7.9f); ln(20f, 1.5f, 20f, 7.9f)
+            ring(4f, 10.1f, 2.2f); ring(20f, 10.1f, 2.2f); ln(6.4f, 10.1f, 17.6f, 10.1f)
+            head(12f, 5.7f); ln(12f, 10.1f, 12f, 17.9f); ln(12f, 17.9f, 9.6f, 22.5f); ln(12f, 17.9f, 14.4f, 22.5f)
         }
     }
 }
