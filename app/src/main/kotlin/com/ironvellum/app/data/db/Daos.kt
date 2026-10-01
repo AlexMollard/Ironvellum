@@ -122,6 +122,9 @@ interface SessionDao {
     @Query("UPDATE set_logs SET modifiers = :modifiers WHERE sessionId = :sessionId AND exerciseId = :exerciseId")
     suspend fun setModifiers(sessionId: Long, exerciseId: Long, modifiers: String)
 
+    @Query("UPDATE set_logs SET weightKg = :weightKg WHERE id IN (:ids)")
+    suspend fun setLoads(ids: List<Long>, weightKg: Double)
+
     @Query("SELECT * FROM set_logs WHERE sessionId = :sessionId ORDER BY exercisePosition, setIndex")
     suspend fun setsFor(sessionId: Long): List<SetLogEntity>
 

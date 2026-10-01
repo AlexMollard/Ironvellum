@@ -66,6 +66,8 @@ import com.ironvellum.app.domain.RoutineCode
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.modifiersAfterLoadChange
+import com.ironvellum.app.domain.CarrySet
+import com.ironvellum.app.domain.loadsToCarry
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SealedEdit
@@ -632,6 +634,88 @@ class Repository(
         return null
     }
 
+    private suspend fun trainingMode(): TrainingMode =
+        profileDao.get()?.trainingMode?.let {
+            runCatching { TrainingMode.valueOf(it) }.getOrDefault(TrainingMode.STRENGTH)
+        } ?: TrainingMode.STRENGTH
+
+    /**
+     * What the progression engine prescribes for [entry], or null for work it
+     * does not progress (a run, yoga, bouldering). Only completed trials feed
+     * it, so while a trial is live this answers the same as it did at the
+     * start; [trialReasons] relies on that.
+     */
+    private suspend fun recommendationFor(
+        entry: PresetEntryEntity,
+        exercise: ExerciseEntity?,
+        mode: TrainingMode,
+    ): Progression.Recommendation? {
+        val metric = runCatching { ExerciseMetric.valueOf(exercise?.metric ?: "REPS") }
+            .getOrDefault(ExerciseMetric.REPS)
+        // The test is "is strength work", not "is a hold". Left hold-only,
+        // a run (DISTANCE_TIME) was handed a rep band and a load step and
+        // told to hit N reps and add 2.5 kg. An activity movement — Yoga's
+        // DURATION, Bouldering's ATTEMPTS_GRADE, that run — skips the
+        // recommendation and carries the preset's own target through
+        // unchanged; nothing better exists to prescribe it.
+        if (!metric.isStrength) return null
+        // Every logged session for this movement, newest first — not just
+        // the last one. `fromSets` wrapped a single session, so the stall
+        // counter was always 0 and the deload at STALLS_BEFORE_DELOAD could
+        // never fire: a lifter grinding the same failed load got told to
+        // repeat it forever.
+        //
+        // A static hold is not progressed here: its overload is seconds,
+        // and Progression's double-progression adds LOAD once the rep band
+        // is cleared. Feeding it seconds would prescribe a weight vest for
+        // a longer plank. Holds take the preset's own target until hold
+        // progression is designed.
+        val history = sessionDao.recentDoneSets(entry.exerciseId)
+            .groupBy { it.sessionId }
+            .values
+            .map { rows -> rows.sortedBy { it.setIndex }.map { Progression.Attempt(it.weightKg, it.reps) } }
+        return Progression.fromSessions(
+            mode = mode,
+            targetReps = entry.targetReps,
+            minSets = entry.targetSets,
+            sessions = history,
+            muscleGroup = exercise?.muscleGroup ?: "",
+            exerciseName = exercise?.name ?: "",
+        )
+    }
+
+    /**
+     * Why a live trial's loads moved, by exercise: the engine's own reason,
+     * only for movements whose prescription changed since last time (a repeat
+     * or a first attempt has nothing to explain). Rebuilt from the rite the
+     * trial began from, so an open trial has none.
+     */
+    suspend fun trialReasons(sessionId: Long): Map<Long, String> {
+        val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
+        val pw = presetDao.presetWithEntries(presetId) ?: return emptyMap()
+        val mode = trainingMode()
+        return pw.entries.sortedBy { it.position }.mapNotNull { entry ->
+            val recommendation = recommendationFor(entry, exerciseDao.byId(entry.exerciseId), mode)
+            recommendation?.takeIf { it.changed }?.let { entry.exerciseId to it.reason }
+        }.toMap()
+    }
+
+    /**
+     * When [ticked] has just been marked done with a load, hands that load to
+     * the later undone sets of the same movement that have none ([loadsToCarry]).
+     * Runs inside the caller's transaction. It writes the rows directly and
+     * skips [followLoad]: ticking never touches a "weighted" tag, and a set
+     * that inherits a load only follows a set that already carries it.
+     */
+    private suspend fun carryLoad(ticked: SetLogEntity, nowDone: Boolean, weightKg: Double?) {
+        if (ticked.done || !nowDone) return
+        val siblings = sessionDao.setsFor(ticked.sessionId)
+            .filter { it.exerciseId == ticked.exerciseId }
+            .map { CarrySet(it.id, it.setIndex, it.weightKg, it.done) }
+        val ids = loadsToCarry(CarrySet(ticked.id, ticked.setIndex, weightKg, true), siblings)
+        if (ids.isNotEmpty() && weightKg != null) sessionDao.setLoads(ids, weightKg)
+    }
+
     suspend fun startSessionFromPreset(presetId: Long): Long = db.withTransaction {
         claimLiveSession()?.let { return@withTransaction it }
         val pw = presetDao.presetWithEntries(presetId) ?: error("Rite $presetId not found")
@@ -644,9 +728,7 @@ class Repository(
                 xpAwarded = 0,
             ),
         )
-        val mode = profileDao.get()?.trainingMode?.let {
-            runCatching { TrainingMode.valueOf(it) }.getOrDefault(TrainingMode.STRENGTH)
-        } ?: TrainingMode.STRENGTH
+        val mode = trainingMode()
         val exerciseById = exerciseDao.let { dao -> pw.entries.map { it.exerciseId }.distinct().mapNotNull { dao.byId(it) } }
             .associateBy { it.id }
 
@@ -654,46 +736,12 @@ class Repository(
             val exercise = exerciseById[entry.exerciseId]
             val metric = runCatching { ExerciseMetric.valueOf(exercise?.metric ?: "REPS") }
                 .getOrDefault(ExerciseMetric.REPS)
-            // Every logged session for this movement, newest first — not just
-            // the last one. `fromSets` wrapped a single session, so the stall
-            // counter was always 0 and the deload at STALLS_BEFORE_DELOAD could
-            // never fire: a lifter grinding the same failed load got told to
-            // repeat it forever.
-            //
-            // A static hold is not progressed here: its overload is seconds,
-            // and Progression's double-progression adds LOAD once the rep band
-            // is cleared. Feeding it seconds would prescribe a weight vest for
-            // a longer plank. Holds take the preset's own target until hold
-            // progression is designed.
-            //
-            // The test is "is strength work", not "is a hold". Left hold-only,
-            // a run (DISTANCE_TIME) was handed a rep band and a load step and
-            // told to hit N reps and add 2.5 kg. An activity movement — Yoga's
-            // DURATION, Bouldering's ATTEMPTS_GRADE, that run — skips the
-            // recommendation and carries the preset's own target through
-            // unchanged; nothing better exists to prescribe it.
-            val isStrength = metric.isStrength
+            val recommendation = recommendationFor(entry, exercise, mode)
             // Seconds-in-durationSec stays HOLD-only: only a hold's preset
             // target is a duration. An activity entry keeps its own target
             // reps as the logged figure — the honest passthrough, since its
             // preset has no duration field to carry instead.
             val isHold = metric == ExerciseMetric.HOLD
-            val recommendation = if (!isStrength) {
-                null
-            } else {
-                val history = sessionDao.recentDoneSets(entry.exerciseId)
-                    .groupBy { it.sessionId }
-                    .values
-                    .map { rows -> rows.sortedBy { it.setIndex }.map { Progression.Attempt(it.weightKg, it.reps) } }
-                Progression.fromSessions(
-                    mode = mode,
-                    targetReps = entry.targetReps,
-                    minSets = entry.targetSets,
-                    sessions = history,
-                    muscleGroup = exercise?.muscleGroup ?: "",
-                    exerciseName = exercise?.name ?: "",
-                )
-            }
             (0 until entry.targetSets).map { index ->
                 SetLogEntity(
                     sessionId = sessionId,
@@ -766,6 +814,7 @@ class Repository(
         if (isSealed(current.sessionId)) return@withTransaction
         sessionDao.updateSet(current.copy(reps = reps, weightKg = weightKg, done = done))
         followLoad(current, weightKg)
+        carryLoad(current, done, weightKg)
     }
 
     /**
@@ -789,6 +838,7 @@ class Repository(
             ),
         )
         followLoad(current, weightKg)
+        carryLoad(current, done, weightKg)
     }
 
     /**
@@ -846,6 +896,7 @@ class Repository(
             ),
         )
         followLoad(current, weightKg)
+        carryLoad(current, done, weightKg)
     }
 
     /**
