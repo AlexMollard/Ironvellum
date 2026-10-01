@@ -63,6 +63,12 @@ data class ExerciseProfile(
      * with a 1.0.
      */
     val noLeadByDesign: Boolean = false,
+    /**
+     * True when each side is worked in turn, so one prescribed set is a set
+     * per side: each side earns the set's volume, and the clock pays for
+     * the work twice ([ProgramRules.setSeconds]).
+     */
+    val unilateral: Boolean = false,
 )
 
 object MuscleMap {
@@ -134,6 +140,21 @@ object MuscleMap {
     )
 
     fun isTechnique(exerciseName: String): Boolean = key(exerciseName) in technique
+
+    /**
+     * Dosed movements worked one side at a time, each side taking the full
+     * rep count ("8 reps per leg", the skill standards' own wording): the
+     * single-leg and single-arm work, split stances, lunges and step-ups,
+     * the archers and one-arm progressions, the one-arm row and the
+     * anti-rotation presses. Holds are left out: they are never dosed.
+     */
+    private val unilateralKeys = setOf(
+        "single-leg calf raise", "single-leg glute bridge", "single-leg romanian deadlift", "pistol squat",
+        "shrimp squat", "dragon squat", "split squat", "bulgarian split squat", "cossack squat", "barbell lunge",
+        "walking lunge", "barbell step-up", "dumbbell step-up", "archer pull-up", "archer push-up",
+        "one-arm pull-up", "one-arm negative", "one-arm push-up", "one-arm negative push-up", "dumbbell row",
+        "side-lying hip abduction", "dumbbell external rotation", "woodchop", "pallof press",
+    )
 
     private val profiles: Map<String, ExerciseProfile> = buildMap {
         // ---- Base catalogue: pull ----
@@ -883,7 +904,7 @@ object MuscleMap {
             MovementPattern.CORE, Muscle.HIP_FLEXORS, Muscle.GLUTES, Muscle.ADDUCTORS, Muscle.LOWER_BACK,
             Muscle.ROTATOR_CUFF, Muscle.ABS,
         ))
-    }
+    }.mapValues { (name, profile) -> if (name in unilateralKeys) profile.copy(unilateral = true) else profile }
 
     /** The conventional pull: a hinge from a flexed hip, so the adductor magnus extends it too (see romanian deadlift). */
     private fun deadlift() = ExerciseProfile(
