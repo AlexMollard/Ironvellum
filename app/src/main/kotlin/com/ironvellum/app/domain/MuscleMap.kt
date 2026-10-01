@@ -381,14 +381,15 @@ object MuscleMap {
         // unprofiled.
         // Feet on the floor carry part of the body, but a hold is held to
         // near failure like a rep set (a set counts whatever its load -
-        // Lopez 2021): the front lever shape on straight arms, so the lats
-        // lead it as they lead every front lever.
+        // Lopez 2021). It is the top of a row held on BENT arms, not a lever
+        // shape: the lats still lead (the elbows are pulled down to the
+        // ribs), with the row's blade-retracting helpers.
         put("front row hold", ExerciseProfile(
             muscles = mapOf(
                 Muscle.LATS to 1.0, Muscle.RHOMBOIDS to 0.5, Muscle.REAR_DELTS to 0.5,
                 Muscle.FOREARMS to 0.5,
             ),
-            pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = false,
+            pattern = MovementPattern.HORIZONTAL_PULL, compound = true, stretchBias = false,
         ))
         put("tuck front lever", frontLever())
         put("advanced tuck front lever", frontLever())
