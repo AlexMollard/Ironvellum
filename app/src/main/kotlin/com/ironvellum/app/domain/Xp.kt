@@ -47,7 +47,7 @@ object Xp {
     const val QUEST_BONUS = 25
 
     /** Paid once per band+week when the band's weekly goal is met and this lifter contributed. */
-    const val BAND_GOAL_BONUS = 40
+    const val CIRCLE_GOAL_BONUS = 40
 
     /** Reps in one set that pay full rate. */
     const val FULL_VALUE_REPS = MovementDifficulty.FULL_VALUE_REPS

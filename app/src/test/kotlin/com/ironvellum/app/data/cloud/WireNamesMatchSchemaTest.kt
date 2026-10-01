@@ -331,31 +331,40 @@ class WireNamesMatchSchemaTest {
     }
 
     @Test
-    fun `the warband rpc returns exactly the columns the client decodes`() {
-        // my_warband() hands the band over; a column the client does not decode
+    fun `the circle rpc returns exactly the columns the client decodes`() {
+        // my_circle() hands the band over; a column the client does not decode
         // is a detail silently dropped, one it decodes that is not returned is
         // a default shown as fact.
         assertEquals(
-            functionReturnColumns(RPC_MY_WARBAND).sorted(),
-            serialNames(WarbandDto.serializer().descriptor).sorted(),
+            functionReturnColumns(RPC_MY_CIRCLE).sorted(),
+            serialNames(CircleDto.serializer().descriptor).sorted(),
         )
-        assertTrue("$RPC_MY_WARBAND() now takes arguments", functionParams(RPC_MY_WARBAND).isEmpty())
-        assertTrue("$RPC_LEAVE_WARBAND() now takes arguments", functionParams(RPC_LEAVE_WARBAND).isEmpty())
+        assertTrue("$RPC_MY_CIRCLE() now takes arguments", functionParams(RPC_MY_CIRCLE).isEmpty())
+        assertTrue("$RPC_LEAVE_CIRCLE() now takes arguments", functionParams(RPC_LEAVE_CIRCLE).isEmpty())
     }
 
     @Test
-    fun `set_warband_goal takes one p_goal argument`() {
+    fun `set_circle_goal takes one p_per_member argument`() {
         // The goal travels through a named argument; a rename on either side
-        // would silently post a null and the server would refuse the owner.
-        assertEquals(setOf("p_goal"), functionParams(RPC_SET_WARBAND_GOAL))
+        // would silently post a null and the server would refuse the Keeper.
+        assertEquals(setOf("p_per_member"), functionParams(RPC_SET_CIRCLE_GOAL))
     }
 
     @Test
-    fun `warband rpc argument names match the function signatures`() {
+    fun `the circle bonus rpc returns exactly the columns the client decodes`() {
+        assertEquals(
+            functionReturnColumns(RPC_CIRCLE_BONUSES).sorted(),
+            serialNames(CircleBonusDto.serializer().descriptor).sorted(),
+        )
+        assertTrue("$RPC_CIRCLE_BONUSES() now takes arguments", functionParams(RPC_CIRCLE_BONUSES).isEmpty())
+    }
+
+    @Test
+    fun `circle rpc argument names match the function signatures`() {
         for ((fn, dto) in listOf(
-            RPC_CREATE_WARBAND to CreateWarbandArgs.serializer().descriptor,
-            RPC_JOIN_WARBAND to JoinWarbandArgs.serializer().descriptor,
-            RPC_SET_WARBAND_GOAL to SetWarbandGoalArgs.serializer().descriptor,
+            RPC_CREATE_CIRCLE to CreateCircleArgs.serializer().descriptor,
+            RPC_JOIN_CIRCLE to JoinCircleArgs.serializer().descriptor,
+            RPC_SET_CIRCLE_GOAL to SetCircleGoalArgs.serializer().descriptor,
         )) {
             val params = functionParams(fn)
             assertTrue("no parameters parsed for $fn — the parser is broken", params.isNotEmpty())

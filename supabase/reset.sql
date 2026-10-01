@@ -41,22 +41,25 @@ drop view if exists public.public_feed;
 drop view if exists public.shadow_board;
 drop view if exists public.leaderboard;
 
--- The warband RPCs return the `warbands` row type, so they must go before the
--- tables or the drop is refused on the dependency.
-drop function if exists public.my_warband();
-drop function if exists public.leave_warband();
-drop function if exists public.set_warband_goal(int);
-drop function if exists public.join_warband(text);
-drop function if exists public.create_warband(text);
+-- The circle RPCs return the `circles` row type (create_circle), so they must
+-- go before the tables or the drop is refused on the dependency.
+drop function if exists public.circle_bonuses();
+drop function if exists public.my_circle();
+drop function if exists public.leave_circle();
+drop function if exists public.set_circle_goal(int);
+drop function if exists public.join_circle(text);
+drop function if exists public.create_circle(text);
 
 drop table if exists
-    public.warband_members,
-    public.warbands,
+    public.circle_week_members,
+    public.circle_weeks,
+    public.circle_members,
+    public.circles,
     public.lift_marks,
     public.reports,
     public.inbox_seen,
     public.friend_request_log,
-    public.warband_join_log,
+    public.circle_join_log,
     public.mutes,
     public.blocks,
     public.session_comments,
@@ -78,10 +81,17 @@ drop function if exists public.delete_my_account();
 drop function if exists public.push_aggregates(bigint, bigint, int, bigint, int, double precision);
 drop function if exists public.monarch_level(bigint);
 drop function if exists public.find_hunter(text);
-drop function if exists public.warband_week_days(uuid, timestamptz);
-drop function if exists public.warband_members_handover();
-drop function if exists public.in_my_warband(uuid);
-drop function if exists public.warband_member(uuid, uuid);
+drop function if exists public.circle_roll(uuid);
+drop function if exists public.circle_settle_week(uuid, date);
+drop function if exists public.circle_open_week(uuid, date);
+drop function if exists public.circle_week_days(uuid, date);
+drop function if exists public.circle_member_days(uuid, timestamptz, timestamptz);
+drop function if exists public.circle_week_settles_at(date);
+drop function if exists public.circle_week_start(timestamptz);
+drop function if exists public.circle_members_before_delete();
+drop function if exists public.circle_members_handover();
+drop function if exists public.in_my_circle(uuid);
+drop function if exists public.circle_member(uuid, uuid);
 drop function if exists public.can_see_author(uuid);
 drop function if exists public.can_view_session(uuid, text);
 drop function if exists public.can_view(uuid);

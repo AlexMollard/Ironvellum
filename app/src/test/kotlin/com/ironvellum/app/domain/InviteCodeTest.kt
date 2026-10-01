@@ -8,7 +8,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * The invite code is generated in SQL (create_warband) and validated in Kotlin
+ * The invite code is generated in SQL (create_circle) and validated in Kotlin
  * (isValidInviteCode, the join input filter). Two copies of one alphabet, so
  * the pair gets a guard: a client alphabet narrower than the server's would
  * refuse codes the server legitimately drew; a wider one would send a code the
@@ -27,13 +27,13 @@ class InviteCodeTest {
     @Test
     fun `the kotlin alphabet is the server's alphabet`() {
         val sql = Regex("""alphabet text := '([^']+)'""").find(baseline)?.groupValues?.get(1)
-        requireNotNull(sql) { "no alphabet literal in create_warband — the parser, not the schema, is broken" }
+        requireNotNull(sql) { "no alphabet literal in create_circle — the parser, not the schema, is broken" }
         assertEquals(
-            "InviteCodeAlphabet drifted from create_warband's draw alphabet",
+            "InviteCodeAlphabet drifted from create_circle's draw alphabet",
             sql,
             InviteCodeAlphabet,
         )
-        // Exactly 31 glyphs: the regex character class on warbands.invite_code
+        // Exactly 31 glyphs: the regex character class on circles.invite_code
         // must describe the same set. The class is written with ranges
         // (2-9A-HJ-NP-Z), so expand them before comparing.
         val check = Regex("""invite_code ~ '\^\[([^\]]+)\]\{\d+\}\$'""").find(baseline)?.groupValues?.get(1)
@@ -119,11 +119,11 @@ class InviteCodeTest {
     @Test
     fun `the join statuses the client reads are the ones the server returns`() {
         // Every status string the client maps must be spelled in the join function.
-        val join = Regex("""create or replace function public\.join_warband\(.*?\n\$\$;""", RegexOption.DOT_MATCHES_ALL)
+        val join = Regex("""create or replace function public\.join_circle\(.*?\n\$\$;""", RegexOption.DOT_MATCHES_ALL)
             .find(baseline)?.value
-        requireNotNull(join) { "join_warband not found in the baseline" }
+        requireNotNull(join) { "join_circle not found in the baseline" }
         for (status in listOf("joined", "no_such_code", "full", "throttled")) {
-            assertTrue("join_warband never returns '$status'", join.contains("return '$status'"))
+            assertTrue("join_circle never returns '$status'", join.contains("return '$status'"))
         }
     }
 }

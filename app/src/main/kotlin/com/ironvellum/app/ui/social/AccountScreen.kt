@@ -845,7 +845,7 @@ private fun SignedInPanels(
     }
 
     SectionHeader("Circle")
-    WarbandSection(onOpenLifter = onOpenLifter, refreshSignal = circleRefreshSignal)
+    CircleSection(onOpenLifter = onOpenLifter, refreshSignal = circleRefreshSignal)
 
     SectionHeader(if (accepted.isEmpty()) "Allies" else "Allies · ${accepted.size}")
     AlliesPanel(

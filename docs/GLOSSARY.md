@@ -111,7 +111,7 @@ Support's public cost page is **"View the costs"**, never "the Ledger".
 | Term | Means | Use | Never |
 |---|---|---|---|
 | **Ally** | A friend | "Add an ally", "Ally request", "Remove ally" | friend, follower, rival |
-| **Circle** | A group of up to 8 allies with a shared weekly goal | "YOUR CIRCLE", "Form a circle", "Join a circle", "Circle code", "CIRCLE'S GOAL MET" | warband, band, guild, group, muster |
+| **Circle** | A group of 2-8 allies sharing a weekly goal of days trained | "YOUR CIRCLE", "Form a circle", "Join a circle", "Circle code", "CIRCLE'S GOAL MET" | warband, band, guild, group, muster |
 | **Keeper** | The Ironbound who runs a circle | badge "KEEPER" | owner, leader |
 | **Tidings** | What allies have done | "TIDINGS", "Every Ironbound's public trials" | feed, activity |
 | **The Reckoning** | A leaderboard; each lift and the Veil have their own | "THE RECKONING", "Choose a reckoning", "the Pull-up reckoning" | leaderboard, board, rankings |
@@ -190,16 +190,17 @@ trial" (not in one session).
 
 These are identifiers, not copy, and do not change with the glossary: nav
 routes (`hunter/{userId}`, `presets`, `titles`, `idle`, `workout_log`,
-`session/…`), cloud RPCs and columns (`find_hunter`, `*_warband`, `shadow_*`,
+`session/…`), cloud RPCs and columns (`find_hunter`, `*_circle`, `shadow_*`,
 `session_likes`, `friends`, `sessions`), reaction wire values (`salute`,
 `iron`, `flame`), Room columns (`shadows`, `essence`, `relics`), title ids
 (`awakened`, `shadow_ascendant`, …), enum names (`ArmyClass`, `RewardRarity`),
 the routine code prefix `IVR1:`, and relic names, which derive from the roll
 and seed the art (so the relic house "the Ledger" stays).
 
-The warband wire names are the exception to revisit: the feature is new, and
-renaming `*_warband` to `*_circle` belongs with the warband audit, not this
-pass.
+The circle wire names follow the glossary (`circles`, `circle_members`,
+`my_circle`, `create_circle`, ...). The one exception is the inbox kinds
+`band_join` and `band_goal`: builds already installed parse those, so the
+server keeps sending them and the client accepts the `circle_*` spellings too.
 
 ## Decisions
 

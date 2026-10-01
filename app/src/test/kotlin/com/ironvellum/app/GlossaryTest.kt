@@ -95,7 +95,7 @@ class GlossaryTest {
         val sql = baselineSql()
         val functions = Regex("""create or replace function public\.(\w+)\(.*?\n\$\$;""", RegexOption.DOT_MATCHES_ALL)
             .findAll(sql)
-            .filter { it.groupValues[1].let { name -> "warband" in name || "circle" in name } }
+            .filter { "circle" in it.groupValues[1] }
             .toList()
         assertTrue("no circle function found in the baseline; the scan would pass vacuously", functions.size >= 5)
         val raise = Regex("""raise\s+exception\s+'((?:[^']|'')*)'""")

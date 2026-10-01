@@ -284,14 +284,14 @@ private fun InboxRow(
         is InboxItem.NewComment -> Icons.Outlined.ChatBubbleOutline to "left a remark on ${item.sessionHeadline.orWorkout()}"
         is InboxItem.NewReply -> Icons.Outlined.Forum to "replied on ${item.sessionHeadline.ifBlank { "a trial" }}"
         is InboxItem.NewReaction -> item.reaction.glyph() to "paid ${item.reaction.displayName()} tribute on ${item.sessionHeadline.orWorkout()}"
-        is InboxItem.NewBandmate -> Icons.Outlined.GroupAdd to "joined your circle ${item.bandName}"
+        is InboxItem.NewCircleMember -> Icons.Outlined.GroupAdd to "joined your circle ${item.circleName}"
         is InboxItem.CircleGoalMet -> Icons.Outlined.EmojiEvents to "sealed the trial that met your circle's weekly goal"
     }
     val open: () -> Unit = when (item) {
         is InboxItem.NewComment -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
         is InboxItem.NewReply -> { { onOpenComments(item.sessionId, item.sessionHeadline.ifBlank { "a trial" }, false) } }
         is InboxItem.NewReaction -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
-        is InboxItem.NewBandmate, is InboxItem.CircleGoalMet -> onOpenCircle
+        is InboxItem.NewCircleMember, is InboxItem.CircleGoalMet -> onOpenCircle
         else -> onOpenLifter
     }
     InkPanel(
