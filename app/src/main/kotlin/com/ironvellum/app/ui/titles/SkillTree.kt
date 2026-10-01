@@ -52,8 +52,10 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -111,8 +113,30 @@ fun SkillTreeGraph(
 
         // Label lines scale with the system font so a large setting grows the
         // rows instead of clipping the label; the geometry reads the same height.
-        val lineH = with(LocalDensity.current) { LabelLine.toDp().value }
-        val metrics = remember(layout, cellW, lineH) { treeMetrics(layout, cellW.value, lineH) }
+        val uiDensity = LocalDensity.current
+        val lineH = with(uiDensity) { LabelLine.toDp().value }
+        // The label's line count is measured, not guessed from its length: the
+        // real cell width and the system font scale decide where a name wraps.
+        // Bold is the widest weight a label takes (the open node), so the row
+        // is never reserved short.
+        val measurer = rememberTextMeasurer()
+        val labelStyle = MaterialTheme.typography.labelSmall.copy(
+            fontSize = LabelSize,
+            lineHeight = LabelLine,
+            letterSpacing = 0.sp,
+            fontWeight = FontWeight.Bold,
+        )
+        val measured = remember(layout, cellW, uiDensity, labelStyle) {
+            val textW = with(uiDensity) { (cellW - LabelPad * 2).roundToPx() }.coerceAtLeast(1)
+            layout.nodes.associate { n ->
+                n.skill.name to measurer.measure(
+                    n.skill.name, labelStyle, constraints = Constraints(maxWidth = textW), maxLines = MAX_LABEL_LINES,
+                ).lineCount.coerceIn(1, MAX_LABEL_LINES)
+            }
+        }
+        val metrics = remember(layout, cellW, lineH, measured) {
+            treeMetrics(layout, cellW.value, lineH) { measured.getValue(it.skill.name) }
+        }
         val tops = metrics.tops
         val levelLines = metrics.levelLines
 
@@ -172,8 +196,15 @@ fun SkillTreeGraph(
 }
 
 private val LabelLine = 12.sp
+private val LabelSize = 11.sp
 
-/** A short name fits one line under a node; anything longer is given two. An estimate: the gap below absorbs a miss. */
+/** Side padding inside a label plate. */
+private val LabelPad = 3.dp
+
+/** The most lines a technique's name may take under its node before it is cut. */
+private const val MAX_LABEL_LINES = 3
+
+/** A character-count guess at a label's lines, for callers that cannot measure. The tree itself measures. */
 internal fun labelLines(name: String): Int = if (name.length <= 12) 1 else 2
 
 /**
@@ -374,7 +405,7 @@ private fun SkillNode(
         Text(
             skill.name,
             style = MaterialTheme.typography.labelSmall,
-            fontSize = 11.sp,
+            fontSize = LabelSize,
             lineHeight = LabelLine,
             letterSpacing = 0.sp,
             fontWeight = if (state == NodeState.NEXT) FontWeight.Bold else FontWeight.Normal,
@@ -384,14 +415,14 @@ private fun SkillNode(
                 NodeState.LOCKED -> IronvellumColors.InkMuted
             },
             textAlign = TextAlign.Center,
-            maxLines = 2,
+            maxLines = MAX_LABEL_LINES,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier
                 .widthIn(max = width)
                 .heightIn(min = textH / 2 * lines)
                 .clip(plate)
                 .background(plateColour)
-                .padding(horizontal = 3.dp),
+                .padding(horizontal = LabelPad),
         )
         if (crossNeed != null) {
             Text(

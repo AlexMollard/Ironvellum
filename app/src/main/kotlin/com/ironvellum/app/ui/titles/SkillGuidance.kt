@@ -97,6 +97,34 @@ object SkillGuidance {
             (load?.let { " @ ${formatLoad(it)}kg" } ?: "")
     }
 
+    /**
+     * The effort to show as "best". A bare rep count is only comparable on a
+     * bodyweight standard; on a loaded one 12 reps with no bar is not better
+     * than 5 at 100 kg, so an effort that clears the standard wins, then the
+     * heavier one, then the higher figure.
+     */
+    fun bestEffort(
+        skill: Skills.SkillDef,
+        efforts: List<Effort>,
+        bodyweightKg: Double? = null,
+        female: Boolean = false,
+    ): Effort? {
+        if (Skills.loadBar(skill.name, female) == null) return efforts.maxByOrNull { it.value }
+        return efforts.maxWithOrNull(
+            compareBy<Effort>(
+                { clears(skill, it, bodyweightKg, female) },
+                { it.weightKg ?: 0.0 },
+                { it.value },
+            ),
+        )
+    }
+
+    /** An effort as the lifter reads it: "5 reps @ 100kg", or "40s" for an unloaded one. */
+    fun effortText(skill: Skills.SkillDef, effort: Effort, female: Boolean = false): String {
+        val load = effort.weightKg?.takeIf { it > 0.0 && Skills.loadBar(skill.name, female) != null }
+        return withUnit(effort.value, skill) + (load?.let { " @ ${formatLoad(it)}kg" } ?: "")
+    }
+
     /** Available and not yet mastered: where the next claim on a path can come from. */
     fun isFrontier(skill: Skills.SkillDef, mastered: Set<String>): Boolean =
         skill.name !in mastered && Skills.unlocked(skill, mastered)

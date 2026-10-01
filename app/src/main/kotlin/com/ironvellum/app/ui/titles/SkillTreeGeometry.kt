@@ -31,8 +31,18 @@ internal data class TreeMetrics(
     val levelLines: List<Int>,
 )
 
-internal fun treeMetrics(layout: TreeLayout, cellW: Float, lineH: Float): TreeMetrics {
-    val lines = layout.levels.indices.map { l -> layout.nodes.filter { it.level == l }.maxOf { labelLines(it.skill.name) } }
+/**
+ * [linesOf] is how many lines a node's label takes. The screen passes the
+ * measured count at the real cell width and font scale; the default is the
+ * character-count guess [labelLines].
+ */
+internal fun treeMetrics(
+    layout: TreeLayout,
+    cellW: Float,
+    lineH: Float,
+    linesOf: (PlacedSkill) -> Int = { labelLines(it.skill.name) },
+): TreeMetrics {
+    val lines = layout.levels.indices.map { l -> layout.nodes.filter { it.level == l }.maxOf(linesOf) }
     val tops = layout.levels.runningFold(0f) { y, level ->
         y + TOP_PAD_DP + NODE_DP + TEXT_GAP_DP + lineH * lines[layout.levels.indexOf(level)] +
             (if (level.hasCrossNeed) lineH * 2 else 0f) + EDGE_GAP_DP

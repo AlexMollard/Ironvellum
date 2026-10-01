@@ -38,13 +38,32 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkBorder
 
 /** What a path tile reads out loud: name, progress, then where to go next. */
-internal fun tileDescription(line: String, done: Int, total: Int, next: String?, recent: Boolean): String =
+internal fun tileDescription(line: String, done: Int, total: Int, status: String, recent: Boolean): String =
     buildList {
         add("$line path")
         add("$done of $total mastered")
-        add(if (next != null) "next: $next" else "complete")
+        add(status)
         if (recent) add("most recent")
     }.joinToString(", ")
+
+/**
+ * The line under a path tile: "complete" only when every technique is
+ * mastered. An open technique reads "next: ..."; a path whose remaining
+ * techniques all wait on another path says which one, rather than "complete".
+ */
+internal fun pathStatus(done: Int, total: Int, next: String?, blocker: CrossNeed?): String = when {
+    done >= total -> "complete"
+    next != null -> "next: $next"
+    blocker != null -> "locked: needs ${blocker.skill} (${blocker.line})"
+    else -> "locked"
+}
+
+/** [pathStatus] for a path as the tile reads it, from the graph's own reading order. */
+internal fun pathStatusOf(line: String, mastered: Set<String>): String {
+    val (done, total) = SkillGuidance.lineProgress(line, mastered)
+    val layout = treeLayout(line, columns = 4)
+    return pathStatus(done, total, layout.firstNext(mastered)?.name, layout.firstBlocker(mastered))
+}
 
 /**
  * Every path as a tile, two across: name, progress and the technique to go
@@ -58,11 +77,9 @@ internal fun PathGrid(
     onOpen: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // The next technique per path, in the order the graph reads. Four slots is
-    // the phone layout; a wider one only re-orders within a row.
-    val next = remember(mastered) {
-        Skills.LINES.associateWith { treeLayout(it, columns = 4).firstNext(mastered)?.name }
-    }
+    // The status per path, in the order the graph reads. Four slots is the
+    // phone layout; a wider one only re-orders within a row.
+    val status = remember(mastered) { Skills.LINES.associateWith { pathStatusOf(it, mastered) } }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Skills.LINES.chunked(2).forEach { pair ->
             // fillMaxHeight inside an intrinsic-height row would need the same
@@ -74,7 +91,7 @@ internal fun PathGrid(
                         line = line,
                         done = done,
                         total = total,
-                        next = next[line],
+                        status = status.getValue(line),
                         recent = line == recentLine,
                         onClick = { onOpen(line) },
                         modifier = Modifier.weight(1f),
@@ -91,7 +108,7 @@ private fun PathTile(
     line: String,
     done: Int,
     total: Int,
-    next: String?,
+    status: String,
     recent: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
@@ -105,7 +122,7 @@ private fun PathTile(
             .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
             .inkBorder(if (recent) IronvellumColors.SovereignGold else IronvellumColors.Bracket, shape, if (recent) 1.5.dp else 1.dp)
             .clickable(role = Role.Button, onClickLabel = "Open path") { onClick() }
-            .semantics(mergeDescendants = true) { contentDescription = tileDescription(line, done, total, next, recent) }
+            .semantics(mergeDescendants = true) { contentDescription = tileDescription(line, done, total, status, recent) }
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -132,10 +149,7 @@ private fun PathTile(
         ProgressBar(done, total, Modifier.fillMaxWidth())
         Spacer(Modifier.height(6.dp))
         Text(
-            when {
-                complete || next == null -> "complete"
-                else -> "next: $next"
-            },
+            status,
             style = MaterialTheme.typography.labelSmall,
             fontSize = 11.sp,
             color = if (complete) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,

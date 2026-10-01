@@ -6,6 +6,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -22,7 +24,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import java.time.format.DateTimeFormatter
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.R
@@ -79,6 +86,9 @@ fun SkillJournal(
     practiceCounts: Map<String, Int>,
     onOpenLine: (String) -> Unit,
     onSelect: (String) -> Unit,
+    /** The lifter, so the podium's "best" on a loaded standard is judged against their bodyweight. */
+    bodyweightKg: Double? = null,
+    female: Boolean = false,
 ) {
     val zone = ZoneId.systemDefault()
     val attempts = log.filterNot { it.claimed }
@@ -98,15 +108,22 @@ fun SkillJournal(
             modifier = Modifier.padding(bottom = 8.dp),
         )
     }
-    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        StatTile("ATTEMPTS", attempts.size.toString(), Modifier.weight(1f))
-        StatTile("MASTERED", "${claimed.size}", Modifier.weight(1f), gold = claimed.isNotEmpty())
-        StatTile("DAYS IN A ROW", "${practiceStreak(byDay, today)}d", Modifier.weight(1f))
-        StatTile(
-            "LAST",
-            attempts.firstOrNull()?.let { formatDate(it.practicedAtMs, "d MMM") } ?: "—",
-            Modifier.weight(1f),
-        )
+    val tiles = listOf(
+        Triple("ATTEMPTS", attempts.size.toString(), false),
+        Triple("MASTERED", "${claimed.size}", claimed.isNotEmpty()),
+        Triple("DAYS KEPT", "${practiceStreak(byDay, today)}d", false),
+        Triple("LAST", attempts.firstOrNull()?.let { formatDate(it.practicedAtMs, "d MMM") } ?: "—", false),
+    )
+    // Four across on a phone; two by two once the font is scaled up, where a
+    // label would otherwise break mid-word.
+    tiles.chunked(if (LocalDensity.current.fontScale > 1.3f) 2 else 4).forEachIndexed { r, rowTiles ->
+        if (r > 0) Spacer(Modifier.height(8.dp))
+        // Equal heights, whichever label wraps.
+        Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            rowTiles.forEach { (label, value, gold) ->
+                StatTile(label, value, Modifier.weight(1f).fillMaxHeight(), gold = gold)
+            }
+        }
     }
 
     // ---- training heatmap --------------------------------------------------
@@ -127,8 +144,11 @@ fun SkillJournal(
                 bottomEnd = CornerSize(2.dp),
                 bottomStart = CornerSize(2.dp),
             )
+            // Colour alone carries the cells, so the grid reads out as one summary
+            // and its 84 cells stay out of the accessibility tree.
+            val summary = heatmapSummary(byDay, start, today)
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = summary },
                 horizontalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 repeat(WEEKS) { w ->
@@ -229,7 +249,14 @@ fun SkillJournal(
         practiceCounts.entries.sortedByDescending { it.value }.take(3)
             .forEachIndexed { index, (name, count) ->
                 val def = Skills.forName(name)
-                val best = attempts.filter { it.skillName == name }.maxOfOrNull { it.value } ?: 0
+                val best = def?.let { d ->
+                    SkillGuidance.bestEffort(
+                        d,
+                        attempts.filter { it.skillName == name }.map { SkillGuidance.Effort(it.value, it.weightKg) },
+                        bodyweightKg,
+                        female,
+                    )?.let { SkillGuidance.effortText(d, it, female) }
+                } ?: "none"
                 val rowShape = MaterialTheme.shapes.small
                 Row(
                     Modifier
@@ -245,7 +272,7 @@ fun SkillJournal(
                             if (index == 0) IronvellumColors.SovereignGold else IronvellumColors.Rune,
                             rowShape,
                         )
-                        .clickable { onSelect(name) }
+                        .clickable(onClickLabel = "Open $name", role = Role.Button) { onSelect(name) }
                         .padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
@@ -260,7 +287,7 @@ fun SkillJournal(
                     Column(Modifier.weight(1f)) {
                         Text(name, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
                         Text(
-                            "$count ${plural(count, "attempt", "attempts")} · best $best${def?.unit ?: ""}",
+                            "$count ${plural(count, "attempt", "attempts")} · best $best",
                             style = MaterialTheme.typography.labelSmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -316,7 +343,7 @@ fun SkillJournal(
             entries.forEachIndexed { i, entry ->
                 val def = Skills.forName(entry.skillName)
                 Row(
-                    Modifier.fillMaxWidth().clickable { onSelect(entry.skillName) },
+                    Modifier.fillMaxWidth().clickable(onClickLabel = "Open ${entry.skillName}", role = Role.Button) { onSelect(entry.skillName) },
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     // timeline rail
@@ -374,8 +401,8 @@ fun SkillJournal(
                         Text(
                             when {
                                 entry.claimed -> "MASTERED"
-                                entry.weightKg != null -> "${entry.value}${def?.unit ?: ""} @${formatLoad(entry.weightKg)}kg"
-                                else -> "${entry.value}${def?.unit ?: ""}"
+                                entry.weightKg != null -> "${def?.let { SkillGuidance.withUnit(entry.value, it) } ?: entry.value} @${formatLoad(entry.weightKg)}kg"
+                                else -> def?.let { SkillGuidance.withUnit(entry.value, it) } ?: "${entry.value}"
                             },
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
@@ -386,6 +413,20 @@ fun SkillJournal(
                 }
             }
         }
+}
+
+/**
+ * One sentence for the training heatmap: "12 weeks: 9 days practised, most 4
+ * attempts on 3 Sep". Only days from [start] to [today] count.
+ */
+internal fun heatmapSummary(byDay: Map<LocalDate, Int>, start: LocalDate, today: LocalDate): String {
+    val days = byDay.filter { (date, n) -> n > 0 && !date.isBefore(start) && !date.isAfter(today) }
+    if (days.isEmpty()) return "$WEEKS weeks: no attempts logged"
+    // the latest day among those tied for most
+    val top = days.entries.maxWith(compareBy({ it.value }, { it.key }))
+    val on = top.key.format(DateTimeFormatter.ofPattern("d MMM", java.util.Locale.getDefault()))
+    return "$WEEKS weeks: ${days.size} ${plural(days.size, "day", "days")} practised, " +
+        "most ${top.value} ${plural(top.value, "attempt", "attempts")} on $on"
 }
 
 /** Consecutive days with at least one logged attempt, counting back from today. */
@@ -410,7 +451,7 @@ private fun StatTile(label: String, value: String, modifier: Modifier = Modifier
                 shape,
             )
             .inkBorder(if (gold) IronvellumColors.SovereignGold else IronvellumColors.Rune, shape, 1.dp)
-            .padding(vertical = 10.dp),
+            .padding(horizontal = 4.dp, vertical = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -424,9 +465,11 @@ private fun StatTile(label: String, value: String, modifier: Modifier = Modifier
             label,
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
-            fontSize = 9.sp,
+            fontSize = 10.sp,
             color = IronvellumColors.InkMuted,
-            letterSpacing = 1.sp,
+            letterSpacing = 0.5.sp,
+            textAlign = TextAlign.Center,
+            maxLines = 2,
         )
     }
 }
@@ -460,7 +503,7 @@ private fun LineCard(
                 shape,
             )
             .inkBorder(if (complete) IronvellumColors.SovereignGold else IronvellumColors.Rune, shape, 1.dp)
-            .clickable { onClick() }
+            .clickable(onClickLabel = "Open $line path", role = Role.Button) { onClick() }
             .padding(10.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
