@@ -116,7 +116,6 @@ td a, .link { color: var(--ink); text-decoration: underline; text-decoration-col
 
 <script>
 const DATA = /*__ATLAS_DATA__*/null;
-const ACTIVITY = ["SPORT", "CARDIO", "CLIMBING", "WATER", "MOBILITY"];
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const label = m => DATA.muscles[m] || m;
@@ -129,9 +128,13 @@ function flagsOf(e) {
   if (!ms.length) f.push("No muscles listed, so this exercise counts toward nothing.");
   ms.filter(([, v]) => !(v >= 0 && v <= 1)).forEach(([m, v]) =>
     f.push(`${label(m)} is credited ${v} of a set, outside the allowed 0 to 1.`));
-  // Activities and mobility credit broadly by design; only training moves need a lead.
-  if (ms.length && !ms.some(([, v]) => v === 1) && !ACTIVITY.includes(e.group))
+  // Activities, mobility drills and some holds have no lead by design (the
+  // app's own noLeadByDesign flag); every other exercise needs one.
+  const leads = ms.some(([, v]) => v === 1);
+  if (ms.length && !leads && !e.noLeadByDesign)
     f.push("No muscle is credited a full set (1.0), so nothing is marked as the main muscle.");
+  if (leads && e.noLeadByDesign)
+    f.push("Marked as having no main muscle by design, yet one muscle is credited a full set (1.0).");
   if (!e.guide) f.push("No how-to guide.");
   else if ((e.guide.steps || []).length < 3) f.push("The how-to has fewer than three steps.");
   return f;

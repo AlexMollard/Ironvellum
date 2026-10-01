@@ -54,6 +54,15 @@ data class ExerciseProfile(
      * 2022, Kassiano 2023, Pedrosa 2022, Wolf 2025, Kubo 2019).
      */
     val stretchBias: Boolean,
+    /**
+     * True when no muscle is credited a full set ON PURPOSE, so the figure
+     * marks no main muscle: activities (practised submaximally), mobility
+     * drills (a stretch is not a hard set), the seated calf raise (measured
+     * half credit) and holds no muscle takes near failure - position and
+     * balance holds, and the scapular-pull drill. Every other profile leads
+     * with a 1.0.
+     */
+    val noLeadByDesign: Boolean = false,
 )
 
 object MuscleMap {
@@ -215,7 +224,7 @@ object MuscleMap {
             // the generator can prescribe, and at the helper 0.5 it filled
             // calf deficits "at full stretch" as if it were a calf raise.
             muscles = mapOf(Muscle.CALVES to 0.25, Muscle.TIBIALIS to 0.25),
-            pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
+            pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true, noLeadByDesign = true,
         ))
         put("glute bridge", ExerciseProfile(
             muscles = mapOf(Muscle.GLUTES to 1.0, Muscle.HAMSTRINGS to 0.5),
@@ -346,11 +355,13 @@ object MuscleMap {
         // Compound: shoulder, trunk and hip are braced together, which also
         // keeps the compound rest these holds were timed with while
         // unprofiled.
-        // Feet on the floor carry part of the body: a submaximal front
-        // lever shape, so nothing earns more than the helper share.
+        // Feet on the floor carry part of the body, but a hold is held to
+        // near failure like a rep set (a set counts whatever its load -
+        // Lopez 2021): the front lever shape on straight arms, so the lats
+        // lead it as they lead every front lever.
         put("front row hold", ExerciseProfile(
             muscles = mapOf(
-                Muscle.LATS to 0.5, Muscle.RHOMBOIDS to 0.5, Muscle.REAR_DELTS to 0.5,
+                Muscle.LATS to 1.0, Muscle.RHOMBOIDS to 0.5, Muscle.REAR_DELTS to 0.5,
                 Muscle.FOREARMS to 0.5,
             ),
             pattern = MovementPattern.VERTICAL_PULL, compound = true, stretchBias = false,
@@ -555,9 +566,12 @@ object MuscleMap {
         put("seated calf raise", ExerciseProfile(
             // Knees bent = gastrocnemius slack: it grew 1.7%/0.6% seated vs
             // 12.4%/9.2% standing (Kinoshita 2023), so the seated raise is
-            // half credit against the standing one.
+            // half credit against the standing one. Its soleus is the
+            // target, but CALVES is the whole calf: a 1.0 would score it the
+            // standing raise's equal, which the trial contradicts, so it
+            // has no lead by design.
             muscles = mapOf(Muscle.CALVES to 0.5),
-            pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
+            pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true, noLeadByDesign = true,
         ))
         put("standing calf raise", ExerciseProfile(
             // Knee extended: gastroc grew ~7x more than seated (Kinoshita
@@ -575,8 +589,11 @@ object MuscleMap {
         put("assisted dip", dip())
         // ---- Skill-tree rows (REPS-metric, not milestone-priced) ----
         put("scapular pull", ExerciseProfile(
+            // A technique drill: a few centimetres of shoulder-blade
+            // depression from a hang, never near failure for any one
+            // muscle, so the helpers only and no lead by design.
             muscles = mapOf(Muscle.LATS to 0.5, Muscle.RHOMBOIDS to 0.5, Muscle.FOREARMS to 0.5),
-            pattern = MovementPattern.VERTICAL_PULL, compound = false, stretchBias = true,
+            pattern = MovementPattern.VERTICAL_PULL, compound = false, stretchBias = true, noLeadByDesign = true,
         ))
         put("australian pull-up", row())
         // A pull-up held in an L: the pull-up's own credits plus the trunk
@@ -736,15 +753,18 @@ object MuscleMap {
             pattern = MovementPattern.CORE,
         ))
         // ---- Mobility holds ----
-        // The muscles held long or working to hold the position, all at the
-        // helper share. A squat hold, like every squat, credits no hamstrings.
+        // The muscles held long or working to hold the position, at the
+        // helper share. The pure stretches have no lead by design: a stretch
+        // is not a hard set, and a 1.0 would pad the week. The bridge and
+        // the wrist prep load a muscle, so they lead. A squat hold, like
+        // every squat, credits no hamstrings.
         put("deep squat hold", hold(
             Muscle.QUADS to 0.5, Muscle.GLUTES to 0.5, Muscle.ADDUCTORS to 0.5, Muscle.CALVES to 0.5,
-            pattern = MovementPattern.SQUAT,
+            pattern = MovementPattern.SQUAT, noLead = true,
         ))
         put("pancake", hold(
             Muscle.ADDUCTORS to 0.5, Muscle.HAMSTRINGS to 0.5, Muscle.HIP_FLEXORS to 0.5, Muscle.LOWER_BACK to 0.5,
-            pattern = MovementPattern.HINGE,
+            pattern = MovementPattern.HINGE, noLead = true,
         ))
         put("bridge", hold(
             Muscle.LOWER_BACK to 1.0, Muscle.GLUTES to 0.5, Muscle.FRONT_DELTS to 0.5, Muscle.TRICEPS to 0.5,
@@ -752,14 +772,14 @@ object MuscleMap {
         ))
         put("front split", hold(
             Muscle.HAMSTRINGS to 0.5, Muscle.HIP_FLEXORS to 0.5, Muscle.GLUTES to 0.5,
-            pattern = MovementPattern.LUNGE,
+            pattern = MovementPattern.LUNGE, noLead = true,
         ))
         // Hanging with the arms behind: the back lever's shoulder flexors, held
         // long. A hang from the bar, so the hanging family's pattern, not a press.
         put("german hang", hold(
             Muscle.FRONT_DELTS to 0.5, Muscle.UPPER_CHEST to 0.5, Muscle.BICEPS to 0.5, Muscle.ROTATOR_CUFF to 0.5,
             Muscle.FOREARMS to 0.5,
-            pattern = MovementPattern.VERTICAL_PULL,
+            pattern = MovementPattern.VERTICAL_PULL, noLead = true,
         ))
         put("wrist prep", hold(Muscle.FOREARMS to 1.0, pattern = MovementPattern.ISOLATION, compound = false))
         // ---- Activities: cardio ----
@@ -876,28 +896,34 @@ object MuscleMap {
     )
 
     /**
-     * Holds and activities outside the lever and planche lines. Every share
-     * is the helper 0.5 unless a muscle plainly leads: no longitudinal trial
-     * measured growth from any of them, and not stretch biased - the
-     * lengthened-position trials were all dynamic.
+     * Holds outside the lever and planche lines. Every share is the helper
+     * 0.5 unless a muscle plainly leads: no longitudinal trial measured
+     * growth from any of them, and not stretch biased - the
+     * lengthened-position trials were all dynamic. [noLead] marks a hold
+     * no muscle leads on purpose ([ExerciseProfile.noLeadByDesign]).
      */
     private fun hold(
         vararg muscles: Pair<Muscle, Double>,
         pattern: MovementPattern,
         compound: Boolean = true,
-    ) = ExerciseProfile(muscles = linkedMapOf(*muscles), pattern = pattern, compound = compound, stretchBias = false)
+        noLead: Boolean = false,
+    ) = ExerciseProfile(
+        muscles = linkedMapOf(*muscles), pattern = pattern, compound = compound, stretchBias = false,
+        noLeadByDesign = noLead,
+    )
 
     /**
      * Cardio, sport, climbing, water and mobility sessions: the prime movers,
      * dominant first, each at the helper 0.5 - practised submaximally, not
-     * sets taken near failure. Compound: the whole body works together.
+     * sets taken near failure, so no lead by design. Compound: the whole
+     * body works together.
      * A pulling activity takes HORIZONTAL_PULL, never VERTICAL_PULL: the
      * pull-up spacing rule ([ProgramGenerator.isPullUpVariant]) must not
      * read a swim or a climb as a pull-up.
      */
     private fun activity(pattern: MovementPattern, vararg muscles: Muscle) = ExerciseProfile(
         muscles = linkedMapOf(*muscles.map { it to 0.5 }.toTypedArray()),
-        pattern = pattern, compound = true, stretchBias = false,
+        pattern = pattern, compound = true, stretchBias = false, noLeadByDesign = true,
     )
 
     /** Handstand holds: the front delts hold the arms overhead, the blade upward-rotated. */
@@ -907,18 +933,27 @@ object MuscleMap {
         pattern = MovementPattern.VERTICAL_PUSH,
     )
 
-    /** Support holds at the top of a dip: the blade held down, the elbows locked. */
+    /**
+     * Support holds at the top of a dip: the blade held down, the elbows
+     * locked. A position hold - the load passes through straight arms, and
+     * the hold ends on the shoulders creeping up, not on one muscle giving
+     * out - so the helpers only and no lead by design.
+     */
     private fun supportHold(vararg extra: Muscle) = hold(
         Muscle.LOWER_CHEST to 0.5, Muscle.TRICEPS to 0.5, Muscle.TRAPS to 0.5, Muscle.FRONT_DELTS to 0.5,
         *extra.map { it to 0.5 }.toTypedArray(),
-        pattern = MovementPattern.HORIZONTAL_PUSH,
+        pattern = MovementPattern.HORIZONTAL_PUSH, noLead = true,
     )
 
-    /** Bent-arm balances (Crow, Frog Stand): the knees rest on the arms, the trunk holds the tuck. */
+    /**
+     * Bent-arm balances (Crow, Frog Stand): the knees rest on the arms, the
+     * trunk holds the tuck. Balance ends the hold long before strength
+     * does, so the helpers only and no lead by design.
+     */
     private fun armBalance() = hold(
         Muscle.TRICEPS to 0.5, Muscle.FRONT_DELTS to 0.5, Muscle.SERRATUS to 0.5, Muscle.ABS to 0.5,
         Muscle.FOREARMS to 0.5,
-        pattern = MovementPattern.HORIZONTAL_PUSH,
+        pattern = MovementPattern.HORIZONTAL_PUSH, noLead = true,
     )
 
     /**
@@ -955,14 +990,14 @@ object MuscleMap {
     /**
      * Back levers: the arm is held behind the body and the flexors and
      * adductors stop it going further - the dip's bottom position with
-     * straight arms. No muscle is shown to lead, so all share the helper
-     * 0.5 (conservative): the costal chest drawing the arm to the hips, the
-     * front delts and the biceps' long head flexing the shoulder, the lats
-     * adducting it, and the grip.
+     * straight arms. A hard straight-arm hold, so it leads as the dip does:
+     * the costal chest drawing the arm back toward the hips (1.0). No trial
+     * measured it; the front delts and the biceps' long head flexing the
+     * shoulder, the lats adducting it, and the grip keep the helper 0.5.
      */
     private fun backLever() = ExerciseProfile(
         muscles = mapOf(
-            Muscle.LOWER_CHEST to 0.5, Muscle.FRONT_DELTS to 0.5, Muscle.BICEPS to 0.5,
+            Muscle.LOWER_CHEST to 1.0, Muscle.FRONT_DELTS to 0.5, Muscle.BICEPS to 0.5,
             Muscle.LATS to 0.5, Muscle.FOREARMS to 0.5,
         ),
         pattern = MovementPattern.HORIZONTAL_PUSH, compound = true, stretchBias = false,
