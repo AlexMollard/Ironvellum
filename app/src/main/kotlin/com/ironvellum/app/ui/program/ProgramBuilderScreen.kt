@@ -583,7 +583,7 @@ fun ProgramBuilderScreen(
                     .clip(MaterialTheme.shapes.extraSmall)
                     .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
                     .clickable { onDone() }
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
+                    .padding(horizontal = 12.dp, vertical = 14.dp),
             )
         }
         Spacer(Modifier.height(12.dp))
@@ -728,7 +728,7 @@ fun ProgramBuilderScreen(
                 Spacer(Modifier.height(8.dp))
                 Caption("\"What my week is missing\" reads the rest of your cycle and fills the gap.")
             }
-            QuestionPanel("SCHEDULE IT ON") {
+            QuestionPanel("PLACE IT ON") {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                     DAY_PICKS.chunked(4).forEach { chunk ->
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
@@ -864,7 +864,7 @@ fun ProgramBuilderScreen(
                         editable = true,
                         onSets = { entryIndex, delta ->
                             viewModel.editEntry(presetIndex, entryIndex) {
-                                it.copy(sets = (it.sets + delta).coerceIn(1, 10))
+                                it.copy(sets = (it.sets + delta).coerceIn(1, ProgramRules.maxSetsPerEntry(it.exerciseName)))
                             }
                         },
                         onReps = { entryIndex, delta ->

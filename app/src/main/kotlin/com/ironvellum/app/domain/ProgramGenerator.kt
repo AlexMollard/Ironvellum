@@ -1679,7 +1679,7 @@ object ProgramGenerator {
             if (sets > ceiling) {
                 changes += PlanChange(
                     PlanChange.Kind.ADJUSTED, name,
-                    "Sets $sets → $ceiling: past $ceiling sets one exercise adds little in a session; " +
+                    "Sets $sets → $ceiling: past $ceiling sets one exercise adds little in a single trial; " +
                         "the rest belongs on another exercise or day - Remmert 2025",
                 )
                 sets = ceiling
