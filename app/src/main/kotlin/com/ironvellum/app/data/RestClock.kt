@@ -18,7 +18,10 @@ object RestClock {
     private val _timer = MutableStateFlow<RestTimer?>(null)
     val timer: StateFlow<RestTimer?> = _timer.asStateFlow()
 
-    private fun now() = SystemClock.elapsedRealtime()
+    /** The monotonic clock; tests swap it so no Android runtime is needed. */
+    internal var clock: () -> Long = { SystemClock.elapsedRealtime() }
+
+    private fun now() = clock()
 
     fun start(sessionId: Long, seconds: Int) {
         _timer.value = RestTimer.start(sessionId, seconds, now())

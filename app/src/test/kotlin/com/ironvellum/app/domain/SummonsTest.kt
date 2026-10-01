@@ -96,4 +96,17 @@ class SummonsTest {
         assertEquals("1 exercise · 1 set · your oath ends tonight.", copy.text)
         assertTrue(copy.bigText.endsWith("Your oath of 12 days ends tonight unless you seal a trial."))
     }
+
+    @Test
+    fun `the Summons is wanted only on an unsealed rite day with nothing live and a way to post`() {
+        assertTrue(Summons.wanted(riteScheduledToday = true, sealedToday = false, liveToday = false, canPost = true))
+        // A respite or an unscheduled cycle.
+        assertFalse(Summons.wanted(riteScheduledToday = false, sealedToday = false, liveToday = false, canPost = true))
+        // Already sealed today: silence.
+        assertFalse(Summons.wanted(riteScheduledToday = true, sealedToday = true, liveToday = false, canPost = true))
+        // Mid-trial.
+        assertFalse(Summons.wanted(riteScheduledToday = true, sealedToday = false, liveToday = true, canPost = true))
+        // Blocked notifications.
+        assertFalse(Summons.wanted(riteScheduledToday = true, sealedToday = false, liveToday = false, canPost = false))
+    }
 }

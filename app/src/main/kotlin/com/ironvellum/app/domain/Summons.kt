@@ -44,6 +44,14 @@ object Summons {
      */
     fun isSummonsHour(now: LocalTime, at: LocalTime = REMIND_AT): Boolean = !now.isBefore(at.minus(MIN_LEAD))
 
+    /**
+     * Whether tonight's Summons should be posted at all: a rite is scheduled
+     * today, no trial is sealed today, none is already under way, and the
+     * notification can actually arrive.
+     */
+    fun wanted(riteScheduledToday: Boolean, sealedToday: Boolean, liveToday: Boolean, canPost: Boolean): Boolean =
+        canPost && riteScheduledToday && !sealedToday && !liveToday
+
     data class Copy(val title: String, val text: String, val bigText: String)
 
     /**
