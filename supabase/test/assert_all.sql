@@ -561,7 +561,7 @@ begin
                       'note', 'completed_at', 'started_at', 'xp_awarded', 'strength_score', 'sets_done',
                       'reps_done', 'held_seconds', 'like_count', 'liked_by_me', 'top_movements', 'best_set',
                       'distance_m', 'hardest_grade', 'movement_count', 'duration_sec',
-                      'comment_count', 'reactions', 'my_reaction']) c
+                      'comment_count', 'reactions', 'my_reaction', 'edited_at']) c
     where not exists (select 1 from information_schema.columns ic
                       where ic.table_schema = 'public' and ic.table_name = 'public_feed' and ic.column_name = c);
     perform assert_true(missing is null, format('public_feed lost column(s) the app reads: %s', missing));
@@ -911,6 +911,26 @@ begin
             'insert into session_sets (session_id, exercise_name, set_index, reps, exercise_position) values (''a5566666-0000-4000-8000-000000000001'', ''Dip'', 1, 5, -1)',
             array['23514']),
         'session_sets.exercise_position accepts a negative position');
+
+    -- Amending a sealed workout: the owner stamps edited_at and deletes the set
+    -- rows the device no longer has; nobody else can remove them.
+    perform must_run(kit,
+        'update sessions set edited_at = now() where id = ''a5566666-0000-4000-8000-000000000001''',
+        'the owner cannot stamp their own workout amended');
+    perform must_run(lux,
+        'delete from session_sets where session_id = ''a5566666-0000-4000-8000-000000000001'' and exercise_name = ''Dip''',
+        'a delete another lifter is not entitled to errored instead of matching nothing');
+    perform assert_true(
+        (select count(*) from session_sets
+         where session_id = 'a5566666-0000-4000-8000-000000000001' and exercise_name = 'Dip') = 1,
+        'another lifter deleted a set row from someone else''s workout');
+    perform must_run(kit,
+        'delete from session_sets where session_id = ''a5566666-0000-4000-8000-000000000001'' and exercise_name = ''Dip''',
+        'the owner cannot delete a stale set row from their own workout');
+    perform assert_true(
+        (select count(*) from session_sets
+         where session_id = 'a5566666-0000-4000-8000-000000000001' and exercise_name = 'Dip') = 0,
+        'the owner''s delete of a stale set row left it in place');
 
     -- The lifters write their own marks (this is also the write path the app uses).
     perform must_run(kit, format(

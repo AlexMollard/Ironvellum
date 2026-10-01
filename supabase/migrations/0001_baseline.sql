@@ -153,6 +153,10 @@ create index if not exists sessions_user_completed_idx on sessions (user_id, com
 create index if not exists sessions_completed_idx on sessions (completed_at desc)
     where completed_at is not null;
 
+-- When the owner amended the sealed workout; null when never amended. The feed
+-- marks an amended workout so an ally is not surprised by changed figures.
+alter table sessions add column if not exists edited_at timestamptz;
+
 -- Sets carry optional duration/distance/grade so a hold, a 5 km run and a V4
 -- problem can be recorded without lying about reps. A hold is reps = 0 with a
 -- positive duration_sec.
@@ -1345,7 +1349,10 @@ select
         ) r
     ), '{}'::jsonb) as reactions,
 
-    (select sl.kind from session_likes sl where sl.session_id = s.id and sl.user_id = auth.uid()) as my_reaction
+    (select sl.kind from session_likes sl where sl.session_id = s.id and sl.user_id = auth.uid()) as my_reaction,
+
+    -- Appended last: create or replace view can only add columns at the end.
+    s.edited_at
 from sessions s
 join profiles p on p.id = s.user_id
 where s.completed_at is not null

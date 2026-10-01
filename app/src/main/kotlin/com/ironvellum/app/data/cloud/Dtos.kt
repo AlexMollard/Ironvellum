@@ -81,6 +81,18 @@ data class SessionDto(
     @SerialName("note") val note: String = "",
     // SessionAudience.wire. The server check is the same three values.
     @SerialName("audience") val audience: String = "profile",
+    // When the owner amended the sealed workout; null (the column's own
+    // default) for one never amended.
+    @SerialName("edited_at") val editedAt: String? = null,
+)
+
+/** Just enough of a pushed set row to find the ones an amendment removed. */
+@Serializable
+data class SessionSetKeyDto(
+    @SerialName("id") val id: String,
+    @SerialName("session_id") val sessionId: String,
+    @SerialName("exercise_name") val exerciseName: String,
+    @SerialName("set_index") val setIndex: Int,
 )
 
 @Serializable
@@ -250,6 +262,8 @@ data class FriendSessionDto(
     @SerialName("strength_score") val strengthScore: Int,
     // PostgREST embed: "*, session_sets(count)" — decode-only, never sent.
     @SerialName("session_sets") val setCounts: List<SetCountRow> = emptyList(),
+    // Defaulted: a backend without the column still decodes.
+    @SerialName("edited_at") val editedAt: String? = null,
 )
 
 data class FeedEntry(
@@ -290,6 +304,8 @@ data class FeedEntry(
     val reactions: Map<Reaction, Int> = emptyMap(),
     /** The caller's own reaction; null when none (or one this build does not know). */
     val myReaction: Reaction? = null,
+    /** When the owner amended the workout; null when never amended. */
+    val editedAtMs: Long? = null,
 )
 
 @Serializable
@@ -328,6 +344,7 @@ data class FeedEntryDto(
     // kind a newer server adds and blank the whole feed page.
     @SerialName("reactions") val reactions: JsonObject? = null,
     @SerialName("my_reaction") val myReaction: String? = null,
+    @SerialName("edited_at") val editedAt: String? = null,
 ) {
     /** Known kinds with a positive count; anything else is skipped, never thrown. */
     internal fun reactionCounts(): Map<Reaction, Int> = buildMap {
@@ -364,6 +381,7 @@ data class FeedEntryDto(
         commentCount = commentCount,
         reactions = reactionCounts(),
         myReaction = Reaction.fromWire(myReaction),
+        editedAtMs = editedAt?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() },
     )
 }
 
@@ -650,6 +668,8 @@ data class FriendSession(
     val xpAwarded: Int,
     val strengthScore: Int,
     val sets: Int,
+    /** When the owner amended the workout; null when never amended. */
+    val editedAtMs: Long? = null,
 )
 
 data class SyncOutcome(

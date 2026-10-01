@@ -181,6 +181,7 @@ class CloudSync(
                     title = session.title,
                     note = session.note,
                     audience = session.audience.wire,
+                    editedAt = session.editedAtMs?.let { Instant.ofEpochMilli(it).toString() },
                 )
             }
             if (sessionDtos.isNotEmpty()) {
@@ -252,6 +253,30 @@ class CloudSync(
                     setDtos,
                 ) {
                     onConflict = "session_id,exercise_name,set_index"
+                }
+            }
+
+            // The upsert above only adds and overwrites: a set an amendment
+            // removed (or moved to another movement or index) would linger on
+            // the cloud forever. Only amended trials can lose a set, so only
+            // they pay the extra round trips. Runs BEFORE the watermark so a
+            // failed delete re-pushes the trial and tries again.
+            val amendedCloudIds = pushedNow
+                .filter { (session, _) -> session.editedAtMs != null }
+                .mapNotNull { (session, sets) -> cloudIds[session.id]?.let { it to sets } }
+            if (amendedCloudIds.isNotEmpty()) {
+                val stale = staleSetRowIds(
+                    current = amendedCloudIds.toMap(),
+                    onCloud = client.postgrest.from("session_sets").select(
+                        Columns.list("id", "session_id", "exercise_name", "set_index"),
+                    ) {
+                        filter { isIn("session_id", amendedCloudIds.map { it.first }) }
+                    }.decodeList<SessionSetKeyDto>(),
+                )
+                if (stale.isNotEmpty()) {
+                    client.postgrest.from("session_sets").delete {
+                        filter { isIn("id", stale) }
+                    }
                 }
             }
 
@@ -907,6 +932,7 @@ class CloudSync(
                     xpAwarded = dto.xpAwarded,
                     strengthScore = dto.strengthScore,
                     sets = dto.setCounts.sumOf { it.count }.toInt(),
+                    editedAtMs = dto.editedAt?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() },
                 )
             }
         }.recoverCatching { error ->
@@ -1457,11 +1483,29 @@ class CloudSync(
             // fingerprint and re-upload the whole history once after the
             // update. The wire string, never the enum — Enum.hashCode is an
             // identity hash and would differ on every process start.
-            return if (session.audience == SessionAudience.PROFILE) {
-                Objects.hash(*fields)
-            } else {
-                Objects.hash(*fields, session.audience.wire)
+            // The amended stamp follows the same rule: it joins only once set,
+            // so never-amended history keeps the fingerprint it was pushed at.
+            val extra = buildList<Any> {
+                if (session.audience != SessionAudience.PROFILE) add(session.audience.wire)
+                session.editedAtMs?.let { add(it) }
             }
+            return Objects.hash(*fields, *extra.toTypedArray())
+        }
+
+        /**
+         * Cloud set rows of the amended trials that the device no longer has.
+         * [current] maps each trial's cloud id to the sets just pushed for it;
+         * a row is stale when its (movement, index) is not among them. Rows of
+         * a trial missing from [current] are never touched.
+         */
+        internal fun staleSetRowIds(
+            current: Map<String, List<SessionSet>>,
+            onCloud: List<SessionSetKeyDto>,
+        ): List<String> {
+            val keep = current.mapValues { (_, sets) -> sets.map { it.exerciseName to it.setIndex }.toSet() }
+            return onCloud
+                .filter { row -> keep[row.sessionId]?.contains(row.exerciseName to row.setIndex) == false }
+                .map { it.id }
         }
     }
 }

@@ -114,6 +114,14 @@ class CloudWireDtosTest {
         assertEquals(0, old.commentCount)
         assertEquals(emptyMap<Reaction, Int>(), old.reactions)
         assertNull(old.myReaction)
+        assertNull("no edited_at column reads as never amended", old.editedAtMs)
+        assertNull(entry.editedAtMs)
+
+        // An amended workout carries Postgres's own timestamptz rendering.
+        val amended = json.decodeFromString<FeedEntryDto>(
+            row.removeSuffix("}") + """, "edited_at": "2026-09-30T08:00:00+00:00"}""",
+        ).toFeedEntry()
+        assertEquals(1790755200000L, amended.editedAtMs)
     }
 
     @Test
