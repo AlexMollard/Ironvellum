@@ -184,6 +184,16 @@ enum class Evidence(val label: String, val citation: String, val doi: String) {
         "Vigotsky AD, Halperin I, Siqueira Trajano G, Vieira TM (2022). Longing for a Longitudinal Proxy: Acutely Measured Surface EMG Amplitude is not a Validated Predictor of Muscle Hypertrophy. Sports Medicine 52(5):985-994.",
         "10.1007/s40279-021-01619-2",
     ),
+    KOURI_1995(
+        "Kouri 1995",
+        "Kouri EM, Pope HG Jr, Katz DL, Oliva P (1995). Fat-free mass index in users and nonusers of anabolic-androgenic steroids. Clinical Journal of Sport Medicine 5(4):223-228.",
+        "10.1097/00042752-199510000-00003",
+    ),
+    SCHUTZ_2002(
+        "Schutz 2002",
+        "Schutz Y, Kyle UUG, Pichard C (2002). Fat-free mass index and fat mass index percentiles in Caucasians aged 18-98 y. International Journal of Obesity 26:953-960.",
+        "10.1038/sj.ijo.0802037",
+    ),
     PALLARES_2019(
         "Pallares 2019",
         "Pallares JG et al. (2019). Full squat produces greater neuromuscular and functional adaptations and lower pain than partial squats after prolonged resistance training. European Journal of Sport Science.",

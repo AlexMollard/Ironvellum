@@ -14,6 +14,8 @@ import androidx.health.connect.client.request.AggregateRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.ironvellum.app.domain.HealthDay
+import com.ironvellum.app.domain.SleepMath
+import com.ironvellum.app.domain.SleepSpan
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
@@ -184,11 +186,16 @@ class HealthSync(private val context: Context) {
                     recordType = SleepSessionRecord::class,
                     timeRangeFilter = TimeRangeFilter.between(from, to),
                 ),
-            ).records
-                .groupBy { it.startTime.atZone(zone).toLocalDate() }
-                .mapValues { (_, sessions) ->
-                    sessions.sumOf { java.time.Duration.between(it.startTime, it.endTime).toMinutes() }
-                }
+            ).records.map { record ->
+                SleepSpan(
+                    start = record.startTime,
+                    end = record.endTime,
+                    awake = record.stages
+                        .filter { it.stage in AWAKE_STAGES }
+                        .map { it.startTime to it.endTime },
+                )
+            }.let { SleepMath.nightMinutesByWakeDay(it, zone) }
+                .mapValues { it.value.toLong() }
         }.onFailure { note("sleep", it) }.getOrDefault(emptyMap())
 
         val restingHrByDate: Map<LocalDate, Int> = runCatching {
@@ -300,4 +307,13 @@ class HealthSync(private val context: Context) {
      */
     private fun toInstrumentPrecision(value: Double): Double =
         Math.round(value * 10.0) / 10.0
+
+    private companion object {
+        /** Stages inside a sleep session that are not sleep. */
+        val AWAKE_STAGES = setOf(
+            SleepSessionRecord.STAGE_TYPE_AWAKE,
+            SleepSessionRecord.STAGE_TYPE_AWAKE_IN_BED,
+            SleepSessionRecord.STAGE_TYPE_OUT_OF_BED,
+        )
+    }
 }
