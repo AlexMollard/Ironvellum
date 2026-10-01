@@ -658,7 +658,7 @@ private fun AuthPanels(
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
                 value = code,
-                onValueChange = { typed -> code = DecimalInput.sanitizeWhole(typed, 10) },
+                onValueChange = { typed -> code = DecimalInput.sanitizeCode(typed, 10) },
                 label = { Text("Code from email") },
                 singleLine = true,
                 keyboardOptions = wholeKeyboard(),

@@ -19,6 +19,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.DecimalInput
@@ -58,6 +60,12 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
         viewModel.rename(name)
         viewModel.setHeight(heightInput)
         onBack()
+    }
+    // Back is not the only way out: a notification tap or the app going to the
+    // background also ends the visit. Both commits are no-ops when nothing changed.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        viewModel.rename(name)
+        viewModel.setHeight(heightInput)
     }
 
     SettingsPage(SettingsSection.PROFILE.title, leave) {

@@ -54,6 +54,14 @@ object DecimalInput {
             if (digits.length > 1) digits.trimStart('0').ifEmpty { "0" } else digits
         }
 
+    /**
+     * Cleans a one-time code: ASCII digits only, at most [maxDigits], and leading
+     * zeros kept. A code is an identifier, not a number, so "012345" stays
+     * "012345" and is never parsed.
+     */
+    fun sanitizeCode(raw: String, maxDigits: Int): String =
+        raw.filter { it in '0'..'9' }.take(maxDigits)
+
     private val DECIMAL = Regex("""([0-9]+[.,]?[0-9]*|[.,][0-9]+)""")
     private val WHOLE = Regex("""[0-9]{1,9}""")
 

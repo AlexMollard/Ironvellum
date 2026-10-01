@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.settings
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
@@ -43,6 +44,7 @@ import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.ironvellumHealthSync
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.launchGuarded
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -121,9 +123,19 @@ data class CloudUi(
     val testing: Boolean = false,
     /** Result of the last TEST, or null before the first one. */
     val probe: ProbeResult? = null,
+    /** The trimmed URL and key [probe] was run against; a result describes only that pair. */
+    val testedUrl: String = "",
+    val testedKey: String = "",
     /** True while a confirmed switch (probe already passed) is being applied. */
     val switching: Boolean = false,
-)
+) {
+    /** The TEST result for exactly this URL and key, or null once either has been edited. */
+    fun probeFor(url: String, key: String): ProbeResult? =
+        probe?.takeIf { testedUrl == url.trim() && testedKey == key.trim() }
+
+    /** Save is allowed only when the typed pair is the pair that tested Ready. */
+    fun canSave(url: String, key: String): Boolean = probeFor(url, key) is ProbeResult.Ready
+}
 
 /**
  * The one SettingsViewModel the hub and every sub-screen share. [owner] is the
@@ -149,6 +161,9 @@ class SettingsViewModel(
 
     private val _exporting = MutableStateFlow(false)
     val exporting: StateFlow<Boolean> = _exporting.asStateFlow()
+
+    private val _exportError = MutableStateFlow<String?>(null)
+    val exportError: StateFlow<String?> = _exportError.asStateFlow()
 
     private val _import = MutableStateFlow(ImportUi())
     val import: StateFlow<ImportUi> = _import.asStateFlow()
@@ -210,10 +225,14 @@ class SettingsViewModel(
         _heightStatus.value = FieldStatus()
     }
 
-    /** A Saved tick describes the last visit; reopening Profile starts without one. Errors stay. */
+    /**
+     * A Saved tick or a refusal describes the last visit's typing; reopening
+     * Profile reloads the stored values, so it starts without either.
+     */
     fun clearSavedTicks() {
         _nameSaved.value = false
-        _heightStatus.value = _heightStatus.value.copy(saved = false)
+        _renameError.value = null
+        _heightStatus.value = FieldStatus()
     }
 
     /**
@@ -246,9 +265,19 @@ class SettingsViewModel(
         if (_exporting.value) return
         viewModelScope.launch {
             _exporting.value = true
-            val json = repo.exportJson()
-            _exporting.value = false
-            onReady(json)
+            _exportError.value = null
+            val json = try {
+                repo.exportJson()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("Ironvellum", "export failed: ${e.message}")
+                _exportError.value = "Could not export: ${e.message ?: "the archive could not be built"}"
+                null
+            } finally {
+                _exporting.value = false
+            }
+            if (json != null) onReady(json)
         }
     }
 
@@ -336,8 +365,7 @@ class SettingsViewModel(
                 importing = false,
                 result = run.fold(
                     { r ->
-                        "Imported ${r.sessions} trials · ${r.sets} sets · " +
-                            "+${r.xpAwarded} XP · ${r.skipped} already in your Chronicle"
+SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
                     },
                     { "Import failed: ${it.message ?: "the file could not be read"}" },
                 ),
@@ -421,6 +449,11 @@ class SettingsViewModel(
         )
     }
 
+    /** A picked file that was empty or unreadable: said aloud instead of doing nothing. */
+    fun reportEmptyImport() {
+        _import.value = ImportUi(summary = "That file was empty or could not be read. Nothing was changed.")
+    }
+
     fun importArchive(json: String) {
         if (_import.value.importing) return
         viewModelScope.launch {
@@ -428,9 +461,9 @@ class SettingsViewModel(
             _import.value = repo.importArchive(json).fold(
                 { r ->
                     ImportUi(
-                        summary = "restored ${r.presets} rites · ${r.sessions} sealed trials · " +
-                            "${r.sets} sets · ${r.stats} readings · ${r.titles} deeds · " +
-                            "${r.skills} Journal attempts · ${r.healthDays} health days",
+                        summary = SettingsSummaries.archiveRestored(
+                            r.presets, r.sessions, r.sets, r.stats, r.titles, r.skills, r.healthDays,
+                        ),
                         // surface the first problem plus how many more, not silence
                         problems = r.problems.takeIf { it.isNotEmpty() }?.let {
                             if (it.size == 1) it.first() else "${it.first()} (+${it.size - 1} more)"
@@ -488,7 +521,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             _cloud.value = CloudUi(testing = true)
             val result = Cloud.probe(CloudConfig(trimmedUrl, trimmedKey, isDefault = false))
-            _cloud.value = CloudUi(probe = result)
+            _cloud.value = CloudUi(probe = result, testedUrl = trimmedUrl, testedKey = trimmedKey)
         }
     }
 
@@ -549,8 +582,16 @@ class SettingsViewModel(
         if (_sync.value.syncing) return
         viewModelScope.launch {
             _sync.value = _sync.value.copy(syncing = true, message = null, historyMessage = null)
-            if (syncSnapshot()) syncHistory()
-            _sync.value = _sync.value.copy(syncing = false)
+            try {
+                if (syncSnapshot()) syncHistory()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("Ironvellum", "health sync failed: ${e.message}")
+                _sync.value = _sync.value.copy(message = "Health Connect sync failed: ${e.message ?: e.javaClass.simpleName}")
+            } finally {
+                _sync.value = _sync.value.copy(syncing = false)
+            }
             _healthLink.value = readHealthLink()
         }
     }

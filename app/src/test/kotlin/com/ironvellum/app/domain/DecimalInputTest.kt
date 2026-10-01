@@ -104,4 +104,12 @@ class DecimalInputTest {
             Locale.setDefault(saved)
         }
     }
+
+    @Test
+    fun `reset codes keep leading zeros and drop non digits`() {
+        assertEquals("012345", DecimalInput.sanitizeCode("012345", 10))
+        assertEquals("000000", DecimalInput.sanitizeCode("000 000", 10))
+        assertEquals("0123", DecimalInput.sanitizeCode("01-2.3x4567", 4))
+        assertEquals("", DecimalInput.sanitizeCode("abc", 10))
+    }
 }

@@ -39,6 +39,18 @@ object SettingsSummaries {
             if (daysSynced > 0) "Connected · $daysSynced ${if (daysSynced == 1) "day" else "days"}" else "Connected"
     }
 
+    /** "1 trial", "2 trials": a count with its noun agreed. */
+    private fun count(n: Int, one: String, many: String = one + "s") = "$n ${if (n == 1) one else many}"
+
+    fun csvImported(sessions: Int, sets: Int, xp: Int, skipped: Int): String =
+        "Imported ${count(sessions, "trial")} · ${count(sets, "set")} · +$xp XP · $skipped already in your Chronicle"
+
+    fun archiveRestored(
+        presets: Int, sessions: Int, sets: Int, stats: Int, titles: Int, skills: Int, healthDays: Int,
+    ): String = "restored ${count(presets, "rite")} · ${count(sessions, "sealed trial")} · " +
+        "${count(sets, "set")} · ${count(stats, "reading")} · ${count(titles, "deed")} · " +
+        "${count(skills, "Journal attempt")} · ${count(healthDays, "health day")}"
+
     /**
      * Heights are almost always whole centimetres: show "180", not "180.0".
      * Falls back to the shared one-decimal format for a fractional reading.

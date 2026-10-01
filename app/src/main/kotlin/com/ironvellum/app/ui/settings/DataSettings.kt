@@ -35,14 +35,17 @@ import kotlinx.coroutines.withContext
 @Composable
 internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val exporting by viewModel.exporting.collectAsStateWithLifecycle()
+    val exportError by viewModel.exportError.collectAsStateWithLifecycle()
     val importUi by viewModel.import.collectAsStateWithLifecycle()
     val importReview by viewModel.importReview.collectAsStateWithLifecycle()
     val catalogueExercises by viewModel.catalogueExercises.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var confirmImport by remember { mutableStateOf(false) }
+    // The archive picked and read, held until the lifter confirms the restore.
+    var pendingArchive by remember { mutableStateOf<String?>(null) }
 
-    // Import replaces everything, so the picker only fires after the confirm dialog.
+    // Import replaces everything: the file is read first, so an empty or
+    // unreadable one is reported before the destructive confirm, not after it.
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             scope.launch {
@@ -52,7 +55,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                         ?.use { stream -> stream.readBytes().toString(Charsets.UTF_8) }
                         .orEmpty()
                 }
-                if (json.isNotBlank()) viewModel.importArchive(json)
+                if (json.isBlank()) viewModel.reportEmptyImport() else pendingArchive = json
             }
         }
     }
@@ -67,12 +70,12 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                         ?.use { stream -> stream.readBytes().toString(Charsets.UTF_8) }
                         .orEmpty()
                 }
-                if (csv.isNotBlank()) viewModel.startCsvImport(csv)
+                if (csv.isBlank()) viewModel.reportEmptyImport() else viewModel.startCsvImport(csv)
             }
         }
     }
 
-    if (confirmImport) {
+    pendingArchive?.let { archive ->
         SettingsConfirmDialog(
             title = "Restore this archive?",
             text = "Replaces your rites and cycle, Chronicle, readings, deeds and Journal on this device. This cannot be undone.",
@@ -80,10 +83,10 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             dismissLabel = "Keep local data",
             danger = true,
             onConfirm = {
-                confirmImport = false
-                importLauncher.launch(arrayOf("application/json", "text/plain", "*/*"))
+                pendingArchive = null
+                viewModel.importArchive(archive)
             },
-            onDismiss = { confirmImport = false },
+            onDismiss = { pendingArchive = null },
         )
     }
 
@@ -103,6 +106,10 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                     },
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
+            exportError?.let {
+                Spacer(Modifier.height(6.dp))
+                SettingsCaption(it, color = IronvellumColors.DangerRed)
             }
         }
 
@@ -136,7 +143,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             } else {
                 IronvellumButton(
                     label = "Import Archive",
-                    onClick = { confirmImport = true },
+                    onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) },
                     danger = true,
                     enabled = !exporting,
                     modifier = Modifier.fillMaxWidth(),
@@ -174,7 +181,13 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
  * in the cache directory the FileProvider exposes, so the receiving app reads it
  * through a content:// URI instead.
  */
-internal suspend fun shareExport(context: Context, title: String, fileName: String, text: String) {
+internal suspend fun shareExport(
+    context: Context,
+    title: String,
+    fileName: String,
+    text: String,
+    mimeType: String = "application/json",
+) {
     val uri = withContext(Dispatchers.IO) {
         val dir = File(context.cacheDir, "exports").apply { mkdirs() }
         // One name, overwritten: the cache is not an archive, and a stale
@@ -184,7 +197,7 @@ internal suspend fun shareExport(context: Context, title: String, fileName: Stri
         FileProvider.getUriForFile(context, "${context.packageName}.exports", file)
     }
     val intent = Intent(Intent.ACTION_SEND).apply {
-        type = "application/json"
+        type = mimeType
         putExtra(Intent.EXTRA_TITLE, fileName)
         putExtra(Intent.EXTRA_STREAM, uri)
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
