@@ -540,6 +540,20 @@ sealed interface InboxItem {
         val body: String,
     ) : InboxItem
 
+    /**
+     * A remark on someone else's trial, in a thread the caller remarked in
+     * first. The thread's owner is not the caller, so it opens without one.
+     */
+    data class NewReply(
+        override val occurredAtMs: Long,
+        override val actorId: String,
+        override val actorName: String,
+        val sessionId: String,
+        val sessionHeadline: String,
+        val commentId: String,
+        val body: String,
+    ) : InboxItem
+
     data class NewReaction(
         override val occurredAtMs: Long,
         override val actorId: String,
@@ -551,6 +565,17 @@ sealed interface InboxItem {
 
     /** A lifter joined the caller's warband; [bandName] carries the band. */
     data class NewBandmate(
+        override val occurredAtMs: Long,
+        override val actorId: String,
+        override val actorName: String,
+        val bandName: String,
+    ) : InboxItem
+
+    /**
+     * The caller's circle reached its weekly goal; [actorId] sealed the trial
+     * that crossed it, and [bandName] carries the circle.
+     */
+    data class CircleGoalMet(
         override val occurredAtMs: Long,
         override val actorId: String,
         override val actorName: String,
@@ -595,6 +620,15 @@ data class InboxRowDto(
                 commentId = commentId ?: return null,
                 body = body.orEmpty(),
             )
+            "reply" -> InboxItem.NewReply(
+                occurredAtMs = at,
+                actorId = actorId,
+                actorName = name,
+                sessionId = sessionId ?: return null,
+                sessionHeadline = sessionHeadline.orEmpty(),
+                commentId = commentId ?: return null,
+                body = body.orEmpty(),
+            )
             "reaction" -> InboxItem.NewReaction(
                 occurredAtMs = at,
                 actorId = actorId,
@@ -604,6 +638,12 @@ data class InboxRowDto(
                 reaction = Reaction.fromWire(reaction) ?: return null,
             )
             "band_join" -> InboxItem.NewBandmate(
+                occurredAtMs = at,
+                actorId = actorId,
+                actorName = name,
+                bandName = body.orEmpty(),
+            )
+            "band_goal" -> InboxItem.CircleGoalMet(
                 occurredAtMs = at,
                 actorId = actorId,
                 actorName = name,

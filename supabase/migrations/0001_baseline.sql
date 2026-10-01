@@ -1537,7 +1537,9 @@ grant execute on function public.mark_inbox_seen() to authenticated;
 -- SECURITY DEFINER because a request comes from a lifter whose profile the
 -- caller usually cannot read yet (that is why they are asking), and the name
 -- is no secret: find_hunter already resolves it. Every branch is pinned to
--- auth.uid(), so it can only ever answer about the caller.
+-- auth.uid(), so it can only ever answer about the caller. Definer rights also
+-- mean RLS does not filter these rows, so a branch that reads someone else's
+-- workout restates the read policy (can_view_session) itself.
 create or replace function public.my_inbox()
 returns table (
     kind             text,
@@ -1585,6 +1587,26 @@ as $$
 
         union all
 
+        -- A remark in a thread the caller joined on someone else's workout:
+        -- anything said after the caller's first remark there, by anyone but
+        -- the caller. Only while the workout is still visible to the caller,
+        -- exactly as the comments read policy would allow.
+        select 'reply', c.created_at, c.user_id, c.author_name,
+               s.id, coalesce(nullif(s.title, ''), s.label), c.id, c.body, null
+        from session_comments c
+        join sessions s on s.id = c.session_id
+        join me on s.user_id <> me.id
+        where c.user_id <> me.id
+          and can_view_session(s.user_id, s.audience)
+          and exists (
+              select 1 from session_comments mine
+              where mine.session_id = c.session_id
+                and mine.user_id = me.id
+                and mine.created_at < c.created_at
+          )
+
+        union all
+
         select 'reaction', l.created_at, l.user_id, p.display_name,
                s.id, coalesce(nullif(s.title, ''), s.label), null, null, l.kind
         from session_likes l
@@ -1610,6 +1632,37 @@ as $$
             where mine.warband_id = m.warband_id and mine.user_id = me.id
         )
         where m.user_id <> me.id
+
+        union all
+
+        -- The caller's warband met its weekly goal: one row per week, at the
+        -- workout that crossed it, attributed to whoever completed that
+        -- workout. Counted exactly as my_warband() counts the banner (current
+        -- members, completed, UTC Monday weeks, can_view_session), so the
+        -- inbox and the banner agree on when the goal fell. The 37 days cover
+        -- the inbox's 30 plus a whole week, so a week that began before the
+        -- window still counts from its Monday.
+        select 'band_goal', g.completed_at, g.user_id,
+               case when g.user_id = me.id or can_view(g.user_id)
+                    then coalesce(p.display_name, 'Ironbound' || right(g.user_id::text, 4))
+                    else 'Ironbound' || right(g.user_id::text, 4) end,
+               null, null, null, w.name, null
+        from me
+        join warband_members mine on mine.user_id = me.id
+        join warbands w on w.id = mine.warband_id
+        join lateral (
+            select s.user_id, s.completed_at,
+                   row_number() over (
+                       partition by date_trunc('week', s.completed_at at time zone 'utc')
+                       order by s.completed_at, s.id
+                   ) as n
+            from sessions s
+            join warband_members m on m.user_id = s.user_id and m.warband_id = w.id
+            where s.completed_at is not null
+              and s.completed_at > now() - interval '37 days'
+              and can_view_session(s.user_id, s.audience)
+        ) g on g.n = w.weekly_goal
+        left join profiles p on p.id = g.user_id
     )
     select i.kind, i.occurred_at, i.actor_id, i.actor_name, i.session_id,
            i.session_headline, i.comment_id, i.body, i.reaction
@@ -1857,7 +1910,7 @@ grant execute on function public.my_warband() to authenticated;
 -- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
 -- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 25 $$;
+language sql stable as $$ select 26 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

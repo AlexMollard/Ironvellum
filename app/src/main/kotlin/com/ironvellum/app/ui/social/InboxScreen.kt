@@ -14,6 +14,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ChatBubbleOutline
+import androidx.compose.material.icons.outlined.EmojiEvents
+import androidx.compose.material.icons.outlined.Forum
 import androidx.compose.material.icons.outlined.GroupAdd
 import androidx.compose.material.icons.outlined.Handshake
 import androidx.compose.material.icons.outlined.PersonAdd
@@ -221,10 +223,13 @@ internal fun InboxScreen(
                                 answering = item.actorId in ui.answering,
                                 answered = ui.answered[item.actorId],
                                 onOpenLifter = { onOpenLifter(item.actorId, item.actorName) },
-                                onOpenComments = { sessionId, headline ->
-                                    // Every comment and reaction in the inbox is on one of
-                                    // the caller's own workouts, so the caller is the owner.
-                                    ui.myUserId?.let { me -> onOpenComments(sessionId, me, headline) }
+                                onOpenComments = { sessionId, headline, mine ->
+                                    // Remarks and tributes are on the caller's own trials, so
+                                    // the caller is the owner. A reply sits on someone else's:
+                                    // it opens with no owner, and the thread reads the real
+                                    // one off the trial, rather than lending the caller the
+                                    // owner's moderation for a moment.
+                                    ui.myUserId?.let { me -> onOpenComments(sessionId, if (mine) me else "", headline) }
                                 },
                                 onAccept = { viewModel.accept(item.actorId) },
                                 onDecline = { viewModel.decline(item.actorId) },
@@ -265,7 +270,7 @@ private fun InboxRow(
     answering: Boolean,
     answered: RequestAnswer?,
     onOpenLifter: () -> Unit,
-    onOpenComments: (sessionId: String, headline: String) -> Unit,
+    onOpenComments: (sessionId: String, headline: String, mine: Boolean) -> Unit,
     onAccept: () -> Unit,
     onDecline: () -> Unit,
 ) {
@@ -273,12 +278,15 @@ private fun InboxRow(
         is InboxItem.FriendRequest -> Icons.Outlined.PersonAdd to "wants to be your ally"
         is InboxItem.RequestAccepted -> Icons.Outlined.Handshake to "accepted your ally request"
         is InboxItem.NewComment -> Icons.Outlined.ChatBubbleOutline to "left a remark on ${item.sessionHeadline.orWorkout()}"
+        is InboxItem.NewReply -> Icons.Outlined.Forum to "replied on ${item.sessionHeadline.ifBlank { "a trial" }}"
         is InboxItem.NewReaction -> item.reaction.glyph() to "paid ${item.reaction.displayName()} tribute on ${item.sessionHeadline.orWorkout()}"
         is InboxItem.NewBandmate -> Icons.Outlined.GroupAdd to "joined your circle ${item.bandName}"
+        is InboxItem.CircleGoalMet -> Icons.Outlined.EmojiEvents to "sealed the trial that met your circle's weekly goal"
     }
     val open: () -> Unit = when (item) {
-        is InboxItem.NewComment -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout()) } }
-        is InboxItem.NewReaction -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout()) } }
+        is InboxItem.NewComment -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
+        is InboxItem.NewReply -> { { onOpenComments(item.sessionId, item.sessionHeadline.ifBlank { "a trial" }, false) } }
+        is InboxItem.NewReaction -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
         else -> onOpenLifter
     }
     InkPanel(
@@ -335,10 +343,11 @@ private fun InboxRow(
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (item is InboxItem.NewComment && item.body.isNotBlank()) {
+                val remark = (item as? InboxItem.NewComment)?.body ?: (item as? InboxItem.NewReply)?.body
+                if (!remark.isNullOrBlank()) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "“${item.body}”",
+                        "“$remark”",
                         style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.Ink,
                         maxLines = 3,

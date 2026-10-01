@@ -1158,12 +1158,14 @@ class CloudSync(
     }
 
     /**
-     * The caller's inbox: ally requests, accepted requests, and comments and
-     * reactions on their workouts, newest first. Derived on the server by
+     * The caller's inbox: ally requests, accepted requests, comments and
+     * reactions on their workouts, replies in threads they remarked in, and
+     * circle joins and goals, newest first. Derived on the server by
      * my_inbox(), never stored, so it cannot grow with time.
      *
      * TTL 30s, like [friends]: new items only arrive when someone acts, and
-     * the daily push refreshes the unread count in the background anyway.
+     * InboxWorker's half-hourly poll refreshes the unread count in the
+     * background anyway.
      */
     suspend fun inbox(force: Boolean = false): Result<Inbox> {
         val me = requireAccount(account).getOrElse { return failure(it) }
