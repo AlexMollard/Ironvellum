@@ -98,8 +98,21 @@ class DeleteWorkoutTest {
         repo.deleteWorkout(id)
         assertTrue(
             "the watermark must go with the session",
-            db.syncStateDao().all().none { it.sessionId == id },
+            db.syncStateDao().all().none { it.sessionId == id && it.fingerprint != SyncStateEntity.TOMBSTONE },
         )
+        assertTrue("no watermark survives for the push to trust", repo.pushWatermark()[id] == null)
+    }
+
+    @Test
+    fun deletingATrialLeavesATombstoneForTheNextPush() = runBlocking {
+        val id = completedSessionWithOneLift()
+        repo.deleteWorkout(id)
+        assertEquals("the delete must record a tombstone", listOf(id), repo.tombstonedSessions())
+        // A push's bookkeeping (watermarks for what still exists) must not erase it.
+        repo.recordPushWatermark(emptyMap())
+        assertEquals("a push must not drop a tombstone it has not applied", listOf(id), repo.tombstonedSessions())
+        repo.clearTombstones(listOf(id))
+        assertTrue(repo.tombstonedSessions().isEmpty())
     }
 
     @Test

@@ -804,8 +804,9 @@ data class WarbandMemberDto(
     // Null when the bandmate's profile is hidden from the caller.
     @SerialName("level") val level: Int? = null,
     @SerialName("current_title_id") val currentTitleId: String? = null,
-    // Completed workouts in the current Monday-start week (UTC anchor),
-    // counted server-side under the feed's own visibility rules.
+    // Days trained in the current Monday-start week (UTC anchor): distinct UTC
+    // days with a trial that has a set, counted server-side, the same for every
+    // viewer whatever the audience of the trials behind it.
     @SerialName("workouts_this_week") val workoutsThisWeek: Int = 0,
     @SerialName("last_workout_at") val lastWorkoutAt: String? = null,
 )
@@ -819,6 +820,10 @@ data class WarbandDto(
     @SerialName("owner_id") val ownerId: String,
     // The owner's weekly challenge for the band; server default 12.
     @SerialName("weekly_goal") val weeklyGoal: Int = 12,
+    // Days trained by the whole band this week: ONE canonical number, the same
+    // for every viewer. Absent only from a server older than schema 27, where
+    // the members' own counts are all there is to sum.
+    @SerialName("band_total") val bandTotal: Int? = null,
     @SerialName("members") val members: List<WarbandMemberDto> = emptyList(),
 ) {
     fun toWarband(): Warband = Warband(
@@ -827,6 +832,7 @@ data class WarbandDto(
         code = code,
         ownerId = ownerId,
         weeklyGoal = weeklyGoal,
+        total = bandTotal ?: members.sumOf { it.workoutsThisWeek },
         members = members.map {
             WarbandMember(
                 userId = it.userId,

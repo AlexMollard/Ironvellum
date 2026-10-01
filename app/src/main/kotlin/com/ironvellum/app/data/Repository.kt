@@ -1477,7 +1477,15 @@ class Repository(
 
     /** Fingerprints of the sessions the last successful push uploaded. */
     suspend fun pushWatermark(): Map<Long, Int> =
-        syncStateDao.all().associate { it.sessionId to it.fingerprint }
+        syncStateDao.all()
+            .filter { it.fingerprint != SyncStateEntity.TOMBSTONE }
+            .associate { it.sessionId to it.fingerprint }
+
+    /** Trials deleted on this device whose cloud rows the next push must delete. */
+    suspend fun tombstonedSessions(): List<Long> = syncStateDao.tombstoned()
+
+    /** Called only after the cloud rows are confirmed deleted. */
+    suspend fun clearTombstones(ids: List<Long>) = syncStateDao.clearTombstones(ids)
 
     /**
      * Called only after a push succeeds; prunes sessions deleted since. Both
@@ -1800,9 +1808,11 @@ class Repository(
      * threshold was reached, and unpicking that would cascade through every
      * other ledger reader.
      *
-     * The set rows go explicitly (no FK cascade) and the push watermark goes
-     * with them; the cloud row is push-only publication and is left alone -
-     * the device stays authoritative, per the data-authority rule.
+     * The set rows go explicitly (no FK cascade) and the push watermark turns
+     * into a tombstone in the same transaction: the next push deletes the cloud
+     * row, so a deleted trial stops counting in a circle's week and in allies'
+     * feeds. The device stays authoritative, per the data-authority rule, and
+     * deletes are only ever recorded here, never inferred from the cloud.
      */
     suspend fun deleteWorkout(sessionId: Long) = db.withTransaction {
         val session = sessionDao.byId(sessionId) ?: return@withTransaction
@@ -1815,7 +1825,7 @@ class Repository(
         val lifetime = profileDao.get()?.lifetimeStrength ?: 0L
         profileDao.setLifetimeStrength(maxOf(0L, lifetime - session.strengthScore))
         sessionDao.deleteSetsFor(sessionId)
-        syncStateDao.deleteFor(sessionId)
+        syncStateDao.upsertAll(listOf(SyncStateEntity(sessionId, SyncStateEntity.TOMBSTONE)))
         sessionDao.deleteCompleted(sessionId)
     }
 
@@ -2734,7 +2744,7 @@ class Repository(
         payoutStore.adoptLegacy(myUserId)
         val weekKey = CirclePayout.weekKey()
         val mine = band.members.firstOrNull { it.userId == myUserId }?.workoutsThisWeek ?: 0
-        val total = band.members.sumOf { it.workoutsThisWeek }
+        val total = band.total
         if (!CirclePayout.owes(
                 total = total,
                 goal = band.weeklyGoal,

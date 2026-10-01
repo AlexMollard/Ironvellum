@@ -1228,7 +1228,7 @@ private fun WarbandBannerLine() {
         band = app.circleBonus.read().getOrNull()?.circle
     }
     band?.let { b ->
-        val total = b.members.sumOf { it.workoutsThisWeek }
+        val total = b.total
         // Goal absent (an older server answer) falls back to the Warband default silently.
         val goal = b.weeklyGoal.coerceAtLeast(1)
         val met = total >= goal

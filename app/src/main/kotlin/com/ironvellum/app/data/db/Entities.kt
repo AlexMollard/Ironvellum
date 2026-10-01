@@ -231,7 +231,21 @@ data class MeasurementEntity(
 data class SyncStateEntity(
     @PrimaryKey val sessionId: Long,
     val fingerprint: Int,
-)
+) {
+    companion object {
+        /**
+         * A [fingerprint] that marks a TOMBSTONE: the trial was deleted on this
+         * device and its cloud row still has to go on the next push. The
+         * watermark table doubles as the tombstone list, so the delete and its
+         * tombstone commit in one Room transaction and travel with the database.
+         * Never inferred by diffing the server against the device: on a fresh
+         * install that diff reads as "delete everything". Keep in step with the
+         * literal in SyncStateDao's queries; pushFingerprint never returns it.
+         * // shortcut: a dedicated table if a tombstone ever needs a timestamp.
+         */
+        const val TOMBSTONE = Int.MIN_VALUE
+    }
+}
 
 
 /**

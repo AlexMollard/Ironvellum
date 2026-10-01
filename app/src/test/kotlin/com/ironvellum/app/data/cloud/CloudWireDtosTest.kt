@@ -74,6 +74,7 @@ class CloudWireDtosTest {
         val dto = json.decodeFromString<WarbandDto>(
             """{"id": "7c9e6a4e-0000-4000-8000-0000000000aa", "name": "North Gate",
                 "code": "K7M2PQ4X", "owner_id": "owner-1", "weekly_goal": 9,
+                "band_total": 5,
                 "members": [
                   {"user_id": "owner-1", "display_name": "Nova", "level": 9,
                    "current_title_id": "first-blood", "workouts_this_week": 2,
@@ -86,6 +87,14 @@ class CloudWireDtosTest {
         assertEquals("K7M2PQ4X", band.code)
         assertEquals("owner-1", band.ownerId)
         assertEquals(9, band.weeklyGoal)
+        // The canonical total is the server's number, not the sum of what this viewer was handed.
+        assertEquals(5, band.total)
+        // A server older than schema 27 sends none: fall back to the members' own counts.
+        assertEquals(2, json.decodeFromString<WarbandDto>(
+            """{"id": "7c9e6a4e-0000-4000-8000-0000000000aa", "name": "North Gate",
+                "code": "K7M2PQ4X", "owner_id": "owner-1",
+                "members": [{"user_id": "a", "display_name": "A", "workouts_this_week": 2}]}""",
+        ).toWarband().total)
         // A band row from before the goal shipped decodes the server default.
         assertEquals(12, json.decodeFromString<WarbandDto>(
             """{"id": "7c9e6a4e-0000-4000-8000-0000000000aa", "name": "North Gate",

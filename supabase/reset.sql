@@ -78,6 +78,7 @@ drop function if exists public.delete_my_account();
 drop function if exists public.push_aggregates(bigint, bigint, int, bigint, int, double precision);
 drop function if exists public.monarch_level(bigint);
 drop function if exists public.find_hunter(text);
+drop function if exists public.warband_week_days(uuid, timestamptz);
 drop function if exists public.warband_members_handover();
 drop function if exists public.in_my_warband(uuid);
 drop function if exists public.warband_member(uuid, uuid);
