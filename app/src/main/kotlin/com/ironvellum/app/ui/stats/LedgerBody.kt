@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.stats
 
+import com.ironvellum.app.domain.fmt
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -186,6 +187,8 @@ internal fun BodyTab(
                         startLabel = shortDay(plot.startDate),
                         endLabel = shortDay(plot.endDate),
                         recordMarker = false,
+                        valueText = { "%.1f kg".fmt(it) },
+                        dateText = { shortDay(plot.dates[it]) },
                     )
                 }
             }

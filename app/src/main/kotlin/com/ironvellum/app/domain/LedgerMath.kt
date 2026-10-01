@@ -23,6 +23,8 @@ data class WeightPlot(
     val endDate: LocalDate,
     /** Latest minus earliest reading in the window; null with fewer than two. */
     val deltaKg: Double?,
+    /** The day of each reading, same size as [values]; the scrub readout names it. */
+    val dates: List<LocalDate>,
 )
 
 /** Mean of the days that had data, and how many those were of the days asked. */
@@ -123,7 +125,7 @@ object Ledger {
             (java.time.temporal.ChronoUnit.DAYS.between(start, dateOf(s.takenAtMs, zone)) / span).coerceIn(0.0, 1.0)
         }
         val delta = if (inWindow.size >= 2) inWindow.last().weightKg - inWindow.first().weightKg else null
-        return WeightPlot(inWindow.map { it.weightKg }, positions, start, today, delta)
+        return WeightPlot(inWindow.map { it.weightKg }, positions, start, today, delta, inWindow.map { dateOf(it.takenAtMs, zone) })
     }
 
     // ------------------------------------------------------------- text

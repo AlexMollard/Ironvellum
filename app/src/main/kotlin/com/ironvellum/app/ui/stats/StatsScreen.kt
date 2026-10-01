@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.stats
 
+import com.ironvellum.app.domain.fmt
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -400,17 +401,21 @@ fun StatsScreen(
     }
 
     drill?.let { metric ->
-        val series = ui.stats.sortedBy { it.takenAtMs }.mapNotNull {
-            when (metric) {
+        // Kept as (reading, value) pairs so the scrub readout can name each day.
+        val readings = ui.stats.sortedBy { it.takenAtMs }.mapNotNull {
+            val v = when (metric) {
                 "BMI" -> Ledger.bmiOf(it, ui.profileHeight)
                 else -> Ledger.ffmiOf(it, ui.profileHeight)
             }
+            v?.let { value -> it to value }
         }
+        val series = readings.map { it.second }
         val current = series.lastOrNull()
         StatDrillDialog(
             metric = metric,
             table = if (metric == "BMI") Bands.BMI else Bands.ffmi(ui.sex),
             series = series,
+            seriesDates = readings.map { formatDate(it.first.takenAtMs, "d MMM") },
             current = current,
             asOf = if (metric == "BMI") null else ffmiReading?.let { formatDate(it.takenAtMs, "d MMM yyyy") },
             onDismiss = { drill = null },
@@ -489,6 +494,7 @@ private fun LiftRecordRow(record: LiftRecord, fresh: Boolean) {
                 description = "${record.name} best estimated one-rep max by session, " +
                     "${record.series.size} ${plural(record.series.size, "session", "sessions")}",
                 recordMarker = false,
+                scrub = false,
             )
         }
         StatValue(
@@ -598,6 +604,7 @@ private fun StatDrillDialog(
     metric: String,
     table: BandTable,
     series: List<Double>,
+    seriesDates: List<String>,
     current: Double?,
     asOf: String?,
     onDismiss: () -> Unit,
@@ -657,7 +664,14 @@ private fun StatDrillDialog(
                     )
                     Spacer(Modifier.height(12.dp))
                     if (series.size >= 2) {
-                        TrendChart(series, IronvellumColors.Emerald, fromZero = false, recordMarker = false)
+                        TrendChart(
+                            series,
+                            IronvellumColors.Emerald,
+                            fromZero = false,
+                            recordMarker = false,
+                            valueText = { "$metric ${formatBodyValue(it)}" },
+                            dateText = { seriesDates[it] },
+                        )
                         ChartCaption("${series.size} readings in the Ledger")
                     } else {
                         ChartCaption("Two readings draw the line.")

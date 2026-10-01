@@ -255,7 +255,9 @@ private fun LifetimeLedger(
         Spacer(Modifier.height(14.dp))
         // Strength across the most recent stretch; a longer series just turns
         // to noise at this width, so cap the chart at the last 20 sessions.
-        val series = sessions.take(20).map { it.strengthScore.toDouble() }
+        // History arrives newest first; the line reads oldest to newest.
+        val recent = sessions.take(20).reversed()
+        val series = recent.map { it.strengthScore.toDouble() }
         // A two-point line is a straight diagonal filling half the panel: it
         // looks like a trend while carrying no information. Below three
         // sessions, say so instead of drawing it.
@@ -267,7 +269,12 @@ private fun LifetimeLedger(
                 color = IronvellumColors.InkMuted,
                 letterSpacing = IronvellumTracking.InlineLabel,
             )
-            TrendChart(values = series, color = IronvellumColors.Emerald)
+            TrendChart(
+                values = series,
+                color = IronvellumColors.Emerald,
+                valueText = { "%.0f strength".fmt(it) },
+                dateText = { formatDate(recent[it].completedAtMs ?: recent[it].startedAtMs, "d MMM") },
+            )
         } else {
             Text(
                 "THE TREND LINE OPENS AT THREE TRIALS",
