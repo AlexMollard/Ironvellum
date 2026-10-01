@@ -488,7 +488,7 @@ internal fun LifterScreen(
                             )
                             session.completedAtMs?.let {
                                 Text(
-                                    formatDate(it, "MMM d"),
+                                    formatDate(it, "MMM d") + if (session.editedAtMs != null) " · amended" else "",
                                     style = MaterialTheme.typography.labelSmall,
                                     color = IronvellumColors.InkMuted,
                                 )

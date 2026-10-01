@@ -683,7 +683,9 @@ private fun FeedCard(
             entry.completedAtMs?.let { ms ->
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    stamp(ms),
+                    // An amended workout says so, or an ally who saw it before
+                    // is left wondering why the figures moved.
+                    stamp(ms) + if (entry.editedAtMs != null) " · amended" else "",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,

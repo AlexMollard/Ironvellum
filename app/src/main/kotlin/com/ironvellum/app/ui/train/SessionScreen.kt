@@ -1262,7 +1262,7 @@ private fun RewardRow(label: String, value: String) {
 }
 
 @Composable
-private fun SetRow(
+internal fun SetRow(
     label: String,
     exerciseName: String,
     setIndex: Int,
@@ -1629,7 +1629,7 @@ internal const val LOAD_STEP_KG = 2.5
 /** Heavier than any lift on record; a guard against a stray extra digit. */
 internal const val MAX_LOAD_KG = 500.0
 
-private const val LOAD_INPUT_MAX_CHARS = 7
+internal const val LOAD_INPUT_MAX_CHARS = 7
 
 internal fun stepDownKg(kg: Double?): Double? =
     kg?.let { (kotlin.math.ceil(it / LOAD_STEP_KG - 1e-9) - 1) * LOAD_STEP_KG }?.takeIf { it > 0.0 }
@@ -1651,7 +1651,7 @@ internal fun parseLoadKg(text: String): Result<Double> {
 }
 
 /** A load as the dialog shows it for editing: no unit, no trailing ".0". */
-private fun loadText(kg: Double): String =
+internal fun loadText(kg: Double): String =
     if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
 
 /**
@@ -1888,7 +1888,7 @@ private fun CharCounter(length: Int, cap: Int, accent: Color) {
     )
 }
 @Composable
-private fun fieldColors(accent: Color) = OutlinedTextFieldDefaults.colors(
+internal fun fieldColors(accent: Color) = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = accent,
     unfocusedBorderColor = accent.copy(alpha = 0.4f),
     focusedLabelColor = accent,

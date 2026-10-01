@@ -16,6 +16,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.outlined.IosShare
+import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -49,6 +52,9 @@ import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.EnergyConfidence
 import com.ironvellum.app.domain.EnergyEstimate
 import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.domain.SealedEdit
+import com.ironvellum.app.domain.TrialDraft
+import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.lifecycle.ViewModelProvider
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.domain.SessionAudience
@@ -68,6 +74,9 @@ import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.combine
@@ -126,6 +135,65 @@ class WorkoutDetailViewModel(
             CloudSyncWorker.pushNow(appContext)
         }
     }
+
+    // ------------------------------------------------------------ amending
+    // The draft lives here, not in the composable, so a rotation mid-edit
+    // keeps it. Nothing reaches the database until confirmSave().
+
+    private val _draft = MutableStateFlow<TrialDraft?>(null)
+    val draft: StateFlow<TrialDraft?> = _draft.asStateFlow()
+
+    /** The settled XP change awaiting the lifter's yes; null when not asking. */
+    private val _pendingSave = MutableStateFlow<SealedEdit.Settlement?>(null)
+    val pendingSave: StateFlow<SealedEdit.Settlement?> = _pendingSave.asStateFlow()
+
+    private val _amendError = MutableStateFlow<String?>(null)
+    val amendError: StateFlow<String?> = _amendError.asStateFlow()
+
+    fun startAmend() {
+        val sets = ui.value.sets
+        if (ui.value.session?.completedAtMs != null && sets.isNotEmpty()) _draft.value = TrialDraft.of(sets)
+    }
+
+    fun changeDraft(change: (TrialDraft) -> TrialDraft) {
+        _draft.update { it?.let(change) }
+    }
+
+    fun cancelAmend() {
+        _draft.value = null
+        _pendingSave.value = null
+    }
+
+    fun requestSave() {
+        val draft = _draft.value ?: return
+        viewModelScope.launch {
+            runCatching { repo.previewSealedEdit(sessionId, draft) }
+                .onSuccess { _pendingSave.value = it }
+                .onFailure { _amendError.value = it.message ?: "The trial could not be amended" }
+        }
+    }
+
+    fun dismissSave() {
+        _pendingSave.value = null
+    }
+
+    /** Written locally, then pushed at once, like the audience. */
+    fun confirmSave() {
+        val draft = _draft.value ?: return
+        _pendingSave.value = null
+        viewModelScope.launch {
+            runCatching { repo.editSealedTrial(sessionId, draft) }
+                .onSuccess {
+                    _draft.value = null
+                    CloudSyncWorker.pushNow(appContext)
+                }
+                .onFailure { _amendError.value = it.message ?: "The trial could not be amended" }
+        }
+    }
+
+    fun dismissAmendError() {
+        _amendError.value = null
+    }
 }
 
 /**
@@ -149,7 +217,13 @@ fun WorkoutDetailScreen(
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val draft by viewModel.draft.collectAsStateWithLifecycle()
+    val pendingSave by viewModel.pendingSave.collectAsStateWithLifecycle()
+    val amendError by viewModel.amendError.collectAsStateWithLifecycle()
     var shareText by remember { mutableStateOf<String?>(null) }
+    // Back while amending discards the draft, as Cancel does, rather than
+    // leaving the screen with the edit silently lost.
+    BackHandler(enabled = draft != null) { viewModel.cancelAmend() }
 
     Column(
         Modifier
@@ -174,7 +248,16 @@ fun WorkoutDetailScreen(
                 // narrow phone instead of being pushed off the row.
                 modifier = Modifier.weight(1f),
             )
-            ui.session?.let { session ->
+            ui.session?.takeIf { draft == null }?.let { session ->
+                if (session.completedAtMs != null && ui.sets.isNotEmpty()) {
+                    IconButton(onClick = viewModel::startAmend) {
+                        Icon(
+                            Icons.Outlined.Edit,
+                            contentDescription = "Amend this trial",
+                            tint = IronvellumColors.Emerald,
+                        )
+                    }
+                }
                 IconButton(onClick = {
                     shareText = WorkoutShare.format(session, ui.sets, ui.exercises)
                 }) {
@@ -225,6 +308,15 @@ fun WorkoutDetailScreen(
                         color = IronvellumColors.InkMuted,
                     )
                 }
+            }
+            draft != null -> draft?.let { current ->
+                TrialAmendEditor(
+                    draft = current,
+                    exercises = ui.exercises,
+                    onChange = viewModel::changeDraft,
+                    onSave = viewModel::requestSave,
+                    onCancel = viewModel::cancelAmend,
+                )
             }
             else -> {
                 // Tapping the kcal readout reveals the formula behind it — a
@@ -277,6 +369,19 @@ fun WorkoutDetailScreen(
 
     shareText?.let { text ->
         ShareCardDialog(text = text, onDismiss = { shareText = null })
+    }
+    pendingSave?.let { settlement ->
+        AmendConfirmDialog(settlement, onConfirm = viewModel::confirmSave, onDismiss = viewModel::dismissSave)
+    }
+    amendError?.let { message ->
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = viewModel::dismissAmendError,
+            title = { Text("Not amended") },
+            text = { Text(message) },
+            confirmButton = { IronvellumButton("OK", onClick = viewModel::dismissAmendError) },
+        )
     }
 }
 
@@ -333,6 +438,15 @@ private fun DetailHeader(
             style = MaterialTheme.typography.labelMedium,
             color = IronvellumColors.InkMuted,
         )
+        session.editedAtMs?.let { amended ->
+            Text(
+                "Amended ${formatDate(amended)}",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SovereignGold,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            )
+        }
         Spacer(Modifier.height(12.dp))
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
             LedgerStat(
