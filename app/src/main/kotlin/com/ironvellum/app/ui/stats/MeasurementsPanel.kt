@@ -120,7 +120,7 @@ private fun SiteTile(
             site.label.uppercase(),
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
+            color = IronvellumColors.InkMuted,
             letterSpacing = IronvellumTracking.InlineLabel,
         )
         Spacer(Modifier.height(4.dp))
