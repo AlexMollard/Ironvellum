@@ -655,7 +655,7 @@ object ProgramGenerator {
         // brachialis work with no bar and no weights, say), and the line says so.
         val volume = weeklyVolumeOf(sessions)
         val capacityNote = if (capacityLimited) {
-            shortfallNote(volume, ctx.targetRange, "add a day to cover them.")
+            shortfallNote(volume, ctx.targetRange, capacityAdvice(days))
         } else {
             shortfallNote(volume, ctx.targetRange, "a fuller armoury would cover them.")
         }
@@ -680,6 +680,14 @@ object ProgramGenerator {
             note = joinNotes(capacityNote, frequencyNote),
         )
     }
+
+    /**
+     * What to do about muscles the session time could not reach. A sixth day
+     * is the most the Forge builds, so a full six-day week is told the one
+     * lever left: a priority claims time before the other muscles fill.
+     */
+    internal fun capacityAdvice(days: Int): String =
+        if (days < 6) "add a day to cover them." else "every rite is full; prioritising them would move time their way."
 
     /** Routine-level note parts, blank ones dropped, one space between. */
     internal fun joinNotes(vararg parts: String): String = parts.filter { it.isNotBlank() }.joinToString(" ")
