@@ -2,7 +2,6 @@ package com.ironvellum.app.ui.stats
 
 import com.ironvellum.app.domain.fmt
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,7 +14,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import com.ironvellum.app.ui.theme.InkCircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.semantics.heading
@@ -24,8 +22,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.activity.compose.BackHandler
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.foundation.layout.wrapContentHeight
 import com.ironvellum.app.ui.components.LedgerSpace
@@ -53,7 +49,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -61,10 +56,9 @@ import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.style.TextAlign
 import androidx.lifecycle.viewModelScope
 import com.ironvellum.app.ui.components.SectionHeader
-import com.ironvellum.app.ui.components.NavChip
+import com.ironvellum.app.ui.components.InkListRow
 import androidx.compose.material.icons.outlined.History
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.InkPanel
@@ -134,10 +128,6 @@ import com.ironvellum.app.R
 import java.util.Locale
 import com.ironvellum.app.ui.components.Term
 import com.ironvellum.app.ui.components.TermInfo
-
-// Calendar colours are theme tokens too: no hex literal lives in this file.
-private val CalendarConquered = IronvellumColors.Emerald
-private val OnEmeraldInk = IronvellumColors.Abyss
 
 /** Band tones to theme tokens: gold stays for earned things, so no band is gold. */
 private fun toneColor(tone: BandTone): Color = when (tone) {
@@ -239,6 +229,7 @@ fun StatsScreen(
     // which is how five screens ended up unreachable earlier.
     onOpenMeasurement: (MeasurementSite) -> Unit,
     onOpenLog: () -> Unit,
+    onOpenWorkout: (Long) -> Unit,
     onOpenSettings: () -> Unit,
     viewModel: StatsViewModel =
         viewModel(factory = viewModelFactory { initializer { StatsViewModel(ironvellumRepository()) } }),
@@ -360,6 +351,7 @@ fun StatsScreen(
                         onMonth = { monthsBack = (monthsBack - it).coerceAtLeast(0) },
                         scroll = trainingScroll,
                         onOpenLog = onOpenLog,
+                        onOpenWorkout = onOpenWorkout,
                     )
                     StatsTab.DAILY -> ActivityTab(
                         days = ui.healthDays,
@@ -507,7 +499,8 @@ private fun LiftRecordRow(record: LiftRecord, fresh: Boolean) {
 
 /**
  * TRAINING: the calendar leads (the owner opens this tab to see whether he
- * trained), then the way to the full chronicle and the per-trial strength line.
+ * trained), then the records board, then the per-trial strength line, then the
+ * door to the full chronicle. One column, panels [LedgerSpace.Panel] apart.
  */
 @Composable
 private fun TrainingTab(
@@ -517,73 +510,50 @@ private fun TrainingTab(
     onMonth: (Int) -> Unit,
     scroll: androidx.compose.foundation.ScrollState,
     onOpenLog: () -> Unit,
+    onOpenWorkout: (Long) -> Unit,
 ) {
+    val nowMs = remember(today) { System.currentTimeMillis() }
+    val records = remember(ui.sessions, ui.sessionSets, ui.exercises, today) {
+        LiftRecords.board(ui.sessions, ui.sessionSets, ui.exercises, nowMs)
+    }
     Column(
         Modifier
             .fillMaxSize()
             .verticalScroll(scroll)
             .padding(horizontal = LedgerSpace.Gutter),
+        verticalArrangement = Arrangement.spacedBy(LedgerSpace.Panel),
     ) {
         Spacer(Modifier.height(LedgerSpace.Panel))
-        PanelLabel("TRAINING CALENDAR")
-        // Month navigation gets its own row: beside the heading at
-        // 360dp the month name wrapped and pushed the arrow off-screen.
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { onMonth(-1) }) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Previous month",
-                    tint = IronvellumColors.SystemGreen,
-                )
-            }
-            Text(
-                "${month.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${month.year}",
-                style = MaterialTheme.typography.titleSmall,
-                color = IronvellumColors.Ink,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                modifier = Modifier.weight(1f),
-            )
-            // Unbounded, the arrow paged into empty future months forever.
-            val canAdvance = month < YearMonth.from(today)
-            IconButton(onClick = { onMonth(1) }, enabled = canAdvance) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = if (canAdvance) "Next month" else "Next month, already at the current month",
-                    tint = if (canAdvance) IronvellumColors.SystemGreen else IronvellumColors.Bracket,
-                )
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        CalendarGrid(month, ui.completedDates, ui.scheduledDays, today)
-
-        Spacer(Modifier.height(LedgerSpace.Section))
-        // The owner's instinct is that his workout history lives under the
-        // Ledger. It lives under Train, so put the door here too.
-        NavChip(
-            label = "FULL CHRONICLE",
-            icon = Icons.Outlined.History,
-            onClick = onOpenLog,
-            modifier = Modifier.fillMaxWidth(),
+        TrainingCalendar(
+            sessions = ui.sessions,
+            completedDates = ui.completedDates,
+            scheduledDays = ui.scheduledDays,
+            month = month,
+            today = today,
+            onMonth = onMonth,
+            onOpenTrial = onOpenWorkout,
         )
 
-        Spacer(Modifier.height(LedgerSpace.Section))
-        val nowMs = remember(today) { System.currentTimeMillis() }
-        val records = remember(ui.sessions, ui.sessionSets, ui.exercises, today) {
-            LiftRecords.board(ui.sessions, ui.sessionSets, ui.exercises, nowMs)
-        }
-        if (ui.sessions.isNotEmpty()) {
-            LiftRecordsPanel(records, nowMs)
-            Spacer(Modifier.height(LedgerSpace.Section))
-        }
+        if (ui.sessions.isNotEmpty()) LiftRecordsPanel(records, nowMs)
+
         InkPanel(Modifier.fillMaxWidth()) {
-            PanelLabel("STRENGTH PER TRIAL")
+            PanelLabel("STRENGTH SCORE PER TRIAL")
             // 0 means "not scored" (no bodyweight existed yet), not a collapse
-            // in strength — plotting it dropped the line to the floor.
-            val scores = ui.sessions.map { it.strengthScore.toDouble() }.filter { it > 0.0 }
+            // in strength - plotting it dropped the line to the floor.
+            val scored = ui.sessions.filter { it.strengthScore > 0 }
+            val scores = scored.map { it.strengthScore.toDouble() }
             if (scores.size >= 2) {
                 Spacer(Modifier.height(8.dp))
-                TrendChart(scores, IronvellumColors.Emerald, fromZero = false)
+                fun day(i: Int) = formatDate(scored[i].completedAtMs ?: scored[i].startedAtMs, "d MMM")
+                TrendChart(
+                    scores,
+                    IronvellumColors.Emerald,
+                    fromZero = false,
+                    startLabel = day(0),
+                    endLabel = day(scored.lastIndex),
+                    valueText = { "%.0f strength score".fmt(it) },
+                    dateText = ::day,
+                )
                 ChartCaption(
                     "Best ${scores.max().toInt()} · ${scores.size} ${plural(scores.size, "trial", "trials")} · scaled to bodyweight",
                 )
@@ -594,6 +564,17 @@ private fun TrainingTab(
             } else {
                 ChartCaption("Log bodyweight to score these trials.")
             }
+        }
+
+        // The owner's instinct is that his workout history lives under the
+        // Ledger. It lives under Train, so put the door here too.
+        InkPanel(Modifier.fillMaxWidth()) {
+            InkListRow(
+                label = "Full chronicle",
+                value = null,
+                supporting = "every sealed trial",
+                onClick = onOpenLog,
+            )
         }
         Spacer(Modifier.height(LedgerSpace.Section))
     }
@@ -732,131 +713,6 @@ private fun ChartCaption(text: String) {
     Text(text, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
 }
 
-
-/**
- * First date the calendar marks a scheduled weekday: the lifter's first
- * workout, or today before there is one. The routine only exists from then
- * on, so earlier dots claimed plans for dates before the app was in use.
- */
-internal fun calendarScheduleStart(completedDates: Set<LocalDate>, today: LocalDate): LocalDate =
-    completedDates.minOrNull()?.coerceAtMost(today) ?: today
-
-@Composable
-private fun CalendarGrid(
-    month: YearMonth,
-    completedDates: Set<LocalDate>,
-    scheduledDays: Set<Int>,
-    today: LocalDate,
-) {
-    val scheduleStart = remember(completedDates, today) { calendarScheduleStart(completedDates, today) }
-    val firstDay = month.atDay(1)
-    // The week starts where the lifter's locale says it does.
-    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-    val weekStart = java.time.temporal.WeekFields.of(locale).firstDayOfWeek
-    val weekdayLabels = remember(weekStart, locale) {
-        (0L..6L).map { weekStart.plus(it).getDisplayName(java.time.format.TextStyle.NARROW, locale) }
-    }
-    val leadingBlanks = (firstDay.dayOfWeek.value - weekStart.value + 7) % 7
-    val cells: List<LocalDate?> = List(leadingBlanks) { null } +
-        (1..month.lengthOfMonth()).map { month.atDay(it) }
-
-    Column(Modifier.fillMaxWidth()) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            weekdayLabels.forEach { label ->
-                Text(
-                    label,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.weight(1f),
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        val paddedCells = cells + List((7 - cells.size % 7) % 7) { null }
-        paddedCells.chunked(7).forEach { week ->
-            Row(Modifier.fillMaxWidth().padding(vertical = 3.dp), horizontalArrangement = Arrangement.SpaceEvenly) {
-                week.forEach { date ->
-                    Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                        if (date == null) {
-                            Spacer(Modifier.height(36.dp))
-                        } else {
-                            val completed = date in completedDates
-                            val scheduled = date >= scheduleStart && date.dayOfWeek.value in scheduledDays
-                            val isToday = date == today
-                            val spoken = date.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", locale)) +
-                                when {
-                                    completed -> ", trial sealed"
-                                    scheduled -> ", scheduled"
-                                    else -> ""
-                                } + if (isToday) ", today" else ""
-                            Column(
-                                Modifier.semantics(mergeDescendants = true) { contentDescription = spoken },
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                Box(
-                                    Modifier
-                                        .size(32.dp)
-                                        .clip(InkCircleShape(7))
-                                        .background(
-                                            if (completed) {
-                                                Brush.verticalGradient(listOf(IronvellumColors.EmeraldBright, CalendarConquered))
-                                            } else {
-                                                Brush.verticalGradient(listOf(Color.Transparent, Color.Transparent))
-                                            },
-                                        )
-                                        .inkBorder(
-                                            IronvellumColors.Ink,
-                                            InkCircleShape(7),
-                                            if (isToday) 1.5.dp else 0.dp,
-                                        ),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Text(
-                                        date.dayOfMonth.toString(),
-                                        color = when {
-                                            completed -> OnEmeraldInk
-                                            isToday -> IronvellumColors.Ink
-                                            else -> IronvellumColors.InkMuted
-                                        },
-                                    )
-                                }
-                                Spacer(Modifier.height(2.dp))
-                                Box(
-                                    Modifier
-                                        .size(4.dp)
-                                        .clip(InkCircleShape(7))
-                                        .background(
-                                            when {
-                                                completed -> CalendarConquered
-                                                scheduled -> IronvellumColors.SystemGreen
-                                                else -> Color.Transparent
-                                            },
-                                        ),
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(10.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            CalendarLegend(CalendarConquered, "sealed")
-            CalendarLegend(IronvellumColors.Ink, "today")
-            CalendarLegend(IronvellumColors.SystemGreen, "scheduled")
-        }
-    }
-}
-
-@Composable
-private fun CalendarLegend(color: Color, label: String) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-        Box(Modifier.size(8.dp).clip(InkCircleShape(7)).background(color))
-        Text(label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
-    }
-}
 
 /** Keep digits and one separator; a comma is accepted and read as a point. */
 private fun decimalInput(raw: String): String = DecimalInput.sanitize(raw, maxDecimals = 1, maxLength = 6)
