@@ -107,7 +107,7 @@ td a, .link { color: var(--ink); text-decoration: underline; text-decoration-col
     <select id="muscle" aria-label="Muscle"><option value="">Any muscle</option></select>
     <label class="chk"><input id="flagged" type="checkbox"> Only ones to double-check</label>
   </div>
-  <p class="muted" style="font-size:.85rem;margin:8px 0 0">A red ! marks an exercise whose data looks unusual: a muscle share off the usual 0 / ¼ / ½ / ¾ / 1 steps, no main muscle, or a missing how-to. These are prompts to look, not confirmed errors.</p>
+  <p class="muted" style="font-size:.85rem;margin:8px 0 0">A red ! marks an exercise whose data looks unusual: a muscle share outside 0 to 1, no main muscle, or a missing how-to. These are prompts to look, not confirmed errors.</p>
   <div class="grid">
     <nav class="list" id="list" aria-label="Exercises"></nav>
     <main class="detail" id="detail"></main>
@@ -116,7 +116,6 @@ td a, .link { color: var(--ink); text-decoration: underline; text-decoration-col
 
 <script>
 const DATA = /*__ATLAS_DATA__*/null;
-const STEPS = [0, 0.25, 0.5, 0.75, 1];
 const ACTIVITY = ["SPORT", "CARDIO", "CLIMBING", "WATER", "MOBILITY"];
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
@@ -128,8 +127,8 @@ function flagsOf(e) {
   const f = [];
   const ms = Object.entries(e.muscles || {});
   if (!ms.length) f.push("No muscles listed, so this exercise counts toward nothing.");
-  ms.filter(([, v]) => !STEPS.includes(v)).forEach(([m, v]) =>
-    f.push(`${label(m)} is credited ${v.toFixed(2)} of a set. Every other share sits on 0, ¼, ½, ¾ or 1, so check this one was meant.`));
+  ms.filter(([, v]) => !(v >= 0 && v <= 1)).forEach(([m, v]) =>
+    f.push(`${label(m)} is credited ${v} of a set, outside the allowed 0 to 1.`));
   // Activities and mobility credit broadly by design; only training moves need a lead.
   if (ms.length && !ms.some(([, v]) => v === 1) && !ACTIVITY.includes(e.group))
     f.push("No muscle is credited a full set (1.0), so nothing is marked as the main muscle.");
@@ -186,7 +185,7 @@ function renderExercises() {
 }
 
 function shareRow(m, v, dominant) {
-  const cls = !STEPS.includes(v) ? "odd" : v >= 1 ? "" : "half";
+  const cls = !(v >= 0 && v <= 1) ? "odd" : v >= 1 ? "" : "half";
   return `<div class="share"><button class="lbl link ${dominant ? "dom" : ""}" data-mu="${esc(m)}">${esc(label(m))}</button>
     <div class="track"><div class="fill ${cls}" style="width:${Math.min(v, 1) * 100}%"></div></div>
     <span class="val ${v === 0 ? "zero" : ""}">${v.toFixed(2)}</span></div>`;
@@ -212,7 +211,7 @@ function exerciseCard(e) {
     <section class="card">
       <h3>Muscles (sets credited per set)</h3>
       ${ms.length ? ms.map(([m, v]) => shareRow(m, v, lead && m === lead[0])).join("") : '<p class="muted">No muscle data.</p>'}
-      <p class="legend">Bold = lead muscle · gridlines at 0.25 steps · red = off the usual 0 / ¼ / ½ / ¾ / 1 steps</p>
+      <p class="legend">Bold = lead muscle · gridlines at 0.25 steps · red = outside 0 to 1</p>
     </section>
     <section class="card">
       <h3>Facts</h3>
