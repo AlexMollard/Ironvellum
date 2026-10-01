@@ -14,7 +14,6 @@ the project licence (GPL-3.0-or-later, see `LICENSE`).
 | `mipmap-anydpi-v26/ic_launcher.xml`, `ic_launcher_round.xml` | adaptive icon composition, no artwork of its own | project licence |
 | `drawable-nodpi/art_empty_*.png` (quests, stats, skills, board, chronicle, allies, muster) | generated with `tools/art.py` in the house ink style below | project licence |
 | `drawable-nodpi/art_crest_*.png` (ten crest frames) | generated with `tools/art.py` from `tools/art_batches/crests.txt` | project licence |
-| `drawable/ic_rank_*.xml` (soldier, knight, commander, grand marshal) | hand-authored 48-unit vectors | project licence |
 
 ## House style: monochrome ink (adopted)
 
@@ -82,13 +81,6 @@ python tools/art.py --style ink "<subject>" \
 ```
 
 Empty-state art must swap as a set, or one screen keeps the old style.
-
-## Rank emblem set
-
-`ic_rank_soldier` → `ic_rank_knight` → `ic_rank_commander` →
-`ic_rank_grand_marshal` escalate from a single chevron to a crowned shield,
-tinted in sequence (`#9AA3AD` muted ink → `#6FAE8C` muted green → `#34D399`
-emerald, gold accents on the last).
 
 ## Attribution string
 
