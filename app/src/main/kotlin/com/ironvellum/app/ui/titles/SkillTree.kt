@@ -66,12 +66,9 @@ import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkBorder
 
 /** The node disc. Room around it is for the glow and the breathing ring. */
-private val NodeSize = 54.dp
-private val TopPad = 5.dp
-private val TextGap = 2.dp
-
-/** Room under a row for the lines that join it to the next. */
-private val EdgeGap = 16.dp
+private val NodeSize = NODE_DP.dp
+private val TopPad = TOP_PAD_DP.dp
+private val TextGap = TEXT_GAP_DP.dp
 private val EdgeW = 2.dp
 
 /** The locked node ring: 3:1 against the page, dimmer than the open green. */
@@ -112,18 +109,12 @@ fun SkillTreeGraph(
         val cellW = maxWidth / columns
         val layout = remember(line, columns) { treeLayout(line, columns) }
 
-        // Two text lines, scaled with the system font so a large setting grows
-        // the rows instead of clipping the label.
-        val textH = with(LocalDensity.current) { (LabelLine * 2f).toDp() }
-        val levelLines = remember(layout) {
-            layout.levels.indices.map { l -> layout.nodes.filter { it.level == l }.maxOf { labelLines(it.skill.name) } }
-        }
-        val tops = remember(layout, textH) {
-            layout.levels.runningFold(0.dp) { y, level ->
-                y + levelHeight(level, levelLines[layout.levels.indexOf(level)], textH / 2)
-            }
-        }
-        val at = remember(layout) { layout.nodes.associateBy { it.skill.name } }
+        // Label lines scale with the system font so a large setting grows the
+        // rows instead of clipping the label; the geometry reads the same height.
+        val lineH = with(LocalDensity.current) { LabelLine.toDp().value }
+        val metrics = remember(layout, cellW, lineH) { treeMetrics(layout, cellW.value, lineH) }
+        val tops = metrics.tops
+        val levelLines = metrics.levelLines
 
         // One breathing phase for every open node, so they pulse together.
         val pulse = rememberBreath()
@@ -137,36 +128,16 @@ fun SkillTreeGraph(
             if (firstNext != null) nextRequester.bringIntoView()
         }
 
-        Box(Modifier.fillMaxWidth().height(tops.last())) {
+        Box(Modifier.fillMaxWidth().height(tops.last().dp)) {
             Canvas(Modifier.fillMaxSize()) {
                 val stroke = EdgeW.toPx()
-                fun centreX(n: PlacedSkill) = (cellW * (n.x + 0.5f)).toPx()
-
+                val dp = density
                 // Dim lines first, so the lit ones win where they share a stretch.
                 layout.edges.sortedBy { edgeRank(it.to, mastered) }.forEach { e ->
-                    val parent = at.getValue(e.from)
-                    val child = at.getValue(e.to)
-                    val px = centreX(parent)
-                    val cx = centreX(child)
-                    // bottom of the parent's disc to the top of the child's
-                    val y0 = (tops[parent.level] + TopPad + NodeSize).toPx()
-                    val y1 = (tops[child.level] + TopPad).toPx()
-                    // A long edge swings out under its parent and drops down the
-                    // child's column, if that column is clear of the rows between.
-                    val clearAtChild = (parent.level + 1 until child.level).all { l ->
-                        layout.nodes.none { it.level == l && kotlin.math.abs(it.x - child.x) < 0.9f }
-                    }
-                    val longJog = child.level > parent.level + 1 && clearAtChild
-                    val path = Path().apply {
-                        moveTo(px, y0)
-                        if (longJog) {
-                            val yj = (tops[parent.level + 1] - EdgeGap / 4).toPx()
-                            cubicTo(px, (y0 + yj) / 2, cx, (y0 + yj) / 2, cx, yj)
-                            lineTo(cx, y1)
-                        } else {
-                            val ym = (y0 + y1) / 2
-                            cubicTo(px, ym, cx, ym, cx, y1)
-                        }
+                    val path = Path()
+                    layout.edgeCurve(e, metrics).forEachIndexed { i, c ->
+                        if (i == 0) path.moveTo(c.p0.x * dp, c.p0.y * dp)
+                        path.cubicTo(c.c1.x * dp, c.c1.y * dp, c.c2.x * dp, c.c2.y * dp, c.p3.x * dp, c.p3.y * dp)
                     }
                     drawPath(path, edgeColor(e.to, mastered), style = Stroke(stroke, cap = StrokeCap.Round))
                 }
@@ -192,7 +163,7 @@ fun SkillTreeGraph(
                     pulse = pulse,
                     onClick = { onSelect(skill.name) },
                     modifier = Modifier
-                        .offset(x = cellW * node.x, y = tops[node.level])
+                        .offset(x = cellW * node.x, y = tops[node.level].dp)
                         .then(if (skill.name == firstNext) Modifier.bringIntoViewRequester(nextRequester) else Modifier),
                 )
             }
@@ -201,9 +172,6 @@ fun SkillTreeGraph(
 }
 
 private val LabelLine = 12.sp
-
-private fun levelHeight(level: TreeLevel, lines: Int, lineH: Dp): Dp =
-    TopPad + NodeSize + TextGap + lineH * lines + (if (level.hasCrossNeed) lineH * 2 else 0.dp) + EdgeGap
 
 /** A short name fits one line under a node; anything longer is given two. An estimate: the gap below absorbs a miss. */
 internal fun labelLines(name: String): Int = if (name.length <= 12) 1 else 2
@@ -270,9 +238,6 @@ internal fun rowDescription(
     }
 }.joinToString(", ")
 
-/** The page tone behind the tree: a label on it hides a line passing under, so the line never cuts text. */
-private val LabelPlate = Color(0xFF0D0E11)
-
 @Composable
 private fun SkillNode(
     skill: Skills.SkillDef,
@@ -287,6 +252,8 @@ private fun SkillNode(
 ) {
     val shape = remember(skill.name) { InkCircleShape(skill.name.hashCode() and 0xFF) }
     val textH = with(LocalDensity.current) { (LabelLine * 2f).toDp() }
+    // The page tone: a label on it hides its own node's line passing under, so the line never cuts text.
+    val plateColour = MaterialTheme.colorScheme.background
     val chip = remember { inkCorners(3.dp, 13) }
     val plate = remember { inkCorners(4.dp, 11) }
     // The whole cell is the touch target, so the node's hit area is well past 48dp.
@@ -423,7 +390,7 @@ private fun SkillNode(
                 .widthIn(max = width)
                 .heightIn(min = textH / 2 * lines)
                 .clip(plate)
-                .background(LabelPlate)
+                .background(plateColour)
                 .padding(horizontal = 3.dp),
         )
         if (crossNeed != null) {
@@ -441,7 +408,7 @@ private fun SkillNode(
                     .widthIn(max = width)
                     .height(textH)
                     .clip(plate)
-                    .background(LabelPlate)
+                    .background(plateColour)
                     .padding(horizontal = 3.dp),
             )
         }
