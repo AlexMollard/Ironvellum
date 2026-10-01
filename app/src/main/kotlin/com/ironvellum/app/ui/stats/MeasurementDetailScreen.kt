@@ -43,6 +43,8 @@ import com.ironvellum.app.domain.Ledger
 import com.ironvellum.app.domain.MeasurementEntry
 import com.ironvellum.app.domain.Measurements
 import com.ironvellum.app.domain.MeasurementSite
+import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkListRow
 import com.ironvellum.app.ui.components.InkPanel
@@ -97,18 +99,7 @@ private val CM_MAX = 250.0
 private const val RECENT_ROWS = 5
 
 /** Keep digits and one point; a decimal comma from the keyboard is read as the point. */
-private fun sanitizeCm(raw: String): String = buildString {
-    var dotSeen = false
-    for (c in raw) {
-        when {
-            c.isDigit() -> append(c)
-            (c == '.' || c == ',') && !dotSeen && isNotEmpty() -> {
-                append('.')
-                dotSeen = true
-            }
-        }
-    }
-}.take(6)
+private fun sanitizeCm(raw: String): String = DecimalInput.sanitize(raw, maxDecimals = 1, maxLength = 6)
 
 private fun parseCm(raw: String): Double? =
     Ledger.parseDecimal(raw)?.takeIf { it in CM_MIN..CM_MAX }
@@ -163,7 +154,7 @@ fun MeasurementDetailScreen(
                         verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.SpaceBetween,
                     ) {
-                        StatValue("%.1f".format(latest.valueCm), size = StatSize.Hero, unit = "cm")
+                        StatValue("%.1f".fmt(latest.valueCm), size = StatSize.Hero, unit = "cm")
                         delta?.let {
                             Text(
                                 "${Ledger.signed(it, "cm")} \u00B7 30D",
@@ -288,7 +279,7 @@ private fun ReadingRow(entry: MeasurementEntry, onDelete: () -> Unit) {
     ) {
         Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
             Text(
-                "${"%.1f".format(entry.valueCm)} cm",
+                "${"%.1f".fmt(entry.valueCm)} cm",
                 style = MaterialTheme.typography.titleSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.Ink,

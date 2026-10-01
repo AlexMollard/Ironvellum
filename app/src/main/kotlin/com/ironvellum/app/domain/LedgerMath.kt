@@ -143,8 +143,7 @@ object Ledger {
     }
 
     /** A typed decimal as the keyboard may give it: a comma is a point. */
-    fun parseDecimal(raw: String): Double? =
-        raw.trim().replace(',', '.').toDoubleOrNull()?.takeIf { it.isFinite() }
+    fun parseDecimal(raw: String): Double? = DecimalInput.parse(raw)
 
     // ----------------------------------------------------------- energy
 

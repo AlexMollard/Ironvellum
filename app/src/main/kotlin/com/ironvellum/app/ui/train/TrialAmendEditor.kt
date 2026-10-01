@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.AlertDialog
@@ -31,7 +30,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,6 +43,7 @@ import com.ironvellum.app.ui.components.ExercisePickerSheet
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.decimalKeyboard
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -237,7 +236,7 @@ private fun AmendLoadDialog(
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
                 value = field,
-                onValueChange = { field = it.copy(text = it.text.take(LOAD_INPUT_MAX_CHARS)) },
+                onValueChange = { field = cleanLoadInput(it) },
                 singleLine = true,
                 label = { Text("Load (kg)") },
                 placeholder = { Text("Leave blank for bodyweight") },
@@ -247,7 +246,7 @@ private fun AmendLoadDialog(
                 } else {
                     null
                 },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                keyboardOptions = decimalKeyboard(),
                 colors = fieldColors(accent = IronvellumColors.SystemGreen),
                 modifier = Modifier.fillMaxWidth().focusRequester(focus),
             )

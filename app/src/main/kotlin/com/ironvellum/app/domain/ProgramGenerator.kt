@@ -533,7 +533,7 @@ object ProgramGenerator {
         // The cap is a total for two-dumbbell lifts; the note names the
         // dumbbell the lifter owns, not "48 kg per dumbbells".
         val each = equipment.dumbbellMaxKg ?: cap
-        val eachLabel = if (each % 1.0 == 0.0) each.toInt().toString() else "%.1f".format(each)
+        val eachLabel = if (each % 1.0 == 0.0) each.toInt().toString() else "%.1f".fmt(each)
         val kit = if (GearRequirements.needsPair(exercise.name)) {
             "your $eachLabel kg dumbbells"
         } else {
@@ -1244,7 +1244,7 @@ object ProgramGenerator {
         if (kotlin.math.abs(sets - kotlin.math.round(sets)) < 0.05) {
             kotlin.math.round(sets).toInt().toString()
         } else {
-            "%.1f".format(sets)
+            "%.1f".fmt(sets)
         }
 
     private fun setsPhrase(sets: Double): String =

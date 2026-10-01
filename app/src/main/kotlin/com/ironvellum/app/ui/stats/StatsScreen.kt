@@ -122,6 +122,7 @@ import com.ironvellum.app.domain.BandTable
 import com.ironvellum.app.domain.BandTone
 import com.ironvellum.app.domain.Bands
 import com.ironvellum.app.domain.Ledger
+import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.dashboard.stepsAsOfCaption
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.heightIn
@@ -841,7 +842,7 @@ private fun CalendarLegend(color: Color, label: String) {
 }
 
 /** Keep digits and one separator; a comma is accepted and read as a point. */
-private fun decimalInput(raw: String): String = raw.filter { it.isDigit() || it == '.' || it == ',' }.take(6)
+private fun decimalInput(raw: String): String = DecimalInput.sanitize(raw, maxDecimals = 1, maxLength = 6)
 
 @Composable
 private fun AddStatDialog(

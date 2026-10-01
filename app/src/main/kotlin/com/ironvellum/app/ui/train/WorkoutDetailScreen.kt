@@ -59,6 +59,7 @@ import androidx.lifecycle.ViewModelProvider
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.WorkoutShare
+import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.ShareCardDialog
@@ -587,7 +588,7 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
                             ExerciseMetric.DURATION ->
                                 append(setFigure(metric, 0, totals.secondsWorked, null).figure)
                         }
-                        if (volumeKg > 0.0) append(" · ${"%.0f".format(volumeKg)} kg vol")
+                        if (volumeKg > 0.0) append(" · ${"%.0f".fmt(volumeKg)} kg vol")
                     },
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,

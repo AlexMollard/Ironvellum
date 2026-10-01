@@ -82,6 +82,7 @@ import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.Xp
+import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
@@ -520,7 +521,7 @@ fun DashboardScreen(
                         GaugeStat(
                             label = "STEPS",
                             // Grouped, like the dial it replaces: "10000" read as a raw field.
-                            value = "${"%,d".format(ui.stepsToday)} / ${"%,d".format(STEP_GOAL)}",
+                            value = "${"%,d".fmt(ui.stepsToday)} / ${"%,d".fmt(STEP_GOAL)}",
                             accent = if (ui.stepsToday >= STEP_GOAL) IronvellumColors.SovereignGold
                             else IronvellumColors.EmeraldBright,
                             fraction = (ui.stepsToday.toFloat() / STEP_GOAL).coerceIn(0f, 1f),
@@ -1126,14 +1127,14 @@ private fun StepGauge(steps: Int, goal: Int, modifier: Modifier = Modifier) {
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                "%,d".format(steps),
+                "%,d".fmt(steps),
                 style = MaterialTheme.typography.titleLarge,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 color = if (hit) IronvellumColors.SovereignGold else IronvellumColors.Ink,
             )
             Text(
-                "/ ${"%,d".format(goal)}",
+                "/ ${"%,d".fmt(goal)}",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,

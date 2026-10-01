@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -49,7 +50,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -75,12 +75,14 @@ import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.TrainingSplit
+import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.CrestMark
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
+import com.ironvellum.app.ui.components.decimalKeyboard
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.program.OptionalEquipmentSaver
 import com.ironvellum.app.ui.program.GearPicker
@@ -374,8 +376,8 @@ fun OnboardingScreen(
     // name what is missing instead of leaving a dead button to explain itself.
     val missing = buildList {
         if (name.trim().isEmpty()) add("a name")
-        if (!BodyLimits.validHeight(heightInput.toDoubleOrNull())) add("height")
-        if (!BodyLimits.validWeight(weightInput.toDoubleOrNull())) add("weight")
+        if (!BodyLimits.validHeight(DecimalInput.parse(heightInput))) add("height")
+        if (!BodyLimits.validWeight(DecimalInput.parse(weightInput))) add("weight")
     }
     val profileValid = missing.isEmpty()
 
@@ -477,7 +479,7 @@ fun OnboardingScreen(
                 onContinueProfile = {
                     // Only reachable when profileValid, so the !! is safe -
                     // the same bounds the repository enforces, checked first.
-                    viewModel.saveProfile(name, sex, heightInput.toDoubleOrNull()!!, weightInput.toDoubleOrNull()!!)
+                    viewModel.saveProfile(name, sex, DecimalInput.parse(heightInput)!!, DecimalInput.parse(weightInput)!!)
                     step = 1
                 },
                 onBack = { step -= 1 },
@@ -722,6 +724,7 @@ private fun ProfileStep(
                 onValueChange = { onName(it.take(24)) },
                 label = { Text("Your name") },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(10.dp))
@@ -732,19 +735,19 @@ private fun ProfileStep(
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
                     value = heightInput,
-                    onValueChange = { onHeight(it.filter { c -> c.isDigit() || c == '.' }.take(6)) },
+                    onValueChange = { onHeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
                     label = { Text("Height (cm)") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = decimalKeyboard(ImeAction.Next),
                     modifier = Modifier.weight(1f),
                 )
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
                     value = weightInput,
-                    onValueChange = { onWeight(it.filter { c -> c.isDigit() || c == '.' }.take(6)) },
+                    onValueChange = { onWeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
                     label = { Text("Weight (kg)") },
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = decimalKeyboard(ImeAction.Done),
                     modifier = Modifier.weight(1f),
                 )
             }

@@ -108,11 +108,11 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.width
 import com.ironvellum.app.domain.Relics
-import java.util.Locale
 import androidx.compose.ui.platform.LocalContext
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.domain.Circle
+import com.ironvellum.app.domain.fmt
 
 
 /** What the figures earned while the app was closed, shown once on arrival. */
@@ -306,7 +306,7 @@ private fun achievementFor(result: RollResult): Achievement {
     }
     val notes = when (val reward = result.reward) {
         is Reward.Figures -> listOf("THE VEIL +${reward.count} ECHOES")
-        is Reward.Relic -> listOf("RATE MULTIPLIER ×%.2f".format(reward.multiplier))
+        is Reward.Relic -> listOf("RATE MULTIPLIER ×%.2f".fmt(reward.multiplier))
         is Reward.CrestFrame -> listOf("CREST INSCRIBED", "WEAR IT ON YOUR FOLIO")
     }
     return Achievement(
@@ -455,7 +455,7 @@ private fun RollWindow(state: IdleState, rate: IdleRate, pendingExact: Double) {
                 )
                 RollStat(
                     label = "RELIC",
-                    value = "×${"%.2f".format(state.relicMultiplier)}",
+                    value = "×${"%.2f".fmt(state.relicMultiplier)}",
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -608,7 +608,7 @@ private fun RateDial(
                 color = IronvellumColors.InkMuted,
             )
             Text(
-                "${"%.1f".format(perHour)}",
+                "${"%.1f".fmt(perHour)}",
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp,
@@ -672,7 +672,7 @@ private fun liveEssence(banked: Long, pendingExact: Double): String {
     // Two decimals at EVERY magnitude: falling back to whole units past 1,000
     // froze the counter again — at 20/hour the integer moves once every three
     // minutes. Grouped so six figures stay readable.
-    return "%,.2f".format(total)
+    return "%,.2f".fmt(total)
 }
 
 @Composable
@@ -750,13 +750,13 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
             // relative weight of training vs. permanent skill reads at a glance.
             FactorRow(
                 label = "TRAINING FACTOR",
-                value = "×${"%.2f".format(rate.trainingFactor)}",
+                value = "×${"%.2f".fmt(rate.trainingFactor)}",
                 // How far up its OWN ceiling, not its share of the product.
                 share = ((rate.trainingFactor - 1.0) / (Idle.MAX_TRAINING_FACTOR - 1.0)).toFloat(),
             )
             FactorRow(
                 label = "TECHNIQUE FACTOR",
-                value = "×${"%.2f".format(rate.skillFactor)}",
+                value = "×${"%.2f".fmt(rate.skillFactor)}",
                 share = ((rate.skillFactor - 1.0) / (Idle.MAX_SKILL_FACTOR - 1.0)).toFloat(),
             )
             // The four raw inputs (sessions, volume, skills, streak) used to
@@ -783,7 +783,7 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
             }
             if (inputsOpen) {
                 RateRow("TRIALS · 7 DAYS", "${inputs.sessionsLast7d}")
-                RateRow("VOLUME · 7 DAYS", "${"%,.0f".format(inputs.volumeLast7d)} kg")
+                RateRow("VOLUME · 7 DAYS", "${"%,.0f".fmt(inputs.volumeLast7d)} kg")
                 RateRow("TECHNIQUES MASTERED", "${inputs.skillsUnlocked}")
                 RateRow("OATH", "${inputs.streakDays} D")
             }
@@ -831,7 +831,7 @@ private fun AwayWindow(report: AwayReport) {
             verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Text(
-                "+%,d".format(report.essence),
+                "+%,d".fmt(report.essence),
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
                 fontSize = 32.sp,
@@ -885,7 +885,7 @@ private fun CapWindow() {
 
 // Grouping separators follow the reader's locale, stated explicitly so the
 // format never silently depends on the JVM default.
-private fun formatEssence(value: Long): String = String.format(Locale.getDefault(), "%,d", value)
+private fun formatEssence(value: Long): String = "%,d".fmt(value)
 
 /** Display name per reward type — `Reward` has no shared name property. */
 private fun rewardName(reward: Reward): String = when (reward) {
@@ -1004,7 +1004,7 @@ private fun RelicVault(relics: List<RelicHolding>) {
             )
             if (relics.isNotEmpty()) {
                 Text(
-                    "VAULT TOTAL \u00d7%.2f".format(
+                    "VAULT TOTAL \u00d7%.2f".fmt(
                         Relics.effectiveMultiplier(relics.map { it.multiplier }),
                     ),
                     style = MaterialTheme.typography.labelSmall,
@@ -1065,9 +1065,9 @@ private fun RelicVault(relics: List<RelicHolding>) {
                             Text(
                                 // Its real contribution, not a flat label: the
                                 // rank sets the weight, so show what it adds.
-                                "+%.2f RATE \u00b7 %s".format(
+                                "+%.2f RATE \u00b7 %s".fmt(
                                     (relic.multiplier - 1.0) * Relics.weightAt(index),
-                                    if (isActive) "FULL WEIGHT" else "%d%% WEIGHT".format(
+                                    if (isActive) "FULL WEIGHT" else "%d%% WEIGHT".fmt(
                                         (Relics.weightAt(index) * 100).toInt(),
                                     ),
                                 ),
@@ -1080,7 +1080,7 @@ private fun RelicVault(relics: List<RelicHolding>) {
                             )
                         }
                         Text(
-                            "×%.2f".format(relic.multiplier),
+                            "×%.2f".fmt(relic.multiplier),
                             style = MaterialTheme.typography.titleMedium,
                             fontFamily = ChakraPetch,
                             fontWeight = FontWeight.Bold,
@@ -1143,7 +1143,7 @@ private fun OddsTable() {
                 }
                 if (odds.relicChance > 0.0) {
                     OddsLine(
-                        "Relic \u00d7%.2f\u2013\u00d7%.2f".format(odds.relicLow, odds.relicHigh),
+                        "Relic \u00d7%.2f\u2013\u00d7%.2f".fmt(odds.relicLow, odds.relicHigh),
                         formatChance(odds.relicChance),
                     )
                 }
@@ -1193,7 +1193,7 @@ private fun OddsLine(label: String, chance: String) {
 /** Whole percents where possible: "1%" reads better than "1.0%". */
 private fun formatChance(fraction: Double): String {
     val pct = fraction * 100.0
-    return if (pct % 1.0 == 0.0) "${pct.toInt()}%" else "%.1f%%".format(pct)
+    return if (pct % 1.0 == 0.0) "${pct.toInt()}%" else "%.1f%%".fmt(pct)
 }
 
 private fun rarityLabel(rarity: RewardRarity): String =

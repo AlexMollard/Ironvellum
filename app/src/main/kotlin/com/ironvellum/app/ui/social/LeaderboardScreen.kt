@@ -65,6 +65,7 @@ import com.ironvellum.app.data.cloud.LiftBoardRow
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Lift
 import com.ironvellum.app.domain.LiftBoards
+import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.ironvellumAccount
@@ -1099,10 +1100,10 @@ private fun MusterEmptyPanel(onRefresh: () -> Unit) {
 
 /** Thousands-separated essence, e.g. 12,480. */
 private fun formatEssence(value: Long): String =
-    java.text.NumberFormat.getIntegerInstance().format(value)
+    "%,d".fmt(value)
 
 /** Extraction rate as e.g. 218.2/H. */
-private fun formatRate(ratePerHour: Double): String = "%.1f/H".format(ratePerHour)
+private fun formatRate(ratePerHour: Double): String = "%.1f/H".fmt(ratePerHour)
 
 /** Which slice of a lift board ranks: the best set of the last 7 days, or the best ever. */
 private enum class LiftWindow(val label: String) {

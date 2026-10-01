@@ -232,7 +232,7 @@ object ProgramRules {
     }
 
     private fun maxE1rmLabel(e1rm: Double): String =
-        if (e1rm % 1.0 == 0.0) e1rm.toInt().toString() else "%.1f".format(e1rm)
+        if (e1rm % 1.0 == 0.0) e1rm.toInt().toString() else "%.1f".fmt(e1rm)
 
     private fun loadFromE1rm(
         exerciseName: String,

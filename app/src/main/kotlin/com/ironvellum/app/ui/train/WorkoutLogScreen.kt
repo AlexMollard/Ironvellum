@@ -53,6 +53,7 @@ import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.components.metricTotals
 import com.ironvellum.app.ui.components.SectionHeader
@@ -239,9 +240,9 @@ private fun LifetimeLedger(
             // Counts get explicit plural forms — appending "s" rendered "1 WORKOUTs".
             LedgerStat("${sessions.size}", plural(sessions.size, "TRIAL", "TRIALS"))
             LedgerStat("${doneSets.size}", plural(doneSets.size, "SET", "SETS"))
-            LedgerStat("%,d".format(totals.reps), plural(totals.reps, "REP", "REPS"))
-            if (totals.heldSeconds > 0) LedgerStat("%,d".format(totals.heldSeconds), "SEC HELD")
-            if (totals.attempts > 0) LedgerStat("%,d".format(totals.attempts), plural(totals.attempts, "ATTEMPT", "ATTEMPTS"))
+            LedgerStat("%,d".fmt(totals.reps), plural(totals.reps, "REP", "REPS"))
+            if (totals.heldSeconds > 0) LedgerStat("%,d".fmt(totals.heldSeconds), "SEC HELD")
+            if (totals.attempts > 0) LedgerStat("%,d".fmt(totals.attempts), plural(totals.attempts, "ATTEMPT", "ATTEMPTS"))
             // One slot for timed and distance work: both same-unit totals, and
             // either may be absent from a history that never logged them.
             if (totals.km > 0 || totals.secondsWorked > 0) {
@@ -249,7 +250,7 @@ private fun LifetimeLedger(
                 val minPart = if (totals.secondsWorked > 0) "${(totals.secondsWorked + 59) / 60} MIN" else null
                 LedgerStat(listOfNotNull(kmPart, minPart).joinToString(" · "), "KM · MIN")
             }
-            LedgerStat("%,d".format(totalXp), "XP")
+            LedgerStat("%,d".fmt(totalXp), "XP")
         }
         Spacer(Modifier.height(14.dp))
         // Strength across the most recent stretch; a longer series just turns
@@ -340,7 +341,7 @@ private fun LogRow(
             // activity-only trial): a gold "0 STR" read as a failing grade.
             if (session.strengthScore > 0) {
                 Spacer(Modifier.width(8.dp))
-                ScorePill("%,d".format(session.strengthScore), "STR", IronvellumColors.SovereignGold)
+                ScorePill("%,d".fmt(session.strengthScore), "STR", IronvellumColors.SovereignGold)
             }
             // Annotation glyphs so annotated sessions are findable at a glance
             // without opening each one.
@@ -371,10 +372,10 @@ private fun LogRow(
                 val exerciseCount = sets.map { it.exerciseId }.distinct().size
                 append(exerciseCount).append(' ').append(plural(exerciseCount, "exercise", "exercises"))
                 append(" · ").append(doneSets.size).append("/").append(sets.size).append(" sets")
-                if (totals.reps > 0) append(" · ").append("%,d".format(totals.reps)).append(' ').append(plural(totals.reps, "rep", "reps"))
-                if (totals.heldSeconds > 0) append(" · ").append("%,d".format(totals.heldSeconds)).append("s held")
+                if (totals.reps > 0) append(" · ").append("%,d".fmt(totals.reps)).append(' ').append(plural(totals.reps, "rep", "reps"))
+                if (totals.heldSeconds > 0) append(" · ").append("%,d".fmt(totals.heldSeconds)).append("s held")
                 if (totals.attempts > 0) {
-                    append(" · ").append("%,d".format(totals.attempts)).append(' ').append(plural(totals.attempts, "attempt", "attempts"))
+                    append(" · ").append("%,d".fmt(totals.attempts)).append(' ').append(plural(totals.attempts, "attempt", "attempts"))
                 }
                 if (totals.km > 0) append(" · ").append(formatBodyValue(totals.km)).append(" km")
                 if (totals.secondsWorked > 0) {

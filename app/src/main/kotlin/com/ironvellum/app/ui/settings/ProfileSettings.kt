@@ -21,9 +21,11 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SettingsGroup
+import com.ironvellum.app.ui.components.decimalKeyboard
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
@@ -90,13 +92,13 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 shape = MaterialTheme.shapes.small,
                 value = heightInput,
                 onValueChange = {
-                    heightInput = it.filter { c -> c.isDigit() || c == '.' }.take(6)
+                    heightInput = DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)
                     viewModel.clearHeightStatus()
                 },
                 label = { Text("Height (cm)") },
                 isError = heightStatus.error != null,
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                keyboardOptions = decimalKeyboard(),
                 keyboardActions = KeyboardActions(onDone = {
                     viewModel.setHeight(heightInput)
                     focus.clearFocus()

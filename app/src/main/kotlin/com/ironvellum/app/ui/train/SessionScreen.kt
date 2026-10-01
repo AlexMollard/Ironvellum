@@ -71,10 +71,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.ui.text.TextRange
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -131,6 +129,7 @@ import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.plural
+import com.ironvellum.app.ui.components.decimalKeyboard
 import com.ironvellum.app.ui.launchGuarded
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -159,6 +158,8 @@ import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.WEIGHTED_MODIFIER
 import com.ironvellum.app.domain.applicableModifiers
+import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.program.RiteMusclesDialog
 import com.ironvellum.app.ui.program.ShareLevel
 import com.ironvellum.app.ui.program.musclesAt
@@ -1005,7 +1006,7 @@ fun SessionScreen(
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
                     value = field,
-                    onValueChange = { field = it.copy(text = it.text.take(LOAD_INPUT_MAX_CHARS)) },
+                    onValueChange = { field = cleanLoadInput(it) },
                     singleLine = true,
                     label = { Text("Load (kg)") },
                     placeholder = { Text("Leave blank for bodyweight") },
@@ -1015,7 +1016,7 @@ fun SessionScreen(
                     } else {
                         null
                     },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                    keyboardOptions = decimalKeyboard(),
                     colors = fieldColors(accent = IronvellumColors.SystemGreen),
                     modifier = Modifier.fillMaxWidth().focusRequester(focus),
                 )
@@ -1695,7 +1696,7 @@ private fun SetDeltaBadge(delta: SetRecords.Delta?, displaySetNo: Int) {
         // Shortfall is muted, never red: a lighter back-off set is normal.
         val colour = if (delta.deltaScore >= 0.0) IronvellumColors.EmeraldBright else IronvellumColors.InkMuted
         Text(
-            (if (delta.deltaScore >= 0.0) "▲ +" else "▽ ") + "%.1f".format(delta.deltaScore),
+            (if (delta.deltaScore >= 0.0) "▲ +" else "▽ ") + "%.1f".fmt(delta.deltaScore),
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             color = colour,
@@ -1715,6 +1716,12 @@ internal const val MAX_LOAD_KG = 500.0
 
 internal const val LOAD_INPUT_MAX_CHARS = 7
 
+/** Loads are kept to the gram, see [parseLoadKg]. */
+internal const val LOAD_INPUT_DECIMALS = 3
+
+internal fun cleanLoadInput(typed: TextFieldValue): TextFieldValue =
+    typed.copy(text = DecimalInput.sanitize(typed.text, LOAD_INPUT_DECIMALS, LOAD_INPUT_MAX_CHARS))
+
 internal fun stepDownKg(kg: Double?): Double? =
     kg?.let { (kotlin.math.ceil(it / LOAD_STEP_KG - 1e-9) - 1) * LOAD_STEP_KG }?.takeIf { it > 0.0 }
 
@@ -1726,11 +1733,10 @@ internal fun stepUpKg(kg: Double?): Double =
  * the value is kept to the gram. Anything else, or out of range, fails.
  */
 internal fun parseLoadKg(text: String): Result<Double> {
-    val trimmed = text.trim().replace(',', '.')
-    if (trimmed.isEmpty()) return Result.success(0.0)
-    val kg = trimmed.toDoubleOrNull()
+    if (text.isBlank()) return Result.success(0.0)
+    val kg = DecimalInput.parse(text)
         ?: return Result.failure(IllegalArgumentException("not a number: $text"))
-    if (kg.isNaN() || kg < 0.0 || kg > MAX_LOAD_KG) return Result.failure(IllegalArgumentException("out of range: $text"))
+    if (kg < 0.0 || kg > MAX_LOAD_KG) return Result.failure(IllegalArgumentException("out of range: $text"))
     return Result.success(Math.round(kg * 1000.0) / 1000.0)
 }
 

@@ -30,6 +30,7 @@ import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.StatEntry
 import com.ironvellum.app.domain.STEP_GOAL
 import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.BarChart
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkListRow
@@ -277,4 +278,4 @@ private fun confidenceWord(confidence: EnergyConfidence): String = when (confide
 private fun shortDate(date: LocalDate): String =
     date.format(java.time.format.DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
 
-private fun fmtInt(v: Int): String = String.format(Locale.getDefault(), "%,d", v)
+private fun fmtInt(v: Int): String = "%,d".fmt(v)

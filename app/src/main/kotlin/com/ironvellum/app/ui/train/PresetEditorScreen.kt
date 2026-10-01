@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
@@ -40,7 +41,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -55,8 +55,11 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.decimalKeyboard
+import com.ironvellum.app.ui.components.wholeKeyboard
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -180,9 +183,9 @@ class PresetEditorViewModel(
                 entries = current.entries.map {
                     Repository.PresetDraftEntry(
                         exerciseId = it.exerciseId,
-                        targetSets = it.sets.toIntOrNull()?.coerceIn(1, 30) ?: 3,
-                        targetReps = it.reps.toIntOrNull()?.coerceIn(1, 500) ?: 10,
-                        targetWeightKg = it.weight.toDoubleOrNull(),
+                        targetSets = DecimalInput.parseWhole(it.sets)?.coerceIn(1, 30) ?: 3,
+                        targetReps = DecimalInput.parseWhole(it.reps)?.coerceIn(1, 500) ?: 10,
+                        targetWeightKg = DecimalInput.parse(it.weight),
                         modifiers = it.modifiers.trim(),
                     )
                 },
@@ -468,34 +471,34 @@ private fun EntryRow(
         when (metric) {
             ExerciseMetric.REPS -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Reps", entry.reps, Modifier.weight(1f)) { onEntry(entry.copy(reps = it)) }
-                    NumberField("kg", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
+                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Reps", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS) { onEntry(entry.copy(reps = it)) }
+                    NumberField("kg", entry.weight, Modifier.weight(1f), decimal = true) { onEntry(entry.copy(weight = it)) }
                 }
             }
             ExerciseMetric.HOLD -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Seconds", entry.reps, Modifier.weight(1f)) { onEntry(entry.copy(reps = it)) }
-                    NumberField("kg", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
+                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Seconds", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS) { onEntry(entry.copy(reps = it)) }
+                    NumberField("kg", entry.weight, Modifier.weight(1f), decimal = true) { onEntry(entry.copy(weight = it)) }
                 }
             }
             ExerciseMetric.DURATION -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Min (target)", entry.reps, Modifier.weight(1f)) { onEntry(entry.copy(reps = it)) }
+                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Min (target)", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS) { onEntry(entry.copy(reps = it)) }
                 }
             }
             ExerciseMetric.DISTANCE_TIME -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Km (target)", entry.weight, Modifier.weight(1f)) { onEntry(entry.copy(weight = it)) }
+                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Km (target)", entry.weight, Modifier.weight(1f), decimal = true) { onEntry(entry.copy(weight = it)) }
                 }
             }
             ExerciseMetric.ATTEMPTS_GRADE -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f)) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Attempts (target)", entry.reps, Modifier.weight(1f)) { onEntry(entry.copy(reps = it)) }
+                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Attempts (target)", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS) { onEntry(entry.copy(reps = it)) }
                 }
             }
         }
@@ -510,6 +513,7 @@ private fun EntryRow(
             label = { Text("Modifiers") },
             placeholder = { Text("weighted, deficit, elevated…") },
             singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -537,21 +541,33 @@ private fun RowControl(glyph: String, description: String, enabled: Boolean, onC
     }
 }
 
+/** Sets cap at 30 and reps at 500 when saved, so two and three digits. */
+private const val SETS_DIGITS = 2
+private const val REPS_DIGITS = 3
+
+/** A target figure: kg and km take a decimal, counts (sets, reps, seconds, minutes) do not. */
 @Composable
 private fun NumberField(
     label: String,
     value: String,
     modifier: Modifier = Modifier,
+    decimal: Boolean = false,
+    maxDigits: Int = 3,
     onValueChange: (String) -> Unit,
 ) {
     OutlinedTextField(
         shape = MaterialTheme.shapes.small,
         value = value,
-        onValueChange = { input -> onValueChange(input.filter { it.isDigit() || it == '.' }.take(7)) },
+        onValueChange = { input ->
+            onValueChange(
+                if (decimal) DecimalInput.sanitize(input, maxDecimals = 2, maxLength = 7)
+                else DecimalInput.sanitizeWhole(input, maxDigits),
+            )
+        },
         // One line: a wrapped label made its field taller than its neighbours.
         label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
         singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+        keyboardOptions = if (decimal) decimalKeyboard(ImeAction.Next) else wholeKeyboard(ImeAction.Next),
         modifier = modifier,
     )
 }
