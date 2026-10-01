@@ -55,8 +55,8 @@ android {
         // versionCode MUST be incremented for every Play Store upload; a reused
         // versionCode is rejected by the store. Keep versionName in sync with
         // the release tag. No git-derived scheme — bump it by hand.
-        versionCode = 5
-        versionName = "1.4"
+        versionCode = 6
+        versionName = "1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         testInstrumentationRunnerArguments["listener"] = "com.ironvellum.app.NoLiveSessionListener"
