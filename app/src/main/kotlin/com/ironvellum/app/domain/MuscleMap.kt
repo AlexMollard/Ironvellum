@@ -30,7 +30,7 @@ package com.ironvellum.app.domain
  * whole trapezius: its lower fibres pull the blade down in every pull-up,
  * its middle fibres squeeze it back with the rhomboids in every row, its
  * upper fibres shrug, hold a loaded hinge and upward-rotate overhead (0.5
- * each; 1.0 on shrugs). Rows lead with the rhomboids. Serratus
+ * each; 1.0 on shrugs and the prone Y raise). Rows lead with the rhomboids. Serratus
  * protracts and upward-rotates the blade (push-ups, overhead and handstand
  * pressing). The rotator cuff holds the ball of the shoulder in its socket
  * whenever the arm works overhead or pulls under load - pull-ups, rows,
@@ -159,7 +159,8 @@ object MuscleMap {
                 Muscle.TRICEPS to 1.0, Muscle.MID_CHEST to 0.5, Muscle.FRONT_DELTS to 0.5,
                 Muscle.SERRATUS to 0.5,
             ),
-            pattern = MovementPattern.HORIZONTAL_PUSH, compound = true, stretchBias = true,
+            // Triceps loaded with the shoulder neutral, not long: as the close-grip bench.
+            pattern = MovementPattern.HORIZONTAL_PUSH, compound = true, stretchBias = false,
         ))
         put("pike push-up", verticalPress())
         put("handstand push-up", verticalPress())
@@ -173,7 +174,12 @@ object MuscleMap {
         ))
         // ---- Base catalogue: shoulder health ----
         put("prone y raise", ExerciseProfile(
-            muscles = mapOf(Muscle.ROTATOR_CUFF to 1.0, Muscle.TRAPS to 0.5, Muscle.REAR_DELTS to 0.5),
+            // The lower and middle trapezius lead prone overhead elevation
+            // (Ekstrom 2003); the delts and cuff assist and steady it.
+            muscles = mapOf(
+                Muscle.TRAPS to 1.0, Muscle.REAR_DELTS to 0.5, Muscle.SIDE_DELTS to 0.5,
+                Muscle.ROTATOR_CUFF to 0.5,
+            ),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = false,
         ))
         put("dumbbell external rotation", ExerciseProfile(
@@ -312,9 +318,9 @@ object MuscleMap {
         // prices EFFORT for XP and the strength score; applied here it would
         // turn a near-maximal 10 s tuck lever into a fifth of a set while a
         // 3-rep pull-up set counted whole.
-        put("l-sit", lSit())
+        put("l-sit", lSit(triceps = true))
         // Wider or higher legs load the same compression harder.
-        put("straddle l-sit", lSit())
+        put("straddle l-sit", lSit(triceps = true))
         put("v-sit", lSit())
         // The lever and planche lines. No longitudinal trial measured growth
         // from any of them, so every share is movement anatomy on the 1.0 /
@@ -367,8 +373,10 @@ object MuscleMap {
         ))
         put("sumo deadlift", ExerciseProfile(
             muscles = mapOf(
-                Muscle.HAMSTRINGS to 0.5, Muscle.GLUTES to 1.0, Muscle.ADDUCTORS to 1.0,
+                Muscle.GLUTES to 1.0, Muscle.ADDUCTORS to 1.0, Muscle.HAMSTRINGS to 0.5,
                 Muscle.QUADS to 0.5, Muscle.LOWER_BACK to 0.5,
+                // The grip holds the bar through the whole pull, as in the deadlift.
+                Muscle.FOREARMS to 0.5,
             ),
             pattern = MovementPattern.HINGE, compound = true, stretchBias = true,
         ))
@@ -398,7 +406,8 @@ object MuscleMap {
         put("arnold press", ExerciseProfile(
             muscles = mapOf(
                 Muscle.FRONT_DELTS to 1.0, Muscle.SIDE_DELTS to 0.5, Muscle.TRICEPS to 0.5,
-                Muscle.TRAPS to 0.5, Muscle.SERRATUS to 0.5,
+                // The cuff steadies overhead work, as in every other press.
+                Muscle.TRAPS to 0.5, Muscle.SERRATUS to 0.5, Muscle.ROTATOR_CUFF to 0.5,
             ),
             pattern = MovementPattern.VERTICAL_PUSH, compound = true, stretchBias = true,
         ))
@@ -410,11 +419,16 @@ object MuscleMap {
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = false,
         ))
         put("front raise", ExerciseProfile(
-            muscles = mapOf(Muscle.FRONT_DELTS to 1.0),
+            // Shoulder flexion: the clavicular chest assists.
+            muscles = mapOf(Muscle.FRONT_DELTS to 1.0, Muscle.UPPER_CHEST to 0.5),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = false,
         ))
         put("reverse fly", ExerciseProfile(
-            muscles = mapOf(Muscle.REAR_DELTS to 1.0, Muscle.RHOMBOIDS to 0.5, Muscle.ROTATOR_CUFF to 0.5),
+            // The middle trapezius retracts the blade with the rhomboids.
+            muscles = mapOf(
+                Muscle.REAR_DELTS to 1.0, Muscle.RHOMBOIDS to 0.5, Muscle.TRAPS to 0.5,
+                Muscle.ROTATOR_CUFF to 0.5,
+            ),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = false,
         ))
         put("dumbbell fly", fly())
@@ -426,12 +440,14 @@ object MuscleMap {
         ))
         put("reverse curl", ExerciseProfile(
             // Pronated grip: weaker still for the biceps; the brachioradialis
-            // (forearms) works hard beside the brachialis.
-            muscles = mapOf(Muscle.BRACHIALIS to 1.0, Muscle.FOREARMS to 0.5, Muscle.BICEPS to 0.5),
+            // (forearms) is the strongest flexor here, a co-prime mover with
+            // the brachialis.
+            muscles = mapOf(Muscle.BRACHIALIS to 1.0, Muscle.FOREARMS to 1.0, Muscle.BICEPS to 0.5),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = false,
         ))
         put("preacher curl", ExerciseProfile(
-            muscles = mapOf(Muscle.BICEPS to 1.0, Muscle.BRACHIALIS to 0.5),
+            // The brachioradialis and grip work in every curl.
+            muscles = mapOf(Muscle.BICEPS to 1.0, Muscle.BRACHIALIS to 0.5, Muscle.FOREARMS to 0.5),
             pattern = MovementPattern.ISOLATION, compound = false, stretchBias = true,
         ))
         put("dumbbell shrug", shrug())
@@ -561,9 +577,10 @@ object MuscleMap {
         put("one-arm negative push-up", pressFamily(MovementPattern.HORIZONTAL_PUSH, pushUp = true))
         put("one-arm push-up", pressFamily(MovementPattern.HORIZONTAL_PUSH, pushUp = true))
         put("bench dip", ExerciseProfile(
-            // Triceps-led; the chest share is the dip's costal fibres.
+            // Triceps-led; the chest share is the dip's costal fibres. Elbow
+            // and shoulder extension together: a press, like the other dips.
             muscles = mapOf(Muscle.TRICEPS to 1.0, Muscle.LOWER_CHEST to 0.5, Muscle.FRONT_DELTS to 0.5),
-            pattern = MovementPattern.ISOLATION, compound = false, stretchBias = false,
+            pattern = MovementPattern.HORIZONTAL_PUSH, compound = true, stretchBias = false,
         ))
         put("parallel bar dip", dip())
         put("pike press", verticalPress())
@@ -600,7 +617,12 @@ object MuscleMap {
         put("strict muscle-up", muscleUp(Muscle.TRICEPS))
         put("inverted muscle-up", muscleUp(Muscle.FRONT_DELTS))
         put("handstand-to-bridge", ExerciseProfile(
-            muscles = mapOf(Muscle.LOWER_BACK to 0.5, Muscle.ABS to 0.5, Muscle.FRONT_DELTS to 0.5),
+            // The same loaded arch as the stand-to-stand bridge; the glutes
+            // extend the hips and the triceps lock the arms overhead.
+            muscles = mapOf(
+                Muscle.LOWER_BACK to 1.0, Muscle.FRONT_DELTS to 0.5, Muscle.GLUTES to 0.5,
+                Muscle.ABS to 0.5, Muscle.TRICEPS to 0.5,
+            ),
             pattern = MovementPattern.CORE, compound = false, stretchBias = true,
         ))
         put("stand-to-stand bridge", ExerciseProfile(
@@ -718,11 +740,12 @@ object MuscleMap {
             Muscle.HAMSTRINGS to 0.5, Muscle.HIP_FLEXORS to 0.5, Muscle.GLUTES to 0.5,
             pattern = MovementPattern.LUNGE,
         ))
-        // Hanging with the arms behind: the back lever's shoulder flexors, held long.
+        // Hanging with the arms behind: the back lever's shoulder flexors, held
+        // long. A hang from the bar, so the hanging family's pattern, not a press.
         put("german hang", hold(
             Muscle.FRONT_DELTS to 0.5, Muscle.UPPER_CHEST to 0.5, Muscle.BICEPS to 0.5, Muscle.ROTATOR_CUFF to 0.5,
             Muscle.FOREARMS to 0.5,
-            pattern = MovementPattern.HORIZONTAL_PUSH,
+            pattern = MovementPattern.VERTICAL_PULL,
         ))
         put("wrist prep", hold(Muscle.FOREARMS to 1.0, pattern = MovementPattern.ISOLATION, compound = false))
         // ---- Activities: cardio ----
@@ -753,7 +776,10 @@ object MuscleMap {
         // A heavy rope loads the shoulders turning it.
         put("weighted skipping", activity(MovementPattern.LUNGE, *rope, Muscle.FRONT_DELTS, Muscle.SIDE_DELTS))
         // ---- Activities: water ----
-        val stroke = arrayOf(Muscle.LATS, Muscle.FRONT_DELTS, Muscle.TRICEPS, Muscle.ROTATOR_CUFF, Muscle.HIP_FLEXORS)
+        // The serratus protracts and upward-rotates the blade through each stroke.
+        val stroke = arrayOf(
+            Muscle.LATS, Muscle.FRONT_DELTS, Muscle.TRICEPS, Muscle.ROTATOR_CUFF, Muscle.HIP_FLEXORS, Muscle.SERRATUS,
+        )
         put("swimming", activity(MovementPattern.HORIZONTAL_PULL, *stroke))
         // Treading water is the eggbeater kick: the adductors and quads.
         put("water polo", activity(MovementPattern.HORIZONTAL_PULL, *stroke, Muscle.ADDUCTORS, Muscle.QUADS))
@@ -881,12 +907,17 @@ object MuscleMap {
         pattern = MovementPattern.HORIZONTAL_PUSH,
     )
 
-    /** L-sit holds: the hip flexors lift the legs while the abs curl the pelvis. */
-    private fun lSit() = ExerciseProfile(
-        muscles = mapOf(
-            Muscle.ABS to 1.0, Muscle.HIP_FLEXORS to 1.0, Muscle.FOREARMS to 0.5,
-            Muscle.QUADS to 0.5,
-        ),
+    /**
+     * L-sit holds: the hip flexors lift the legs while the abs curl the
+     * pelvis. [triceps] when the hands press the floor: the elbows stay
+     * locked under the whole body, as in the manna.
+     */
+    private fun lSit(triceps: Boolean = false) = ExerciseProfile(
+        muscles = linkedMapOf(Muscle.ABS to 1.0, Muscle.HIP_FLEXORS to 1.0).apply {
+            if (triceps) put(Muscle.TRICEPS, 0.5)
+            put(Muscle.FOREARMS, 0.5)
+            put(Muscle.QUADS, 0.5)
+        },
         pattern = MovementPattern.CORE, compound = false, stretchBias = false,
     )
 

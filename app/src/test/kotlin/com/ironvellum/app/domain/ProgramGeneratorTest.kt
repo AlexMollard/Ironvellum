@@ -1194,10 +1194,15 @@ class ProgramGeneratorTest {
         val top = ProgramRules.weeklySetTarget(VolumeLevel.STANDARD, TrainingFocus.STRENGTH).endInclusive
         // Within one lateral-raise set of the top: the next would overshoot it.
         assertTrue("side delts at ${volume[Muscle.SIDE_DELTS]}", volume[Muscle.SIDE_DELTS]!! > top - 1.0)
+        // One lateral-raise block at its 5-set ceiling: the prone Y raises
+        // the rear-delt priority brings credit the side delts the rest.
         assertEquals(
-            10, entriesOf(prioritised).filter { it.exerciseName == "Lateral Raise" }.sumOf { it.sets },
+            5, entriesOf(prioritised).filter { it.exerciseName == "Lateral Raise" }.sumOf { it.sets },
         )
-        assertEquals(volumeOf(plain)[Muscle.FRONT_DELTS]!!, volume[Muscle.FRONT_DELTS]!!, 1e-9)
+        // Across the week one archer push-up set gives way to one more
+        // shoulder-press set: front delts +1.0 - 0.7. No set is ever added
+        // for the front delts themselves (below).
+        assertEquals(volumeOf(plain)[Muscle.FRONT_DELTS]!! + 0.3, volume[Muscle.FRONT_DELTS]!!, 1e-9)
         assertTrue(entriesOf(prioritised).none { filledFor(it) == Muscle.FRONT_DELTS })
     }
 
