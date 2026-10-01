@@ -226,4 +226,27 @@ object Ledger {
 
     fun sealedThisMonth(sealedDays: Set<LocalDate>, today: LocalDate): Int =
         sealedDays.count { it.year == today.year && it.month == today.month && it <= today }
+
+    // ------------------------------------------------------------ summary text
+
+    /** 8240 -> "8.2k", 950 -> "950": a step count short enough for a row. */
+    fun compactCount(n: Int): String =
+        if (n >= 1000) String.format(java.util.Locale.US, "%.1fk", n / 1000.0) else n.toString()
+
+    /** 430 -> "7h 10m". */
+    fun sleepText(minutes: Int): String = "${minutes / 60}h ${minutes % 60}m"
+
+    /**
+     * What the Daily row on the body tab says: steps, sleep, active kcal for
+     * today, only the parts Health Connect delivered, or null when it has
+     * delivered nothing for today.
+     */
+    fun dailySummary(todayRow: HealthDay?): String? {
+        val parts = listOfNotNull(
+            todayRow?.steps?.takeIf { it > 0 }?.let { "${compactCount(it)} steps" },
+            todayRow?.sleepMinutes?.takeIf { it > 0 }?.let { sleepText(it) },
+            todayRow?.activeKcal?.takeIf { it > 0 }?.let { "$it kcal" },
+        )
+        return parts.takeIf { it.isNotEmpty() }?.joinToString(" \u00B7 ")
+    }
 }

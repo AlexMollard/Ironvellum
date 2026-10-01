@@ -1,6 +1,5 @@
 package com.ironvellum.app.ui.stats
 
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -20,6 +19,15 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
+import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.foundation.layout.wrapContentHeight
+import com.ironvellum.app.ui.components.LedgerSpace
+import com.ironvellum.app.domain.MeasurementEntry
+import com.ironvellum.app.domain.Measurements
+import kotlinx.coroutines.flow.Flow
 import androidx.compose.material3.AlertDialog
 import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.compose.material3.Icon
@@ -133,6 +141,8 @@ private fun toneColor(tone: BandTone): Color = when (tone) {
 }
 
 data class StatsUi(
+    /** False until the first real emission: the screen draws nothing rather than flash its empty state. */
+    val loaded: Boolean = false,
     val stats: List<StatEntry> = emptyList(),
     val completedDates: Set<LocalDate> = emptySet(),
     val scheduledDays: Set<Int> = emptySet(),
@@ -147,27 +157,29 @@ data class StatsUi(
     val sex: Sex = Sex.MALE,
     /** When Health Connect last returned days this process; null until it has. */
     val healthSyncedAtMs: Long? = null,
+    val measurements: List<MeasurementEntry> = emptyList(),
 )
 
 class StatsViewModel(private val repo: Repository) : ViewModel() {
-    // Five flows exceed combine's arity-4 convenience overload, so the history
-    // group is combined first and joined with the exercise catalogue after.
-    val log: StateFlow<Triple<List<StatEntry>, List<Pair<WorkoutSession, List<SessionSet>>>, List<HealthDay>>> =
+    // Not a StateFlow: a stateIn with an empty initial value made `ui` emit a
+    // "loaded" empty screen before Room had answered.
+    private val log: Flow<Triple<List<StatEntry>, List<Pair<WorkoutSession, List<SessionSet>>>, List<HealthDay>>> =
         combine(
             repo.observeStats(),
             repo.observeHistory(),
             repo.observeHealthDays(),
         ) { stats, history, healthDays ->
             Triple(stats, history, healthDays)
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Triple(emptyList(), emptyList(), emptyList()))
+        }
     val ui: StateFlow<StatsUi> = combine(
         log,
         repo.observePresets(),
         repo.observeExercises(),
         repo.observeBodyProfile(),
-        repo.observeHealthSyncedAt(),
-    ) { (stats, history, healthDays), presets, exercises, bodyProfile, syncedAt ->
+        combine(repo.observeHealthSyncedAt(), repo.observeMeasurements()) { syncedAt, tape -> syncedAt to tape },
+    ) { (stats, history, healthDays), presets, exercises, bodyProfile, (syncedAt, tape) ->
         StatsUi(
+            loaded = true,
             stats = stats,
             completedDates = history.map {
                 Instant.ofEpochMilli(it.first.completedAtMs ?: it.first.startedAtMs)
@@ -181,6 +193,7 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
             profileHeight = bodyProfile.first,
             sex = bodyProfile.second,
             healthSyncedAtMs = syncedAt,
+            measurements = tape,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsUi())
 
@@ -188,21 +201,13 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
         viewModelScope.launch { repo.deleteStat(id) }
     }
 
+    fun restoreStat(stat: StatEntry) {
+        viewModelScope.launchGuarded("restore reading") { repo.restoreStat(stat) }
+    }
+
     fun addStat(weightKg: Double, bodyFatPct: Double?) {
         viewModelScope.launchGuarded("log reading") { repo.addStat(weightKg, bodyFatPct) }
     }
-
-    /** Profile sex; feeds the body-fat estimator's formula choice. */
-    val sex: StateFlow<Sex> = repo.observeBodyProfile()
-        .map { it.second }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Sex.MALE)
-
-    /** Latest measured circumference per site, for the estimator prefill. */
-    val latestMeasurements: StateFlow<Map<MeasurementSite, Double>> = repo.observeMeasurements()
-        .map { entries ->
-            entries.sortedBy { it.takenAtMs }.associate { it.site to it.valueCm }
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     fun syncHealthHistory(days: Int = 90) {
         viewModelScope.launch { repo.syncHealthHistory(days) }
@@ -210,11 +215,14 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
 }
 
 /**
- * DAILY, not ACTIVITY: the Train screen's workout history was called the
- * "Activity Log", so one word named both a step count and a training record
- * and the owner kept opening this tab looking for his workouts.
+ * BODY / LIFTS / DAILY. DAILY, not ACTIVITY: the Train screen's workout history
+ * was called the "Activity Log", so one word named both a step count and a
+ * training record. BODY, not FRAME: the tab holds the body.
  */
-private enum class StatsTab(val label: String) { BODY("FRAME"), TRAINING("TRAINING"), DAILY("DAILY") }
+private enum class StatsTab(val label: String) { BODY("BODY"), LIFTS("LIFTS"), DAILY("DAILY") }
+
+/** Panes inside the Ledger. They replace the tabs and answer to Back, so they need no routes. */
+private enum class LedgerPage { MAIN, HISTORY, TAPE }
 
 @Composable
 fun StatsScreen(
@@ -227,413 +235,135 @@ fun StatsScreen(
         viewModel(factory = viewModelFactory { initializer { StatsViewModel(ironvellumRepository()) } }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    // Saveable: a rotation mid-add used to slam the dialog shut and drop the weigh-in.
+    // Everything the lifter chose survives rotation and process death: the
+    // dialog, the tab, the pane, the range, the month and each tab's scroll.
     var showAdd by rememberSaveable { mutableStateOf(false) }
-    var drill by remember { mutableStateOf<String?>(null) }
+    var drill by rememberSaveable { mutableStateOf<String?>(null) }
+    var tabIndex by rememberSaveable { mutableIntStateOf(0) }
+    var pageIndex by rememberSaveable { mutableIntStateOf(0) }
+    var rangeIndex by rememberSaveable { mutableIntStateOf(0) }
+    var monthsBack by rememberSaveable { mutableIntStateOf(0) }
+    val tab = StatsTab.entries[tabIndex]
+    val page = LedgerPage.entries[pageIndex]
+    val range = LedgerRange.entries[rangeIndex]
+    val bodyScroll = rememberScrollState()
+    val liftsScroll = rememberScrollState()
+    val dailyScroll = rememberScrollState()
+    var lastDeleted by remember { mutableStateOf<StatEntry?>(null) }
+
     val today = rememberToday()
     // Health Connect trails the watch: pull the last fortnight whenever the Ledger opens.
     androidx.compose.runtime.LaunchedEffect(Unit) { viewModel.syncHealthHistory(14) }
-    var month by remember { mutableStateOf(YearMonth.from(today)) }
-    var tab by remember { mutableStateOf(StatsTab.BODY) }
-    val latest = ui.stats.firstOrNull()
     val zone = remember { ZoneId.systemDefault() }
+    val latest = ui.stats.firstOrNull()
     val ffmiReading = remember(ui.stats, ui.profileHeight) { Ledger.latestFfmi(ui.stats, ui.profileHeight) }
-    val bmiNow = latest?.let { Ledger.bmiOf(it, ui.profileHeight) }
-    val heightKnown = (ui.profileHeight ?: 0.0) > 0.0 || (latest?.heightCm ?: 0.0) > 0.0
 
-    Column(Modifier.fillMaxSize()) {
-        Spacer(Modifier.height(20.dp))
-        Text(
-            "THE LEDGER",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.ScreenTitle,
-            modifier = Modifier.padding(horizontal = 16.dp),
+    BackHandler(enabled = page != LedgerPage.MAIN) { pageIndex = 0 }
+
+    when (page) {
+        LedgerPage.HISTORY -> WeightHistoryPage(
+            stats = ui.stats,
+            profileHeight = ui.profileHeight,
+            lastDeleted = lastDeleted,
+            onDelete = {
+                lastDeleted = it
+                viewModel.deleteStat(it.id)
+            },
+            onUndo = {
+                lastDeleted?.let(viewModel::restoreStat)
+                lastDeleted = null
+            },
+            onUndoExpired = { lastDeleted = null },
+            onBack = { pageIndex = 0 },
         )
-        Spacer(Modifier.height(12.dp))
-
-        // Segmented control
-        InkSegmented(
-            options = StatsTab.entries.map { it to it.label },
-            selected = tab,
-            onPick = { tab = it },
-            modifier = Modifier.padding(horizontal = 16.dp),
+        LedgerPage.TAPE -> TapePage(
+            entries = ui.measurements,
+            onOpenSite = onOpenMeasurement,
+            onBack = { pageIndex = 0 },
         )
-
-        if (tab == StatsTab.BODY) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
+        LedgerPage.MAIN -> Column(Modifier.fillMaxSize()) {
+            Spacer(Modifier.height(20.dp))
+            Row(
+                Modifier.fillMaxWidth().padding(start = LedgerSpace.Gutter, end = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                Spacer(Modifier.height(16.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    InkPanel(
-                        Modifier.weight(1f),
-                        onClick = if (latest == null) null else ({ drill = "BMI" }),
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            MetricLabel("BMI")
-                            Spacer(Modifier.weight(1f))
-                            TermInfo(Term.BMI, Modifier.size(32.dp))
-                        }
-                        // Paired with FFMI's caption so the two cards stay level.
-                        MetricCaption("body mass index")
-                        MetricValue(
-                            bmiNow?.let { formatBodyValue(it) } ?: "—",
-                            bmiNow?.let { BodyStats.bmiCategory(it) }
-                                ?: "set height in Settings",
-                        )
-                        Spacer(Modifier.height(6.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                "DETAIL",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = ChakraPetch,
-                                color = IronvellumColors.SystemGreen,
-                                letterSpacing = IronvellumTracking.InlineLabel,
-                            )
-                            Text("\u203A", color = IronvellumColors.SystemGreen)
-                        }
-                    }
-                    InkPanel(
-                        Modifier.weight(1f),
-                        onClick = if (latest == null) null else ({ drill = "FFMI" }),
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            MetricLabel("FFMI")
-                            Spacer(Modifier.weight(1f))
-                            TermInfo(Term.FFMI, Modifier.size(32.dp))
-                        }
-                        MetricCaption("muscle mass for your height")
-                        MetricValue(
-                            ffmiReading?.let { formatBodyValue(it.value) } ?: "—",
-                            // ffmi is also null when height is unset — a lifter
-                            // who already logs body fat must not be told to log it.
-                            ffmiReading?.let {
-                                "${BodyStats.ffmiCategory(it.value, ui.sex)} · ${formatDate(it.takenAtMs, "d MMM")}"
-                            } ?: if (!heightKnown) "set height in Settings" else "log body fat %",
-                        )
-                        Spacer(Modifier.height(6.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text(
-                                "DETAIL",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = ChakraPetch,
-                                color = IronvellumColors.SystemGreen,
-                                letterSpacing = IronvellumTracking.InlineLabel,
-                            )
-                            Text("\u203A", color = IronvellumColors.SystemGreen)
-                        }
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                InkPanel(Modifier.fillMaxWidth()) {
-                    MetricLabel("WEIGHT")
-                    // Derived once per data change rather than on every
-                    // recomposition. The saving is algorithmic, not measured: on a
-                    // software-rendered emulator identical scroll sweeps vary by
-                    // ±11 points of janky frames, which is too noisy to attribute
-                    // anything to. A real-device measurement is still owed.
-                    val weights = remember(ui.stats) {
-                        ui.stats.sortedBy { it.takenAtMs }.map { it.weightKg }
-                    }
-                    MetricValueBig(latest?.weightKg?.let { formatBodyValue(it) } ?: "—", "kg")
-                    val plot = remember(ui.stats, today) { Ledger.weightPlot(ui.stats, LedgerRange.ALL, today, zone) }
-                    if (plot != null && plot.values.size >= 2) {
-                        Spacer(Modifier.height(8.dp))
-                        // Placed by date, dated at both ends, and no gold: the
-                        // heaviest weigh-in is not an achievement.
-                        TrendChart(
-                            plot.values,
-                            IronvellumColors.Emerald,
-                            fromZero = false,
-                            positions = plot.positions,
-                            startLabel = shortDate(plot.startDate),
-                            endLabel = shortDate(plot.endDate),
-                            recordMarker = false,
-                        )
-                        plot.deltaKg?.let { ChartCaption("${Ledger.signed(it, "kg")} since ${shortDate(plot.startDate)}") }
-                    } else {
-                        ChartCaption("Two readings draw the line.")
-                    }
-                }
-                Spacer(Modifier.height(10.dp))
-                InkPanel(Modifier.fillMaxWidth()) {
-                    MetricLabel("BMI TREND")
-                    val bmis = remember(ui.stats) {
-                        ui.stats.sortedBy { it.takenAtMs }
-                            .mapNotNull { Ledger.bmiOf(it, ui.profileHeight) }
-                    }
-                    // Was: a second "readings unlock the trend" hint below —
-                    // WEIGHT card above already says it; the big "—" value from
-                    // MetricValueBig stands in until a trend exists.
-                    if (bmis.size >= 2) {
-                        TrendChart(bmis, IronvellumColors.Emerald, fromZero = false, recordMarker = false)
-                        ChartCaption("Latest ${formatBodyValue(bmis.last())} — ${BodyStats.bmiCategory(bmis.last())}")
-                    } else {
-                        // Muted dash placeholder, same treatment as the empty
-                        // measurement tiles.
-                        Text(
-                            "—",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.InkMuted,
-                        )
-                    }
-                }
-                Spacer(Modifier.height(14.dp))
-                IronvellumButton(
-                    "Log a reading",
-                    onClick = { showAdd = true },
-                    modifier = Modifier.fillMaxWidth(),
+                Text(
+                    "THE LEDGER",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                    letterSpacing = IronvellumTracking.ScreenTitle,
+                    modifier = Modifier.weight(1f),
                 )
-                Spacer(Modifier.height(14.dp))
-                // Circumferences sit beside weight/BMI/FFMI: same body tab,
-                // same never-leaves-the-device rule.
-                MeasurementsPanel(onOpenSite = onOpenMeasurement)
-                SectionHeader("Readings")
-                if (ui.stats.isEmpty()) {
-                    // Empty-state art drawn for this screen and never wired in.
-                    Column(
-                        Modifier.fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Image(
-                            painter = painterResource(R.drawable.art_empty_stats),
-                            contentDescription = null,
-                            // Explicit size for the same reason as the rest-day
-                            // art, and 213dp against a 71-unit viewport matches
-                            // its ~9dp rendered stroke exactly.
-                            modifier = Modifier
-                                .size(213.dp)
-                                .alpha(0.6f),
-                        )
-                        Spacer(Modifier.height(10.dp))
-                        Text(
-                            "The Ledger knows nothing of your frame yet. Log a reading to begin.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = IronvellumColors.InkMuted,
-                        )
-                    }
+                Text(
+                    "+ WEIGHT",
+                    style = MaterialTheme.typography.labelLarge,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.SystemGreen,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .clickable(role = androidx.compose.ui.semantics.Role.Button) { showAdd = true }
+                        .heightIn(min = LedgerSpace.Target)
+                        .padding(horizontal = 12.dp)
+                        .wrapContentHeight(),
+                )
+                IconButton(onClick = { pageIndex = LedgerPage.HISTORY.ordinal }) {
+                    Icon(
+                        Icons.Outlined.History,
+                        contentDescription = "Weight history",
+                        tint = IronvellumColors.SystemGreen,
+                    )
                 }
-                // Latest readings only: this section sits in a plain scrolling
-                // Column, so every row listed is composed whether it is on
-                // screen or not, and someone who weighs in daily reaches
-                // thousands. The charts above already carry the whole history,
-                // and the metric detail screens carry it per metric.
-                ui.stats.take(READING_ROWS).forEach { stat ->
-                    InkPanel(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(
-                                    formatDate(stat.takenAtMs, "MMM d, yyyy · HH:mm"),
-                                    style = MaterialTheme.typography.titleSmall,
-                                )
-                                val bmi = Ledger.bmiOf(stat, ui.profileHeight)
-                                Text(
-                                    buildString {
-                                        append("${formatBodyValue(stat.weightKg)} kg")
-                                        // 0.0 is the heightless sentinel, never a real height.
-                                        Ledger.heightFor(stat, ui.profileHeight)?.let { append(" · ${formatBodyValue(it)} cm") }
-                                        stat.bodyFatPct?.let { append(" · ${formatBodyValue(it)}% bf") }
-                                        bmi?.let { append(" · BMI ${formatBodyValue(it)}") }
-                                    },
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = IronvellumColors.InkMuted,
-                                )
-                            }
-                        // One tap on the trash icon used to erase the weigh-in
-                        // outright; it feeds the strength score's weight
-                        // interpolation. Arm first, match the WorkoutLog row.
-                        var armed by remember { mutableStateOf(false) }
-                        if (armed) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    "KEEP",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontFamily = ChakraPetch,
-                                    color = IronvellumColors.InkMuted,
-                                    letterSpacing = IronvellumTracking.InlineLabel,
-                                    modifier = Modifier
-                                        .clip(MaterialTheme.shapes.extraSmall)
-                                        .clickable { armed = false }
-                                        .heightIn(min = 44.dp)
-                                        .padding(horizontal = 10.dp)
-                                        .wrapContentHeight(),
-                                )
-                                Text(
-                                    "DELETE",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontFamily = ChakraPetch,
-                                    color = IronvellumColors.DangerRed,
-                                    letterSpacing = IronvellumTracking.InlineLabel,
-                                    modifier = Modifier
-                                        .clip(MaterialTheme.shapes.extraSmall)
-                                        .clickable {
-                                            armed = false
-                                            viewModel.deleteStat(stat.id)
-                                        }
-                                        .heightIn(min = 44.dp)
-                                        .padding(horizontal = 10.dp)
-                                        .wrapContentHeight(),
-                                )
-                            }
-                        } else {
-                            IconButton(onClick = { armed = true }) {
-                                Icon(Icons.Outlined.Delete, contentDescription = "Delete reading", tint = IronvellumColors.InkMuted)
-                            }
-                        }
-                        }
-                    }
-                }
-                Spacer(Modifier.height(24.dp))
             }
-        } else if (tab == StatsTab.TRAINING) {
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
-            ) {
-                Spacer(Modifier.height(16.dp))
-                // The owner's instinct is that his workout history lives under
-                // Stats. It lives under Train, so put the door here too rather
-                // than expect him to re-learn the map.
-                NavChip(
-                    label = "FULL CHRONICLE",
-                    icon = Icons.Outlined.History,
-                    onClick = onOpenLog,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(4.dp))
-                // Nothing logged yet: one line, not three cards each explaining
-                // in its own words that it has no data. The third card here was
-                // an UNLABELLED chart of per-campaign XP - the same numbers the
-                // cumulative line already draws - captioned "0 campaigns".
-                if (ui.sessions.isEmpty()) {
-                    InkPanel(Modifier.fillMaxWidth()) {
-                        MetricLabel("TRAINING")
-                        ChartCaption("Seal a trial to draw these lines.")
-                    }
-                } else {
-                    InkPanel(Modifier.fillMaxWidth()) {
-                        MetricLabel("CUMULATIVE XP")
-                        val cumulative = remember(ui.sessions) { runningXp(ui.sessions) }
-                        val totalXp = remember(ui.sessions) { ui.sessions.sumOf { it.xpAwarded } }
-                        if (cumulative.size >= 2) {
-                            TrendChart(cumulative, IronvellumColors.SystemGreen)
-                            ChartCaption("$totalXp XP across ${ui.sessions.size} ${plural(ui.sessions.size, "trial", "trials")}")
-                        } else {
-                            ChartCaption("One more trial draws the line.")
-                        }
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    InkPanel(Modifier.fillMaxWidth()) {
-                        MetricLabel("STRENGTH PER TRIAL")
-                        // 0 means "not scored" (no bodyweight existed yet), not a
-                        // collapse in strength — plotting it dropped the line to
-                        // the floor. And TrendChart draws no line below 2 points.
-                        val scores = ui.sessions.map { it.strengthScore.toDouble() }.filter { it > 0.0 }
-                        if (scores.size >= 2) {
-                            TrendChart(scores)
-                            ChartCaption(
-                                "Best ${scores.max().toInt()} · ${scores.size} ${plural(scores.size, "trial", "trials")} · scaled to bodyweight",
-                            )
-                        } else if (scores.size == 1) {
-                            // Scored, just not plottable yet. The old copy said
-                            // "log bodyweight" at a lifter who plainly had.
-                            ChartCaption(
-                                "Best ${scores.first().toInt()} · one more scored trial draws the line.",
-                            )
-                        } else {
-                            ChartCaption("Log bodyweight to score these trials.")
-                        }
-                    }
-                }
-                Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(8.dp))
 
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "TRAINING CALENDAR",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        letterSpacing = IronvellumTracking.SectionHeader,
-                    )
-                }
-                // Month navigation gets its own row: beside the heading at
-                // 360dp the month name wrapped and pushed → off-screen.
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "←",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = IronvellumColors.SystemGreen,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .clickable { month = month.minusMonths(1) }
-                            // "←" is announced as a character, which tells a
-                            // screen-reader user nothing about what it does.
-                            .semantics { contentDescription = "Previous month" }
-                            .size(44.dp)
-                            .wrapContentHeight(),
-                    )
-                    Text(
-                        "${month.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${month.year}",
-                        style = MaterialTheme.typography.titleSmall,
-                        color = IronvellumColors.Ink,
-                        textAlign = TextAlign.Center,
-                        maxLines = 1,
-                        modifier = Modifier.weight(1f),
-                    )
-                    // Unbounded, the arrow paged into empty future months
-                    // forever; the calendar stops at the current month.
-                    val canAdvance = month < YearMonth.from(today)
-                    Text(
-                        "→",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (canAdvance) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
-                        textAlign = TextAlign.Center,
-                        modifier = (if (canAdvance) {
-                            Modifier
-                                .clip(MaterialTheme.shapes.extraSmall)
-                                .clickable { month = month.plusMonths(1) }
-                                .semantics { contentDescription = "Next month" }
-                        } else {
-                            Modifier.semantics { contentDescription = "Next month — already at the current month" }
-                        }).size(44.dp).wrapContentHeight(),
-                    )
-                }
-                Spacer(Modifier.height(10.dp))
-                CalendarGrid(month, ui.completedDates, ui.scheduledDays, today)
-                Spacer(Modifier.height(24.dp))
-            }
-        } else {
-            ActivityTab(
-                days = ui.healthDays,
-                today = today,
-                syncedAtMs = ui.healthSyncedAtMs,
-                profileHeight = ui.profileHeight,
-                stats = ui.stats,
-                sessions = ui.sessions,
-                sessionSets = ui.sessionSets,
-                exercises = ui.exercises,
-                onOpenSettings = onOpenSettings,
+            InkSegmented(
+                options = StatsTab.entries.map { it to it.label },
+                selected = tab,
+                onPick = { tabIndex = it.ordinal },
+                modifier = Modifier.padding(horizontal = LedgerSpace.Gutter),
             )
+
+            // Nothing is drawn until Room has answered: an empty state shown for
+            // a frame reads as "you have no data".
+            if (ui.loaded) {
+                when (tab) {
+                    StatsTab.BODY -> BodyTab(
+                        ui = ui,
+                        today = today,
+                        zone = zone,
+                        scroll = bodyScroll,
+                        range = range,
+                        onRange = { rangeIndex = it.ordinal },
+                        onDrill = { drill = it },
+                        onLogWeight = { showAdd = true },
+                        onOpenLifts = { tabIndex = StatsTab.LIFTS.ordinal },
+                        onOpenTape = { pageIndex = LedgerPage.TAPE.ordinal },
+                        onOpenDaily = { tabIndex = StatsTab.DAILY.ordinal },
+                    )
+                    StatsTab.LIFTS -> LiftsTab(
+                        ui = ui,
+                        today = today,
+                        month = YearMonth.from(today).minusMonths(monthsBack.toLong()),
+                        onMonth = { monthsBack = (monthsBack - it).coerceAtLeast(0) },
+                        scroll = liftsScroll,
+                        onOpenLog = onOpenLog,
+                    )
+                    StatsTab.DAILY -> ActivityTab(
+                        days = ui.healthDays,
+                        today = today,
+                        syncedAtMs = ui.healthSyncedAtMs,
+                        profileHeight = ui.profileHeight,
+                        stats = ui.stats,
+                        sessions = ui.sessions,
+                        sessionSets = ui.sessionSets,
+                        exercises = ui.exercises,
+                        onOpenSettings = onOpenSettings,
+                        scroll = dailyScroll,
+                    )
+                }
+            }
         }
     }
 
@@ -641,8 +371,10 @@ fun StatsScreen(
         AddStatDialog(
             initialWeight = latest?.weightKg?.let { formatBodyValue(it) } ?: "",
             heightCm = ui.profileHeight,
-            sex = viewModel.sex.collectAsStateWithLifecycle().value,
-            measurements = viewModel.latestMeasurements.collectAsStateWithLifecycle().value,
+            sex = ui.sex,
+            measurements = remember(ui.measurements) {
+                Measurements.latest(ui.measurements).mapValues { it.value.valueCm }
+            },
             onDismiss = { showAdd = false },
             onOpenSettings = {
                 showAdd = false
@@ -674,9 +406,90 @@ fun StatsScreen(
     }
 }
 
-private fun runningXp(sessions: List<WorkoutSession>): List<Double> {
-    var total = 0
-    return sessions.map { total += it.xpAwarded; total.toDouble() }
+/**
+ * LIFTS: the calendar leads (the owner opens this tab to see whether he
+ * trained), then the way to the full chronicle and the per-trial strength line.
+ */
+@Composable
+private fun LiftsTab(
+    ui: StatsUi,
+    today: LocalDate,
+    month: YearMonth,
+    onMonth: (Int) -> Unit,
+    scroll: androidx.compose.foundation.ScrollState,
+    onOpenLog: () -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(scroll)
+            .padding(horizontal = LedgerSpace.Gutter),
+    ) {
+        Spacer(Modifier.height(LedgerSpace.Panel))
+        PanelLabel("TRAINING CALENDAR")
+        // Month navigation gets its own row: beside the heading at
+        // 360dp the month name wrapped and pushed the arrow off-screen.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { onMonth(-1) }) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Previous month",
+                    tint = IronvellumColors.SystemGreen,
+                )
+            }
+            Text(
+                "${month.month.name.lowercase().replaceFirstChar { it.uppercase() }} ${month.year}",
+                style = MaterialTheme.typography.titleSmall,
+                color = IronvellumColors.Ink,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                modifier = Modifier.weight(1f),
+            )
+            // Unbounded, the arrow paged into empty future months forever.
+            val canAdvance = month < YearMonth.from(today)
+            IconButton(onClick = { onMonth(1) }, enabled = canAdvance) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = if (canAdvance) "Next month" else "Next month, already at the current month",
+                    tint = if (canAdvance) IronvellumColors.SystemGreen else IronvellumColors.Bracket,
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        CalendarGrid(month, ui.completedDates, ui.scheduledDays, today)
+
+        Spacer(Modifier.height(LedgerSpace.Section))
+        // The owner's instinct is that his workout history lives under the
+        // Ledger. It lives under Train, so put the door here too.
+        NavChip(
+            label = "FULL CHRONICLE",
+            icon = Icons.Outlined.History,
+            onClick = onOpenLog,
+            modifier = Modifier.fillMaxWidth(),
+        )
+
+        Spacer(Modifier.height(LedgerSpace.Section))
+        InkPanel(Modifier.fillMaxWidth()) {
+            PanelLabel("STRENGTH PER TRIAL")
+            // 0 means "not scored" (no bodyweight existed yet), not a collapse
+            // in strength — plotting it dropped the line to the floor.
+            val scores = ui.sessions.map { it.strengthScore.toDouble() }.filter { it > 0.0 }
+            if (scores.size >= 2) {
+                Spacer(Modifier.height(8.dp))
+                TrendChart(scores, IronvellumColors.Emerald, fromZero = false)
+                ChartCaption(
+                    "Best ${scores.max().toInt()} · ${scores.size} ${plural(scores.size, "trial", "trials")} · scaled to bodyweight",
+                )
+            } else if (scores.size == 1) {
+                ChartCaption("Best ${scores.first().toInt()} · one more scored trial draws the line.")
+            } else if (ui.sessions.isEmpty()) {
+                ChartCaption("Seal a trial to draw this line.")
+            } else {
+                ChartCaption("Log bodyweight to score these trials.")
+            }
+        }
+        Spacer(Modifier.height(LedgerSpace.Section))
+    }
 }
 
 @Composable
@@ -1137,11 +950,12 @@ private fun ActivityTab(
     sessionSets: Map<Long, List<SessionSet>>,
     exercises: Map<Long, Exercise>,
     onOpenSettings: () -> Unit,
+    scroll: androidx.compose.foundation.ScrollState,
 ) {
     Column(
         Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scroll)
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(16.dp))

@@ -1458,6 +1458,21 @@ class Repository(
 
     suspend fun deleteStat(id: Long) = statDao.delete(id)
 
+    /**
+     * Puts a deleted reading back with its original id, time, height and body
+     * fat, for the history page's Undo. The id is free again once the row is
+     * gone, so nothing else can have taken it.
+     */
+    suspend fun restoreStat(stat: StatEntry) = statDao.insert(
+        StatEntity(
+            id = stat.id,
+            takenAtMs = stat.takenAtMs,
+            weightKg = stat.weightKg,
+            heightCm = stat.heightCm,
+            bodyFatPct = stat.bodyFatPct,
+        ),
+    )
+
     // ---------------------------------------------------------------- measurements
     // Device-only by design: the cloud schema has no measurement table, so
     // nothing here may grow a sync path.
