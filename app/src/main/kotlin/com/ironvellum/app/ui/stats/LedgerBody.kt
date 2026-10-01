@@ -91,7 +91,7 @@ internal fun BodyTab(
     onRange: (LedgerRange) -> Unit,
     onDrill: (String) -> Unit,
     onLogWeight: () -> Unit,
-    onOpenLifts: () -> Unit,
+    onOpenTraining: () -> Unit,
     onOpenTape: () -> Unit,
     onOpenDaily: () -> Unit,
     onOpenHistory: () -> Unit,
@@ -223,10 +223,10 @@ internal fun BodyTab(
                     t.delta?.let { "${signedInt(it)} vs ${t.trialsBack} ${plural(t.trialsBack, "trial", "trials")} ago" }
                         ?: "first scored trial"
                 } ?: "seal a scored trial",
-                onClick = onOpenLifts,
+                onClick = onOpenTraining,
             )
             InkDivider()
-            ConsistencyRow(weeks, month, onClick = onOpenLifts)
+            ConsistencyRow(weeks, month, onClick = onOpenTraining)
         }
 
         InkPanel(Modifier.fillMaxWidth()) {
