@@ -3,17 +3,22 @@ package com.ironvellum.app.domain
 /**
  * Per-muscle contribution of every catalogue movement.
  *
- * THE SCALE (evidence brief section 9.4) - three levels anchored on the
- * fractional-set method of Pelland 2026, which compared exactly 1 / 0.5 / 0
- * and found the fractional model strongest:
- *  - 1.0 direct: the muscle is loaded through a long ROM at or near full
- *    stretch, with measured or hinge-equivalent longitudinal data behind it;
- *  - 0.5 indirect: the muscle assists or works at short length / submaximally;
- *  - 0 absent: not meaningfully loaded (hamstrings from squats - Kubo 2019).
- * Finer sub-levels (0.3 / 0.7) appear ONLY where a longitudinal trial
- * measured them: the bench/push-up press family (pecs 1.0, front delts 0.7,
- * triceps 0.6, side delts 0.3 - Lanza 2024) and the calf raises (standing
- * calf raise half-credits soleus - Kinoshita 2023).
+ * THE SCALE (evidence brief section 9.4): a share is the sets one set
+ * credits the muscle, judged against weekly targets calibrated to direct
+ * sets, so 1.0 is the ceiling. Anchored on the fractional-set method of
+ * Pelland 2026, which compared 1 / 0.5 / 0 and found the fractional model
+ * strongest. Any value from 0 to 1 is valid; these are the common steps:
+ *  - 1.0 prime mover: the muscle the set is for, loaded hard (often long);
+ *  - 0.75 worked hard but not the lead, with evidence it grows nearly as
+ *    much as the lead (squat adductors at depth - Kubo 2019);
+ *  - 0.5 meaningful helper: assists, or works at short length / submaximally;
+ *  - 0.25 minor synergist or stabiliser: a real but small stimulus;
+ *  - 0 explicitly not credited (hamstrings from squats - Kubo 2019).
+ * A value off these steps carries a short reason comment where it is set:
+ * usually a trial measured it, as in the bench/push-up press family (pecs
+ * 1.0, front delts 0.7, triceps 0.6, side delts 0.3 - Lanza 2024).
+ * Consumers treat a share of 0.5 or more as "trains the muscle"
+ * (generator fills, frequency) and 0.7 or more as main work on the figure.
  *
  * WHAT THE NUMBERS ARE: the 1.0/0.5/0 levels have meta-analytic endorsement;
  * every per-exercise share beyond that is an ESTIMATE from small MRI/US

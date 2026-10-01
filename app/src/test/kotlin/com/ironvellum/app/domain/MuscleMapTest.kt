@@ -68,14 +68,29 @@ class MuscleMapTest {
 
     @Test
     fun `every contribution sits within the 0 to 1 scale`() {
+        // Any value from 0 to 1 is valid (0.6 triceps on the bench is a
+        // measured share); 1.0 is the ceiling, a direct set.
         for (key in MuscleMap.keys) {
             val profile = MuscleMap.profile(key)!!
             profile.muscles.forEach { (muscle, share) ->
+                assertFalse("$key credits $muscle with NaN", share.isNaN())
                 assertTrue(
                     "$key credits $muscle with $share outside the 0..1 scale",
                     share in 0.0..1.0,
                 )
             }
+        }
+    }
+
+    @Test
+    fun `the first full share is the dominant muscle`() {
+        // Redundancy and stretch credit read the dominant muscle as the
+        // largest share, first in map order on a tie: with 1.0 the ceiling
+        // that is always the first 1.0 entry where one exists.
+        for (key in MuscleMap.keys) {
+            val muscles = MuscleMap.profile(key)!!.muscles
+            val lead = muscles.entries.firstOrNull { it.value == 1.0 }?.key ?: continue
+            assertEquals(key, lead, dominant(key))
         }
     }
 

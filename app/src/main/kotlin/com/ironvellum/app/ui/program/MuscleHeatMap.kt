@@ -361,8 +361,10 @@ fun BodyHeatMap(
 enum class ShareLevel(val label: String) { MAIN("MAIN"), ASSIST("ASSIST") }
 
 /**
- * MuscleMap shares are 1.0 direct and 0.5 indirect, with 0.7 and 0.3 only
- * where a trial measured them; 0.7 reads as main work, 0.3 as assisting.
+ * MuscleMap shares run 0 to 1 (1.0 prime mover, 0.75 worked hard, 0.5
+ * helper, 0.25 minor). 0.7 and up reads as main work - the 0.75 step and
+ * the bench press's measured 0.7 front delts - and anything lower, the
+ * press's 0.6 triceps included, as assisting.
  */
 fun shareLevel(share: Double): ShareLevel = if (share >= 0.7) ShareLevel.MAIN else ShareLevel.ASSIST
 
