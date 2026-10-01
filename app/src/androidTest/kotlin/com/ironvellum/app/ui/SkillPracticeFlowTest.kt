@@ -51,8 +51,10 @@ class SkillPracticeFlowTest {
         driver.tab("Codex")
         driver.click(driver.awaitAnyText { it == "PATHS" })
 
-        // Dead Hang is the root of the PULL line, so it is always unlocked and
-        // always the first practisable skill on a fresh profile.
+        // PATHS opens on the grid of paths; Pull is the first tile. Dead Hang is
+        // its root, so it is always unlocked and always the first practisable
+        // skill on a fresh profile.
+        driver.click(driver.awaitAnyText { it == "Pull" })
         driver.click(driver.awaitAnyText { it == "Dead Hang" })
         driver.awaitText("LOG AN ATTEMPT")
 

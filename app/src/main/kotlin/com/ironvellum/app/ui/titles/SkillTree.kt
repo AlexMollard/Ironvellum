@@ -2,208 +2,219 @@ package com.ironvellum.app.ui.titles
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.ui.geometry.Offset
-import com.ironvellum.app.ui.theme.inkBorder
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import com.ironvellum.app.ui.theme.InkCircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.inkStroke
+import com.ironvellum.app.ui.theme.InkCircleShape
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.ui.theme.inkStroke
 
-private val RailW = 18.dp
-private val NodeDot = 12.dp
+/** Width of the left gutter that carries the tier numerals. */
+private val GutterW = 28.dp
+private val NodeSize = 32.dp
+private val TopPad = 4.dp
+private val TextGap = 2.dp
 
-private data class Row(
-    val skill: Skills.SkillDef,
-    val depth: Int,
-    /**
-     * Ancestor rail columns that still have rows pending below this one, each
-     * to the children the rail still has to reach below this row. A rail is
-     * the path to those children, so it takes the colour of the best of them.
-     */
-    val openRails: Map<Int, List<String>>,
-    /** Column this row's line arrives from; null for a chain root. */
-    val fromDepth: Int?,
-    val isLastChild: Boolean,
-    /** Siblings after this one, still reached through the parent's rail. */
-    val laterSiblings: List<String>,
-    /** This skill's own children, reached through the line below its dot. */
-    val children: List<String>,
-)
+/** Room under a row for the lines that join it to the next. */
+private val BusGap = 14.dp
+private val EdgeW = 2.dp
 
-/**
- * Depth-first rail tree. A single-child step keeps its parent's column so a
- * linear progression reads as one unbroken trunk; only a fork indents. Each
- * row draws the half-segment above its dot and, when it has children, the
- * half below — so consecutive rows join instead of floating.
- */
-private fun rows(line: String): List<Row> {
-    val skills = Skills.ALL.filter { it.line == line }
-    val inLine = skills.map { it.name }.toSet()
-    // A technique hangs under its first prerequisite on this path; one whose
-    // prerequisites all sit on other paths is a root here.
-    val parentOf = skills.associate { it.name to it.prerequisites.firstOrNull { p -> p in inLine } }
-    val childrenOf = skills.groupBy { parentOf[it.name] }
-    val roots = skills.filter { parentOf[it.name] == null }
-        .sortedBy { it.tier }
-
-    val out = mutableListOf<Row>()
-
-    fun walk(
-        skill: Skills.SkillDef,
-        depth: Int,
-        openRails: Map<Int, List<String>>,
-        fromDepth: Int?,
-        isLast: Boolean,
-        laterSiblings: List<String>,
-    ) {
-        val kids = childrenOf[skill.name].orEmpty().sortedBy { it.tier }
-        // a lone successor stays in this column; a fork steps right
-        val childDepth = if (kids.size > 1) depth + 1 else depth
-        out += Row(
-            skill = skill,
-            depth = depth,
-            openRails = openRails,
-            fromDepth = fromDepth,
-            isLastChild = isLast,
-            laterSiblings = laterSiblings,
-            children = kids.map { it.name },
-        )
-        kids.forEachIndexed { i, kid ->
-            val later = kids.drop(i + 1).map { it.name }
-            // a fork's rail stays open through each child's subtree until the
-            // last child, carrying the children still below
-            val rails = if (kids.size > 1 && later.isNotEmpty()) openRails + (depth to later) else openRails - depth
-            walk(kid, childDepth, rails, depth, i == kids.lastIndex, later)
-        }
-    }
-
-    roots.forEachIndexed { i, root ->
-        walk(root, 0, emptyMap(), null, i == roots.lastIndex, emptyList())
-    }
-    return out
-}
-
-/** A path's techniques in the order the tree draws them, top to bottom. */
-internal fun treeOrder(line: String): List<Skills.SkillDef> = rows(line).map { it.skill }
-
-/** The locked node dot: 3:1 against the page, dimmer than the open green. */
+/** The locked node ring: 3:1 against the page, dimmer than the open green. */
 internal val LockedDot = Color(0xFF64625C)
 
-/** The lighter end of a locked row's background, where its text has the least contrast. */
+/** The locked node's fill, where its glyph and label have the least contrast. */
 internal val LockedRowBg = Color(0xFF101512)
 
+/** What a node is, in shape and glyph as well as colour. */
+private enum class NodeState { MASTERED, NEXT, LOCKED }
+
 /**
- * The colour of a stretch of rail, from the skills it leads to: gold when it
- * reaches a mastered skill (a mastered skill's prerequisite is mastered too,
- * so the whole stretch joins mastered to mastered), green when it reaches
- * skills that are open, and ink when everything below it is still locked.
+ * One path as a node graph: round nodes in tier rows (numerals down the left
+ * edge), joined by ink lines from each prerequisite to its dependants, with
+ * branches side by side. The edges are drawn on a canvas behind the nodes.
  */
-private fun railColor(leadsTo: List<String>, mastered: Set<String>): Color = when {
-    leadsTo.any { it in mastered } -> IronvellumColors.SovereignGold.copy(alpha = 0.85f)
-    leadsTo.any { name -> Skills.forName(name)?.let { Skills.unlocked(it, mastered) } == true } ->
-        IronvellumColors.SystemGreen.copy(alpha = 0.85f)
-    else -> IronvellumColors.Rune
-}
-
-/** Every colour one row paints, resolved from the mastered set. */
-private data class RailPaint(
-    val passing: Map<Int, Color>,
-    /** The parent's rail from the top of this row down to this row's branch. */
-    val intoRow: Color,
-    /** The parent's rail from this row's branch on to later siblings. */
-    val pastRow: Color,
-    /** The line out of this row's dot toward its children. */
-    val below: Color,
-)
-
 @Composable
 fun SkillTreeGraph(
     line: String,
     mastered: Set<String>,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
-    /** Best logged effort per technique, for the "best 40/60s" cue on open rows. */
+    /** Best logged effort per technique, for the "best 40/60s" cue read out on open nodes. */
     best: Map<String, SkillGuidance.Effort> = emptyMap(),
     /** The lifter, so a load-bearing standard is judged against their bodyweight. */
     bodyweightKg: Double? = null,
     female: Boolean = false,
 ) {
-    val treeRows = remember(line) { rows(line) }
-    // The first open, unmastered technique in drawing order: where the eye
-    // should land when a path opens.
-    val firstNext = remember(line, mastered) {
-        SkillGuidance.frontier(treeRows.map { it.skill }, mastered).firstOrNull()?.name
-    }
-    val nextRequester = remember { BringIntoViewRequester() }
-    // Keyed on the target too: the mastered set can arrive after the first
-    // frame, and a claim moves the frontier on.
-    LaunchedEffect(line, firstNext) {
-        if (firstNext != null) nextRequester.bringIntoView()
-    }
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val columns = columnsFor((maxWidth - GutterW).value)
+        val cellW = (maxWidth - GutterW) / columns
+        val layout = remember(line, columns) { treeLayout(line, columns) }
 
-    Column(modifier.fillMaxWidth()) {
-        treeRows.forEach { row ->
-            val isMastered = row.skill.name in mastered
-            SkillRow(
-                row = row,
-                mastered = isMastered,
-                unlocked = Skills.unlocked(row.skill, mastered),
-                next = SkillGuidance.isFrontier(row.skill, mastered),
-                needs = row.skill.firstUnmetPrerequisite(mastered),
-                cue = if (isMastered) null else SkillGuidance.progressCue(row.skill, best[row.skill.name], bodyweightKg, female),
-                paint = RailPaint(
-                    passing = row.openRails.mapValues { (_, below) -> railColor(below, mastered) },
-                    intoRow = railColor(listOf(row.skill.name) + row.laterSiblings, mastered),
-                    pastRow = railColor(row.laterSiblings, mastered),
-                    below = railColor(row.children, mastered),
-                ),
-                onClick = { onSelect(row.skill.name) },
-                modifier = if (row.skill.name == firstNext) Modifier.bringIntoViewRequester(nextRequester) else Modifier,
-            )
+        // Two text lines, scaled with the system font so a large setting grows
+        // the rows instead of clipping the label.
+        val textH = with(LocalDensity.current) { (LabelLine * 2f).toDp() }
+        val tops = remember(layout, textH) {
+            layout.levels.runningFold(0.dp) { y, level -> y + levelHeight(level, textH) }
+        }
+        val at = remember(layout) { layout.nodes.associateBy { it.skill.name } }
+
+        // Where the eye should land when a path opens. Keyed on the target too:
+        // the mastered set can arrive after the first frame, and a claim moves
+        // the frontier on.
+        val firstNext = remember(layout, mastered) { layout.firstNext(mastered)?.name }
+        val nextRequester = remember { BringIntoViewRequester() }
+        LaunchedEffect(line, firstNext) {
+            if (firstNext != null) nextRequester.bringIntoView()
+        }
+
+        Box(Modifier.fillMaxWidth().height(tops.last())) {
+            Canvas(Modifier.fillMaxSize()) {
+                val stroke = EdgeW.toPx()
+                fun centreX(n: PlacedSkill) = (GutterW + cellW * (n.x + 0.5f)).toPx()
+
+                layout.levels.forEachIndexed { l, level ->
+                    if (level.startsTier && l > 0) {
+                        val y = tops[l].toPx() + 1.dp.toPx()
+                        inkStroke(Offset(0f, y), Offset(size.width, y), IronvellumColors.Rune.copy(alpha = 0.7f), 1.dp.toPx(), seed = l, taperEnds = false)
+                    }
+                }
+
+                // Dim lines first, so the lit ones win where they share a stretch.
+                layout.edges.sortedBy { edgeRank(it.to, mastered) }.forEach { e ->
+                    val parent = at.getValue(e.from)
+                    val child = at.getValue(e.to)
+                    val px = centreX(parent)
+                    val cx = centreX(child)
+                    // leaves the parent below its label, lands on the child's top
+                    val y0 = (tops[parent.level + 1] - BusGap).toPx()
+                    val y1 = (tops[child.level] + TopPad).toPx()
+                    // A long edge jogs under its parent and drops down the
+                    // child's column, if that column is clear of the rows between.
+                    val clearAtChild = (parent.level + 1 until child.level).all { l ->
+                        layout.nodes.none { it.level == l && kotlin.math.abs(it.x - child.x) < 0.9f }
+                    }
+                    val longJog = child.level > parent.level + 1 && clearAtChild
+                    val bus = (if (longJog) tops[parent.level + 1] - BusGap / 2 else tops[child.level] - BusGap / 2).toPx()
+                    val color = edgeColor(e.to, mastered)
+                    val seed = e.hashCode()
+                    if (kotlin.math.abs(px - cx) < 0.5f) {
+                        inkStroke(Offset(px, y0), Offset(cx, y1), color, stroke, seed, taperEnds = false)
+                    } else {
+                        inkStroke(Offset(px, y0), Offset(px, bus), color, stroke, seed, taperEnds = false)
+                        inkStroke(Offset(px, bus), Offset(cx, bus), color, stroke, seed + 1, taperEnds = false)
+                        inkStroke(Offset(cx, bus), Offset(cx, y1), color, stroke, seed + 2, taperEnds = false)
+                    }
+                }
+            }
+
+            layout.levels.forEachIndexed { l, level ->
+                if (level.startsTier) {
+                    Box(
+                        Modifier.offset(y = tops[l] + TopPad).width(GutterW).height(NodeSize),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(
+                            Skills.tierLabel(level.tier),
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = ChakraPetch,
+                            fontWeight = FontWeight.Bold,
+                            color = IronvellumColors.InkMuted,
+                        )
+                    }
+                }
+            }
+
+            layout.nodes.forEach { node ->
+                val skill = node.skill
+                val isMastered = skill.name in mastered
+                val unlocked = Skills.unlocked(skill, mastered)
+                val needs = skill.firstUnmetPrerequisite(mastered)
+                val cue = if (isMastered) null else SkillGuidance.progressCue(skill, best[skill.name], bodyweightKg, female)
+                SkillNode(
+                    skill = skill,
+                    state = when {
+                        isMastered -> NodeState.MASTERED
+                        unlocked -> NodeState.NEXT
+                        else -> NodeState.LOCKED
+                    },
+                    description = rowDescription(skill, isMastered, unlocked, needs, cue),
+                    crossNeed = if (isMastered) null else crossNeedMarker(layout.crossNeeds[skill.name].orEmpty(), mastered),
+                    width = cellW,
+                    onClick = { onSelect(skill.name) },
+                    modifier = Modifier
+                        .offset(x = GutterW + cellW * node.x, y = tops[node.level])
+                        .then(if (skill.name == firstNext) Modifier.bringIntoViewRequester(nextRequester) else Modifier),
+                )
+            }
         }
     }
 }
 
-/** What a screen reader hears for one tree row: name, tier, state, then what to do next. */
+private val LabelLine = 14.sp
+
+private fun levelHeight(level: TreeLevel, textH: Dp): Dp =
+    TopPad + NodeSize + TextGap + textH + (if (level.hasCrossNeed) textH else 0.dp) + BusGap
+
+/** A line's colour from the dependant it leads to: gold once mastered, green when open, ink while locked. */
+private fun edgeColor(to: String, mastered: Set<String>): Color = when {
+    to in mastered -> IronvellumColors.SovereignGold.copy(alpha = 0.85f)
+    Skills.forName(to)?.let { Skills.unlocked(it, mastered) } == true ->
+        IronvellumColors.SystemGreen.copy(alpha = 0.85f)
+    else -> IronvellumColors.Bracket
+}
+
+private fun edgeRank(to: String, mastered: Set<String>): Int = when {
+    to in mastered -> 2
+    Skills.forName(to)?.let { Skills.unlocked(it, mastered) } == true -> 1
+    else -> 0
+}
+
+/** "needs L-sit (Core)" for the first prerequisite still on another path; null when none is outstanding. */
+internal fun crossNeedMarker(needs: List<CrossNeed>, mastered: Set<String>): String? {
+    val open = needs.filter { it.skill !in mastered }
+    val first = open.firstOrNull() ?: return null
+    return "needs ${first.skill} (${first.line})" + if (open.size > 1) " +${open.size - 1}" else ""
+}
+
+/** What a screen reader hears for one node: name, tier, state, then what to do next. */
 internal fun rowDescription(
     skill: Skills.SkillDef,
     mastered: Boolean,
@@ -225,223 +236,101 @@ internal fun rowDescription(
 }.joinToString(", ")
 
 @Composable
-private fun SkillRow(
-    row: Row,
-    mastered: Boolean,
-    unlocked: Boolean,
-    next: Boolean,
-    needs: String?,
-    cue: String?,
-    paint: RailPaint,
+private fun SkillNode(
+    skill: Skills.SkillDef,
+    state: NodeState,
+    description: String,
+    crossNeed: String?,
+    width: Dp,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val accent = when {
-        mastered -> IronvellumColors.SovereignGold
-        unlocked -> IronvellumColors.SystemGreen
-        else -> IronvellumColors.Rune
-    }
-    val shape = MaterialTheme.shapes.small
-
-    val dotOffset = RailW / 2
-
-    // At least 58dp, taller when a long name or standard wraps; the rail box
-    // fills whatever height the row settles on, so the strokes still meet.
-    androidx.compose.foundation.layout.Row(
-        modifier.fillMaxWidth().heightIn(min = 58.dp).height(IntrinsicSize.Min),
-        verticalAlignment = Alignment.CenterVertically,
+    val shape = remember(skill.name) { InkCircleShape(skill.name.hashCode() and 0xFF) }
+    val textH = with(LocalDensity.current) { (LabelLine * 2f).toDp() }
+    // The whole cell is the touch target, so a 32dp node still has a hit area
+    // well past 48dp.
+    Column(
+        modifier
+            .width(width)
+            .clickable(role = Role.Button, onClickLabel = "Open technique") { onClick() }
+            // One sentence for the whole node; the visible texts stay in the
+            // merged node so it is still found by its name.
+            .semantics(mergeDescendants = true) { contentDescription = description },
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        // Geometry: the dot for column d sits at d*RailW + RailW/2. Each row
-        // paints the segment above its dot and, if it has successors, the one
-        // below — so neighbouring rows meet exactly at the row boundary.
-        Box(Modifier.width(RailW * (row.depth + 1)).fillMaxHeight()) {
-            Canvas(Modifier.fillMaxSize()) {
-                val rail = RailW.toPx()
-                val stroke = 2f.dp.toPx()
-                // Each row paints its own half-segments, so consecutive rows
-                // meet exactly at the row boundary — where antialiasing left a
-                // faint seam. Every segment that runs off the top or bottom of
-                // the row extends half a stroke width past it, overlapping the
-                // neighbour's end instead of kissing it.
-                val over = stroke / 2f
-                val top = -over
-                val bottom = size.height + over
-                val mid = size.height / 2f
-                val dotX = row.depth * rail + rail / 2f
-                val color = accent.copy(alpha = 0.85f)
-
-                // ancestor rails passing straight through this row; the
-                // parent's own column is drawn by the drop-in below
-                row.openRails.forEach { (d, _) ->
-                    val x = d * rail + rail / 2f
-                    if (x != dotX && d != row.fromDepth) {
-                        // Ancestor rail: brushed, and never tapered - it runs
-                        // through the row rather than starting or ending in it.
-                        inkStroke(
-                            Offset(x, top),
-                            Offset(x, bottom),
-                            paint.passing.getValue(d),
-                            stroke,
-                            seed = d * 17,
-                            taperEnds = false,
-                        )
-                    }
-                }
-
-                row.fromDepth?.let { from ->
-                    if (from == row.depth) {
-                        // same column: a straight trunk segment into the dot
-                        inkStroke(Offset(dotX, top), Offset(dotX, mid), color, stroke, seed = row.depth * 7, taperEnds = false)
-                    } else {
-                        val parentX = from * rail + rail / 2f
-                        // parent's column drops in to this row's branch, then
-                        // carries on past it when more siblings follow
-                        inkStroke(Offset(parentX, top), Offset(parentX, mid), paint.intoRow, stroke, seed = from * 11, taperEnds = false)
-                        if (!row.isLastChild) {
-                            inkStroke(Offset(parentX, mid), Offset(parentX, bottom), paint.pastRow, stroke, seed = from * 13, taperEnds = false)
-                        }
-                        inkStroke(Offset(parentX, mid), Offset(dotX, mid), color, stroke, seed = from * 5, taperEnds = false)
-                    }
-                }
-
-                // hand the line to the row below
-                if (row.children.isNotEmpty()) {
-                    inkStroke(Offset(dotX, mid), Offset(dotX, bottom), paint.below, stroke, seed = row.depth * 3, taperEnds = false)
-                }
-            }
-            Box(
-                Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = dotOffset - NodeDot / 2)
-                    .size(NodeDot)
-                    .clip(InkCircleShape(7))
-                    .background(
-                        when {
-                            mastered -> IronvellumColors.SovereignGold
-                            unlocked -> IronvellumColors.SystemGreen
-                            else -> LockedDot
-                        },
-                    ),
-            )
-        }
-        Spacer(Modifier.width(6.dp))
-
-        val description = rowDescription(row.skill, mastered, unlocked, needs, cue)
-        androidx.compose.foundation.layout.Row(
+        Box(Modifier.height(TopPad))
+        Box(
             Modifier
-                .fillMaxWidth()
-                .fillMaxHeight()
-                .padding(vertical = 4.dp, horizontal = 2.dp)
+                .size(NodeSize)
                 .clip(shape)
                 .background(
-                    when {
-                        mastered -> Brush.horizontalGradient(listOf(Color(0xFF3A2A08), Color(0xFF14170F)))
-                        unlocked -> Brush.horizontalGradient(listOf(Color(0xFF15251F), Color(0xFF0D1310)))
-                        else -> Brush.horizontalGradient(listOf(LockedRowBg, Color(0xFF0C100E)))
+                    when (state) {
+                        NodeState.MASTERED -> IronvellumColors.SovereignGold
+                        NodeState.NEXT -> Color(0xFF15251F)
+                        NodeState.LOCKED -> LockedRowBg
                     },
                 )
-                .inkBorder(accent.copy(alpha = if (unlocked || mastered) 1f else 0.45f), shape, 1.dp)
-                .clickable(role = Role.Button, onClickLabel = "Open technique") { onClick() }
-                // One sentence for the whole row; the visible texts stay in
-                // the merged node so the row is still found by its name.
-                .semantics(mergeDescendants = true) { contentDescription = description }
-                .padding(horizontal = 10.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .inkBorder(
+                    when (state) {
+                        NodeState.MASTERED -> IronvellumColors.SovereignGold
+                        NodeState.NEXT -> IronvellumColors.SystemGreen
+                        NodeState.LOCKED -> LockedDot
+                    },
+                    shape,
+                    if (state == NodeState.NEXT) 2.dp else 1.5.dp,
+                ),
+            contentAlignment = Alignment.Center,
         ) {
-            Column(Modifier.width(0.dp).weight(1f)) {
-                Text(
-                    row.skill.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = when {
-                        mastered -> IronvellumColors.SovereignGold
-                        unlocked -> IronvellumColors.Ink
-                        else -> IronvellumColors.InkMuted
-                    },
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+            // State in a glyph, not the colour alone: check, filled dot, lock.
+            when (state) {
+                NodeState.MASTERED -> Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = IronvellumColors.Abyss,
+                    modifier = Modifier.size(20.dp),
                 )
-                Text(
-                    when {
-                        mastered -> "MASTERED"
-                        unlocked -> row.skill.standard
-                        // "LOCKED" said nothing the muted ink and the
-                        // prerequisite did not already say, on every locked row.
-                        else -> "needs ${needs ?: "its prerequisite"}"
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    // 9sp was unreadably small; 11sp matches the smallest body
-                    // copy anywhere in the app.
-                    fontSize = 11.sp,
-                    color = if (mastered) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
-                    // Two lines, then an ellipsis: one line cut most standards
-                    // off before the part that says how to clear them.
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
+                NodeState.NEXT -> Box(
+                    Modifier.size(12.dp).clip(InkCircleShape(3)).background(IronvellumColors.SystemGreen),
                 )
-                if (cue != null && unlocked) {
-                    Text(
-                        cue,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontSize = 11.sp,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.SystemGreen,
-                        maxLines = 1,
-                    )
-                }
+                NodeState.LOCKED -> Icon(
+                    Icons.Filled.Lock,
+                    contentDescription = null,
+                    tint = IronvellumColors.InkMuted,
+                    modifier = Modifier.size(16.dp),
+                )
             }
-            Spacer(Modifier.width(8.dp))
-            Column(horizontalAlignment = Alignment.End) {
-                // State in a glyph and a word, not the colour alone.
-                androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
-                    when {
-                        mastered -> Icon(
-                            Icons.Filled.Check,
-                            contentDescription = null,
-                            tint = IronvellumColors.SovereignGold,
-                            modifier = Modifier.size(14.dp),
-                        )
-                        !unlocked -> Icon(
-                            Icons.Filled.Lock,
-                            contentDescription = null,
-                            tint = IronvellumColors.InkMuted,
-                            modifier = Modifier.size(14.dp),
-                        )
-                        else -> Unit
-                    }
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        Skills.tierLabel(row.skill.tier),
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        // Rune ink on a locked row read at about 1.4:1.
-                        color = if (mastered || unlocked) accent else IronvellumColors.InkMuted,
-                        letterSpacing = 1.sp,
-                    )
-                }
-                if (next) {
-                    Text(
-                        "NEXT",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontSize = 11.sp,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = IronvellumColors.SystemGreen,
-                        letterSpacing = 1.sp,
-                        maxLines = 1,
-                    )
-                }
-                if (row.children.size > 1) {
-                    Text(
-                        "opens ${row.children.size}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontSize = 11.sp,
-                        color = IronvellumColors.InkMuted,
-                        maxLines = 1,
-                    )
-                }
-            }
+        }
+        Box(Modifier.height(TextGap))
+        Text(
+            skill.name,
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = 11.sp,
+            lineHeight = LabelLine,
+            letterSpacing = 0.sp,
+            fontWeight = if (state == NodeState.NEXT) FontWeight.Bold else FontWeight.Normal,
+            color = when (state) {
+                NodeState.MASTERED -> IronvellumColors.SovereignGold
+                NodeState.NEXT -> IronvellumColors.Ink
+                NodeState.LOCKED -> IronvellumColors.InkMuted
+            },
+            textAlign = TextAlign.Center,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth().heightIn(min = textH).padding(horizontal = 2.dp),
+        )
+        if (crossNeed != null) {
+            Text(
+                crossNeed,
+                style = MaterialTheme.typography.labelSmall,
+                fontSize = 10.sp,
+                lineHeight = LabelLine,
+            letterSpacing = 0.sp,
+                color = IronvellumColors.InkMuted,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.fillMaxWidth().height(textH).padding(horizontal = 2.dp),
+            )
         }
     }
 }

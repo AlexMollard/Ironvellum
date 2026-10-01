@@ -92,10 +92,12 @@ class SkillGuidanceTest {
 
     // ---- frontier and NEXT
 
+    private fun graphOrder(line: String) = treeLayout(line, columns = 4).nodes.map { it.skill }
+
     @Test
     fun `with nothing mastered the frontier is every technique without a prerequisite`() {
         for (line in Skills.LINES) {
-            val ordered = treeOrder(line)
+            val ordered = graphOrder(line)
             assertEquals(
                 line,
                 ordered.filter { it.prerequisites.isEmpty() },
@@ -110,15 +112,15 @@ class SkillGuidanceTest {
         fun opens(root: Skills.SkillDef) =
             Skills.ALL.filter { it.line == root.line && it.prerequisites == listOf(root.name) }
         val root = Skills.ALL.first { it.prerequisites.isEmpty() && opens(it).isNotEmpty() }
-        val frontier = SkillGuidance.frontier(treeOrder(root.line), setOf(root.name))
+        val frontier = SkillGuidance.frontier(graphOrder(root.line), setOf(root.name))
         assertFalse(root in frontier)
         assertTrue(opens(root).all { it in frontier })
     }
 
     @Test
-    fun `the tree order holds every technique on the path once`() {
+    fun `the graph holds every technique on the path once`() {
         for (line in Skills.LINES) {
-            val names = treeOrder(line).map { it.name }
+            val names = graphOrder(line).map { it.name }
             assertEquals(Skills.ALL.filter { it.line == line }.map { it.name }.toSet(), names.toSet())
             assertEquals(names.size, names.distinct().size)
         }
@@ -139,7 +141,7 @@ class SkillGuidanceTest {
     }
 
     @Test
-    fun `the tree opens on the path of the newest attempt or claim`() {
+    fun `the grid marks the path of the newest attempt or claim`() {
         val older = Skills.ALL.first()
         val newer = Skills.ALL.first { it.line != older.line }
         val log = listOf(
@@ -177,7 +179,7 @@ class SkillGuidanceTest {
     }
 
     @Test
-    fun `a row describes its state in words`() {
+    fun `a node describes its state in words`() {
         val locked = Skills.ALL.first { it.prerequisites.isNotEmpty() }
         val text = rowDescription(locked, mastered = false, unlocked = false, needs = locked.prerequisites.first(), cue = null)
         assertTrue(text, text.startsWith("${locked.name}, tier ${Skills.tierLabel(locked.tier)}, locked, needs "))
