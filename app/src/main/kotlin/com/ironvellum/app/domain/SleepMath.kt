@@ -20,8 +20,8 @@ data class SleepSpan(
  */
 object SleepMath {
 
-    /** Sessions starting at or after this local hour are naps unless they are the day's only/longest sleep. */
-    private const val NAP_FROM_HOUR = 12
+    /** Sessions closer than this belong to one night: a toilet trip or a wake-up between two halves. */
+    private val SAME_NIGHT_GAP = Duration.ofHours(3)
 
     /** Session length minus the awake stages inside it (clipped to the session). */
     fun asleepMinutes(span: SleepSpan): Int {
@@ -35,18 +35,29 @@ object SleepMath {
     }
 
     /**
-     * Asleep minutes per WAKE-UP day. The longest session of a day is the night;
-     * any other session ending that day counts only when it began before
-     * [NAP_FROM_HOUR] (a split night) - an afternoon sleep is a nap and is left
-     * out of the night's figure rather than inflating it.
+     * Asleep minutes per WAKE-UP day. Sessions whose gaps are within
+     * [SAME_NIGHT_GAP] chain into one night, whichever half is longer and
+     * whichever side of midnight it falls on, so a split night counts in full.
+     * A night is dated by when its last half ended. When several chains end on
+     * one day the longest is the night; the others (an afternoon nap) are left
+     * out rather than inflating it.
      */
-    fun nightMinutesByWakeDay(spans: List<SleepSpan>, zone: ZoneId): Map<LocalDate, Int> =
-        spans.groupBy { it.end.atZone(zone).toLocalDate() }
-            .mapValues { (_, sessions) ->
-                val ranked = sessions.sortedByDescending { asleepMinutes(it) }
-                val night = ranked.first()
-                val extra = ranked.drop(1).filter { it.start.atZone(zone).hour < NAP_FROM_HOUR }
-                (listOf(night) + extra).sumOf { asleepMinutes(it) }
+    fun nightMinutesByWakeDay(spans: List<SleepSpan>, zone: ZoneId): Map<LocalDate, Int> {
+        val chains = mutableListOf<MutableList<SleepSpan>>()
+        var chainEnd: Instant? = null
+        for (span in spans.sortedBy { it.start }) {
+            val end = chainEnd
+            if (end != null && Duration.between(end, span.start) <= SAME_NIGHT_GAP) {
+                chains.last() += span
+                if (span.end > end) chainEnd = span.end
+            } else {
+                chains += mutableListOf(span)
+                chainEnd = span.end
             }
+        }
+        return chains
+            .groupBy({ chain -> chain.maxOf { it.end }.atZone(zone).toLocalDate() }, { chain -> chain.sumOf { asleepMinutes(it) } })
+            .mapValues { (_, minutes) -> minutes.max() }
             .filterValues { it > 0 }
+    }
 }
