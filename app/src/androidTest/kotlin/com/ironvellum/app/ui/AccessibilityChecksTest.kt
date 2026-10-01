@@ -187,6 +187,19 @@ class AccessibilityChecksTest {
     }
 
     /**
+     * The Ledger's tape and history panes are not routes: they replace the tab
+     * row inside the destination and survive a re-tap of the nav bar. Leave
+     * one if it is open, so the next path starts from the tabs.
+     */
+    private fun leaveLedgerPane() {
+        val back = compose.onAllNodesWithContentDescription("Back to Ledger")
+        if (back.fetchSemanticsNodes().isNotEmpty()) {
+            back.onFirst().performClick()
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        }
+    }
+
+    /**
      * Opens a sub-surface by visible text, falling back to a content
      * description for icon-only entry points. Returns false when this build
      * shows neither, so a missing feature is skipped rather than failed.
@@ -233,6 +246,7 @@ class AccessibilityChecksTest {
             visited += where
             unlabelled += unlabelledControls().map { "$where: $it" }
             tooSmall += controlsBelowTheAccessibleFloor().map { "$where: $it" }
+            leaveLedgerPane()
         }
 
         // Skipping is deliberate for a surface a build does not show, but a
@@ -373,8 +387,13 @@ class AccessibilityChecksTest {
         val DEEPER_SURFACES = listOf(
             listOf("Codex", "PATHS"),
             listOf("Codex", "JOURNAL"),
-            listOf("Ledger", "DETAIL"),
-            listOf("Ledger", "TRAINING"),
+            // The BMI chip opens its band dialog even with no readings, so it
+            // exists on an empty install. The two panes replace the tabs and
+            // are left again by the sweep's own exit step below.
+            listOf("Ledger", "BMI"),
+            listOf("Ledger", "Tape measurements"),
+            listOf("Ledger", "Weight history"),
+            listOf("Ledger", "LIFTS"),
             listOf("Ledger", "DAILY"),
             listOf("Rites", "EXERCISES"),
             listOf("Rites", "FULL CHRONICLE"),
@@ -402,7 +421,7 @@ class AccessibilityChecksTest {
         /** destination to the tab labels of one row inside it. */
         val TAB_ROWS = listOf(
             "Codex" to listOf("DEEDS", "PATHS", "JOURNAL"),
-            "Ledger" to listOf("FRAME", "TRAINING", "DAILY"),
+            "Ledger" to listOf("BODY", "LIFTS", "DAILY"),
         )
         const val FRAME_BUDGET_MS = 1_200L
         const val MIN_TARGET_DP = 48f

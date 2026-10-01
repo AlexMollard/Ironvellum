@@ -188,4 +188,12 @@ class LedgerMathTest {
         assertEquals(listOf(0, 1, 2), counts)
         assertEquals(1, Ledger.sealedThisMonth(sealed + LocalDate.of(2026, 10, 1), today))
     }
+
+    @Test
+    fun `daily summary names only what arrived and is null when nothing did`() {
+        assertEquals("8.2k steps \u00B7 7h 10m \u00B7 410 kcal", Ledger.dailySummary(day(0, steps = 8240, kcal = 410, sleep = 430)))
+        assertEquals("950 steps", Ledger.dailySummary(day(0, steps = 950)))
+        assertNull(Ledger.dailySummary(day(0)))
+        assertNull(Ledger.dailySummary(null))
+    }
 }
