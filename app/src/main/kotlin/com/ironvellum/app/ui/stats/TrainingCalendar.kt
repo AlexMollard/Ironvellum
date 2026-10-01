@@ -1,0 +1,297 @@
+package com.ironvellum.app.ui.stats
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
+import com.ironvellum.app.domain.Streak
+import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.LedgerSpace
+import com.ironvellum.app.ui.components.PanelLabel
+import com.ironvellum.app.ui.components.StatSize
+import com.ironvellum.app.ui.components.StatValue
+import com.ironvellum.app.ui.components.plural
+import com.ironvellum.app.ui.theme.InkCircleShape
+import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.inkBorder
+import java.time.DayOfWeek
+import java.time.Instant
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
+import java.time.format.TextStyle
+import java.time.temporal.WeekFields
+import java.util.Locale
+
+/** Cells are about 40dp: a month of six weeks fits above the records board. */
+private val CellHeight = 40.dp
+
+/**
+ * First date the calendar marks a scheduled weekday: the lifter's first
+ * workout, or today before there is one. The routine only exists from then
+ * on, so earlier dots claimed plans for dates before the app was in use.
+ */
+internal fun calendarScheduleStart(completedDates: Set<LocalDate>, today: LocalDate): LocalDate =
+    completedDates.minOrNull()?.coerceAtMost(today) ?: today
+
+/**
+ * The day a sealed trial is filed under: the same rule that builds the
+ * Ledger's sealed-day set (finished time, or start time when none).
+ */
+internal fun trialDay(session: WorkoutSession, zone: ZoneId): LocalDate =
+    Instant.ofEpochMilli(session.completedAtMs ?: session.startedAtMs).atZone(zone).toLocalDate()
+
+/** Trial ids per day, oldest first, so the last id of a day is its latest trial. */
+internal fun trialsByDay(sessions: List<WorkoutSession>, zone: ZoneId): Map<LocalDate, List<Long>> =
+    sessions
+        .sortedBy { it.completedAtMs ?: it.startedAtMs }
+        .groupBy({ trialDay(it, zone) }, { it.id })
+
+/** Trials sealed in [month], not counting any dated after [today]. Two on one day count twice. */
+internal fun trialsInMonth(byDay: Map<LocalDate, List<Long>>, month: YearMonth, today: LocalDate): Int =
+    byDay.entries.sumOf { (day, ids) -> if (YearMonth.from(day) == month && day <= today) ids.size else 0 }
+
+/** The month as full weeks beginning on [weekStart]; null pads the days outside it. */
+internal fun calendarWeeks(month: YearMonth, weekStart: DayOfWeek): List<List<LocalDate?>> {
+    val leading = (month.atDay(1).dayOfWeek.value - weekStart.value + 7) % 7
+    val days: List<LocalDate?> = List(leading) { null } + (1..month.lengthOfMonth()).map { month.atDay(it) }
+    return (days + List((7 - days.size % 7) % 7) { null }).chunked(7)
+}
+
+/** What a screen reader says for one day. */
+internal fun daySpeech(date: String, trials: Int, rite: Boolean, isToday: Boolean, future: Boolean): String =
+    buildString {
+        append(date)
+        when {
+            trials == 1 -> append(", trial sealed")
+            trials > 1 -> append(", $trials trials sealed")
+            rite && future -> append(", rite day")
+            rite -> append(", rite day, no trial sealed")
+        }
+        if (isToday) append(", today")
+    }
+
+/**
+ * The calendar panel: the month's count and the oath up top, a compact grid
+ * below. A day with a sealed trial opens it; every other day is plain.
+ */
+@Composable
+internal fun TrainingCalendar(
+    sessions: List<WorkoutSession>,
+    completedDates: Set<LocalDate>,
+    scheduledDays: Set<Int>,
+    month: YearMonth,
+    today: LocalDate,
+    onMonth: (Int) -> Unit,
+    onOpenTrial: (Long) -> Unit,
+) {
+    val zone = remember { ZoneId.systemDefault() }
+    val locale = LocalConfiguration.current.locales[0]
+    val byDay = remember(sessions, zone) { trialsByDay(sessions, zone) }
+    val inMonth = remember(byDay, month, today) { trialsInMonth(byDay, month, today) }
+    val oath = remember(completedDates, today) { Streak.current(completedDates, today) }
+    val scheduleStart = remember(completedDates, today) { calendarScheduleStart(completedDates, today) }
+    val weekStart = remember(locale) { WeekFields.of(locale).firstDayOfWeek }
+    val weeks = remember(month, weekStart) { calendarWeeks(month, weekStart) }
+    val weekdayLabels = remember(weekStart, locale) {
+        (0L..6L).map { weekStart.plus(it).getDisplayName(TextStyle.NARROW, locale) }
+    }
+    val monthName = month.month.getDisplayName(TextStyle.FULL, locale)
+
+    InkPanel(Modifier.fillMaxWidth()) {
+        PanelLabel("TRAINING")
+        Row(
+            Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            StatValue(inMonth.toString(), size = StatSize.Hero, unit = plural(inMonth, "trial", "trials"))
+            Text(
+                if (oath > 0) "Oath · $oath ${plural(oath, "day", "days")} kept" else "No oath yet",
+                style = MaterialTheme.typography.titleSmall,
+                color = IronvellumColors.InkMuted,
+                modifier = Modifier.padding(bottom = 4.dp),
+            )
+        }
+        Text(
+            if (month == YearMonth.from(today)) "sealed this month" else "sealed in $monthName",
+            style = MaterialTheme.typography.labelSmall,
+            color = IronvellumColors.InkMuted,
+        )
+
+        // Month navigation on its own row: the month name never competes with a heading for width.
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { onMonth(-1) }) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                    contentDescription = "Previous month",
+                    tint = IronvellumColors.SystemGreen,
+                )
+            }
+            Text(
+                "$monthName ${month.year}",
+                style = MaterialTheme.typography.titleSmall,
+                color = IronvellumColors.Ink,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
+            )
+            // Unbounded, the arrow paged into empty future months forever.
+            val canAdvance = month < YearMonth.from(today)
+            IconButton(onClick = { onMonth(1) }, enabled = canAdvance) {
+                Icon(
+                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                    contentDescription = if (canAdvance) "Next month" else "Next month, already at the current month",
+                    tint = if (canAdvance) IronvellumColors.SystemGreen else IronvellumColors.Bracket,
+                )
+            }
+        }
+
+        Row(Modifier.fillMaxWidth()) {
+            weekdayLabels.forEach { label ->
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        weeks.forEach { week ->
+            Row(Modifier.fillMaxWidth()) {
+                week.forEach { date ->
+                    Box(Modifier.weight(1f)) {
+                        if (date == null) {
+                            Spacer(Modifier.height(CellHeight))
+                        } else {
+                            DayCell(
+                                date = date,
+                                trialIds = byDay[date].orEmpty(),
+                                rite = date >= scheduleStart && date.dayOfWeek.value in scheduledDays,
+                                today = today,
+                                locale = locale,
+                                onOpenTrial = onOpenTrial,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(LedgerSpace.Panel))
+        Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            LegendItem("sealed") { SealedMark() }
+            LegendItem("rite day") { RiteMark() }
+            LegendItem("today") {
+                Box(Modifier.size(12.dp).inkBorder(IronvellumColors.Ink, InkCircleShape(7), 1.5.dp))
+            }
+        }
+    }
+}
+
+@Composable
+private fun DayCell(
+    date: LocalDate,
+    trialIds: List<Long>,
+    rite: Boolean,
+    today: LocalDate,
+    locale: Locale,
+    onOpenTrial: (Long) -> Unit,
+) {
+    val sealed = trialIds.isNotEmpty()
+    val isToday = date == today
+    val future = date > today
+    val spoken = daySpeech(
+        date.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", locale)),
+        trialIds.size, rite, isToday, future,
+    )
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .height(CellHeight)
+            .clip(MaterialTheme.shapes.extraSmall)
+            // A day with a trial opens its latest one; the rest are not controls.
+            .then(
+                if (sealed) {
+                    Modifier.clickable(onClickLabel = "Open trial", role = Role.Button) { onOpenTrial(trialIds.last()) }
+                } else {
+                    Modifier
+                },
+            )
+            .semantics(mergeDescendants = true) { contentDescription = spoken },
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Box(
+            Modifier
+                .size(28.dp)
+                .inkBorder(IronvellumColors.Ink, InkCircleShape(7), if (isToday) 1.5.dp else 0.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                date.dayOfMonth.toString(),
+                style = MaterialTheme.typography.bodySmall,
+                color = when {
+                    sealed || isToday -> IronvellumColors.Ink
+                    future -> IronvellumColors.InkMuted.copy(alpha = 0.5f)
+                    else -> IronvellumColors.InkMuted
+                },
+            )
+        }
+        Box(Modifier.height(8.dp), contentAlignment = Alignment.Center) {
+            when {
+                sealed -> SealedMark()
+                rite -> RiteMark()
+            }
+        }
+    }
+}
+
+/** A sealed day: a small filled ink dot. */
+@Composable
+private fun SealedMark() {
+    Box(Modifier.size(6.dp).clip(InkCircleShape(7)).background(IronvellumColors.Ink))
+}
+
+/** A rite day with nothing sealed on it (yet): the same dot, hollow. */
+@Composable
+private fun RiteMark() {
+    Box(Modifier.size(6.dp).inkBorder(IronvellumColors.InkMuted, InkCircleShape(7), 1.dp))
+}
+
+@Composable
+private fun LegendItem(label: String, mark: @Composable () -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        mark()
+        Text(label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+    }
+}
