@@ -1,8 +1,6 @@
 package com.ironvellum.app
 
 import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
@@ -13,6 +11,7 @@ import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
+import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.SessionSet
 import kotlinx.coroutines.CoroutineScope
@@ -35,26 +34,13 @@ import kotlinx.coroutines.launch
 class WorkoutSessionService : Service() {
 
     companion object {
-        const val CHANNEL_ID = "workout"
-        private const val NOTIFICATION_ID = 2
         private const val EXTRA_SESSION_ID = "sessionId"
 
         fun start(context: Context, sessionId: Long) {
-            ensureChannel(context)
+            Notifications.ensureChannels(context)
             val intent = Intent(context, WorkoutSessionService::class.java)
                 .putExtra(EXTRA_SESSION_ID, sessionId)
             ContextCompat.startForegroundService(context, intent)
-        }
-
-        fun ensureChannel(context: Context) {
-            val manager = context.getSystemService(NotificationManager::class.java) ?: return
-            manager.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_ID,
-                    "Trial in progress",
-                    NotificationManager.IMPORTANCE_LOW,
-                ).apply { description = "Live progress of the trial you have open." },
-            )
         }
     }
 
@@ -70,7 +56,7 @@ class WorkoutSessionService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        ensureChannel(this)
+        Notifications.ensureChannels(this)
         repo = (applicationContext as IronvellumApp).repository
     }
 
@@ -87,7 +73,7 @@ class WorkoutSessionService : Service() {
         // exists from 34 (UPSIDE_DOWN_CAKE); below it the manifest type is enough.
         androidx.core.app.ServiceCompat.startForeground(
             this,
-            NOTIFICATION_ID,
+            Notifications.ID_TRIAL,
             buildNotification(emptyList(), startedAtMs = null),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
@@ -117,7 +103,7 @@ class WorkoutSessionService : Service() {
         val manager = NotificationManagerCompat.from(this)
         if (!manager.areNotificationsEnabled()) return
         @Suppress("MissingPermission") // guarded directly above
-        manager.notify(NOTIFICATION_ID, notification)
+        manager.notify(Notifications.ID_TRIAL, notification)
     }
 
     /**
@@ -147,12 +133,13 @@ class WorkoutSessionService : Service() {
         val intent = packageManager.getLaunchIntentForPackage(packageName)
         val pending = intent?.let {
             PendingIntent.getActivity(
-                this, 0, it,
+                this, Notifications.REQUEST_TRIAL, it,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
         }
-        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, Notifications.CHANNEL_TRIAL)
             .setSmallIcon(R.drawable.ic_reminder)
+            .setColor(Notifications.ACCENT)
             .setContentTitle(title)
             .setContentText(body)
             .setSubText("TRIAL · $done / $total $setWord")

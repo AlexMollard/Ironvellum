@@ -1,8 +1,6 @@
 package com.ironvellum.app.data
 
 import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -26,16 +24,11 @@ import com.ironvellum.app.ui.social.displayName
  * a busy evening must not bury the shade under a dozen rows.
  */
 object InboxNotifier {
-    const val CHANNEL_ID = "allies"
-    const val EXTRA_OPEN_TAB = "open_tab"
-    const val TAB_INBOX = "inbox"
-
     private const val PREFS = "inbox_notifier"
     private const val KEY_ENABLED = "enabled"
     private const val KEY_MARK = "mark_ms"
     private const val KEY_MARK_USER = "mark_user"
     private const val KEY_ASKED = "asked_permission"
-    private const val NOTIFICATION_ID = 2
 
     private fun prefs(context: Context) = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
@@ -66,18 +59,8 @@ object InboxNotifier {
         return enabled(context) && !hasPermission(context)
     }
 
-    /** Idempotent; called from Application.onCreate so the channel exists before any post. */
-    fun ensureChannel(context: Context) {
-        val manager = context.getSystemService(NotificationManager::class.java) ?: return
-        manager.createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, "Allies", NotificationManager.IMPORTANCE_DEFAULT).apply {
-                description = "Requests, remarks and tributes from your allies."
-            },
-        )
-    }
-
     fun cancel(context: Context) {
-        NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+        NotificationManagerCompat.from(context).cancel(Notifications.ID_ALLIES)
     }
 
     /** Sign-out or account switch: the next lifter must start from a clean baseline, not inherit this one's mark. */
@@ -116,14 +99,15 @@ object InboxNotifier {
         val latest = line(fresh.first())
         val (title, text) = if (fresh.size == 1) "Ironvellum" to latest else "${fresh.size} new missives" to latest
         val intent = Intent(context, MainActivity::class.java)
-            .putExtra(EXTRA_OPEN_TAB, TAB_INBOX)
+            .putExtra(Notifications.EXTRA_OPEN_TAB, Notifications.TAB_INBOX)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         val pending = PendingIntent.getActivity(
-            context, 0, intent,
+            context, Notifications.REQUEST_ALLIES, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_ALLIES)
             .setSmallIcon(R.drawable.ic_reminder)
+            .setColor(Notifications.ACCENT)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(text))
@@ -138,7 +122,7 @@ object InboxNotifier {
         ) {
             return
         }
-        NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, notification)
+        NotificationManagerCompat.from(context).notify(Notifications.ID_ALLIES, notification)
     }
 
     private fun line(item: InboxItem): String = when (item) {
