@@ -10,6 +10,7 @@ import com.ironvellum.app.data.HealthSync
 import com.ironvellum.app.data.IronvellumDatabase
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Notifications
+import com.ironvellum.app.data.Reminders
 import com.ironvellum.app.ui.theme.InkStyle
 import com.ironvellum.app.data.HealthSyncWorker
 import com.ironvellum.app.data.cloud.CloudSyncWorker
@@ -101,6 +102,9 @@ class IronvellumApp : Application() {
             runCatching { accountRepository.restore() }
         }
         HealthSyncWorker.schedule(this)
+        // Moves an upgraded install off the old periodic job, and books a run
+        // for one whose queue was lost; a queued run is kept as it is.
+        Reminders.ensureScheduled(this)
         CloudSyncWorker.schedule(this)
         InboxWorker.schedule(this)
     }

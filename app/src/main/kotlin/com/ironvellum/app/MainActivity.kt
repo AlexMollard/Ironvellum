@@ -52,10 +52,15 @@ class MainActivity : ComponentActivity() {
         )
         // A rotation or process restore re-delivers the launch intent; only a
         // fresh launch may act on it, or the inbox would reopen on every turn.
-        if (savedInstanceState == null) noteOpenTab(intent)
+        if (savedInstanceState == null) {
+            noteOpenTab(intent)
+        } else {
+            inboxRequest = savedInstanceState.getInt(KEY_INBOX_REQUEST)
+            todayRequest = savedInstanceState.getInt(KEY_TODAY_REQUEST)
+        }
         setContent {
             IronvellumTheme {
-                IronvellumRoot(inboxRequest = inboxRequest)
+                IronvellumRoot(inboxRequest = inboxRequest, todayRequest = todayRequest)
             }
         }
     }
@@ -68,9 +73,29 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun noteOpenTab(intent: Intent?) {
-        if (intent?.getStringExtra(Notifications.EXTRA_OPEN_TAB) == Notifications.TAB_INBOX) inboxRequest++
+        when (intent?.getStringExtra(Notifications.EXTRA_OPEN_TAB)) {
+            Notifications.TAB_INBOX -> inboxRequest++
+            Notifications.TAB_TODAY -> todayRequest++
+        }
     }
 
-    /** Bumped per notification tap so two taps in a row both navigate; the UI compares counts, not values. */
+    /**
+     * Bumped per notification tap so two taps in a row both navigate; the UI
+     * compares counts, not values. Saved with the activity because the UI's
+     * served counts are: a count reset to 0 by a rotation would sit below
+     * them and the next tap would be ignored.
+     */
     private var inboxRequest by mutableIntStateOf(0)
+    private var todayRequest by mutableIntStateOf(0)
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putInt(KEY_INBOX_REQUEST, inboxRequest)
+        outState.putInt(KEY_TODAY_REQUEST, todayRequest)
+    }
+
+    private companion object {
+        const val KEY_INBOX_REQUEST = "inbox_request"
+        const val KEY_TODAY_REQUEST = "today_request"
+    }
 }

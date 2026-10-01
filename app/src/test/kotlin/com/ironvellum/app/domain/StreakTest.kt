@@ -54,6 +54,20 @@ class StreakTest {
             ),
         )
     }
+
+    @Test
+    fun `the oath is at risk only on its last untrained day`() {
+        val today = LocalDate.parse("2026-09-14")
+        // Last trial exactly seven days ago: tomorrow the gap closes the chain.
+        assertEquals(true, Streak.atRisk(d("2026-09-01", "2026-09-07"), today))
+        // Six days ago: another day of grace.
+        assertEquals(false, Streak.atRisk(d("2026-09-08"), today))
+        // Trained today: nothing to defend.
+        assertEquals(false, Streak.atRisk(d("2026-09-07", "2026-09-14"), today))
+        // Already broken, or never begun: there is no oath to lose.
+        assertEquals(false, Streak.atRisk(d("2026-09-06"), today))
+        assertEquals(false, Streak.atRisk(emptySet(), today))
+    }
 }
 
 class ArmyClassTest {

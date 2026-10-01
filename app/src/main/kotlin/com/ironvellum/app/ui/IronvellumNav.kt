@@ -136,7 +136,7 @@ object Routes {
 private data class BottomDestination(val route: String, val label: String, val icon: ImageVector)
 
 @Composable
-fun IronvellumRoot(inboxRequest: Int = 0) {
+fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -215,6 +215,18 @@ fun IronvellumRoot(inboxRequest: Int = 0) {
                     launchSingleTop = true
                     // Fresh entry: a restored one would keep whichever tab was open.
                     restoreState = false
+                }
+            }
+        }
+        // A tapped Summons lands on Today, where the scheduled rite begins.
+        var servedTodayRequest by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
+        androidx.compose.runtime.LaunchedEffect(todayRequest) {
+            if (todayRequest <= servedTodayRequest) return@LaunchedEffect
+            servedTodayRequest = todayRequest
+            lifecycle.withStarted {
+                navController.navigate(Routes.DASHBOARD) {
+                    popUpTo(Routes.DASHBOARD) { inclusive = true }
+                    launchSingleTop = true
                 }
             }
         }

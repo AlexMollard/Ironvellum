@@ -72,6 +72,18 @@
                 android:value="Displays live progress of the workout session the user has open." />
         </service>
 
+        <!-- Re-books the evening Summons when the timezone or the clock moves:
+             WorkManager's delay is elapsed time and would keep the old 19:30.
+             Both are protected system broadcasts, so it need not be exported. -->
+        <receiver
+            android:name=".data.TimeChangeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+            </intent-filter>
+        </receiver>
+
         <!--
           Android 14+ requires a privacy-rationale entry point for health
           permissions. Without it every read throws IllegalStateException

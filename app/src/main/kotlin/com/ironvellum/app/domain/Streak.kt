@@ -31,4 +31,15 @@ object Streak {
         }
         return (today.toEpochDay() - chainEnd.toEpochDay()).toInt() + 1
     }
+
+    /**
+     * True on the last day a live oath survives untrained: the last trial was
+     * exactly [MAX_GAP_DAYS] days ago, so tomorrow the gap closes the chain.
+     * A day already trained, or an oath already broken, is never at risk.
+     */
+    fun atRisk(dates: Set<LocalDate>, today: LocalDate): Boolean {
+        if (current(dates, today) == 0) return false
+        val last = dates.filter { !it.isAfter(today) }.max()
+        return today.toEpochDay() - last.toEpochDay() == MAX_GAP_DAYS
+    }
 }

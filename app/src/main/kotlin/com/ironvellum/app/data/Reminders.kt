@@ -9,34 +9,44 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.content.edit
 import androidx.core.app.NotificationManagerCompat
-import androidx.work.ExistingPeriodicWorkPolicy
-import androidx.work.PeriodicWorkRequestBuilder
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
+import com.ironvellum.app.MainActivity
 import com.ironvellum.app.R
-import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.Streak
+import com.ironvellum.app.domain.Summons
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.first
-import java.time.Duration
+import java.time.Instant
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
 
 /**
- * The one bring-back mechanism the app has: an optional daily reminder.
+ * The one bring-back mechanism the app has: an optional evening Summons.
  *
  * Everything else about the weekly loop waits for the lifter to open the app;
  * this is the only thing that reaches out. Deliberately minimal: one toggle,
- * one fixed evening hour, no per-day schedule, no streak guilt in the copy.
+ * one fixed evening hour, no per-day schedule, no oath guilt in the copy.
  * Off until the lifter turns it on.
+ *
+ * It speaks only when there is something to summon to: a rite the cycle puts
+ * on today, not yet sealed and not already under way. A respite, an
+ * unscheduled cycle or a trial in progress gets silence.
  */
 object Reminders {
     private const val PREFS = "reminders"
     private const val KEY_ENABLED = "enabled"
-    private const val WORK_NAME = "daily-reminder"
+    private const val WORK_NAME = "summons"
 
-    /** The hour the reminder fires. One number, one place to change it. */
-    private val REMIND_AT: LocalTime = LocalTime.of(19, 30)
+    /**
+     * The 24-hour periodic job this replaced. A periodic interval drifts off
+     * the wall clock at every DST change and timezone move, so each run now
+     * schedules the next local 19:30 itself; the old job is cancelled wherever
+     * the new one is scheduled, or an upgraded install would fire twice.
+     */
+    private const val LEGACY_WORK_NAME = "daily-reminder"
 
     fun enabled(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_ENABLED, false)
@@ -47,105 +57,113 @@ object Reminders {
         }
     }
 
-    /** Turns the reminder on and (re)enqueues the daily work. Safe to call again. */
+    /** Turns the Summons on and schedules the next 19:30. Safe to call again. */
     fun enable(context: Context) {
         setEnabled(context, true)
         Notifications.ensureChannels(context)
-        val delay = Duration.between(
-            LocalDateTime.now(),
-            LocalDateTime.of(LocalDate.now().plusDays(if (LocalDateTime.now().toLocalTime() < REMIND_AT) 0 else 1), REMIND_AT),
-        )
-        val request = PeriodicWorkRequestBuilder<ReminderWorker>(1, TimeUnit.DAYS)
-            .setInitialDelay(delay.toMinutes(), TimeUnit.MINUTES)
-            .addTag(WORK_NAME)
-            .build()
-        WorkManager.getInstance(context).enqueueUniquePeriodicWork(
-            WORK_NAME,
-            // KEEP: re-enabling must not reset the clock the lifter expects.
-            ExistingPeriodicWorkPolicy.KEEP,
-            request,
-        )
+        schedule(context, ExistingWorkPolicy.REPLACE)
     }
 
     fun disable(context: Context) {
         setEnabled(context, false)
-        WorkManager.getInstance(context).cancelUniqueWork(WORK_NAME)
+        val work = WorkManager.getInstance(context)
+        work.cancelUniqueWork(WORK_NAME)
+        work.cancelUniqueWork(LEGACY_WORK_NAME)
+        NotificationManagerCompat.from(context).cancel(Notifications.ID_SUMMONS)
+    }
+
+    /**
+     * App start: keeps a queued run (a launch must not move tonight's
+     * Summons), and gives an install that has none, or only the legacy
+     * periodic job, its first one-time run.
+     */
+    fun ensureScheduled(context: Context) {
+        if (enabled(context)) schedule(context, ExistingWorkPolicy.KEEP)
+    }
+
+    /**
+     * Recomputes the next 19:30 from the clock as it reads now: after each
+     * run, and when the timezone or the time itself changes (TimeChangeReceiver).
+     */
+    fun reschedule(context: Context) {
+        if (enabled(context)) schedule(context, ExistingWorkPolicy.REPLACE)
+    }
+
+    private fun schedule(context: Context, policy: ExistingWorkPolicy) {
+        val work = WorkManager.getInstance(context)
+        work.cancelUniqueWork(LEGACY_WORK_NAME)
+        // No exact alarm: a Summons a few minutes late is fine, and the
+        // permission is not worth asking for it.
+        val delay = Summons.delayUntilNext(ZonedDateTime.now(), minLead = Summons.MIN_LEAD)
+        val request = OneTimeWorkRequestBuilder<ReminderWorker>()
+            .setInitialDelay(delay.toMillis(), TimeUnit.MILLISECONDS)
+            .addTag(WORK_NAME)
+            .build()
+        work.enqueueUniqueWork(WORK_NAME, policy, request)
     }
 
     /** The worker's whole job. Returns false when it had nothing to say. */
     suspend fun notifyIfWanted(context: Context, repo: Repository): Boolean {
         if (!enabled(context)) return false
+        if (!Notifications.access(context, Notifications.CHANNEL_SUMMONS).canPost) return false
+
+        // What today actually is: a rite, a respite, under way, or already done.
+        val today = LocalDate.now()
+        val zone = ZoneId.systemDefault()
+        fun dayOf(ms: Long) = Instant.ofEpochMilli(ms).atZone(zone).toLocalDate()
+
+        // A respite or an unscheduled cycle has nothing to summon to. The oath
+        // does not need defending on a free day either: one trial in seven
+        // keeps it, and the Summons never nags about it on its own.
+        val rite = repo.observePresets().firstOrNull()
+            ?.firstOrNull { it.scheduledDay == today.dayOfWeek.value }
+            ?: return false
+
+        val history = repo.observeHistory().firstOrNull() ?: emptyList()
+        val dates = history.mapNotNull { it.first.completedAtMs?.let(::dayOf) }.toSet()
+        // Already sealed today: the kindest notification is silence.
+        if (today in dates) return false
+        // Mid-trial: the lifter is already doing what the Summons would ask.
+        val live = repo.observeLiveSession().firstOrNull()
+        if (live != null && dayOf(live.startedAtMs) == today) return false
+
+        val oath = Streak.current(dates, today)
+        val copy = Summons.copy(
+            riteName = rite.name,
+            exercises = rite.entries.size,
+            sets = rite.entries.sumOf { it.targetSets },
+            oathDays = oath,
+            nextDeedDays = DEED_MILESTONES.firstOrNull { it > oath },
+            oathAtRisk = Streak.atRisk(dates, today),
+        )
+
+        // To Today, where the scheduled rite is one tap from beginning.
+        val intent = Intent(context, MainActivity::class.java)
+            .putExtra(Notifications.EXTRA_OPEN_TAB, Notifications.TAB_TODAY)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        val pending = PendingIntent.getActivity(
+            context, Notifications.REQUEST_SUMMONS, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+        )
+        val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_SUMMONS)
+            .setSmallIcon(R.drawable.ic_reminder)
+            .setColor(Notifications.ACCENT)
+            .setContentTitle(copy.title)
+            .setContentText(copy.text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(copy.bigText))
+            .setContentIntent(pending)
+            .setAutoCancel(true)
+            .build()
+        // Checked inline where lint can see it; Notifications.access is the same test.
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
             return false
         }
-        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return false
-        val pending = PendingIntent.getActivity(
-            context, Notifications.REQUEST_SUMMONS, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-
-        // What today actually is: a quest, a rest day, or already done.
-        val today = LocalDate.now()
-        val history = repo.observeHistory().firstOrNull() ?: emptyList()
-        val zone = java.time.ZoneId.systemDefault()
-        val doneToday = history.any {
-            it.first.completedAtMs?.let { ms ->
-                java.time.Instant.ofEpochMilli(ms).atZone(zone).toLocalDate() == today
-            } == true
-        }
-        // Already claimed today: the kindest notification is silence.
-        if (doneToday) return false
-
-        val dates = history.mapNotNull {
-            it.first.completedAtMs?.let { ms -> java.time.Instant.ofEpochMilli(ms).atZone(zone).toLocalDate() }
-        }.toSet()
-        val streak = Titles.trainingStreakDays(dates)
-        val next = DEED_MILESTONES.firstOrNull { it > streak }
-        val days = pluralDays(streak)
-
-        val quest = repo.observePresets().firstOrNull()
-            ?.firstOrNull { it.scheduledDay == today.dayOfWeek.value }
-        val (title, text, bigText) = if (quest == null) {
-            // A scheduled rest day is a kept day, not a missed one: say so.
-            Triple(
-                "RESPITE",
-                "Take your respite. The oath holds at $days.",
-                "Nothing in your cycle today. Respite counts — your oath of $days holds until your next trial.",
-            )
-        } else {
-            val exercises = quest.entries.size.let { if (it == 1) "1 exercise" else "$it exercises" }
-            val sets = quest.entries.sumOf { it.targetSets }.let { if (it == 1) "1 set" else "$it sets" }
-            Triple(
-                "THE SUMMONS · ${quest.name.uppercase()}",
-                "$exercises · $sets waiting.",
-                buildString {
-                    append("${quest.name}: $exercises, $sets today. ")
-                    append(
-                        if (streak == 0) "Today's Trial starts the oath."
-                        else if (next != null) "Oath · $days kept. Next deed at ${pluralDays(next)}."
-                        else "Oath · $days kept.",
-                    )
-                },
-            )
-        }
-
-        val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_SUMMONS)
-            .setSmallIcon(R.drawable.ic_reminder)
-            .setColor(Notifications.ACCENT)
-            .setContentTitle(title)
-            .setContentText(text)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
-            .setContentIntent(pending)
-            .setAutoCancel(true)
-            .build()
         NotificationManagerCompat.from(context).notify(Notifications.ID_SUMMONS, notification)
         return true
     }
 
-    /** Streak deed thresholds — keep in step with the TrainingStreak deeds. */
+    /** Oath deed thresholds — keep in step with the TrainingStreak deeds. */
     private val DEED_MILESTONES = listOf(3, 7, 14, 30, 100)
-
-    private fun pluralDays(n: Int) = if (n == 1) "1 day" else "$n days"
 }
