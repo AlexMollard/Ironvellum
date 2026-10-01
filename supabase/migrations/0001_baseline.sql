@@ -108,6 +108,102 @@ create table if not exists friend_request_log (
 );
 create index if not exists friend_request_log_idx on friend_request_log (requester_id, sent_at);
 
+-- A project that still has warbands (schema 26 and before) is migrated IN PLACE
+-- here, before anything below creates the new names, so no data is lost: the
+-- tables, columns, constraints and indexes are renamed (warbands -> circles,
+-- warband_members -> circle_members, warband_id -> circle_id, warband_join_log
+-- -> circle_join_log), weekly_goal (a total of 5-50 workouts) becomes per_member
+-- (days each member aims to train, 1-7: the default 12 is 3, anything else is
+-- round(goal / members) clamped to 1..7; a project that never had weekly_goal
+-- keeps 3), the Keeper may be null mid-handover and deleting their account
+-- hands the circle over, and circle names are trimmed. The old policies and
+-- *_warband functions go; the definitions below recreate them under the new
+-- names. A fresh project has no warbands and skips all of it. The same block
+-- opens supabase/hosted/2026-10-01-circles.sql, which the live project runs once.
+do $rename$
+declare
+    c record;
+begin
+    if to_regclass('public.warbands') is not null and to_regclass('public.circles') is not null then
+        raise exception 'warbands and circles both exist: merge them by hand before applying this file';
+    end if;
+    if to_regclass('public.warbands') is not null then
+        drop policy if exists warbands_read on warbands;
+        drop policy if exists warbands_update on warbands;
+        drop policy if exists warbands_delete on warbands;
+        drop policy if exists warband_members_read on warband_members;
+        drop function if exists public.create_warband(text);
+        drop function if exists public.join_warband(text);
+        drop function if exists public.leave_warband();
+        drop function if exists public.set_warband_goal(int);
+        drop function if exists public.my_warband();
+        drop function if exists public.in_my_warband(uuid);
+        drop function if exists public.warband_member(uuid, uuid);
+
+        alter table warbands rename to circles;
+        alter table warband_members rename to circle_members;
+        alter table circle_members rename column warband_id to circle_id;
+        if to_regclass('public.warband_join_log') is not null then
+            alter table warband_join_log rename to circle_join_log;
+        end if;
+
+        -- Constraints (and the indexes behind the keys) and plain indexes that
+        -- carry the old name, so the result matches a fresh project.
+        for c in
+            select con.conrelid::regclass::text as tbl, con.conname
+            from pg_constraint con
+            where con.conname like 'warband%'
+              and con.conrelid in (
+                  select r.oid from pg_class r
+                  where r.relnamespace = 'public'::regnamespace
+                    and r.relname in ('circles', 'circle_members', 'circle_join_log'))
+        loop
+            execute format('alter table %s rename constraint %I to %I',
+                           c.tbl, c.conname, replace(c.conname, 'warband', 'circle'));
+        end loop;
+        for c in
+            select i.indexname from pg_indexes i
+            where i.schemaname = 'public' and i.indexname like 'warband%'
+        loop
+            execute format('alter index public.%I rename to %I', c.indexname, replace(c.indexname, 'warband', 'circle'));
+        end loop;
+
+        -- The goal: a total of workouts becomes days per member.
+        alter table circles add column if not exists per_member int not null default 3
+            check (per_member between 1 and 7);
+        alter table circles add column if not exists pending_per_member int
+            check (pending_per_member between 1 and 7);
+        if exists (select 1 from information_schema.columns
+                   where table_schema = 'public' and table_name = 'circles' and column_name = 'weekly_goal') then
+            update circles w
+            set per_member = case
+                when w.weekly_goal = 12 then 3
+                else greatest(1, least(7, round(
+                    w.weekly_goal::numeric
+                    / greatest(1, (select count(*) from circle_members m where m.circle_id = w.id))
+                )::int))
+            end;
+            alter table circles drop column weekly_goal;
+        end if;
+
+        -- The Keeper may be null while a handover is in flight, and the owner's
+        -- account going away hands the circle over instead of deleting it.
+        alter table circles alter column owner_id drop not null;
+        alter table circles drop constraint circles_owner_id_fkey;
+        alter table circles add constraint circles_owner_id_fkey
+            foreign key (owner_id) references auth.users (id) on delete set null;
+
+        -- Names are stored trimmed.
+        alter table circles drop constraint if exists circles_name_check;
+        update circles
+        set name = case when btrim(name) = '' then 'Circle' else left(btrim(name), 24) end
+        where name <> btrim(name);
+        alter table circles add constraint circles_name_trimmed
+            check (name = btrim(name) and char_length(name) between 1 and 24);
+    end if;
+end
+$rename$;
+
 -- Failed circle-code attempts, capped per lifter like friend requests: the
 -- code space is huge, but a throttled door costs nothing to close. RLS is on
 -- with no policies: the security-definer RPCs own every write, and no client
@@ -1794,7 +1890,8 @@ grant execute on function public.mark_inbox_seen() to authenticated;
 
 -- The UTC Monday that opens the week containing p_at, as a timestamptz. UTC is
 -- spelled out so a moved server timezone cannot shift everyone's week; the
--- client keeps the same anchor (CirclePayout.weekKey).
+-- client shows the reset in the lifter's own clock from the same anchor
+-- (circleResetLabel in ui/social/CircleUi.kt).
 create or replace function public.circle_week_start(p_at timestamptz)
 returns timestamptz
 language sql
@@ -2176,7 +2273,7 @@ revoke execute on function public.my_inbox() from public, anon;
 grant execute on function public.my_inbox() to authenticated;
 
 -- ---------------------------------------------------------------- circles
--- The invite-code alphabet create_circle() draws from: digits 2-9 and letters
+-- The invite-code alphabet circle_draw_code() draws from: digits 2-9 and letters
 -- minus I, L and O — 31 unambiguous glyphs. Keep in step with
 -- InviteCodeAlphabet in domain/Circles.kt and the check on circles.invite_code.
 
@@ -2607,6 +2704,19 @@ create or replace function public.schema_version() returns int
 language sql stable as $$ select 27 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
+
+-- History starts now. A circle that predates the week records (a migrated
+-- warband, or one never read since) opens only the CURRENT week, so the first
+-- read after an upgrade cannot back-fill past weeks under today's roster and
+-- settle or pay them under rules nobody trained against. A circle with a week
+-- on record is left alone: this is a no-op on every run after the first.
+do $history$
+begin
+    perform public.circle_open_week(c.id, (public.circle_week_start(now()) at time zone 'utc')::date)
+    from circles c
+    where not exists (select 1 from circle_weeks w where w.circle_id = c.id);
+end
+$history$;
 
 -- ================================================================ sign-up
 

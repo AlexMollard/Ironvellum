@@ -9,9 +9,8 @@
 --
 -- Apply it BEFORE shipping the app build that expects schema 27, and do not
 -- re-run 2026-10-01-inbox.sql afterwards (it alters the old warbands table).
--- It can also be run before re-applying the baseline on any project that still
--- has warbands: re-applying the baseline first would create empty circles
--- beside the old tables and strand their data.
+-- The baseline carries the same migration at its top, so a project that
+-- re-applies the baseline instead (a self-hosted one, say) ends up identical.
 --
 -- What it changes:
 --   1. The tables, columns, constraints, indexes, policies and functions are
@@ -34,7 +33,10 @@
 --   5. my_inbox() keeps its columns and its 'band_join' / 'band_goal' kinds
 --      (builds already installed parse those) and gains 'circle_left',
 --      'circle_keeper' and 'circle_removed', which older builds skip.
---   6. schema_version() reports 27.
+--   6. History starts now: a migrated circle opens only the current week, so
+--      the first read cannot back-fill past weeks under today's roster and
+--      settle or pay them. Weeks are counted from this one on.
+--   7. schema_version() reports 27.
 --
 -- What an older installed build does against the patched project: sessions,
 -- allies, the feed and the inbox keep working. Its circle panel and Veil
@@ -44,14 +46,27 @@
 
 begin;
 
--- ---------------------------------------------------------------- 1. rename in place
+-- ---------------------------------------------------------------- 1. rename in place (the baseline's own block)
+-- A project that still has warbands (schema 26 and before) is migrated IN PLACE
+-- here, before anything below creates the new names, so no data is lost: the
+-- tables, columns, constraints and indexes are renamed (warbands -> circles,
+-- warband_members -> circle_members, warband_id -> circle_id, warband_join_log
+-- -> circle_join_log), weekly_goal (a total of 5-50 workouts) becomes per_member
+-- (days each member aims to train, 1-7: the default 12 is 3, anything else is
+-- round(goal / members) clamped to 1..7; a project that never had weekly_goal
+-- keeps 3), the Keeper may be null mid-handover and deleting their account
+-- hands the circle over, and circle names are trimmed. The old policies and
+-- *_warband functions go; the definitions below recreate them under the new
+-- names. A fresh project has no warbands and skips all of it. The same block
+-- opens supabase/hosted/2026-10-01-circles.sql, which the live project runs once.
 do $rename$
 declare
     c record;
 begin
-    if to_regclass('public.warbands') is not null and to_regclass('public.circles') is null then
-        -- The policies and functions that name the old tables go first; the
-        -- new ones are created below, from the baseline.
+    if to_regclass('public.warbands') is not null and to_regclass('public.circles') is not null then
+        raise exception 'warbands and circles both exist: merge them by hand before applying this file';
+    end if;
+    if to_regclass('public.warbands') is not null then
         drop policy if exists warbands_read on warbands;
         drop policy if exists warbands_update on warbands;
         drop policy if exists warbands_delete on warbands;
@@ -72,7 +87,7 @@ begin
         end if;
 
         -- Constraints (and the indexes behind the keys) and plain indexes that
-        -- carry the old name, so the result matches a fresh baseline.
+        -- carry the old name, so the result matches a fresh project.
         for c in
             select con.conrelid::regclass::text as tbl, con.conname
             from pg_constraint con
@@ -127,6 +142,7 @@ begin
     end if;
 end
 $rename$;
+
 
 -- ---------------------------------------------------------------- 2. definitions, verbatim from the baseline
 -- Failed circle-code attempts, capped per lifter like friend requests: the
@@ -521,7 +537,8 @@ grant execute on function public.delete_my_account() to authenticated;
 
 -- The UTC Monday that opens the week containing p_at, as a timestamptz. UTC is
 -- spelled out so a moved server timezone cannot shift everyone's week; the
--- client keeps the same anchor (CirclePayout.weekKey).
+-- client shows the reset in the lifter's own clock from the same anchor
+-- (circleResetLabel in ui/social/CircleUi.kt).
 create or replace function public.circle_week_start(p_at timestamptz)
 returns timestamptz
 language sql
@@ -903,7 +920,7 @@ revoke execute on function public.my_inbox() from public, anon;
 grant execute on function public.my_inbox() to authenticated;
 
 -- ---------------------------------------------------------------- circles
--- The invite-code alphabet create_circle() draws from: digits 2-9 and letters
+-- The invite-code alphabet circle_draw_code() draws from: digits 2-9 and letters
 -- minus I, L and O — 31 unambiguous glyphs. Keep in step with
 -- InviteCodeAlphabet in domain/Circles.kt and the check on circles.invite_code.
 
@@ -1329,5 +1346,18 @@ create or replace function public.schema_version() returns int
 language sql stable as $$ select 27 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
+
+-- History starts now. A circle that predates the week records (a migrated
+-- warband, or one never read since) opens only the CURRENT week, so the first
+-- read after an upgrade cannot back-fill past weeks under today's roster and
+-- settle or pay them under rules nobody trained against. A circle with a week
+-- on record is left alone: this is a no-op on every run after the first.
+do $history$
+begin
+    perform public.circle_open_week(c.id, (public.circle_week_start(now()) at time zone 'utc')::date)
+    from circles c
+    where not exists (select 1 from circle_weeks w where w.circle_id = c.id);
+end
+$history$;
 
 commit;

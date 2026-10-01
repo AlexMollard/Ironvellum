@@ -58,7 +58,7 @@ data class CircleMember(
 )
 
 /**
- * The invite-code alphabet create_circle() draws from: digits 2-9 and letters
+ * The invite-code alphabet circle_draw_code() draws from: digits 2-9 and letters
  * minus I, L and O — 31 unambiguous glyphs, so a code read aloud off a phone
  * screen survives. MUST stay in step with the alphabet literal and the
  * `invite_code ~ '^[2-9A-HJ-NP-Z]{8}$'` check in
