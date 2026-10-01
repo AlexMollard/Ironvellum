@@ -24,7 +24,9 @@ import androidx.compose.material.icons.outlined.Delete
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.foundation.layout.wrapContentHeight
+import com.ironvellum.app.ui.components.LedgerContrast
 import com.ironvellum.app.ui.components.LedgerSpace
+import com.ironvellum.app.ui.components.rememberZoneId
 import com.ironvellum.app.domain.MeasurementEntry
 import com.ironvellum.app.domain.Measurements
 import kotlinx.coroutines.flow.Flow
@@ -102,7 +104,6 @@ import com.ironvellum.app.ui.launchGuarded
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
-import java.time.Instant
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
@@ -134,7 +135,7 @@ import com.ironvellum.app.ui.components.TermInfo
 
 /** Band tones to theme tokens: gold stays for earned things, so no band is gold. */
 private fun toneColor(tone: BandTone): Color = when (tone) {
-    BandTone.LOW -> IronvellumColors.Bracket
+    BandTone.LOW -> LedgerContrast.Graphic
     BandTone.OK -> IronvellumColors.SystemGreen
     BandTone.GOOD -> IronvellumColors.Emerald
     BandTone.STRONG -> IronvellumColors.EmeraldBright
@@ -183,10 +184,6 @@ class StatsViewModel(private val repo: Repository) : ViewModel() {
         StatsUi(
             loaded = true,
             stats = stats,
-            completedDates = history.map {
-                Instant.ofEpochMilli(it.first.completedAtMs ?: it.first.startedAtMs)
-                    .atZone(ZoneId.systemDefault()).toLocalDate()
-            }.toSet(),
             scheduledDays = presets.mapNotNull { it.scheduledDay }.toSet(),
             sessions = history.map { it.first }.sortedBy { it.startedAtMs },
             healthDays = healthDays,
@@ -237,7 +234,13 @@ fun StatsScreen(
     viewModel: StatsViewModel =
         viewModel(factory = viewModelFactory { initializer { StatsViewModel(ironvellumRepository()) } }),
 ) {
-    val ui by viewModel.ui.collectAsStateWithLifecycle()
+    val stream by viewModel.ui.collectAsStateWithLifecycle()
+    val zone = rememberZoneId()
+    // Sealed days are bucketed here, with the zone the screen is showing, not in
+    // the ViewModel with whatever zone was current at the last Room emission.
+    val ui = remember(stream, zone) {
+        stream.copy(completedDates = stream.sessions.map { trialDay(it, zone) }.toSet())
+    }
     // Everything the lifter chose survives rotation and process death: the
     // dialog, the tab, the pane, the range, the month and each tab's scroll.
     var showAdd by rememberSaveable { mutableStateOf(false) }
@@ -255,10 +258,9 @@ fun StatsScreen(
     val dailyScroll = rememberScrollState()
     var lastDeleted by remember { mutableStateOf<StatEntry?>(null) }
 
-    val today = rememberToday()
+    val today = rememberToday(zone)
     // Health Connect trails the watch: pull the last fortnight whenever the Ledger opens.
     androidx.compose.runtime.LaunchedEffect(Unit) { viewModel.syncHealthHistory(14) }
-    val zone = remember { ZoneId.systemDefault() }
     val latest = ui.stats.firstOrNull()
     val ffmiReading = remember(ui.stats, ui.profileHeight) { Ledger.latestFfmi(ui.stats, ui.profileHeight) }
 
@@ -422,12 +424,12 @@ fun StatsScreen(
  * Each lift's best estimated one-rep max with its trend. The number is the
  * Epley estimate of the marked load (a pull-up's ADDED kilos), so it is
  * comparable with itself over time, not with a bodyweight-inclusive table.
- * Gold appears only as the PR tag on a record set in the last fortnight.
+ * Gold appears only as the PEAK tag on a peak set in the last fortnight.
  */
 @Composable
 private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long) {
     InkPanel(Modifier.fillMaxWidth()) {
-        PanelLabel("LIFT RECORDS")
+        PanelLabel("LIFT PEAKS")
         Text(
             "Best estimated 1RM of the marked load, in kg. Epley, up to 12 reps.",
             style = MaterialTheme.typography.bodySmall,
@@ -471,7 +473,7 @@ private fun LiftRecordRow(record: LiftRecord, fresh: Boolean) {
                 )
                 if (fresh) {
                     Text(
-                        "PR",
+                        "PEAK",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.SovereignGold,
@@ -486,8 +488,8 @@ private fun LiftRecordRow(record: LiftRecord, fresh: Boolean) {
                 IronvellumColors.Emerald,
                 fromZero = false,
                 modifier = Modifier.fillMaxWidth().height(32.dp),
-                description = "${record.name} best estimated one-rep max by session, " +
-                    "${record.series.size} ${plural(record.series.size, "session", "sessions")}",
+                description = "${record.name} best estimated one-rep max by trial, " +
+                    "${record.series.size} ${plural(record.series.size, "trial", "trials")}",
                 recordMarker = false,
                 scrub = false,
             )
@@ -695,7 +697,8 @@ private fun AddStatDialog(
     // Bounded, not merely positive: a typo'd body fat of 500 used to reach
     // Katch-McArdle and show a negative resting burn as fact.
     val validWeight = BodyLimits.validWeight(Ledger.parseDecimal(weight.value))
-    val validBodyFat = bodyFat.value.isBlank() && bfValue == null || BodyLimits.validBodyFat(bfValue)
+    // Typed text that does not read as a number is invalid, never "no body fat".
+    val validBodyFat = Ledger.bodyFatTextValid(bodyFat.value)
 
     // Estimator state: prefill the tapes from the lifter's latest measurements.
     var showEstimator by rememberSaveable { mutableStateOf(false) }
@@ -823,7 +826,13 @@ private fun AddStatDialog(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            estimate?.let { "~${it.toInt()}% BODY FAT (estimate)" } ?: "Tapes not complete",
+                            estimate?.let {
+                                if (Ledger.bodyFatTextValid(it.toInt().toString())) {
+                                    "~${it.toInt()}% BODY FAT (estimate)"
+                                } else {
+                                    "Estimate out of range, check the tapes"
+                                }
+                            } ?: "Tapes not complete",
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
                             color = if (estimate != null) IronvellumColors.EmeraldBright else IronvellumColors.InkMuted,
@@ -833,7 +842,8 @@ private fun AddStatDialog(
                         )
                         IronvellumButton(
                             label = "Use",
-                            enabled = estimate != null,
+                            // An estimate outside the allowed range (Navy can go negative) cannot be used.
+                            enabled = estimate != null && Ledger.bodyFatTextValid(estimate.toInt().toString()),
                             onClick = {
                                 estimate?.let {
                                     bodyFat.value = it.toInt().toString()
@@ -865,21 +875,21 @@ private fun AddStatDialog(
 
 /** Today's date, refreshed on resume and at midnight so the windows below never go stale. */
 @Composable
-private fun rememberToday(): LocalDate {
-    var today by remember { mutableStateOf(LocalDate.now()) }
-    androidx.compose.runtime.LaunchedEffect(today) {
-        val zone = ZoneId.systemDefault()
+private fun rememberToday(zone: ZoneId): LocalDate {
+    var today by remember { mutableStateOf(LocalDate.now(zone)) }
+    androidx.compose.runtime.LaunchedEffect(today, zone) {
+        today = LocalDate.now(zone)
         val untilMidnight = java.time.Duration.between(
             java.time.ZonedDateTime.now(zone),
             today.plusDays(1).atStartOfDay(zone),
         ).toMillis()
         kotlinx.coroutines.delay(untilMidnight.coerceAtLeast(1_000L) + 1_000L)
-        today = LocalDate.now()
+        today = LocalDate.now(zone)
     }
     val owner = androidx.lifecycle.compose.LocalLifecycleOwner.current
-    androidx.compose.runtime.DisposableEffect(owner) {
+    androidx.compose.runtime.DisposableEffect(owner, zone) {
         val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) today = LocalDate.now()
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) today = LocalDate.now(zone)
         }
         owner.lifecycle.addObserver(observer)
         onDispose { owner.lifecycle.removeObserver(observer) }

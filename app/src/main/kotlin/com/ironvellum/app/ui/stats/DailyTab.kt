@@ -40,6 +40,7 @@ import com.ironvellum.app.ui.components.InkListRow
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.LedgerSpace
+import com.ironvellum.app.ui.components.rememberZoneId
 import com.ironvellum.app.ui.components.PanelLabel
 import com.ironvellum.app.ui.components.RangeChips
 import com.ironvellum.app.ui.components.StatSize
@@ -102,7 +103,7 @@ internal fun ActivityTab(
             }
         }
 
-        val zone = remember { ZoneId.systemDefault() }
+        val zone = rememberZoneId()
         val latest = stats.firstOrNull()
         val weightKg = latest?.weightKg
         val heightCm = latest?.let { Ledger.heightFor(it, profileHeight) } ?: profileHeight?.takeIf { it > 0.0 }

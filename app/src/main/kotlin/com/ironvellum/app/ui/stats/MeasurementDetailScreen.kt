@@ -50,6 +50,7 @@ import com.ironvellum.app.ui.components.InkListRow
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.LedgerSpace
+import com.ironvellum.app.ui.components.rememberZoneId
 import com.ironvellum.app.ui.components.PanelLabel
 import com.ironvellum.app.ui.components.StatSize
 import com.ironvellum.app.ui.components.StatValue
@@ -122,7 +123,7 @@ fun MeasurementDetailScreen(
     // Saveable: rotation mid-entry used to clear the half-typed reading.
     var readingInput by rememberSaveable(site) { mutableStateOf("") }
     var showAll by rememberSaveable(site) { mutableStateOf(false) }
-    val zone = remember { ZoneId.systemDefault() }
+    val zone = rememberZoneId()
     val newestFirst = remember(ui.entries) { ui.entries.sortedByDescending { it.takenAtMs } }
     val oldestFirst = remember(newestFirst) { newestFirst.reversed() }
     val latest = newestFirst.firstOrNull()

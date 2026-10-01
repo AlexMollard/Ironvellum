@@ -411,7 +411,7 @@ class AccessibilityChecksTest {
             // exists on an empty install. The two panes replace the tabs and
             // are left again by the sweep's own exit step below.
             listOf("Ledger", "BMI"),
-            listOf("Ledger", "Tape measurements"),
+            listOf("Ledger", "Tape readings"),
             // (The History link only exists once a weight is logged, and the
             // test profile has none, so the pane is not on the sweep.)
             listOf("Ledger", "TRAINING"),

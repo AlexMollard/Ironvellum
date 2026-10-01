@@ -45,7 +45,7 @@ internal fun TapePage(
 ) {
     val latest = Measurements.latest(entries)
     Column(Modifier.fillMaxSize()) {
-        LedgerTopBar("TAPE MEASUREMENTS", onBack)
+        LedgerTopBar("TAPE READINGS", onBack)
         Column(
             Modifier
                 .fillMaxSize()

@@ -3,6 +3,7 @@ package com.ironvellum.app.domain
 import java.time.LocalDate
 import java.time.ZoneId
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -186,7 +187,25 @@ class LedgerMathTest {
         val sealed = setOf(LocalDate.of(2026, 9, 28), LocalDate.of(2026, 9, 30), LocalDate.of(2026, 9, 27))
         val counts = Ledger.weeklyCounts(sealed, today, weeks = 3)
         assertEquals(listOf(0, 1, 2), counts)
-        assertEquals(1, Ledger.sealedThisMonth(sealed + LocalDate.of(2026, 10, 1), today))
+    }
+
+    @Test
+    fun `weekly counts follow the week start they are given`() {
+        // Sunday 27 Sep belongs to the week of Monday 21 Sep, but starts the next one in a Sunday-start locale.
+        val sealed = setOf(LocalDate.of(2026, 9, 27))
+        assertEquals(listOf(1, 0), Ledger.weeklyCounts(sealed, today, weeks = 2, weekStart = java.time.DayOfWeek.MONDAY))
+        assertEquals(listOf(0, 1), Ledger.weeklyCounts(sealed, today, weeks = 2, weekStart = java.time.DayOfWeek.SUNDAY))
+    }
+
+    @Test
+    fun `body fat text is valid when blank or a number in range, and invalid when it will not parse`() {
+        assertTrue(Ledger.bodyFatTextValid(""))
+        assertTrue(Ledger.bodyFatTextValid("  "))
+        assertTrue(Ledger.bodyFatTextValid("18,5"))
+        assertFalse(Ledger.bodyFatTextValid("."))
+        assertFalse(Ledger.bodyFatTextValid("-5"))
+        assertFalse(Ledger.bodyFatTextValid("1"))
+        assertFalse(Ledger.bodyFatTextValid("80"))
     }
 
     @Test

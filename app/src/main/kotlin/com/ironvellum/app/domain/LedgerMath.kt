@@ -216,17 +216,31 @@ object Ledger {
         return StrengthTrend(latest, latest - scored[scored.size - 1 - back], back)
     }
 
-    /** Sealed days per week (Monday start) for the [weeks] weeks ending with today's, oldest first. */
-    fun weeklyCounts(sealedDays: Set<LocalDate>, today: LocalDate, weeks: Int = 12): List<Int> {
-        val thisMonday = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY))
+    /**
+     * Sealed days per week for the [weeks] weeks ending with today's, oldest
+     * first. Weeks begin on [weekStart], which callers take from the locale so
+     * the strip agrees with the calendar grid.
+     */
+    fun weeklyCounts(
+        sealedDays: Set<LocalDate>,
+        today: LocalDate,
+        weeks: Int = 12,
+        weekStart: DayOfWeek = DayOfWeek.MONDAY,
+    ): List<Int> {
+        val thisWeekStart = today.with(TemporalAdjusters.previousOrSame(weekStart))
         return (weeks - 1 downTo 0).map { back ->
-            val monday = thisMonday.minusWeeks(back.toLong())
-            (0..6).count { monday.plusDays(it.toLong()) in sealedDays }
+            val first = thisWeekStart.minusWeeks(back.toLong())
+            (0..6).count { first.plusDays(it.toLong()) in sealedDays }
         }
     }
 
-    fun sealedThisMonth(sealedDays: Set<LocalDate>, today: LocalDate): Int =
-        sealedDays.count { it.year == today.year && it.month == today.month && it <= today }
+    /**
+     * Body fat typed in the add-reading dialog: blank is fine (optional), any
+     * other text must read as a number inside [BodyLimits.BODY_FAT_PCT]. Text
+     * that does not parse is invalid, not "no body fat".
+     */
+    fun bodyFatTextValid(raw: String): Boolean =
+        raw.isBlank() || parseDecimal(raw)?.let { BodyLimits.validBodyFat(it) } == true
 
     /**
      * 0..1 positions for readings on [dates] (oldest first), spaced by the
