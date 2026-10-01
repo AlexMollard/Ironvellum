@@ -217,9 +217,6 @@ class WorkoutSessionService : Service() {
         val builder = NotificationCompat.Builder(this, Notifications.CHANNEL_TRIAL)
             .setSmallIcon(R.drawable.ic_reminder)
             .setColor(Notifications.ACCENT)
-            // Foreground-service notifications may be colorized: the accent then
-            // tints the progress bar and surface instead of the system blue.
-            .setColorized(true)
             .setContentTitle(title)
             .setContentText(body)
             .setSubText("TRIAL · $done / $total $setWord")
