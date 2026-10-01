@@ -176,6 +176,52 @@ class SkillPrerequisiteGateTest {
         )
     }
 
+    /**
+     * All-of prerequisites: Handstand-to-Bridge needs BOTH Freestanding
+     * Handstand and Bridge. One of the two is not enough, and the claim that
+     * completes the pair is what opens it.
+     */
+    @Test
+    fun aSkillWithTwoPrerequisitesNeedsBoth() = runBlocking {
+        repo.claimSkill("Wall Handstand")
+        val handstand = repo.claimSkill("Freestanding Handstand")
+        assertTrue(
+            "Bridge is still missing, so the handstand claim opens nothing that needs it",
+            handstand.unlockedNext.none { it.name == "Handstand-to-Bridge" },
+        )
+        val xpBefore = db.profileDao().get()!!.totalXp
+        assertTrue(runCatching { repo.claimSkill("Handstand-to-Bridge") }.isFailure)
+        assertEquals("a refused claim mints nothing", xpBefore, db.profileDao().get()!!.totalXp)
+
+        val bridge = repo.claimSkill("Bridge")
+        assertTrue(bridge.unlockedNext.any { it.name == "Handstand-to-Bridge" })
+        repo.claimSkill("Handstand-to-Bridge")
+        assertTrue(db.skillPracticeDao().claim("Handstand-to-Bridge") != null)
+    }
+
+    /**
+     * The claim row stamps what it paid, and the unclaim refunds the stamp.
+     * A row from before stamping (value 0) refunds the tier it was claimed
+     * at, so the ledger lands back exactly where it started either way.
+     */
+    @Test
+    fun unclaimRefundsTheStampedXp() = runBlocking {
+        repo.claimSkill(root.name)
+        assertEquals(root.xp, db.skillPracticeDao().claim(root.name)!!.value)
+        repo.unclaimSkill(root.name)
+        assertEquals(0L, db.profileDao().get()!!.totalXp)
+
+        // An unstamped legacy claim, as an older build wrote it.
+        db.skillPracticeDao().insert(
+            com.ironvellum.app.data.db.SkillPracticeEntity(
+                skillName = root.name, practicedAtMs = 1L, claimed = true,
+            ),
+        )
+        db.profileDao().addXp(root.xp.toLong())
+        repo.unclaimSkill(root.name)
+        assertEquals(0L, db.profileDao().get()!!.totalXp)
+    }
+
     private companion object {
         const val TEST_DB = "skill_prerequisite_gate_test.db"
     }

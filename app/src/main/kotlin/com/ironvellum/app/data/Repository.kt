@@ -1736,11 +1736,14 @@ class Repository(
             .map { it.skillName }
             .toSet()
         check(Skills.unlocked(def, mastered)) {
-            "${def.requires} not mastered — $skillName stays locked until it is"
+            "${def.prerequisites.filterNot { it in mastered }.joinToString()} not mastered — " +
+                "$skillName stays locked until it is"
         }
         val now = System.currentTimeMillis()
+        // The claim row records what it paid in `value` (unused on claims),
+        // so an unclaim refunds exactly that even after the skill re-tiers.
         skillPracticeDao.insert(
-            SkillPracticeEntity(skillName = skillName, practicedAtMs = now, claimed = true),
+            SkillPracticeEntity(skillName = skillName, practicedAtMs = now, claimed = true, value = def.xp),
         )
         val before = profileDao.get() ?: error("Profile missing")
         val levelBefore = Xp.levelFor(before.totalXp)
@@ -1767,37 +1770,42 @@ class Repository(
             levelAfter = Xp.levelFor(newTotal),
             totalXp = newTotal,
             newTitles = newly,
-            unlockedNext = Skills.unlockedBy(skillName),
+            unlockedNext = Skills.unlockedBy(skillName, mastered),
         )
     }
 
     /**
      * Undo an accidental claim: removes mastery and takes the XP back. The
-     * subtraction is always exactly [SkillDef.xp], what a reclaim re-adds, so
-     * unclaim/reclaim can never mint XP. A ledger already below that figure
+     * subtraction is exactly what the claim PAID ([Skills.claimRefund]: the
+     * figure stamped on the claim row, or the tier it was claimed at for a
+     * row from before stamping), never the current tier's [SkillDef.xp] - a
+     * re-tiered skill would otherwise refund more or less than it paid. A
+     * reclaim then pays the current tier, so unclaim/reclaim moves a claim
+     * onto the new tier without minting. A ledger already below that figure
      * (spent down by a deleted workout) cannot pay it back, so the unclaim is
      * refused rather than clamped: a clamped refund followed by a full reclaim
      * was an XP farm. Rolls and titles the claim already granted are
      * deliberately kept: a title once earned is not taken back.
      */
     suspend fun unclaimSkill(skillName: String) = db.withTransaction {
-        val def = Skills.forName(skillName) ?: error("Unknown skill $skillName")
-        if (skillPracticeDao.claim(skillName) == null) return@withTransaction
+        Skills.forName(skillName) ?: error("Unknown skill $skillName")
+        val claim = skillPracticeDao.claim(skillName) ?: return@withTransaction
         // A claimed skill that others REQUIRE cannot stand down while they
         // stand on it: dropping Dead Hang would leave Scapular Pull claimed
         // with its own floor gone, and the tree's invariant quietly broken.
         val dependents = skillPracticeDao.observeAll().first()
-            .filter { it.claimed && Skills.forName(it.skillName)?.requires == skillName }
+            .filter { it.claimed && Skills.forName(it.skillName)?.prerequisites?.contains(skillName) == true }
             .map { it.skillName }
         check(dependents.isEmpty()) {
             "$skillName is still required by ${dependents.joinToString()} - unclaim those first"
         }
+        val refund = Skills.claimRefund(skillName, claim.value)
         val total = profileDao.get()?.totalXp ?: 0L
-        check(total >= def.xp) {
-            "$skillName paid ${def.xp} XP but only $total XP is left - it stays claimed"
+        check(total >= refund) {
+            "$skillName paid $refund XP but only $total XP is left - it stays claimed"
         }
         skillPracticeDao.deleteClaims(skillName)
-        profileDao.addXp(-def.xp.toLong())
+        profileDao.addXp(-refund.toLong())
     }
 
     /**
