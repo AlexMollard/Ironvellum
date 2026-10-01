@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
@@ -69,6 +70,7 @@ import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.components.IronvellumTabBar
 import com.ironvellum.app.ui.components.IronvellumTabItem
 import com.ironvellum.app.ui.components.InkPickerSheet
+import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.domain.ExerciseSearch
 import androidx.compose.ui.semantics.Role
@@ -594,33 +596,40 @@ private fun LinePickerBar(line: String, selected: String, mastered: Set<String>,
         searchLabel = "Search paths",
         count = shown.size,
     ) {
-        shown.forEach { candidate ->
+        shown.forEachIndexed { index, candidate ->
             val skills = Skills.ALL.filter { it.line == candidate }
             val done = skills.count { it.name in mastered }
             item(key = candidate) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(min = 56.dp)
-                        .clip(MaterialTheme.shapes.small)
-                        .selectable(selected = candidate == selected, role = Role.RadioButton) {
-                            open = false
-                            onPick(candidate)
-                        }
-                        .padding(horizontal = 8.dp, vertical = 8.dp),
-                ) {
-                    Column(Modifier.weight(1f)) {
+                Column {
+                    if (index > 0) {
+                        Box(Modifier.fillMaxWidth().height(1.dp).background(IronvellumColors.Rune.copy(alpha = 0.6f)))
+                    }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 56.dp)
+                            .clip(MaterialTheme.shapes.small)
+                            .selectable(selected = candidate == selected, role = Role.RadioButton) {
+                                open = false
+                                onPick(candidate)
+                            }
+                            .padding(horizontal = 8.dp, vertical = 8.dp),
+                    ) {
                         Text(
                             candidate,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = if (candidate == selected) FontWeight.Bold else FontWeight.Normal,
                             color = if (candidate == selected) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+                            modifier = Modifier.weight(1f),
                         )
+                        // The same done/total the PATH bar shows, so one figure has one format.
                         Text(
-                            plural(done, "1 mastered", "$done mastered") + " · ${skills.size} techniques",
-                            style = MaterialTheme.typography.labelSmall,
+                            "$done/${skills.size}",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = ChakraPetch,
                             color = IronvellumColors.InkMuted,
+                            modifier = Modifier.semantics { contentDescription = "$done of ${skills.size} mastered" },
                         )
                     }
                 }
@@ -662,8 +671,10 @@ private fun RiteChoiceDialog(
                 )
                 Spacer(Modifier.height(8.dp))
                 rites.forEach { (id, name) ->
+                    RiteChoiceDivider()
                     RiteChoiceRow(name) { onPick(id) }
                 }
+                RiteChoiceDivider()
                 RiteChoiceRow("New rite · $skillName", accent = IronvellumColors.SystemGreen) { onPick(null) }
             }
         },
@@ -675,18 +686,27 @@ private fun RiteChoiceDialog(
 
 @Composable
 private fun RiteChoiceRow(label: String, accent: Color = IronvellumColors.Ink, onClick: () -> Unit) {
-    Text(
-        label,
-        style = MaterialTheme.typography.bodyMedium,
-        color = accent,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 48.dp)
-            .clickable(role = Role.Button) { onClick() }
-            .wrapContentHeight(),
-    )
+    // The shared tap row, with a chevron so every choice reads as a destination.
+    TapRow(onClickLabel = label, onClick = onClick) {
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            color = accent,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = IronvellumColors.InkMuted,
+        )
+    }
+}
+
+@Composable
+private fun RiteChoiceDivider() {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(IronvellumColors.Rune.copy(alpha = 0.6f)))
 }
 
 // No line art on the tree's pills. Six of the ten lines had a mark and four did

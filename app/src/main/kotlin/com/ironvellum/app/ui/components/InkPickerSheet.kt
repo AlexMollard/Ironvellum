@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -121,6 +122,9 @@ fun InkPickerSheet(
             LazyColumn(
                 Modifier.weight(1f).fillMaxWidth(),
                 verticalArrangement = Arrangement.Top,
+                // Breathing room under the last row, so the end of a long list
+                // never sits flush against (or under) the navigation bar.
+                contentPadding = PaddingValues(bottom = 24.dp),
                 content = content,
             )
         }

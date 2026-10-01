@@ -68,6 +68,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.ui.semantics.Role
 import com.ironvellum.app.ui.components.ExerciseFacts
+import com.ironvellum.app.ui.components.topFade
 import com.ironvellum.app.ui.components.TermChip
 import com.ironvellum.app.ui.components.termsIn
 
@@ -162,8 +163,10 @@ fun SkillDetailDialog(
             Column(
                 Modifier
                     .fillMaxWidth()
+                    .topFade(10.dp)
                     .verticalScroll(rememberScrollState()),
             ) {
+                Spacer(Modifier.height(10.dp))
                 // A female lifter reads her own published bar, not the male default.
                 DetailBlock("CLAIM STANDARD", sexBar ?: skill.standard, IronvellumColors.SovereignGold)
                 DetailBlock("WHY IT MATTERS", skill.why, IronvellumColors.InkMuted)
@@ -335,7 +338,7 @@ fun SkillDetailDialog(
                         )
                         Spacer(Modifier.height(8.dp))
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            IronvellumButton("Unclaim", onClick = onUnclaim, modifier = Modifier.fillMaxWidth(0.5f))
+                            IronvellumButton("Unclaim", onClick = onUnclaim, modifier = Modifier.fillMaxWidth(0.5f), danger = true)
                             IronvellumButton("Keep it", onClick = { confirmUnclaim = false }, quiet = true)
                         }
                     } else {
@@ -482,7 +485,9 @@ fun SkillDetailDialog(
                         )
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    // The ADD LOAD link is already a 48dp target with its text centred, so
+                    // it supplies its own gap; only the stepper row needs one.
+                    Spacer(Modifier.height(if (showLoad || load > 0.0) 12.dp else 0.dp))
                     IronvellumButton(
                         "Log attempt",
                         onClick = { onLogPractice(attempt, load.takeIf { it > 0.0 }) },
