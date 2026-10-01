@@ -249,6 +249,7 @@ fun StatsScreen(
     var pageIndex by rememberSaveable { mutableIntStateOf(0) }
     var rangeIndex by rememberSaveable { mutableIntStateOf(0) }
     var monthsBack by rememberSaveable { mutableIntStateOf(0) }
+    var dailyRangeIndex by rememberSaveable { mutableIntStateOf(1) }
     val tab = StatsTab.entries[tabIndex]
     val page = LedgerPage.entries[pageIndex]
     val range = LedgerRange.entries[rangeIndex]
@@ -314,10 +315,10 @@ fun StatsScreen(
                         .padding(horizontal = 12.dp)
                         .wrapContentHeight(),
                 )
-                IconButton(onClick = { pageIndex = LedgerPage.HISTORY.ordinal }) {
+                IconButton(onClick = onOpenLog) {
                     Icon(
                         Icons.Outlined.History,
-                        contentDescription = "Weight history",
+                        contentDescription = "Full chronicle",
                         tint = IronvellumColors.SystemGreen,
                     )
                 }
@@ -347,6 +348,7 @@ fun StatsScreen(
                         onOpenLifts = { tabIndex = StatsTab.LIFTS.ordinal },
                         onOpenTape = { pageIndex = LedgerPage.TAPE.ordinal },
                         onOpenDaily = { tabIndex = StatsTab.DAILY.ordinal },
+                        onOpenHistory = { pageIndex = LedgerPage.HISTORY.ordinal },
                     )
                     StatsTab.LIFTS -> LiftsTab(
                         ui = ui,
@@ -367,6 +369,8 @@ fun StatsScreen(
                         exercises = ui.exercises,
                         onOpenSettings = onOpenSettings,
                         scroll = dailyScroll,
+                        rangeIndex = dailyRangeIndex,
+                        onRange = { dailyRangeIndex = it },
                     )
                 }
             }

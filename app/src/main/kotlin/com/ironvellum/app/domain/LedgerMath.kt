@@ -250,15 +250,19 @@ object Ledger {
     fun sleepText(minutes: Int): String = "${minutes / 60}h ${minutes % 60}m"
 
     /**
-     * What the Daily row on the body tab says: steps, sleep, active kcal for
-     * today, only the parts Health Connect delivered, or null when it has
-     * delivered nothing for today.
+     * What the Daily row on the body tab says: the 7-day average of steps,
+     * sleep and active kcal, only the parts that have data. Today is left out
+     * of the cumulative figures (steps, kcal) because it is partial. Null when
+     * Health Connect has delivered nothing in the window.
      */
-    fun dailySummary(todayRow: HealthDay?): String? {
+    fun dailyAverageSummary(days: List<HealthDay>, today: LocalDate): String? {
+        val steps = average(days, today, 7, includeToday = false) { it.steps.toDouble() }
+        val sleep = average(days, today, 7, includeToday = true) { it.sleepMinutes.toDouble() }
+        val kcal = average(days, today, 7, includeToday = false) { it.activeKcal.toDouble() }
         val parts = listOfNotNull(
-            todayRow?.steps?.takeIf { it > 0 }?.let { "${compactCount(it)} steps" },
-            todayRow?.sleepMinutes?.takeIf { it > 0 }?.let { sleepText(it) },
-            todayRow?.activeKcal?.takeIf { it > 0 }?.let { "$it kcal" },
+            steps?.let { "${compactCount(it.value.toInt())} steps" },
+            sleep?.let { sleepText(it.value.toInt()) },
+            kcal?.let { "${it.value.toInt()} kcal" },
         )
         return parts.takeIf { it.isNotEmpty() }?.joinToString(" \u00B7 ")
     }
