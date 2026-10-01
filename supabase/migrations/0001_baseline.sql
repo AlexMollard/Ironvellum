@@ -641,7 +641,12 @@ set search_path = pg_catalog, public
 as $$
 declare
     alphabet text := '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
-    v        bigint := ('x' || encode(gen_random_bytes(5), 'hex'))::bit(40)::bigint;
+    -- 40 random bits from gen_random_uuid(), which is pg_catalog (PG13+). Not
+    -- pgcrypto's gen_random_bytes(): Supabase installs pgcrypto in the
+    -- `extensions` schema, which this search_path excludes, so that call failed
+    -- with 42883 and nobody could form a circle or change a code. The first 12
+    -- hex digits of a v4 uuid are all random (the version nibble is the 13th).
+    v        bigint := ('x' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 10))::bit(40)::bigint;
     code     text := '';
     i        int;
 begin
@@ -1389,19 +1394,19 @@ begin
     select count(*) into n from session_comments c
     where c.user_id = new.user_id and c.created_at > now() - interval '1 minute';
     if n >= 10 then
-        raise exception 'Too many comments — wait a minute.';
+        raise exception 'Too many remarks — wait a minute.';
     end if;
 
     select count(*) into n from session_comments c
     where c.user_id = new.user_id and c.created_at > now() - interval '1 day';
     if n >= 200 then
-        raise exception 'Daily comment limit reached — try again tomorrow.';
+        raise exception 'Daily remark limit reached — try again tomorrow.';
     end if;
 
     -- Bounds the one thing a crowd could grow without limit: a single thread.
     select count(*) into n from session_comments c where c.session_id = new.session_id;
     if n >= 200 then
-        raise exception 'This workout has reached its comment limit.';
+        raise exception 'This trial has reached its remark limit.';
     end if;
     return new;
 end;
@@ -2233,8 +2238,15 @@ as $$
         -- fell. The current week and the five before it: far enough back to
         -- cover the inbox's 30 days and a whole week more. A week the circle
         -- has not opened yet cannot have been crossed; the next read opens it.
+        -- Muted or blocked members are not filtered out of THIS row (see the
+        -- final where): the circle met its goal and the bonus is paid whoever
+        -- trained that day. They are only not named: a mute or a block turns
+        -- the name into the neutral handle.
         select 'band_goal', g.at, g.user_id,
-               case when g.user_id = me.id or can_view(g.user_id)
+               case when g.user_id = me.id
+                         or (can_view(g.user_id)
+                             and not exists (select 1 from mutes mm
+                                             where mm.muter_id = me.id and mm.muted_id = g.user_id))
                     then coalesce(p.display_name, 'Ironbound' || right(g.user_id::text, 4))
                     else 'Ironbound' || right(g.user_id::text, 4) end,
                null, null, null, c.name, null
@@ -2264,8 +2276,9 @@ as $$
            i.session_headline, i.comment_id, i.body, i.reaction
     from items i, me
     where i.occurred_at > now() - interval '30 days'
-      and not blocked_between(me.id, i.actor_id)
-      and not exists (select 1 from mutes m where m.muter_id = me.id and m.muted_id = i.actor_id)
+      and (i.kind = 'band_goal'
+           or (not blocked_between(me.id, i.actor_id)
+               and not exists (select 1 from mutes m where m.muter_id = me.id and m.muted_id = i.actor_id)))
     order by i.occurred_at desc
     limit 100;
 $$;
@@ -2701,7 +2714,7 @@ grant execute on function public.circle_bonuses() to authenticated;
 -- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
 -- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 27 $$;
+language sql stable as $$ select 28 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

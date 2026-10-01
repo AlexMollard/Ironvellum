@@ -13,7 +13,13 @@
 -- `authenticated` grant set that Supabase provisions. Policy logic, constraints,
 -- triggers and function privileges are all exercised faithfully; HTTP-level
 -- behaviour is not.
-create extension if not exists pgcrypto;
+-- Supabase installs its extensions into the `extensions` schema, which a
+-- function pinned to `search_path = pg_catalog, public` cannot see. Mirror that
+-- here, so a call to gen_random_bytes() fails in this harness exactly as it
+-- does on the project (it did, once, and the harness hid it: pgcrypto in
+-- public made every such call resolve).
+create schema if not exists extensions;
+create extension if not exists pgcrypto schema extensions;
 
 create schema if not exists auth;
 

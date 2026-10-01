@@ -620,7 +620,7 @@ begin
             format('comment %s of the minute is refused', i));
     end loop;
     r := refusal(ivo, format('insert into session_comments (session_id, user_id, body) values (%L, %L, ''eleven'')', w_ivo, ivo));
-    perform assert_true(r = 'P0001: Too many comments — wait a minute.',
+    perform assert_true(r = 'P0001: Too many remarks — wait a minute.',
         format('the 11th comment in a minute is not refused (%s)', r));
     -- Move those out of the minute and fill the day to 199. Replica mode
     -- skips the trigger, which would otherwise stamp now() on every row.
@@ -632,11 +632,11 @@ begin
     perform must_run(ivo, format('insert into session_comments (session_id, user_id, body) values (%L, %L, ''two hundred'')', w_ivo, ivo),
         'the 200th comment of the day is refused');
     r := refusal(ivo, format('insert into session_comments (session_id, user_id, body) values (%L, %L, ''too many'')', w_ivo, ivo));
-    perform assert_true(r = 'P0001: Daily comment limit reached — try again tomorrow.',
+    perform assert_true(r = 'P0001: Daily remark limit reached — try again tomorrow.',
         format('the 201st comment of the day is not refused (%s)', r));
     -- Ivo's workout now holds 200: the thread is full for everyone.
     r := refusal(hale, format('insert into session_comments (session_id, user_id, body) values (%L, %L, ''late'')', w_ivo, hale));
-    perform assert_true(r = 'P0001: This workout has reached its comment limit.',
+    perform assert_true(r = 'P0001: This trial has reached its remark limit.',
         format('the 201st comment on one workout is not refused (%s)', r));
 
     -- ------------------------------------------------ comment delete
@@ -1298,16 +1298,25 @@ begin
     );
     perform set_config('probe.uid', '', true);
 
+    -- The harness must look like Supabase: pgcrypto in the `extensions` schema,
+    -- off every function's pinned search_path. Were it in public, a function
+    -- calling gen_random_bytes() would pass here and fail 42883 on the project.
+    perform assert_true(
+        (select extnamespace::regnamespace::text from pg_extension where extname = 'pgcrypto') <> 'public'
+            and to_regprocedure('public.gen_random_bytes(integer)') is null,
+        'pgcrypto is installed in public: the stub no longer mirrors Supabase, so a search_path slip would pass unseen'
+    );
+
     -- 0014: the version beacon is public and tells the truth. The app probes
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 27,
-        format('schema_version() reports %s, not 27 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 28,
+        format('schema_version() reports %s, not 28 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 27,
+        (select public.schema_version()) = 28,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -1913,6 +1922,23 @@ begin
         value_as(cole, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 0,
         'a lifter outside the circle is told its goal fell'
     );
+    -- The goal falling is the circle's news, not the actor's: a member who
+    -- muted (or blocked) whoever trained that day still hears of it, and the
+    -- actor is only left unnamed.
+    perform must_run(bram, format('insert into mutes (muter_id, muted_id) values (%L, %L)', bram, ash), 'bram could not mute ash');
+    perform assert_true(
+        value_as(bram, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 1
+            and value_as(bram, 'select actor_name from my_inbox() where kind = ''band_goal''') ~ '^Ironbound[0-9]{4}$',
+        'muting the member who crossed the goal hides the circle''s goal missive, or names them'
+    );
+    delete from mutes where muter_id = bram and muted_id = ash;
+    insert into blocks (blocker_id, blocked_id) values (bram, ash);
+    perform assert_true(
+        value_as(bram, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 1
+            and value_as(bram, 'select actor_name from my_inbox() where kind = ''band_goal''') ~ '^Ironbound[0-9]{4}$',
+        'blocking the member who crossed the goal hides the circle''s goal missive, or names them'
+    );
+    delete from blocks where blocker_id = bram and blocked_id = ash;
 
     perform must_run(bram, 'select public.leave_circle()', 'bram could not leave');
     perform must_run(ash, 'select public.leave_circle()', 'ash could not leave');
