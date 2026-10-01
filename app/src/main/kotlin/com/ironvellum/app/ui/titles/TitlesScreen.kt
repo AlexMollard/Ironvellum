@@ -419,14 +419,7 @@ fun TitlesScreen(
                 )
             } else {
                 PathHeader(line = line, mastered = mastered, onBack = { openLine = null })
-                // The roman tier numerals down the left read as noise without
-                // one line of explanation.
-                Text(
-                    "Tiers I — V · a higher numeral is a harder standard",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = IronvellumColors.InkMuted,
-                )
-                Spacer(Modifier.height(10.dp))
+                Spacer(Modifier.height(6.dp))
                 SkillTreeGraph(
                     line = line,
                     mastered = mastered,

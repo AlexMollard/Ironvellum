@@ -1,10 +1,18 @@
 package com.ironvellum.app.ui.titles
 
+import android.provider.Settings
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.runtime.State
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,8 +22,10 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
@@ -24,12 +34,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -45,31 +62,33 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.InkCircleShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkBorder
-import com.ironvellum.app.ui.theme.inkStroke
 
-/** Width of the left gutter that carries the tier numerals. */
-private val GutterW = 28.dp
-private val NodeSize = 32.dp
-private val TopPad = 4.dp
+/** The node disc. Room around it is for the glow and the breathing ring. */
+private val NodeSize = 54.dp
+private val TopPad = 5.dp
 private val TextGap = 2.dp
 
 /** Room under a row for the lines that join it to the next. */
-private val BusGap = 14.dp
+private val EdgeGap = 16.dp
 private val EdgeW = 2.dp
 
 /** The locked node ring: 3:1 against the page, dimmer than the open green. */
 internal val LockedDot = Color(0xFF64625C)
 
-/** The locked node's fill, where its glyph and label have the least contrast. */
+/** The locked node's fill, where its glyph has the least contrast. */
 internal val LockedRowBg = Color(0xFF101512)
 
-/** What a node is, in shape and glyph as well as colour. */
+/** A locked glyph: part of the silhouette, deliberately close to its disc. */
+internal val LockedGlyph = Color(0xFF3A3A36)
+
+/** What a node is, in shape, glyph and badge as well as colour. */
 private enum class NodeState { MASTERED, NEXT, LOCKED }
 
 /**
- * One path as a node graph: round nodes in tier rows (numerals down the left
- * edge), joined by ink lines from each prerequisite to its dependants, with
- * branches side by side. The edges are drawn on a canvas behind the nodes.
+ * One path as a node graph: game-style discs in tier rows, each carrying the
+ * pictogram of its movement and a tier chip, joined by ink lines from the
+ * bottom of each prerequisite to the top of its dependants. The edges are
+ * drawn on a canvas behind the nodes.
  */
 @Composable
 fun SkillTreeGraph(
@@ -84,17 +103,25 @@ fun SkillTreeGraph(
     female: Boolean = false,
 ) {
     BoxWithConstraints(modifier.fillMaxWidth()) {
-        val columns = columnsFor((maxWidth - GutterW).value)
-        val cellW = (maxWidth - GutterW) / columns
+        val columns = columnsFor(maxWidth.value)
+        val cellW = maxWidth / columns
         val layout = remember(line, columns) { treeLayout(line, columns) }
 
         // Two text lines, scaled with the system font so a large setting grows
         // the rows instead of clipping the label.
         val textH = with(LocalDensity.current) { (LabelLine * 2f).toDp() }
+        val levelLines = remember(layout) {
+            layout.levels.indices.map { l -> layout.nodes.filter { it.level == l }.maxOf { labelLines(it.skill.name) } }
+        }
         val tops = remember(layout, textH) {
-            layout.levels.runningFold(0.dp) { y, level -> y + levelHeight(level, textH) }
+            layout.levels.runningFold(0.dp) { y, level ->
+                y + levelHeight(level, levelLines[layout.levels.indexOf(level)], textH / 2)
+            }
         }
         val at = remember(layout) { layout.nodes.associateBy { it.skill.name } }
+
+        // One breathing phase for every open node, so they pulse together.
+        val pulse = rememberBreath()
 
         // Where the eye should land when a path opens. Keyed on the target too:
         // the mastered set can arrive after the first frame, and a claim moves
@@ -108,14 +135,7 @@ fun SkillTreeGraph(
         Box(Modifier.fillMaxWidth().height(tops.last())) {
             Canvas(Modifier.fillMaxSize()) {
                 val stroke = EdgeW.toPx()
-                fun centreX(n: PlacedSkill) = (GutterW + cellW * (n.x + 0.5f)).toPx()
-
-                layout.levels.forEachIndexed { l, level ->
-                    if (level.startsTier && l > 0) {
-                        val y = tops[l].toPx() + 1.dp.toPx()
-                        inkStroke(Offset(0f, y), Offset(size.width, y), IronvellumColors.Rune.copy(alpha = 0.7f), 1.dp.toPx(), seed = l, taperEnds = false)
-                    }
-                }
+                fun centreX(n: PlacedSkill) = (cellW * (n.x + 0.5f)).toPx()
 
                 // Dim lines first, so the lit ones win where they share a stretch.
                 layout.edges.sortedBy { edgeRank(it.to, mastered) }.forEach { e ->
@@ -123,42 +143,27 @@ fun SkillTreeGraph(
                     val child = at.getValue(e.to)
                     val px = centreX(parent)
                     val cx = centreX(child)
-                    // leaves the parent below its label, lands on the child's top
-                    val y0 = (tops[parent.level + 1] - BusGap).toPx()
+                    // bottom of the parent's disc to the top of the child's
+                    val y0 = (tops[parent.level] + TopPad + NodeSize).toPx()
                     val y1 = (tops[child.level] + TopPad).toPx()
-                    // A long edge jogs under its parent and drops down the
+                    // A long edge swings out under its parent and drops down the
                     // child's column, if that column is clear of the rows between.
                     val clearAtChild = (parent.level + 1 until child.level).all { l ->
                         layout.nodes.none { it.level == l && kotlin.math.abs(it.x - child.x) < 0.9f }
                     }
                     val longJog = child.level > parent.level + 1 && clearAtChild
-                    val bus = (if (longJog) tops[parent.level + 1] - BusGap / 2 else tops[child.level] - BusGap / 2).toPx()
-                    val color = edgeColor(e.to, mastered)
-                    val seed = e.hashCode()
-                    if (kotlin.math.abs(px - cx) < 0.5f) {
-                        inkStroke(Offset(px, y0), Offset(cx, y1), color, stroke, seed, taperEnds = false)
-                    } else {
-                        inkStroke(Offset(px, y0), Offset(px, bus), color, stroke, seed, taperEnds = false)
-                        inkStroke(Offset(px, bus), Offset(cx, bus), color, stroke, seed + 1, taperEnds = false)
-                        inkStroke(Offset(cx, bus), Offset(cx, y1), color, stroke, seed + 2, taperEnds = false)
+                    val path = Path().apply {
+                        moveTo(px, y0)
+                        if (longJog) {
+                            val yj = (tops[parent.level + 1] - EdgeGap / 4).toPx()
+                            cubicTo(px, (y0 + yj) / 2, cx, (y0 + yj) / 2, cx, yj)
+                            lineTo(cx, y1)
+                        } else {
+                            val ym = (y0 + y1) / 2
+                            cubicTo(px, ym, cx, ym, cx, y1)
+                        }
                     }
-                }
-            }
-
-            layout.levels.forEachIndexed { l, level ->
-                if (level.startsTier) {
-                    Box(
-                        Modifier.offset(y = tops[l] + TopPad).width(GutterW).height(NodeSize),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            Skills.tierLabel(level.tier),
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = IronvellumColors.InkMuted,
-                        )
-                    }
+                    drawPath(path, edgeColor(e.to, mastered), style = Stroke(stroke, cap = StrokeCap.Round))
                 }
             }
 
@@ -178,9 +183,11 @@ fun SkillTreeGraph(
                     description = rowDescription(skill, isMastered, unlocked, needs, cue),
                     crossNeed = if (isMastered) null else crossNeedMarker(layout.crossNeeds[skill.name].orEmpty(), mastered),
                     width = cellW,
+                    lines = levelLines[node.level],
+                    pulse = pulse,
                     onClick = { onSelect(skill.name) },
                     modifier = Modifier
-                        .offset(x = GutterW + cellW * node.x, y = tops[node.level])
+                        .offset(x = cellW * node.x, y = tops[node.level])
                         .then(if (skill.name == firstNext) Modifier.bringIntoViewRequester(nextRequester) else Modifier),
                 )
             }
@@ -188,10 +195,33 @@ fun SkillTreeGraph(
     }
 }
 
-private val LabelLine = 14.sp
+private val LabelLine = 12.sp
 
-private fun levelHeight(level: TreeLevel, textH: Dp): Dp =
-    TopPad + NodeSize + TextGap + textH + (if (level.hasCrossNeed) textH else 0.dp) + BusGap
+private fun levelHeight(level: TreeLevel, lines: Int, lineH: Dp): Dp =
+    TopPad + NodeSize + TextGap + lineH * lines + (if (level.hasCrossNeed) lineH * 2 else 0.dp) + EdgeGap
+
+/** A short name fits one line under a node; anything longer is given two. An estimate: the gap below absorbs a miss. */
+internal fun labelLines(name: String): Int = if (name.length <= 12) 1 else 2
+
+/**
+ * A 0..1 breath, 2s each way, for the open nodes. Held still at mid-breath when
+ * the system animation scale is off, so reduced motion gets a calm ring rather
+ * than a loop.
+ */
+@Composable
+private fun rememberBreath(): State<Float> {
+    val context = LocalContext.current
+    val animated = remember {
+        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
+    }
+    if (!animated) return remember { mutableFloatStateOf(0.5f) }
+    return rememberInfiniteTransition(label = "treeBreath").animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(tween(2000, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "treeBreathPhase",
+    )
+}
 
 /** A line's colour from the dependant it leads to: gold once mastered, green when open, ink while locked. */
 private fun edgeColor(to: String, mastered: Set<String>): Color = when {
@@ -235,6 +265,9 @@ internal fun rowDescription(
     }
 }.joinToString(", ")
 
+/** The page tone behind the tree: a label on it hides a line passing under, so the line never cuts text. */
+private val LabelPlate = Color(0xFF0D0E11)
+
 @Composable
 private fun SkillNode(
     skill: Skills.SkillDef,
@@ -242,13 +275,15 @@ private fun SkillNode(
     description: String,
     crossNeed: String?,
     width: Dp,
+    lines: Int,
+    pulse: State<Float>,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shape = remember(skill.name) { InkCircleShape(skill.name.hashCode() and 0xFF) }
     val textH = with(LocalDensity.current) { (LabelLine * 2f).toDp() }
-    // The whole cell is the touch target, so a 32dp node still has a hit area
-    // well past 48dp.
+    val plate = RoundedCornerShape(4.dp)
+    // The whole cell is the touch target, so the node's hit area is well past 48dp.
     Column(
         modifier
             .width(width)
@@ -262,43 +297,104 @@ private fun SkillNode(
         Box(
             Modifier
                 .size(NodeSize)
-                .clip(shape)
-                .background(
+                .drawBehind {
+                    val r = size.minDimension / 2f
                     when (state) {
-                        NodeState.MASTERED -> IronvellumColors.SovereignGold
-                        NodeState.NEXT -> Color(0xFF15251F)
-                        NodeState.LOCKED -> LockedRowBg
-                    },
-                )
-                .inkBorder(
-                    when (state) {
-                        NodeState.MASTERED -> IronvellumColors.SovereignGold
-                        NodeState.NEXT -> IronvellumColors.SystemGreen
-                        NodeState.LOCKED -> LockedDot
-                    },
-                    shape,
-                    if (state == NodeState.NEXT) 2.dp else 1.5.dp,
-                ),
+                        // a soft halo, the gold of an earned thing
+                        NodeState.MASTERED -> drawCircle(
+                            Brush.radialGradient(
+                                0.62f to IronvellumColors.SovereignGold.copy(alpha = 0.42f),
+                                1f to Color.Transparent,
+                                center = center,
+                                radius = r * 1.55f,
+                            ),
+                            radius = r * 1.55f,
+                        )
+                        // a ring that breathes outward from the disc
+                        NodeState.NEXT -> {
+                            val t = pulse.value
+                            drawCircle(
+                                IronvellumColors.SystemGreen.copy(alpha = 0.55f - 0.4f * t),
+                                radius = r + 2.dp.toPx() + 5.dp.toPx() * t,
+                                style = Stroke(1.5.dp.toPx()),
+                            )
+                        }
+                        NodeState.LOCKED -> Unit
+                    }
+                },
             contentAlignment = Alignment.Center,
         ) {
-            // State in a glyph, not the colour alone: check, filled dot, lock.
-            when (state) {
-                NodeState.MASTERED -> Icon(
-                    Icons.Filled.Check,
-                    contentDescription = null,
-                    tint = IronvellumColors.Abyss,
-                    modifier = Modifier.size(20.dp),
-                )
-                NodeState.NEXT -> Box(
-                    Modifier.size(12.dp).clip(InkCircleShape(3)).background(IronvellumColors.SystemGreen),
-                )
-                NodeState.LOCKED -> Icon(
-                    Icons.Filled.Lock,
-                    contentDescription = null,
-                    tint = IronvellumColors.InkMuted,
-                    modifier = Modifier.size(16.dp),
+            Box(
+                Modifier
+                    .size(NodeSize)
+                    .clip(shape)
+                    .background(
+                        when (state) {
+                            NodeState.MASTERED -> IronvellumColors.SovereignGold
+                            NodeState.NEXT -> Color(0xFF15251F)
+                            NodeState.LOCKED -> LockedRowBg
+                        },
+                    )
+                    .inkBorder(
+                        when (state) {
+                            NodeState.MASTERED -> IronvellumColors.SovereignGold
+                            NodeState.NEXT -> IronvellumColors.SystemGreen
+                            NodeState.LOCKED -> LockedDot
+                        },
+                        shape,
+                        if (state == NodeState.NEXT) 3.dp else 1.5.dp,
+                    ),
+                contentAlignment = Alignment.Center,
+            ) {
+                SkillGlyph(
+                    family = glyphFamily(skill),
+                    color = when (state) {
+                        NodeState.MASTERED -> IronvellumColors.Abyss
+                        NodeState.NEXT -> IronvellumColors.Ink
+                        NodeState.LOCKED -> LockedGlyph
+                    },
+                    modifier = Modifier.size(32.dp),
                 )
             }
+
+            // State as a badge, not the colour alone: a check, or a lock.
+            if (state != NodeState.NEXT) {
+                Box(
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .offset(x = 3.dp, y = 3.dp)
+                        .size(20.dp)
+                        .clip(InkCircleShape(5))
+                        .background(IronvellumColors.Abyss)
+                        .inkBorder(if (state == NodeState.MASTERED) IronvellumColors.SovereignGold else LockedDot, InkCircleShape(5), 1.5.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        if (state == NodeState.MASTERED) Icons.Filled.Check else Icons.Filled.Lock,
+                        contentDescription = null,
+                        tint = if (state == NodeState.MASTERED) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                        modifier = Modifier.size(12.dp),
+                    )
+                }
+            }
+
+            // The tier, as a small ink chip on the node's shoulder.
+            Text(
+                Skills.tierLabel(skill.tier),
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                fontSize = 9.sp,
+                lineHeight = 11.sp,
+                letterSpacing = 0.sp,
+                color = IronvellumColors.Abyss,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = (-5).dp, y = (-3).dp)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(if (state == NodeState.LOCKED) IronvellumColors.InkMuted else IronvellumColors.Ink)
+                    .padding(horizontal = 3.dp, vertical = 1.dp),
+            )
         }
         Box(Modifier.height(TextGap))
         Text(
@@ -316,7 +412,12 @@ private fun SkillNode(
             textAlign = TextAlign.Center,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.fillMaxWidth().heightIn(min = textH).padding(horizontal = 2.dp),
+            modifier = Modifier
+                .widthIn(max = width)
+                .heightIn(min = textH / 2 * lines)
+                .clip(plate)
+                .background(LabelPlate)
+                .padding(horizontal = 3.dp),
         )
         if (crossNeed != null) {
             Text(
@@ -324,12 +425,17 @@ private fun SkillNode(
                 style = MaterialTheme.typography.labelSmall,
                 fontSize = 10.sp,
                 lineHeight = LabelLine,
-            letterSpacing = 0.sp,
+                letterSpacing = 0.sp,
                 color = IronvellumColors.InkMuted,
                 textAlign = TextAlign.Center,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.fillMaxWidth().height(textH).padding(horizontal = 2.dp),
+                modifier = Modifier
+                    .widthIn(max = width)
+                    .height(textH)
+                    .clip(plate)
+                    .background(LabelPlate)
+                    .padding(horizontal = 3.dp),
             )
         }
     }

@@ -10,8 +10,8 @@ import org.junit.Test
 
 class SkillTreeLayoutTest {
 
-    /** A 360dp phone: 16dp gutters each side and the numeral column. */
-    private val phoneColumns = columnsFor(360f - 32f - 28f)
+    /** A 360dp phone: 16dp gutters each side. */
+    private val phoneColumns = columnsFor(360f - 32f)
 
     @Test
     fun `a phone gets four slots and a tablet more, never fewer`() {
