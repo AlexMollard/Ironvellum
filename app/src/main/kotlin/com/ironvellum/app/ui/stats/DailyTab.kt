@@ -47,7 +47,7 @@ import java.time.ZoneId
 import java.util.Locale
 
 /** The chart windows DAILY offers. One choice drives every chart on the tab. */
-private enum class DailyRange(val label: String, val days: Int) { D7("7D", 7), D14("14D", 14), D30("30D", 30) }
+internal enum class DailyRange(val label: String, val days: Int) { D7("7D", 7), D14("14D", 14), D30("30D", 30) }
 
 /**
  * DAILY, slimmed to what Health Connect and the Dashboard do not already say:
@@ -67,8 +67,9 @@ internal fun ActivityTab(
     exercises: Map<Long, Exercise>,
     onOpenSettings: () -> Unit,
     scroll: ScrollState,
+    rangeIndex: Int,
+    onRange: (Int) -> Unit,
 ) {
-    var rangeIndex by rememberSaveable { mutableStateOf(1) }
     var showMethod by rememberSaveable { mutableStateOf(false) }
     val range = DailyRange.entries[rangeIndex]
 
@@ -80,20 +81,21 @@ internal fun ActivityTab(
         verticalArrangement = Arrangement.spacedBy(LedgerSpace.Panel),
     ) {
         Spacer(Modifier.height(LedgerSpace.Panel))
-        if (days.isEmpty()) {
+        val hasHealthData = days.isNotEmpty()
+        // Only the Health Connect blocks wait for Health Connect: trials still
+        // have a burn estimate without it.
+        if (!hasHealthData) {
             InkPanel(Modifier.fillMaxWidth()) {
                 PanelLabel("DAILY")
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Steps, sleep, active energy and resting heart rate show here once Health Connect is linked in Settings.",
+                    "Steps, sleep and resting heart rate show here once Health Connect is linked in Settings.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
                 Spacer(Modifier.height(10.dp))
                 IronvellumButton(label = "Open Settings", onClick = onOpenSettings, quiet = true)
             }
-            Spacer(Modifier.height(LedgerSpace.Section))
-            return
         }
 
         val zone = remember { ZoneId.systemDefault() }
@@ -121,7 +123,8 @@ internal fun ActivityTab(
         // Three numbers for today. Steps trail the watch, so they carry their age.
         val todaySteps = todayRow?.steps?.takeIf { it > 0 }
         val lastNight = todayRow?.sleepMinutes?.takeIf { it > 0 }
-        InkPanel(Modifier.fillMaxWidth()) {
+        val anyBurn = burns.any { it != null }
+        if (hasHealthData) InkPanel(Modifier.fillMaxWidth()) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpace.Panel)) {
                 TodayNumber(
                     "STEPS",
@@ -151,13 +154,15 @@ internal fun ActivityTab(
             )
         }
 
-        RangeChips(
-            options = DailyRange.entries.map { it to it.label },
-            selected = range,
-            onPick = { rangeIndex = it.ordinal },
-        )
+        if (hasHealthData || anyBurn) {
+            RangeChips(
+                options = DailyRange.entries.map { it to it.label },
+                selected = range,
+                onPick = { onRange(it.ordinal) },
+            )
+        }
 
-        InkPanel(Modifier.fillMaxWidth()) {
+        if (hasHealthData) InkPanel(Modifier.fillMaxWidth()) {
             PanelLabel("STEPS")
             Text(
                 avgSteps?.let { "avg ${fmtInt(it.value.toInt())}/day \u00B7 ${it.tracked} of $n days, today excluded" }
@@ -175,7 +180,7 @@ internal fun ActivityTab(
             )
         }
 
-        InkPanel(Modifier.fillMaxWidth()) {
+        if (hasHealthData) InkPanel(Modifier.fillMaxWidth()) {
             PanelLabel("SLEEP")
             Text(
                 avgSleep?.let { "avg ${Ledger.sleepText(it.value.toInt())} \u00B7 ${it.tracked} of $n nights" } ?: "no nights tracked",
@@ -186,7 +191,7 @@ internal fun ActivityTab(
             BarChart(sleep, IronvellumColors.SystemGreen, startLabel = startLabel, endLabel = "today")
         }
 
-        InkPanel(Modifier.fillMaxWidth()) {
+        if (anyBurn) InkPanel(Modifier.fillMaxWidth()) {
             PanelLabel("ACTIVE KCAL")
             val measured = burns.count { it?.confidence == EnergyConfidence.MEASURED }
             Text(
@@ -203,7 +208,7 @@ internal fun ActivityTab(
             )
         }
 
-        InkPanel(Modifier.fillMaxWidth()) {
+        if (hasHealthData || anyBurn) InkPanel(Modifier.fillMaxWidth()) {
             InkListRow(
                 label = "How these are estimated",
                 value = null,

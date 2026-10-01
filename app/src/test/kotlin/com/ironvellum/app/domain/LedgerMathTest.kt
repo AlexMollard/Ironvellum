@@ -190,11 +190,13 @@ class LedgerMathTest {
     }
 
     @Test
-    fun `daily summary names only what arrived and is null when nothing did`() {
-        assertEquals("8.2k steps \u00B7 7h 10m \u00B7 410 kcal", Ledger.dailySummary(day(0, steps = 8240, kcal = 410, sleep = 430)))
-        assertEquals("950 steps", Ledger.dailySummary(day(0, steps = 950)))
-        assertNull(Ledger.dailySummary(day(0)))
-        assertNull(Ledger.dailySummary(null))
+    fun `daily summary is the seven day average, leaves out partial today and names only what arrived`() {
+        val rows = listOf(day(0, steps = 100, kcal = 5, sleep = 480)) +
+            (1L..2L).map { day(it, steps = 8000, kcal = 400, sleep = 420) }
+        assertEquals("8.0k steps \u00B7 7h 20m \u00B7 400 kcal", Ledger.dailyAverageSummary(rows, today))
+        assertEquals("7h 0m", Ledger.dailyAverageSummary(listOf(day(1, sleep = 420)), today))
+        assertNull(Ledger.dailyAverageSummary(emptyList(), today))
+        assertNull("only today's partial row", Ledger.dailyAverageSummary(listOf(day(0, steps = 10)), today))
     }
 
     @Test

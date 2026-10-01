@@ -25,6 +25,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -92,6 +93,7 @@ internal fun BodyTab(
     onOpenLifts: () -> Unit,
     onOpenTape: () -> Unit,
     onOpenDaily: () -> Unit,
+    onOpenHistory: () -> Unit,
 ) {
     val latest = ui.stats.firstOrNull()
     val plot = remember(ui.stats, today, range) { Ledger.weightPlot(ui.stats, range, today, zone) }
@@ -101,7 +103,7 @@ internal fun BodyTab(
     val strength = remember(ui.sessions) { Ledger.strengthTrend(ui.sessions) }
     val weeks = remember(ui.completedDates, today) { Ledger.weeklyCounts(ui.completedDates, today) }
     val month = remember(ui.completedDates, today) { Ledger.sealedThisMonth(ui.completedDates, today) }
-    val daily = remember(ui.healthDays, today) { Ledger.dailySummary(Ledger.todayRow(ui.healthDays, today)) }
+    val daily = remember(ui.healthDays, today) { Ledger.dailyAverageSummary(ui.healthDays, today) }
 
     Column(
         Modifier
@@ -142,12 +144,37 @@ internal fun BodyTab(
                         )
                     }
                 }
-                Text(
-                    "Logged ${formatDate(latest.takenAtMs, "d MMM")}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                )
-                Spacer(Modifier.height(8.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Logged ${formatDate(latest.takenAtMs, "d MMM")}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.weight(1f),
+                    )
+                    // The readings behind the chart, with delete, one tap away.
+                    Row(
+                        Modifier
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .clickable(role = Role.Button, onClick = onOpenHistory)
+                            .heightIn(min = LedgerSpace.Target)
+                            .padding(start = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            "History",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontFamily = ChakraPetch,
+                            color = IronvellumColors.SystemGreen,
+                            letterSpacing = IronvellumTracking.InlineLabel,
+                        )
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = IronvellumColors.SystemGreen,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
                 when {
                     plot == null -> ChartNote("No reading in the last ${range.label}. Widen the range.")
                     plot.values.size < 2 -> ChartNote("Two readings draw the line.")
@@ -211,7 +238,7 @@ internal fun BodyTab(
             InkListRow(
                 label = "Daily",
                 value = null,
-                supporting = daily ?: "Not synced today",
+                supporting = daily?.let { "7-day average \u00B7 $it" } ?: "Not synced",
                 onClick = onOpenDaily,
             )
         }
