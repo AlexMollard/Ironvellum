@@ -142,6 +142,33 @@ class SetCeilingTest {
     }
 
     @Test
+    fun `a mobility drill never makes the lifter's calf raise redundant`() {
+        // The owner's Legs rite: improve removed the calf raise as "already
+        // trained the same way" by the knee-to-wall drill, re-added it, and
+        // did the same again on its own output.
+        val legs = PlannedPreset(
+            "Legs", "", 3,
+            listOf(
+                PlannedEntry("Knee-to-Wall Dorsiflexion", 3, 10, null),
+                PlannedEntry("Pistol Squat", 3, 8, null, modifiers = "weighted"),
+                PlannedEntry("Romanian Deadlift", 3, 10, null, modifiers = "weighted"),
+                PlannedEntry("Single-Leg Calf Raise", 3, 10, null, modifiers = "weighted"),
+                PlannedEntry("Hanging Leg Raise", 3, 10, null),
+            ),
+        )
+        for (focus in TrainingFocus.entries) {
+            val request = ProgramRequest(focus, VolumeLevel.STANDARD, ownerKit, 3, split = TrainingSplit.PUSH_PULL_LEGS)
+            val first = ProgramGenerator.improve(legs, emptyList(), request, catalogue, strength)
+            assertTrue(
+                "$focus: ${first.changes}",
+                first.changes.none { it.kind == PlanChange.Kind.REMOVED && it.exerciseName == "Single-Leg Calf Raise" },
+            )
+            val second = ProgramGenerator.improve(first.after, emptyList(), request, catalogue, strength)
+            assertEquals("$focus: second pass changed ${second.changes}", emptyList<PlanChange>(), second.changes)
+        }
+    }
+
+    @Test
     fun `improve brings a six-set entry back to its ceiling and says why`() {
         val legs = PlannedPreset(
             "Legs", "", 3,
