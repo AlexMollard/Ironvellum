@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
-"""Export the exercise catalogue and build .tmp/exercise-atlas.html.
+"""Export the exercise catalogue and rebuild docs/exercise-atlas.html.
 
 Runs the CatalogueExport unit test (which writes .tmp/exercises.json), then
 injects the JSON into tools/exercise_atlas.html at /*__ATLAS_DATA__*/null.
+Writes the committed standalone page to docs/ and a bare fragment (no document
+skeleton, which the Artifact host adds itself) to .tmp/ for publishing.
 """
 import json
 import os
@@ -14,8 +16,13 @@ ROOT = Path(__file__).resolve().parent.parent
 TMP = ROOT / ".tmp"
 JSON_PATH = TMP / "exercises.json"
 TEMPLATE = ROOT / "tools" / "exercise_atlas.html"
-OUT = TMP / "exercise-atlas.html"
+OUT = ROOT / "docs" / "exercise-atlas.html"
+FRAGMENT = TMP / "exercise-atlas.html"
 TOKEN = "/*__ATLAS_DATA__*/null"
+HEAD = (
+    '<!doctype html>\n<html lang="en">\n<meta charset="utf-8">\n'
+    '<meta name="viewport" content="width=device-width, initial-scale=1">\n'
+)
 
 
 def main() -> int:
@@ -36,18 +43,20 @@ def main() -> int:
 
     data = json.loads(JSON_PATH.read_text(encoding="utf-8"))
     print(f"{JSON_PATH} ({len(data['exercises'])} exercises)")
-    if not TEMPLATE.exists():
-        print(f"No template at {TEMPLATE}; stopping after the JSON.")
-        return 0
-
-    html = TEMPLATE.read_text(encoding="utf-8")
+    html = TEMPLATE.read_text(encoding="utf-8").replace("\r\n", "\n")
     if TOKEN not in html:
         print(f"Template lacks {TOKEN}", file=sys.stderr)
         return 1
-    payload = json.dumps(data, ensure_ascii=False).replace("</", "<\\/")
-    with open(OUT, "w", encoding="utf-8", newline="") as f:
-        f.write(html.replace(TOKEN, payload))
-    print(OUT)
+
+    # One exercise per line keeps the committed page's diffs readable.
+    head = {k: v for k, v in data.items() if k != "exercises"}
+    rows = ",\n".join(json.dumps(e, ensure_ascii=False) for e in data["exercises"])
+    payload = json.dumps(head, ensure_ascii=False)[:-1] + ',\n"exercises": [\n' + rows + "\n]}"
+    page = html.replace(TOKEN, payload.replace("</", "<\\/"))
+    for path, text in ((OUT, HEAD + page), (FRAGMENT, page)):
+        with open(path, "w", encoding="utf-8", newline="") as f:
+            f.write(text.replace("\n", "\r\n"))
+        print(path)
     return 0
 
 
