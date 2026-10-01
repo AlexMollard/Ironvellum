@@ -12,6 +12,7 @@ import com.ironvellum.app.data.db.PresetEntryEntity
 import com.ironvellum.app.data.db.PresetEntity
 import com.ironvellum.app.domain.ExportWriter
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.TrialDraft
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
@@ -401,6 +402,41 @@ class ExportRoundTripTest {
         val lifted = restoredSession.sets.single { it.done && it.durationSec == null }
         assertEquals(9, lifted.reps)
         assertEquals(22.5, lifted.weightKg!!, 0.001)
+    }
+
+    /**
+     * Each movement of a trial is its own block, keyed by exercisePosition.
+     * The export used to drop it, so a restored two-movement trial came back
+     * as one block, and amending it then rewrote the sets in the wrong order.
+     */
+    @Test
+    fun aRestoredTrialKeepsItsMovementBlocksAndCanBeAmended() = runTest {
+        val bench = db.exerciseDao().observeAll().first().first { it.name == "Bench Press" }.id
+        val deadlift = db.exerciseDao().observeAll().first().first { it.name == "Deadlift" }.id
+        val sessionId = repo.startFreeformSession("Two blocks")
+        repeat(2) { repo.addExtraSet(sessionId, bench, reps = 8, weightKg = 60.0, modifiers = "") }
+        repeat(2) { repo.addExtraSet(sessionId, deadlift, reps = 5, weightKg = 100.0, modifiers = "") }
+        db.sessionDao().setsFor(sessionId).forEach { repo.updateSet(it.id, reps = it.reps, weightKg = it.weightKg, done = true) }
+        repo.completeSession(sessionId)
+        val before = db.sessionDao().setsFor(sessionId).map { it.exerciseId to it.exercisePosition }
+        assertEquals("the fixture must have two blocks", 2, before.map { it.second }.distinct().size)
+
+        val archive = repo.exportJson()
+        db.presetDao().clearAll()
+        db.sessionDao().clearAll()
+        val result = repo.importArchive(archive)
+        assertTrue("import failed: ${result.exceptionOrNull()?.message}", result.isSuccess)
+
+        val restoredSession = db.sessionDao().observeCompletedWithSets().first().single()
+        assertEquals(before, restoredSession.sets.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
+            .map { it.exerciseId to it.exercisePosition })
+
+        val id = restoredSession.session.id
+        val draft = TrialDraft.of(repo.observeHistory().first().first { it.first.id == id }.second)
+        assertEquals("two blocks after restore", 2, draft.blocks.size)
+        repo.editSealedTrial(id, draft.updateSet(1, 0) { it.copy(reps = 4) })
+        val after = db.sessionDao().setsFor(id)
+        assertEquals(listOf(8, 8, 4, 5), after.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex })).map { it.reps })
     }
 
     private companion object {
