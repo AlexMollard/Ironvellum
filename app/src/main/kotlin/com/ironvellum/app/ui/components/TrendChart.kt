@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -206,7 +207,7 @@ fun BarChart(
 
     Column(Modifier.fillMaxWidth()) {
         Canvas(modifier.semantics { contentDescription = spoken }) {
-            // bars stand on a baseline just inside the frame so round caps never touch the date labels
+            // bars stand on a baseline just inside the frame so they never touch the date labels
             val pad = 4.dp.toPx()
             val base = size.height - pad
             fun yFor(v: Double): Float = (pad + (base - pad) * (1.0 - v / top)).toFloat()
@@ -219,15 +220,12 @@ fun BarChart(
             values.forEachIndexed { i, v ->
                 val x = slot * i + slot / 2f
                 if (v == null) {
-                    inkStroke(
-                        Offset(x, base), Offset(x, base - 3.dp.toPx()),
-                        IronvellumColors.Bracket, barW.coerceAtMost(3.dp.toPx()), seed = i, taperEnds = false,
-                    )
+                    inkBar(x, base, 3.dp.toPx(), barW.coerceAtMost(3.dp.toPx()), IronvellumColors.Bracket, seed = i)
                 } else {
                     val alpha = if (faded?.getOrNull(i) == true) 0.45f else 1f
-                    inkStroke(
-                        Offset(x, base), Offset(x, yFor(v).coerceAtMost(base - 2.dp.toPx())),
-                        color.copy(alpha = color.alpha * alpha), barW, seed = i, taperEnds = false,
+                    inkBar(
+                        x, base, base - yFor(v).coerceAtMost(base - 2.dp.toPx()), barW,
+                        color.copy(alpha = color.alpha * alpha), seed = i,
                     )
                 }
             }
@@ -248,6 +246,26 @@ fun BarChart(
             ChartDates(startLabel, endLabel)
         }
     }
+}
+
+/**
+ * One bar with flat ends: a filled quad, not a stroke, because a stroke is
+ * brushed with round caps. The only hand in it is a hairline of drift on the
+ * top edge, so the bar still reads as inked rather than ruled.
+ */
+private fun DrawScope.inkBar(centerX: Float, base: Float, height: Float, width: Float, color: Color, seed: Int) {
+    val half = width / 2f
+    val drift = if (InkStyle.enabled) 0.4.dp.toPx() else 0f
+    val rng = kotlin.random.Random(seed * 17 + 3)
+    val top = base - height
+    val path = Path().apply {
+        moveTo(centerX - half, base)
+        lineTo(centerX - half, top + (rng.nextFloat() - 0.5f) * 2f * drift)
+        lineTo(centerX + half, top + (rng.nextFloat() - 0.5f) * 2f * drift)
+        lineTo(centerX + half, base)
+        close()
+    }
+    drawPath(path, color)
 }
 
 @Composable
