@@ -114,6 +114,27 @@ def crashes(serial: str) -> int:
     return adb("logcat", "-d", "-b", "crash", serial=serial).count("FATAL EXCEPTION")
 
 
+def apk_age(apk: pathlib.Path, src: pathlib.Path = pathlib.Path("app/src/main")) -> tuple[float, float | None]:
+    """Seconds since the APK was built, and how far it trails the newest source file.
+
+    The second value is None when the APK is at least as new as every file under
+    `src`, otherwise the gap in seconds, so a stale build can be called out.
+    """
+    built = apk.stat().st_mtime
+    newest = max((f.stat().st_mtime for f in src.rglob("*") if f.is_file()), default=0.0)
+    return time.time() - built, (newest - built) if newest > built else None
+
+
+def fmt_age(seconds: float) -> str:
+    seconds = int(seconds)
+    if seconds < 90:
+        return f"{seconds}s"
+    if seconds < 5400:
+        return f"{seconds // 60}m"
+    if seconds < 172800:
+        return f"{seconds // 3600}h"
+    return f"{seconds // 86400}d"
+
 def main() -> None:
     # Labels carry glyphs (◆, →) the Windows console code page cannot print.
     sys.stdout.reconfigure(encoding="utf-8")
@@ -143,6 +164,12 @@ def main() -> None:
     elif args.cmd == "install":
         if not APK.exists():
             sys.exit(f"{APK} missing; build first")
+        age, behind = apk_age(APK)
+        built = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(APK.stat().st_mtime))
+        print(f"APK built {built} ({fmt_age(age)} ago)")
+        if behind is not None:
+            print(f"!! STALE: app/src/main has changes {fmt_age(behind)} newer than this APK; "
+                  "run :app:assembleFossDebug first")
         print(adb("install", "-r", str(APK), serial=serial).strip().splitlines()[-1])
     elif args.cmd == "launch":
         wake(serial)
