@@ -63,3 +63,24 @@ fun extractInviteCode(text: String): String? {
     CODE_AFTER_WORD.find(up)?.let { return it.groupValues[1] }
     return CODE_BARE.findAll(up).map { it.value }.firstOrNull { token -> token.any(Char::isDigit) }
 }
+
+/**
+ * What `join_warband` answers. A status, not an error: a refusal that raised
+ * would roll back the failed attempt the server had just logged for its
+ * throttle. Only "joined" is a success; the rest read as the lifter's refusal.
+ */
+object JoinStatus {
+    const val JOINED = "joined"
+
+    /** The status inside the RPC's JSON scalar (a quoted string), unquoted. */
+    fun parse(raw: String): String = raw.trim().trim('"')
+
+    /** The refusal to show for [status], or null when the lifter joined. */
+    fun refusal(status: String): String? = when (status) {
+        JOINED -> null
+        "no_such_code" -> "No circle answers to that code"
+        "full" -> "That circle is full"
+        "throttled" -> "Too many code attempts today — try again tomorrow."
+        else -> "The circle did not take you in — try again"
+    }
+}

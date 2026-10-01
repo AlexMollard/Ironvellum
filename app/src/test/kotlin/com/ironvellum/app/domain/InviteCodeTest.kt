@@ -104,4 +104,26 @@ class InviteCodeTest {
         assertNull(extractInviteCode("AK7M2PQ4X"))
         assertNull(extractInviteCode("K7M2PQ0X")) // 0 is not drawable
     }
+
+    @Test
+    fun `join statuses read as a success or a refusal in the app's words`() {
+        assertEquals("joined", JoinStatus.parse("\"joined\"\n"))
+        assertNull(JoinStatus.refusal("joined"))
+        assertEquals("No circle answers to that code", JoinStatus.refusal("no_such_code"))
+        assertEquals("That circle is full", JoinStatus.refusal("full"))
+        assertTrue(JoinStatus.refusal("throttled")!!.startsWith("Too many code attempts"))
+        // A status this build does not know is a refusal, never a quiet success.
+        assertTrue(JoinStatus.refusal("something-new") != null)
+    }
+
+    @Test
+    fun `the join statuses the client reads are the ones the server returns`() {
+        // Every status string the client maps must be spelled in the join function.
+        val join = Regex("""create or replace function public\.join_warband\(.*?\n\$\$;""", RegexOption.DOT_MATCHES_ALL)
+            .find(baseline)?.value
+        requireNotNull(join) { "join_warband not found in the baseline" }
+        for (status in listOf("joined", "no_such_code", "full", "throttled")) {
+            assertTrue("join_warband never returns '$status'", join.contains("return '$status'"))
+        }
+    }
 }
