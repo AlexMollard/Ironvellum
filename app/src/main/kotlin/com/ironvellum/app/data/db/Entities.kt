@@ -280,6 +280,10 @@ data class GachaStateEntity(
     // has to survive the app being closed between rank-ups: held in memory it
     // would reset on every launch and never actually fire.
     val figureStreak: Int = 0,
+    // Highest level that has ever paid its level-up inscription. Levels fall
+    // when XP is refunded; without this a claim, unclaim, reclaim loop would
+    // pay the same level again every lap.
+    val rollLevelMark: Int = 0,
 )
 
 /** One owned crest frame per row; id is the stable catalogue id from Gacha. */

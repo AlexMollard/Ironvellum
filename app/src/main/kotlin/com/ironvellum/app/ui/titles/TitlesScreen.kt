@@ -207,11 +207,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
     fun claim(skillName: String) {
         viewModelScope.launchGuarded("claim skill") {
             val result = repo.claimSkill(skillName)
-            // The roll is banked HERE, at the one place a level-up is produced.
-            // Granting it from a LaunchedEffect keyed on the result double-paid
-            // whenever composition restarted (a rotation) while the overlay was
-            // still showing that same claim.
-            if (result.levelAfter > result.levelBefore) repo.grantRoll()
+            // Inscriptions are banked inside the claim's own transaction.
             _claim.value = result
         }
     }

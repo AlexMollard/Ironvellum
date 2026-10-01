@@ -93,6 +93,7 @@ import com.ironvellum.app.domain.Relics
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -103,6 +104,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Evidence from real training, not practice: a completed session's best set of
@@ -1140,15 +1143,11 @@ class Repository(
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         val now = finishedAt
         titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
-        profileDao.setCurrentTitle(newly.firstOrNull()?.id ?: before.currentTitleId)
+        wearIfNoneWorn(newly)
 
         // A level-up from ANY source banks inscriptions — workout XP included.
         // Without this, levelling through sessions never paid out at all.
-        val levelsGained = Xp.levelFor(newTotal) - levelBefore
-        if (levelsGained > 0) {
-            val g = gachaDao.get() ?: GachaStateEntity()
-            gachaDao.upsert(g.copy(rolls = g.rolls + levelsGained))
-        }
+        bankLevelRolls(levelBefore, Xp.levelFor(newTotal))
 
         CompletionResult(
             xpAwarded = totalXpGain,
@@ -1647,14 +1646,38 @@ class Repository(
         // but nothing worn, and the unlock never came round again.
         db.withTransaction {
             titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
-            if (profileDao.get()?.currentTitleId == null) {
-                profileDao.setCurrentTitle(newly.first().id)
-            }
+            wearIfNoneWorn(newly)
         }
         // Every earned title gets its moment: reconciliation runs before any UI
         // exists, so the awards wait here until a screen can show them.
         _pendingCelebrations.value = _pendingCelebrations.value + newly
         return newly
+    }
+
+    /**
+     * The one worn-title rule for every path that unlocks deeds: the lifter's
+     * choice stands, and a new deed is worn only when nothing is. Of several
+     * unlocked at once the rarest wins (first in catalogue order on a tie),
+     * so an import does not dress the lifter in the easiest of twenty.
+     * Call inside the transaction that inserted [newly].
+     */
+    private suspend fun wearIfNoneWorn(newly: List<TitleDef>) {
+        if (newly.isEmpty() || profileDao.get()?.currentTitleId != null) return
+        profileDao.setCurrentTitle(newly.maxByOrNull { it.rarity.ordinal }!!.id)
+    }
+
+    /**
+     * Banks the inscriptions owed for a rise in level, inside the caller's
+     * transaction: each level pays once, ever ([Xp.rollsDue]), however many
+     * a single gain crosses and however often a refund drops the level back.
+     */
+    private suspend fun bankLevelRolls(levelBefore: Int, levelAfter: Int) {
+        val g = gachaDao.get() ?: GachaStateEntity()
+        val due = Xp.rollsDue(levelBefore, levelAfter, g.rollLevelMark)
+        val mark = maxOf(g.rollLevelMark, levelAfter)
+        if (due > 0 || mark != g.rollLevelMark) {
+            gachaDao.upsert(g.copy(rolls = g.rolls + due, rollLevelMark = mark))
+        }
     }
 
     private val _pendingCelebrations = MutableStateFlow<List<TitleDef>>(emptyList())
@@ -1762,7 +1785,10 @@ class Repository(
         )
     }
 
-    /** Claiming mastery: awards skill XP, may level you up and unlock titles. */
+    /**
+     * Claiming mastery: awards skill XP, may level you up and unlock titles.
+     * Level-up inscriptions are banked here, in the claim's own transaction.
+     */
     suspend fun claimSkill(skillName: String): SkillClaimResult = db.withTransaction {
         val def = Skills.forName(skillName) ?: error("Unknown skill $skillName")
         check(skillPracticeDao.claim(skillName) == null) { "$skillName already mastered" }
@@ -1788,6 +1814,7 @@ class Repository(
         val levelBefore = Xp.levelFor(before.totalXp)
         val newTotal = before.totalXp + def.xp
         profileDao.addXp(def.xp.toLong())
+        bankLevelRolls(levelBefore, Xp.levelFor(newTotal))
         val ledger = Titles.ledgerOf(
             totalXp = newTotal,
             history = observeHistory().first(),
@@ -1799,9 +1826,7 @@ class Repository(
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
-        if (newly.isNotEmpty()) {
-            profileDao.setCurrentTitle(newly.first().id)
-        }
+        wearIfNoneWorn(newly)
         SkillClaimResult(
             skill = def,
             xpAwarded = def.xp,
@@ -1928,7 +1953,7 @@ class Repository(
                 strengthScore = plan.strengthScore,
                 editedAtMs = nowMs,
                 // Recorded once, by the first amendment: the cap's base.
-                sealedXp = plan.session.sealedXp ?: plan.session.xpAwarded,
+                sealedXp = sealedBase(plan.session),
             ),
         )
         if (plan.settlement.applied != 0) profileDao.addXp(plan.settlement.applied.toLong())
@@ -1950,13 +1975,24 @@ class Repository(
             )
             Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet()).also { found ->
                 titleDao.insertAll(found.map { TitleUnlockEntity(it.id, nowMs) })
-                profileDao.setCurrentTitle(found.firstOrNull()?.id ?: profile.currentTitleId)
+                wearIfNoneWorn(found)
             }
         } else {
             emptyList()
         }
         AmendResult(plan.settlement, plan.strengthScore, newly)
     }
+
+    /**
+     * What the raise cap is measured against. `sealedXp` is device-only: a
+     * trial restored from the cloud arrives with `editedAtMs` set (it was
+     * amended) but no `sealedXp`, and its stored XP may already be raised.
+     * Taking that as the sealed figure would let the cap restart from the
+     * raised value, so such a trial gets half its XP: no headroom, no
+     * further raise. Cuts are unaffected.
+     */
+    private fun sealedBase(session: SessionEntity): Int =
+        session.sealedXp ?: if (session.editedAtMs != null) session.xpAwarded / 2 else session.xpAwarded
 
     private suspend fun planAmend(sessionId: Long, draft: TrialDraft, nowMs: Long): AmendPlan {
         val session = sessionDao.byId(sessionId) ?: error("Trial $sessionId not found")
@@ -1998,7 +2034,7 @@ class Repository(
         val scoring = SessionScoring(catalogue)
         val settlement = SealedEdit.settle(
             xpAwarded = session.xpAwarded,
-            sealedXp = session.sealedXp ?: session.xpAwarded,
+            sealedXp = sealedBase(session),
             oldSetsXp = scoring.xp(sessionDao.setsFor(sessionId), bodyweight),
             newSetsXp = scoring.xp(rows, bodyweight),
             totalXp = profileDao.get()?.totalXp ?: 0L,
@@ -2394,6 +2430,12 @@ class Repository(
                 // none of these keys — absence means "no information", never
                 // "empty set", so the local rows survive untouched.
                 if (archive.idle != null || archive.gacha != null) {
+                    // A restore never un-pays a level: keep the mark, and treat
+                    // the level the restored ledger stands at as already paid.
+                    val paidThrough = maxOf(
+                        gachaDao.get()?.rollLevelMark ?: 0,
+                        Xp.levelFor(profileDao.get()?.totalXp ?: 0L),
+                    )
                     idleDao.clearAll()
                     gachaDao.clearRolls()
                     gachaDao.clearFrames()
@@ -2408,9 +2450,13 @@ class Repository(
                             ),
                         )
                     }
-                    archive.gacha?.let {
-                        gachaDao.upsert(GachaStateEntity(rolls = it.rolls, equippedFrame = it.equippedFrame))
-                    }
+                    gachaDao.upsert(
+                        GachaStateEntity(
+                            rolls = archive.gacha?.rolls ?: 0,
+                            equippedFrame = archive.gacha?.equippedFrame,
+                            rollLevelMark = paidThrough,
+                        ),
+                    )
                     archive.crestFrames.forEach {
                         gachaDao.insertFrame(OwnedCrestFrameEntity(frameId = it.frameId, ownedAtMs = it.ownedAtMs))
                     }
@@ -2575,7 +2621,7 @@ class Repository(
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, System.currentTimeMillis()) })
-        profileDao.setCurrentTitle(newly.firstOrNull()?.id ?: profile.currentTitleId)
+        wearIfNoneWorn(newly)
 
         MergeResult(
             sessions = sessionsInserted,
@@ -2794,11 +2840,23 @@ class Repository(
         owed.forEach { payoutStore.markPaid(myUserId, it) }
         val xp = CirclePayout.BONUS_XP * owed.size
         try {
-            profileDao.addXp(xp.toLong())
+            // NonCancellable: once the weeks are marked the write must land
+            // whole, or a cancel arriving as it commits would unmark weeks
+            // whose XP is already in and pay them twice. XP and inscriptions
+            // share one transaction, like every other level-up.
+            withContext(NonCancellable) {
+                db.withTransaction {
+                    val levelBefore = Xp.levelFor(profileDao.get()?.totalXp ?: 0L)
+                    profileDao.addXp(xp.toLong())
+                    bankLevelRolls(levelBefore, Xp.levelFor(profileDao.get()?.totalXp ?: 0L))
+                }
+            }
         } catch (e: Throwable) {
-            owed.forEach { payoutStore.unmark(myUserId, it) }
+            // A cancellation is not a failed write: the flags stay, the XP is in.
+            if (e !is CancellationException) owed.forEach { payoutStore.unmark(myUserId, it) }
             throw e
         }
+        reconcileTitles()
         CircleBonusPaid(xp, bonuses.lastOrNull { it.week == owed.last() }?.circleName)
     }
 

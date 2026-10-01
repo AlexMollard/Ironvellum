@@ -167,4 +167,13 @@ object Xp {
     }
 
     fun levelFor(totalXp: Long): Int = progress(totalXp).level
+
+    /**
+     * Inscriptions owed for a rise from [levelBefore] to [levelAfter], given
+     * the highest level that has ever paid ([paidThrough]). Each level pays
+     * once, ever: dropping a level (an unclaim, a deleted trial) and climbing
+     * back re-crosses levels that already paid, and must not mint again.
+     */
+    fun rollsDue(levelBefore: Int, levelAfter: Int, paidThrough: Int): Int =
+        (levelAfter - maxOf(levelBefore, paidThrough)).coerceAtLeast(0)
 }
