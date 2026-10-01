@@ -1535,20 +1535,42 @@ begin
         'the warband attempt log is readable by a client role'
     );
 
-    -- trained-this-week: the count follows the feed's own visibility — Rey's
-    -- public workout counts, Sol's private one never does. Completed NOW, so
-    -- the Monday-start anchor cannot drift across a week boundary mid-run.
+    -- trained-this-week: a count of DAYS trained, canonical for every viewer.
+    -- Rey's public trial and Sol's PRIVATE one count alike (visibility is not a
+    -- condition of the count), each needs a set to count, and only the time of
+    -- the trial still follows the feed's visibility. Completed NOW, so the
+    -- Monday-start anchor cannot drift across a week boundary mid-run.
     insert into sessions (id, user_id, local_id, label, started_at, completed_at, audience) values
         ('a5566666-0000-4000-8000-000000000001', rey, 1, 'Pull', now() - interval '1 hour', now(), 'profile'),
         ('a5566666-0000-4000-8000-000000000002', sol, 1, 'Legs', now() - interval '1 hour', now(), 'private');
     perform assert_true(
+        value_as(nova, 'select band_total from my_warband()') = '0',
+        'trials without a set counted toward the band''s week'
+    );
+    insert into session_sets (session_id, exercise_name, set_index, reps) values
+        ('a5566666-0000-4000-8000-000000000001', 'Row', 0, 8),
+        ('a5566666-0000-4000-8000-000000000002', 'Squat', 0, 5);
+    perform assert_true(
         value_as(nova, 'select members->1->>''workouts_this_week'' from my_warband()') = '1'
-            and value_as(nova, 'select members->2->>''workouts_this_week'' from my_warband()') = '0',
-        'workouts_this_week counted a workout the feed would hide, or hid one it shows'
+            and value_as(nova, 'select members->2->>''workouts_this_week'' from my_warband()') = '1'
+            and value_as(nova, 'select members->0->>''workouts_this_week'' from my_warband()') = '0',
+        'a member''s days trained follow the audience of their trials, or an empty member is not zero'
     );
     perform assert_true(
-        value_as(nova, 'select (members->1->>''last_workout_at'') is not null from my_warband()') = 'true',
-        'last_workout_at is null behind a visible workout'
+        value_as(nova, 'select band_total from my_warband()') = '2'
+            and value_as(rey, 'select band_total from my_warband()') = '2'
+            and value_as(sol, 'select band_total from my_warband()') = '2',
+        'two bandmates read different totals for the same week'
+    );
+    perform assert_true(
+        value_as(nova, 'select (members->1->>''last_workout_at'') is not null from my_warband()') = 'true'
+            and value_as(nova, 'select (members->2->>''last_workout_at'') is null from my_warband()') = 'true',
+        'last_workout_at is null behind a visible trial, or hands over the time of a private one'
+    );
+    perform assert_true(
+        not has_function_privilege('anon', 'public.warband_week_days(uuid, timestamptz)', 'execute')
+            and not has_function_privilege('authenticated', 'public.warband_week_days(uuid, timestamptz)', 'execute'),
+        'warband_week_days is callable by a client role: an oracle on anyone''s training days'
     );
 
     -- The cap: fill to 8 server-side, the ninth joiner refuses. Ivo is still
@@ -1647,6 +1669,7 @@ declare
     w_ash uuid := 'a5577777-1111-4000-8000-000000000001';
     c_early uuid; c_bram uuid; c_ash uuid; c_cole uuid;
     code text;
+    prev timestamptz := (date_trunc('week', now() at time zone 'utc')) at time zone 'utc' - interval '7 days';
 begin
     perform sign_up(ash, '{"display_name": "Ashby"}');
     perform sign_up(bram, '{"display_name": "Bramwell"}');
@@ -1692,23 +1715,40 @@ begin
     code := value_as(ash, 'select code from my_warband()');
     perform must_run(bram, format('select public.join_warband(%L)', code), 'the replies fixture could not join the band');
     perform must_run(ash, 'select public.set_warband_goal(5)', 'the replies fixture could not set the goal');
-    -- Seconds apart, so the week boundary can only split them in its first seconds.
+    -- Days trained, so the goal needs five DAYS: the previous week is complete,
+    -- always inside the inbox window, and gives five distinct days at any hour.
+    -- Both joined well before it opened.
+    update warband_members set joined_at = now() - interval '21 days' where user_id = ash;
+    update warband_members set joined_at = now() - interval '20 days' where user_id = bram;
     insert into sessions (user_id, local_id, label, started_at, completed_at)
     select case when n % 2 = 0 then ash else bram end, 100 + n, 'Goal',
-           now() - make_interval(secs => 60 - n), now() - make_interval(secs => 10 - n)
+           prev + make_interval(days => n - 1, hours => 9), prev + make_interval(days => n - 1, hours => 10)
     from generate_series(1, 4) n;
+    insert into session_sets (session_id, exercise_name, set_index, reps)
+    select s.id, 'Press', 0, 5 from sessions s where s.label = 'Goal' and s.user_id in (ash, bram);
     perform assert_true(
         value_as(ash, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 0,
-        'a band four workouts short of a five-workout goal reads as having met it'
+        'a band four days short of a five-day goal reads as having met it'
+    );
+    -- A second trial on a day already counted is no new day.
+    insert into sessions (user_id, local_id, label, started_at, completed_at)
+    values (bram, 104, 'Goal', prev + interval '10 hours', prev + interval '11 hours');
+    insert into session_sets (session_id, exercise_name, set_index, reps)
+    select s.id, 'Press', 0, 5 from sessions s where s.user_id = bram and s.local_id = 104;
+    perform assert_true(
+        value_as(ash, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 0,
+        'a second trial on the same day counted as another day toward the goal'
     );
     insert into sessions (user_id, local_id, label, started_at, completed_at)
-    values (bram, 105, 'Goal', now() - interval '1 minute', now() - interval '1 second');
+    values (bram, 105, 'Goal', prev + interval '4 days 9 hours', prev + interval '4 days 10 hours');
+    insert into session_sets (session_id, exercise_name, set_index, reps)
+    select s.id, 'Press', 0, 5 from sessions s where s.user_id = bram and s.local_id = 105;
     perform assert_true(
         value_as(ash, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 1
             and value_as(bram, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 1
             and value_as(ash, 'select actor_id::text from my_inbox() where kind = ''band_goal''') = bram::text
             and value_as(ash, 'select body from my_inbox() where kind = ''band_goal''') = 'Ember Ring',
-        'the band''s goal falling is not one row per member, at the crossing workout, naming the band'
+        'the band''s goal falling is not one row per member, at the crossing day, naming the band'
     );
     perform assert_true(
         value_as(cole, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 0,
@@ -1719,6 +1759,121 @@ begin
     perform must_run(ash, 'select public.leave_warband()', 'ash could not leave');
     delete from auth.users where id in (ash, bram, cole);
 end $rp$;
+
+-- ------------------------------------------------------------- circle counting
+-- warband_week_days() on a fixed past week (Monday 2024-01-01, UTC), so every
+-- boundary is exact and no assertion depends on the day the suite runs. The
+-- end-to-end parity (every viewer reads the same total) uses the current week.
+create or replace function circle_test_trial(uid uuid, at timestamptz, with_sets boolean, aud text)
+returns void language plpgsql as $$
+declare
+    sid uuid;
+begin
+    insert into sessions (user_id, local_id, label, started_at, completed_at, audience)
+    values (uid, (select coalesce(max(s.local_id), 0) + 1 from sessions s where s.user_id = uid),
+            'Trial', at - interval '1 hour', at, aud)
+    returning id into sid;
+    if with_sets then
+        insert into session_sets (session_id, exercise_name, set_index, reps) values (sid, 'Squat', 0, 5);
+    end if;
+end;
+$$;
+
+do $cnt$
+declare
+    ann uuid := 'a5599999-0000-4000-8000-000000000001';
+    bob uuid := 'a5599999-0000-4000-8000-000000000002';
+    cat uuid := 'a5599999-0000-4000-8000-000000000003';
+    ws  timestamptz := '2024-01-01 00:00:00+00';
+    ws2 timestamptz := '2024-01-08 00:00:00+00';
+    band uuid;
+    code text;
+    before_n int;
+    v text;
+begin
+    perform sign_up(ann, '{"display_name": "Annika"}');
+    perform sign_up(bob, '{"display_name": "Bobbie"}');
+    perform sign_up(cat, '{"display_name": "Catriona"}');
+    update profiles set visibility = 'public'  where id = ann;
+    update profiles set visibility = 'private' where id = bob;
+    update profiles set visibility = 'friends' where id = cat;
+    perform must_run(ann, 'select public.create_warband(''Count Ring'')', 'the counting fixture could not form a band');
+    code := value_as(ann, 'select code from my_warband()');
+    perform assert_true(value_as(bob, format('select public.join_warband(%L)', code)) = 'joined', 'bob could not join');
+    perform assert_true(value_as(cat, format('select public.join_warband(%L)', code)) = 'joined', 'cat could not join');
+    band := (select warband_id from warband_members where user_id = ann);
+    update warband_members set joined_at = '2023-12-01 00:00:00+00' where user_id in (ann, bob);
+    update warband_members set joined_at = '2024-01-03 12:00:00+00' where user_id = cat;
+
+    -- Ann: two trials on Monday are one day; Wednesday; Sunday at 23:59:59 is the last second of the week.
+    perform circle_test_trial(ann, '2024-01-01 08:00:00+00', true, 'profile');
+    perform circle_test_trial(ann, '2024-01-01 18:00:00+00', true, 'profile');
+    perform circle_test_trial(ann, '2024-01-03 10:00:00+00', true, 'profile');
+    perform circle_test_trial(ann, '2024-01-07 23:59:59+00', true, 'profile');
+    -- Bob: a PRIVATE trial counts; one with no sets does not.
+    perform circle_test_trial(bob, '2024-01-02 09:00:00+00', true, 'private');
+    perform circle_test_trial(bob, '2024-01-04 09:00:00+00', false, 'profile');
+    -- Cat joined Wednesday noon: Monday's trial predates it, Wednesday afternoon counts, and a trial
+    -- at exactly the next Monday 00:00:00 belongs to the NEXT week.
+    perform circle_test_trial(cat, '2024-01-01 09:00:00+00', true, 'friends');
+    perform circle_test_trial(cat, '2024-01-03 13:00:00+00', true, 'friends');
+    perform circle_test_trial(cat, '2024-01-08 00:00:00+00', true, 'friends');
+
+    perform assert_true((select count(*) from warband_week_days(band, ws)) = 5, 'the week did not count 5 days');
+    perform assert_true(
+        (select count(*) from warband_week_days(band, ws) where user_id = ann) = 3
+            and (select count(*) from warband_week_days(band, ws) where user_id = bob) = 1
+            and (select count(*) from warband_week_days(band, ws) where user_id = cat) = 1,
+        'a member''s days were not one per UTC day, with a set, after joining, inside the week'
+    );
+    perform assert_true(
+        (select array_agg(n order by n) from warband_week_days(band, ws)) = array[1, 2, 3, 4, 5]
+            and (select user_id from warband_week_days(band, ws) where n = 1) = ann,
+        'the counted days are not numbered in the order they happened'
+    );
+    -- The boundary trial is counted once, in the week it falls in: not in both, not in neither.
+    perform assert_true(
+        (select count(*) from warband_week_days(band, ws2)) = 1
+            and (select user_id from warband_week_days(band, ws2)) = cat,
+        'the trial at the week boundary was counted in the wrong week, or twice'
+    );
+
+    -- The future never counts: a trial stamped half a day ahead leaves the current week's count alone.
+    select count(*) into before_n
+    from warband_week_days(band, (date_trunc('week', now() at time zone 'utc')) at time zone 'utc');
+    perform circle_test_trial(ann, now() + interval '12 hours', true, 'profile');
+    perform assert_true(
+        (select count(*) from warband_week_days(band, (date_trunc('week', now() at time zone 'utc')) at time zone 'utc')) = before_n,
+        'a trial stamped in the future counted toward the week'
+    );
+    delete from sessions where user_id = ann and completed_at > now();
+
+    -- Parity: each viewer reads the same total and the same per-member days for the
+    -- current week, whether the trials behind them are public or private, and
+    -- whether or not the viewer may see the member's profile.
+    perform circle_test_trial(ann, now(), true, 'profile');
+    perform circle_test_trial(bob, now(), true, 'private');
+    perform assert_true(
+        value_as(ann, 'select band_total from my_warband()') = '2'
+            and value_as(bob, 'select band_total from my_warband()') = '2'
+            and value_as(cat, 'select band_total from my_warband()') = '2',
+        'bandmates read different totals for the same week'
+    );
+    foreach v in array array[ann::text, bob::text, cat::text] loop
+        perform assert_true(
+            value_as(v::uuid, 'select members->0->>''workouts_this_week'' from my_warband()') = '1'
+                and value_as(v::uuid, 'select members->1->>''workouts_this_week'' from my_warband()') = '1'
+                and value_as(v::uuid, 'select members->2->>''workouts_this_week'' from my_warband()') = '0',
+            'a viewer read a different per-member breakdown'
+        );
+    end loop;
+
+    delete from sessions where user_id in (ann, bob, cat);
+    perform must_run(cat, 'select public.leave_warband()', 'cat could not leave');
+    perform must_run(bob, 'select public.leave_warband()', 'bob could not leave');
+    perform must_run(ann, 'select public.leave_warband()', 'ann could not leave');
+    delete from auth.users where id in (ann, bob, cat);
+end $cnt$;
 
 -- ------------------------------------------------------- circle safety (schema 27)
 do $sf$
@@ -1784,4 +1939,5 @@ drop function if exists must_run(uuid, text, text);
 drop function if exists refusal(uuid, text);
 drop function if exists refused_as_anon(text, text[]);
 drop function if exists sign_up(uuid, jsonb);
+drop function if exists circle_test_trial(uuid, timestamptz, boolean, text);
 drop function if exists value_as(uuid, text);

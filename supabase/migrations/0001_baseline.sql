@@ -1593,6 +1593,58 @@ $$;
 revoke execute on function public.mark_inbox_seen() from public, anon;
 grant execute on function public.mark_inbox_seen() to authenticated;
 
+-- ---------------------------------------------------------------- counting
+-- The ONE definition of what a band's week is made of, shared by the roster
+-- (my_warband) and the goal missive (my_inbox), so the banner and the inbox can
+-- never disagree about when a goal fell.
+--
+-- A band's week counts DAYS TRAINED: for each current member, the distinct UTC
+-- days on which they sealed at least one trial, at most one per day however many
+-- trials they sealed. A trial counts only when
+--   * it has at least one row in session_sets (an empty trial is not training),
+--   * it was completed at or after the member joined the band (the week's early
+--     trials of someone who has just arrived are not the band's),
+--   * it falls inside the week, [p_ws, p_ws + 7 days), and not in the future
+--     (the guard trigger lets a client stamp a day ahead).
+-- Visibility is deliberately NOT a condition: the count is one canonical number,
+-- the same for every viewer, so two bandmates can never read different totals
+-- and disagree about whether the goal was met. It is a bare count of days; the
+-- trial itself, its contents and its audience are never exposed. The roster
+-- shows each member's own last-trial time under the feed's visibility rules
+-- separately, in my_warband.
+--
+-- n numbers the counted days across the whole band in the order they happened,
+-- so "the day that crossed the goal" is the row where n equals the goal.
+--
+-- SECURITY DEFINER because it reads other lifters' sessions, which a plain
+-- member's RLS refuses, and CLOSED to every client role: asked directly it would
+-- be an oracle on any lifter's training days. Only the definer RPCs call it.
+create or replace function public.warband_week_days(p_band uuid, p_ws timestamptz)
+returns table (user_id uuid, day date, at timestamptz, n int)
+language sql
+stable
+security definer
+set search_path = pg_catalog, public
+as $$
+    select d.user_id, d.day, d.at,
+           (row_number() over (order by d.at, d.user_id))::int
+    from (
+        select m.user_id,
+               (s.completed_at at time zone 'utc')::date as day,
+               min(s.completed_at) as at
+        from warband_members m
+        join sessions s on s.user_id = m.user_id
+        where m.warband_id = p_band
+          and s.completed_at is not null
+          and s.completed_at >= greatest(p_ws, m.joined_at)
+          and s.completed_at <  p_ws + interval '7 days'
+          and s.completed_at <= now()
+          and exists (select 1 from session_sets x where x.session_id = s.id)
+        group by m.user_id, 2
+    ) d;
+$$;
+revoke execute on function public.warband_week_days(uuid, timestamptz) from public, anon, authenticated;
+
 -- SECURITY DEFINER because a request comes from a lifter whose profile the
 -- caller usually cannot read yet (that is why they are asking), and the name
 -- is no secret: find_hunter already resolves it. Every branch is pinned to
@@ -1700,13 +1752,12 @@ as $$
         union all
 
         -- The caller's warband met its weekly goal: one row per week, at the
-        -- workout that crossed it, attributed to whoever completed that
-        -- workout. Counted exactly as my_warband() counts the banner (current
-        -- members, completed, UTC Monday weeks, can_view_session), so the
-        -- inbox and the banner agree on when the goal fell. The 37 days cover
-        -- the inbox's 30 plus a whole week, so a week that began before the
-        -- window still counts from its Monday.
-        select 'band_goal', g.completed_at, g.user_id,
+        -- day that crossed it, attributed to whoever trained that day. Counted
+        -- by warband_week_days(), exactly as my_warband() counts the banner, so
+        -- the inbox and the banner agree on when the goal fell. The current
+        -- week and the five before it: far enough back to cover the inbox's 30
+        -- days and a whole week more.
+        select 'band_goal', g.at, g.user_id,
                case when g.user_id = me.id or can_view(g.user_id)
                     then coalesce(p.display_name, 'Ironbound' || right(g.user_id::text, 4))
                     else 'Ironbound' || right(g.user_id::text, 4) end,
@@ -1714,17 +1765,10 @@ as $$
         from me
         join warband_members mine on mine.user_id = me.id
         join warbands w on w.id = mine.warband_id
-        join lateral (
-            select s.user_id, s.completed_at,
-                   row_number() over (
-                       partition by date_trunc('week', s.completed_at at time zone 'utc')
-                       order by s.completed_at, s.id
-                   ) as n
-            from sessions s
-            join warband_members m on m.user_id = s.user_id and m.warband_id = w.id
-            where s.completed_at is not null
-              and s.completed_at > now() - interval '37 days'
-              and can_view_session(s.user_id, s.audience)
+        cross join lateral generate_series(0, 5) as k
+        join lateral warband_week_days(
+            w.id,
+            (date_trunc('week', now() at time zone 'utc')) at time zone 'utc' - k * interval '7 days'
         ) g on g.n = w.weekly_goal
         left join profiles p on p.id = g.user_id
     )
@@ -1920,28 +1964,43 @@ revoke execute on function public.set_warband_goal(int) from public, anon;
 grant execute on function public.set_warband_goal(int) to authenticated;
 
 -- The caller's band and roster, or no rows when they are in none. SECURITY
--- DEFINER because the roster aggregates sessions of bandmates under the feed's
--- own visibility rules (can_view_session: allies-only workouts of bandmates
--- count, private ones never do) — a plain-member read could not see those
--- rows directly. workouts_this_week counts completed sessions in the CURRENT
--- Monday-start week, anchored in UTC explicitly so a moved server timezone
--- cannot shift everyone's week — the client shows exactly this number, so
--- both ends must keep the same anchor.
+-- DEFINER because the count reads bandmates' sessions, which a plain member's
+-- RLS refuses. The week is the CURRENT Monday-start week, anchored in UTC
+-- explicitly so a moved server timezone cannot shift everyone's week — the
+-- client shows exactly these numbers, so both ends must keep the same anchor.
+--
+-- band_total and each member's workouts_this_week are DAYS TRAINED, counted by
+-- warband_week_days(): canonical and the same for every viewer, whatever the
+-- audience of the trials behind them (see that function). Only last_workout_at,
+-- which names a moment of a particular trial, still follows the feed's
+-- visibility (can_view_session): a private trial's time is never handed over.
+--
 -- Identity follows the profile's own visibility: a bandmate whose profile the
 -- caller cannot view lists under the neutral handle, with level and worn
 -- title withheld, exactly as anywhere else in the app.
--- The return row grew weekly_goal in schema 25, and create or replace cannot
--- change a row type in place: drop the old shape first. Idempotent, and the
--- function holds no data.
+-- The return row grew band_total in schema 27 (weekly_goal in 25), and create
+-- or replace cannot change a row type in place: drop the old shape first.
+-- Idempotent, and the function holds no data.
 drop function if exists public.my_warband();
 create or replace function public.my_warband()
-returns table (id uuid, name text, code text, owner_id uuid, weekly_goal int, members jsonb)
+returns table (id uuid, name text, code text, owner_id uuid, weekly_goal int, band_total int, members jsonb)
 language sql
 stable
 security definer
 set search_path = pg_catalog, public
 as $$
+    with ws as (
+        select (date_trunc('week', now() at time zone 'utc')) at time zone 'utc' as at
+    ),
+    mine as (
+        select m.warband_id from warband_members m where m.user_id = auth.uid()
+    ),
+    days as (
+        select d.user_id, d.day
+        from mine, ws, lateral warband_week_days(mine.warband_id, ws.at) d
+    )
     select w.id, w.name, w.invite_code, w.owner_id, w.weekly_goal,
+           (select count(*)::int from days),
            (
             select json_agg(json_build_object(
                        'user_id', m.user_id,
@@ -1954,24 +2013,23 @@ as $$
                                      then coalesce(p.level, 1) end,
                        'current_title_id', case when m.user_id = auth.uid() or can_view(m.user_id)
                                                 then p.current_title_id end,
-                       'workouts_this_week', coalesce(week.n, 0),
-                       'last_workout_at', week.last_at
+                       'workouts_this_week', (select count(*) from days dd where dd.user_id = m.user_id),
+                       'last_workout_at', (
+                           select max(s.completed_at)
+                           from sessions s, ws
+                           where s.user_id = m.user_id
+                             and s.completed_at is not null
+                             and s.completed_at >= ws.at
+                             and s.completed_at <= now()
+                             and can_view_session(s.user_id, s.audience)
+                       )
                    ) order by m.joined_at, m.user_id)
             from warband_members m
             left join profiles p on p.id = m.user_id
-            left join lateral (
-                select count(*) as n, max(s.completed_at) as last_at
-                from sessions s
-                where s.user_id = m.user_id
-                  and s.completed_at is not null
-                  and s.completed_at >= (date_trunc('week', now() at time zone 'utc')) at time zone 'utc'
-                  and can_view_session(s.user_id, s.audience)
-            ) week on true
             where m.warband_id = w.id
            )
     from warbands w
-    where exists (select 1 from warband_members me
-                  where me.warband_id = w.id and me.user_id = auth.uid());
+    where w.id in (select warband_id from mine);
 $$;
 revoke execute on function public.my_warband() from public, anon;
 grant execute on function public.my_warband() to authenticated;

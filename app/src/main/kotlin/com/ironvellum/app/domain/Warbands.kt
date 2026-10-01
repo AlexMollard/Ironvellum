@@ -12,11 +12,13 @@ data class Warband(
     val ownerId: String,
     /** The owner's weekly challenge: total band workouts aimed for this week. */
     val weeklyGoal: Int = 12,
+    /** Days trained by the whole band this week: one canonical number, identical for every viewer. */
+    val total: Int = 0,
     /** Oldest member first — the server's order, kept as handed over. */
     val members: List<WarbandMember>,
 )
 
-/** One bandmate. [workoutsThisWeek] counts completed workouts in the current Monday-start week (UTC anchor, server-computed).
+/** One bandmate. [workoutsThisWeek] counts days trained in the current Monday-start week (UTC anchor, server-computed, the same for every viewer).
  *  [level] and [titleId] are null when the bandmate's profile is hidden from the caller. */
 data class WarbandMember(
     val userId: String,

@@ -5,6 +5,7 @@ import com.ironvellum.app.data.cloud.Cloud.failure
 import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.Warband
+import com.ironvellum.app.data.db.SyncStateEntity
 import com.ironvellum.app.domain.JoinStatus
 import com.ironvellum.app.domain.isValidInviteCode
 import com.ironvellum.app.domain.SetRecords
@@ -118,6 +119,27 @@ class CloudSync(
             val lifetimeStrength = history.sumOf { (session, _) -> session.strengthScore.toLong() }
 
             val problems = mutableListOf<String>()
+
+            // Trials deleted on this device go from the cloud too, so they stop
+            // counting in a circle's week and stop showing in allies' feeds.
+            // Tombstones are RECORDED by the delete itself, never inferred by
+            // comparing the cloud with the device (on a fresh install that
+            // comparison would delete the whole cloud history). They are
+            // cleared only once the delete succeeded, so a failed one retries.
+            val tombstones = repo.tombstonedSessions()
+            if (tombstones.isNotEmpty()) {
+                runCatching {
+                    client.postgrest.from("sessions").delete {
+                        filter {
+                            eq("user_id", me.userId)
+                            isIn("local_id", tombstones)
+                        }
+                    }
+                    repo.clearTombstones(tombstones)
+                }.onFailure { error ->
+                    problems += "Deleted trials were not removed from the cloud: ${Cloud.explain(error)}"
+                }
+            }
             // The worn title is the only profile column push owns. The name
             // and visibility have their own flows, and the row itself is made
             // by the server at sign-up: clients hold no INSERT on profiles, so
@@ -1495,7 +1517,10 @@ class CloudSync(
                 if (session.audience != SessionAudience.PROFILE) add(session.audience.wire)
                 session.editedAtMs?.let { add(it) }
             }
-            return Objects.hash(*fields, *extra.toTypedArray())
+            // The sentinel is reserved for tombstones; a real fingerprint must not equal it.
+            return Objects.hash(*fields, *extra.toTypedArray()).let {
+                if (it == SyncStateEntity.TOMBSTONE) it + 1 else it
+            }
         }
 
         /**

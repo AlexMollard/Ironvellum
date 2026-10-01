@@ -415,9 +415,9 @@ private fun WarbandRoster(
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
 
-    // The week header is the client summing the members' counts — the server
-    // does not hand back a total.
-    val total = band.members.sumOf { it.workoutsThisWeek }
+    // The server's canonical total: summing what the viewer was handed could
+    // differ from the next member's sum and split GOAL MET between phones.
+    val total = band.total
     // Goal absent (an older server answer) falls back to the Warband default silently.
     val goal = band.weeklyGoal.coerceAtLeast(1)
     val met = total >= goal

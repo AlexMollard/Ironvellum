@@ -411,13 +411,25 @@ interface SyncStateDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsertAll(rows: List<SyncStateEntity>)
 
-    /** Drops watermarks for sessions that no longer exist locally. */
-    @Query("DELETE FROM sync_state WHERE sessionId NOT IN (:keep)")
+    /**
+     * Drops watermarks for sessions that no longer exist locally. Tombstones
+     * (fingerprint -2147483648, SyncStateEntity.TOMBSTONE) are exactly such
+     * sessions and are NOT watermarks: they stay until the cloud row is gone.
+     */
+    @Query("DELETE FROM sync_state WHERE sessionId NOT IN (:keep) AND fingerprint != -2147483648")
     suspend fun pruneExcept(keep: List<Long>)
 
     /** The deleted session's watermark goes with it, so nothing references a ghost. */
     @Query("DELETE FROM sync_state WHERE sessionId = :sessionId")
     suspend fun deleteFor(sessionId: Long)
+
+    /** Local ids of trials deleted here whose cloud row has not been deleted yet. */
+    @Query("SELECT sessionId FROM sync_state WHERE fingerprint = -2147483648")
+    suspend fun tombstoned(): List<Long>
+
+    /** Forgets tombstones once the cloud rows are confirmed gone. */
+    @Query("DELETE FROM sync_state WHERE sessionId IN (:ids) AND fingerprint = -2147483648")
+    suspend fun clearTombstones(ids: List<Long>)
 
     /**
      * Forgets every watermark, so the next push re-uploads the whole history.
