@@ -123,7 +123,8 @@ class ProgramBuilderViewModel(
     // generated plan survives rotation the same way the editor's does.
     val focus = MutableStateFlow(TrainingFocus.GENERAL)
     val tier = MutableStateFlow(VolumeLevel.LOW)
-    val equipment = MutableStateFlow(Equipment.FULL_GYM)
+    /** Null until the lifter has picked (or Settings / onboarding saved) an armoury; no cycle is built on a guess. */
+    val equipment = MutableStateFlow<Equipment?>(null)
     val daysPerWeek = MutableStateFlow(4)
     val split = MutableStateFlow(TrainingSplit.UPPER_LOWER)
     val priorities = MutableStateFlow<Set<MuscleArea>>(emptySet())
@@ -243,7 +244,7 @@ class ProgramBuilderViewModel(
     private fun request(): ProgramRequest = ProgramRequest(
         focus = focus.value,
         volume = tier.value,
-        equipment = equipment.value,
+        equipment = checkNotNull(equipment.value) { "armoury not picked" },
         daysPerWeek = daysPerWeek.value,
         priorities = priorities.value,
         sex = sex.value,
@@ -267,6 +268,8 @@ class ProgramBuilderViewModel(
     fun generate() {
         val cat = catalogue.value
         if (cat.isEmpty()) return
+        // The screen asks for the armoury and shows no preview until it is set.
+        val gear = equipment.value ?: return
         // A preset picker that is still loading is not "nothing to improve":
         // wait for Room's first emission instead of flashing an error.
         if (mode == "improve" && presets.value.isEmpty()) return
@@ -278,7 +281,7 @@ class ProgramBuilderViewModel(
                     selectedTemplateId.value = chosen?.id
                     chosen?.let {
                         ProgramTemplates.build(
-                            it, tier.value, equipment.value, cat, _strength.value, compoundOnly.value, maxExercises.value,
+                            it, tier.value, gear, cat, _strength.value, compoundOnly.value, maxExercises.value,
                         )
                     }
                 }
@@ -378,10 +381,11 @@ class ProgramBuilderViewModel(
     /** Remembered whenever generator output is applied; Weekly Coverage and
      *  the next builder visit read the SAME volume and goal she answered with. */
     private fun rememberAnswers() {
+        val gear = equipment.value ?: return
         ProgramAnswersStore.save(
             appContext,
             ProgramAnswers(
-                tier.value, focus.value, equipment.value, daysPerWeek.value, priorities.value, split.value,
+                tier.value, focus.value, gear, daysPerWeek.value, priorities.value, split.value,
                 compoundOnly.value, maxExercises.value,
             ),
         )
@@ -640,6 +644,10 @@ fun ProgramBuilderScreen(
 
         QuestionPanel("YOUR ARMOURY") {
             GearPicker(equipment = equipment, onChange = { viewModel.equipment.value = it })
+            if (equipment == null) {
+                Spacer(Modifier.height(8.dp))
+                Caption(ARMOURY_PICK_CAPTION)
+            }
         }
 
         QuestionPanel("EXERCISES") {
@@ -819,7 +827,9 @@ fun ProgramBuilderScreen(
 
         if (mode == "improve") {
             val current = improvement
-            if (current == null) {
+            if (equipment == null) {
+                Caption(ARMOURY_PICK_CAPTION)
+            } else if (current == null) {
                 Caption("Reading your rite against the evidence…")
             } else {
                 // The rest of the week feeds the volume read but is NOT
@@ -840,7 +850,13 @@ fun ProgramBuilderScreen(
         } else {
             val current = plan
             if (current == null || current.presets.isEmpty()) {
-                Caption(if (catalogue.isEmpty()) "Consulting the catalogue…" else "Nothing to show yet.")
+                Caption(
+                    when {
+                        equipment == null -> ARMOURY_PICK_CAPTION
+                        catalogue.isEmpty() -> "Consulting the catalogue…"
+                        else -> "Nothing to show yet."
+                    },
+                )
             } else {
                 current.presets.forEachIndexed { presetIndex, preset ->
                     ProposedDay(
@@ -1009,6 +1025,9 @@ private fun trimYears(value: Double): String {
 }
 
 /** A question in the app's HUD voice, one panel to itself, like onboarding's. */
+private const val ARMOURY_PICK_CAPTION =
+    "Pick your armoury to see a preview. Nothing means bodyweight only."
+
 @Composable
 private fun QuestionPanel(label: String, content: @Composable () -> Unit) {
     InkPanel(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
