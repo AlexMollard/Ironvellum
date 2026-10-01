@@ -1,5 +1,7 @@
 package com.ironvellum.app.data.cloud
 
+import kotlinx.serialization.EncodeDefault
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -81,8 +83,11 @@ data class SessionDto(
     @SerialName("note") val note: String = "",
     // SessionAudience.wire. The server check is the same three values.
     @SerialName("audience") val audience: String = "profile",
-    // When the owner amended the sealed workout; null (the column's own
-    // default) for one never amended.
+    // When the owner amended the sealed trial; null (the column's own
+    // default) for one never amended. Never sent while null, so a hosted
+    // project that predates the column keeps accepting every other push.
+    @OptIn(ExperimentalSerializationApi::class)
+    @EncodeDefault(EncodeDefault.Mode.NEVER)
     @SerialName("edited_at") val editedAt: String? = null,
 )
 

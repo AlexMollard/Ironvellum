@@ -21,6 +21,22 @@ import kotlinx.serialization.json.jsonObject
  */
 class CloudWireDtosTest {
 
+    @Test
+    fun `a never-amended trial does not send edited_at`() {
+        // supabase-kt may encode defaults; the hosted project may predate the
+        // column. Either way a null stamp must not appear in the push body.
+        val strict = Json { encodeDefaults = true }
+        val dto = SessionDto(
+            userId = "u", localId = 1, label = "Legs",
+            startedAt = "2026-09-30T08:00:00Z", completedAt = "2026-09-30T09:00:00Z",
+            xpAwarded = 10, strengthScore = 0,
+        )
+        val sent = strict.encodeToJsonElement(dto).jsonObject
+        assertEquals(false, "edited_at" in sent)
+        val amended = strict.encodeToJsonElement(dto.copy(editedAt = "2026-10-01T08:00:00Z")).jsonObject
+        assertEquals(true, "edited_at" in amended)
+    }
+
     private val json = Json
 
     @Test
