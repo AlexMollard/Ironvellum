@@ -632,7 +632,7 @@ internal fun splitCaption(split: TrainingSplit, days: Int): String = when (split
         "Push, pull, legs twice over. Short rites, every muscle twice a week."
     }
     TrainingSplit.UPPER_LOWER_PPL ->
-        "Push, pull, legs, then upper and lower. Every muscle twice in five days."
+        "PPL is push / pull / legs: those three days, then upper and lower. Every muscle twice in five days."
 }
 
 /**
