@@ -164,7 +164,13 @@ class WorkoutDetailViewModel(
 
     fun startAmend() {
         val sets = ui.value.sets
-        if (ui.value.session?.completedAtMs != null && sets.isNotEmpty()) _draft.value = TrialDraft.of(sets)
+        if (ui.value.session?.completedAtMs == null || sets.isEmpty()) return
+        val opened = TrialDraft.of(sets)
+        if (opened.hasRepeatedMovement) {
+            _amendError.value = "This trial lists one movement twice with different modifiers, so it cannot be amended."
+        } else {
+            _draft.value = opened
+        }
     }
 
     fun changeDraft(change: (TrialDraft) -> TrialDraft) {
