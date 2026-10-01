@@ -6,6 +6,33 @@ import org.junit.Test
 
 class ChartScrubTest {
     @Test
+    fun `stepping walks the included points both ways and stops at the ends`() {
+        val included = { i: Int -> i != 2 }
+        assertEquals(0, stepIndex(ScrubState.NONE, 1, 5, included))
+        assertEquals(4, stepIndex(ScrubState.NONE, -1, 5, included))
+        // the gap at 2 is skipped
+        assertEquals(3, stepIndex(1, 1, 5, included))
+        assertEquals(1, stepIndex(3, -1, 5, included))
+        assertNull(stepIndex(4, 1, 5, included))
+        assertNull(stepIndex(0, -1, 5, included))
+        assertNull(stepIndex(ScrubState.NONE, 1, 0, included))
+    }
+
+    @Test
+    fun `a drag that starts in a system gesture strip is recognised`() {
+        // chart 16 px in from a 1080 px window, 24 px gesture strips
+        assertEquals(true, startsInGestureEdge(4f, 16f, 1080f, 24f, 24f))
+        assertEquals(false, startsInGestureEdge(40f, 16f, 1080f, 24f, 24f))
+        assertEquals(true, startsInGestureEdge(1050f, 16f, 1080f, 24f, 24f))
+        assertEquals(false, startsInGestureEdge(4f, 16f, 1080f, 0f, 0f))
+    }
+
+    @Test
+    fun `a two line readout is spoken as one sentence`() {
+        assertEquals("80.5 kg, 3 Oct", spokenReadout("80.5 kg\n3 Oct"))
+    }
+
+    @Test
     fun `nearest point skips gaps and ties go to the earlier point`() {
         val xs = listOf(0f, null, 100f, 200f)
         assertEquals(0, nearestIndex(xs, -30f))

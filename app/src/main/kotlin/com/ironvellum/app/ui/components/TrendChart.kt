@@ -77,7 +77,7 @@ fun TrendChart(
     val gold = IronvellumColors.SovereignGold
     val lastIndex = values.indexOfLast { it != null }
     val bestIndex = values.indexOfLast { it != null && it == present.max() }
-    val spoken = description ?: chartSummary(values, startLabel, endLabel)
+    val spoken = description ?: chartSummary(values, startLabel, endLabel, valueText)
     val scrubState = remember { ScrubState() }
     val measurer = rememberTextMeasurer()
     val readoutStyle = MaterialTheme.typography.labelMedium.copy(color = IronvellumColors.Ink)
@@ -85,7 +85,17 @@ fun TrendChart(
     Column(Modifier.fillMaxWidth()) {
         Canvas(
             modifier
-                .semantics { contentDescription = spoken }
+                .semantics {
+                    if (scrub) {
+                        scrubSemantics(
+                            spoken, scrubState, values.size,
+                            included = { values[it] != null },
+                            readout = { scrubReadout(valueText(values[it]!!), dateText?.invoke(it)) },
+                        )
+                    } else {
+                        contentDescription = spoken
+                    }
+                }
                 .then(
                     if (scrub) {
                         Modifier.scrubGesture(scrubState) { x, width ->
@@ -249,7 +259,7 @@ fun BarChart(
     val present = values.filterNotNull()
     val top = (listOfNotNull(present.maxOrNull(), goal).maxOrNull() ?: 0.0).takeIf { it > 0.0 } ?: 1.0
     val gold = IronvellumColors.SovereignGold
-    val spoken = description ?: chartSummary(values, startLabel, endLabel)
+    val spoken = description ?: chartSummary(values, startLabel, endLabel, valueText)
     val scrubState = remember { ScrubState() }
     val measurer = rememberTextMeasurer()
     val readoutStyle = MaterialTheme.typography.labelMedium.copy(color = IronvellumColors.Ink)
@@ -257,7 +267,15 @@ fun BarChart(
     Column(Modifier.fillMaxWidth()) {
         Canvas(
             modifier
-                .semantics { contentDescription = spoken }
+                .semantics {
+                    scrubSemantics(
+                        spoken, scrubState, values.size,
+                        included = { true },
+                        readout = { i ->
+                            scrubReadout(values[i]?.let(valueText) ?: "no data", dateText?.invoke(i))
+                        },
+                    )
+                }
                 .scrubGesture(scrubState) { x, width -> slotIndex(x, width, values.size) },
         ) {
             // bars stand on a baseline just inside the frame so they never touch the date labels
@@ -273,7 +291,7 @@ fun BarChart(
             values.forEachIndexed { i, v ->
                 val x = slot * i + slot / 2f
                 if (v == null) {
-                    inkBar(x, base, 3.dp.toPx(), barW.coerceAtMost(3.dp.toPx()), IronvellumColors.Bracket, seed = i)
+                    inkBar(x, base, 3.dp.toPx(), barW.coerceAtMost(3.dp.toPx()), LedgerContrast.Graphic, seed = i)
                 } else {
                     val alpha = if (faded?.getOrNull(i) == true) 0.45f else 1f
                     inkBar(
@@ -345,11 +363,20 @@ private fun ChartDates(start: String?, end: String?, mid: String? = null) {
     }
 }
 
-/** "Chart, 14 slots, 9 with data. Latest 8.1, low 2.0, high 9.4. From 18 Sep to 1 Oct." */
-internal fun chartSummary(values: List<Double?>, startLabel: String?, endLabel: String?): String {
+/**
+ * "Chart of 9 values, 5 of 14 slots empty. Latest 8.1 kg, low 2.0 kg, high 9.4 kg. From 18 Sep to 1 Oct."
+ * The figures go through [valueText], the chart's own readout formatter, so
+ * they carry the unit and the integer formatting a sighted reader gets.
+ */
+internal fun chartSummary(
+    values: List<Double?>,
+    startLabel: String?,
+    endLabel: String?,
+    valueText: (Double) -> String = ::scrubNumber,
+): String {
     val present = values.filterNotNull()
     if (present.isEmpty()) return "Chart with no data"
-    fun f(v: Double) = if (v >= 1000.0) String.format(Locale.US, "%,.0f", v) else String.format(Locale.US, "%.1f", v)
+    val f = valueText
     val gaps = values.size - present.size
     return buildString {
         append("Chart of ${present.size} ${if (present.size == 1) "value" else "values"}")

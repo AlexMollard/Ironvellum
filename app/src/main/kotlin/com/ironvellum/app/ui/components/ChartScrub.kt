@@ -1,10 +1,14 @@
 package com.ironvellum.app.ui.components
 
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.systemGestures
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -15,7 +19,16 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.SemanticsPropertyReceiver
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextMeasurer
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
@@ -34,7 +47,12 @@ import kotlin.math.abs
  * is never claimed here and the parent verticalScroll takes it as usual. A
  * long-press would also work but makes the reader wait before anything shows.
  * If the parent scroll does win the gesture, onDragCancel fires and the cursor
- * clears, so it can never stick.
+ * clears, so it can never stick. A drag that starts inside a system gesture
+ * edge (Back swipe) is ignored: the system owns it.
+ *
+ * Screen readers and switch users have no finger: [scrubSemantics] exposes the
+ * summary plus "Next point" / "Previous point" actions that move the same
+ * cursor and speak the same readout.
  *
  * Everything that decides WHERE things go is a plain function below, so the
  * snap and placement maths are unit-tested without Compose.
@@ -100,6 +118,66 @@ internal fun readoutLeft(cursorX: Float, labelWidth: Float, chartWidth: Float, g
 }
 
 /**
+ * The point [delta] (+1 / -1) places from [current] that satisfies [included],
+ * or null when there is none that way (the cursor stays). From [ScrubState.NONE]
+ * a forward step lands on the first included point and a backward one on the last.
+ */
+internal fun stepIndex(current: Int, delta: Int, count: Int, included: (Int) -> Boolean): Int? {
+    if (count <= 0 || delta == 0) return null
+    val step = if (delta > 0) 1 else -1
+    var i = when {
+        current !in 0 until count -> if (step > 0) 0 else count - 1
+        else -> current + step
+    }
+    while (i in 0 until count) {
+        if (included(i)) return i
+        i += step
+    }
+    return null
+}
+
+/** True when a drag that began at [startX] inside the chart sits in a system gesture strip of the window. */
+internal fun startsInGestureEdge(
+    startX: Float,
+    chartLeftInWindow: Float,
+    windowWidth: Float,
+    leftInset: Float,
+    rightInset: Float,
+): Boolean {
+    val x = chartLeftInWindow + startX
+    return x < leftInset || x > windowWidth - rightInset
+}
+
+/** A readout for speech: the visual two-line "value\ndate" read as one sentence. */
+internal fun spokenReadout(readout: String): String = readout.replace("\n", ", ")
+
+/**
+ * The chart's semantics: the [summary], the point under the cursor as its state
+ * and next / previous point actions, so a point can be read without touch.
+ * [included] says which points can be stopped on (a gap in a trend line cannot).
+ */
+internal fun SemanticsPropertyReceiver.scrubSemantics(
+    summary: String,
+    state: ScrubState,
+    count: Int,
+    included: (Int) -> Boolean,
+    readout: (Int) -> String,
+) {
+    contentDescription = summary
+    val at = state.index
+    if (at in 0 until count) stateDescription = spokenReadout(readout(at))
+    fun go(delta: Int): Boolean {
+        val next = stepIndex(state.index, delta, count, included) ?: return false
+        state.index = next
+        return true
+    }
+    customActions = listOf(
+        CustomAccessibilityAction("Next point") { go(1) },
+        CustomAccessibilityAction("Previous point") { go(-1) },
+    )
+}
+
+/**
  * Wire the drag to [state]. [snap] maps (finger x, chart width) to a point
  * index, or null for none; the haptic tick fires only when the snapped index
  * actually changes.
@@ -108,8 +186,14 @@ internal fun readoutLeft(cursorX: Float, labelWidth: Float, chartWidth: Float, g
 internal fun Modifier.scrubGesture(state: ScrubState, snap: (x: Float, width: Float) -> Int?): Modifier {
     val haptic = LocalHapticFeedback.current
     val currentSnap by rememberUpdatedState(snap)
-    return pointerInput(state) {
+    val edges = WindowInsets.systemGestures
+    val layoutDirection = LocalLayoutDirection.current
+    val windowWidth by rememberUpdatedState(LocalWindowInfo.current.containerSize.width.toFloat())
+    var chartLeft by remember { mutableFloatStateOf(0f) }
+    return onGloballyPositioned { chartLeft = it.positionInWindow().x }.pointerInput(state) {
+        var ignored = false
         fun move(x: Float) {
+            if (ignored) return
             val index = currentSnap(x, size.width.toFloat()) ?: return
             if (index != state.index) {
                 state.index = index
@@ -117,11 +201,18 @@ internal fun Modifier.scrubGesture(state: ScrubState, snap: (x: Float, width: Fl
             }
         }
         detectHorizontalDragGestures(
-            onDragStart = { move(it.x) },
+            onDragStart = {
+                ignored = startsInGestureEdge(
+                    it.x, chartLeft, windowWidth,
+                    edges.getLeft(this, layoutDirection).toFloat(),
+                    edges.getRight(this, layoutDirection).toFloat(),
+                )
+                move(it.x)
+            },
             onDragEnd = { state.clear() },
             onDragCancel = { state.clear() },
             onHorizontalDrag = { change, _ ->
-                change.consume()
+                if (!ignored) change.consume()
                 move(change.position.x)
             },
         )
