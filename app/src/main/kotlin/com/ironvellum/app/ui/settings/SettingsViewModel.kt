@@ -209,6 +209,12 @@ class SettingsViewModel(
         _heightStatus.value = FieldStatus()
     }
 
+    /** A Saved tick describes the last visit; reopening Profile starts without one. Errors stay. */
+    fun clearSavedTicks() {
+        _nameSaved.value = false
+        _heightStatus.value = _heightStatus.value.copy(saved = false)
+    }
+
     /**
      * Commits the height field. Blank or unchanged is not an edit and does
      * nothing; anything out of range is refused inline rather than dropped.
