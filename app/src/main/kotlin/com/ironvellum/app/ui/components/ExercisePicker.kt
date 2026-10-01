@@ -263,6 +263,7 @@ private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls,
             Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalArrangement = Arrangement.spacedBy(6.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             FiltersButton(open = controls.filtersOpen, activeCount = active.size) {
                 controls.filtersOpen = !controls.filtersOpen
@@ -321,7 +322,8 @@ private fun FiltersButton(open: Boolean, activeCount: Int, onClick: () -> Unit) 
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
-            .heightIn(min = 44.dp)
+            // The same 32dp as the chips beside it; 44dp made it tower over them.
+            .heightIn(min = 32.dp)
             .clip(MaterialTheme.shapes.small)
             .background(Brush.linearGradient(listOf(Color(0xFF141C18), Color(0xFF101714))))
             .inkBorder(
