@@ -15,7 +15,7 @@ import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.Term
-import com.ironvellum.app.ui.components.TermInfo
+import com.ironvellum.app.ui.components.TermChip
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /** The generator's goal control words, so one concept has one name. */
@@ -36,18 +36,18 @@ internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Un
                 onPick = { viewModel.setMode(it) },
             )
             Spacer(Modifier.height(8.dp))
+            Text(
+                when (mode) {
+                    TrainingMode.STRENGTH -> "Clear all sets and load rises. Three stalls: deload."
+                    TrainingMode.HYPERTROPHY -> "Reps climb, then load. Three stalls: deload."
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
+            // One labelled chip per term, so each explainer says what it explains.
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    when (mode) {
-                        TrainingMode.STRENGTH -> "Clear all sets and load rises. Three stalls: deload."
-                        TrainingMode.HYPERTROPHY -> "Reps climb, then load. Three stalls: deload."
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.weight(1f),
-                )
-                if (mode != TrainingMode.STRENGTH) TermInfo(Term.DOUBLE_PROGRESSION)
-                TermInfo(Term.DELOAD)
+                if (mode != TrainingMode.STRENGTH) TermChip(Term.DOUBLE_PROGRESSION)
+                TermChip(Term.DELOAD)
             }
         }
     }

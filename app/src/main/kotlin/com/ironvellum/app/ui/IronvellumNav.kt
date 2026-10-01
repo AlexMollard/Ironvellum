@@ -23,6 +23,7 @@ import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.withStarted
@@ -63,6 +64,7 @@ import com.ironvellum.app.ui.settings.SettingsSection
 import com.ironvellum.app.ui.settings.SettingsSectionScreen
 import com.ironvellum.app.ui.settings.settingsViewModel
 import com.ironvellum.app.ui.settings.SupportScreen
+import com.ironvellum.app.ui.social.AccountScreen
 import com.ironvellum.app.ui.social.AccountSettingsScreen
 import com.ironvellum.app.ui.social.SocialScreen
 import com.ironvellum.app.ui.social.LifterScreen
@@ -102,6 +104,7 @@ object Routes {
     const val SUPPORT = "support"
     const val SOCIAL = "social"
     const val ACCOUNT = "account"
+    const val SIGN_IN = "sign_in"
     const val WORKOUT_LOG = "workout_log"
     const val MUSCLE_COVERAGE = "muscle_coverage"
     const val WORKOUT_DETAIL = "workout/{sessionId}"
@@ -526,14 +529,8 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         viewModel = settingsViewModel(entry),
                         onOpenSection = { navController.navigate(Routes.settingsSection(it)) },
                         onOpenAccount = { navController.navigate(Routes.ACCOUNT) },
-                        onOpenSignIn = {
-                            // Signed out, Allies is the sign-in screen: open it as its tab.
-                            navController.navigate(Routes.SOCIAL) {
-                                popUpTo(Routes.DASHBOARD) { saveState = false }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
+                        // Signed out, the sign-in form is pushed over Settings so BACK returns here.
+                        onOpenSignIn = { navController.navigate(Routes.SIGN_IN) },
                         onOpenSupport = { navController.navigate(Routes.SUPPORT) },
                         onBack = { navController.popBackStack() },
                     )
@@ -558,7 +555,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         )
                     }
                 }
-                composable(Routes.SUPPORT) { SupportScreen() }
+                composable(Routes.SUPPORT) { SupportScreen(onBack = { navController.popBackStack() }) }
                 composable(
                     Routes.MEASUREMENT,
                     arguments = listOf(navArgument("site") { type = NavType.StringType }),
@@ -595,6 +592,19 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenAccount = { navController.navigate(Routes.ACCOUNT) },
                         inboxRequest = inboxRequest,
                     )
+                }
+                composable(Routes.SIGN_IN) {
+                    val signedIn by ironvellumApp.accountRepository.account.collectAsStateWithLifecycle()
+                    // Signing in here lands on Allies, where the account now lives.
+                    LaunchedEffect(signedIn != null) {
+                        if (signedIn != null) {
+                            navController.navigate(Routes.SOCIAL) {
+                                popUpTo(Routes.DASHBOARD) { saveState = false }
+                                launchSingleTop = true
+                            }
+                        }
+                    }
+                    AccountScreen(onBack = { navController.popBackStack() }, pushed = true)
                 }
                 composable(Routes.ACCOUNT) {
                     AccountSettingsScreen(onBack = { navController.popBackStack() })

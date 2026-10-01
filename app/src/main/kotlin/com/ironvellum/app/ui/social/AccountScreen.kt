@@ -407,6 +407,9 @@ fun AccountScreen(
     onOpenLifter: (userId: String, displayName: String) -> Unit = { _, _ -> },
     // Same no-op default reasoning; SocialScreen wires the ACCOUNT route.
     onOpenAccount: () -> Unit = {},
+    // Pushed from Settings rather than hosted as the Allies tab: the signed-out
+    // form then carries its own BACK header.
+    pushed: Boolean = false,
     viewModel: AccountViewModel = viewModel(
         factory = viewModelFactory {
             initializer { AccountViewModel(ironvellumAccount(), ironvellumCloudSync()) }
@@ -482,8 +485,8 @@ fun AccountScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
     ) {
-        Spacer(Modifier.height(20.dp))
-        AccountTitle()
+        Spacer(Modifier.height(if (pushed) 8.dp else 20.dp))
+        AccountTitle(pushed, onBack)
 
         when {
             !cloudConfigured -> NotConfiguredPanel()
@@ -511,14 +514,19 @@ fun AccountScreen(
 
 /** Screen title shared by the signed-in and sign-in layouts. */
 @Composable
-private fun AccountTitle() {
-    Text(
-        "ACCOUNT",
-        style = MaterialTheme.typography.labelLarge,
-        fontFamily = ChakraPetch,
-        color = IronvellumColors.InkMuted,
-        letterSpacing = IronvellumTracking.ScreenTitle,
-    )
+private fun AccountTitle(pushed: Boolean, onBack: () -> Unit) {
+    if (pushed) {
+        PushedHeader("ACCOUNT", onBack)
+    } else {
+        Text(
+            "ACCOUNT",
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+            letterSpacing = IronvellumTracking.ScreenTitle,
+        )
+        Spacer(Modifier.height(6.dp))
+    }
     Text(
         "Cloud link for the Ironbound",
         style = MaterialTheme.typography.labelLarge,
@@ -1135,7 +1143,7 @@ private fun AlliesPanel(
                 IronvellumButton(label = "Remove", onClick = {
                     confirmRemove = null
                     onRemoveAlly(friend.userId)
-                })
+                }, danger = true)
             },
             dismissButton = {
                 IronvellumButton(label = "Keep", onClick = { confirmRemove = null }, quiet = true)

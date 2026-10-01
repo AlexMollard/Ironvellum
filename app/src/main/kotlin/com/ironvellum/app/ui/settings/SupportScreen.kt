@@ -1,23 +1,18 @@
 package com.ironvellum.app.ui.settings
 
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalUriHandler
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.BuildConfig
@@ -47,25 +42,16 @@ private fun panelTitle(): String =
  * location as plain text, which GPL permits.
  */
 @Composable
-fun SupportScreen() {
-    val uriHandler = LocalUriHandler.current
+fun SupportScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
     val support = BuildConfig.SUPPORT_LINKS
+    // An explicit ACTION_VIEW, so a phone with no browser is a no-op, not a crash.
+    val openUrl: (String) -> Unit = { url ->
+        runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
+    }
 
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp),
-    ) {
-        Spacer(Modifier.height(18.dp))
-        Text(
-            panelTitle(),
-            style = MaterialTheme.typography.titleLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = 2.sp,
-        )
-        Spacer(Modifier.height(14.dp))
+    SettingsPage(panelTitle(), onBack) {
+        Spacer(Modifier.height(4.dp))
 
         InkPanel(Modifier.fillMaxWidth()) {
             Text(
@@ -87,7 +73,8 @@ fun SupportScreen() {
                 Spacer(Modifier.height(10.dp))
                 IronvellumButton(
                     label = "View the costs",
-                    onClick = { uriHandler.openUri(SupportLinks.COSTS_LEDGER) },
+                    onClick = { openUrl(SupportLinks.COSTS_LEDGER) },
+                    modifier = Modifier.fillMaxWidth(),
                     quiet = true,
                 )
             }
@@ -108,19 +95,25 @@ fun SupportScreen() {
                 Spacer(Modifier.height(10.dp))
                 IronvellumButton(
                     label = "Sponsor on GitHub",
-                    onClick = { uriHandler.openUri(SupportLinks.GITHUB_SPONSORS) },
+                    onClick = { openUrl(SupportLinks.GITHUB_SPONSORS) },
+                    modifier = Modifier.fillMaxWidth(),
                 )
                 Spacer(Modifier.height(10.dp))
                 IronvellumButton(
                     label = "Donate on Liberapay",
-                    onClick = { uriHandler.openUri(SupportLinks.LIBERAPAY) },
+                    onClick = { openUrl(SupportLinks.LIBERAPAY) },
+                    modifier = Modifier.fillMaxWidth(),
                     quiet = true,
                 )
             }
             Spacer(Modifier.height(14.dp))
         }
 
-        InkPanel(Modifier.fillMaxWidth()) {
+        // The whole card is the tap target, so the link needs no padded box of its own.
+        InkPanel(
+            Modifier.fillMaxWidth(),
+            onClick = if (support) ({ openUrl(SupportLinks.REPOSITORY) }) else null,
+        ) {
             Text(
                 "SOURCE",
                 style = MaterialTheme.typography.labelMedium,
@@ -134,12 +127,7 @@ fun SupportScreen() {
                     SupportLinks.REPOSITORY,
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.SystemGreen,
-                    modifier = Modifier
-                        .clickable(onClickLabel = "Open the source code", role = Role.Button) {
-                            uriHandler.openUri(SupportLinks.REPOSITORY)
-                        }
-                        .heightIn(min = 44.dp)
-                        .wrapContentHeight(Alignment.CenterVertically),
+                    textDecoration = TextDecoration.Underline,
                 )
             } else {
                 Text(
@@ -184,6 +172,5 @@ fun SupportScreen() {
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(horizontal = 4.dp),
         )
-        Spacer(Modifier.height(24.dp))
     }
 }
