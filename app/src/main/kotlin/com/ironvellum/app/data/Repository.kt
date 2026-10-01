@@ -2107,6 +2107,10 @@ class Repository(
                     id = s.id,
                     exerciseId = s.exerciseId,
                     exerciseName = names[s.exerciseId] ?: "Unknown",
+                    // Which block a set belongs to: without it a restored
+                    // backup lands every set on position 0 and merges the
+                    // movements into one block.
+                    exercisePosition = s.exercisePosition,
                     setIndex = s.setIndex,
                     reps = s.reps,
                     weightKg = s.weightKg,
