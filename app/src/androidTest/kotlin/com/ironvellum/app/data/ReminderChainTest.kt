@@ -37,7 +37,7 @@ class ReminderChainTest {
             android.Manifest.permission.POST_NOTIFICATIONS,
         )
 
-        Reminders.ensureChannel(context)
+        Notifications.ensureChannels(context)
         Reminders.enable(context)
         assertTrue("enable must persist the opt-in", Reminders.enabled(context))
 
@@ -48,7 +48,7 @@ class ReminderChainTest {
         if (posted) {
             assertTrue(
                 "the posted reminder must be live in the tray",
-                manager.activeNotifications.any { it.notification.channelId == Reminders.CHANNEL_ID },
+                manager.activeNotifications.any { it.notification.channelId == Notifications.CHANNEL_SUMMONS },
             )
         }
 

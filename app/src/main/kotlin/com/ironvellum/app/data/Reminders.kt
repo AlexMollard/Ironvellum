@@ -1,8 +1,6 @@
 package com.ironvellum.app.data
 
 import android.Manifest
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -35,7 +33,6 @@ import java.util.concurrent.TimeUnit
 object Reminders {
     private const val PREFS = "reminders"
     private const val KEY_ENABLED = "enabled"
-    const val CHANNEL_ID = "reminders"
     private const val WORK_NAME = "daily-reminder"
 
     /** The hour the reminder fires. One number, one place to change it. */
@@ -50,24 +47,10 @@ object Reminders {
         }
     }
 
-    /** Idempotent; called from Application.onCreate so the channel always exists. */
-    fun ensureChannel(context: Context) {
-        val manager = context.getSystemService(NotificationManager::class.java) ?: return
-        manager.createNotificationChannel(
-            NotificationChannel(
-                CHANNEL_ID,
-                "The Summons",
-                NotificationManager.IMPORTANCE_DEFAULT,
-            ).apply {
-                description = "A once-a-day summons that today's trial is still unsealed."
-            },
-        )
-    }
-
     /** Turns the reminder on and (re)enqueues the daily work. Safe to call again. */
     fun enable(context: Context) {
         setEnabled(context, true)
-        ensureChannel(context)
+        Notifications.ensureChannels(context)
         val delay = Duration.between(
             LocalDateTime.now(),
             LocalDateTime.of(LocalDate.now().plusDays(if (LocalDateTime.now().toLocalTime() < REMIND_AT) 0 else 1), REMIND_AT),
@@ -99,7 +82,7 @@ object Reminders {
         }
         val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return false
         val pending = PendingIntent.getActivity(
-            context, 0, intent,
+            context, Notifications.REQUEST_SUMMONS, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
 
@@ -148,15 +131,16 @@ object Reminders {
             )
         }
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(context, Notifications.CHANNEL_SUMMONS)
             .setSmallIcon(R.drawable.ic_reminder)
+            .setColor(Notifications.ACCENT)
             .setContentTitle(title)
             .setContentText(text)
             .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
             .setContentIntent(pending)
             .setAutoCancel(true)
             .build()
-        NotificationManagerCompat.from(context).notify(1, notification)
+        NotificationManagerCompat.from(context).notify(Notifications.ID_SUMMONS, notification)
         return true
     }
 

@@ -4,7 +4,7 @@ import android.content.Intent
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.setValue
-import com.ironvellum.app.data.InboxNotifier
+import com.ironvellum.app.data.Notifications
 import android.content.Context
 import android.content.res.Configuration
 import com.ironvellum.app.ui.theme.FIXED_FONT_SCALE
@@ -68,7 +68,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun noteOpenTab(intent: Intent?) {
-        if (intent?.getStringExtra(InboxNotifier.EXTRA_OPEN_TAB) == InboxNotifier.TAB_INBOX) inboxRequest++
+        if (intent?.getStringExtra(Notifications.EXTRA_OPEN_TAB) == Notifications.TAB_INBOX) inboxRequest++
     }
 
     /** Bumped per notification tap so two taps in a row both navigate; the UI compares counts, not values. */
