@@ -154,7 +154,7 @@ fun SkillDetailSheet(
         {
             InfoProgress(
                 fraction = if (cleared) 1f else if (skill.target <= 0) 0f else (bestOverall.toFloat() / skill.target).coerceIn(0f, 1f),
-                line = "${SkillGuidance.withUnit(bestOverall, skill)} / ${SkillGuidance.withUnit(skill.target, skill)} Â· $standardWord",
+                line = "${SkillGuidance.withUnit(bestOverall, skill)} / ${SkillGuidance.withUnit(skill.target, skill)} · $standardWord",
                 caption = listOfNotNull(
                     if (best > 0) "Practice best ${SkillGuidance.withUnit(best, skill)}" else null,
                     trained?.let { t ->
@@ -164,7 +164,7 @@ fun SkillDetailSheet(
                             if (w != null && w > 0.0) append(" @ ${formatLoad(w)}kg")
                         }
                     },
-                ).joinToString(" Â· "),
+                ).joinToString(" · "),
                 fill = Brush.horizontalGradient(
                     listOf(if (cleared) IronvellumColors.SovereignGold else IronvellumColors.SystemGreen, if (cleared) IronvellumColors.SovereignGold else IronvellumColors.Emerald),
                 ),
@@ -205,7 +205,7 @@ fun SkillDetailSheet(
             )
             unlocked -> listOf(
                 InfoAction("Train it", onTrain, quiet = true),
-                InfoAction("Claim mastery", onClaim, gold = cleared, quiet = !cleared),
+                InfoAction("Claim", onClaim, gold = cleared, quiet = !cleared),
             )
             else -> listOf(InfoAction("Train it", onTrain, quiet = true))
         },
@@ -269,14 +269,14 @@ fun SkillDetailSheet(
             rows(
                 "RECENT ATTEMPTS",
                 recent.map { entry ->
-                    formatDate(entry.practicedAtMs, "EEE d MMM Â· HH:mm") to when {
+                    formatDate(entry.practicedAtMs, "EEE d MMM · HH:mm") to when {
                         entry.claimed -> "CLAIMED"
                         entry.weightKg != null -> "${entry.value}${skill.unit} @ ${formatLoad(entry.weightKg)}kg"
                         else -> "${entry.value}${skill.unit}"
                     }
                 },
             )
-            if (entries.size > 6) text(null, "+${entries.size - 6} earlier â€” full list in JOURNAL", IronvellumColors.InkMuted)
+            if (entries.size > 6) text(null, "+${entries.size - 6} earlier — full list in JOURNAL", IronvellumColors.InkMuted)
         }
         // How to do it, what it works and what it needs: the same
         // facts the exercise info card shows.
@@ -284,7 +284,7 @@ fun SkillDetailSheet(
     }
 }
 
-/** The attempt form: a big readout with Â± targets, the quick values, an optional added load and LOG. */
+/** The attempt form: a big readout with ± targets, the quick values, an optional added load and LOG. */
 @Composable
 private fun AttemptLogger(
     skill: Skills.SkillDef,
@@ -312,7 +312,7 @@ private fun AttemptLogger(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        StepGlyph("âˆ’", "Fewer") { onAttempt((attempt - attemptStep(skill)).coerceAtLeast(0)) }
+        StepGlyph("−", "Fewer") { onAttempt((attempt - attemptStep(skill)).coerceAtLeast(0)) }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 attempt.toString(),
@@ -368,7 +368,7 @@ private fun AttemptLogger(
         ) {
             MiniLabel("ADDED LOAD")
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StepGlyph("âˆ’", "Less added load") { onLoad((load - 2.5).coerceAtLeast(0.0)) }
+                StepGlyph("−", "Less added load") { onLoad((load - 2.5).coerceAtLeast(0.0)) }
                 Text(
                     if (load <= 0.0) "BW" else "${formatLoad(load)}kg",
                     style = MaterialTheme.typography.titleMedium,
