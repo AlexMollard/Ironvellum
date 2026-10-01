@@ -642,7 +642,8 @@ private fun StatDrillDialog(
                     )
                     Text(
                         category ?: "",
-                        style = MaterialTheme.typography.labelLarge,
+                        // titleSmall: labelLarge's wide tracking wrapped long band names onto two lines
+                        style = MaterialTheme.typography.titleSmall,
                         color = IronvellumColors.SystemGreen,
                     )
                     Spacer(Modifier.height(10.dp))
@@ -825,6 +826,7 @@ private fun CalendarGrid(
                 }
             }
         }
+        Spacer(Modifier.height(10.dp))
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             CalendarLegend(CalendarConquered, "sealed")
             CalendarLegend(IronvellumColors.Ink, "today")

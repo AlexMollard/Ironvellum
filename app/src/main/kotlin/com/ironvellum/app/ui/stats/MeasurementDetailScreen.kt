@@ -285,7 +285,7 @@ private fun ReadingRow(entry: MeasurementEntry, onDelete: () -> Unit) {
                 color = IronvellumColors.Ink,
             )
             Text(
-                formatDate(entry.takenAtMs),
+                formatDate(entry.takenAtMs, "d MMM yyyy \u00B7 HH:mm"),
                 style = MaterialTheme.typography.labelSmall,
                 color = IronvellumColors.InkMuted,
             )

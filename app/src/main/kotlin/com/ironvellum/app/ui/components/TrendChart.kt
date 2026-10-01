@@ -71,7 +71,13 @@ fun TrendChart(
 
     Column(Modifier.fillMaxWidth()) {
         Canvas(modifier.semantics { contentDescription = spoken }) {
-            fun yFor(v: Double): Float = (size.height * (1.0 - ((v - floor) / span))).toFloat()
+            // inset so the extreme points and their dots sit inside the frame, not on its edge
+            val inset = 6.dp.toPx()
+            // a flat series (every reading equal) rides the middle, not the floor
+            val flat = !fromZero && present.max() == present.min()
+            fun yFor(v: Double): Float =
+                if (flat) size.height / 2f
+                else (inset + (size.height - 2 * inset) * (1.0 - ((v - floor) / span))).toFloat()
             fun xFor(i: Int): Float = when {
                 positions != null -> (positions[i] * size.width).toFloat()
                 values.size == 1 -> size.width / 2f
@@ -168,10 +174,14 @@ fun TrendChart(
             inkDot(Offset(xFor(lastIndex), yFor(values[lastIndex]!!)), 5.5f, endColor, seed = lastIndex)
         }
         if (startLabel != null || endLabel != null) {
-            ChartDates(startLabel, endLabel)
+            // measurements get their span in the middle, since the chart has no y axis
+            val mid = if (!fromZero && present.size > 1 && present.max() != present.min()) "${chartNum(present.min())}\u2013${chartNum(present.max())}" else null
+            ChartDates(startLabel, endLabel, mid)
         }
     }
 }
+
+private fun chartNum(v: Double) = String.format(Locale.US, "%.1f", v)
 
 /**
  * Bars for per-day counts. A null slot is a visible gap (a hairline stub), so
@@ -196,7 +206,10 @@ fun BarChart(
 
     Column(Modifier.fillMaxWidth()) {
         Canvas(modifier.semantics { contentDescription = spoken }) {
-            fun yFor(v: Double): Float = (size.height * (1.0 - v / top)).toFloat()
+            // bars stand on a baseline just inside the frame so round caps never touch the date labels
+            val pad = 4.dp.toPx()
+            val base = size.height - pad
+            fun yFor(v: Double): Float = (pad + (base - pad) * (1.0 - v / top)).toFloat()
             repeat(2) { i ->
                 val y = size.height * (i + 1) / 3f
                 inkStroke(Offset(0f, y), Offset(size.width, y), IronvellumColors.Rune.copy(alpha = 0.6f), 1.4f, seed = i * 13)
@@ -207,13 +220,13 @@ fun BarChart(
                 val x = slot * i + slot / 2f
                 if (v == null) {
                     inkStroke(
-                        Offset(x, size.height), Offset(x, size.height - 3.dp.toPx()),
+                        Offset(x, base), Offset(x, base - 3.dp.toPx()),
                         IronvellumColors.Bracket, barW.coerceAtMost(3.dp.toPx()), seed = i, taperEnds = false,
                     )
                 } else {
                     val alpha = if (faded?.getOrNull(i) == true) 0.45f else 1f
                     inkStroke(
-                        Offset(x, size.height), Offset(x, yFor(v).coerceAtMost(size.height - 2.dp.toPx())),
+                        Offset(x, base), Offset(x, yFor(v).coerceAtMost(base - 2.dp.toPx())),
                         color.copy(alpha = color.alpha * alpha), barW, seed = i, taperEnds = false,
                     )
                 }
@@ -238,12 +251,13 @@ fun BarChart(
 }
 
 @Composable
-private fun ChartDates(start: String?, end: String?) {
+private fun ChartDates(start: String?, end: String?, mid: String? = null) {
     Row(
         Modifier.fillMaxWidth().padding(top = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
         Text(start.orEmpty(), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+        if (mid != null) Text(mid, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
         Text(end.orEmpty(), style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
     }
 }

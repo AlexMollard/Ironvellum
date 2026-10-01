@@ -19,6 +19,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Energy
@@ -160,6 +161,7 @@ internal fun ActivityTab(
                 options = DailyRange.entries.map { it to it.label },
                 selected = range,
                 onPick = { onRange(it.ordinal) },
+                modifier = Modifier.align(Alignment.End),
             )
         }
 
