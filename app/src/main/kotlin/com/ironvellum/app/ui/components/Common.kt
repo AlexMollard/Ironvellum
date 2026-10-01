@@ -342,6 +342,9 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
  * `quiet` is the same shape without the fill, for the SECOND action in a card.
  * Four bright emerald slabs stacked down the Ledger screen all shouted equally
  * and nothing read as the main thing to do.
+ *
+ * `danger` is the quiet shape in red, for an action that replaces or deletes
+ * data; it always sits behind a confirm.
  */
 @Composable
 fun IronvellumButton(
@@ -351,6 +354,7 @@ fun IronvellumButton(
     gold: Boolean = false,
     enabled: Boolean = true,
     quiet: Boolean = false,
+    danger: Boolean = false,
 ) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
@@ -370,13 +374,14 @@ fun IronvellumButton(
             .background(
                 when {
                     !enabled -> Brush.linearGradient(listOf(Color(0xFF1E3026), Color(0xFF16211B)))
-                    quiet -> Brush.linearGradient(listOf(Color(0xFF141C18), Color(0xFF101714)))
+                    quiet || danger -> Brush.linearGradient(listOf(Color(0xFF141C18), Color(0xFF101714)))
                     else -> Brush.linearGradient(colors)
                 },
             )
             .inkBorder(
                 when {
                     !enabled -> IronvellumColors.Rune
+                    danger -> IronvellumColors.DangerRed.copy(alpha = 0.7f)
                     quiet -> IronvellumColors.Rune
                     else -> Color(0x5934D399)
                 },
@@ -394,6 +399,7 @@ fun IronvellumButton(
             // readable choice. Inheriting the theme colour rendered grey-on-gold.
             color = when {
                 !enabled -> IronvellumColors.InkMuted
+                danger -> IronvellumColors.DangerRed
                 quiet -> IronvellumColors.SystemGreen
                 else -> IronvellumColors.Abyss
             },
