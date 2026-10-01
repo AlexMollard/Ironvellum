@@ -1302,12 +1302,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 25,
-        format('schema_version() reports %s, not 25 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 26,
+        format('schema_version() reports %s, not 26 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 25,
+        (select public.schema_version()) = 26,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -1594,6 +1594,92 @@ begin
         'a5500000-0000-4000-8000-000000000057',
         'a5500000-0000-4000-8000-000000000058');
 end $wb$;
+
+-- ------------------------------------------------------- inbox: replies, goals
+-- Replies: a remark after the caller's own, in a thread on someone else's
+-- workout, reaches the caller while that workout stays visible to them.
+-- Goals: the band's weekly goal falling is one inbox row per member, at the
+-- workout that crossed it, counted the way my_warband() counts the banner.
+do $rp$
+declare
+    ash  uuid := 'a5577777-0000-4000-8000-000000000001';
+    bram uuid := 'a5577777-0000-4000-8000-000000000002';
+    cole uuid := 'a5577777-0000-4000-8000-000000000003';
+    w_ash uuid := 'a5577777-1111-4000-8000-000000000001';
+    c_early uuid; c_bram uuid; c_ash uuid; c_cole uuid;
+    code text;
+begin
+    perform sign_up(ash, '{"display_name": "Ashby"}');
+    perform sign_up(bram, '{"display_name": "Bramwell"}');
+    perform sign_up(cole, '{"display_name": "Colter"}');
+    update profiles set visibility = 'public' where id in (ash, bram, cole);
+
+    -- Old enough to sit outside the goal count below, while its remarks are new.
+    insert into sessions (id, user_id, local_id, label, started_at, completed_at, audience)
+    values (w_ash, ash, 1, 'Ash Day', now() - interval '40 days 1 hour', now() - interval '40 days', 'profile');
+    insert into session_comments (session_id, user_id, body) values (w_ash, cole, 'first') returning id into c_early;
+    insert into session_comments (session_id, user_id, body) values (w_ash, bram, 'mine') returning id into c_bram;
+    insert into session_comments (session_id, user_id, body) values (w_ash, ash, 'thanks') returning id into c_ash;
+    insert into session_comments (session_id, user_id, body) values (w_ash, cole, 'same') returning id into c_cole;
+    -- The insert trigger stamps now(); spread them out as they would be.
+    update session_comments set created_at = now() - interval '4 hours' where id = c_early;
+    update session_comments set created_at = now() - interval '3 hours' where id = c_bram;
+    update session_comments set created_at = now() - interval '2 hours' where id = c_ash;
+    update session_comments set created_at = now() - interval '1 hour' where id = c_cole;
+
+    perform assert_true(
+        value_as(bram, 'select count(*) from my_inbox() where kind = ''reply''')::int = 2
+            and value_as(bram, format('select count(*) from my_inbox() where kind = ''reply'' and comment_id in (%L, %L)', c_ash, c_cole))::int = 2,
+        'a remark after the caller''s own, on someone else''s workout, does not reach the caller as a reply'
+    );
+    perform assert_true(
+        value_as(bram, format('select count(*) from my_inbox() where comment_id = %L', c_early))::int = 0
+            and value_as(bram, format('select count(*) from my_inbox() where comment_id = %L', c_bram))::int = 0,
+        'a remark from before the caller joined the thread, or the caller''s own, reads as a reply'
+    );
+    perform assert_true(
+        value_as(ash, 'select count(*) from my_inbox() where kind = ''reply''')::int = 0
+            and value_as(ash, format('select count(*) from my_inbox() where kind = ''comment'' and session_id = %L', w_ash))::int = 3,
+        'the workout''s owner gets its remarks as replies, or loses them as comments'
+    );
+    update sessions set audience = 'private' where id = w_ash;
+    perform assert_true(
+        value_as(bram, 'select count(*) from my_inbox() where kind = ''reply''')::int = 0,
+        'replies on a workout made private still reach someone it is now hidden from'
+    );
+    delete from sessions where id = w_ash;
+
+    perform must_run(ash, 'select public.create_warband(''Ember Ring'')', 'the replies fixture could not form a band');
+    code := value_as(ash, 'select code from my_warband()');
+    perform must_run(bram, format('select public.join_warband(%L)', code), 'the replies fixture could not join the band');
+    perform must_run(ash, 'select public.set_warband_goal(5)', 'the replies fixture could not set the goal');
+    -- Seconds apart, so the week boundary can only split them in its first seconds.
+    insert into sessions (user_id, local_id, label, started_at, completed_at)
+    select case when n % 2 = 0 then ash else bram end, 100 + n, 'Goal',
+           now() - make_interval(secs => 60 - n), now() - make_interval(secs => 10 - n)
+    from generate_series(1, 4) n;
+    perform assert_true(
+        value_as(ash, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 0,
+        'a band four workouts short of a five-workout goal reads as having met it'
+    );
+    insert into sessions (user_id, local_id, label, started_at, completed_at)
+    values (bram, 105, 'Goal', now() - interval '1 minute', now() - interval '1 second');
+    perform assert_true(
+        value_as(ash, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 1
+            and value_as(bram, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 1
+            and value_as(ash, 'select actor_id::text from my_inbox() where kind = ''band_goal''') = bram::text
+            and value_as(ash, 'select body from my_inbox() where kind = ''band_goal''') = 'Ember Ring',
+        'the band''s goal falling is not one row per member, at the crossing workout, naming the band'
+    );
+    perform assert_true(
+        value_as(cole, 'select count(*) from my_inbox() where kind = ''band_goal''')::int = 0,
+        'a lifter outside the band is told its goal fell'
+    );
+
+    perform must_run(bram, 'select public.leave_warband()', 'bram could not leave');
+    perform must_run(ash, 'select public.leave_warband()', 'ash could not leave');
+    delete from auth.users where id in (ash, bram, cole);
+end $rp$;
 
 drop function if exists assert_true(boolean, text);
 drop function if exists refused_as(uuid, text, text[]);

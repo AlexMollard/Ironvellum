@@ -18,6 +18,8 @@ import com.ironvellum.app.data.cloud.InboxWorker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import com.ironvellum.app.data.CrashJournal
 
@@ -99,13 +101,28 @@ class IronvellumApp : Application() {
             runCatching { repository.reconcileTitles() }
             // Restore a stored sign-in before any screen asks who we are,
             // otherwise the social surfaces flash "signed out" on every launch.
-            runCatching { accountRepository.restore() }
+            val restored = runCatching { accountRepository.restore() }.getOrNull()?.isSuccess == true
+            // The inbox poll follows the account from here on. Not before the
+            // restore: a worker that cold-started this process is waiting for
+            // that account, and a null read too early would cancel it. A
+            // failed restore (offline token refresh) proves nothing either, so
+            // until an account is seen only a sign-in may change the schedule.
+            appScope.launch {
+                var settled = restored
+                combine(accountRepository.account, Cloud.config) { acct, cfg -> acct != null && cfg != null }
+                    .distinctUntilChanged()
+                    .collect { live ->
+                        if (live) settled = true
+                        if (settled) InboxWorker.sync(this@IronvellumApp, live)
+                    }
+            }
         }
         HealthSyncWorker.schedule(this)
         // Moves an upgraded install off the old periodic job, and books a run
         // for one whose queue was lost; a queued run is kept as it is.
         Reminders.ensureScheduled(this)
         CloudSyncWorker.schedule(this)
-        InboxWorker.schedule(this)
+        // No backend at all is known now, without waiting for any restore.
+        if (Cloud.config.value == null) InboxWorker.cancel(this)
     }
 }
