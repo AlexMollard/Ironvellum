@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -173,7 +174,7 @@ class PresetEditorViewModel(
 
     fun save(onDone: () -> Unit) {
         val current = _ui.value
-        if (current.name.isBlank() || current.entries.isEmpty()) return
+        if (!current.canSave()) return
         viewModelScope.launch {
             repo.savePreset(
                 presetId = current.presetId,
@@ -183,8 +184,10 @@ class PresetEditorViewModel(
                 entries = current.entries.map {
                     Repository.PresetDraftEntry(
                         exerciseId = it.exerciseId,
-                        targetSets = DecimalInput.parseWhole(it.sets)?.coerceIn(1, 30) ?: 3,
-                        targetReps = DecimalInput.parseWhole(it.reps)?.coerceIn(1, 500) ?: 10,
+                        // canSave() proved every required target is typed. Distance
+                        // work has no reps field, so its stored reps stay the legacy 10.
+                        targetSets = DecimalInput.parseWhole(it.sets)!!.coerceIn(1, 30),
+                        targetReps = DecimalInput.parseWhole(it.reps)?.coerceIn(1, 500) ?: HIDDEN_REPS,
                         targetWeightKg = DecimalInput.parse(it.weight),
                         modifiers = it.modifiers.trim(),
                     )
@@ -213,6 +216,32 @@ internal fun newEntry(exercise: Exercise): EditorEntry =
     } else {
         EditorEntry(exercise.id, exercise.name, sets = "3", reps = "", weight = "", modifiers = "")
     }
+
+/** The reps stored for distance work, whose editor has no reps field. */
+private const val HIDDEN_REPS = 10
+
+/** Which target fields of [entry] must be typed (or fixed) before the rite can be saved. */
+internal enum class TargetField { SETS, REPS, WEIGHT }
+
+/**
+ * Required targets that are blank, zero or out of range for the movement's
+ * [metric]. Nothing is defaulted on save, so a duration or grade exercise can
+ * no longer be stored as a 10-minute target nobody typed; a kg target above the
+ * session's own ceiling ([MAX_LOAD_KG]) is refused rather than saved unreachable.
+ */
+internal fun missingTargets(entry: EditorEntry, metric: ExerciseMetric): Set<TargetField> = buildSet {
+    if ((DecimalInput.parseWhole(entry.sets) ?: 0) < 1) add(TargetField.SETS)
+    if (metric != ExerciseMetric.DISTANCE_TIME && (DecimalInput.parseWhole(entry.reps) ?: 0) < 1) add(TargetField.REPS)
+    val kg = DecimalInput.parse(entry.weight)
+    if (entry.weight.isNotBlank() && (kg == null || kg > MAX_LOAD_KG)) add(TargetField.WEIGHT)
+}
+
+private fun EditorUi.metricOf(entry: EditorEntry): ExerciseMetric =
+    exercises.firstOrNull { it.id == entry.exerciseId }?.metric ?: ExerciseMetric.REPS
+
+/** A named rite with at least one exercise, every target of which is valid. */
+internal fun EditorUi.canSave(): Boolean =
+    name.isNotBlank() && entries.isNotEmpty() && entries.all { missingTargets(it, metricOf(it)).isEmpty() }
 
 /** Whether [current] differs from the workout as loaded in anything the lifter edits. */
 internal fun editorChanged(baseline: EditorUi, current: EditorUi): Boolean =
@@ -293,6 +322,7 @@ fun PresetEditorScreen(
                             onClick = { viewModel.setScheduledDay(day) },
                             modifier = Modifier
                                 .weight(1f)
+                                .heightIn(min = 48.dp)
                                 // The unscheduled option is drawn as "—", which a
                                 // screen reader announces as a dash. Say what it means.
                                 .semantics { contentDescription = label.takeIf { day != null } ?: "No day in the cycle" },
@@ -331,11 +361,19 @@ fun PresetEditorScreen(
         )
 
         Spacer(Modifier.height(12.dp))
+        if (ui.name.isNotBlank() && ui.entries.isNotEmpty() && !ui.canSave()) {
+            Text(
+                "Fill in the marked targets to save. Kg tops out at ${MAX_LOAD_KG.toInt()}.",
+                style = MaterialTheme.typography.labelSmall,
+                color = IronvellumColors.InkMuted,
+            )
+            Spacer(Modifier.height(8.dp))
+        }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             IronvellumButton(
                 label = "Save Rite",
                 onClick = { viewModel.save(onDone) },
-                enabled = ui.name.isNotBlank() && ui.entries.isNotEmpty(),
+                enabled = ui.canSave(),
                 modifier = Modifier.weight(1f),
             )
             if (ui.presetId != null) {
@@ -419,7 +457,7 @@ private fun EntryRow(
                     onClick = { expanded = true },
                     shape = MaterialTheme.shapes.small,
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
                 ) {
                     Text(
                         entry.exerciseName.ifBlank { "Pick exercise" },
@@ -449,7 +487,7 @@ private fun EntryRow(
             RowControl("▼", "Move down", enabled = !isLast) { onMove(1) }
             Box(
                 Modifier
-                    .size(44.dp)
+                    .size(48.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
                     .clickable(onClickLabel = "Remove exercise", onClick = onRemove)
                     .semantics {
@@ -468,37 +506,38 @@ private fun EntryRow(
         // DURATION/ATTEMPTS_GRADE store whole numbers in `reps`; DISTANCE_TIME stores
         // kilometres in `weight` so save() keeps mapping to targetWeightKg untouched.
         val metric = exercises.firstOrNull { it.id == entry.exerciseId }?.metric ?: ExerciseMetric.REPS
+        val bad = missingTargets(entry, metric)
         when (metric) {
             ExerciseMetric.REPS -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Reps", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS) { onEntry(entry.copy(reps = it)) }
-                    NumberField("kg", entry.weight, Modifier.weight(1f), decimal = true) { onEntry(entry.copy(weight = it)) }
+                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS, isError = TargetField.SETS in bad) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Reps", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS, isError = TargetField.REPS in bad) { onEntry(entry.copy(reps = it)) }
+                    NumberField("kg", entry.weight, Modifier.weight(1f), decimal = true, isError = TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
                 }
             }
             ExerciseMetric.HOLD -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Seconds", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS) { onEntry(entry.copy(reps = it)) }
-                    NumberField("kg", entry.weight, Modifier.weight(1f), decimal = true) { onEntry(entry.copy(weight = it)) }
+                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS, isError = TargetField.SETS in bad) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Seconds", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS, isError = TargetField.REPS in bad) { onEntry(entry.copy(reps = it)) }
+                    NumberField("kg", entry.weight, Modifier.weight(1f), decimal = true, isError = TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
                 }
             }
             ExerciseMetric.DURATION -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Min (target)", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS) { onEntry(entry.copy(reps = it)) }
+                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS, isError = TargetField.SETS in bad) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Min (target)", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS, isError = TargetField.REPS in bad) { onEntry(entry.copy(reps = it)) }
                 }
             }
             ExerciseMetric.DISTANCE_TIME -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Km (target)", entry.weight, Modifier.weight(1f), decimal = true) { onEntry(entry.copy(weight = it)) }
+                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS, isError = TargetField.SETS in bad) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Km (target)", entry.weight, Modifier.weight(1f), decimal = true, isError = TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
                 }
             }
             ExerciseMetric.ATTEMPTS_GRADE -> {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Attempts (target)", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS) { onEntry(entry.copy(reps = it)) }
+                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS, isError = TargetField.SETS in bad) { onEntry(entry.copy(sets = it)) }
+                    NumberField("Attempts (target)", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS, isError = TargetField.REPS in bad) { onEntry(entry.copy(reps = it)) }
                 }
             }
         }
@@ -519,12 +558,12 @@ private fun EntryRow(
     }
 }
 
-/** One fixed 44dp reorder control; the glyph alone read to TalkBack as a triangle. */
+/** One fixed 48dp reorder control; the glyph alone read to TalkBack as a triangle. */
 @Composable
 private fun RowControl(glyph: String, description: String, enabled: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(44.dp)
+            .size(48.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .clickable(enabled = enabled, onClickLabel = description, onClick = onClick)
             .semantics {
@@ -553,11 +592,13 @@ private fun NumberField(
     modifier: Modifier = Modifier,
     decimal: Boolean = false,
     maxDigits: Int = 3,
+    isError: Boolean = false,
     onValueChange: (String) -> Unit,
 ) {
     OutlinedTextField(
         shape = MaterialTheme.shapes.small,
         value = value,
+        isError = isError,
         onValueChange = { input ->
             onValueChange(
                 if (decimal) DecimalInput.sanitize(input, maxDecimals = 2, maxLength = 7)

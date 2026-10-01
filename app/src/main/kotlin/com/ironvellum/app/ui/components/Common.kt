@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -61,6 +62,8 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -623,9 +626,12 @@ fun <T> InkSegmented(
     modifier: Modifier = Modifier,
 ) {
     val shape = MaterialTheme.shapes.extraSmall
+    // Min intrinsic height so one segment whose label wraps (large font scale)
+    // makes its neighbours the same height rather than ragged.
     Row(
         modifier
             .fillMaxWidth()
+            .height(IntrinsicSize.Min)
             .clip(shape)
             .background(IronvellumColors.Abyss)
             .inkBorder(IronvellumColors.Rune, shape, 1.dp),
@@ -635,6 +641,8 @@ fun <T> InkSegmented(
             Box(
                 Modifier
                     .weight(1f)
+                    .fillMaxHeight()
+                    .heightIn(min = 48.dp)
                     .clip(shape)
                     .background(if (isOn) IronvellumColors.Vault else Color.Transparent)
                     .then(
@@ -658,7 +666,10 @@ fun <T> InkSegmented(
                     fontFamily = ChakraPetch,
                     color = if (isOn) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
                     letterSpacing = IronvellumTracking.InlineLabel,
-                    maxLines = 1,
+                    // Wraps or ellipsises at a large font scale instead of clipping.
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center,
                 )
             }
         }
