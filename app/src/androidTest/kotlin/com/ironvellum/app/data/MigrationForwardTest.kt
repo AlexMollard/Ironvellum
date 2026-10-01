@@ -3,6 +3,7 @@ package com.ironvellum.app.data
 import androidx.room.testing.MigrationTestHelper
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+import com.ironvellum.app.domain.Xp
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -633,5 +634,48 @@ class MigrationForwardTest {
                 assertEquals(1789790000000L, c.getLong(0))
             }
         }
+    }
+
+    /**
+     * Schema 33 -> 34 adds the level the lifter has already been paid for to
+     * the gacha row, seeded to their CURRENT level so no past level-up pays
+     * again. The banked rolls must come through beside it, and a lifter with
+     * no gacha row at all must get one rather than an UPDATE that matches
+     * nothing and leaves the mark at 0 (which would re-pay every level).
+     */
+    @Test
+    fun upgradeTo34SeedsTheRollLevelMarkToTheCurrentLevel() = runTest {
+        val totalXp = 25_000L
+        val level = Xp.levelFor(totalXp)
+        assertTrue("the fixture must sit above level 1 to prove the seed", level > 1)
+        val profile = "INSERT INTO profile (id, name, totalXp, currentTitleId, lifetimeStrength, trainingMode, sex, inkStyle, scoringVersion) " +
+            "VALUES (1, 'Ironbound', $totalXp, NULL, 0, 'STRENGTH', 'MALE', 1, 0)"
+
+        helper.createDatabase(dbName, 33).use { old ->
+            old.execSQL(profile)
+            old.execSQL("INSERT OR REPLACE INTO gacha_state (id, rolls, equippedFrame, figureStreak) VALUES (1, 4, 'masterwork', 2)")
+        }
+        helper.runMigrationsAndValidate(dbName, IronvellumDatabase.VERSION, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT rolls, equippedFrame, figureStreak, rollLevelMark FROM gacha_state WHERE id = 1").use { c ->
+                assertTrue("the gacha row must survive the upgrade", c.moveToFirst())
+                assertEquals(4, c.getInt(0))
+                assertEquals("masterwork", c.getString(1))
+                assertEquals(2, c.getInt(2))
+                assertEquals("existing levels count as already paid", level, c.getInt(3))
+            }
+        }
+
+        helper.createDatabase("$dbName-norow", 33).use { old ->
+            old.execSQL(profile)
+            old.execSQL("DELETE FROM gacha_state")
+        }
+        helper.runMigrationsAndValidate("$dbName-norow", IronvellumDatabase.VERSION, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT rolls, rollLevelMark FROM gacha_state WHERE id = 1").use { c ->
+                assertTrue("a missing gacha row is created by the upgrade", c.moveToFirst())
+                assertEquals(0, c.getInt(0))
+                assertEquals(level, c.getInt(1))
+            }
+        }
+        InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase("$dbName-norow")
     }
 }

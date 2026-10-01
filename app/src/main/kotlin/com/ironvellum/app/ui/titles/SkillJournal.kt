@@ -132,10 +132,10 @@ fun SkillJournal(
         Column(Modifier.fillMaxWidth()) {
             val start = today.minusWeeks((WEEKS - 1).toLong())
                 .with(java.time.DayOfWeek.MONDAY)
-            // ONE shape for all 84 cells, not one per cell. InkEdgeShape keeps a
+            // ONE shape for every cell, not one per cell. InkEdgeShape keeps a
             // minimum wobble so small fills still read as drawn, which on a 12px
             // cell is a tenth of its height - with a different salt per cell the
-            // grid came out as 84 different silhouettes and read as torn rather
+            // grid came out as a different silhouette per cell and read as torn rather
             // than inked.
             val cellShape = InkEdgeShape(
                 salt = 7,
@@ -145,7 +145,7 @@ fun SkillJournal(
                 bottomStart = CornerSize(2.dp),
             )
             // Colour alone carries the cells, so the grid reads out as one summary
-            // and its 84 cells stay out of the accessibility tree.
+            // and its cells stay out of the accessibility tree.
             val summary = heatmapSummary(byDay, start, today)
             Row(
                 Modifier.fillMaxWidth().clearAndSetSemantics { contentDescription = summary },

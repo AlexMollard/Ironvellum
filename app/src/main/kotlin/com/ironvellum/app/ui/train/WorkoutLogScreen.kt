@@ -136,8 +136,10 @@ fun WorkoutLogScreen(
                 color = IronvellumColors.InkMuted,
                 letterSpacing = IronvellumTracking.InlineLabel,
                 modifier = Modifier
+                    .heightIn(min = 48.dp)
                     .clip(MaterialTheme.shapes.extraSmall)
                     .clickable { onBack() }
+                    .wrapContentHeight(Alignment.CenterVertically)
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             )
         }

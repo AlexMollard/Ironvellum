@@ -137,6 +137,17 @@ class RoutineCodeTest {
     }
 
     @Test
+    fun `the sender is refused what the receiver would refuse`() {
+        val entry = SharedEntry("Plank", 3, 30, null, "")
+        val workout = SharedWorkout("Pull", "", null, listOf(entry))
+        assertNull(RoutineCode.shareRefusal(List(14) { workout }))
+        assertNull(RoutineCode.shareRefusal(listOf(workout.copy(entries = List(20) { entry }))))
+        assertTrue(RoutineCode.shareRefusal(List(15) { workout })!!.contains("14 rites"))
+        val refused = RoutineCode.shareRefusal(listOf(workout.copy(entries = List(21) { entry })))!!
+        assertTrue(refused.contains("20 exercises") && refused.contains("Pull") && refused.contains("21"))
+    }
+
+    @Test
     fun `hostile nesting fails instead of overflowing the stack`() {
         assertTrue(failureOf(rawCode("[".repeat(5_000))).isNotBlank())
     }
