@@ -370,7 +370,7 @@ object ProgramTemplates {
                     "Your dumbbell is too light for the ${entry.exerciseName}; the " +
                         "${exercise.name} is harder - Lopez 2021"
                 } else if (substituted && compoundOnly && MovementDifficulty.isIsolation(entry.exerciseName)) {
-                    "Compound & skill only: the ${exercise.name} stands in for the " +
+                    "Compound & technique only: the ${exercise.name} stands in for the " +
                         "${entry.exerciseName} - Gentil 2015"
                 } else if (substituted) {
                     "Nothing in your armoury for the ${entry.exerciseName}; the ${exercise.name} is the " +

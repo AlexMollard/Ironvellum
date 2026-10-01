@@ -131,14 +131,14 @@ fun termsIn(text: String): List<Term> = Term.entries.filter { term ->
 
 /**
  * The small "what's this?" button that opens a [Term]'s definition. Sized to a
- * 44dp touch target around an 18dp icon, the same as the Veil's drop-rate info.
+ * 48dp touch target around an 18dp icon.
  */
 @Composable
 fun TermInfo(term: Term, modifier: Modifier = Modifier) {
     var open by remember { mutableStateOf(false) }
     Box(
         modifier
-            .size(44.dp)
+            .size(48.dp)
             .clickable(role = Role.Button, onClickLabel = "Explain") { open = true },
         contentAlignment = Alignment.Center,
     ) {

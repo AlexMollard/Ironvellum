@@ -1249,7 +1249,7 @@ as $$
 begin
     if new.started_at > now() + interval '1 day'
        or (new.completed_at is not null and new.completed_at > now() + interval '1 day') then
-        raise exception 'session timestamps cannot be in the future';
+        raise exception 'trial timestamps cannot be in the future';
     end if;
     return new;
 end;

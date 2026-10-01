@@ -194,7 +194,7 @@ fun ExerciseExplorerScreen(
                                 append("  ·  ")
                                 append(if (selectedExercise.isWeighted) "weighted" else "bodyweight")
                                 if (skill != null) {
-                                    append("  ·  skill tier ${Skills.tierLabel(skill.tier)}")
+                                    append("  ·  technique tier ${Skills.tierLabel(skill.tier)}")
                                 }
                             },
                             style = MaterialTheme.typography.labelMedium,

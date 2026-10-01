@@ -12,7 +12,9 @@ internal val RETIRED_WORDS: List<Regex> = listOf(
     "mustering", "muster", "marched", "marching", "legion", "conquered", "victory",
     "presets?", "workout log", "full log", "skill tree", "leaderboard", "inbox",
     "epic", "equip", "equipped", "stand fast", "frontline", "scouting", "summoning",
-    "workouts?",
+    "workouts?", "sessions?", "stats", "skills?", "plans?", "programs?", "gear", "equipment",
+    "schedule", "scheduled", "schedules", "templates?", "achievements?", "badges?", "friends?",
+    "followers?", "feed", "comments?", "rest days?", "daily reminders?", "onboarding",
 ).map { Regex("""(?i)(?<![\w'])$it(?![\w'])""") }
 
 /**
@@ -49,6 +51,9 @@ class GlossaryTest {
         "(?:Hunter|Lifter|Ironbound)" to "legacy seeded handles still count as unclaimed",
         "Hunter 2014" to "citation author",
         "Inbox poll failed" to "logcat line, never shown",
+        "Remmert JF," to "citation, always plain (\"Is There Too Much of a Good Thing... Session\")",
+        "Moesgaard L et al." to "citation, always plain (\"...Programs\")",
+        "comments/" to "nav route, a protected name",
     )
 
     /** Raised messages that name a retired word on purpose, with the reason. */
