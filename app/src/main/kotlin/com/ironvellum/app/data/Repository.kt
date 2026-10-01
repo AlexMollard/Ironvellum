@@ -2814,6 +2814,7 @@ class Repository(
             volumeLast7d = volume,
             skillsUnlocked = practices.filter { it.claimed }.map { it.skillName }.distinct().size,
             streakDays = Titles.trainingStreakDays(completedDates),
+            sealedTrials = completed.size,
         )
     }
 
@@ -2882,6 +2883,8 @@ data class IdleInputs(
     val volumeLast7d: Double,
     val skillsUnlocked: Int,
     val streakDays: Int,
+    /** Every trial ever sealed, so a lapsed lifter is told apart from a new one. */
+    val sealedTrials: Int = 0,
 )
 
 /** Idle state plus the rate the Ledger is currently paying. */
