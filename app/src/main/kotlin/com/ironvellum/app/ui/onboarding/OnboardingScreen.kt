@@ -93,6 +93,7 @@ import com.ironvellum.app.ui.program.planNotes
 import com.ironvellum.app.ui.program.SplitPicker
 import com.ironvellum.app.ui.program.splitCaption
 import com.ironvellum.app.ui.program.volumeCaption
+import com.ironvellum.app.ui.settings.SettingsConfirmDialog
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -105,8 +106,16 @@ import android.content.Context
 import androidx.core.content.edit
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+
+/**
+ * A plan with no exercises would, taken, replace every existing rite with
+ * nothing and then dismiss setup for good. Only a plan that writes something
+ * may be taken.
+ */
+internal fun RoutinePlan.isTakeable(): Boolean = presets.any { it.entries.isNotEmpty() }
 
 class OnboardingViewModel(
     private val repo: Repository,
@@ -154,6 +163,11 @@ class OnboardingViewModel(
     private val _plan = MutableStateFlow<RoutinePlan?>(null)
     val plan: StateFlow<RoutinePlan?> = _plan.asStateFlow()
 
+    /** How many rites already exist; taking a cycle replaces them, so the screen asks first. */
+    val existingRites: StateFlow<Int> = repo.observePresets()
+        .map { it.size }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
     /** True while the reviewed plan is the owner's calisthenics week, whose accept path is applyStarterTemplate. */
     private val _isStarter = MutableStateFlow(false)
     val isStarter: StateFlow<Boolean> = _isStarter.asStateFlow()
@@ -190,7 +204,7 @@ class OnboardingViewModel(
                 if (name.trim().isNotEmpty()) repo.rename(name)
                 repo.setSex(sex)
                 repo.setHeight(heightCm)
-                repo.addStat(weightKg, null)
+                repo.logTodaysWeight(weightKg)
             }.onFailure {
                 _applyError.value = "Could not save your details" + (it.message?.let { m -> ": $m" } ?: "")
             }
@@ -269,6 +283,10 @@ class OnboardingViewModel(
         split: TrainingSplit,
     ) {
         val plan = _plan.value ?: return
+        if (!plan.isTakeable()) {
+            _applyError.value = "This cycle has no exercises. Rebuild it from your answers first. Nothing was written."
+            return
+        }
         val generated = !_isStarter.value
         viewModelScope.launch {
             runCatching {
@@ -371,6 +389,27 @@ fun OnboardingScreen(
 
     val applyError by viewModel.applyError.collectAsStateWithLifecycle()
     val plan by viewModel.plan.collectAsStateWithLifecycle()
+    val existingRites by viewModel.existingRites.collectAsStateWithLifecycle()
+    var confirmReplace by remember { mutableStateOf(false) }
+    val takeCycle = {
+        equipment?.let { viewModel.acceptRoutine(tier, focus, it, daysPerWeek, split) }
+        Unit
+    }
+    if (confirmReplace) {
+        SettingsConfirmDialog(
+            title = "Replace your rites?",
+            text = "Taking this cycle replaces your $existingRites existing " +
+                "${if (existingRites == 1) "rite" else "rites"}. Your Chronicle is kept. This cannot be undone.",
+            confirmLabel = "Replace",
+            dismissLabel = "Keep my rites",
+            danger = true,
+            onConfirm = {
+                confirmReplace = false
+                takeCycle()
+            },
+            onDismiss = { confirmReplace = false },
+        )
+    }
 
     // The same bounds the repository enforces, checked here so the footer can
     // name what is missing instead of leaving a dead button to explain itself.
@@ -403,12 +442,18 @@ fun OnboardingScreen(
             )
         }
 
+        // The whole screen scrolls, header and footer included: with the
+        // keyboard up, a large font or in landscape the fixed parts alone can
+        // outgrow the window, and a fixed header left the fields no room.
+        // fillMaxSize before verticalScroll keeps the viewport as the minimum
+        // height, so the spacer below still pins the footer on a tall screen.
         Column(
             Modifier
                 .fillMaxSize()
                 .imePadding()
                 .statusBarsPadding()
                 .navigationBarsPadding()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp),
         ) {
             Spacer(Modifier.height(16.dp))
@@ -430,7 +475,7 @@ fun OnboardingScreen(
 
             Box(
                 Modifier
-                    .weight(1f)
+                    .fillMaxWidth()
                     .focusGroup()
                     .onFocusChanged { fieldFocused = it.hasFocus },
             ) {
@@ -469,11 +514,15 @@ fun OnboardingScreen(
                 }
             }
 
+            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.height(16.dp))
+
             StepFooter(
                 step = step,
                 missing = missing,
                 profileValid = profileValid,
-                planReady = plan != null,
+                planReady = plan?.isTakeable() == true,
+                planEmpty = plan != null && plan?.isTakeable() != true,
                 armouryPicked = equipment != null,
                 applyError = applyError,
                 onContinueProfile = {
@@ -485,7 +534,8 @@ fun OnboardingScreen(
                 onBack = { step -= 1 },
                 onForward = { step = 2 },
                 onAccept = {
-                    equipment?.let { viewModel.acceptRoutine(tier, focus, it, daysPerWeek, split) }
+                    // Taking a cycle replaces every existing rite: never silently.
+                    if (existingRites > 0) confirmReplace = true else takeCycle()
                 },
             )
         }
@@ -612,6 +662,7 @@ private fun StepFooter(
     missing: List<String>,
     profileValid: Boolean,
     planReady: Boolean,
+    planEmpty: Boolean,
     armouryPicked: Boolean,
     applyError: String?,
     onContinueProfile: () -> Unit,
@@ -671,7 +722,7 @@ private fun StepFooter(
                 Column(Modifier.weight(1f)) {
                     if (!planReady) {
                         Text(
-                            "Still consulting the catalogue…",
+                            if (planEmpty) "Add exercises back or rebuild to take a cycle." else "Still consulting the catalogue…",
                             style = MaterialTheme.typography.labelSmall,
                             color = IronvellumColors.InkMuted,
                         )
@@ -709,12 +760,11 @@ private fun ProfileStep(
     weightInput: String,
     onWeight: (String) -> Unit,
 ) {
-    // One scrolling mechanism per step: a Column in verticalScroll, never a
-    // lazy list nested inside - that pairing crashes at runtime in this repo.
+    // The screen scrolls as a whole (see OnboardingScreen), so a step is a plain
+    // Column: never a lazy list or a second scroller nested inside - that
+    // pairing crashes at runtime in this repo.
     Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
+        Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         InkPanel(Modifier.fillMaxWidth()) {
@@ -781,9 +831,7 @@ private fun TrainingStep(
     onTier: (VolumeLevel) -> Unit,
 ) {
     Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
+        Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         InkPanel(Modifier.fillMaxWidth()) {
@@ -925,9 +973,7 @@ private fun ProposalStep(
     }
 
     Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState()),
+        Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
     ) {
         val current = plan
@@ -960,10 +1006,21 @@ private fun ProposalStep(
             }
             if (current.presets.isEmpty()) {
                 Text(
-                    "Nothing left — go back and rebuild, or take the starter cycle instead.",
+                    "Nothing left. Rebuild from your answers, or take the starter cycle instead.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
+                if (!isStarter) {
+                    IronvellumButton(
+                        label = "Rebuild from my answers",
+                        onClick = {
+                            if (catalogue.isNotEmpty()) {
+                                viewModel.ensurePlan(daysPerWeek, split, equipment, focus, tier, sex, catalogue, force = true)
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
             // The rest guidance and any shortfall, said once for the routine
             // rather than under every day, with the progression rule the goal
