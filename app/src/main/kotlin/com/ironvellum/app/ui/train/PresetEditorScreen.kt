@@ -380,6 +380,7 @@ fun PresetEditorScreen(
                         confirmDiscard = false
                         onDone()
                     },
+                    danger = true,
                 )
             },
             dismissButton = {

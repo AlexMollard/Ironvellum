@@ -185,6 +185,7 @@ internal fun ImportRoutineDialog(
                 IronvellumButton(
                     label = "Replace",
                     onClick = { confirmReplace = false; onImport(workouts, true) },
+                    danger = true,
                 )
             },
             dismissButton = {

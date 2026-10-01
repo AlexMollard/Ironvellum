@@ -457,7 +457,7 @@ internal fun CommentsScreen(
                 IronvellumButton(label = "Delete", onClick = {
                     confirmDelete = null
                     viewModel.delete(comment)
-                })
+                }, danger = true)
             },
             dismissButton = {
                 IronvellumButton(label = "Keep", onClick = { confirmDelete = null }, quiet = true)
