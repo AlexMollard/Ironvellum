@@ -57,6 +57,11 @@ import androidx.compose.material.icons.outlined.History
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.TrendChart
+import com.ironvellum.app.ui.components.BarChart
+import com.ironvellum.app.ui.components.PanelLabel
+import com.ironvellum.app.ui.components.StatSize
+import com.ironvellum.app.ui.components.StatValue
+import com.ironvellum.app.domain.LedgerRange
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -113,10 +118,9 @@ import java.util.Locale
 import com.ironvellum.app.ui.components.Term
 import com.ironvellum.app.ui.components.TermInfo
 
-// Genuinely unique chart/band colours that have no IronvellumColors token — kept in one
-// place so they aren't scattered; everything else must reference IronvellumColors.
-private val CalendarConquered = Color(0xFF10B981)
-private val OnEmeraldInk = Color(0xFF06251B)
+// Calendar colours are theme tokens too: no hex literal lives in this file.
+private val CalendarConquered = IronvellumColors.Emerald
+private val OnEmeraldInk = IronvellumColors.Abyss
 
 /** Band tones to theme tokens: gold stays for earned things, so no band is gold. */
 private fun toneColor(tone: BandTone): Color = when (tone) {
@@ -337,13 +341,21 @@ fun StatsScreen(
                         ui.stats.sortedBy { it.takenAtMs }.map { it.weightKg }
                     }
                     MetricValueBig(latest?.weightKg?.let { formatBodyValue(it) } ?: "—", "kg")
-                    if (weights.size >= 2) {
+                    val plot = remember(ui.stats, today) { Ledger.weightPlot(ui.stats, LedgerRange.ALL, today, zone) }
+                    if (plot != null && plot.values.size >= 2) {
                         Spacer(Modifier.height(8.dp))
-                        TrendChart(weights, IronvellumColors.SovereignGold, fromZero = false)
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            ChartCaption("min ${formatBodyValue(weights.min())} kg")
-                            ChartCaption("max ${formatBodyValue(weights.max())} kg")
-                        }
+                        // Placed by date, dated at both ends, and no gold: the
+                        // heaviest weigh-in is not an achievement.
+                        TrendChart(
+                            plot.values,
+                            IronvellumColors.Emerald,
+                            fromZero = false,
+                            positions = plot.positions,
+                            startLabel = shortDate(plot.startDate),
+                            endLabel = shortDate(plot.endDate),
+                            recordMarker = false,
+                        )
+                        plot.deltaKg?.let { ChartCaption("${Ledger.signed(it, "kg")} since ${shortDate(plot.startDate)}") }
                     } else {
                         ChartCaption("Two readings draw the line.")
                     }
@@ -359,7 +371,7 @@ fun StatsScreen(
                     // WEIGHT card above already says it; the big "—" value from
                     // MetricValueBig stands in until a trend exists.
                     if (bmis.size >= 2) {
-                        TrendChart(bmis, IronvellumColors.SystemGreen, fromZero = false)
+                        TrendChart(bmis, IronvellumColors.Emerald, fromZero = false, recordMarker = false)
                         ChartCaption("Latest ${formatBodyValue(bmis.last())} — ${BodyStats.bmiCategory(bmis.last())}")
                     } else {
                         // Muted dash placeholder, same treatment as the empty
@@ -434,7 +446,7 @@ fun StatsScreen(
                                         bmi?.let { append(" · BMI ${formatBodyValue(it)}") }
                                     },
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = IronvellumColors.SystemGreen,
+                                    color = IronvellumColors.InkMuted,
                                 )
                             }
                         // One tap on the trash icon used to erase the weigh-in
@@ -691,7 +703,7 @@ private fun StatDrillDialog(
                     "$metric — frame rating",
                     style = MaterialTheme.typography.titleLarge,
                     fontFamily = ChakraPetch,
-                    color = IronvellumColors.SovereignGold,
+                    color = IronvellumColors.Ink,
                 )
                 Text(
                     "The Ledger rates your frame",
@@ -724,7 +736,7 @@ private fun StatDrillDialog(
                     BandBar(value = current, bands = bands, scaleMax = table.scaleMax)
                     Spacer(Modifier.height(12.dp))
                     if (series.size >= 2) {
-                        TrendChart(series, IronvellumColors.SystemGreen, fromZero = false)
+                        TrendChart(series, IronvellumColors.Emerald, fromZero = false, recordMarker = false)
                         ChartCaption("${series.size} readings in the Ledger")
                     } else {
                         ChartCaption("Two readings draw the line.")
@@ -780,25 +792,11 @@ private fun BandBar(value: Double, bands: List<Band>, scaleMax: Double) {
 }
 
 @Composable
-private fun MetricLabel(label: String) {
-    Text(
-        label,
-        style = MaterialTheme.typography.labelMedium,
-        fontFamily = ChakraPetch,
-        color = IronvellumColors.SystemGreen,
-        letterSpacing = IronvellumTracking.InlineLabel,
-    )
-}
+private fun MetricLabel(label: String) = PanelLabel(label)
 
 @Composable
 private fun MetricValue(value: String, hint: String) {
-    Text(
-        value,
-        style = MaterialTheme.typography.headlineMedium,
-        fontFamily = ChakraPetch,
-        fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-        color = IronvellumColors.SovereignGold,
-    )
+    StatValue(value, size = StatSize.Tile)
     Text(hint, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
 }
 
@@ -809,18 +807,7 @@ private fun MetricCaption(text: String) {
 }
 
 @Composable
-private fun MetricValueBig(value: String, unit: String) {
-    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Text(
-            value,
-            style = MaterialTheme.typography.displaySmall,
-            fontFamily = ChakraPetch,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
-        )
-        Text(unit, style = MaterialTheme.typography.titleMedium, color = IronvellumColors.InkMuted)
-    }
-}
+private fun MetricValueBig(value: String, unit: String) = StatValue(value, size = StatSize.Hero, unit = unit)
 
 @Composable
 private fun ChartCaption(text: String) {
@@ -889,7 +876,7 @@ private fun CalendarGrid(
                                             },
                                         )
                                         .inkBorder(
-                                            IronvellumColors.SovereignGold,
+                                            IronvellumColors.Ink,
                                             InkCircleShape(7),
                                             if (isToday) 1.5.dp else 0.dp,
                                         ),
@@ -899,8 +886,8 @@ private fun CalendarGrid(
                                         date.dayOfMonth.toString(),
                                         color = when {
                                             completed -> OnEmeraldInk
-                                            isToday -> IronvellumColors.SovereignGold
-                                            else -> IronvellumColors.Ink
+                                            isToday -> IronvellumColors.Ink
+                                            else -> IronvellumColors.InkMuted
                                         },
                                     )
                                 }
@@ -925,7 +912,7 @@ private fun CalendarGrid(
         }
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             CalendarLegend(CalendarConquered, "sealed")
-            CalendarLegend(IronvellumColors.SovereignGold, "today")
+            CalendarLegend(IronvellumColors.Ink, "today")
             CalendarLegend(IronvellumColors.SystemGreen, "scheduled")
         }
     }
@@ -1209,7 +1196,12 @@ private fun ActivityTab(
         InkPanel(Modifier.fillMaxWidth()) {
             MetricLabel("STEPS — LAST 14 DAYS")
             val tracked = Ledger.tracked(steps14)
-            TrendChart(steps14.filterNotNull(), goal = STEP_GOAL.toDouble())
+            BarChart(
+                steps14,
+                goal = STEP_GOAL.toDouble(),
+                startLabel = shortDate(today.minusDays(13)),
+                endLabel = "today",
+            )
             val hits = steps14.count { (it ?: 0.0) >= STEP_GOAL }
             ChartCaption("$tracked of 14 days tracked · $hits hit the ${fmtInt(STEP_GOAL)} goal")
         }
@@ -1219,7 +1211,7 @@ private fun ActivityTab(
             MetricLabel("DISTANCE (KM) — LAST 30 DAYS")
             val km = km30.filterNotNull()
             if (km.size >= 2) {
-                TrendChart(km, IronvellumColors.SystemGreen)
+                BarChart(km30, IronvellumColors.Emerald, startLabel = shortDate(today.minusDays(29)), endLabel = "today")
                 ChartCaption(
                     "best ${"%.1f".format(km.max())} km · total ${"%.0f".format(km.sum())} km · " +
                         "${km.size} of 30 days tracked",
@@ -1229,7 +1221,7 @@ private fun ActivityTab(
             }
         }
 
-        EnergySection(burns, measuredDays, stats)
+        EnergySection(burns, today, measuredDays, stats)
         Spacer(Modifier.height(14.dp))
         SectionHeader("Active calories — last 7 days")
         val window7 = Ledger.window(today, 7).reversed()
@@ -1281,6 +1273,7 @@ private fun ActivityTab(
 @Composable
 private fun EnergySection(
     burns: List<EnergyEstimate?>,
+    today: LocalDate,
     measuredDays: Int,
     stats: List<StatEntry>,
 ) {
@@ -1294,13 +1287,7 @@ private fun EnergySection(
         MetricLabel("BURN TODAY")
         if (todayBurn != null) {
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    fmtInt(todayBurn.kcal),
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = IronvellumColors.SovereignGold,
-                )
+                StatValue(fmtInt(todayBurn.kcal), size = StatSize.Tile)
                 Text(
                     "kcal · ${confidenceWord(todayBurn.confidence)}",
                     style = MaterialTheme.typography.labelMedium,
@@ -1319,7 +1306,12 @@ private fun EnergySection(
         // A null slot is "not estimable or not synced", never 0 kcal.
         val charted = burns.filterNotNull()
         if (charted.size >= 2) {
-            TrendChart(charted.map { it.kcal.toDouble() })
+            BarChart(
+                burns.map { it?.kcal?.toDouble() },
+                faded = burns.map { it != null && it.confidence != EnergyConfidence.MEASURED },
+                startLabel = shortDate(today.minusDays(13)),
+                endLabel = "today",
+            )
             Spacer(Modifier.height(6.dp))
             EnergyLegend()
             val measuredLine =
@@ -1348,13 +1340,7 @@ private fun EnergySection(
         MetricLabel("RESTING BURN (KATCH-MCARDLE)")
         if (resting != null) {
             Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                    fmtInt(resting.kcal),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = IronvellumColors.SystemGreen,
-                )
+                StatValue(fmtInt(resting.kcal), size = StatSize.Inline)
                 Text(
                     "kcal/day at rest · ${confidenceWord(resting.confidence)}",
                     style = MaterialTheme.typography.labelMedium,
@@ -1411,6 +1397,9 @@ private fun EnergyLegend() {
 }
 
 
+private fun shortDate(date: LocalDate): String =
+    date.format(java.time.format.DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
+
 private fun fmtInt(v: Int): String = String.format(Locale.getDefault(), "%,d", v)
 
 private fun fmtSleep(minutes: Int): String = "${minutes / 60}h ${minutes % 60}m"
@@ -1418,15 +1407,9 @@ private fun fmtSleep(minutes: Int): String = "${minutes / 60}h ${minutes % 60}m"
 @Composable
 private fun ActivityTile(label: String, value: String, hint: String, modifier: Modifier = Modifier) {
     InkPanel(modifier) {
-        MetricLabel(label)
+        PanelLabel(label)
         Spacer(Modifier.height(2.dp))
-        Text(
-            value,
-            style = MaterialTheme.typography.headlineMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
-        )
+        StatValue(value, size = StatSize.Tile)
         Text(hint, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
     }
 }
@@ -1446,10 +1429,10 @@ private fun MetricRow(label: String, value: String, best: Boolean) {
                 color = IronvellumColors.Ink,
             )
             Text(
-                value,
+                if (best) "best · $value" else value,
                 style = MaterialTheme.typography.titleSmall,
                 fontFamily = ChakraPetch,
-                color = if (best) IronvellumColors.SovereignGold else IronvellumColors.SystemGreen,
+                color = IronvellumColors.Ink,
             )
         }
     }
