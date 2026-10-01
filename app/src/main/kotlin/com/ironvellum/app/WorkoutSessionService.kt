@@ -64,6 +64,12 @@ class WorkoutSessionService : Service() {
      */
     private var watcher: Job? = null
 
+    /** The trial [watcher] describes; a restart for the same one must not tear it down. */
+    private var watchedSessionId = -1L
+
+    /** The newest trial notification, re-shown as is when the same trial is announced again. */
+    private var lastTrial: Notification? = null
+
     /** Waits out the running rest; replaced whenever the rest changes. */
     private var restWait: Job? = null
 
@@ -81,11 +87,16 @@ class WorkoutSessionService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        watcher?.cancel()
-        watcher = null
-        restWait?.cancel()
-        restWait = null
         val sessionId = intent?.getLongExtra(EXTRA_SESSION_ID, -1L) ?: -1L
+        val sameTrial = sessionId > 0L && sessionId == watchedSessionId && watcher?.isActive == true
+        if (!sameTrial) {
+            watcher?.cancel()
+            watcher = null
+            restWait?.cancel()
+            restWait = null
+            lastTrial = null
+            watchedSessionId = -1L
+        }
         if (sessionId <= 0L) {
             stopSelf()
             return START_NOT_STICKY
@@ -96,7 +107,9 @@ class WorkoutSessionService : Service() {
         androidx.core.app.ServiceCompat.startForeground(
             this,
             Notifications.ID_TRIAL,
-            buildNotification(sessionId, emptyList(), startedAtMs = null, rest = null),
+            // The same trial keeps its last notification and its armed rest: no
+            // "Opening the trial" flicker, no gap before the watcher's next emission.
+            lastTrial ?: buildNotification(sessionId, emptyList(), startedAtMs = null, rest = null),
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
             } else {
@@ -104,7 +117,11 @@ class WorkoutSessionService : Service() {
             },
         )
 
+        if (sameTrial) return START_NOT_STICKY
+        watchedSessionId = sessionId
+
         watcher = scope.launch {
+            var lastDone = -1
             combine(
                 repo.observeSessionSets(sessionId),
                 repo.observeSession(sessionId),
@@ -119,7 +136,22 @@ class WorkoutSessionService : Service() {
                         stopSelf()
                         return@collect
                     }
-                    post(Notifications.ID_TRIAL, buildNotification(sessionId, sets, session.startedAtMs, rest))
+                    val done = sets.count { it.done }
+                    val allDone = sets.isNotEmpty() && done == sets.size
+                    // "Rest is over" is stale news once the sets move on: a set
+                    // ticked or unticked, or every set done (no rest follows).
+                    if (allDone || (lastDone >= 0 && done != lastDone)) {
+                        NotificationManagerCompat.from(this@WorkoutSessionService).cancel(Notifications.ID_REST_OVER)
+                    }
+                    lastDone = done
+                    if (allDone && rest != null) {
+                        // Nothing is left to rest for; the emission this causes re-enters with no rest.
+                        RestClock.cancel(sessionId)
+                        return@collect
+                    }
+                    val trial = buildNotification(sessionId, sets, session.startedAtMs, rest)
+                    lastTrial = trial
+                    post(Notifications.ID_TRIAL, trial)
                     awaitRest(sessionId, rest, sets)
                 }
         }

@@ -105,7 +105,8 @@ object Reminders {
     /** The worker's whole job. Returns false when it had nothing to say. */
     suspend fun notifyIfWanted(context: Context, repo: Repository): Boolean {
         if (!enabled(context)) return false
-        if (!Notifications.access(context, Notifications.CHANNEL_SUMMONS).canPost) return false
+        val canPost = Notifications.access(context, Notifications.CHANNEL_SUMMONS).canPost
+        if (!canPost) return false
 
         // What today actually is: a rite, a respite, under way, or already done.
         val today = LocalDate.now()
@@ -117,15 +118,19 @@ object Reminders {
         // keeps it, and the Summons never nags about it on its own.
         val rite = repo.observePresets().firstOrNull()
             ?.firstOrNull { it.scheduledDay == today.dayOfWeek.value }
-            ?: return false
 
         val history = repo.observeHistory().firstOrNull() ?: emptyList()
         val dates = history.mapNotNull { it.first.completedAtMs?.let(::dayOf) }.toSet()
-        // Already sealed today: the kindest notification is silence.
-        if (today in dates) return false
-        // Mid-trial: the lifter is already doing what the Summons would ask.
+        // Sealed today, or mid-trial: the kindest notification is silence.
         val live = repo.observeLiveSession().firstOrNull()
-        if (live != null && dayOf(live.startedAtMs) == today) return false
+        if (!Summons.wanted(
+                riteScheduledToday = rite != null,
+                sealedToday = today in dates,
+                liveToday = live != null && dayOf(live.startedAtMs) == today,
+                canPost = canPost,
+            )
+        ) return false
+        rite ?: return false
 
         val oath = Streak.current(dates, today)
         val copy = Summons.copy(

@@ -97,7 +97,10 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import android.os.SystemClock
+import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.RestClock
+import com.ironvellum.app.ui.components.NotificationBlockedNotice
+import com.ironvellum.app.ui.components.rememberNotificationAccess
 import com.ironvellum.app.domain.RestTimer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.window.Dialog
@@ -486,6 +489,7 @@ fun SessionScreen(
     // only the reminder toggle asked for it, so most lifters never saw the
     // trial notification. Asked ONCE, the first time a trial opens; a refusal
     // is final here (Settings can still grant it), so there is no nagging.
+    val restAccess = rememberNotificationAccess(Notifications.CHANNEL_REST)
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Re-announce so the service posts now, not at the next ticked set.
         if (granted) WorkoutSessionService.start(screenContext, sessionId)
@@ -614,6 +618,13 @@ fun SessionScreen(
         }
         rest?.let { timer ->
             RestBar(timer, onExtend = viewModel::extendRest, onSkip = viewModel::skipRest)
+            // The countdown above still runs, but the buzz at its end cannot arrive.
+            NotificationBlockedNotice(
+                channelId = Notifications.CHANNEL_REST,
+                access = restAccess,
+                blockedText = "Rest-over alerts are blocked, so the end of a rest will not buzz.",
+                modifier = Modifier.padding(top = 4.dp),
+            )
         }
         if (ui.sets.isNotEmpty()) {
             val estimate = remember(ui.sets, exercises, focus, pace) {
@@ -1080,6 +1091,9 @@ fun SessionScreen(
                 onPick = null,
                 modifiers = current.modifiers,
             )
+        } else {
+            // Forget the block, or re-adding it later would reopen the sheet unasked.
+            LaunchedEffect(exerciseId) { infoFor = null }
         }
     }
 
