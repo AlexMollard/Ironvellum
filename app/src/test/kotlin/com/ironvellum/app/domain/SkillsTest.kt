@@ -8,13 +8,18 @@ import org.junit.Test
 
 class SkillsTest {
 
-    /** A prerequisite nobody can ever master would strand the rest of its line. */
+    /**
+     * A prerequisite nobody can ever master would strand the rest of its line.
+     * Only a SKILL can be mastered - claimSkill refuses any other name - so a
+     * catalogue-only movement as a prerequisite would lock its dependant
+     * forever, however often it is logged.
+     */
     @Test
-    fun `every prerequisite is a masterable movement`() {
-        val masterable = Skills.ALL.map { it.name }.toSet() + Seed.exercises.map { it.name }
-        Skills.ALL.mapNotNull { it.requires }.forEach { prereq ->
-            assertTrue("dangling prerequisite: $prereq", prereq in masterable)
+    fun `every prerequisite is a claimable skill`() {
+        Skills.ALL.flatMap { skill -> skill.prerequisites.map { skill.name to it } }.forEach { (skill, prereq) ->
+            assertTrue("$skill waits on $prereq, which is not a skill", Skills.forName(prereq) != null)
         }
+        assertTrue(Seed.exercises.isNotEmpty())
     }
 
     @Test
@@ -29,7 +34,20 @@ class SkillsTest {
     fun `a skill unlocks only once its prerequisite is mastered`() {
         val hspu = Skills.forName("Handstand Push-up")!!
         assertFalse(Skills.unlocked(hspu, emptySet()))
-        assertTrue(Skills.unlocked(hspu, setOf("Wall HSPU")))
+        assertFalse("all prerequisites, not any", Skills.unlocked(hspu, setOf("Wall HSPU")))
+        assertTrue(Skills.unlocked(hspu, setOf("Wall HSPU", "Freestanding Handstand")))
+    }
+
+    /**
+     * Gating is for NEW claims. Mastery that predates a prerequisite is never
+     * re-judged, so the next step opens on what the lifter actually owns.
+     */
+    @Test
+    fun `a claimed skill missing a newer prerequisite still opens what it leads to`() {
+        val hspu = Skills.forName("Handstand Push-up")!!
+        // Wall HSPU and Handstand Push-up claimed before Freestanding Handstand
+        // was a prerequisite: 90-Degree Push-up still unlocks off the claim.
+        assertTrue(Skills.unlocked(Skills.forName("90-Degree Push-up")!!, setOf("Wall HSPU", hspu.name)))
     }
 
     @Test
@@ -41,10 +59,40 @@ class SkillsTest {
                 "Straddle Press to Handstand",
                 // dependants cross progression lines, not just the parent's own line
                 "Handstand-to-Bridge",
+                "Handstand Push-up",
+                "Inverted Muscle-up",
             ),
-            Skills.unlockedBy("Freestanding Handstand").map { it.name }.toSet(),
+            Skills.dependantsOf("Freestanding Handstand").map { it.name }.toSet(),
         )
         assertEquals(emptyList<String>(), Skills.unlockedBy("Manna").map { it.name })
+    }
+
+    /** A dependant with a second, unmet prerequisite does not open yet. */
+    @Test
+    fun `unlocking waits on every prerequisite`() {
+        assertFalse(
+            "Handstand-to-Bridge also needs Bridge",
+            Skills.unlockedBy("Freestanding Handstand").any { it.name == "Handstand-to-Bridge" },
+        )
+        assertTrue(
+            Skills.unlockedBy("Freestanding Handstand", setOf("Bridge")).any { it.name == "Handstand-to-Bridge" },
+        )
+        assertTrue(
+            "already mastered is not newly unlocked",
+            Skills.unlockedBy("Dead Hang", setOf("Scapular Pull")).none { it.name == "Scapular Pull" },
+        )
+    }
+
+    /**
+     * An unclaim refunds what the claim PAID. A stamped claim refunds its
+     * stamp whatever the tier is now; an unstamped (older) claim refunds the
+     * tier it was claimed at, so re-tiering a skill never revokes or mints.
+     */
+    @Test
+    fun `an unclaim refunds what the claim paid, not the current tier`() {
+        assertEquals(240, Skills.claimRefund("Dead Hang", stampedXp = 240))
+        assertEquals("unstamped, unchanged tier", 120, Skills.claimRefund("Dead Hang", stampedXp = 0))
+        assertEquals(0, Skills.claimRefund("No Such Skill", stampedXp = 0))
     }
 
     @Test
@@ -71,19 +119,13 @@ class SkillsTest {
      */
     @Test
     fun `no skill waits on itself, directly or through its line`() {
-        val parentOf = Skills.ALL.associate { it.name to it.requires }
-        Skills.ALL.forEach { skill ->
-            val seen = linkedSetOf(skill.name)
-            var cursor = skill.requires
-            while (cursor != null) {
-                assertTrue(
-                    "prerequisite loop: ${seen.joinToString(" -> ")} -> $cursor",
-                    cursor !in seen,
-                )
-                seen += cursor
-                cursor = parentOf[cursor]
-            }
+        val done = mutableSetOf<String>()
+        fun visit(name: String, path: List<String>) {
+            assertTrue("prerequisite loop: ${(path + name).joinToString(" -> ")}", name !in path)
+            if (!done.add(name)) return
+            Skills.forName(name)?.prerequisites?.forEach { visit(it, path + name) }
         }
+        Skills.ALL.forEach { visit(it.name, emptyList()) }
     }
 
     /**
@@ -111,13 +153,12 @@ class SkillsTest {
      */
     @Test
     fun `a prerequisite is never a harder tier than what it unlocks`() {
-        val bad = Skills.ALL.mapNotNull { skill ->
-            val prereq = skill.requires ?: return@mapNotNull null
-            // A prerequisite can be another skill or a catalogue movement;
-            // both carry a tier through the difficulty tables.
-            val prereqTier = Skills.forName(prereq)?.tier ?: MovementDifficulty.tier(prereq)
-            (prereqTier > skill.tier).takeIf { it }?.let {
-                "${skill.name} (tier ${skill.tier}) requires $prereq (tier $prereqTier)"
+        val bad = Skills.ALL.flatMap { skill ->
+            skill.prerequisites.mapNotNull { prereq ->
+                val prereqTier = Skills.forName(prereq)!!.tier
+                (prereqTier > skill.tier).takeIf { it }?.let {
+                    "${skill.name} (tier ${skill.tier}) requires $prereq (tier $prereqTier)"
+                }
             }
         }
         assertEquals("prerequisites harder than their unlock", emptyList<String>(), bad)
@@ -199,8 +240,8 @@ class SkillsTest {
             skills.drop(1).zipWithNext().forEach { (lower, higher) ->
                 assertEquals(
                     "each rung requires the one below it",
-                    lower.name,
-                    higher.requires,
+                    listOf(lower.name),
+                    higher.prerequisites,
                 )
             }
         }
@@ -234,10 +275,10 @@ class SkillsTest {
     fun `repaired lines have no tier gaps on their chains`() {
         assertEquals(2, Skills.forName("Parallel Bar Support Hold")!!.tier)
         assertEquals(
-            "Parallel Bar Support Hold",
-            Skills.forName("Parallel Bar Dip")!!.requires,
+            listOf("Parallel Bar Support Hold"),
+            Skills.forName("Parallel Bar Dip")!!.prerequisites,
         )
         assertEquals(3, Skills.forName("Straddle L-sit")!!.tier)
-        assertEquals("Straddle L-sit", Skills.forName("V-Sit")!!.requires)
+        assertEquals(listOf("Straddle L-sit"), Skills.forName("V-Sit")!!.prerequisites)
     }
 }

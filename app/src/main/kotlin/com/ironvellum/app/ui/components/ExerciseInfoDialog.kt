@@ -1,11 +1,13 @@
 package com.ironvellum.app.ui.components
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -15,8 +17,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseGuides
@@ -29,7 +38,6 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.program.ExerciseMuscles
 import com.ironvellum.app.ui.theme.IronvellumTracking
-import com.ironvellum.app.ui.titles.prerequisites
 
 /**
  * Facts about one exercise, all read from data the app already holds: the
@@ -77,15 +85,16 @@ internal fun ExerciseInfoDialog(
             }
         },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
+            Column(Modifier.topFade().verticalScroll(rememberScrollState())) {
+                Spacer(Modifier.height(6.dp))
                 ExerciseFacts(exercise.name, modifiers, showMissingMuscles = true)
                 if (skill != null) {
                     InfoHeading("TECHNIQUE")
                     InfoBody("${Skills.tierLabel(skill.tier)} · ${skill.line}", IronvellumColors.SystemGreen)
                     InfoBody("Claim: ${skill.standard}")
                     if (skill.why.isNotBlank()) InfoBody(skill.why, IronvellumColors.InkMuted)
-                    skill.prerequisites().takeIf { it.isNotEmpty() }?.let {
-                        InfoBody("Needs ${it.joinToString(" and ")} first", IronvellumColors.InkMuted)
+                    if (skill.prerequisites.isNotEmpty()) {
+                        InfoBody("Needs ${skill.prerequisites.joinToString(" and ")} first", IronvellumColors.InkMuted)
                     }
                 }
                 if (boards.isNotEmpty()) {
@@ -144,8 +153,21 @@ internal fun ExerciseFacts(name: String, modifiers: String = "", showMissingMusc
     }
     if (guide != null) {
         InfoHeading("HOW TO")
-        InfoBody(guide.setup, IronvellumColors.InkMuted)
-        guide.steps.forEachIndexed { i, step -> InfoBody("${i + 1}. $step") }
+        // One level for the whole procedure: the setup and the steps read in
+        // Ink, and only the numerals step back.
+        InfoBody(guide.setup)
+        Spacer(Modifier.height(4.dp))
+        guide.steps.forEachIndexed { i, step ->
+            Row(Modifier.padding(bottom = 2.dp)) {
+                Text(
+                    "${i + 1}.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.width(22.dp),
+                )
+                Text(step, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.Ink, modifier = Modifier.weight(1f))
+            }
+        }
         if (guide.cues.isNotEmpty()) {
             InfoHeading("CUES")
             guide.cues.forEach { InfoBody("• $it") }
@@ -160,6 +182,23 @@ internal fun ExerciseFacts(name: String, modifiers: String = "", showMissingMusc
         InfoBody(gear.replaceFirstChar { it.uppercase() })
     }
 }
+
+/**
+ * Fades the top [height] of a scrolling area to transparent, so content that
+ * scrolls under the dialog's header dissolves instead of being cut hard. The
+ * first child should start with at least that much space, or it rests faded.
+ */
+internal fun Modifier.topFade(height: Dp = 14.dp): Modifier = this
+    .graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val h = height.toPx()
+        drawRect(
+            Brush.verticalGradient(listOf(Color.Transparent, Color.Black), startY = 0f, endY = h),
+            size = Size(size.width, h),
+            blendMode = BlendMode.DstIn,
+        )
+    }
 
 @Composable
 private fun InfoHeading(text: String) {
