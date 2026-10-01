@@ -72,12 +72,15 @@ object Skills {
 
         /**
          * Figures that state a LOAD or an angle, not a rep count. "5 reps
-         * with +25 kg" must chase 5, and "1 rep from a 90-Degree hold" must
-         * chase 1 - taking the max digit run read the plate's number or the
-         * angle as the target and asked for twenty-five reps.
+         * with +25 kg" must chase 5, "1 rep from a 90-Degree hold" must
+         * chase 1, and "5 reps at 65 percent of your bodyweight" must chase
+         * 5 - taking the max digit run read the plate's number, the angle or
+         * the share as the target and asked for twenty-five reps.
          */
-        private val nonRepFigures =
-            Regex("\\d+[-\\s]*(?:kgs?|kilos?)(?![a-z])|\\d+[-\\s]*(?:°|degrees?)", RegexOption.IGNORE_CASE)
+        private val nonRepFigures = Regex(
+            "\\d+[-\\s]*(?:kgs?|kilos?)(?![a-z])|\\d+[-\\s]*(?:°|degrees?)|\\d+\\s*(?:%|percent)",
+            RegexOption.IGNORE_CASE,
+        )
 
         /** The number in the standard: the value a practice attempt chases. */
         val target: Int
@@ -512,7 +515,7 @@ object Skills {
             standard = "3 reps lowering and pulling back up under control, no hands",
             why = "Eccentric hamstring strength; serious injury insurance.",
         ),
-        // SQUAT line — the loaded barbell benchmark (ExRx strength standards)
+        // SQUAT line — the loaded barbell benchmark (Strength Level standards)
         SkillDef(
             "Back Squat", 1, "Squat",
             standard = "5 reps at your bodyweight, hips below knees every rep",
@@ -530,15 +533,15 @@ object Skills {
         ),
         SkillDef(
             "Double-Bodyweight Squat", 4, "Squat", prerequisites = listOf("Heavy Squat"),
-            standard = "1 rep at double bodyweight, full depth, no wraps",
-            why = "Twice your bodyweight below parallel is the classical mark of a strong Ironbound.",
+            standard = "1 rep at two and a quarter times bodyweight, full depth, no wraps",
+            why = "Two and a quarter times bodyweight is the advanced squat - a step past the double the name remembers.",
         ),
         SkillDef(
             "Triple-Bodyweight Squat", 5, "Squat", prerequisites = listOf("Double-Bodyweight Squat"),
-            standard = "1 rep at triple bodyweight, full depth, competition-legal",
-            why = "Triple-bodyweight squatting is strength-sport territory few recreational Ironbound ever reach.",
+            standard = "1 rep at two and three-quarter times bodyweight, full depth, competition-legal",
+            why = "Two and three-quarter times bodyweight is elite squatting; the name keeps the triple few Ironbound ever reach.",
         ),
-        // BENCH line — the upper-body barbell benchmark (ExRx strength standards)
+        // BENCH line — the upper-body barbell benchmark (Strength Level standards)
         SkillDef(
             "Bench Press", 1, "Bench",
             standard = "5 reps at three quarters of your bodyweight, bar touches the chest",
@@ -546,8 +549,8 @@ object Skills {
         ),
         SkillDef(
             "Volume Bench Press", 2, "Bench", prerequisites = listOf("Bench Press"),
-            standard = "5 sets of 5 reps at bodyweight, touch and go",
-            why = "Sustained volume at full bodyweight builds the pressing base heavy singles stand on.",
+            standard = "5 reps at your bodyweight, touch and go",
+            why = "Five reps at full bodyweight in one set is the pressing base the paused triples and heavy singles stand on.",
         ),
         SkillDef(
             "Paused Bench Press", 3, "Bench", prerequisites = listOf("Volume Bench Press"),
@@ -564,7 +567,7 @@ object Skills {
             standard = "1 rep at double bodyweight, paused, no bounce",
             why = "Benching your bodyweight twice is the classic elite upper-body proof.",
         ),
-        // PRESS line — strict overhead strength (ExRx strength standards)
+        // PRESS line — strict overhead strength (Strength Level standards)
         SkillDef(
             "Overhead Press", 1, "Press",
             standard = "5 reps at half your bodyweight, strict, no leg drive",
@@ -572,25 +575,25 @@ object Skills {
         ),
         SkillDef(
             "Volume Overhead Press", 2, "Press", prerequisites = listOf("Overhead Press"),
-            standard = "5 sets of 5 reps at three quarters of your bodyweight, strict",
-            why = "Volume under the strict bar turns a press you can do into a press you own.",
+            standard = "5 reps at 65 percent of your bodyweight, strict",
+            why = "Five strict reps past the novice bar turn a press you can do into a press you own.",
         ),
         SkillDef(
             "Bodyweight Overhead Press", 3, "Press", prerequisites = listOf("Volume Overhead Press"),
-            standard = "3 reps at full bodyweight, strict, no leg drive",
-            why = "Pressing your own bodyweight overhead is the old-school strongman dividing line.",
+            standard = "3 reps at four fifths of your bodyweight, strict, no leg drive",
+            why = "A strict triple at four fifths of bodyweight is intermediate pressing - the full bodyweight the name promises is the next rung.",
         ),
         SkillDef(
             "Heavy Overhead Press", 4, "Press", prerequisites = listOf("Bodyweight Overhead Press"),
-            standard = "1 rep at one and a quarter times bodyweight, strict",
-            why = "A quarter past bodyweight, strict, is pressing strength almost nobody keeps idle.",
+            standard = "1 rep at your bodyweight, strict",
+            why = "Pressing your own bodyweight overhead, strict, is the old-school strongman dividing line.",
         ),
         SkillDef(
             "Half-Again Overhead Press", 5, "Press", prerequisites = listOf("Heavy Overhead Press"),
-            standard = "1 rep at one and a half times bodyweight, strict, no leg drive",
-            why = "Bodyweight-and-a-half strict is elite overhead strength, full stop.",
+            standard = "1 rep at one and a quarter times bodyweight, strict, no leg drive",
+            why = "A quarter past bodyweight, strict, is elite overhead strength; half again, as the name says, is past even that.",
         ),
-        // DEADLIFT line — the hinge benchmark (ExRx strength standards)
+        // DEADLIFT line — the hinge benchmark (Strength Level standards)
         SkillDef(
             "Deadlift", 1, "Deadlift",
             standard = "5 reps at your bodyweight, flat back, no straps",
@@ -795,40 +798,43 @@ object Skills {
      * published elite sits below those bars - so the detail view renders this
      * bar for a FEMALE profile instead.
      *
-     * Source: ExRx strength standards, ages 18-39
-     * (https://exrx.net/Testing/WeightLifting/StrengthStandards and the per-lift
-     * tables), read through the StrengthMath bodyweight-multiple restatement
-     * (female squat 0.6/0.85/1.25/1.6/2.0, female deadlift 0.7/1.0/1.4/1.85/2.25)
-     * and the ExRx female bench and press cells. Entries whose male bar sits
-     * between named ExRx cells (tier I squat and deadlift, both volume tiers,
-     * bench tiers II and IV) and the whole press line are ExRx-aligned
-     * approximations from traincalc's figures, not verified to a single cell.
+     * Source: Strength Level's bodyweight-multiple standards
+     * (https://strengthlevel.com/strength-standards/<lift>/kg, read
+     * 2026-10-01), beginner/novice/intermediate/advanced/elite 1RM:
+     * - squat: male 0.75/1.25/1.75/2.25/2.75, female 0.5/0.75/1.25/1.75/2.25
+     * - bench: male 0.5/1.0/1.25/1.5/2.0, female 0.3/0.5/0.75/1.1/1.45
+     * - press: male 0.35/0.55/0.8/1.05/1.35, female 0.2/0.35/0.5/0.7/0.95
+     * - deadlift: male 1.0/1.5/2.0/2.5/3.25, female 0.75/1.0/1.5/2.0/2.5
+     * Each female bar is the female figure at the level the male bar sits
+     * at; a male bar between two levels (tier I squat and bench, the press
+     * line, tier V deadlift) is interpolated between the same two female
+     * levels and rounded to 0.05.
      */
     private val femaleBars: Map<String, String> = mapOf(
         // Squat line
-        "Back Squat" to "0.75x bodyweight",
-        "Pause Squat" to "0.85x bodyweight",
+        "Back Squat" to "0.65x bodyweight",
+        "Pause Squat" to "0.75x bodyweight",
         "Heavy Squat" to "1.25x bodyweight",
-        "Double-Bodyweight Squat" to "1.6x bodyweight",
-        "Triple-Bodyweight Squat" to "2x bodyweight",
+        "Double-Bodyweight Squat" to "1.75x bodyweight",
+        "Triple-Bodyweight Squat" to "2.25x bodyweight",
         // Bench line
-        "Bench Press" to "0.5x bodyweight",
-        "Volume Bench Press" to "0.65x bodyweight",
+        "Bench Press" to "0.4x bodyweight",
+        "Volume Bench Press" to "0.5x bodyweight",
         "Paused Bench Press" to "0.75x bodyweight",
         "Heavy Bench Press" to "1.1x bodyweight",
-        "Double-Bodyweight Bench Press" to "1.4x bodyweight",
+        "Double-Bodyweight Bench Press" to "1.45x bodyweight",
         // Press line
-        "Overhead Press" to "0.35x bodyweight",
-        "Volume Overhead Press" to "0.45x bodyweight",
+        "Overhead Press" to "0.3x bodyweight",
+        "Volume Overhead Press" to "0.4x bodyweight",
         "Bodyweight Overhead Press" to "0.5x bodyweight",
-        "Heavy Overhead Press" to "0.8x bodyweight",
-        "Half-Again Overhead Press" to "1.05x bodyweight",
+        "Heavy Overhead Press" to "0.65x bodyweight",
+        "Half-Again Overhead Press" to "0.85x bodyweight",
         // Deadlift line
-        "Deadlift" to "0.85x bodyweight",
+        "Deadlift" to "0.75x bodyweight",
         "Volume Deadlift" to "1x bodyweight",
-        "Double-Bodyweight Deadlift" to "1.4x bodyweight",
-        "Heavy Deadlift" to "1.85x bodyweight",
-        "Triple-Bodyweight Deadlift" to "2.25x bodyweight",
+        "Double-Bodyweight Deadlift" to "1.5x bodyweight",
+        "Heavy Deadlift" to "2x bodyweight",
+        "Triple-Bodyweight Deadlift" to "2.35x bodyweight",
     )
 
     /**

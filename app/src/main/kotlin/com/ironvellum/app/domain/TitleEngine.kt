@@ -469,8 +469,9 @@ object Titles {
         // ---- Strength milestones ----
         // Load thresholds are estimated-1RM multiples of bodyweight, read per
         // sex (male / female). Female cells come from the ExRx-derived
-        // restatement Skills.femaleBars already ships (squat 0.6/1.25,
-        // bench 0.5, press 0.35, deadlift 1.4/2.25); the weighted pull-up has
+        // restatement Skills.femaleBars shipped before it moved to Strength
+        // Level (squat 0.6/1.25, bench 0.5, press 0.35, deadlift 1.4/2.25),
+        // and stay so an earned deed keeps its bar; the weighted pull-up has
         // no published ExRx cell, so it scales by the app's own upper-body
         // factor StrengthIndex.UPPER_BODY_FEMALE (Bishop 1983): 0.5 / 1.54
         // rounds down to 0.3. Any set estimates the 1RM (Epley, rep term
