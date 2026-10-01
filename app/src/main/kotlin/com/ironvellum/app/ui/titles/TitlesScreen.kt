@@ -369,8 +369,8 @@ fun TitlesScreen(
             letterSpacing = 6.sp,
         )
         Text(
-            "${ui.unlocked.size} ${if (ui.unlocked.size == 1) "deed" else "deeds"} earned · " +
-                "${mastered.size} ${if (mastered.size == 1) "technique" else "techniques"} mastered",
+            // The deed count lives on the Deeds board now, beside its overall bar.
+            "${mastered.size} ${if (mastered.size == 1) "technique" else "techniques"} mastered",
             style = MaterialTheme.typography.bodyMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,

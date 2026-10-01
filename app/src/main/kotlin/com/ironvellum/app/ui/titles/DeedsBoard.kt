@@ -1,12 +1,15 @@
 package com.ironvellum.app.ui.titles
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -14,17 +17,16 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.PaddingValues
-
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -32,102 +34,50 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.role
-import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.DeedLadder
+import com.ironvellum.app.domain.DeedLadders
+import com.ironvellum.app.domain.RungState
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
-import com.ironvellum.app.domain.TitleRarity
+import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.InkRail
+import com.ironvellum.app.ui.components.LedgerSpace
+import com.ironvellum.app.ui.components.RangeChips
+import com.ironvellum.app.ui.components.SettingsGroup
+import com.ironvellum.app.ui.components.StatSize
+import com.ironvellum.app.ui.components.StatValue
+import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.components.InkRail
-import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.ui.theme.InkCircleShape
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.ui.theme.inkBorder
+import kotlinx.coroutines.launch
 
 /**
- * The deeds half of the codex: what you wear, what you are closest to earning,
- * a showcase of what you hold, then the rest grouped by the kind of deed it
- * demands. The grouped half is filterable, collapsible and proximity-ordered
- * so it stays one screen tall instead of ninety near-identical panels.
+ * The deeds half of the codex. No filters: a header with the overall count,
+ * the title you wear, the few deeds closest to earned, eight categories to
+ * drill into, and a wall of what you hold. Inside a category the deeds are
+ * grouped as ladders, one row per series, so a long catalogue stays a short
+ * screen. Tapping any deed opens its detail sheet.
  */
-
-/** Status rail filters; counts are derived independently per chip. */
-private enum class DeedFilter(val label: String) {
-    IN_PROGRESS("IN PROGRESS"),
-    // "CLOSE" read as a dismiss button next to the search field; the chip
-    // means the deed is close enough to finish.
-    IN_REACH("IN REACH"),
-    CLAIMED("EARNED"),
-    LOCKED("LOCKED"),
-    ALL("ALL"),
-}
-
-private fun DeedFilter.matches(def: TitleDef, unlocked: Map<String, Long>, progress: Titles.Progress): Boolean {
-    val claimed = def.id in unlocked
-    return when (this) {
-        DeedFilter.IN_PROGRESS -> !claimed && progress.fraction < 0.5f
-        DeedFilter.IN_REACH -> !claimed && progress.fraction >= 0.5f
-        DeedFilter.CLAIMED -> claimed
-        DeedFilter.LOCKED -> !claimed
-        DeedFilter.ALL -> true
-    }
-}
-
-/** Rarity accent per tier — same tokens the crest will use, so board and avatar agree. */
-private fun rarityColor(rarity: TitleRarity): Color = when (rarity) {
-    TitleRarity.Common -> IronvellumColors.InkMuted
-    TitleRarity.Rare -> IronvellumColors.SystemGreen
-    TitleRarity.Epic -> IronvellumColors.Emerald
-    TitleRarity.Masterwork -> IronvellumColors.SovereignGold
-}
-
-@Composable
-private fun RarityChip(rarity: TitleRarity, modifier: Modifier = Modifier) {
-    val accent = rarityColor(rarity)
-    val shape = MaterialTheme.shapes.extraSmall
-    // The top rarity must be unmistakable at a glance: gold jewel fill plus a
-    // heavier border. Epic gets a green jewel fill; Rare and Common stay quiet.
-    val bg = when (rarity) {
-        TitleRarity.Masterwork -> Brush.verticalGradient(listOf(Color(0xFF5A3F0C), Color(0xFF1E1606)))
-        TitleRarity.Epic -> Brush.verticalGradient(listOf(Color(0xFF123526), Color(0xFF0C211A)))
-        else -> Brush.verticalGradient(listOf(Color(0xFF161C1A), Color(0xFF111614)))
-    }
-    Box(
-        modifier
-            .background(bg, shape)
-            .inkBorder(accent, shape, if (rarity == TitleRarity.Masterwork) 2.dp else 1.dp)
-            .padding(horizontal = 6.dp, vertical = 2.dp),
-    ) {
-        Text(
-            rarity.label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            fontSize = 9.sp,
-            fontFamily = ChakraPetch,
-            color = accent,
-            letterSpacing = 1.sp,
-            maxLines = 1,
-            softWrap = false,
-        )
-    }
-}
-
 @Composable
 fun DeedsBoard(
     unlocked: Map<String, Long>,
@@ -140,546 +90,719 @@ fun DeedsBoard(
     // so it must never be handed infinite height by a scrolling parent.
     modifier: Modifier = Modifier.fillMaxSize(),
 ) {
-    val earned = Titles.ALL.filter { it.id in unlocked }
-    val locked = Titles.ALL.filter { it.id !in unlocked }
-    val equipped = equippedId?.let { Titles.byId(it) }
-
-    // TextFieldValue is NOT Bundle-storable: a bare rememberSaveable threw the
-    // moment the board composed, taking every screen behind it with it.
-    var query by rememberSaveable(stateSaver = TextFieldValue.Saver) {
-        mutableStateOf(TextFieldValue(""))
-    }
-    var filter by remember { mutableStateOf(DeedFilter.IN_PROGRESS) }
-    // Rarity narrows independently of the status filter; null = every tier.
-    var rarityFilter by remember { mutableStateOf<TitleRarity?>(null) }
-    // Toggling reorders each section's rows by rarity instead of proximity.
-    var byRarity by remember { mutableStateOf(false) }
-    // Search, rarity and sort order were eleven chips and a field standing
-    // between the tabs and the first deed. They live behind one toggle now; a
-    // narrowed board must still say so, so an active refinement keeps it open.
-    var refineOpen by rememberSaveable { mutableStateOf(false) }
-    val searching = query.text.isNotBlank()
-    val showRefine = refineOpen || searching || rarityFilter != null || byRarity
-
-    // progress per deed computed once; every chip count, sort and row reuses it
+    val earnedIds = remember(unlocked) { unlocked.keys.toSet() }
     val progressOf = remember(ledger) {
         Titles.ALL.associate { it.id to Titles.progress(it.rule, ledger) }
     }
+    var openCategory by rememberSaveable { mutableStateOf<String?>(null) }
+    var sheetId by rememberSaveable { mutableStateOf<String?>(null) }
+    // Hoisted so drilling into a category and back lands on the same scroll.
+    val homeState = rememberLazyListState()
 
-    // Nearest deed's category is the one section that starts expanded, so the
-    // default screen answers "what next" without ninety panels of scroll.
-    val nearestCategory = locked
-        .maxByOrNull { progressOf[it.id]?.fraction ?: 0f }
-        ?.let { Titles.category(it.rule) }
-    val expandedCategories = remember {
-        mutableStateOf(setOfNotNull(nearestCategory))
+    // System back climbs one level: category to board, never straight out.
+    BackHandler(enabled = openCategory != null) { openCategory = null }
+
+    val category = openCategory
+    if (category == null) {
+        DeedsHome(
+            unlocked = unlocked,
+            earnedIds = earnedIds,
+            equippedId = equippedId,
+            progressOf = progressOf,
+            ledger = ledger,
+            sex = sex,
+            listState = homeState,
+            onOpenCategory = { openCategory = it },
+            onOpenDeed = { sheetId = it },
+            modifier = modifier,
+        )
+    } else {
+        CategoryScreen(
+            category = category,
+            unlocked = unlocked,
+            earnedIds = earnedIds,
+            progressOf = progressOf,
+            ledger = ledger,
+            sex = sex,
+            onBack = { openCategory = null },
+            onOpenDeed = { sheetId = it },
+            modifier = modifier,
+        )
     }
-    // Claimed showcase starts collapsed: on a phone the five sealed cards
-    // alone push the category sections off-screen. Wearing stays one tap away.
-    var claimedOpen by remember { mutableStateOf(false) }
 
-    // Closest unearned deed — the thing worth chasing today, shown inside the
-    // merged hero panel under every filter.
-    val next = locked
-        .filter { rarityFilter == null || it.rarity == rarityFilter }
-        .map { it to progressOf.getValue(it.id) }
-        .maxByOrNull { it.second.fraction }
+    sheetId?.let { id ->
+        val def = Titles.byId(id)
+        val progress = progressOf[id]
+        if (def != null && progress != null) {
+            DeedDetailSheet(
+                def = def,
+                progress = progress,
+                ledger = ledger,
+                sex = sex,
+                earnedAtMs = unlocked[id],
+                worn = id == equippedId,
+                onWear = {
+                    onEquip(id)
+                    sheetId = null
+                },
+                onDismiss = { sheetId = null },
+            )
+        }
+    }
+}
+
+// ---------------------------------------------------------------- home ----
+
+/** How many nearly-won deeds the shelf shows. */
+private const val SHELF_SIZE = 4
+
+@Composable
+private fun DeedsHome(
+    unlocked: Map<String, Long>,
+    earnedIds: Set<String>,
+    equippedId: String?,
+    progressOf: Map<String, Titles.Progress>,
+    ledger: Titles.Ledger,
+    sex: Sex,
+    listState: LazyListState,
+    onOpenCategory: (String) -> Unit,
+    onOpenDeed: (String) -> Unit,
+    modifier: Modifier,
+) {
+    val scope = rememberCoroutineScope()
+    val earned = Titles.ALL.filter { it.id in earnedIds }
+    val worn = equippedId?.let { Titles.byId(it) }
+
+    // The next rung of each unfinished ladder, nearest first. Ties go to the
+    // gentler deed, so a fresh account is pointed at easy wins.
+    val shelf = remember(earnedIds, progressOf) {
+        DeedLadders.ALL
+            .mapNotNull { it.next(earnedIds) }
+            .sortedWith(
+                compareByDescending<TitleDef> { progressOf.getValue(it.id).fraction }
+                    .thenBy { it.rarity.ordinal },
+            )
+            .take(SHELF_SIZE)
+    }
+    val wallIndex = 2 + (if (shelf.isNotEmpty()) 1 else 0) + 1
 
     LazyColumn(
         modifier,
-        // The chip rail used to sit flush against the tab row above it. Padding
-        // is a requirement here, not a nicety.
-        contentPadding = PaddingValues(top = 10.dp, bottom = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(top = 10.dp, bottom = 24.dp),
     ) {
-        // One short rail of status filters, then the board. Rarity, sort order
-        // and search are refinements: five more chips plus a text field ahead of
-        // the content was a screen of controls before a screen of deeds.
-        item(key = "rail") {
-            // A deliberate 3x2 grid: the five filters and the refine toggle share
-            // the row width equally, so nothing is orphaned at 360dp (a
-            // scrolling rail clipped "LOCKE", and a free wrap left two chips
-            // alone on row two with the toggle floating beside row one).
-            FlowRow(
-                Modifier.fillMaxWidth().padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                maxItemsInEachRow = 3,
-            ) {
-                DeedFilter.entries.forEach { f ->
-                    // No count in the label: every section header below
-                    // carries its own tally, and the counts made five chips
-                    // long enough to need scrolling to reach the last one.
-                    DeedFilterChip(
-                        label = f.label,
-                        selected = filter == f,
-                        onClick = { filter = f },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-                // The sixth cell, so the grid closes as a rectangle.
-                DeedFilterChip(
-                    label = if (showRefine) "Hide deed refinements" else "Refine deeds",
-                    selected = showRefine,
-                    onClick = { refineOpen = !refineOpen },
-                    modifier = Modifier.weight(1f),
-                    icon = Icons.Filled.Tune,
-                )
-            }
-        }
-        if (showRefine) {
-            item(key = "refine") {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    DeedSearchField(query, onQueryChange = { query = it })
-                    Row(
-                        Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    ) {
-                        // Rarity narrows independently of status; tapping the
-                        // selected tier again clears it.
-                        TitleRarity.entries.forEach { r ->
-                            DeedFilterChip(
-                                label = r.name.uppercase(),
-                                selected = rarityFilter == r,
-                                onClick = { rarityFilter = if (rarityFilter == r) null else r },
-                            )
-                        }
-                        DeedFilterChip(
-                            label = if (byRarity) "ORDER · RARITY" else "ORDER · PROXIMITY",
-                            selected = byRarity,
-                            onClick = { byRarity = !byRarity },
-                        )
-                    }
-                }
-            }
+        item(key = "header") {
+            DeedsHeader(earned = earned.size, total = Titles.ALL.size)
         }
 
-        // --- merged hero: what you wear + what to chase next, one panel -----
-        item(key = "hero") {
-            InkPanel(Modifier.fillMaxWidth()) {
-                Column(Modifier.fillMaxWidth()) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
+        item(key = "worn") {
+            SettingsGroup(label = null, topSpace = LedgerSpace.Panel) {
+                when {
+                    worn != null -> TapRow(
+                        onClickLabel = "Open ${worn.name}",
+                        onClick = { onOpenDeed(worn.id) },
                     ) {
                         Text(
-                            equipped?.name?.uppercase() ?: "NO TITLE WORN",
-                            style = MaterialTheme.typography.headlineSmall,
+                            "Wearing",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                        )
+                        Text(
+                            worn.name,
+                            style = MaterialTheme.typography.titleSmall,
                             fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = if (equipped != null) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                            color = IronvellumColors.SovereignGold,
                             maxLines = 1,
-                            softWrap = false,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
                         )
-                        // The worn title's tier — the same chip every deed row shows.
-                        if (equipped != null) {
-                            Spacer(Modifier.width(8.dp))
-                            RarityChip(equipped.rarity)
-                        }
+                        Chevron()
                     }
-                    Text(
-                        equipped?.describeFor(sex) ?: "Earn a deed below, then wear its title.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.InkMuted,
-                    )
-                    // No HELD/CAMPAIGNS/SETS/REPS row here: HELD repeated the
-                    // "0 deeds" count in the Codex header two lines above, and
-                    // the other three are lifetime ledger totals that belong on
-                    // Stats, not in front of the deed you are chasing.
-                    if (next != null) {
-                        Spacer(Modifier.height(10.dp))
-                        ClosestDeedCard(next.first, next.second)
+                    earned.isNotEmpty() -> TapRow(
+                        onClickLabel = "Show the deeds you have earned",
+                        onClick = { scope.launch { listState.animateScrollToItem(wallIndex) } },
+                    ) {
+                        Text(
+                            "Wear a title you've earned",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontFamily = ChakraPetch,
+                            color = IronvellumColors.Ink,
+                            modifier = Modifier.weight(1f),
+                        )
+                        Chevron()
+                    }
+                    else -> Row(Modifier.heightIn(min = LedgerSpace.Target), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "No title worn yet. Earn a deed and its title is yours to wear.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                        )
                     }
                 }
             }
         }
 
-        // No "UNCLAIMED HIGH SEATS" panel: it was a second listing of three
-        // deeds that are in the list below, so the rarest ones appeared twice
-        // and pushed the list itself off the screen. The rarity filter on the
-        // rail finds them.
-
-        // --- claimed showcase, collapsed by default --------------------------
-        if (earned.isNotEmpty()) {
-            item(key = "claimed-head") {
-                CategoryHeader(
-                    category = "EARNED ${earned.size}",
-                    claimed = earned.size,
-                    total = earned.size,
-                    open = claimedOpen,
-                    onClick = { claimedOpen = !claimedOpen },
-                )
-            }
-            if (claimedOpen) {
-                item(key = "claimed-grid") {
-                    Column {
-                        earned.chunked(2).forEach { pair ->
-                            Row(
-                                Modifier.fillMaxWidth().padding(bottom = 8.dp),
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            ) {
-                                pair.forEach { def ->
-                                    Box(Modifier.weight(1f)) {
-                                        SealCard(
-                                            def = def,
-                                            unlockedAtMs = unlocked[def.id],
-                                            worn = def.id == equippedId,
-                                            onClick = { onEquip(def.id) },
-                                        )
-                                    }
-                                }
-                                if (pair.size == 1) Spacer(Modifier.weight(1f))
-                            }
+        if (shelf.isNotEmpty()) {
+            item(key = "close") {
+                Column {
+                    SectionLabel("CLOSE TO EARNING")
+                    SettingsGroup(label = null, topSpace = 0.dp) {
+                        shelf.forEachIndexed { i, def ->
+                            if (i > 0) InkDivider()
+                            NearRow(def, progressOf.getValue(def.id), ledger, sex) { onOpenDeed(def.id) }
                         }
                     }
                 }
             }
         }
 
-        // --- collapsible category sections ----------------------------------
-        val visibleSections = locked
-            .filter { filter.matches(it, unlocked, progressOf.getValue(it.id)) }
-            .filter { rarityFilter == null || it.rarity == rarityFilter }
-            .filter {
-                !searching ||
-                    it.name.contains(query.text.trim(), ignoreCase = true) ||
-                    it.describeFor(sex).contains(query.text.trim(), ignoreCase = true)
-            }
-            .groupBy { Titles.category(it.rule) }
-            .mapValues { (_, defs) ->
-                if (byRarity) {
-                    // Rarity order: prized deeds first, then the nearest ones.
-                    defs.sortedWith(
-                        compareBy<TitleDef> { it.id in unlocked }
-                            .thenByDescending { it.rarity.ordinal }
-                            .thenByDescending { progressOf.getValue(it.id).fraction },
-                    )
-                } else {
-                    // proximity order: closest first, then small honest targets;
-                    // claimed sink to the bottom of their section
-                    defs.sortedWith(
-                        compareBy<TitleDef> { it.id in unlocked }
-                            .thenByDescending { progressOf.getValue(it.id).fraction }
-                            .thenBy { progressOf.getValue(it.id).target },
-                    )
+        item(key = "categories") {
+            Column {
+            SectionLabel("CATEGORIES")
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                DeedLadders.CATEGORIES.chunked(2).forEach { pair ->
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        pair.forEach { c ->
+                            val defs = DeedLadders.ALL.filter { it.category == c.name }.flatMap { it.rungs }
+                            CategoryTile(
+                                name = c.name,
+                                blurb = c.blurb,
+                                earned = defs.count { it.id in earnedIds },
+                                total = defs.size,
+                                onClick = { onOpenCategory(c.name) },
+                                modifier = Modifier.weight(1f),
+                            )
+                        }
+                    }
                 }
             }
+            }
+        }
 
-        // A search term filters every section, so only matching ones appear —
-        // and while searching every surviving section is force-expanded.
-        val sections = visibleSections.entries.sortedBy { it.key }
-        sections.forEach { (category, defs) ->
-            // A search term force-expands every surviving section; otherwise
-            // only categories the user (or the nearest deed) opened show rows.
-            val open = searching || category in expandedCategories.value
-            item(key = "cat:$category") {
-                CategoryHeader(
-                    category = category,
-                    claimed = defs.count { it.id in unlocked },
-                    total = defs.size,
-                    open = open,
-                    onClick = {
-                        expandedCategories.value =
-                            if (category in expandedCategories.value) {
-                                expandedCategories.value - category
-                            } else {
-                                expandedCategories.value + category
-                            }
-                    },
+        item(key = "wall") {
+            Column {
+                SectionLabel("EARNED  ${earned.size}")
+                EarnedWall(
+                    earned = earned.sortedWith(
+                        compareByDescending<TitleDef> { it.rarity.ordinal }
+                            .thenByDescending { unlocked[it.id] ?: 0L },
+                    ),
+                    equippedId = equippedId,
+                    onOpenDeed = onOpenDeed,
                 )
-            }
-            if (open) {
-                items(defs, key = { it.id }) { def ->
-                    DeedRow(def, progressOf.getValue(def.id), unlocked[def.id], sex)
-                }
             }
         }
     }
 }
 
 @Composable
-private fun ClosestDeedCard(def: TitleDef, progress: Titles.Progress) {
-    // Compact by design: this now lives INSIDE the merged hero panel, not in
-    // its own section, so it must stay a few lines tall.
-    Column(Modifier.fillMaxWidth()) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
+private fun DeedsHeader(earned: Int, total: Int) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {
+                contentDescription = "Deeds: $earned of $total earned"
+            },
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
             Text(
-                def.name.uppercase(),
+                "DEEDS",
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                letterSpacing = IronvellumTracking.InlineLabel,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            StatValue("$earned / $total", size = StatSize.Inline)
+        }
+        Spacer(Modifier.height(8.dp))
+        InkRail(
+            fraction = if (total == 0) 0f else earned.toFloat() / total,
+            height = 4.dp,
+            fill = railFill(earned = earned == total),
+            seed = 3,
+        )
+    }
+}
+
+@Composable
+private fun SectionLabel(text: String) {
+    Spacer(Modifier.height(LedgerSpace.Section))
+    Text(
+        text,
+        style = MaterialTheme.typography.labelMedium,
+        fontFamily = ChakraPetch,
+        color = IronvellumColors.SystemGreen,
+        letterSpacing = IronvellumTracking.InlineLabel,
+        modifier = Modifier.semantics { heading() },
+    )
+    Spacer(Modifier.height(8.dp))
+}
+
+@Composable
+private fun Chevron() {
+    Icon(
+        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+        contentDescription = null,
+        tint = IronvellumColors.InkMuted,
+    )
+}
+
+/** One of the few unearned deeds nearest to done: name, bar, how far to go. */
+@Composable
+private fun NearRow(def: TitleDef, progress: Titles.Progress, ledger: Titles.Ledger, sex: Sex, onClick: () -> Unit) {
+    val toGo = deedProgressText(def, progress, ledger, earned = false).toGo
+    val requirement = def.describeFor(sex)
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = LedgerSpace.Target)
+            .clip(MaterialTheme.shapes.extraSmall)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "${def.name}, ${def.rarity.label}. $requirement $toGo."
+            }
+            .clickable(onClickLabel = "Open ${def.name}", role = Role.Button, onClick = onClick)
+            .padding(vertical = 10.dp),
+    ) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                def.name,
                 style = MaterialTheme.typography.titleSmall,
                 fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
                 color = IronvellumColors.Ink,
                 maxLines = 1,
-                softWrap = false,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f, fill = false),
             )
-            RarityChip(def.rarity)
+            Spacer(Modifier.width(8.dp))
+            RarityMark(def.rarity)
         }
-        Spacer(Modifier.height(6.dp))
-        ProgressTrack(progress.fraction, tall = false)
-        Spacer(Modifier.height(4.dp))
         Text(
-            "${progress.current} / ${progress.target} · ${progress.remaining} " +
-                "${if (progress.unit == "level" && progress.remaining != 1L) "levels" else progress.unit} to go",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SovereignGold,
+            requirement,
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.height(6.dp))
+        BarWithToGo(progress.fraction, toGo)
+    }
+}
+
+@Composable
+private fun BarWithToGo(fraction: Float, toGo: String) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Box(Modifier.weight(1f)) {
+            InkRail(fraction = fraction, height = 4.dp, fill = railFill(earned = false), seed = 9)
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            toGo,
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.Ink,
+            maxLines = 1,
         )
     }
 }
 
 @Composable
-private fun DeedSearchField(query: TextFieldValue, onQueryChange: (TextFieldValue) -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF141A18), MaterialTheme.shapes.extraSmall)
-            .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
+private fun CategoryTile(
+    name: String,
+    blurb: String,
+    earned: Int,
+    total: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    InkPanel(
+        modifier
+            .heightIn(min = LedgerSpace.Target)
+            .semantics(mergeDescendants = true) {
+                contentDescription = "$name. $blurb. $earned of $total deeds earned."
+            },
+        onClick = onClick,
     ) {
-        Icon(Icons.Filled.Search, contentDescription = null, tint = IronvellumColors.InkMuted)
-        Box(Modifier.padding(start = 8.dp).fillMaxWidth()) {
-            BasicTextField(
-                value = query,
-                onValueChange = onQueryChange,
-                singleLine = true,
-                textStyle = MaterialTheme.typography.bodyMedium.copy(color = IronvellumColors.Ink),
-                cursorBrush = Brush.horizontalGradient(listOf(IronvellumColors.SystemGreen, IronvellumColors.SystemGreen)),
-                // The placeholder is a sibling Text, so the field itself
-                // announced nothing: a screen reader landed on an unlabelled
-                modifier = Modifier
-                    .fillMaxWidth()
-                    // A single line of text measured 20dp, under the WCAG AA
-                    // floor; the row's own padding supplies the visual height.
-                    .heightIn(min = 24.dp)
-                    .semantics { contentDescription = "Search deeds" },
+        Text(
+            name,
+            style = MaterialTheme.typography.titleSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.Ink,
+            maxLines = 1,
+        )
+        // Two lines reserved so a row of tiles stays level whatever the blurb length.
+        Text(
+            blurb,
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            minLines = 2,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "$earned / $total",
+                style = MaterialTheme.typography.titleSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.Ink,
+                modifier = Modifier.weight(1f),
             )
-            if (query.text.isEmpty()) {
-                Text(
-                    "search deeds",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = IronvellumColors.InkMuted,
+            if (total > 0 && earned == total) GoldCheck()
+        }
+        Spacer(Modifier.height(6.dp))
+        InkRail(
+            fraction = if (total == 0) 0f else earned.toFloat() / total,
+            height = 4.dp,
+            fill = railFill(earned = total > 0 && earned == total),
+            seed = 7,
+        )
+    }
+}
+
+@Composable
+private fun GoldCheck() {
+    Icon(
+        Icons.Filled.Check,
+        contentDescription = "Complete",
+        tint = IronvellumColors.SovereignGold,
+        modifier = Modifier.size(18.dp),
+    )
+}
+
+/** Compact badges of every deed held; each opens its detail sheet. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun EarnedWall(earned: List<TitleDef>, equippedId: String?, onOpenDeed: (String) -> Unit) {
+    if (earned.isEmpty()) {
+        Text(
+            "Nothing is written here yet. Seal a trial to earn the first deed.",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
+        return
+    }
+    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        earned.forEach { def ->
+            val worn = def.id == equippedId
+            val shape = MaterialTheme.shapes.extraSmall
+            // The 48dp target is the outer box; the badge drawn inside is smaller.
+            Box(
+                Modifier
+                    .heightIn(min = LedgerSpace.Target)
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = "${def.name}, ${def.rarity.label}, earned" +
+                            if (worn) ", worn" else ""
+                    }
+                    .clickable(onClickLabel = "Open ${def.name}", role = Role.Button) { onOpenDeed(def.id) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Row(
+                    Modifier
+                        .background(Color(0xFF141A18), shape)
+                        .inkBorder(
+                            if (worn) IronvellumColors.SovereignGold else rarityColor(def.rarity),
+                            shape,
+                            if (worn) 2.dp else 1.dp,
+                        )
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = IronvellumColors.SovereignGold,
+                        modifier = Modifier.size(14.dp),
+                    )
+                    Text(
+                        def.name,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.Ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ------------------------------------------------------------ category ----
+
+private enum class DeedRange(val label: String) { ToDo("To do"), Earned("Earned"), All("All") }
+
+@Composable
+private fun CategoryScreen(
+    category: String,
+    unlocked: Map<String, Long>,
+    earnedIds: Set<String>,
+    progressOf: Map<String, Titles.Progress>,
+    ledger: Titles.Ledger,
+    sex: Sex,
+    onBack: () -> Unit,
+    onOpenDeed: (String) -> Unit,
+    modifier: Modifier,
+) {
+    var range by rememberSaveable(category) { mutableStateOf(DeedRange.ToDo) }
+    val blurb = DeedLadders.CATEGORIES.firstOrNull { it.name == category }?.blurb.orEmpty()
+    val ladders = remember(category) { DeedLadders.ALL.filter { it.category == category } }
+    val total = ladders.sumOf { it.rungs.size }
+    val earned = ladders.sumOf { l -> l.rungs.count { it.id in earnedIds } }
+
+    val shown = remember(ladders, earnedIds, progressOf, range) {
+        ladders
+            .filter { l ->
+                when (range) {
+                    DeedRange.ToDo -> l.next(earnedIds) != null
+                    DeedRange.Earned -> l.rungs.any { it.id in earnedIds }
+                    DeedRange.All -> true
+                }
+            }
+            // Unfinished ladders first, nearest to the next rung first.
+            .sortedWith(
+                compareBy<DeedLadder> { it.next(earnedIds) == null }
+                    .thenByDescending { l -> l.next(earnedIds)?.let { progressOf.getValue(it.id).fraction } ?: 0f },
+            )
+    }
+
+    LazyColumn(modifier, contentPadding = PaddingValues(top = 4.dp, bottom = 24.dp)) {
+        item(key = "head") {
+            Column(
+                Modifier.fillMaxWidth(),
+            ) {
+                Row(
+                    Modifier
+                        .heightIn(min = LedgerSpace.Target)
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .semantics(mergeDescendants = true) { contentDescription = "Back to all deeds" }
+                        .clickable(role = Role.Button, onClick = onBack)
+                        .padding(end = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = IronvellumColors.SystemGreen)
+                    Text(
+                        "BACK",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.SystemGreen,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                    )
+                }
+                Column(
+                    Modifier.semantics(mergeDescendants = true) {
+                        contentDescription = "$category deeds: $earned of $total earned. $blurb."
+                    },
+                ) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            category,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontFamily = ChakraPetch,
+                            color = IronvellumColors.Ink,
+                            modifier = Modifier.weight(1f).semantics { heading() },
+                        )
+                        StatValue("$earned / $total", size = StatSize.Inline)
+                    }
+                    Text(blurb, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                    Spacer(Modifier.height(8.dp))
+                    InkRail(
+                        fraction = if (total == 0) 0f else earned.toFloat() / total,
+                        height = 4.dp,
+                        fill = railFill(earned = total > 0 && earned == total),
+                        seed = 3,
+                    )
+                }
+                Spacer(Modifier.height(8.dp))
+                RangeChips(
+                    options = DeedRange.entries.map { it to it.label },
+                    selected = range,
+                    onPick = { range = it },
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun DeedFilterChip(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-    /** Draws this icon instead of the label text; the label then names it for semantics. */
-    icon: ImageVector? = null,
-) {
-    Box(
-        modifier
-            .background(
-                if (selected) {
-                    Brush.verticalGradient(listOf(Color(0xFF2C7A5A), Color(0xFF1B4D3A)))
-                } else {
-                    Brush.verticalGradient(listOf(Color(0xFF161C1A), Color(0xFF111614)))
-                },
-                MaterialTheme.shapes.extraSmall,
-            )
-            .inkBorder(if (selected) IronvellumColors.SystemGreen else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-            .clickable { onClick() }
-            // A filter chip narrows a list rather than navigating, so it reads
-            // as a checkbox rather than a tab — but either way the fill that
-            // marks it active has to reach semantics.
-            .semantics {
-                role = Role.Checkbox
-                this.selected = selected
-                if (icon != null) contentDescription = label
+        if (shown.isEmpty()) {
+            item(key = "empty") {
+                Text(
+                    when (range) {
+                        DeedRange.ToDo -> "Every deed in $category is earned."
+                        DeedRange.Earned -> "Nothing is written here yet. Earned deeds appear on this page."
+                        DeedRange.All -> "No deeds here."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(top = LedgerSpace.Panel),
+                )
             }
-            // 32dp matched the Material chip but sat under the app-wide 44dp
-            // touch floor; the min height is the target, the padding only
-            // centres the label in it.
-            .heightIn(min = 44.dp)
-            // 7dp and 0.5sp keep all five filters on one line at 411dp; at
-            // 9dp and 1sp "ALL" wrapped onto a row of its own.
-            .padding(horizontal = 7.dp, vertical = 5.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        if (icon != null) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = if (selected) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
-            )
-            return@Box
         }
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
-            letterSpacing = 0.5.sp,
-            // A chip label must never wrap: "CLIMBING" broke into one letter
-            // per line when the row ran out of width.
-            maxLines = 1,
-            softWrap = false,
-        )
+        items(shown, key = { it.key }) { ladder ->
+            Spacer(Modifier.height(LedgerSpace.Panel))
+            LadderCard(
+                ladder = ladder,
+                earnedIds = earnedIds,
+                unlocked = unlocked,
+                progressOf = progressOf,
+                ledger = ledger,
+                sex = sex,
+                onOpenDeed = onOpenDeed,
+            )
+        }
     }
 }
 
 @Composable
-private fun CategoryHeader(
-    category: String,
-    claimed: Int,
-    total: Int,
-    open: Boolean,
-    onClick: () -> Unit,
+private fun LadderCard(
+    ladder: DeedLadder,
+    earnedIds: Set<String>,
+    unlocked: Map<String, Long>,
+    progressOf: Map<String, Titles.Progress>,
+    ledger: Titles.Ledger,
+    sex: Sex,
+    onOpenDeed: (String) -> Unit,
 ) {
-    // One line, no rail. Every deed inside already draws its own, and a rail on
-    // the header made a collapsed section look like a third card type between
-    // the hero and the rows.
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF141A18), MaterialTheme.shapes.extraSmall)
-            .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-            .clickable { onClick() }
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            if (open) "▾ $category" else "▸ $category",
-            style = MaterialTheme.typography.titleSmall,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
-            maxLines = 1,
-            softWrap = false,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-            "$claimed/$total",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-        )
-    }
-}
+    val next = ladder.next(earnedIds)
+    val held = ladder.rungs.count { it.id in earnedIds }
+    val series = ladder.rungs.size > 1
+    // A finished ladder opens its top rung; an open one opens the rung to win.
+    val target = next ?: ladder.rungs.last()
+    val progress = progressOf.getValue(target.id)
+    val text = deedProgressText(target, progress, ledger, earned = next == null)
 
-@Composable
-private fun DeedRow(def: TitleDef, progress: Titles.Progress, unlockedAtMs: Long?, sex: Sex) {
-    val claimed = unlockedAtMs != null
+    val sentence = buildString {
+        append(ladder.title).append(". ")
+        if (series) append("$held of ${ladder.rungs.size} rungs earned. ")
+        if (next != null) {
+            if (series) append("Next: ${next.name}, ${next.rarity.label}. ")
+            append(next.describeFor(sex)).append(' ')
+            append("${text.counts}, ${text.toGo}.")
+        } else {
+            append("Complete.")
+        }
+    }
+
     InkPanel(Modifier.fillMaxWidth()) {
         Column(
             Modifier
                 .fillMaxWidth()
-                // claimed deeds sink to the bottom of their section and dim
-                .alpha(if (claimed) 0.55f else 1f),
+                .heightIn(min = LedgerSpace.Target)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .semantics(mergeDescendants = true) { contentDescription = sentence }
+                .clickable(onClickLabel = "Open ${target.name}", role = Role.Button) { onOpenDeed(target.id) },
         ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Column(Modifier.width(0.dp).weight(1f)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    ladder.title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.Ink,
+                    modifier = Modifier.weight(1f),
+                )
+                if (next == null) {
+                    GoldCheck()
+                } else if (series) {
                     Text(
-                        def.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = IronvellumColors.Ink,
-                    )
-                    Text(
-                        if (claimed) "earned ${formatDate(unlockedAtMs, "d MMM yyyy")}" else def.describeFor(sex),
+                        "$held / ${ladder.rungs.size}",
                         style = MaterialTheme.typography.bodySmall,
-                        color = if (claimed) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                        // The bar is the deed: two lines so a strength standard
-                        // is read whole rather than cut at the bodyweight.
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
+                        color = IronvellumColors.InkMuted,
                     )
                 }
-                RarityChip(def.rarity)
-                Spacer(Modifier.width(8.dp))
+            }
+            if (next != null) {
+                if (series) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Next · ${next.name}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.Ink,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        RarityMark(next.rarity)
+                    }
+                } else {
+                    RarityMark(next.rarity)
+                }
                 Text(
-                    "${progress.current}/${progress.target}",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    color = if (progress.fraction > 0f) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                    next.describeFor(sex),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Spacer(Modifier.height(6.dp))
+                BarWithToGo(progress.fraction, "${text.counts} · ${text.toGo}")
+            } else {
+                val whenEarned = unlocked[target.id]?.let { formatDate(it, "d MMM yyyy") }
+                Text(
+                    if (series) "All ${ladder.rungs.size} rungs earned" else "Earned ${whenEarned.orEmpty()}".trim(),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.SovereignGold,
                 )
             }
-            Spacer(Modifier.height(6.dp))
-            ProgressTrack(progress.fraction, tall = false)
+        }
+        if (series) {
+            RungStrip(ladder, earnedIds, onOpenDeed)
+        }
+    }
+}
+
+/** One marker per rung: earned, the one to win next, or still locked. Each opens its deed. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun RungStrip(ladder: DeedLadder, earnedIds: Set<String>, onOpenDeed: (String) -> Unit) {
+    val states = ladder.states(earnedIds)
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        // Share the width evenly, but never squeeze a marker under the 48dp
+        // target: seven rungs on a 360dp phone wrap to a second row instead.
+        val slot = maxOf(LedgerSpace.Target, maxWidth / ladder.rungs.size)
+        FlowRow(Modifier.fillMaxWidth()) {
+        ladder.rungs.forEachIndexed { i, rung ->
+            val state = states[i]
+            val word = when (state) {
+                RungState.Earned -> "earned"
+                RungState.Next -> "next to earn"
+                RungState.Locked -> "locked"
+            }
+            Box(
+                Modifier
+                    .width(slot)
+                    .heightIn(min = LedgerSpace.Target)
+                    .semantics(mergeDescendants = true) {
+                        contentDescription = "Rung ${i + 1} of ${ladder.rungs.size}: ${rung.name}, ${rung.rarity.label}, $word"
+                    }
+                    .clickable(onClickLabel = "Open ${rung.name}", role = Role.Button) { onOpenDeed(rung.id) },
+                contentAlignment = Alignment.Center,
+            ) {
+                RungMarker(state)
+            }
+        }
         }
     }
 }
 
 @Composable
-private fun SealCard(def: TitleDef, unlockedAtMs: Long?, worn: Boolean, onClick: () -> Unit) {
-    val shape = MaterialTheme.shapes.small
-    // Seal border carries the rarity accent; worn keeps the gold treatment.
-    val rim = if (worn) IronvellumColors.SovereignGold else rarityColor(def.rarity)
-    val rimWidth = if (worn || def.rarity == TitleRarity.Masterwork) 2.dp else 1.dp
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(
-                Brush.verticalGradient(
-                    if (worn) listOf(Color(0xFF5A3F0C), Color(0xFF1E1606))
-                    else listOf(Color(0xFF1C2119), Color(0xFF10140F)),
-                ),
-                shape,
-            )
-            .inkBorder(rim, shape, rimWidth)
-            .clickable { onClick() }
-            .padding(10.dp),
-    ) {
-        Text(
-            def.name,
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
-            maxLines = 2,
-        )
-        unlockedAtMs?.let {
-            Text(
-                formatDate(it, "d MMM yyyy"),
-                style = MaterialTheme.typography.labelSmall,
-                fontSize = 9.sp,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+private fun RungMarker(state: RungState) {
+    when (state) {
+        RungState.Earned -> Box(
+            Modifier.size(22.dp).clip(InkCircleShape(7)).background(IronvellumColors.SovereignGold),
+            contentAlignment = Alignment.Center,
         ) {
-            Text(
-                if (worn) "WORN" else "TAP TO WEAR",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                fontSize = 9.sp,
-                color = if (worn) IronvellumColors.SovereignGold else IronvellumColors.SystemGreen,
-                letterSpacing = 1.sp,
+            Icon(
+                Icons.Filled.Check,
+                contentDescription = null,
+                tint = IronvellumColors.Abyss,
+                modifier = Modifier.size(14.dp),
             )
-            RarityChip(def.rarity)
         }
+        RungState.Next -> Box(
+            Modifier.size(22.dp).inkBorder(IronvellumColors.SystemGreen, InkCircleShape(7), 2.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Box(Modifier.size(8.dp).clip(InkCircleShape(7)).background(IronvellumColors.SystemGreen))
+        }
+        RungState.Locked -> Box(
+            Modifier.size(22.dp).inkBorder(IronvellumColors.Bracket, InkCircleShape(7), 1.5.dp),
+        )
     }
-}
-
-@Composable
-private fun ProgressTrack(fraction: Float, tall: Boolean) {
-    // Shared ink rail: this used to be its own track-plus-fill Box pair, one of
-    // four copies of the same widget across the app.
-    InkRail(
-        fraction = fraction,
-        height = if (tall) 10.dp else 6.dp,
-        seed = if (tall) 5 else 9,
-    )
 }
