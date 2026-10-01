@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import com.ironvellum.app.ui.theme.InkCircleShape
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
@@ -111,6 +113,10 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.LiftRecord
+import com.ironvellum.app.domain.LiftRecords
+import androidx.compose.foundation.layout.width
+import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.domain.Band
 import com.ironvellum.app.domain.BandTable
 import com.ironvellum.app.domain.BandTone
@@ -407,6 +413,87 @@ fun StatsScreen(
 }
 
 /**
+ * Each lift's best estimated one-rep max with its trend. The number is the
+ * Epley estimate of the marked load (a pull-up's ADDED kilos), so it is
+ * comparable with itself over time, not with a bodyweight-inclusive table.
+ * Gold appears only as the PR tag on a record set in the last fortnight.
+ */
+@Composable
+private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long) {
+    InkPanel(Modifier.fillMaxWidth()) {
+        PanelLabel("LIFT RECORDS")
+        Text(
+            "Best estimated 1RM of the marked load, in kg. Epley, up to 12 reps.",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
+        if (records.isEmpty()) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "Log weighted sets of 1 to 12 reps to build the board.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
+        }
+        records.forEachIndexed { i, record ->
+            if (i > 0) InkDivider()
+            LiftRecordRow(record, fresh = LiftRecords.isFresh(record, nowMs))
+        }
+    }
+}
+
+@Composable
+private fun LiftRecordRow(record: LiftRecord, fresh: Boolean) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = LedgerSpace.Target).padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                record.name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = IronvellumColors.InkMuted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    record.deltaKg?.let { "${Ledger.signed(it, "kg")} / 90d" } ?: "no 90d history yet",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                )
+                if (fresh) {
+                    Text(
+                        "PR",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.SovereignGold,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                    )
+                }
+            }
+        }
+        Box(Modifier.width(88.dp)) {
+            TrendChart(
+                record.series,
+                IronvellumColors.Emerald,
+                fromZero = false,
+                modifier = Modifier.fillMaxWidth().height(32.dp),
+                description = "${record.name} best estimated one-rep max by session, " +
+                    "${record.series.size} ${plural(record.series.size, "session", "sessions")}",
+                recordMarker = false,
+            )
+        }
+        StatValue(
+            "%.1f".format(Locale.US, record.bestE1rmKg),
+            size = StatSize.Inline,
+            unit = "kg",
+        )
+    }
+}
+
+/**
  * LIFTS: the calendar leads (the owner opens this tab to see whether he
  * trained), then the way to the full chronicle and the per-trial strength line.
  */
@@ -469,6 +556,14 @@ private fun LiftsTab(
         )
 
         Spacer(Modifier.height(LedgerSpace.Section))
+        val nowMs = remember(today) { System.currentTimeMillis() }
+        val records = remember(ui.sessions, ui.sessionSets, ui.exercises, today) {
+            LiftRecords.board(ui.sessions, ui.sessionSets, ui.exercises, nowMs)
+        }
+        if (ui.sessions.isNotEmpty()) {
+            LiftRecordsPanel(records, nowMs)
+            Spacer(Modifier.height(LedgerSpace.Section))
+        }
         InkPanel(Modifier.fillMaxWidth()) {
             PanelLabel("STRENGTH PER TRIAL")
             // 0 means "not scored" (no bodyweight existed yet), not a collapse
@@ -546,7 +641,13 @@ private fun StatDrillDialog(
                         color = IronvellumColors.SystemGreen,
                     )
                     Spacer(Modifier.height(10.dp))
-                    BandBar(value = current, bands = bands, scaleMax = table.scaleMax)
+                    BandBar(
+                        value = current,
+                        bands = bands,
+                        scaleMax = table.scaleMax,
+                        description = "$metric ${formatBodyValue(current)}, $category, on a scale of " +
+                            bands.indices.joinToString("; ") { "${bands[it].label} ${Bands.rangeText(table, it)}" },
+                    )
                     Spacer(Modifier.height(12.dp))
                     if (series.size >= 2) {
                         TrendChart(series, IronvellumColors.Emerald, fromZero = false, recordMarker = false)
@@ -582,8 +683,8 @@ private fun StatDrillDialog(
 }
 
 @Composable
-private fun BandBar(value: Double, bands: List<Band>, scaleMax: Double) {
-    Canvas(Modifier.fillMaxWidth().height(18.dp)) {
+private fun BandBar(value: Double, bands: List<Band>, scaleMax: Double, description: String) {
+    Canvas(Modifier.fillMaxWidth().height(18.dp).semantics { contentDescription = description }) {
         var low = 0.0
         bands.forEach { band ->
             val start = (low / scaleMax * size.width).toFloat()
@@ -605,30 +706,11 @@ private fun BandBar(value: Double, bands: List<Band>, scaleMax: Double) {
 }
 
 @Composable
-private fun MetricLabel(label: String) = PanelLabel(label)
-
-@Composable
-private fun MetricValue(value: String, hint: String) {
-    StatValue(value, size = StatSize.Tile)
-    Text(hint, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
-}
-
-/** A plain-words gloss under an abbreviated metric name. */
-@Composable
-private fun MetricCaption(text: String) {
-    Text(text, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
-}
-
-@Composable
-private fun MetricValueBig(value: String, unit: String) = StatValue(value, size = StatSize.Hero, unit = unit)
-
-@Composable
 private fun ChartCaption(text: String) {
     Spacer(Modifier.height(4.dp))
     Text(text, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
 }
 
-private val WEEKDAYS = listOf("M", "T", "W", "T", "F", "S", "S")
 
 /**
  * First date the calendar marks a scheduled weekday: the lifter's first
@@ -647,13 +729,19 @@ private fun CalendarGrid(
 ) {
     val scheduleStart = remember(completedDates, today) { calendarScheduleStart(completedDates, today) }
     val firstDay = month.atDay(1)
-    val leadingBlanks = firstDay.dayOfWeek.value - 1
+    // The week starts where the lifter's locale says it does.
+    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
+    val weekStart = java.time.temporal.WeekFields.of(locale).firstDayOfWeek
+    val weekdayLabels = remember(weekStart, locale) {
+        (0L..6L).map { weekStart.plus(it).getDisplayName(java.time.format.TextStyle.NARROW, locale) }
+    }
+    val leadingBlanks = (firstDay.dayOfWeek.value - weekStart.value + 7) % 7
     val cells: List<LocalDate?> = List(leadingBlanks) { null } +
         (1..month.lengthOfMonth()).map { month.atDay(it) }
 
     Column(Modifier.fillMaxWidth()) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            WEEKDAYS.forEach { label ->
+            weekdayLabels.forEach { label ->
                 Text(
                     label,
                     style = MaterialTheme.typography.labelSmall,
@@ -676,7 +764,16 @@ private fun CalendarGrid(
                             val completed = date in completedDates
                             val scheduled = date >= scheduleStart && date.dayOfWeek.value in scheduledDays
                             val isToday = date == today
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            val spoken = date.format(java.time.format.DateTimeFormatter.ofPattern("d MMMM", locale)) +
+                                when {
+                                    completed -> ", trial sealed"
+                                    scheduled -> ", scheduled"
+                                    else -> ""
+                                } + if (isToday) ", today" else ""
+                            Column(
+                                Modifier.semantics(mergeDescendants = true) { contentDescription = spoken },
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                            ) {
                                 Box(
                                     Modifier
                                         .size(32.dp)
@@ -739,6 +836,9 @@ private fun CalendarLegend(color: Color, label: String) {
     }
 }
 
+/** Keep digits and one separator; a comma is accepted and read as a point. */
+private fun decimalInput(raw: String): String = raw.filter { it.isDigit() || it == '.' || it == ',' }.take(6)
+
 @Composable
 private fun AddStatDialog(
     initialWeight: String,
@@ -753,10 +853,10 @@ private fun AddStatDialog(
     // prefills are initial values only — restored user input wins over them.
     val weight = rememberSaveable { mutableStateOf(initialWeight) }
     val bodyFat = rememberSaveable { mutableStateOf("") }
-    val bfValue = bodyFat.value.toDoubleOrNull()
+    val bfValue = Ledger.parseDecimal(bodyFat.value)
     // Bounded, not merely positive: a typo'd body fat of 500 used to reach
     // Katch-McArdle and show a negative resting burn as fact.
-    val validWeight = BodyLimits.validWeight(weight.value.toDoubleOrNull())
+    val validWeight = BodyLimits.validWeight(Ledger.parseDecimal(weight.value))
     val validBodyFat = bodyFat.value.isBlank() && bfValue == null || BodyLimits.validBodyFat(bfValue)
 
     // Estimator state: prefill the tapes from the lifter's latest measurements.
@@ -766,15 +866,17 @@ private fun AddStatDialog(
     val hips = rememberSaveable { mutableStateOf(measurements[MeasurementSite.HIPS]?.let { formatBodyValue(it) } ?: "") }
     val estimate = if (showEstimator) BodyStats.estimateBodyFatNavy(
         sex, heightCm ?: 0.0,
-        neck.value.toDoubleOrNull() ?: 0.0,
-        waist.value.toDoubleOrNull() ?: 0.0,
-        hips.value.toDoubleOrNull(),
+        Ledger.parseDecimal(neck.value) ?: 0.0,
+        Ledger.parseDecimal(waist.value) ?: 0.0,
+        Ledger.parseDecimal(hips.value),
     ) else null
 
     Dialog(onDismissRequest = onDismiss) {
         InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+            // Scrollable: with the estimator open and the keyboard up the
+            // buttons used to sit below the fold.
             Column(
-                Modifier.fillMaxWidth(),
+                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 Text(
@@ -791,9 +893,10 @@ private fun AddStatDialog(
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
                     value = weight.value,
-                    onValueChange = { weight.value = it },
+                    onValueChange = { weight.value = decimalInput(it) },
                     label = { Text("Weight (kg)") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                     isError = weight.value.isNotBlank() && !validWeight,
                     supportingText = if (weight.value.isNotBlank() && !validWeight) {
                         { Text("Enter a weight between ${BodyLimits.WEIGHT_KG.start.toInt()} and ${BodyLimits.WEIGHT_KG.endInclusive.toInt()} kg.") }
@@ -805,9 +908,14 @@ private fun AddStatDialog(
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
                     value = bodyFat.value,
-                    onValueChange = { bodyFat.value = it },
+                    onValueChange = { bodyFat.value = decimalInput(it) },
                     label = { Text("Body fat % — optional") },
                     singleLine = true,
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
+                    // The buttons can sit under the keyboard: its own Done key logs the reading.
+                    keyboardActions = KeyboardActions(
+                        onDone = { if (validWeight && validBodyFat) onConfirm(Ledger.parseDecimal(weight.value) ?: 0.0, bfValue) },
+                    ),
                     isError = bodyFat.value.isNotBlank() && !validBodyFat,
                     supportingText = if (bodyFat.value.isNotBlank() && !validBodyFat) {
                         { Text("Enter a body fat between ${BodyLimits.BODY_FAT_PCT.start.toInt()} and ${BodyLimits.BODY_FAT_PCT.endInclusive.toInt()}%, or leave it blank.") }
@@ -827,7 +935,7 @@ private fun AddStatDialog(
                         modifier = Modifier
                             .clip(MaterialTheme.shapes.extraSmall)
                             .clickable(onClick = onOpenSettings)
-                            .heightIn(min = 44.dp)
+                            .heightIn(min = LedgerSpace.Target)
                             .wrapContentHeight(),
                     )
                 }
@@ -853,9 +961,10 @@ private fun AddStatDialog(
                         OutlinedTextField(
                             shape = MaterialTheme.shapes.small,
                             value = field.value,
-                            onValueChange = { field.value = it },
+                            onValueChange = { field.value = decimalInput(it) },
                             label = { Text(label) },
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -863,9 +972,10 @@ private fun AddStatDialog(
                         OutlinedTextField(
                             shape = MaterialTheme.shapes.small,
                             value = hips.value,
-                            onValueChange = { hips.value = it },
+                            onValueChange = { hips.value = decimalInput(it) },
                             label = { Text("HIPS (cm)") },
                             singleLine = true,
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -875,7 +985,7 @@ private fun AddStatDialog(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            estimate?.let { "~$it% BODY FAT" } ?: "Tapes not complete",
+                            estimate?.let { "~${it.toInt()}% BODY FAT (estimate)" } ?: "Tapes not complete",
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
                             color = if (estimate != null) IronvellumColors.EmeraldBright else IronvellumColors.InkMuted,
@@ -888,7 +998,7 @@ private fun AddStatDialog(
                             enabled = estimate != null,
                             onClick = {
                                 estimate?.let {
-                                    bodyFat.value = it.toString()
+                                    bodyFat.value = it.toInt().toString()
                                     showEstimator = false
                                 }
                             },
@@ -903,7 +1013,7 @@ private fun AddStatDialog(
                     IronvellumButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f), quiet = true)
                     IronvellumButton(
                         label = "LOG IT",
-                        onClick = { onConfirm(weight.value.toDoubleOrNull() ?: 0.0, bfValue) },
+                        onClick = { onConfirm(Ledger.parseDecimal(weight.value) ?: 0.0, bfValue) },
                         enabled = validWeight && validBodyFat,
                         gold = true,
                         modifier = Modifier.weight(1f),
@@ -938,319 +1048,3 @@ private fun rememberToday(): LocalDate {
     }
     return today
 }
-
-@Composable
-private fun ActivityTab(
-    days: List<HealthDay>,
-    today: LocalDate,
-    syncedAtMs: Long?,
-    profileHeight: Double?,
-    stats: List<StatEntry>,
-    sessions: List<WorkoutSession>,
-    sessionSets: Map<Long, List<SessionSet>>,
-    exercises: Map<Long, Exercise>,
-    onOpenSettings: () -> Unit,
-    scroll: androidx.compose.foundation.ScrollState,
-) {
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(scroll)
-            .padding(horizontal = 16.dp),
-    ) {
-        Spacer(Modifier.height(16.dp))
-        if (days.isEmpty()) {
-            InkPanel(Modifier.fillMaxWidth()) {
-                MetricLabel("DAILY")
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "Steps, sleep, distance, active energy and resting heart rate show here once Health Connect is linked in Settings.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
-                Spacer(Modifier.height(10.dp))
-                IronvellumButton(label = "Open Settings", onClick = onOpenSettings, quiet = true)
-            }
-            Spacer(Modifier.height(24.dp))
-            return
-        }
-
-        val zone = remember { ZoneId.systemDefault() }
-        val latest = stats.firstOrNull()
-        val weightKg = latest?.weightKg
-        val heightCm = latest?.let { Ledger.heightFor(it, profileHeight) } ?: profileHeight?.takeIf { it > 0.0 }
-        // One derivation per data change; every window is calendar dates ending on today.
-        val todayRow = Ledger.todayRow(days, today)
-        val steps14 = remember(days, today) { Ledger.slots(days, today, 14) { it.steps.toDouble() } }
-        val km30 = remember(days, today) { Ledger.slots(days, today, 30) { it.distanceKm } }
-        val avg7 = remember(days, today) { Ledger.average(days, today, 7, includeToday = false) { it.steps.toDouble() } }
-        val burns = remember(days, today, sessions, sessionSets, exercises, weightKg, heightCm) {
-            Ledger.burnSlots(days, today, 14, sessions, sessionSets, exercises, weightKg, heightCm, zone)
-        }
-        val measuredDays = remember(days, today) { Ledger.tracked(Ledger.slots(days, today, 14) { it.activeKcal.toDouble() }) }
-
-        val todaySteps = todayRow?.steps?.takeIf { it > 0 }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            ActivityTile(
-                "TODAY'S STEPS",
-                todaySteps?.let { fmtInt(it) } ?: "—",
-                if (todaySteps != null) stepsAsOfCaption(syncedAtMs, today) ?: "from Health Connect" else "not synced today",
-                Modifier.weight(1f),
-            )
-            // The owner must see why the number is low: a missed sync shrinks it.
-            ActivityTile(
-                "7-DAY AVERAGE",
-                avg7?.let { fmtInt(it.value.toInt()) } ?: "—",
-                avg7?.let { "steps/day · ${it.tracked} of ${it.of} days, today excluded" } ?: "no days tracked",
-                Modifier.weight(1f),
-            )
-        }
-
-        Spacer(Modifier.height(14.dp))
-        InkPanel(Modifier.fillMaxWidth()) {
-            MetricLabel("STEPS — LAST 14 DAYS")
-            val tracked = Ledger.tracked(steps14)
-            BarChart(
-                steps14,
-                goal = STEP_GOAL.toDouble(),
-                startLabel = shortDate(today.minusDays(13)),
-                endLabel = "today",
-            )
-            val hits = steps14.count { (it ?: 0.0) >= STEP_GOAL }
-            ChartCaption("$tracked of 14 days tracked · $hits hit the ${fmtInt(STEP_GOAL)} goal")
-        }
-
-        Spacer(Modifier.height(10.dp))
-        InkPanel(Modifier.fillMaxWidth()) {
-            MetricLabel("DISTANCE (KM) — LAST 30 DAYS")
-            val km = km30.filterNotNull()
-            if (km.size >= 2) {
-                BarChart(km30, IronvellumColors.Emerald, startLabel = shortDate(today.minusDays(29)), endLabel = "today")
-                ChartCaption(
-                    "best ${"%.1f".format(km.max())} km · total ${"%.0f".format(km.sum())} km · " +
-                        "${km.size} of 30 days tracked",
-                )
-            } else {
-                ChartCaption("Distance appears once Health Connect reports it.")
-            }
-        }
-
-        EnergySection(burns, today, measuredDays, stats)
-        Spacer(Modifier.height(14.dp))
-        SectionHeader("Active calories — last 7 days")
-        val window7 = Ledger.window(today, 7).reversed()
-        val rowsByDate = days.associateBy { it.date }
-        val kcalRows = window7.mapNotNull { date ->
-            val row = rowsByDate[date]
-            val burn = Ledger.dayBurn(row, Ledger.sessionsOn(date, sessions, sessionSets, zone), exercises, weightKg, heightCm)
-            burn?.let { Triple(date, row, it) }
-        }
-        if (kcalRows.isEmpty()) {
-            Text(
-                "Active calories are unwritten — Health Connect has reported none yet.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-        } else {
-            val best = kcalRows.maxOf { it.third.kcal }
-            kcalRows.forEach { (date, _, burn) ->
-                val measured = burn.confidence == EnergyConfidence.MEASURED
-                MetricRow(
-                    date.toString() + if (measured) "" else " · estimated",
-                    "${fmtInt(burn.kcal)} kcal" + if (measured) "" else " (est.)",
-                    measured && burn.kcal == best,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
-        SectionHeader("Sleep — last 7 nights")
-        val sleep7 = Ledger.window(today, 7).mapNotNull { date ->
-            rowsByDate[date]?.takeIf { it.sleepMinutes > 0 }
-        }
-        if (sleep7.isEmpty()) {
-            Text(
-                "Sleep is unwritten — Health Connect has reported none yet.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-        } else {
-            val bestSleep = sleep7.maxOf { it.sleepMinutes }
-            sleep7.reversed().forEach { day ->
-                MetricRow(day.date.toString(), fmtSleep(day.sleepMinutes), day.sleepMinutes == bestSleep)
-            }
-        }
-        Spacer(Modifier.height(24.dp))
-    }
-}
-
-@Composable
-private fun EnergySection(
-    burns: List<EnergyEstimate?>,
-    today: LocalDate,
-    measuredDays: Int,
-    stats: List<StatEntry>,
-) {
-    val todayBurn = burns.lastOrNull()
-    val bfReading = Ledger.latestWithBodyFat(stats)
-    val resting = Energy.restingKcalPerDay(bfReading?.weightKg, bfReading?.bodyFatPct)
-
-    Spacer(Modifier.height(14.dp))
-    SectionHeader("Energy burn — last 14 days")
-    InkPanel(Modifier.fillMaxWidth()) {
-        MetricLabel("BURN TODAY")
-        if (todayBurn != null) {
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatValue(fmtInt(todayBurn.kcal), size = StatSize.Tile)
-                Text(
-                    "kcal · ${confidenceWord(todayBurn.confidence)}",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    modifier = Modifier.padding(bottom = 4.dp),
-                )
-            }
-        } else {
-            MetricValue("—", "not synced today, and no trial logged")
-        }
-
-        Spacer(Modifier.height(10.dp))
-        MetricLabel("DAILY BURN · LAST 14 DAYS")
-        // A null slot is "not estimable or not synced", never 0 kcal.
-        val charted = burns.filterNotNull()
-        if (charted.size >= 2) {
-            BarChart(
-                burns.map { it?.kcal?.toDouble() },
-                faded = burns.map { it != null && it.confidence != EnergyConfidence.MEASURED },
-                startLabel = shortDate(today.minusDays(13)),
-                endLabel = "today",
-            )
-            Spacer(Modifier.height(6.dp))
-            EnergyLegend()
-            val measuredLine =
-                if (measuredDays == 0) {
-                    "all MET estimates — Health Connect has not reported active calories."
-                } else {
-                    "$measuredDays of ${burns.size} days are measured by Health Connect. " +
-                        "Estimates are never added on top of a measured day."
-                }
-            ChartCaption("${charted.size} of ${burns.size} days estimable · $measuredLine")
-        } else {
-            ChartCaption("Burn is estimable on ${charted.size} of ${burns.size} days — log bodyweight or connect Health Connect to estimate more.")
-        }
-
-        if (stats.isEmpty()) {
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "Log your bodyweight to estimate activity burn.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-
-        // Resting rate: Katch-McArdle needs lean mass, so it only exists with body fat.
-        Spacer(Modifier.height(12.dp))
-        MetricLabel("RESTING BURN (KATCH-MCARDLE)")
-        if (resting != null) {
-            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                StatValue(fmtInt(resting.kcal), size = StatSize.Inline)
-                Text(
-                    "kcal/day at rest · ${confidenceWord(resting.confidence)}",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    modifier = Modifier.padding(bottom = 3.dp),
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-            ChartCaption("${resting.basis} · from your ${formatDate(bfReading!!.takenAtMs, "d MMM")} reading")
-        } else {
-            Text(
-                "Log body fat to estimate resting burn.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-    }
-}
-
-private fun confidenceWord(confidence: EnergyConfidence): String = when (confidence) {
-    EnergyConfidence.MEASURED -> "measured"
-    EnergyConfidence.ESTIMATED -> "estimated"
-    EnergyConfidence.COARSE -> "rough estimate"
-}
-
-@Composable
-private fun EnergyLegend() {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("\u25CF", color = IronvellumColors.Emerald, style = MaterialTheme.typography.labelSmall)
-            Text(
-                "measured — Health Connect",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("\u25CB", color = IronvellumColors.InkMuted, style = MaterialTheme.typography.labelSmall)
-            Text(
-                "estimated — MET model",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-    }
-}
-
-
-private fun shortDate(date: LocalDate): String =
-    date.format(java.time.format.DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
-
-private fun fmtInt(v: Int): String = String.format(Locale.getDefault(), "%,d", v)
-
-private fun fmtSleep(minutes: Int): String = "${minutes / 60}h ${minutes % 60}m"
-
-@Composable
-private fun ActivityTile(label: String, value: String, hint: String, modifier: Modifier = Modifier) {
-    InkPanel(modifier) {
-        PanelLabel(label)
-        Spacer(Modifier.height(2.dp))
-        StatValue(value, size = StatSize.Tile)
-        Text(hint, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
-    }
-}
-
-@Composable
-private fun MetricRow(label: String, value: String, best: Boolean) {
-    InkPanel(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                label,
-                style = MaterialTheme.typography.titleSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.Ink,
-            )
-            Text(
-                if (best) "best · $value" else value,
-                style = MaterialTheme.typography.titleSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.Ink,
-            )
-        }
-    }
-}
-
-/** The charts carry the whole history; this list is the recent detail. */
-private const val READING_ROWS = 12

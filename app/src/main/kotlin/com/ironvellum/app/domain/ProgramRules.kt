@@ -183,6 +183,14 @@ object ProgramRules {
     /** Reps above 12 stop flattering the Epley estimate (LeSuer 1997). */
     const val MAX_E1RM_REPS = 12
 
+    /**
+     * Epley estimate of a one-rep max from [loadKg] for [reps]. The one copy:
+     * the strength profile, the lift boards and the Ledger's records board
+     * all read it, so they cannot disagree. Callers bound [reps] themselves
+     * ([MAX_E1RM_REPS]).
+     */
+    fun epley(loadKg: Double, reps: Int): Double = loadKg * (1.0 + reps / 30.0)
+
     /** Accuracy of the Epley inversion degrades past ~10 reps (LeSuer 1997). */
     const val MAX_WORKING_REPS = 10
 
@@ -197,7 +205,7 @@ object ProgramRules {
         for (lift in lifts) {
             if (lift.weightKg <= 0.0) continue
             if (lift.reps < 1 || lift.reps > MAX_E1RM_REPS) continue
-            val e1rm = lift.weightKg * (1.0 + lift.reps / 30.0)
+            val e1rm = epley(lift.weightKg, lift.reps)
             val key = lift.exerciseName.trim().lowercase()
             if (e1rm > (best[key] ?: 0.0)) best[key] = e1rm
         }
