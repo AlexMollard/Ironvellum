@@ -109,8 +109,9 @@ td a, .link { color: var(--ink); text-decoration: underline; text-decoration-col
     <input id="q" type="search" placeholder="Search name, muscle, cue…" aria-label="Search">
     <select id="group" aria-label="Group"><option value="">All groups</option></select>
     <select id="muscle" aria-label="Muscle"><option value="">Any muscle</option></select>
-    <label class="chk"><input id="flagged" type="checkbox"> Flagged only</label>
+    <label class="chk"><input id="flagged" type="checkbox"> Only ones to double-check</label>
   </div>
+  <p class="muted" style="font-size:.85rem;margin:8px 0 0">A red ! marks an exercise whose data looks unusual: a muscle share off the usual 0 / ¼ / ½ / ¾ / 1 steps, no main muscle, or a missing how-to. These are prompts to look, not confirmed errors.</p>
   <div class="grid">
     <nav class="list" id="list" aria-label="Exercises"></nav>
     <main class="detail" id="detail"></main>
@@ -118,7 +119,7 @@ td a, .link { color: var(--ink); text-decoration: underline; text-decoration-col
 </div>
 
 <script>
-const DATA = {"commit": "ba68bc1", "muscles": {"UPPER_CHEST": "Upper chest", "MID_CHEST": "Mid chest", "LOWER_CHEST": "Lower chest", "LATS": "Lats", "RHOMBOIDS": "Rhomboids", "TRAPS": "Traps", "FRONT_DELTS": "Front delts", "SIDE_DELTS": "Side delts", "REAR_DELTS": "Rear delts", "ROTATOR_CUFF": "Rotator cuff", "SERRATUS": "Serratus", "BICEPS": "Biceps", "BRACHIALIS": "Brachialis", "TRICEPS": "Triceps", "FOREARMS": "Forearms", "ABS": "Abs", "OBLIQUES": "Obliques", "LOWER_BACK": "Lower back", "HIP_FLEXORS": "Hip flexors", "QUADS": "Quads", "HAMSTRINGS": "Hamstrings", "GLUTES": "Glutes", "ADDUCTORS": "Adductors (inner thigh)", "ABDUCTORS": "Abductors (outer hip)", "CALVES": "Calves", "TIBIALIS": "Tibialis"},
+const DATA = {"commit": "aef195e", "muscles": {"UPPER_CHEST": "Upper chest", "MID_CHEST": "Mid chest", "LOWER_CHEST": "Lower chest", "LATS": "Lats", "RHOMBOIDS": "Rhomboids", "TRAPS": "Traps", "FRONT_DELTS": "Front delts", "SIDE_DELTS": "Side delts", "REAR_DELTS": "Rear delts", "ROTATOR_CUFF": "Rotator cuff", "SERRATUS": "Serratus", "BICEPS": "Biceps", "BRACHIALIS": "Brachialis", "TRICEPS": "Triceps", "FOREARMS": "Forearms", "ABS": "Abs", "OBLIQUES": "Obliques", "LOWER_BACK": "Lower back", "HIP_FLEXORS": "Hip flexors", "QUADS": "Quads", "HAMSTRINGS": "Hamstrings", "GLUTES": "Glutes", "ADDUCTORS": "Adductors (inner thigh)", "ABDUCTORS": "Abductors (outer hip)", "CALVES": "Calves", "TIBIALIS": "Tibialis"},
 "exercises": [
 {"name": "Pull-up", "group": "PULL", "metric": "REPS", "weighted": false, "pattern": "VERTICAL_PULL", "compound": true, "stretchBias": true, "muscles": {"LATS": 1.0, "RHOMBOIDS": 0.5, "TRAPS": 0.5, "BICEPS": 0.5, "REAR_DELTS": 0.5, "BRACHIALIS": 0.5, "FOREARMS": 0.5, "ROTATOR_CUFF": 0.5}, "modifiers": ["assisted", "archer", "one-arm", "tempo", "paused"], "gear": "pull-up bar or rings", "guide": {"setup": "Hang from a bar with an overhand grip a little wider than your shoulders and your arms straight.", "steps": ["Pull your shoulder blades down to start.", "Drive your elbows down toward your ribs until your chin clears the bar.", "Pause briefly at the top.", "Lower under control until your arms are fully straight.", "Rest, then repeat for the next rep."], "cues": ["Elbows to your pockets", "Chest up to the bar", "Smooth lowering"], "commonMistakes": ["Kipping or swinging for momentum", "Stopping short of straight arms at the bottom", "Shrugging your shoulders up to your ears"]}, "skill": {"tier": "III", "line": "Pull", "standard": "8 clean reps, chin over bar, dead hang each rep"}},
 {"name": "Chin-up", "group": "PULL", "metric": "REPS", "weighted": false, "pattern": "VERTICAL_PULL", "compound": true, "stretchBias": true, "muscles": {"LATS": 1.0, "RHOMBOIDS": 0.5, "TRAPS": 0.5, "BICEPS": 0.5, "REAR_DELTS": 0.5, "BRACHIALIS": 0.5, "FOREARMS": 0.5, "ROTATOR_CUFF": 0.5}, "modifiers": ["assisted", "archer", "one-arm", "tempo", "paused"], "gear": "pull-up bar or rings", "guide": {"setup": "Hang from a bar with an underhand grip about shoulder width and your arms straight.", "steps": ["Pull your shoulder blades down to start.", "Pull your elbows down and forward until your chin clears the bar.", "Hold the top for a moment.", "Lower slowly to straight arms.", "Repeat without bouncing at the bottom."], "cues": ["Chest to the bar", "Squeeze your elbows into your sides", "Control the way down"], "commonMistakes": ["Craning your neck to reach the bar", "Half reps that skip the straight-arm bottom", "Swinging your legs for momentum"]}, "skill": null},
@@ -372,15 +373,18 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;
 const label = m => DATA.muscles[m] || m;
 const pretty = s => s ? s.toLowerCase().replace(/_/g, " ") : "—";
 
+// Each check names what is unusual and why it might be wrong, in plain words.
 function flagsOf(e) {
   const f = [];
-  const vals = Object.values(e.muscles || {});
-  if (!vals.length) f.push("no muscles");
-  if (vals.some(v => !STEPS.includes(v))) f.push("off-scale share");
-  // Activities and mobility credit broadly by design; only training moves need a 1.0 lead.
-  if (vals.length && !vals.includes(1) && !ACTIVITY.includes(e.group)) f.push("no 1.0 lead");
-  if (!e.guide) f.push("no guide");
-  else if ((e.guide.steps || []).length < 3) f.push("short guide");
+  const ms = Object.entries(e.muscles || {});
+  if (!ms.length) f.push("No muscles listed, so this exercise counts toward nothing.");
+  ms.filter(([, v]) => !STEPS.includes(v)).forEach(([m, v]) =>
+    f.push(`${label(m)} is credited ${v.toFixed(2)} of a set. Every other share sits on 0, ¼, ½, ¾ or 1, so check this one was meant.`));
+  // Activities and mobility credit broadly by design; only training moves need a lead.
+  if (ms.length && !ms.some(([, v]) => v === 1) && !ACTIVITY.includes(e.group))
+    f.push("No muscle is credited a full set (1.0), so nothing is marked as the main muscle.");
+  if (!e.guide) f.push("No how-to guide.");
+  else if ((e.guide.steps || []).length < 3) f.push("The how-to has fewer than three steps.");
   return f;
 }
 
@@ -392,7 +396,7 @@ function init() {
   if (!DATA) { $("detail").innerHTML = '<div class="card empty">No catalogue data was embedded. Run tools/exercise_atlas.py.</div>'; return; }
   DATA.exercises.forEach(e => e.flags = flagsOf(e));
   const flagged = DATA.exercises.filter(e => e.flags.length).length;
-  $("meta").textContent = `${DATA.exercises.length} exercises · ${Object.keys(DATA.muscles).length} muscles · ${flagged} flagged` + (DATA.commit ? ` · ${DATA.commit}` : "");
+  $("meta").textContent = `${DATA.exercises.length} exercises · ${Object.keys(DATA.muscles).length} muscles · ${flagged} to double-check` + (DATA.commit ? ` · ${DATA.commit}` : "");
   [...new Set(DATA.exercises.map(e => e.group))].forEach(g => $("group").insertAdjacentHTML("beforeend", `<option value="${esc(g)}">${esc(pretty(g))}</option>`));
   Object.keys(DATA.muscles).forEach(m => $("muscle").insertAdjacentHTML("beforeend", `<option value="${esc(m)}">${esc(label(m))}</option>`));
   ["q", "group", "muscle", "flagged"].forEach(id => $(id).addEventListener("input", render));
@@ -424,7 +428,7 @@ function renderExercises() {
   const rows = DATA.exercises.filter(matches);
   $("list").innerHTML = `<div class="count">${rows.length} shown</div>` + rows.map(e =>
     `<button class="row" data-n="${esc(e.name)}" aria-current="${e.name === state.sel}">
-      <span class="nm">${esc(e.name)}</span>${e.flags.length ? `<span class="warn" title="${esc(e.flags.join(", "))}">!</span>` : ""}<span class="tag">${esc(pretty(e.group))}</span></button>`).join("");
+      <span class="nm">${esc(e.name)}</span>${e.flags.length ? `<span class="warn" title="${esc(e.flags.join(" "))}">!</span>` : ""}<span class="tag">${esc(pretty(e.group))}</span></button>`).join("");
   $("list").querySelectorAll(".row").forEach(b => b.onclick = () => { state.sel = b.dataset.n; save(); renderExercises(); });
   const e = DATA.exercises.find(x => x.name === state.sel);
   $("detail").innerHTML = e ? exerciseCard(e) : '<div class="card empty">Pick an exercise.</div>';
@@ -452,13 +456,13 @@ function exerciseCard(e) {
       ${e.compound != null ? `<span class="chip">${e.compound ? "compound" : "isolation"}</span>` : ""}
       ${e.stretchBias ? `<span class="chip on">stretch-biased</span>` : ""}
     </div>
-    ${e.flags.length ? `<p class="flag" style="margin-top:10px">Check: ${esc(e.flags.join(" · "))}</p>` : ""}
+    ${e.flags.length ? `<ul class="flag" style="margin-top:10px">${e.flags.map(s => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
   </section>
   <div class="two">
     <section class="card">
       <h3>Muscles (sets credited per set)</h3>
       ${ms.length ? ms.map(([m, v]) => shareRow(m, v, lead && m === lead[0])).join("") : '<p class="muted">No muscle data.</p>'}
-      <p class="legend">Bold = lead muscle · gridlines at 0.25 steps · red = off the 0 / ¼ / ½ / ¾ / 1 scale</p>
+      <p class="legend">Bold = lead muscle · gridlines at 0.25 steps · red = off the usual 0 / ¼ / ½ / ¾ / 1 steps</p>
     </section>
     <section class="card">
       <h3>Facts</h3>
