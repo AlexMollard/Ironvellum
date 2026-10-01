@@ -106,8 +106,9 @@ object WorkoutShare {
         when (exercise?.metric ?: ExerciseMetric.REPS) {
             ExerciseMetric.HOLD -> secondsBody(group) + loadSuffix(group, exercise)
             ExerciseMetric.DURATION -> {
-                val minutes = group.sumOf { it.durationSec ?: 0 } / 60
-                "$minutes min" + loadSuffix(group, exercise)
+                val total = group.sumOf { it.durationSec ?: 0 }
+                val minutes = (total + 30) / 60
+                (if (total < 60) "$total s" else "$minutes min") + loadSuffix(group, exercise)
             }
             ExerciseMetric.DISTANCE_TIME -> {
                 val km = group.sumOf { it.distanceM ?: 0.0 } / 1000.0
@@ -121,7 +122,7 @@ object WorkoutShare {
             ExerciseMetric.ATTEMPTS_GRADE -> {
                 val attempts = group.sumOf { it.reps }
                 val grade = group.firstNotNullOfOrNull { it.grade?.takeIf(String::isNotBlank) }
-                "$attempts sent" + (grade?.let { " \u00B7 $it" } ?: "")
+                "$attempts ${if (attempts == 1) "attempt" else "attempts"}" + (grade?.let { " \u00B7 $it" } ?: "")
             }
             ExerciseMetric.REPS ->
                 // An archive from before HOLD existed restores a hold as a

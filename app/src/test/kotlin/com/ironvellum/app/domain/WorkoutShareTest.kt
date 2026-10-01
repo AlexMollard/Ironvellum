@@ -287,4 +287,18 @@ class WorkoutShareTest {
         val card = WorkoutShare.format(session(), listOf(set(1, "Push-up", 0, 12)), mapOf(1L to exercise(1, "Push-up")), zone)
         assertEquals(card.trimEnd(), card)
     }
-}
+
+    @Test
+    fun `attempts read as attempts and short durations keep their seconds`() {
+        val climb = exercise(1, "Boulder", ExerciseMetric.ATTEMPTS_GRADE)
+        val run = exercise(2, "Sprint", ExerciseMetric.DURATION)
+        val card = WorkoutShare.format(
+            session(),
+            listOf(set(1, "Boulder", 0, 5, grade = "V4"), set(2, "Sprint", 0, 0, durationSec = 45, position = 1)),
+            mapOf(1L to climb, 2L to run),
+            zone,
+        )
+        assertTrue(card, card.contains("5 attempts · V4"))
+        assertTrue(card, card.contains("45 s"))
+        assertFalse(card, card.contains("sent"))
+    }}
