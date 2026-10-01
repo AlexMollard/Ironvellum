@@ -33,6 +33,7 @@ object ExerciseGuides {
             legs1()
             legs2()
             core()
+            progressionSteps()
             activities()
         }
     }
@@ -4446,6 +4447,285 @@ object ExerciseGuides {
                 commonMistakes = listOf(
                     "Rushing into deep positions",
                     "Letting the palms lift off the floor",
+                ),
+            ),
+        )
+    }
+
+    // ---- Progression steps added by the October 2026 skill audit ----
+    private fun MutableMap<String, ExerciseGuide>.progressionSteps() {
+        put(
+            "negative pull-up",
+            ExerciseGuide(
+                setup = "Stand on a box under a bar so you can start with your chin already over it, hands just wider than your shoulders.",
+                steps = listOf(
+                    "Step or jump to the top position, chin over the bar and elbows bent.",
+                    "Take your feet off the box and hold the top for a moment.",
+                    "Lower yourself slowly, taking about five seconds to reach straight arms.",
+                    "Finish in a full dead hang with your shoulders still active.",
+                    "Step back onto the box and repeat.",
+                ),
+                cues = listOf(
+                    "Slow all the way down",
+                    "Shoulders stay down, away from the ears",
+                    "Legs still, no swing",
+                ),
+                commonMistakes = listOf(
+                    "Dropping through the bottom half",
+                    "Jumping into the next rep without resetting",
+                    "Letting the shoulders shrug up at the bottom",
+                ),
+            ),
+        )
+        put(
+            "elevated pike push-up",
+            ExerciseGuide(
+                setup = "Put your feet on a box or bench about hip height and walk your hands back until your hips sit high over your shoulders.",
+                steps = listOf(
+                    "Set your hands shoulder-width apart, fingers spread.",
+                    "Bend your elbows and lower the top of your head toward the floor in front of your hands.",
+                    "Keep your hips stacked over your hands as you lower.",
+                    "Touch your head lightly to the floor.",
+                    "Press back up until your arms are straight.",
+                ),
+                cues = listOf(
+                    "Hips over hands",
+                    "Head and hands make a triangle",
+                    "Elbows angled forward, not flared",
+                ),
+                commonMistakes = listOf(
+                    "Letting the hips drift back toward the box",
+                    "Flaring the elbows wide",
+                    "Shortening the range as the set gets hard",
+                ),
+            ),
+        )
+        put(
+            "wall hspu negative",
+            ExerciseGuide(
+                setup = "Walk your feet up a wall into a chest-to-wall handstand, hands about a hand-length from the wall, a folded mat under your head.",
+                steps = listOf(
+                    "Lock your arms and hold a straight line with your chest facing the wall.",
+                    "Bend your elbows and lower slowly, taking about five seconds.",
+                    "Keep your elbows tracking forward and your body tight.",
+                    "Touch your head lightly to the mat.",
+                    "Come down off the wall, then walk back up for the next rep.",
+                ),
+                cues = listOf(
+                    "Five slow seconds down",
+                    "Ribs in, glutes squeezed",
+                    "Head lands in front of the hands",
+                ),
+                commonMistakes = listOf(
+                    "Collapsing the last part of the way",
+                    "Letting the lower back arch off the wall",
+                    "Trying to press back up before the negatives are smooth",
+                ),
+            ),
+        )
+        put(
+            "planche lean",
+            ExerciseGuide(
+                setup = "Get into a push-up position on the floor or parallettes, fingers turned slightly out, feet together on the floor.",
+                steps = listOf(
+                    "Lock your elbows and push the floor away so your upper back rounds slightly.",
+                    "Lean your shoulders forward past your wrists while your feet stay on the floor.",
+                    "Point your toes so you can lean further.",
+                    "Hold the lean with straight arms for the set time.",
+                    "Lean further forward over time as the hold gets easy.",
+                ),
+                cues = listOf(
+                    "Arms straight, always",
+                    "Shoulders far past the hands",
+                    "Push the floor away",
+                ),
+                commonMistakes = listOf(
+                    "Bending the elbows to lean further",
+                    "Letting the hips sag",
+                    "Shrugging the shoulders toward the ears",
+                ),
+            ),
+        )
+        put(
+            "elbow lever",
+            ExerciseGuide(
+                setup = "Squat with your hands flat on the floor, fingers pointing out to the sides or back, elbows close together.",
+                steps = listOf(
+                    "Bend your elbows and set them into your belly just beside your hip bones.",
+                    "Lean forward so your weight moves onto your hands.",
+                    "Straighten your legs behind you and lift your feet off the floor.",
+                    "Hold your body level from head to feet, balancing on your elbows.",
+                    "Lower your feet under control.",
+                ),
+                cues = listOf(
+                    "Elbows dig into the hips",
+                    "Squeeze the legs together",
+                    "Look slightly ahead",
+                ),
+                commonMistakes = listOf(
+                    "Placing the elbows too far apart to support the hips",
+                    "Letting the legs drop below the head",
+                    "Holding past the point where the wrists hurt",
+                ),
+            ),
+        )
+        put(
+            "rto support hold",
+            ExerciseGuide(
+                setup = "Set rings at hip height and press up to a support with straight arms, rings beside your hips.",
+                steps = listOf(
+                    "Lock your elbows and press your shoulders down.",
+                    "Turn the rings out until your palms face forward.",
+                    "Keep the rings close to your sides and your body still.",
+                    "Hold the turned-out position for the set time.",
+                    "Turn back to neutral and step down.",
+                ),
+                cues = listOf(
+                    "Palms forward, elbows locked",
+                    "Shoulders down, chest proud",
+                    "Squeeze the rings into your sides",
+                ),
+                commonMistakes = listOf(
+                    "Letting the rings turn back in as you tire",
+                    "Bending the elbows to make it easier",
+                    "Shrugging up into the ears",
+                ),
+            ),
+        )
+        put(
+            "banded iron cross",
+            ExerciseGuide(
+                setup = "Hang rings high, loop a resistance band over the ring straps so it runs under your arms, and press to a ring support.",
+                steps = listOf(
+                    "Turn the rings out with straight arms.",
+                    "Lower slowly, letting the arms open out to the sides as the band takes some of the load.",
+                    "Stop with your arms straight out to the sides at shoulder height.",
+                    "Hold the cross shape with your elbows locked.",
+                    "Press back up to the support, using a lighter band as you get stronger.",
+                ),
+                cues = listOf(
+                    "Elbows locked the whole time",
+                    "Pull the rings down and in",
+                    "Lower slowly",
+                ),
+                commonMistakes = listOf(
+                    "Bending the elbows, which loads them badly",
+                    "Dropping into the cross fast",
+                    "Using a band so strong the muscles never work",
+                ),
+            ),
+        )
+        put(
+            "tuck human flag",
+            ExerciseGuide(
+                setup = "Stand beside a vertical pole, grip it with your top hand at head height and your bottom hand at hip height.",
+                steps = listOf(
+                    "Pull hard with the top arm and press hard with the bottom arm, both arms straight.",
+                    "Jump or kick your feet up off the floor.",
+                    "Tuck your knees in toward your chest.",
+                    "Hold your hips level with your hands, body sideways to the floor.",
+                    "Lower your feet under control and switch sides.",
+                ),
+                cues = listOf(
+                    "Pull with the top, push with the bottom",
+                    "Arms straight",
+                    "Hips stay up",
+                ),
+                commonMistakes = listOf(
+                    "Bending the bottom arm",
+                    "Letting the hips sink below the hands",
+                    "Hands set too close together on the pole",
+                ),
+            ),
+        )
+        put(
+            "supported pistol squat",
+            ExerciseGuide(
+                setup = "Stand on one leg beside a post, door frame or rack upright and hold it lightly with one hand.",
+                steps = listOf(
+                    "Lift your other leg straight out in front of you.",
+                    "Sit down on the standing leg as deep as you can go, heel flat.",
+                    "Use the hand only for balance, not to pull yourself up.",
+                    "Stand back up by pushing through the whole foot.",
+                    "Finish the reps, then switch legs.",
+                ),
+                cues = listOf(
+                    "Heel stays down",
+                    "Knee tracks over the toes",
+                    "Hand balances, legs lift",
+                ),
+                commonMistakes = listOf(
+                    "Pulling up with the arm",
+                    "Letting the knee cave in",
+                    "Stopping short of full depth",
+                ),
+            ),
+        )
+        put(
+            "one-leg back lever",
+            ExerciseGuide(
+                setup = "Hang from rings or a bar and get into an advanced tuck back lever.",
+                steps = listOf(
+                    "Start in a tucked inverted hang.",
+                    "Lower until your back is flat.",
+                    "Extend one leg straight back in line with your body while the other stays tucked.",
+                    "Hold with straight arms and level hips.",
+                    "Return to the inverted hang and switch legs.",
+                ),
+                cues = listOf(
+                    "Keep your arms straight and your body in a flat line",
+                    "Push your chest forward and squeeze your glutes",
+                ),
+                commonMistakes = listOf(
+                    "Letting the hips drop or the back arch hard",
+                    "Bending the elbows",
+                    "Twisting the hips toward the extended leg",
+                ),
+            ),
+        )
+        put(
+            "tuck l-sit",
+            ExerciseGuide(
+                setup = "Sit between parallettes, two boxes or on the floor with your hands beside your hips, arms straight.",
+                steps = listOf(
+                    "Press down through your hands and lift your seat off the surface.",
+                    "Pull your knees up tight toward your chest.",
+                    "Keep your feet off the floor and your shoulders pushed down.",
+                    "Hold for the set time, breathing steadily.",
+                    "Extend one leg at a time as it gets easy.",
+                ),
+                cues = listOf(
+                    "Push the floor away",
+                    "Knees to chest",
+                    "Shoulders down, chest tall",
+                ),
+                commonMistakes = listOf(
+                    "Shrugging the shoulders up",
+                    "Letting the feet touch down",
+                    "Leaning back so the hips slide behind the hands",
+                ),
+            ),
+        )
+        put(
+            "half split",
+            ExerciseGuide(
+                setup = "Kneel on a soft mat and step one foot forward into a lunge, then shift your hips back over the back knee.",
+                steps = listOf(
+                    "Straighten the front leg with the heel on the floor and toes up.",
+                    "Keep your hips square and stacked over the back knee.",
+                    "Fold your chest toward the front knee with a long back.",
+                    "Hold with steady breathing for the set time.",
+                    "Release slowly and switch legs.",
+                ),
+                cues = listOf(
+                    "Hips square",
+                    "Long back, fold from the hips",
+                    "Ease in, never bounce",
+                ),
+                commonMistakes = listOf(
+                    "Rounding the back to reach the knee",
+                    "Letting the hips twist open",
+                    "Bending the front knee to cheat the range",
                 ),
             ),
         )

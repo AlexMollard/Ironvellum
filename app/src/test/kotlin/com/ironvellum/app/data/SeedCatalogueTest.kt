@@ -105,6 +105,9 @@ class SeedCatalogueTest {
             "Ring Support Hold" to MuscleGroup.PUSH,
             "Ring Dip" to MuscleGroup.PUSH,
             "Iron Cross" to MuscleGroup.PUSH,
+            "RTO Support Hold" to MuscleGroup.PUSH,
+            "Banded Iron Cross" to MuscleGroup.PUSH,
+            "Tuck Human Flag" to MuscleGroup.CORE,
             "Kip-up" to MuscleGroup.CORE,
             "Handstand-to-Bridge" to MuscleGroup.CORE,
             "Human Flag" to MuscleGroup.CORE,
@@ -127,7 +130,9 @@ class SeedCatalogueTest {
         // group again: when a name cue and the line disagree, the cue wins.
         val pressCue = listOf("Push-up", "Dip", "Press", "Support Hold", "Cross", "Planche")
         val pullCue = listOf("Pull-up", "Row", "Hang", "Curl", "Lever")
-        val sanctioned = setOf("Muscle-up", "Strict Muscle-up", "Inverted Muscle-up")
+        // The elbow lever is a bent-arm balance that presses into the floor:
+        // "lever" names its shape, not a pull.
+        val sanctioned = setOf("Muscle-up", "Strict Muscle-up", "Inverted Muscle-up", "Elbow Lever")
         val wrong = Seed.exercises.mapNotNull { e ->
             val group = MuscleGroup.valueOf(e.muscleGroup)
             when {
