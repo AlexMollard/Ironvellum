@@ -156,6 +156,18 @@ class CircleUiTest {
     }
 
     @Test
+    fun `a refused action re-reads the circle so a stale roster is corrected`() {
+        val gateway = FakeGateway().apply { circle = circle() }
+        val vm = CircleViewModel(gateway)
+        gateway.actionError = IllegalStateException("Only the Keeper changes the circle code")
+        gateway.circle = circle("Gate House")
+        vm.newCode()
+        assertEquals("Only the Keeper changes the circle code", vm.ui.value.actionError)
+        assertEquals("Gate House", vm.ui.value.circle?.name)
+        assertEquals(listOf(false, true), gateway.reads)
+    }
+
+    @Test
     fun `the Keeper actions reach the gateway`() {
         val gateway = FakeGateway().apply { circle = circle() }
         val vm = CircleViewModel(gateway)

@@ -24,7 +24,7 @@ import kotlinx.coroutines.withContext
 import java.io.IOException
 
 /** The schema literal the baseline writes into [Cloud.NEEDED_SCHEMA_VERSION]. */
-const val NEEDED_SCHEMA_VERSION = 27
+const val NEEDED_SCHEMA_VERSION = 28
 
 /**
  * The backend the app currently talks to. [isDefault] distinguishes the
@@ -106,6 +106,8 @@ object Cloud {
     private const val PREFS_FILE = "cloud_config"
     private const val PREF_URL = "url"
     private const val PREF_KEY = "key"
+    private const val PREF_TOMBSTONE_OWNER = "tombstone_owner"
+    private const val KEEPER_ONLY = "Only the Keeper"
 
     private var prefs: SharedPreferences? = null
 
@@ -198,6 +200,18 @@ object Cloud {
         _config.value = resolve(next)
     }
 
+    /**
+     * The account the trial deletions waiting on this phone belong to: the last
+     * one signed in here. Kept beside the backend choice, which is just as much
+     * a fact about this phone and survives the same way. Null before the first
+     * sign-in (and when the file has not been opened yet).
+     */
+    var tombstoneOwner: String?
+        get() = prefs?.getString(PREF_TOMBSTONE_OWNER, null)
+        set(value) {
+            prefs?.edit()?.putString(PREF_TOMBSTONE_OWNER, value)?.apply()
+        }
+
     private fun readOverride(prefs: SharedPreferences): CloudConfig? {
         val url = prefs.getString(PREF_URL, null)
         val key = prefs.getString(PREF_KEY, null)
@@ -262,7 +276,11 @@ object Cloud {
         }
         is PostgrestRestException -> when (error.code) {
             "23505" -> "That true name is taken"
-            "42501" -> "The cloud refused this — you are not allowed to change that record"
+            // circle_keeper_lock refuses a non-Keeper with 42501 and a sentence
+            // for the lifter ("Only the Keeper can ..."): the keys may have just
+            // been passed on, and the generic line would hide why.
+            "42501" -> error.error.takeIf { it.startsWith(KEEPER_ONLY) }
+                ?: "The cloud refused this — you are not allowed to change that record"
             "23514" -> "The cloud rejected this value as out of range"
             // raise exception in our own triggers (rate limits, blocked
             // requests): the message is written for the lifter in the

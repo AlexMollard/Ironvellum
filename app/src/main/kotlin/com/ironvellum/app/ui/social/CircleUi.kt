@@ -207,7 +207,13 @@ class CircleViewModel(
                         .onSuccess { read -> onRead(read) }
                         .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
                 }
-                .onFailure { _ui.value = _ui.value.copy(actionError = it.reason()) }
+                .onFailure { failure ->
+                    _ui.value = _ui.value.copy(actionError = failure.reason())
+                    // A refusal usually means the roster on screen is behind: the
+                    // keys were passed on, or the member already left. Read it again
+                    // so the screen shows what the server holds; the refusal stays.
+                    gateway.read(force = true).onSuccess { read -> onRead(read) }
+                }
             _ui.value = _ui.value.copy(actionBusy = false)
         }
     }
@@ -344,13 +350,19 @@ fun CircleSection(
         AlertDialog(
             shape = MaterialTheme.shapes.medium,
             containerColor = Color(0xFF0D1110),
-            onDismissRequest = { confirmRotate = false },
+            onDismissRequest = {
+                vm.dismissActionError()
+                confirmRotate = false
+            },
             title = { Text("New circle code?") },
             text = {
-                Text(
-                    "The current code stops working at once. Members stay; anyone holding " +
-                        "the old code can no longer join.",
-                )
+                Column {
+                    Text(
+                        "The current code stops working at once. Members stay; anyone holding " +
+                            "the old code can no longer join.",
+                    )
+                    InlineActionError(actionError)
+                }
             },
             confirmButton = {
                 IronvellumButton(label = "New code", enabled = !ui.actionBusy, onClick = {
@@ -358,7 +370,10 @@ fun CircleSection(
                 })
             },
             dismissButton = {
-                IronvellumButton(label = "Keep", onClick = { confirmRotate = false }, quiet = true)
+                IronvellumButton(label = "Keep", onClick = {
+                    vm.dismissActionError()
+                    confirmRotate = false
+                }, quiet = true)
             },
         )
     }
@@ -367,13 +382,19 @@ fun CircleSection(
         AlertDialog(
             shape = MaterialTheme.shapes.medium,
             containerColor = Color(0xFF0D1110),
-            onDismissRequest = { removeId = null },
+            onDismissRequest = {
+                vm.dismissActionError()
+                removeId = null
+            },
             title = { Text("Remove ${removing.displayName}?") },
             text = {
-                Text(
-                    "They are told, and their days this week still count. They can rejoin " +
-                        "with the code unless you change it first.",
-                )
+                Column {
+                    Text(
+                        "They are told, and their days this week still count. They can rejoin " +
+                            "with the code unless you change it first.",
+                    )
+                    InlineActionError(actionError)
+                }
             },
             confirmButton = {
                 IronvellumButton(label = "Remove", enabled = !ui.actionBusy, onClick = {
@@ -381,7 +402,10 @@ fun CircleSection(
                 })
             },
             dismissButton = {
-                IronvellumButton(label = "Keep", onClick = { removeId = null }, quiet = true)
+                IronvellumButton(label = "Keep", onClick = {
+                    vm.dismissActionError()
+                    removeId = null
+                }, quiet = true)
             },
         )
     }
@@ -523,7 +547,7 @@ private fun CircleRoster(
             // stale week pass for the current one.
             Spacer(Modifier.height(4.dp))
             Text(
-                "Could not refresh — pull down to try again.",
+                "The ink has faded — this roster is from your last sync. Pull down to try again.",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
@@ -549,21 +573,24 @@ private fun CircleRoster(
                 letterSpacing = IronvellumTracking.InlineLabel,
             )
             if (isOwner) {
-                // 44dp minimum touch target via TapPad; the label is announced
+                // 48dp minimum touch target via TapPad; the label is announced
                 // with the current goal so a screen reader hears what it edits.
-                TapPad("EDIT", "Change the weekly goal, currently ${circle.perMember} days each") { onEditGoal() }
+                TapPad("EDIT", "Change the weekly goal, currently ${circle.perMember} days each", minSize = 48.dp) { onEditGoal() }
             }
         }
         Spacer(Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            // The text takes what COPY and SHARE leave and wraps, so at 360dp or
+            // a large font scale the actions are never squeezed out of the row.
             Text(
                 "CIRCLE CODE ${circle.code}",
                 style = MaterialTheme.typography.labelMedium,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = IronvellumTracking.InlineLabel,
+                modifier = Modifier.weight(1f),
             )
-            RowAction("COPY", IronvellumColors.SystemGreen) {
+            RowAction("COPY", IronvellumColors.SystemGreen, contentDescription = "Copy the circle code") {
                 scope.launch {
                     clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Ironvellum circle code", circle.code)))
                 }
@@ -572,7 +599,7 @@ private fun CircleRoster(
                     Toast.makeText(context, "Circle code copied", Toast.LENGTH_SHORT).show()
                 }
             }
-            RowAction("SHARE", IronvellumColors.SystemGreen) {
+            RowAction("SHARE", IronvellumColors.SystemGreen, contentDescription = "Share the circle code") {
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(
@@ -585,8 +612,8 @@ private fun CircleRoster(
         }
         if (isOwner) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                RowAction("RENAME", IronvellumColors.SystemGreen, onRename)
-                RowAction("NEW CODE", IronvellumColors.SystemGreen, onRotate)
+                RowAction("RENAME", IronvellumColors.SystemGreen, contentDescription = "Rename the circle", onClick = onRename)
+                RowAction("NEW CODE", IronvellumColors.SystemGreen, contentDescription = "Make a new circle code", onClick = onRotate)
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -691,7 +718,14 @@ private fun CircleMemberRow(
                     letterSpacing = IronvellumTracking.InlineLabel,
                 )
             }
-            onRemove?.let { RowAction("REMOVE", IronvellumColors.DangerRed, it) }
+            onRemove?.let {
+                RowAction(
+                    "REMOVE",
+                    IronvellumColors.DangerRed,
+                    contentDescription = "Remove ${member.displayName} from the circle",
+                    onClick = it,
+                )
+            }
         }
     }
 }

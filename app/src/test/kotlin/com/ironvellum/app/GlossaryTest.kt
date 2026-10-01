@@ -51,6 +51,12 @@ class GlossaryTest {
         "Inbox poll failed" to "logcat line, never shown",
     )
 
+    /** Raised messages that name a retired word on purpose, with the reason. */
+    private val allowedRaises = mapOf(
+        "warbands and circles both exist: merge them by hand before applying this file" to
+            "the migration guard names the old tables; only the project owner ever sees it",
+    ).keys
+
     @Test
     fun `the scan actually sees the sources`() {
         assertTrue(
@@ -84,35 +90,30 @@ class GlossaryTest {
     }
 
     /**
-     * The circle functions raise messages the app shows word for word
-     * (Cloud.explain passes a P0001 through), so they are copy too. Scoped to
-     * the functions named for the circle: other functions' messages are
-     * developer-facing refusals (a revoked grant, a bad argument) that the
-     * client replaces, and rewording them is not this test's business.
+     * The baseline's `raise exception` messages are copy too: Cloud.explain
+     * passes a P0001 through word for word (a remark rate limit, a blocked ally
+     * request, a circle refusal). A refusal carrying errcode 42501 is the
+     * developer-facing kind a revoked grant gives, which the client replaces
+     * (except "Only the Keeper ...", which is written as copy), so it is skipped.
      */
     @Test
-    fun `no retired glossary word reaches an error the circle functions raise`() {
+    fun `no retired glossary word reaches an error the baseline raises`() {
         val sql = baselineSql()
-        val functions = Regex("""create or replace function public\.(\w+)\(.*?\n\$\$;""", RegexOption.DOT_MATCHES_ALL)
-            .findAll(sql)
-            .filter { "circle" in it.groupValues[1] }
-            .toList()
-        assertTrue("no circle function found in the baseline; the scan would pass vacuously", functions.size >= 5)
-        val raise = Regex("""raise\s+exception\s+'((?:[^']|'')*)'""")
+        val raise = Regex("""raise\s+exception\s+'((?:[^']|'')*)'([^;]*);""")
         val hits = mutableListOf<String>()
         var messages = 0
-        for (fn in functions) {
-            for (m in raise.findAll(fn.value)) {
-                messages++
-                val text = m.groupValues[1].replace("''", "'")
-                retired.firstOrNull { it.containsMatchIn(text) }?.let {
-                    hits += "${fn.groupValues[1]}: \"$text\"  (${it.find(text)!!.value})"
-                }
+        for (m in raise.findAll(sql)) {
+            if ("42501" in m.groupValues[2]) continue
+            messages++
+            val text = m.groupValues[1].replace("''", "'")
+            if (text in allowedRaises) continue
+            retired.firstOrNull { it.containsMatchIn(text) }?.let {
+                hits += "\"$text\"  (${it.find(text)!!.value})"
             }
         }
-        assertTrue("no raise exception found in the circle functions; the scan is broken", messages >= 5)
+        assertTrue("fewer than 15 raise exception messages found in the baseline; the scan is broken", messages >= 15)
         assertEquals(
-            "A circle function raises a message with a word docs/GLOSSARY.md retired:\n" + hits.joinToString("\n"),
+            "The baseline raises a message with a word docs/GLOSSARY.md retired:\n" + hits.joinToString("\n"),
             0,
             hits.size,
         )

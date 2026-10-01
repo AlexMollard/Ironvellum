@@ -49,6 +49,17 @@ internal fun partitionPushable(sets: List<SessionSet>): Pair<List<SessionSet>, L
     sets.partition { it.exerciseName.isNotBlank() }
 
 /**
+ * The deletions waiting on this phone are the last signed-in account's: a trial
+ * deleted while signed out, or while another account was in, must not be
+ * deleted from whoever signs in next, whose cloud may hold a different trial
+ * under the same local id (a second phone). So when [signedIn] is not the
+ * [owner] of the waiting tombstones, they are dropped; the pending cloud rows
+ * of the old owner stay, which is the safe side of a missed delete.
+ */
+internal fun tombstonesToDrop(owner: String?, signedIn: String, pending: List<Long>): List<Long> =
+    if (owner == signedIn) emptyList() else pending
+
+/**
  * Everything that leaves the device through PostgREST: aggregates, completed
  * measurements (StatEntry) and HealthDay rows — the cloud schema has no table
  * for them on purpose.
@@ -59,6 +70,8 @@ class CloudSync(
 ) {
     // Read cache + single-flight for the social reads. See CloudReadCache.
     private val cache = CloudReadCache()
+    // Declared before init: the sign-in collector below uses it.
+    private val tombstoneLock = Mutex()
     // Push watermark lives in Room (`sync_state`), read per push below.
 
     private val _inboxUnread = MutableStateFlow(0)
@@ -74,8 +87,9 @@ class CloudSync(
         // the count: the next lifter on this phone must not see the previous
         // one's dot. CloudSync lives as long as the app, so does this scope.
         CoroutineScope(SupervisorJob() + Dispatchers.Default).launch {
-            account.account.map { it?.userId }.distinctUntilChanged().collect {
+            account.account.map { it?.userId }.distinctUntilChanged().collect { userId ->
                 _inboxUnread.value = 0
+                if (userId != null) runCatching { scopeTombstonesTo(userId) }
             }
         }
     }
@@ -88,6 +102,20 @@ class CloudSync(
      * silently invalidates it and the client would otherwise skip every row.
      */
     suspend fun forgetPushedState() = repo.clearPushWatermark()
+
+    /**
+     * Makes the waiting trial deletions [userId]'s, dropping them when they were
+     * left by another account (see [tombstonesToDrop]). Run when an account
+     * signs in and again at the top of every push, so a push that races the
+     * sign-in still sees only its own account's deletions.
+     */
+    private suspend fun scopeTombstonesTo(userId: String) = tombstoneLock.withLock {
+        val owner = Cloud.tombstoneOwner
+        if (owner == userId) return@withLock
+        val drop = tombstonesToDrop(owner, userId, repo.tombstonedSessions())
+        if (drop.isNotEmpty()) repo.clearTombstones(drop)
+        Cloud.tombstoneOwner = userId
+    }
 
     suspend fun push(): Result<SyncOutcome> {
         val me = requireAccount(account).getOrElse { return failure(it) }
@@ -126,6 +154,7 @@ class CloudSync(
             // comparing the cloud with the device (on a fresh install that
             // comparison would delete the whole cloud history). They are
             // cleared only once the delete succeeded, so a failed one retries.
+            scopeTombstonesTo(me.userId)
             val tombstones = repo.tombstonedSessions()
             if (tombstones.isNotEmpty()) {
                 runCatching {

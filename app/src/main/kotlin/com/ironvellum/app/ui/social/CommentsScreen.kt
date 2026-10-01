@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -34,9 +35,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -801,8 +804,8 @@ private fun CommentRow(
                 maxLines = 1,
                 modifier = Modifier.weight(1f),
             )
-            if (canReport) RowAction("REPORT", IronvellumColors.InkMuted, onReport)
-            if (canDelete) RowAction("DELETE", IronvellumColors.DangerRed, onDelete)
+            if (canReport) RowAction("REPORT", IronvellumColors.InkMuted, onClick = onReport)
+            if (canDelete) RowAction("DELETE", IronvellumColors.DangerRed, onClick = onDelete)
         }
         Text(
             comment.body,
@@ -812,9 +815,18 @@ private fun CommentRow(
     }
 }
 
-/** A small text action on a row: 44dp tall, visually a label, never a slab. */
+/**
+ * A small text action on a row: a 48dp target, visually a label, never a slab.
+ * [contentDescription] is what a screen reader says in place of the bare label,
+ * for a row that repeats it ("REMOVE" on every member): name what it acts on.
+ */
 @Composable
-internal fun RowAction(label: String, tint: Color, onClick: () -> Unit) {
+internal fun RowAction(
+    label: String,
+    tint: Color,
+    contentDescription: String? = null,
+    onClick: () -> Unit,
+) {
     Text(
         label,
         style = MaterialTheme.typography.labelSmall,
@@ -822,14 +834,20 @@ internal fun RowAction(label: String, tint: Color, onClick: () -> Unit) {
         fontWeight = FontWeight.SemiBold,
         color = tint,
         letterSpacing = IronvellumTracking.InlineLabel,
+        textAlign = TextAlign.Center,
         maxLines = 1,
         softWrap = false,
         modifier = Modifier
-            .heightIn(min = 44.dp)
+            .heightIn(min = 48.dp)
+            .widthIn(min = 48.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .clickable(role = Role.Button) { onClick() }
             .wrapContentHeight()
-            .padding(horizontal = 8.dp),
+            .padding(horizontal = 8.dp)
+            .then(
+                if (contentDescription == null) Modifier
+                else Modifier.semantics { this.contentDescription = contentDescription },
+            ),
     )
 }
 
