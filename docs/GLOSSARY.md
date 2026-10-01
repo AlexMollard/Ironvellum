@@ -58,7 +58,7 @@ Settings keeps the name **Settings**.
 | **Folio** | An Ironbound's public page | "Open folio", "Manage folio", "This folio is private" | profile page, lifter page, record sealed |
 | **Frame** | The body being measured | "YOUR FRAME", "Frame rating" | body, vessel |
 | **Ascension** | The tier ladder that follows level: Acolyte · Adept · Warden · Magister · Archon · Exarch · Sovereign | "ASCENSION · Adept", on reaching one: "ASCENDED · from Acolyte" | class, army class, promotion, Recruit…Grand Marshal |
-| **Strength Rank** | Untrained, Novice, Intermediate, Advanced, Elite | its own labelled value, never joined to the ascension | rank alone |
+| **Strength Rank** | Current strength from the barbell, pull-up and dip reckonings (best estimated 1-rep max over bodyweight per lift in the last 90 days, averaged): Untrained, Novice, Intermediate, Advanced, Elite; **Unranked** before any | its own labelled value, never joined to the ascension; "STRENGTH RANK · Unranked" | rank alone; never for level |
 
 ## Training
 

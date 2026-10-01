@@ -59,6 +59,7 @@ import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.Progression
+import com.ironvellum.app.domain.Rank
 import com.ironvellum.app.domain.Reward
 import com.ironvellum.app.domain.RollResult
 import com.ironvellum.app.domain.RoutineCode
@@ -1223,6 +1224,12 @@ class Repository(
     fun observeStats(): Flow<List<StatEntry>> =
         statDao.observeAll().map { list ->
             list.map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
+        }
+
+    /** The current Strength Rank ([Rank.current]); null while unranked. */
+    fun observeStrengthRank(): Flow<String?> =
+        combine(observeHistory(), observeStats(), observeBodyProfile()) { history, stats, body ->
+            Rank.current(history, SetRecords.bodyweightLookup(stats), body.second, System.currentTimeMillis())
         }
 
     /**

@@ -2,7 +2,7 @@ package com.ironvellum.app.domain
 
 /**
  * The muster ladder. You begin as nothing; every class is seized by leveling.
- * Levels mirror [Rank]'s strength grade but grow the roll instead.
+ * It follows level (XP); [Rank] follows strength and never reads level.
  *
  * Plain military ranks on purpose: they carry the tone without borrowing any
  * one setting's vocabulary.

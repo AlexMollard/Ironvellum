@@ -218,6 +218,11 @@ class DashboardViewModel(
         .map { it.second }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Sex.MALE)
 
+    /** Strength Rank from the lift boards, "Unranked" without one; blank until first read. */
+    val strengthRank: StateFlow<String> = repo.observeStrengthRank()
+        .map { it ?: Rank.UNRANKED }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
     /** The Garrison at a glance: its live rate and the inscriptions waiting to be spent. */
     val garrison: StateFlow<GarrisonGlance?> = combine(repo.observeIdleRate(), repo.observeRolls()) { rate, rolls ->
         GarrisonGlance(perHour = rate.perHour, inscriptions = rolls)
@@ -321,6 +326,7 @@ fun DashboardScreen(
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     val live by viewModel.live.collectAsStateWithLifecycle()
     val bodyGap by viewModel.bodyGap.collectAsStateWithLifecycle()
+    val strengthRank by viewModel.strengthRank.collectAsStateWithLifecycle()
     val profile = ui.profile
     val progress = Xp.progress(profile?.totalXp ?: 0L)
     val today = LocalDate.now()
@@ -397,7 +403,7 @@ fun DashboardScreen(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f, fill = false)) {
                         Text(
-                            "STRENGTH RANK · ${Rank.forLevel(progress.level)}",
+                            if (strengthRank.isEmpty()) "STRENGTH RANK" else "STRENGTH RANK · $strengthRank",
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
                             // No tracking: labelMedium's 2sp is pure letter
@@ -465,7 +471,7 @@ fun DashboardScreen(
                             modifier = Modifier.size(22.dp),
                         )
                     }
-                    // Rank and crest as one insignia: the worn crest supplies
+                    // Level and crest as one insignia: the worn crest supplies
                     // the plate this level sits on.
                     LifterSigil(level = progress.level, frameId = equippedFrame)
                 }

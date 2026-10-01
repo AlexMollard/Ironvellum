@@ -25,7 +25,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 
 /**
- * Rank and worn crest as ONE insignia.
+ * Level and worn crest as ONE insignia.
  *
  * They used to be two competing objects on the player card: a plain circular
  * level badge that matched nothing else in the app's cut-corner language, and a
