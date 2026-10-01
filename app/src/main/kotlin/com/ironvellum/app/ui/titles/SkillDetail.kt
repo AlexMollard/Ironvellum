@@ -86,6 +86,11 @@ fun SkillDetailDialog(
     training: SkillTrainingEvidence? = null,
     /** The published female bar, when this lifter's profile says it applies. */
     sexBar: String? = null,
+    /** Latest weigh-in; null when none, which leaves a loaded standard unjudged. */
+    bodyweightKg: Double? = null,
+    female: Boolean = false,
+    /** The XP an unclaim takes back: what the claim actually paid. */
+    refundXp: Int = skill.xp,
     /** Every mastered technique, so each prerequisite chip can say whether it is met. */
     masteredSkills: Set<String> = emptySet(),
     onLogPractice: (value: Int, weightKg: Double?) -> Unit,
@@ -106,11 +111,13 @@ fun SkillDetailDialog(
     // lifter who already hit it in a session must not read "to go".
     val trained = training
     val bestOverall = maxOf(best, trained?.value ?: 0)
-    val cleared = remember(skill, practiced, trained) {
+    val cleared = remember(skill, practiced, trained, bodyweightKg, female) {
         SkillGuidance.cleared(
             skill,
             practiced.map { SkillGuidance.Effort(it.value, it.weightKg) } +
                 listOfNotNull(trained?.let { SkillGuidance.Effort(it.value, it.weightKg) }),
+            bodyweightKg,
+            female,
         )
     }
     val terms = remember(skill, sexBar) { termsIn("${skill.name} ${sexBar ?: skill.standard} ${skill.why}") }
@@ -166,7 +173,7 @@ fun SkillDetailDialog(
                         terms.forEach { TermChip(it) }
                     }
                 }
-                val prerequisites = skill.prerequisites()
+                val prerequisites = skill.prerequisites
                 if (prerequisites.isNotEmpty()) {
                     Text(
                         "REQUIRES",
@@ -259,13 +266,15 @@ fun SkillDetailDialog(
                             color = IronvellumColors.InkMuted,
                             letterSpacing = 1.sp,
                         )
-                        val needKg = SkillGuidance.requiredAddedKg(skill)
+                        val needKg = SkillGuidance.requiredKg(skill, bodyweightKg, female)
+                        val added = Skills.loadBar(skill.name, female)?.added == true
                         Text(
                             when {
                                 cleared -> "standard cleared"
                                 // Reps alone cannot judge a bodyweight-multiple bar.
-                                !SkillGuidance.judgeable(skill) -> "check the load yourself"
-                                bestOverall >= skill.target && needKg != null -> "needs +${formatLoad(needKg)}kg"
+                                !SkillGuidance.judgeable(skill, bodyweightKg, female) -> "check the load yourself"
+                                bestOverall >= skill.target && needKg != null ->
+                                    "needs ${if (added) "+" else ""}${formatLoad(needKg)}kg"
                                 else -> "${SkillGuidance.withUnit(skill.target - bestOverall, skill)} to standard"
                             },
                             style = MaterialTheme.typography.labelMedium,
@@ -320,7 +329,7 @@ fun SkillDetailDialog(
                 if (mastered) {
                     if (confirmUnclaim) {
                         Text(
-                            "Give the technique back? The ${skill.xp} XP is removed too.",
+                            "Give the technique back? The $refundXp XP is removed too.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.DangerRed,
                         )
@@ -518,7 +527,7 @@ fun SkillDetailDialog(
                     )
                 } else {
                     Text(
-                        "Locked until ${skill.firstUnmetPrerequisite(masteredSkills) ?: skill.prerequisites().joinToString(" and ")} is mastered.",
+                        "Locked until ${skill.firstUnmetPrerequisite(masteredSkills) ?: skill.prerequisites.joinToString(" and ")} is mastered.",
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                     )

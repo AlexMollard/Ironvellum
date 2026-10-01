@@ -5,15 +5,9 @@ import androidx.compose.ui.graphics.luminance
 import com.ironvellum.app.domain.SkillPractice
 import com.ironvellum.app.domain.Skills
 
-/**
- * Every prerequisite of a technique. Read through here, never `requires`
- * directly, so the tree, the detail and the chips follow one rule.
- */
-internal fun Skills.SkillDef.prerequisites(): List<String> = listOfNotNull(requires)
-
 /** The first prerequisite still to master; null when the technique is open. */
 internal fun Skills.SkillDef.firstUnmetPrerequisite(mastered: Set<String>): String? =
-    prerequisites().firstOrNull { it !in mastered }
+    prerequisites.firstOrNull { it !in mastered }
 
 /**
  * Pure decisions behind the technique screens: what the attempt stepper
@@ -25,32 +19,48 @@ object SkillGuidance {
     /** One logged effort: reps, seconds or metres, and any load on top. */
     data class Effort(val value: Int, val weightKg: Double?)
 
-    private val addedKg = Regex("""\+\s*(\d+(?:\.\d+)?)\s*kg""", RegexOption.IGNORE_CASE)
-
-    /** The "+25 kg" a standard asks for on top of bodyweight; null when it asks for none. */
-    fun requiredAddedKg(skill: Skills.SkillDef): Double? =
-        addedKg.find(skill.standard)?.groupValues?.get(1)?.toDouble()
-
     /**
-     * A standard set as a multiple of bodyweight ("1 rep at double
-     * bodyweight") cannot be judged from a rep count: [Skills.SkillDef.target]
-     * keeps the reps and drops the load, so one light rep would read as
-     * cleared. Those, and any standard without a figure, are left to the
-     * person claiming.
+     * The load a standard asks for, in kg, for a lifter of [bodyweightKg]
+     * ([Skills.loadBar]'s share of it); null when it asks for none or the
+     * bodyweight is unknown.
      */
-    fun judgeable(skill: Skills.SkillDef): Boolean =
-        skill.target > 0 && !skill.standard.contains("bodyweight", ignoreCase = true)
-
-    /** Whether one effort meets the standard; always false for an unjudgeable one. */
-    fun clears(skill: Skills.SkillDef, effort: Effort): Boolean {
-        if (!judgeable(skill) || effort.value < skill.target) return false
-        val needKg = requiredAddedKg(skill) ?: return true
-        return (effort.weightKg ?: 0.0) >= needKg
+    fun requiredKg(skill: Skills.SkillDef, bodyweightKg: Double?, female: Boolean = false): Double? {
+        val bar = Skills.loadBar(skill.name, female) ?: return null
+        return bodyweightKg?.takeIf { it > 0.0 }?.let { bar.share * it }
     }
 
+    /**
+     * A load set as a share of bodyweight needs the bodyweight to be judged;
+     * without it there is no verdict, and the person claiming decides. Any
+     * unloaded standard that still reads as a bodyweight multiple, and any
+     * without a figure, is left to them too.
+     */
+    fun judgeable(
+        skill: Skills.SkillDef,
+        bodyweightKg: Double? = null,
+        female: Boolean = false,
+    ): Boolean {
+        if (skill.target <= 0) return false
+        if (Skills.loadBar(skill.name, female) != null) return bodyweightKg != null && bodyweightKg > 0.0
+        return !skill.standard.contains("bodyweight", ignoreCase = true)
+    }
+
+    /** Whether one effort meets the standard; always false for an unjudgeable one. */
+    fun clears(
+        skill: Skills.SkillDef,
+        effort: Effort,
+        bodyweightKg: Double? = null,
+        female: Boolean = false,
+    ): Boolean = judgeable(skill, bodyweightKg, female) &&
+        Skills.meetsStandard(skill, effort.value, effort.weightKg, bodyweightKg, female) == true
+
     /** True when any logged effort meets the standard. Never claims: it only tells. */
-    fun cleared(skill: Skills.SkillDef, efforts: List<Effort>): Boolean =
-        efforts.any { clears(skill, it) }
+    fun cleared(
+        skill: Skills.SkillDef,
+        efforts: List<Effort>,
+        bodyweightKg: Double? = null,
+        female: Boolean = false,
+    ): Boolean = efforts.any { clears(skill, it, bodyweightKg, female) }
 
     /**
      * What the attempt stepper starts on: the most recent logged attempt, or
@@ -75,9 +85,14 @@ object SkillGuidance {
     }
 
     /** "best 40/60s" for a tree row; null with nothing logged or a bodyweight-multiple standard. */
-    fun progressCue(skill: Skills.SkillDef, best: Effort?): String? {
-        if (best == null || best.value <= 0 || !judgeable(skill)) return null
-        val load = best.weightKg?.takeIf { it > 0.0 && requiredAddedKg(skill) != null }
+    fun progressCue(
+        skill: Skills.SkillDef,
+        best: Effort?,
+        bodyweightKg: Double? = null,
+        female: Boolean = false,
+    ): String? {
+        if (best == null || best.value <= 0 || !judgeable(skill, bodyweightKg, female)) return null
+        val load = best.weightKg?.takeIf { it > 0.0 && Skills.loadBar(skill.name, female) != null }
         return "best ${best.value}/${withUnit(skill.target, skill)}" +
             (load?.let { " @ ${formatLoad(it)}kg" } ?: "")
     }

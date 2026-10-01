@@ -17,9 +17,10 @@ import org.junit.Test
 class SkillGuidanceTest {
 
     private val timedHold = Skills.ALL.first {
-        it.metric == Skills.Metric.SECONDS && SkillGuidance.judgeable(it) && SkillGuidance.requiredAddedKg(it) == null
+        it.metric == Skills.Metric.SECONDS && SkillGuidance.judgeable(it) && Skills.loadBar(it.name) == null
     }
-    private val addedLoad = Skills.ALL.first { SkillGuidance.requiredAddedKg(it) != null && SkillGuidance.judgeable(it) }
+    private val addedLoad = Skills.forName("Weighted Pull-up")!!
+    private val bodyweightKg = 90.0
     private val bodyweightBar = Skills.ALL.first { it.standard.contains("bodyweight", ignoreCase = true) }
 
     // ---- the attempt default
@@ -61,10 +62,16 @@ class SkillGuidanceTest {
 
     @Test
     fun `an added-load standard needs the load as well as the count`() {
-        val need = SkillGuidance.requiredAddedKg(addedLoad)!!
-        assertFalse(SkillGuidance.cleared(addedLoad, listOf(Effort(addedLoad.target, null))))
-        assertFalse(SkillGuidance.cleared(addedLoad, listOf(Effort(addedLoad.target, need - 2.5))))
-        assertTrue(SkillGuidance.cleared(addedLoad, listOf(Effort(addedLoad.target, need))))
+        val need = SkillGuidance.requiredKg(addedLoad, bodyweightKg)!!
+        assertFalse(SkillGuidance.cleared(addedLoad, listOf(Effort(addedLoad.target, null)), bodyweightKg))
+        assertFalse(SkillGuidance.cleared(addedLoad, listOf(Effort(addedLoad.target, need - 2.5)), bodyweightKg))
+        assertTrue(SkillGuidance.cleared(addedLoad, listOf(Effort(addedLoad.target, need)), bodyweightKg))
+    }
+
+    @Test
+    fun `a loaded standard has no verdict without a bodyweight`() {
+        assertFalse(SkillGuidance.judgeable(addedLoad, null))
+        assertFalse(SkillGuidance.cleared(addedLoad, listOf(Effort(addedLoad.target, 500.0)), null))
     }
 
     @Test
@@ -91,7 +98,7 @@ class SkillGuidanceTest {
             val ordered = treeOrder(line)
             assertEquals(
                 line,
-                ordered.filter { it.prerequisites().isEmpty() },
+                ordered.filter { it.prerequisites.isEmpty() },
                 SkillGuidance.frontier(ordered, emptySet()),
             )
         }
@@ -101,8 +108,8 @@ class SkillGuidanceTest {
     fun `mastering a technique moves the frontier to what it opens`() {
         // Only children that need nothing else: one with a second prerequisite stays locked.
         fun opens(root: Skills.SkillDef) =
-            Skills.ALL.filter { it.line == root.line && it.prerequisites() == listOf(root.name) }
-        val root = Skills.ALL.first { it.prerequisites().isEmpty() && opens(it).isNotEmpty() }
+            Skills.ALL.filter { it.line == root.line && it.prerequisites == listOf(root.name) }
+        val root = Skills.ALL.first { it.prerequisites.isEmpty() && opens(it).isNotEmpty() }
         val frontier = SkillGuidance.frontier(treeOrder(root.line), setOf(root.name))
         assertFalse(root in frontier)
         assertTrue(opens(root).all { it in frontier })
@@ -171,8 +178,8 @@ class SkillGuidanceTest {
 
     @Test
     fun `a row describes its state in words`() {
-        val locked = Skills.ALL.first { it.prerequisites().isNotEmpty() }
-        val text = rowDescription(locked, mastered = false, unlocked = false, needs = locked.prerequisites().first(), cue = null)
+        val locked = Skills.ALL.first { it.prerequisites.isNotEmpty() }
+        val text = rowDescription(locked, mastered = false, unlocked = false, needs = locked.prerequisites.first(), cue = null)
         assertTrue(text, text.startsWith("${locked.name}, tier ${Skills.tierLabel(locked.tier)}, locked, needs "))
         assertTrue(rowDescription(timedHold, true, true, null, null).endsWith("mastered"))
     }

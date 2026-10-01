@@ -12,9 +12,9 @@ class TechniqueEvidenceTest {
         SetRecords.Record("x", setIndex = 0, score = score, reps = reps, weightKg = weightKg, achievedAtMs = 0, sessionId = 0)
 
     private val loadFree = Skills.ALL.first {
-        it.target > 0 && !it.standard.contains("bodyweight", true) && !it.standard.contains("kg", true)
+        it.target > 0 && !it.standard.contains("bodyweight", true) && Skills.loadBar(it.name) == null
     }
-    private val addedLoad = Skills.ALL.first { Regex("""\+\s*\d+\s*kg""").containsMatchIn(it.standard) }
+    private val addedLoad = Skills.forName("Weighted Pull-up")!!
     private val bodyweightBar = Skills.ALL.first { it.standard.contains("bodyweight", true) }
 
     private val heavyShort = record(reps = 5, weightKg = 25.0, score = 900.0)

@@ -115,8 +115,6 @@ data class SkillTrainingEvidence(
     val achievedAtMs: Long,
 )
 
-private val addedLoadClause = Regex("""\+\s*\d+(?:\.\d+)?\s*kg""", RegexOption.IGNORE_CASE)
-
 /**
  * Which set-position record stands as a movement's evidence. [SetRecords.records]
  * keeps one per set position. A count-only technique standard ("Hang 60s")
@@ -129,7 +127,7 @@ private val addedLoadClause = Regex("""\+\s*\d+(?:\.\d+)?\s*kg""", RegexOption.I
 internal fun techniqueEvidence(records: List<SetRecords.Record>, skill: Skills.SkillDef?): SetRecords.Record {
     val countOnly = skill != null &&
         !skill.standard.contains("bodyweight", ignoreCase = true) &&
-        !addedLoadClause.containsMatchIn(skill.standard)
+        Skills.loadBar(skill.name) == null
     return if (countOnly) records.maxWith(compareBy({ it.reps }, { it.score })) else records.maxBy { it.score }
 }
 

@@ -101,6 +101,8 @@ data class TitlesUi(
     /** Best logged training set per normalised movement name - evidence the lifter never had to re-log. */
     val training: Map<String, SkillTrainingEvidence> = emptyMap(),
     val sex: Sex = Sex.MALE,
+    /** Latest weigh-in, the yardstick for loads set as a share of bodyweight. */
+    val bodyweightKg: Double? = null,
     /** Best logged effort per technique name, practice or training, for the tree's progress cue. */
     val bestEffort: Map<String, SkillGuidance.Effort> = emptyMap(),
     /** Every rite as id to name, for "Train it". */
@@ -176,6 +178,7 @@ class TitlesViewModel(private val repo: Repository) : ViewModel() {
             ),
             training = training,
             sex = bodyProfile.second,
+            bodyweightKg = SetRecords.bodyweightLookup(stats)(Long.MAX_VALUE).takeIf { it > 0.0 },
             bestEffort = bestEfforts(practices, training),
             rites = presets.map { it.id to it.name },
         )
@@ -292,6 +295,9 @@ fun TitlesScreen(
                 training = ui.training[Titles.normaliseName(name)],
                 sexBar = if (ui.sex == Sex.FEMALE) Skills.femaleStandard(name) else null,
                 masteredSkills = mastered,
+                bodyweightKg = ui.bodyweightKg,
+                female = ui.sex == Sex.FEMALE,
+                refundXp = Skills.claimRefund(name, entries.firstOrNull { it.claimed }?.value ?: 0),
                 onLogPractice = { value, load ->
                     viewModel.practice(name, value, load)
                     openSkill = null
@@ -436,6 +442,8 @@ fun TitlesScreen(
                 onSelect = { openSkill = it },
                 modifier = Modifier.fillMaxWidth(),
                 best = ui.bestEffort,
+                bodyweightKg = ui.bodyweightKg,
+                female = ui.sex == Sex.FEMALE,
             )
             Spacer(Modifier.height(28.dp))
             return@Column

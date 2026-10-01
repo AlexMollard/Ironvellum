@@ -28,13 +28,6 @@ object Skills {
         /** Why this technique is worth chasing. */
         val why: String,
     ) {
-        /**
-         * The first (in-line) prerequisite, for views that draw a single
-         * parent. Gating never reads this: [unlocked] checks every entry of
-         * [prerequisites].
-         */
-        val requires: String? get() = prerequisites.firstOrNull()
-
         /** Skills are milestones, not sets: reward scales hard with tier. */
         val xp: Int get() = tier * XP_PER_TIER
 
