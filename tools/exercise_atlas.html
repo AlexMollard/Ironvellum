@@ -1,0 +1,256 @@
+<title>Ironvellum Exercise Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a ledger. Sticky filter bar, index list on the left, one exercise's full record on the right; stacks on phones. */
+:root {
+  --paper: #0c0c0b; --panel: #171715; --raised: #1e1e1b;
+  --ink: #e8e8e4; --muted: #a3a099; --rune: #32302b;
+  --green: #6fae8c; --emerald: #34d399; --gold: #f2c14e; --red: #ef5350;
+  --display: "Chakra Petch", "Segoe UI", system-ui, sans-serif;
+  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) {
+  --paper: #f4f4f1; --panel: #ffffff; --raised: #ecebe6;
+  --ink: #1b1b19; --muted: #5f5d57; --rune: #d6d4cc;
+  --green: #2f7a55; --emerald: #0f9a6a; --gold: #a67a06; --red: #c62828;
+  color-scheme: light;
+} }
+:root[data-theme="light"] {
+  --paper: #f4f4f1; --panel: #ffffff; --raised: #ecebe6;
+  --ink: #1b1b19; --muted: #5f5d57; --rune: #d6d4cc;
+  --green: #2f7a55; --emerald: #0f9a6a; --gold: #a67a06; --red: #c62828;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.5 var(--body); }
+.wrap { max-width: 1240px; margin: 0 auto; padding-inline: 16px; padding-block: 16px 48px; }
+header.top { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; padding-block: 8px 12px; }
+h1 { font: 700 1.5rem/1.1 var(--display); letter-spacing: .12em; text-transform: uppercase; margin: 0; }
+.meta { color: var(--muted); font: .8rem var(--mono); }
+.bar { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 2; background: var(--paper);
+  display: flex; flex-wrap: wrap; gap: 8px; padding-block: 8px; border-bottom: 1px solid var(--rune); }
+.bar input, .bar select { font: inherit; font-size: .9rem; color: var(--ink); background: var(--panel);
+  border: 1px solid var(--rune); border-radius: 4px; padding: 7px 10px; min-width: 0; }
+.bar input { flex: 1 1 220px; }
+.bar select { flex: 0 1 190px; }
+.bar label.chk { display: flex; align-items: center; gap: 6px; font-size: .85rem; color: var(--muted); }
+:focus-visible { outline: 2px solid var(--emerald); outline-offset: 2px; }
+.tabs { display: flex; gap: 4px; }
+.tabs button { font: 600 .8rem var(--display); letter-spacing: .14em; text-transform: uppercase;
+  background: transparent; color: var(--muted); border: 1px solid var(--rune); border-radius: 4px; padding: 7px 12px; cursor: pointer; }
+.tabs button[aria-pressed="true"] { color: var(--paper); background: var(--green); border-color: var(--green); }
+.grid { display: grid; grid-template-columns: minmax(0, 330px) minmax(0, 1fr); gap: 16px; margin-top: 12px; }
+@media (max-width: 760px) { .grid { grid-template-columns: minmax(0, 1fr); } .list { max-height: 40vh; } }
+.list { background: var(--panel); border: 1px solid var(--rune); border-radius: 6px; overflow-y: auto;
+  max-height: calc(100vh - 150px); position: sticky; top: 64px; align-self: start; }
+.list .count { font: .75rem var(--mono); color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--rune); }
+.row { display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; font: inherit; font-size: .9rem;
+  color: var(--ink); background: none; border: 0; border-bottom: 1px solid var(--rune); padding: 7px 12px; cursor: pointer; }
+.row:hover { background: var(--raised); }
+.row[aria-current="true"] { background: var(--raised); box-shadow: inset 3px 0 0 var(--green); }
+.row .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row .tag { font: .7rem var(--mono); color: var(--muted); }
+.row .warn { color: var(--red); font: 600 .7rem var(--mono); }
+.row .shr { font: 500 .8rem var(--mono); color: var(--gold); font-variant-numeric: tabular-nums; }
+.detail { min-width: 0; display: grid; gap: 16px; }
+.card { background: var(--panel); border: 1px solid var(--rune); border-radius: 6px; padding: 16px; min-width: 0; }
+.card h2 { font: 700 1.35rem/1.2 var(--display); margin: 0 0 4px; text-wrap: balance; }
+.card h3 { font: 600 .75rem var(--display); letter-spacing: .2em; text-transform: uppercase; color: var(--green); margin: 0 0 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font: .75rem var(--mono); color: var(--muted); border: 1px solid var(--rune); border-radius: 3px; padding: 2px 7px; }
+.chip.on { color: var(--ink); border-color: var(--green); }
+.two { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.share { display: grid; grid-template-columns: minmax(0, 190px) minmax(0, 1fr) 44px; align-items: center; gap: 10px; padding-block: 3px; }
+.share .lbl { font-size: .88rem; min-width: 0; overflow-wrap: anywhere; }
+.share .lbl.dom { font-weight: 600; }
+.share .track { height: 10px; background: var(--raised); border-radius: 2px; position: relative; overflow: hidden; }
+.share .track::after { content: ""; position: absolute; inset: 0; background:
+  repeating-linear-gradient(90deg, transparent 0 calc(25% - 1px), var(--rune) calc(25% - 1px) 25%); }
+.share .fill { height: 100%; background: var(--emerald); }
+.share .fill.half { background: var(--green); }
+.share .fill.odd { background: var(--red); }
+.share .val { font: 500 .85rem var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+.share .val.zero { color: var(--muted); }
+.legend { font: .75rem var(--mono); color: var(--muted); margin-top: 8px; }
+ol, ul { margin: 0; padding-left: 1.3em; max-width: 68ch; }
+li { margin-block: 3px; }
+p { margin: 0 0 8px; max-width: 68ch; }
+.muted { color: var(--muted); }
+.flag { color: var(--red); font: .8rem var(--mono); }
+.kv { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 14px; font-size: .9rem; }
+.kv dt { color: var(--muted); font: .8rem var(--mono); padding-top: 2px; }
+.kv dd { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+.tablewrap { overflow-x: auto; }
+th, td { text-align: left; padding: 6px 10px; border-bottom: 1px solid var(--rune); }
+th { font: 600 .72rem var(--display); letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+td.num { font: .85rem var(--mono); text-align: right; font-variant-numeric: tabular-nums; }
+td a, .link { color: var(--ink); text-decoration: underline; text-decoration-color: var(--rune); cursor: pointer; background: none; border: 0; font: inherit; padding: 0; }
+.empty { color: var(--muted); padding: 24px; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <h1>Exercise Atlas</h1>
+    <span class="meta" id="meta"></span>
+  </header>
+  <div class="bar">
+    <div class="tabs" role="group" aria-label="View">
+      <button id="tab-ex" aria-pressed="true">Exercises</button>
+      <button id="tab-mu" aria-pressed="false">Muscles</button>
+    </div>
+    <input id="q" type="search" placeholder="Search name, muscle, cue…" aria-label="Search">
+    <select id="group" aria-label="Group"><option value="">All groups</option></select>
+    <select id="muscle" aria-label="Muscle"><option value="">Any muscle</option></select>
+    <label class="chk"><input id="flagged" type="checkbox"> Flagged only</label>
+  </div>
+  <div class="grid">
+    <nav class="list" id="list" aria-label="Exercises"></nav>
+    <main class="detail" id="detail"></main>
+  </div>
+</div>
+
+<script>
+const DATA = /*__ATLAS_DATA__*/null;
+const STEPS = [0, 0.25, 0.5, 0.75, 1];
+const ACTIVITY = ["SPORT", "CARDIO", "CLIMBING", "WATER", "MOBILITY"];
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const label = m => DATA.muscles[m] || m;
+const pretty = s => s ? s.toLowerCase().replace(/_/g, " ") : "—";
+
+function flagsOf(e) {
+  const f = [];
+  const vals = Object.values(e.muscles || {});
+  if (!vals.length) f.push("no muscles");
+  if (vals.some(v => !STEPS.includes(v))) f.push("off-scale share");
+  // Activities and mobility credit broadly by design; only training moves need a 1.0 lead.
+  if (vals.length && !vals.includes(1) && !ACTIVITY.includes(e.group)) f.push("no 1.0 lead");
+  if (!e.guide) f.push("no guide");
+  else if ((e.guide.steps || []).length < 3) f.push("short guide");
+  return f;
+}
+
+const state = { view: "ex", sel: null, selMuscle: null };
+try { const s = JSON.parse(localStorage.getItem("atlas") || "{}"); Object.assign(state, s); } catch (_) {}
+const save = () => { try { localStorage.setItem("atlas", JSON.stringify(state)); } catch (_) {} };
+
+function init() {
+  if (!DATA) { $("detail").innerHTML = '<div class="card empty">No catalogue data was embedded. Run tools/exercise_atlas.py.</div>'; return; }
+  DATA.exercises.forEach(e => e.flags = flagsOf(e));
+  const flagged = DATA.exercises.filter(e => e.flags.length).length;
+  $("meta").textContent = `${DATA.exercises.length} exercises · ${Object.keys(DATA.muscles).length} muscles · ${flagged} flagged` + (DATA.commit ? ` · ${DATA.commit}` : "");
+  [...new Set(DATA.exercises.map(e => e.group))].forEach(g => $("group").insertAdjacentHTML("beforeend", `<option value="${esc(g)}">${esc(pretty(g))}</option>`));
+  Object.keys(DATA.muscles).forEach(m => $("muscle").insertAdjacentHTML("beforeend", `<option value="${esc(m)}">${esc(label(m))}</option>`));
+  ["q", "group", "muscle", "flagged"].forEach(id => $(id).addEventListener("input", render));
+  $("tab-ex").onclick = () => { state.view = "ex"; save(); render(); };
+  $("tab-mu").onclick = () => { state.view = "mu"; save(); render(); };
+  if (!DATA.exercises.some(e => e.name === state.sel)) state.sel = DATA.exercises[0].name;
+  if (!DATA.muscles[state.selMuscle]) state.selMuscle = Object.keys(DATA.muscles)[0];
+  render();
+}
+
+function matches(e) {
+  const q = $("q").value.trim().toLowerCase(), g = $("group").value, m = $("muscle").value;
+  if (g && e.group !== g) return false;
+  if (m && !(e.muscles[m] > 0)) return false;
+  if ($("flagged").checked && !e.flags.length) return false;
+  if (!q) return true;
+  const hay = [e.name, e.group, e.pattern, ...Object.keys(e.muscles).map(label), ...(e.modifiers || []),
+    e.guide && e.guide.setup, ...(e.guide ? [...e.guide.steps, ...e.guide.cues, ...e.guide.commonMistakes] : [])].join(" ").toLowerCase();
+  return hay.includes(q);
+}
+
+function render() {
+  $("tab-ex").setAttribute("aria-pressed", state.view === "ex");
+  $("tab-mu").setAttribute("aria-pressed", state.view === "mu");
+  state.view === "ex" ? renderExercises() : renderMuscles();
+}
+
+function renderExercises() {
+  const rows = DATA.exercises.filter(matches);
+  $("list").innerHTML = `<div class="count">${rows.length} shown</div>` + rows.map(e =>
+    `<button class="row" data-n="${esc(e.name)}" aria-current="${e.name === state.sel}">
+      <span class="nm">${esc(e.name)}</span>${e.flags.length ? `<span class="warn" title="${esc(e.flags.join(", "))}">!</span>` : ""}<span class="tag">${esc(pretty(e.group))}</span></button>`).join("");
+  $("list").querySelectorAll(".row").forEach(b => b.onclick = () => { state.sel = b.dataset.n; save(); renderExercises(); });
+  const e = DATA.exercises.find(x => x.name === state.sel);
+  $("detail").innerHTML = e ? exerciseCard(e) : '<div class="card empty">Pick an exercise.</div>';
+  $("detail").querySelectorAll("[data-mu]").forEach(b => b.onclick = () => { state.view = "mu"; state.selMuscle = b.dataset.mu; save(); render(); });
+}
+
+function shareRow(m, v, dominant) {
+  const cls = !STEPS.includes(v) ? "odd" : v >= 1 ? "" : "half";
+  return `<div class="share"><button class="lbl link ${dominant ? "dom" : ""}" data-mu="${esc(m)}">${esc(label(m))}</button>
+    <div class="track"><div class="fill ${cls}" style="width:${Math.min(v, 1) * 100}%"></div></div>
+    <span class="val ${v === 0 ? "zero" : ""}">${v.toFixed(2)}</span></div>`;
+}
+
+function exerciseCard(e) {
+  const ms = Object.entries(e.muscles);
+  const lead = ms.find(([, v]) => v === 1);
+  const g = e.guide;
+  return `
+  <section class="card">
+    <h2>${esc(e.name)}</h2>
+    <div class="chips">
+      <span class="chip">${esc(pretty(e.group))}</span><span class="chip">${esc(pretty(e.metric))}</span>
+      <span class="chip">${e.weighted ? "weighted" : "bodyweight"}</span>
+      ${e.pattern ? `<span class="chip">${esc(pretty(e.pattern))}</span>` : ""}
+      ${e.compound != null ? `<span class="chip">${e.compound ? "compound" : "isolation"}</span>` : ""}
+      ${e.stretchBias ? `<span class="chip on">stretch-biased</span>` : ""}
+    </div>
+    ${e.flags.length ? `<p class="flag" style="margin-top:10px">Check: ${esc(e.flags.join(" · "))}</p>` : ""}
+  </section>
+  <div class="two">
+    <section class="card">
+      <h3>Muscles (sets credited per set)</h3>
+      ${ms.length ? ms.map(([m, v]) => shareRow(m, v, lead && m === lead[0])).join("") : '<p class="muted">No muscle data.</p>'}
+      <p class="legend">Bold = lead muscle · gridlines at 0.25 steps · red = off the 0 / ¼ / ½ / ¾ / 1 scale</p>
+    </section>
+    <section class="card">
+      <h3>Facts</h3>
+      <dl class="kv">
+        <dt>Armoury</dt><dd>${esc(e.gear || "none")}</dd>
+        <dt>Modifiers</dt><dd>${e.modifiers && e.modifiers.length ? e.modifiers.map(esc).join(", ") : '<span class="muted">none</span>'}</dd>
+        ${e.skill ? `<dt>Skill</dt><dd>${esc(e.skill.tier)} · ${esc(e.skill.line)}</dd><dt>Claim</dt><dd>${esc(e.skill.standard)}</dd>` : ""}
+      </dl>
+    </section>
+  </div>
+  <section class="card">
+    <h3>How to</h3>
+    ${g ? `<p class="muted">${esc(g.setup)}</p><ol>${g.steps.map(s => `<li>${esc(s)}</li>`).join("")}</ol>` : '<p class="flag">No guide.</p>'}
+  </section>
+  ${g ? `<div class="two">
+    <section class="card"><h3>Cues</h3><ul>${g.cues.map(s => `<li>${esc(s)}</li>`).join("") || '<li class="muted">none</li>'}</ul></section>
+    <section class="card"><h3>Common mistakes</h3><ul>${g.commonMistakes.map(s => `<li>${esc(s)}</li>`).join("") || '<li class="muted">none</li>'}</ul></section>
+  </div>` : ""}`;
+}
+
+function renderMuscles() {
+  const q = $("q").value.trim().toLowerCase();
+  const mus = Object.keys(DATA.muscles).filter(m => !q || label(m).toLowerCase().includes(q) || m.toLowerCase().includes(q));
+  const pool = DATA.exercises.filter(e => (!$("group").value || e.group === $("group").value) && (!$("flagged").checked || e.flags.length));
+  const credit = m => pool.filter(e => e.muscles[m] > 0);
+  $("list").innerHTML = `<div class="count">${mus.length} muscles</div>` + mus.map(m =>
+    `<button class="row" data-m="${esc(m)}" aria-current="${m === state.selMuscle}"><span class="nm">${esc(label(m))}</span><span class="tag">${credit(m).length}</span></button>`).join("");
+  $("list").querySelectorAll(".row").forEach(b => b.onclick = () => { state.selMuscle = b.dataset.m; save(); renderMuscles(); });
+  const m = state.selMuscle;
+  const rows = credit(m).sort((a, b) => b.muscles[m] - a.muscles[m] || a.name.localeCompare(b.name));
+  const leads = rows.filter(e => Object.entries(e.muscles).find(([, v]) => v === 1)?.[0] === m).length;
+  $("detail").innerHTML = `
+  <section class="card"><h2>${esc(label(m))}</h2>
+    <p class="muted">${rows.length} exercises credit it · ${leads} lead with it · ${rows.filter(e => e.muscles[m] === 1).length} at 1.0</p></section>
+  <section class="card"><div class="tablewrap"><table>
+    <thead><tr><th>Exercise</th><th>Group</th><th>Lead muscle</th><th style="text-align:right">Share</th></tr></thead>
+    <tbody>${rows.map(e => { const ld = Object.entries(e.muscles).find(([, v]) => v === 1);
+      return `<tr><td><button class="link" data-ex="${esc(e.name)}">${esc(e.name)}</button></td><td>${esc(pretty(e.group))}</td>
+      <td>${ld ? esc(label(ld[0])) : '<span class="flag">none</span>'}</td><td class="num">${e.muscles[m].toFixed(2)}</td></tr>`; }).join("")
+      || '<tr><td colspan="4" class="muted">Nothing credits this muscle.</td></tr>'}</tbody></table></div></section>`;
+  $("detail").querySelectorAll("[data-ex]").forEach(b => b.onclick = () => { state.view = "ex"; state.sel = b.dataset.ex; save(); render(); });
+}
+
+init();
+</script>
