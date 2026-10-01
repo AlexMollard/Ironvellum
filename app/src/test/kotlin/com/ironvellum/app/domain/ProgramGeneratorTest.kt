@@ -1069,6 +1069,21 @@ class ProgramGeneratorTest {
     }
 
     @Test
+    fun `a six-day week short on time is never told to add a day`() {
+        val kits = listOf(Equipment.NOTHING, Equipment(fullGym = false, gear = Gear.entries.toSet()), Equipment.FULL_GYM)
+        val notes = kits.flatMap { eq ->
+            TrainingFocus.entries.flatMap { focus ->
+                VolumeLevel.entries.map { volume ->
+                    ProgramGenerator.week(ProgramRequest(focus, volume, eq, 6), catalogue, strength).note
+                }
+            }
+        }
+        notes.forEach { assertFalse(it, "add a day" in it) }
+        assertEquals("add a day to cover them.", ProgramGenerator.capacityAdvice(5))
+        assertTrue(ProgramGenerator.capacityAdvice(6).startsWith("every rite is full"))
+    }
+
+    @Test
     fun `the shortfall note names short tracked muscles and never a helper`() {
         val range = 5.0..15.0
         val everyHelperLight = ProgramRules.TRACKED.associateWith { 5.0 } + ProgramRules.HELPERS.associateWith { 0.0 }
