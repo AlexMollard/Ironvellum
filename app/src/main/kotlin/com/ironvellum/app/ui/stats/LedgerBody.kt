@@ -308,11 +308,12 @@ private fun ConsistencyRow(weeks: List<Int>, sealedThisMonth: Int, onClick: () -
         Modifier
             .fillMaxWidth()
             .clickable(role = Role.Button, onClick = onClick)
-            .padding(vertical = 8.dp),
+            .padding(bottom = 12.dp),
     ) {
         InkListRow(
             label = "Consistency",
             value = "$sealedThisMonth ${plural(sealedThisMonth, "session", "sessions")} this month",
+            supporting = "sealed days per week, last 12 weeks",
             onClick = null,
         )
         WeekStrip(weeks)
