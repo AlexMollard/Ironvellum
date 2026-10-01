@@ -225,6 +225,20 @@ class SkillsTest {
         val ninety = Skills.forName("90-Degree Push-up")!!
         assertEquals(Skills.Metric.REPS, ninety.metric)
         assertEquals(1, ninety.target)
+
+        val press = Skills.forName("Volume Overhead Press")!!
+        assertEquals("a percentage is the load, not the reps", 5, press.target)
+    }
+
+    /** The barbell bars follow Strength Level's male standards. */
+    @Test
+    fun `gym-line bars follow the Strength Level standards`() {
+        assertTrue(Skills.forName("Double-Bodyweight Squat")!!.standard.contains("two and a quarter times"))
+        assertTrue(Skills.forName("Triple-Bodyweight Squat")!!.standard.contains("two and three-quarter times"))
+        assertEquals(5, Skills.forName("Volume Bench Press")!!.target)
+        assertFalse("one set, not five", Skills.forName("Volume Bench Press")!!.standard.contains("sets"))
+        assertTrue(Skills.forName("Bodyweight Overhead Press")!!.standard.contains("four fifths"))
+        assertTrue(Skills.forName("Heavy Overhead Press")!!.standard.contains("at your bodyweight"))
     }
 
     /**
@@ -286,7 +300,7 @@ class SkillsTest {
         }
         assertEquals(null, Skills.femaleStandard("Pull-up"))
         assertEquals(null, Skills.femaleStandard("Full Planche"))
-        assertEquals("1.4x bodyweight", Skills.femaleStandard("Double-Bodyweight Bench Press"))
+        assertEquals("1.45x bodyweight", Skills.femaleStandard("Double-Bodyweight Bench Press"))
     }
 
     /**
