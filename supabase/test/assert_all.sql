@@ -282,7 +282,7 @@ begin
     where t.schemaname = 'public'
       and t.tablename in ('profiles','friendships','sessions','session_sets','earned_titles','level_ups','session_likes',
                           'blocks','mutes','session_comments','inbox_seen','reports','friend_request_log','cloud_archives','lift_marks',
-                          'circles','circle_members','circle_join_log','circle_weeks','circle_week_members')
+                          'circles','circle_members','circle_join_log','circle_weeks','circle_week_members','circle_events')
       and not t.rowsecurity;
     perform assert_true(n = 0, format('%s public table(s) have RLS disabled', n));
 
@@ -1399,8 +1399,26 @@ begin
             and has_function_privilege('authenticated', 'public.join_circle(text)', 'execute')
             and has_function_privilege('authenticated', 'public.leave_circle()', 'execute')
             and has_function_privilege('authenticated', 'public.my_circle()', 'execute')
-            and has_function_privilege('authenticated', 'public.set_circle_goal(int)', 'execute'),
+            and has_function_privilege('authenticated', 'public.set_circle_goal(int)', 'execute')
+            and not has_function_privilege('anon', 'public.set_circle_name(text)', 'execute')
+            and not has_function_privilege('anon', 'public.rotate_circle_code()', 'execute')
+            and not has_function_privilege('anon', 'public.kick_circle_member(uuid)', 'execute')
+            and has_function_privilege('authenticated', 'public.set_circle_name(text)', 'execute')
+            and has_function_privilege('authenticated', 'public.rotate_circle_code()', 'execute')
+            and has_function_privilege('authenticated', 'public.kick_circle_member(uuid)', 'execute')
+            and not has_function_privilege('authenticated', 'public.circle_notify(uuid[], text, uuid, text)', 'execute')
+            and not has_function_privilege('authenticated', 'public.circle_draw_code()', 'execute')
+            and not has_function_privilege('authenticated', 'public.circle_keeper_lock(text)', 'execute')
+            and not has_function_privilege('anon', 'public.circle_notify(uuid[], text, uuid, text)', 'execute'),
         'circle functions are callable beyond their intended callers'
+    );
+    perform assert_true(
+        not has_table_privilege('authenticated', 'circles', 'update')
+            and not has_table_privilege('authenticated', 'circles', 'delete')
+            and not has_table_privilege('authenticated', 'circles', 'insert')
+            and not has_table_privilege('authenticated', 'circle_events', 'select')
+            and not has_table_privilege('anon', 'circle_events', 'select'),
+        'a client role can write a circle directly or read the roster missives'
     );
     perform assert_true(
         refused_as(rey, format('select public.circle_member(%L, %L)', 'a5500000-0000-4000-8000-000000000051', rey), array['42501']),
@@ -1464,15 +1482,29 @@ begin
         'setting the target the week already has did not clear the parked change'
     );
 
-    -- A name is stored trimmed: a direct rename (the owner holds update(name))
-    -- cannot put padding back, nor empty it, nor outgrow 24.
+    -- Rename: Keeper-only through set_circle_name, stored trimmed, 1-24
+    -- characters. There is no direct write left to try: a client update or
+    -- delete of the circles row is refused outright.
     perform assert_true(
-        refused_as(nova, 'update circles set name = '' padded ''', array['23514'])
-            and refused_as(nova, 'update circles set name = ''''', array['23514'])
-            and refused_as(nova, format('update circles set name = %L', repeat('x', 25)), array['23514']),
-        'a circle name accepted padding, nothing, or more than 24 characters'
+        refused_as(nova, 'update circles set name = ''Sneaky''', array['42501'])
+            and refused_as(nova, 'delete from circles', array['42501']),
+        'the Keeper can still write or delete the circles row directly'
     );
-    perform must_run(nova, 'update circles set name = ''North Gate''', 'the owner could not rename the circle');
+    perform must_run(nova, 'select public.set_circle_name(''  Gate House  '')', 'the Keeper could not rename the circle');
+    perform assert_true(
+        value_as(nova, 'select name from my_circle()') = 'Gate House',
+        'a circle name was stored padded'
+    );
+    perform assert_true(
+        refused_as(nova, 'select public.set_circle_name('''')', array['P0001'])
+            and refused_as(nova, 'select public.set_circle_name(''   '')', array['P0001'])
+            and refused_as(nova, 'select public.set_circle_name(null)', array['P0001'])
+            and refused_as(nova, format('select public.set_circle_name(%L)', repeat('x', 25)), array['P0001'])
+            and refused_as(rey, 'select public.set_circle_name(''Mine'')', array['42501'])
+            and refused_as_anon('select public.set_circle_name(''Mine'')', array['42501']),
+        'a circle was renamed to nothing or past 24, or by someone other than the Keeper'
+    );
+    perform must_run(nova, 'select public.set_circle_name(''North Gate'')', 'the Keeper could not rename the circle back');
 
     -- Join: by code, case-insensitively; unknown codes answer with a status.
     perform assert_true(
@@ -1544,6 +1576,82 @@ begin
             and refused_as(rey, 'select count(*) from circle_join_log', array['42501']),
         'the circle attempt log is readable by a client role'
     );
+
+    -- Rotate the code: Keeper-only, the old code stops working at once, the new
+    -- one lets a lifter in, and members stay.
+    perform assert_true(
+        refused_as(rey, 'select public.rotate_circle_code()', array['42501'])
+            and refused_as_anon('select public.rotate_circle_code()', array['42501']),
+        'a circle member rotated the code'
+    );
+    circle := code;
+    code := value_as(nova, 'select public.rotate_circle_code()');
+    perform assert_true(
+        code ~ '^[2-9A-HJ-NP-Z]{8}$' and code <> circle
+            and value_as(nova, 'select code from my_circle()') = code
+            and value_as(nova, 'select jsonb_array_length(members) from my_circle()') = '3',
+        'rotating the code did not draw a new valid code, or cost the circle members'
+    );
+    perform assert_true(
+        value_as(ron, format('select public.join_circle(%L)', circle)) = 'no_such_code',
+        'a retired code still opens the circle'
+    );
+    delete from circle_join_log where user_id = ron;
+
+    -- Remove a member: Keeper-only, never the Keeper, only someone in the circle.
+    -- The removed lifter hears of it; the missive writer prunes what is past 30
+    -- days; the lifter can come back with the code.
+    insert into circle_events (user_id, kind, actor_id, circle_name, occurred_at)
+    values (rey, 'circle_left', nova, 'stale', now() - interval '40 days');
+    perform assert_true(
+        refused_as(rey, format('select public.kick_circle_member(%L)', sol), array['42501'])
+            and refused_as(nova, format('select public.kick_circle_member(%L)', nova), array['P0001'])
+            and refused_as(nova, format('select public.kick_circle_member(%L)', ivo), array['P0001'])
+            and refused_as(nova, 'select public.kick_circle_member(null)', array['P0001']),
+        'kick_circle_member accepted a non-Keeper, the Keeper themselves, a stranger or nobody'
+    );
+    perform must_run(nova, format('select public.kick_circle_member(%L)', sol), 'the Keeper could not remove a member');
+    perform assert_true(
+        value_as(sol, 'select count(*) from circle_members') = '0'
+            and value_as(nova, 'select jsonb_array_length(members) from my_circle()') = '2'
+            and value_as(sol, 'select count(*) from my_inbox() where kind = ''circle_removed''') = '1'
+            and value_as(sol, 'select body from my_inbox() where kind = ''circle_removed''') = 'North Gate'
+            and value_as(sol, 'select actor_id::text from my_inbox() where kind = ''circle_removed''') = nova::text,
+        'removing a member did not remove them, or did not tell them'
+    );
+    perform assert_true(
+        not exists (select 1 from circle_events where circle_name = 'stale'),
+        'the missive writer left a missive older than 30 days'
+    );
+    perform assert_true(
+        value_as(sol, format('select public.join_circle(%L)', code)) = 'joined',
+        'a removed lifter could not rejoin with the code'
+    );
+    update circle_members set joined_at = now() - interval '1 day' where user_id = sol;
+
+    -- Blocked either way with a member: the circle is closed, neutrally, and the
+    -- attempt is logged.
+    insert into blocks (blocker_id, blocked_id) values (ivo, nova);
+    perform assert_true(
+        value_as(ivo, format('select public.join_circle(%L)', code)) = 'closed',
+        'a lifter who blocked a member joined the circle, or was not told it is closed'
+    );
+    perform assert_true(
+        value_as(ivo, 'select count(*) from circle_members') = '0',
+        'a closed join still added a member'
+    );
+    perform assert_true(
+        (select count(*) from circle_join_log where user_id = ivo) = 1,
+        format('a closed join logged %s attempts, not one', (select count(*) from circle_join_log where user_id = ivo))
+    );
+    delete from blocks where blocker_id = ivo;
+    insert into blocks (blocker_id, blocked_id) values (nova, ivo);
+    perform assert_true(
+        value_as(ivo, format('select public.join_circle(%L)', code)) = 'closed',
+        'a lifter blocked by a member joined the circle'
+    );
+    delete from blocks where blocker_id = nova;
+    delete from circle_join_log where user_id = ivo;
 
     -- trained-this-week: a count of DAYS trained, canonical for every viewer.
     -- Only the roster the week OPENED with counts (Nova, who was in before
@@ -1664,6 +1772,17 @@ begin
     perform assert_true(
         value_as(rey, 'select owner_id::text from my_circle()') = rey::text,
         'leaving did not hand ownership to the oldest remaining member'
+    );
+    -- ...and the rest are told: the successor that the keys are theirs, everyone
+    -- else that Nova left.
+    perform assert_true(
+        value_as(rey, 'select count(*) from my_inbox() where kind = ''circle_keeper''') = '1'
+            and value_as(rey, 'select body from my_inbox() where kind = ''circle_keeper''') = 'North Gate'
+            and value_as(rey, 'select count(*) from my_inbox() where kind = ''circle_left''') = '1'
+            and value_as(sol, 'select count(*) from my_inbox() where kind = ''circle_left''') = '1'
+            and value_as(sol, 'select count(*) from my_inbox() where kind = ''circle_keeper''') = '0'
+            and value_as(nova, 'select count(*) from my_inbox() where kind in (''circle_left'', ''circle_keeper'')') = '0',
+        'leaving did not tell the new Keeper and the rest of the circle'
     );
     -- ...and the last member leaving deletes the circle.
     perform must_run(rey, 'select public.leave_circle()', 'rey could not leave');

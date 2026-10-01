@@ -30,6 +30,12 @@ interface CircleGateway {
     suspend fun leave(): Result<*>
 
     suspend fun setGoal(perMember: Int): Result<*>
+
+    suspend fun rename(name: String): Result<*>
+
+    suspend fun rotateCode(): Result<*>
+
+    suspend fun removeMember(userId: String): Result<*>
 }
 
 /**
@@ -102,4 +108,10 @@ class CloudCircleGateway(
     override suspend fun leave(): Result<*> = cloud.leaveCircle()
 
     override suspend fun setGoal(perMember: Int): Result<*> = cloud.setCircleGoal(perMember)
+
+    override suspend fun rename(name: String): Result<*> = cloud.renameCircle(name)
+
+    override suspend fun rotateCode(): Result<*> = cloud.rotateCircleCode()
+
+    override suspend fun removeMember(userId: String): Result<*> = cloud.removeCircleMember(userId)
 }

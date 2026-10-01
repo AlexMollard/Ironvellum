@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -117,7 +118,7 @@ import com.ironvellum.app.domain.Circle
 /** What the figures earned while the app was closed, shown once on arrival. */
 data class AwayReport(val essence: Long, val awayMs: Long)
 
-/** Everything the Garrison screen renders, resolved from the repository. */
+/** Everything the Veil screen renders, resolved from the repository. */
 data class IdleUi(
     val snapshot: IdleSnapshot? = null,
     val inputs: IdleInputs? = null,
@@ -187,6 +188,7 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
 @Composable
 fun IdleScreen(
     onBack: () -> Unit,
+    onOpenCircle: () -> Unit = {},
     viewModel: IdleViewModel =
         viewModel(factory = viewModelFactory { initializer { IdleViewModel(ironvellumRepository()) } }),
 ) {
@@ -239,9 +241,9 @@ fun IdleScreen(
             )
         }
 
-        // The band's pooled week, one line under the header. Refreshes on screen
-        // open only — no worker keeps it ticking while the lifter is elsewhere.
-        CircleBannerLine()
+        // The circle's pooled week, one line under the header; a tap opens the
+        // circle on the ALLIES tab. Refreshes on screen open only.
+        CircleBannerLine(onOpenCircle)
 
         if (snapshot == null || inputs == null) {
             // Brief empty frame while the flows warm up; never fake numbers.
@@ -1208,31 +1210,38 @@ private fun rarityAccent(rarity: RewardRarity): Color = when (rarity) {
 private const val VAULT_ROWS = 12
 
 /**
- * The band's pooled week on the Garrison screen: "CIRCLE · <name> · N / goal
+ * The circle's pooled week on the Veil screen: "CIRCLE · <name> · N / goal
  * this week" over the same progress rail the ALLIES header uses, at a smaller
  * stroke. The server's canonical total, as that header shows it, and a
  * crossed goal adds the gold GOAL MET mark. Hidden when signed out or
- * bandless; a failed read hides the line — it is decoration here, and the
+ * circle-less; a failed read hides the line — it is decoration here, and the
  * ALLIES tab carries the honest error state.
  * One read per screen entry; nothing keeps it fresh while the screen is closed.
  */
 @Composable
-private fun CircleBannerLine() {
+private fun CircleBannerLine(onOpen: () -> Unit) {
     val app = LocalContext.current.applicationContext as IronvellumApp
     val configured = Cloud.config.collectAsStateWithLifecycle().value != null
     val account by app.accountRepository.account.collectAsStateWithLifecycle()
     if (!configured || account == null) return
 
-    var band by remember(account?.userId) { mutableStateOf<Circle?>(null) }
+    var circle by remember(account?.userId) { mutableStateOf<Circle?>(null) }
     LaunchedEffect(account?.userId) {
-        band = app.circleBonus.read().getOrNull()?.circle
+        circle = app.circleBonus.read().getOrNull()?.circle
     }
-    band?.let { b ->
+    circle?.let { b ->
         val total = b.total
         // Goal 0: no two-member roster yet this week, so nothing to measure.
         val goal = b.goal
         val met = goal > 0 && total >= goal
-        Column(Modifier.padding(top = 2.dp)) {
+        Column(
+            Modifier
+                .clip(MaterialTheme.shapes.extraSmall)
+                .clickable(onClickLabel = "Open the circle", onClick = onOpen)
+                .heightIn(min = 48.dp)
+                .padding(top = 2.dp),
+            verticalArrangement = Arrangement.Center,
+        ) {
             Text(
                 "CIRCLE · ${b.name}" + if (goal > 0) " · $total / $goal this week" + if (met) " · GOAL MET" else "" else "",
                 style = MaterialTheme.typography.labelMedium,

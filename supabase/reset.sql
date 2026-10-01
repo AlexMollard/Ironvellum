@@ -43,6 +43,9 @@ drop view if exists public.leaderboard;
 
 -- The circle RPCs return the `circles` row type (create_circle), so they must
 -- go before the tables or the drop is refused on the dependency.
+drop function if exists public.kick_circle_member(uuid);
+drop function if exists public.rotate_circle_code();
+drop function if exists public.set_circle_name(text);
 drop function if exists public.circle_bonuses();
 drop function if exists public.my_circle();
 drop function if exists public.leave_circle();
@@ -51,6 +54,7 @@ drop function if exists public.join_circle(text);
 drop function if exists public.create_circle(text);
 
 drop table if exists
+    public.circle_events,
     public.circle_week_members,
     public.circle_weeks,
     public.circle_members,
@@ -81,6 +85,9 @@ drop function if exists public.delete_my_account();
 drop function if exists public.push_aggregates(bigint, bigint, int, bigint, int, double precision);
 drop function if exists public.monarch_level(bigint);
 drop function if exists public.find_hunter(text);
+drop function if exists public.circle_keeper_lock(text);
+drop function if exists public.circle_draw_code();
+drop function if exists public.circle_notify(uuid[], text, uuid, text);
 drop function if exists public.circle_roll(uuid);
 drop function if exists public.circle_settle_week(uuid, date);
 drop function if exists public.circle_open_week(uuid, date);

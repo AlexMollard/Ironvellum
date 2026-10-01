@@ -49,6 +49,9 @@ class InboxWorker(context: Context, params: WorkerParameters) :
         app.cloudSync.inbox(force = true)
             .onSuccess { InboxNotifier.onInbox(applicationContext, account.userId, it) }
             .onFailure { Log.w(TAG, "Inbox poll failed: ${it.message}") }
+        // A circle read settles the weekly bonus, so a lifter with Ally activity
+        // on but sync off is still paid after the Monday reset.
+        runCatching { app.circleBonus.read(force = true) }
         // A failed poll is not worth a retry storm; the next period covers it.
         return Result.success()
     }

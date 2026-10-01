@@ -296,6 +296,7 @@ fun ProposedEntryRow(
 fun TapPad(
     label: String,
     description: String,
+    minSize: androidx.compose.ui.unit.Dp = 44.dp,
     onClick: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.extraSmall
@@ -304,8 +305,8 @@ fun TapPad(
             .clip(shape)
             .background(IronvellumColors.VaultHigh)
             .clickable(onClick = onClick)
-            .heightIn(min = 44.dp)
-            .widthIn(min = 44.dp)
+            .heightIn(min = minSize)
+            .widthIn(min = minSize)
             .padding(horizontal = 8.dp, vertical = 5.dp),
         contentAlignment = Alignment.Center,
     ) {

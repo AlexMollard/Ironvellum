@@ -572,6 +572,19 @@ sealed interface InboxItem {
     ) : InboxItem
 
     /**
+     * A change to the caller's circle roster: someone left, the keys passed to
+     * the caller, or the caller was removed. [actorId] is who it concerns
+     * ([CircleChange]); [circleName] carries the circle.
+     */
+    data class CircleNotice(
+        override val occurredAtMs: Long,
+        override val actorId: String,
+        override val actorName: String,
+        val circleName: String,
+        val change: CircleChange,
+    ) : InboxItem
+
+    /**
      * The caller's circle reached its weekly goal; [actorId] sealed the trial
      * that crossed it, and [circleName] carries the circle.
      */
@@ -582,6 +595,9 @@ sealed interface InboxItem {
         val circleName: String,
     ) : InboxItem
 }
+
+/** What a [InboxItem.CircleNotice] says happened to the roster. */
+enum class CircleChange { LEFT, KEEPER, REMOVED }
 
 data class Inbox(val items: List<InboxItem>, val seenAtMs: Long?) {
     val unread: Int get() = items.count { seenAtMs == null || it.occurredAtMs > seenAtMs }
@@ -653,9 +669,20 @@ data class InboxRowDto(
                 actorName = name,
                 circleName = body.orEmpty(),
             )
+            "circle_left" -> circleNotice(at, name, CircleChange.LEFT)
+            "circle_keeper" -> circleNotice(at, name, CircleChange.KEEPER)
+            "circle_removed" -> circleNotice(at, name, CircleChange.REMOVED)
             else -> null
         }
     }
+
+    private fun circleNotice(at: Long, name: String, change: CircleChange) = InboxItem.CircleNotice(
+        occurredAtMs = at,
+        actorId = actorId,
+        actorName = name,
+        circleName = body.orEmpty(),
+        change = change,
+    )
 }
 
 /** `inbox_seen`: when the lifter last opened the inbox (server time). */
@@ -796,6 +823,18 @@ data class SetCircleGoalArgs(
     @SerialName("p_per_member") val perMember: Int,
 )
 
+/** Args of `set_circle_name(text)`: the Keeper renames the circle. */
+@Serializable
+data class SetCircleNameArgs(
+    @SerialName("p_name") val name: String,
+)
+
+/** Args of `kick_circle_member(uuid)`: the Keeper removes a member. */
+@Serializable
+data class KickCircleMemberArgs(
+    @SerialName("p_user") val userId: String,
+)
+
 /**
  * One member as `my_circle()` reports them. A member whose profile row is
  * missing still lists — the server already substituted the neutral
@@ -886,6 +925,9 @@ const val RPC_LEAVE_CIRCLE = "leave_circle"
 const val RPC_SET_CIRCLE_GOAL = "set_circle_goal"
 const val RPC_MY_CIRCLE = "my_circle"
 const val RPC_CIRCLE_BONUSES = "circle_bonuses"
+const val RPC_SET_CIRCLE_NAME = "set_circle_name"
+const val RPC_ROTATE_CIRCLE_CODE = "rotate_circle_code"
+const val RPC_KICK_CIRCLE_MEMBER = "kick_circle_member"
 
 /**
  * Encodes a typed RPC argument shape into the JsonObject the pinned

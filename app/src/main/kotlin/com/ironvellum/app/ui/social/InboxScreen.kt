@@ -45,6 +45,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.CloudSync
+import com.ironvellum.app.data.cloud.CircleChange
 import com.ironvellum.app.data.cloud.InboxItem
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -286,12 +287,17 @@ private fun InboxRow(
         is InboxItem.NewReaction -> item.reaction.glyph() to "paid ${item.reaction.displayName()} tribute on ${item.sessionHeadline.orWorkout()}"
         is InboxItem.NewCircleMember -> Icons.Outlined.GroupAdd to "joined your circle ${item.circleName}"
         is InboxItem.CircleGoalMet -> Icons.Outlined.EmojiEvents to "sealed the trial that met your circle's weekly goal"
+        is InboxItem.CircleNotice -> Icons.Outlined.GroupAdd to when (item.change) {
+            CircleChange.LEFT -> "left your circle ${item.circleName}"
+            CircleChange.KEEPER -> "passed you the keys of ${item.circleName}"
+            CircleChange.REMOVED -> "removed you from ${item.circleName}"
+        }
     }
     val open: () -> Unit = when (item) {
         is InboxItem.NewComment -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
         is InboxItem.NewReply -> { { onOpenComments(item.sessionId, item.sessionHeadline.ifBlank { "a trial" }, false) } }
         is InboxItem.NewReaction -> { { onOpenComments(item.sessionId, item.sessionHeadline.orWorkout(), true) } }
-        is InboxItem.NewCircleMember, is InboxItem.CircleGoalMet -> onOpenCircle
+        is InboxItem.NewCircleMember, is InboxItem.CircleGoalMet, is InboxItem.CircleNotice -> onOpenCircle
         else -> onOpenLifter
     }
     InkPanel(

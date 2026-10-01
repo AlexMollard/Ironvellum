@@ -13,6 +13,7 @@ import com.ironvellum.app.MainActivity
 import com.ironvellum.app.R
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.data.cloud.Inbox
+import com.ironvellum.app.data.cloud.CircleChange
 import com.ironvellum.app.data.cloud.InboxItem
 import com.ironvellum.app.data.cloud.InboxWorker
 import com.ironvellum.app.ui.social.displayName
@@ -204,5 +205,10 @@ object InboxNotifier {
         is InboxItem.RequestAccepted -> "${item.actorName} accepted your request"
         is InboxItem.NewCircleMember -> "${item.actorName} joined your circle ${item.circleName}"
         is InboxItem.CircleGoalMet -> "Your circle ${item.circleName} met its weekly goal"
+        is InboxItem.CircleNotice -> when (item.change) {
+            CircleChange.LEFT -> "${item.actorName} left your circle ${item.circleName}"
+            CircleChange.KEEPER -> "You now keep the circle ${item.circleName}"
+            CircleChange.REMOVED -> "You were removed from the circle ${item.circleName}"
+        }
     }
 }
