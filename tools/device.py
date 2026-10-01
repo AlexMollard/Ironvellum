@@ -88,14 +88,30 @@ def dump(serial: str) -> str:
 
 
 def bounds(serial: str, pattern: str) -> tuple[int, int, int, int] | None:
-    match = re.search(pattern + r'[^/]*bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', dump(serial))
+    # [^>]: stay inside one node's attributes. [^/] stopped at the "/" in a resource-id.
+    match = re.search(pattern + r'[^>]*?bounds="\[(\d+),(\d+)\]\[(\d+),(\d+)\]"', dump(serial))
     return tuple(map(int, match.groups())) if match else None  # type: ignore[return-value]
+
+
+def loose(needle: str) -> str:
+    """Regex for `needle` that treats every apostrophe and quote style as one.
+
+    A typed ' must find a label drawn with a curly apostrophe ("Don’t allow"), and
+    the dump may carry either the character or its XML entity.
+    """
+    # �: the dump arrives through adb's text decode, which can turn a curly mark into U+FFFD.
+    apostrophe = "(?:'|‘|’|�|&apos;|&#39;)"
+    quote = '(?:\\"|&quot;|“|”)'
+    return "".join(
+        apostrophe if ch in "'‘’" else quote if ch in '"“”' else re.escape(ch)
+        for ch in needle
+    )
 
 
 def tap(serial: str, needle: str, by_desc: bool = False, settle: float = 2.5) -> bool:
     key = "content-desc" if by_desc else "text"
     # Loose match: labels carry padding spaces ("  New Preset") and casing varies.
-    box = bounds(serial, rf'{key}="\s*{re.escape(needle)}[^"]*"')
+    box = bounds(serial, rf'{key}="\s*{loose(needle)}[^"]*"')
     if box is None:
         return False
     adb("shell", "input", "tap", str((box[0] + box[2]) // 2), str((box[1] + box[3]) // 2), serial=serial)
