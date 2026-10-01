@@ -99,11 +99,13 @@ class SkillGuidanceTest {
 
     @Test
     fun `mastering a technique moves the frontier to what it opens`() {
-        val root = Skills.ALL.first { it.prerequisites().isEmpty() && Skills.unlockedBy(it.name).isNotEmpty() }
-        val mastered = setOf(root.name)
-        val frontier = SkillGuidance.frontier(treeOrder(root.line), mastered)
+        // Only children that need nothing else: one with a second prerequisite stays locked.
+        fun opens(root: Skills.SkillDef) =
+            Skills.ALL.filter { it.line == root.line && it.prerequisites() == listOf(root.name) }
+        val root = Skills.ALL.first { it.prerequisites().isEmpty() && opens(it).isNotEmpty() }
+        val frontier = SkillGuidance.frontier(treeOrder(root.line), setOf(root.name))
         assertFalse(root in frontier)
-        assertTrue(Skills.unlockedBy(root.name).filter { it.line == root.line }.all { it in frontier })
+        assertTrue(opens(root).all { it in frontier })
     }
 
     @Test

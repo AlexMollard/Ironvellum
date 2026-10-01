@@ -73,7 +73,10 @@ data class Achievement(
 fun AchievementOverlay(
     items: List<Achievement>,
     onDone: () -> Unit,
-    /** Makes each note a button; null keeps notes as plain text. Given the item and the note's index. */
+    /**
+     * Makes each note a button; null keeps notes as plain text. Given the item
+     * and the note's index, then the overlay moves on as a tap would.
+     */
     onNote: ((item: Achievement, noteIndex: Int) -> Unit)? = null,
 ) {
     if (items.isEmpty()) return
@@ -223,7 +226,12 @@ fun AchievementOverlay(
                         modifier = if (onNote != null) {
                             Modifier
                                 .heightIn(min = 48.dp)
-                                .clickable(role = Role.Button, onClickLabel = "Open") { onNote(item, index) }
+                                .clickable(role = Role.Button, onClickLabel = "Open") {
+                                    // Moves on like any tap, so the pages
+                                    // still to come are not skipped.
+                                    onNote(item, index)
+                                    if (page < items.lastIndex) page++ else onDone()
+                                }
                                 .wrapContentHeight()
                         } else {
                             Modifier
