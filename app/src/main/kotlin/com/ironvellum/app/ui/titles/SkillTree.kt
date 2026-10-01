@@ -16,6 +16,19 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import com.ironvellum.app.ui.theme.InkCircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -65,8 +78,11 @@ private data class Row(
 private fun rows(line: String): List<Row> {
     val skills = Skills.ALL.filter { it.line == line }
     val inLine = skills.map { it.name }.toSet()
-    val childrenOf = skills.groupBy { it.requires }
-    val roots = skills.filter { it.requires == null || it.requires !in inLine }
+    // A technique hangs under its first prerequisite on this path; one whose
+    // prerequisites all sit on other paths is a root here.
+    val parentOf = skills.associate { it.name to it.prerequisites().firstOrNull { p -> p in inLine } }
+    val childrenOf = skills.groupBy { parentOf[it.name] }
+    val roots = skills.filter { parentOf[it.name] == null }
         .sortedBy { it.tier }
 
     val out = mutableListOf<Row>()
@@ -106,6 +122,15 @@ private fun rows(line: String): List<Row> {
     return out
 }
 
+/** A path's techniques in the order the tree draws them, top to bottom. */
+internal fun treeOrder(line: String): List<Skills.SkillDef> = rows(line).map { it.skill }
+
+/** The locked node dot: 3:1 against the page, dimmer than the open green. */
+internal val LockedDot = Color(0xFF64625C)
+
+/** The lighter end of a locked row's background, where its text has the least contrast. */
+internal val LockedRowBg = Color(0xFF101512)
+
 /**
  * The colour of a stretch of rail, from the skills it leads to: gold when it
  * reaches a mastered skill (a mastered skill's prerequisite is mastered too,
@@ -136,15 +161,30 @@ fun SkillTreeGraph(
     mastered: Set<String>,
     onSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
+    /** Best logged effort per technique, for the "best 40/60s" cue on open rows. */
+    best: Map<String, SkillGuidance.Effort> = emptyMap(),
 ) {
     val treeRows = remember(line) { rows(line) }
+    // The first open, unmastered technique in drawing order: where the eye
+    // should land when a path opens.
+    val firstNext = remember(line, mastered) {
+        SkillGuidance.frontier(treeRows.map { it.skill }, mastered).firstOrNull()?.name
+    }
+    val nextRequester = remember { BringIntoViewRequester() }
+    LaunchedEffect(line) {
+        if (firstNext != null) nextRequester.bringIntoView()
+    }
 
     Column(modifier.fillMaxWidth()) {
         treeRows.forEach { row ->
+            val isMastered = row.skill.name in mastered
             SkillRow(
                 row = row,
-                mastered = row.skill.name in mastered,
+                mastered = isMastered,
                 unlocked = Skills.unlocked(row.skill, mastered),
+                next = SkillGuidance.isFrontier(row.skill, mastered),
+                needs = row.skill.firstUnmetPrerequisite(mastered),
+                cue = if (isMastered) null else SkillGuidance.progressCue(row.skill, best[row.skill.name]),
                 paint = RailPaint(
                     passing = row.openRails.mapValues { (_, below) -> railColor(below, mastered) },
                     intoRow = railColor(listOf(row.skill.name) + row.laterSiblings, mastered),
@@ -152,18 +192,44 @@ fun SkillTreeGraph(
                     below = railColor(row.children, mastered),
                 ),
                 onClick = { onSelect(row.skill.name) },
+                modifier = if (row.skill.name == firstNext) Modifier.bringIntoViewRequester(nextRequester) else Modifier,
             )
         }
     }
 }
+
+/** What a screen reader hears for one tree row: name, tier, state, then what to do next. */
+internal fun rowDescription(
+    skill: Skills.SkillDef,
+    mastered: Boolean,
+    unlocked: Boolean,
+    needs: String?,
+    cue: String?,
+): String = buildList {
+    add(skill.name)
+    add("tier ${Skills.tierLabel(skill.tier)}")
+    when {
+        mastered -> add("mastered")
+        unlocked -> {
+            add("available, next")
+            add("standard ${skill.standard}")
+            cue?.let(::add)
+        }
+        else -> add("locked, needs ${needs ?: "its prerequisite"}")
+    }
+}.joinToString(", ")
 
 @Composable
 private fun SkillRow(
     row: Row,
     mastered: Boolean,
     unlocked: Boolean,
+    next: Boolean,
+    needs: String?,
+    cue: String?,
     paint: RailPaint,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val accent = when {
         mastered -> IronvellumColors.SovereignGold
@@ -172,17 +238,18 @@ private fun SkillRow(
     }
     val shape = MaterialTheme.shapes.small
 
-    val rowH = 58.dp
     val dotOffset = RailW / 2
 
+    // At least 58dp, taller when a long name or standard wraps; the rail box
+    // fills whatever height the row settles on, so the strokes still meet.
     androidx.compose.foundation.layout.Row(
-        Modifier.fillMaxWidth().height(rowH),
+        modifier.fillMaxWidth().heightIn(min = 58.dp).height(IntrinsicSize.Min),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Geometry: the dot for column d sits at d*RailW + RailW/2. Each row
         // paints the segment above its dot and, if it has successors, the one
         // below — so neighbouring rows meet exactly at the row boundary.
-        Box(Modifier.width(RailW * (row.depth + 1)).height(rowH)) {
+        Box(Modifier.width(RailW * (row.depth + 1)).fillMaxHeight()) {
             Canvas(Modifier.fillMaxSize()) {
                 val rail = RailW.toPx()
                 val stroke = 2f.dp.toPx()
@@ -247,27 +314,32 @@ private fun SkillRow(
                         when {
                             mastered -> IronvellumColors.SovereignGold
                             unlocked -> IronvellumColors.SystemGreen
-                            else -> Color(0xFF243029)
+                            else -> LockedDot
                         },
                     ),
             )
         }
         Spacer(Modifier.width(6.dp))
 
+        val description = rowDescription(row.skill, mastered, unlocked, needs, cue)
         androidx.compose.foundation.layout.Row(
             Modifier
                 .fillMaxWidth()
+                .fillMaxHeight()
                 .padding(vertical = 4.dp, horizontal = 2.dp)
                 .clip(shape)
                 .background(
                     when {
                         mastered -> Brush.horizontalGradient(listOf(Color(0xFF3A2A08), Color(0xFF14170F)))
                         unlocked -> Brush.horizontalGradient(listOf(Color(0xFF15251F), Color(0xFF0D1310)))
-                        else -> Brush.horizontalGradient(listOf(Color(0xFF101512), Color(0xFF0C100E)))
+                        else -> Brush.horizontalGradient(listOf(LockedRowBg, Color(0xFF0C100E)))
                     },
                 )
                 .inkBorder(accent.copy(alpha = if (unlocked || mastered) 1f else 0.45f), shape, 1.dp)
-                .clickable { onClick() }
+                .clickable(role = Role.Button, onClickLabel = "Open technique") { onClick() }
+                // One sentence for the whole row; the visible texts stay in
+                // the merged node so the row is still found by its name.
+                .semantics(mergeDescendants = true) { contentDescription = description }
                 .padding(horizontal = 10.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -281,38 +353,80 @@ private fun SkillRow(
                         unlocked -> IronvellumColors.Ink
                         else -> IronvellumColors.InkMuted
                     },
-                    maxLines = 1,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     when {
                         mastered -> "MASTERED"
                         unlocked -> row.skill.standard
                         // "LOCKED" said nothing the muted ink and the
-                        // prerequisite did not already say, on every locked row
-                        // of an 84-skill tree.
-                        else -> "needs ${row.skill.requires}"
+                        // prerequisite did not already say, on every locked row.
+                        else -> "needs ${needs ?: "its prerequisite"}"
                     },
                     style = MaterialTheme.typography.labelSmall,
                     // 9sp was unreadably small; 11sp matches the smallest body
                     // copy anywhere in the app.
                     fontSize = 11.sp,
                     color = if (mastered) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
-                    maxLines = 1,
-                    // A long standard used to clip mid-word and run into the
-                    // tier column at the right edge.
+                    // Two lines, then an ellipsis: one line cut most standards
+                    // off before the part that says how to clear them.
+                    maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                 )
+                if (cue != null && unlocked) {
+                    Text(
+                        cue,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 11.sp,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.SystemGreen,
+                        maxLines = 1,
+                    )
+                }
             }
             Spacer(Modifier.width(8.dp))
             Column(horizontalAlignment = Alignment.End) {
-                Text(
-                    Skills.tierLabel(row.skill.tier),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = accent,
-                    letterSpacing = 1.sp,
-                )
+                // State in a glyph and a word, not the colour alone.
+                androidx.compose.foundation.layout.Row(verticalAlignment = Alignment.CenterVertically) {
+                    when {
+                        mastered -> Icon(
+                            Icons.Filled.Check,
+                            contentDescription = null,
+                            tint = IronvellumColors.SovereignGold,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        !unlocked -> Icon(
+                            Icons.Filled.Lock,
+                            contentDescription = null,
+                            tint = IronvellumColors.InkMuted,
+                            modifier = Modifier.size(14.dp),
+                        )
+                        else -> Unit
+                    }
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        Skills.tierLabel(row.skill.tier),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        // Rune ink on a locked row read at about 1.4:1.
+                        color = if (mastered || unlocked) accent else IronvellumColors.InkMuted,
+                        letterSpacing = 1.sp,
+                    )
+                }
+                if (next) {
+                    Text(
+                        "NEXT",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 11.sp,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        color = IronvellumColors.SystemGreen,
+                        letterSpacing = 1.sp,
+                        maxLines = 1,
+                    )
+                }
                 if (row.children.size > 1) {
                     Text(
                         "opens ${row.children.size}",

@@ -61,6 +61,15 @@ import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.foundation.rememberScrollState
 
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.Icon
+import androidx.compose.ui.semantics.Role
+import com.ironvellum.app.ui.components.ExerciseFacts
+import com.ironvellum.app.ui.components.TermChip
+import com.ironvellum.app.ui.components.termsIn
 
 
 /**
@@ -77,18 +86,38 @@ fun SkillDetailDialog(
     training: SkillTrainingEvidence? = null,
     /** The published female bar, when this lifter's profile says it applies. */
     sexBar: String? = null,
+    /** Every mastered technique, so each prerequisite chip can say whether it is met. */
+    masteredSkills: Set<String> = emptySet(),
     onLogPractice: (value: Int, weightKg: Double?) -> Unit,
     onClaim: () -> Unit,
     onUnclaim: () -> Unit,
     onDismiss: () -> Unit,
+    /** Opens another technique's detail: a prerequisite chip's target. */
+    onOpenSkill: (String) -> Unit = {},
+    /** Puts this technique into a rite. */
+    onTrain: () -> Unit = {},
 ) {
     var confirmUnclaim by remember { mutableStateOf(false) }
-    val best = entries.filterNot { it.claimed }.maxOfOrNull { it.value } ?: 0
+    val practiced = remember(entries) { entries.filterNot { it.claimed } }
+    val bestEntry = remember(practiced) { practiced.maxByOrNull { it.value } }
+    val recent = remember(entries) { entries.sortedByDescending { it.practicedAtMs }.take(6) }
+    val best = bestEntry?.value ?: 0
     // The standard is judged on the better of practice and real training: a
     // lifter who already hit it in a session must not read "to go".
     val trained = training
     val bestOverall = maxOf(best, trained?.value ?: 0)
-    var attempt by remember(skill.name) { mutableIntStateOf(if (bestOverall > 0) bestOverall else skill.target) }
+    val cleared = remember(skill, practiced, trained) {
+        SkillGuidance.cleared(
+            skill,
+            practiced.map { SkillGuidance.Effort(it.value, it.weightKg) } +
+                listOfNotNull(trained?.let { SkillGuidance.Effort(it.value, it.weightKg) }),
+        )
+    }
+    val terms = remember(skill, sexBar) { termsIn("${skill.name} ${sexBar ?: skill.standard} ${skill.why}") }
+    // Starts on the last attempt, or zero. Logging stays off until the value
+    // is set by hand, so one tap can never record a hold nobody did.
+    var attempt by remember(skill.name) { mutableIntStateOf(SkillGuidance.defaultAttempt(entries)) }
+    var touched by remember(skill.name) { mutableStateOf(false) }
     var load by remember(skill.name) {
         mutableDoubleStateOf(entries.firstOrNull { it.weightKg != null }?.weightKg ?: 0.0)
     }
@@ -131,12 +160,30 @@ fun SkillDetailDialog(
                 // A female lifter reads her own published bar, not the male default.
                 DetailBlock("CLAIM STANDARD", sexBar ?: skill.standard, IronvellumColors.SovereignGold)
                 DetailBlock("WHY IT MATTERS", skill.why, IronvellumColors.InkMuted)
-                if (skill.requires != null) {
-                    DetailBlock(
+                if (terms.isNotEmpty()) {
+                    // The words a beginner trips on, each one tap from a plain definition.
+                    FlowRow(Modifier.fillMaxWidth().padding(bottom = 6.dp)) {
+                        terms.forEach { TermChip(it) }
+                    }
+                }
+                val prerequisites = skill.prerequisites()
+                if (prerequisites.isNotEmpty()) {
+                    Text(
                         "REQUIRES",
-                        skill.requires + if (unlocked) "  ·  cleared" else "  ·  not yet mastered",
-                        if (unlocked) IronvellumColors.SystemGreen else IronvellumColors.DangerRed,
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        letterSpacing = 2.sp,
                     )
+                    FlowRow(
+                        Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        prerequisites.forEach { name ->
+                            PrerequisiteChip(name, met = name in masteredSkills) { onOpenSkill(name) }
+                        }
+                    }
                 }
                 Row(
                     Modifier.fillMaxWidth().padding(top = 6.dp),
@@ -170,7 +217,7 @@ fun SkillDetailDialog(
                                 letterSpacing = 1.sp,
                             )
                             Text(
-                                formatDate(entries.filterNot { it.claimed }.maxBy { it.value }.practicedAtMs, "d MMM"),
+                                bestEntry?.let { formatDate(it.practicedAtMs, "d MMM") }.orEmpty(),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = IronvellumColors.InkMuted,
                             )
@@ -212,11 +259,17 @@ fun SkillDetailDialog(
                             color = IronvellumColors.InkMuted,
                             letterSpacing = 1.sp,
                         )
+                        val needKg = SkillGuidance.requiredAddedKg(skill)
                         Text(
-                            if (bestOverall >= skill.target) "standard cleared"
-                            else "${skill.target - bestOverall}${skill.unit} to standard",
+                            when {
+                                cleared -> "standard cleared"
+                                // Reps alone cannot judge a bodyweight-multiple bar.
+                                !SkillGuidance.judgeable(skill) -> "check the load yourself"
+                                bestOverall >= skill.target && needKg != null -> "needs +${formatLoad(needKg)}kg"
+                                else -> "${SkillGuidance.withUnit(skill.target - bestOverall, skill)} to standard"
+                            },
                             style = MaterialTheme.typography.labelMedium,
-                            color = if (bestOverall >= skill.target) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                            color = if (cleared) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                         )
                     }
                 }
@@ -230,7 +283,7 @@ fun SkillDetailDialog(
                         color = IronvellumColors.InkMuted,
                         letterSpacing = 2.sp,
                     )
-                    entries.sortedByDescending { it.practicedAtMs }.take(6).forEach { entry ->
+                    recent.forEach { entry ->
                         Row(
                             Modifier.fillMaxWidth().padding(top = 3.dp),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -290,13 +343,17 @@ fun SkillDetailDialog(
                             style = MaterialTheme.typography.labelSmall,
                             color = IronvellumColors.InkMuted,
                             modifier = Modifier
-                                .clickable { confirmUnclaim = true }
-                                .heightIn(min = 44.dp)
+                                .clickable(role = Role.Button, onClickLabel = "Give the technique back") { confirmUnclaim = true }
+                                .heightIn(min = 48.dp)
                                 .wrapContentHeight(),
                         )
                     }
                 } else if (unlocked) {
                     val pct = if (skill.target <= 0) 0f else (attempt.toFloat() / skill.target).coerceIn(0f, 1f)
+                    val setAttempt = { v: Int ->
+                        attempt = v
+                        touched = true
+                    }
                     Text(
                         "LOG AN ATTEMPT",
                         style = MaterialTheme.typography.labelSmall,
@@ -320,7 +377,7 @@ fun SkillDetailDialog(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        StepGlyph("−", "Fewer") { attempt = (attempt - attemptStep(skill)).coerceAtLeast(0) }
+                        StepGlyph("−", "Fewer") { setAttempt((attempt - attemptStep(skill)).coerceAtLeast(0)) }
                         Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
                                 attempt.toString(),
@@ -341,14 +398,14 @@ fun SkillDetailDialog(
                                 letterSpacing = 2.sp,
                             )
                         }
-                        StepGlyph("+", "More") { attempt += attemptStep(skill) }
+                        StepGlyph("+", "More") { setAttempt(attempt + attemptStep(skill)) }
                     }
 
                     Spacer(Modifier.height(8.dp))
                     // progress against the claim standard
                     InkRail(fraction = pct, seed = 41)
                     Text(
-                        "${(pct * 100).toInt()}% of the ${skill.target}${skill.unit} standard",
+                        SkillGuidance.attemptReadout(skill, attempt, touched),
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(top = 4.dp),
@@ -372,7 +429,7 @@ fun SkillDetailDialog(
                                 label = "$v${skill.unit}",
                                 selected = attempt == v,
                                 modifier = Modifier.weight(1f),
-                            ) { attempt = v }
+                            ) { setAttempt(v) }
                         }
                     }
 
@@ -410,8 +467,9 @@ fun SkillDetailDialog(
                             color = IronvellumColors.SystemGreen,
                             letterSpacing = 2.sp,
                             modifier = Modifier
-                                .clickable { showLoad = true }
-                                .padding(vertical = 6.dp),
+                                .clickable(role = Role.Button, onClickLabel = "Add a load") { showLoad = true }
+                                .heightIn(min = 48.dp)
+                                .wrapContentHeight(),
                         )
                     }
 
@@ -419,31 +477,70 @@ fun SkillDetailDialog(
                     IronvellumButton(
                         "Log attempt",
                         onClick = { onLogPractice(attempt, load.takeIf { it > 0.0 }) },
+                        // Off until a value is set by hand and is above zero.
+                        enabled = touched && attempt > 0,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(14.dp))
                     // Brushed divider, not a ruled 1dp rectangle.
                     Box(Modifier.fillMaxWidth().height(1.dp).inkHairline(IronvellumColors.Rune, seed = 7, thickness = 1.dp))
                     Spacer(Modifier.height(14.dp))
+                    if (cleared) {
+                        // The logged evidence meets the standard: say so, and
+                        // make the claim the obvious next move.
+                        Text(
+                            "You've cleared this — claim it",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontFamily = ChakraPetch,
+                            color = IronvellumColors.SovereignGold,
+                        )
+                        Spacer(Modifier.height(8.dp))
+                    }
                     IronvellumButton(
                         "Claim mastery",
                         onClick = onClaim,
-                        gold = true,
+                        gold = cleared,
+                        quiet = !cleared,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Spacer(Modifier.height(6.dp))
+                    if (!cleared) {
+                        Text(
+                            "Claiming is self-declared: the app never claims for you.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.Ink,
+                        )
+                    }
                     Text(
-                        "Claim only once you can hit ${skill.target}${skill.unit} on demand — it awards ${skill.xp} XP and can be undone.",
+                        "Claim only once you can hit ${SkillGuidance.withUnit(skill.target, skill)} on demand — it awards ${skill.xp} XP and can be undone.",
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                     )
                 } else {
                     Text(
-                        "Locked until ${skill.requires} is mastered.",
+                        "Locked until ${skill.firstUnmetPrerequisite(masteredSkills) ?: skill.prerequisites().joinToString(" and ")} is mastered.",
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
                     )
                 }
+
+                Spacer(Modifier.height(12.dp))
+                IronvellumButton(
+                    "Train it",
+                    onClick = onTrain,
+                    quiet = true,
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Text(
+                    "Adds it to a rite, so it comes up in your sessions.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+
+                // How to do it, what it works and what it needs: the same
+                // facts the exercise info card shows.
+                ExerciseFacts(skill.name)
             }
         },
         confirmButton = {},
@@ -502,8 +599,8 @@ private fun QuickChip(
                 shape,
             )
             .inkBorder(if (selected) IronvellumColors.SystemGreen else IronvellumColors.Rune, shape, 1.dp)
-            .clickable { onClick() }
-            .padding(vertical = 8.dp),
+            .clickable(role = Role.Button, onClickLabel = "Set $label") { onClick() }
+            .heightIn(min = 48.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -515,15 +612,44 @@ private fun QuickChip(
     }
 }
 
-/** Chunky ± target: 44dp of tappable area, not a text glyph you have to hunt. */
+/** A prerequisite as a button: tapping it opens that technique's own detail. */
+@Composable
+private fun PrerequisiteChip(name: String, met: Boolean, onClick: () -> Unit) {
+    val shape = MaterialTheme.shapes.extraSmall
+    val color = if (met) IronvellumColors.SystemGreen else IronvellumColors.DangerRed
+    Row(
+        Modifier
+            .heightIn(min = 48.dp)
+            .background(Color(0xFF151C19), shape)
+            .inkBorder(color, shape, 1.dp)
+            .clickable(role = Role.Button, onClickLabel = "Open $name") { onClick() }
+            .padding(horizontal = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            if (met) Icons.Filled.Check else Icons.Filled.Lock,
+            contentDescription = null,
+            tint = color,
+            modifier = Modifier.size(14.dp),
+        )
+        Text(
+            "$name  ·  ${if (met) "cleared" else "not yet mastered"}",
+            style = MaterialTheme.typography.bodySmall,
+            color = color,
+            modifier = Modifier.padding(start = 6.dp),
+        )
+    }
+}
+
+/** Chunky ± target: 48dp of tappable area, not a text glyph you have to hunt. */
 @Composable
 private fun StepGlyph(symbol: String, label: String, onClick: () -> Unit) {
     Box(
         Modifier
-            .size(44.dp)
+            .size(48.dp)
             .background(Color(0xFF16201C), MaterialTheme.shapes.small)
             .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
-            .clickable { onClick() }
+            .clickable(role = Role.Button) { onClick() }
             // The glyph is announced as a bare character: "−" says nothing
             // about what it steps. The label carries the meaning instead.
             .semantics { contentDescription = label },
