@@ -17,6 +17,7 @@ import androidx.compose.foundation.rememberScrollState
 import com.ironvellum.app.ui.theme.InkCircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -301,7 +302,7 @@ fun StatsScreen(
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
                     letterSpacing = IronvellumTracking.ScreenTitle,
-                    modifier = Modifier.weight(1f),
+                    modifier = Modifier.weight(1f).semantics { heading() },
                 )
                 Text(
                     "+ WEIGHT",
