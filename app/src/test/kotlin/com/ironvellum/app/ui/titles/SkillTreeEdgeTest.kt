@@ -77,4 +77,17 @@ class SkillTreeEdgeTest {
             }
         }
     }
+
+    @Test
+    fun `edges that leave one prerequisite or enter one dependant share lanes`() {
+        for (line in Skills.LINES) {
+            val layout = treeLayout(line, 4)
+            val level = layout.nodes.associate { it.skill.name to it.level }
+            val perEdge = layout.lanes.values.sumOf { it.size }
+            val drawn = layout.lanes.flatMap { (e, xs) -> xs.mapIndexed { i, x -> level.getValue(e.from) + 1 + i to x } }.toSet()
+            assertTrue("$line draws ${drawn.size} lanes for $perEdge crossings", drawn.size <= perEdge)
+            // Handstand is the hub-heavy path: it had one full-height lane per long edge
+            if (line == "Handstand") assertTrue("Handstand draws ${drawn.size} lanes for $perEdge crossings", drawn.size <= perEdge * 0.6)
+        }
+    }
 }

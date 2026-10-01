@@ -107,7 +107,36 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
     val order = mutableListOf<MutableList<String>>()
     val levelTier = mutableListOf<Int>()
     val levelOf = HashMap<String, Int>()
-    val chainOf = HashMap<TreeEdge, List<String>>()
+
+    // One waypoint name per level an edge passes. Edges leaving the same
+    // prerequisite share their waypoints for as long as they run together,
+    // and so do edges entering the same dependant, so a hub draws one trunk
+    // instead of a lane per edge; an edge on its own keeps its own lane.
+    fun chainsFor(): Map<TreeEdge, List<String>> {
+        fun crossing(e: TreeEdge) = levelOf.getValue(e.from) + 1 until levelOf.getValue(e.to)
+        val leaving = HashMap<Pair<String, Int>, Int>()
+        val entering = HashMap<Pair<String, Int>, Int>()
+        edges.forEach { e ->
+            crossing(e).forEach { l ->
+                leaving.merge(e.from to l, 1, Int::plus)
+                entering.merge(e.to to l, 1, Int::plus)
+            }
+        }
+        return edges.associateWith { e ->
+            val top = levelOf.getValue(e.from)
+            val bottom = levelOf.getValue(e.to)
+            crossing(e).map { l ->
+                val out = leaving.getValue(e.from to l) > 1
+                val into = entering.getValue(e.to to l) > 1
+                when {
+                    out && (!into || l - top <= bottom - l) -> "${LANE_MARK}out:${e.from}@$l"
+                    into -> "${LANE_MARK}in:${e.to}@$l"
+                    else -> "${LANE_MARK}${e.from}>${e.to}@$l"
+                }
+            }
+        }
+    }
+    var chainOf: Map<TreeEdge, List<String>> = emptyMap()
 
     // Wrap each group at its limit, then narrow the limit of any row whose
     // waypoints do not fit beside its nodes, until every row has room.
@@ -124,10 +153,9 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
         }
         levelOf.clear()
         order.forEachIndexed { l, names -> names.forEach { levelOf[it] = l } }
+        chainOf = chainsFor()
         val passing = IntArray(order.size)
-        edges.forEach { e ->
-            for (l in levelOf.getValue(e.from) + 1 until levelOf.getValue(e.to)) passing[l]++
-        }
+        chainOf.values.flatten().toSet().forEach { passing[it.substringAfterLast('@').toInt()]++ }
         val tight = order.indices.firstOrNull { l ->
             val n = order[l].size
             n > 1 && (n - 1) + LANE_NODE_GAP * passing[l] > columns - 1 + 2 * LANE_MARGIN &&
@@ -139,19 +167,18 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
     // waypoints: one per level an edge passes, joined into the row's order list
     val upstream = HashMap<String, MutableList<String>>()
     val downstream = HashMap<String, MutableList<String>>()
-    val links = mutableListOf<Pair<String, String>>()
+    val links = LinkedHashSet<Pair<String, String>>()
+    chainOf.values.flatten().toSet().forEach { order[it.substringAfterLast('@').toInt()] += it }
     edges.forEach { e ->
-        val from = levelOf.getValue(e.from)
-        val to = levelOf.getValue(e.to)
-        val chain = (from + 1 until to).map { l -> "$LANE_MARK${e.from}>${e.to}@$l".also { order[l] += it } }
-        chainOf[e] = chain
-        (listOf(e.from) + chain + e.to).zipWithNext().forEach { (a, b) ->
-            upstream.getOrPut(b) { mutableListOf() } += a
-            downstream.getOrPut(a) { mutableListOf() } += b
-            links += a to b
+        (listOf(e.from) + chainOf.getValue(e) + e.to).zipWithNext().forEach { (a, b) ->
+            if (links.add(a to b)) {
+                upstream.getOrPut(b) { mutableListOf() } += a
+                downstream.getOrPut(a) { mutableListOf() } += b
+            }
         }
     }
     order.forEachIndexed { l, names -> names.forEach { levelOf[it] = l } }
+    val linkList = links.toList()
     fun parentsOf(n: String): List<String> = upstream[n].orEmpty()
     fun childrenOf(n: String): List<String> = downstream[n].orEmpty()
 
@@ -164,9 +191,9 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
     fun orderCrossings(): Int {
         val p = norm()
         var count = 0
-        for (i in links.indices) for (j in i + 1 until links.size) {
-            val a = links[i]
-            val b = links[j]
+        for (i in linkList.indices) for (j in i + 1 until linkList.size) {
+            val a = linkList[i]
+            val b = linkList[j]
             if (levelOf[a.first] != levelOf[b.first]) continue
             val top = p.getValue(a.first) - p.getValue(b.first)
             val bottom = p.getValue(a.second) - p.getValue(b.second)
