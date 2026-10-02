@@ -115,6 +115,9 @@ import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
+import com.ironvellum.app.ui.components.ascensionAchievement
+import com.ironvellum.app.ui.components.deedAchievement
+import com.ironvellum.app.ui.components.levelUpAchievement
 import com.ironvellum.app.ui.components.ShareCardDialog
 import com.ironvellum.app.ui.components.ExerciseInfoSheet
 import com.ironvellum.app.ui.components.ExercisePickerSheet
@@ -272,6 +275,15 @@ class SessionViewModel(
 
     fun keepPlan() {
         _routineUpdate.value = null
+    }
+
+    /** The title worn now, so a deed the seal already dressed you in reads WORN. */
+    val wornTitleId: StateFlow<String?> = repo.observeProfile()
+        .map { it?.currentTitleId }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun wearTitle(titleId: String) {
+        viewModelScope.launchGuarded("wear title") { repo.equipTitle(titleId) }
     }
 
     /** This trial's rest between sets, while one runs; shared with the trial service. */
@@ -458,6 +470,7 @@ fun SessionScreen(
     val completion by viewModel.completion.collectAsStateWithLifecycle()
     val finish by viewModel.finish.collectAsStateWithLifecycle()
     val peaks by viewModel.peaks.collectAsStateWithLifecycle()
+    val wornTitleId by viewModel.wornTitleId.collectAsStateWithLifecycle()
     val claiming by viewModel.claiming.collectAsStateWithLifecycle()
     val lastLogged by viewModel.lastLogged.collectAsStateWithLifecycle()
     val reasons by viewModel.reasons.collectAsStateWithLifecycle()
@@ -1144,6 +1157,8 @@ fun SessionScreen(
             SessionViewModel.Finish.AWARDS -> AchievementOverlay(
                 items = awards,
                 onDone = { viewModel.advanceFinish(SessionViewModel.Finish.ROUTINE) },
+                wornTitleId = wornTitleId,
+                onWear = viewModel::wearTitle,
             )
             SessionViewModel.Finish.ROUTINE -> {
                 val offer = routineUpdate
@@ -1174,36 +1189,9 @@ fun SessionScreen(
 
 /** One page per honour the completion earned, shown after the victory. */
 private fun awardsFor(result: Repository.CompletionResult, sex: Sex): List<Achievement> = buildList {
-    if (result.levelAfter > result.levelBefore) {
-        add(
-            Achievement(
-                banner = "LEVEL UP",
-                tagline = "XP LEVEL",
-                name = "Level ${result.levelAfter}",
-                subtitle = "${result.totalXp} XP TOTAL",
-                accent = IronvellumColors.SystemGreen,
-            ),
-        )
-    }
-    if (result.classAfter != result.classBefore) {
-        add(
-            Achievement(
-                banner = "ASCENDED",
-                tagline = "ASCENSION",
-                name = result.classAfter,
-                subtitle = "FROM ${result.classBefore.uppercase()}",
-            ),
-        )
-    }
-    result.newTitles.forEach { title ->
-        add(
-            Achievement(
-                banner = "DEED EARNED",
-                name = title.name,
-                subtitle = title.describeFor(sex).uppercase(),
-            ),
-        )
-    }
+    if (result.levelAfter > result.levelBefore) add(levelUpAchievement(result.levelBefore, result.levelAfter, result.totalXp))
+    if (result.classAfter != result.classBefore) add(ascensionAchievement(result.classBefore, result.classAfter))
+    result.newTitles.forEach { add(deedAchievement(it, sex)) }
 }
 
 @Composable

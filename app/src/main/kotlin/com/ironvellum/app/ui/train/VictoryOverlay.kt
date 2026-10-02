@@ -2,13 +2,9 @@ package com.ironvellum.app.ui.train
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,10 +33,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -60,10 +53,11 @@ import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.LedgerEmbers
+import com.ironvellum.app.ui.components.ledgerDawn
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
-import com.ironvellum.app.ui.theme.inkDot
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -125,18 +119,9 @@ internal fun VictoryOverlay(
             Modifier
                 .fillMaxSize()
                 .background(IronvellumColors.Abyss)
-                .drawBehind {
-                    // A low gold dawn behind the header: the only warm light on screen.
-                    drawRect(
-                        Brush.radialGradient(
-                            listOf(IronvellumColors.SovereignGold.copy(alpha = 0.16f), Color.Transparent),
-                            center = Offset(size.width / 2f, 0f),
-                            radius = size.width,
-                        ),
-                    )
-                },
+                .ledgerDawn(0.16f),
         ) {
-            Embers()
+            LedgerEmbers()
             Column(
                 Modifier
                     .fillMaxSize()
@@ -457,31 +442,6 @@ private fun XpPanel(result: Repository.CompletionResult, xpShown: Int, levelPos:
                     color = IronvellumColors.SovereignGold,
                 )
             }
-        }
-    }
-}
-
-/** A few gold embers drifting up behind the report; quiet, never over the text. */
-@Composable
-private fun Embers() {
-    val drift = rememberInfiniteTransition(label = "embers")
-    val rise by drift.animateFloat(
-        initialValue = 1f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(tween(4200)),
-        label = "rise",
-    )
-    Canvas(Modifier.fillMaxSize()) {
-        repeat(12) { i ->
-            val seed = i * 0.618f
-            val x = ((seed * 7.13f) % 1f) * size.width
-            val cycle = (rise + seed) % 1f
-            inkDot(
-                center = Offset(x, cycle * size.height),
-                radius = (2f + (i % 3)) * 1.6f,
-                color = IronvellumColors.SovereignGold.copy(alpha = (1f - cycle) * 0.35f),
-                seed = i,
-            )
         }
     }
 }

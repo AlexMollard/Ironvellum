@@ -466,7 +466,7 @@ fun CircleSection(
                 Achievement(
                     banner = "CIRCLE'S GOAL MET",
                     name = paid.circleName ?: circle?.name ?: "The circle",
-                    tagline = "The circle met its weekly goal and you carried your share.",
+                    subtitle = "The circle met its weekly goal and you carried your share.",
                     xp = paid.xp,
                 ),
             ),

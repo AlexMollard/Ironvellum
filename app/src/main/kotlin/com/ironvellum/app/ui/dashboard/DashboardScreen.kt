@@ -86,8 +86,8 @@ import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.program.toPlanned
-import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
+import com.ironvellum.app.ui.components.deedAchievement
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.LifterSigil
 import com.ironvellum.app.ui.components.SectionHeader
@@ -277,6 +277,10 @@ class DashboardViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun celebrationsSeen() = repo.clearPendingCelebrations()
+
+    fun wearTitle(titleId: String) {
+        viewModelScope.launchGuarded("wear title") { repo.equipTitle(titleId) }
+    }
 
     fun selectDay(day: Int) {
         selectedDay.value = day
@@ -1114,17 +1118,12 @@ fun DashboardScreen(
     // celebrate in, so the moment is paid out here on the first screen.
     val owed by viewModel.pendingCelebrations.collectAsStateWithLifecycle()
     val sex by viewModel.sex.collectAsStateWithLifecycle()
+    val wornTitleId = viewModel.ui.collectAsStateWithLifecycle().value.profile?.currentTitleId
     AchievementOverlay(
-        items = owed.map { def ->
-            Achievement(
-                // Noun contract: a deed is earned; "Claim" belongs to
-                // technique mastery only.
-                banner = "DEED EARNED",
-                name = def.name,
-                subtitle = def.describeFor(sex).uppercase(),
-            )
-        },
+        items = owed.map { deedAchievement(it, sex) },
         onDone = { viewModel.celebrationsSeen() },
+        wornTitleId = wornTitleId,
+        onWear = viewModel::wearTitle,
     )
 }
 
