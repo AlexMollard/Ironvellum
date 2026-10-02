@@ -21,6 +21,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -30,15 +32,16 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import kotlin.random.Random
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.InkStyle
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkBorder
-import com.ironvellum.app.ui.theme.inkStroke
 
 /**
  * Verdict for one muscle against the tier/focus weekly-set range. LIGHT is a
@@ -166,9 +169,9 @@ fun coverageGaps(volume: Map<Muscle, Double>, goal: CoverageGoal): List<Muscle> 
     }
 
 private val FRONT = listOf(
-    Region(Muscle.TRAPS, 0.029f to 0.145f, 0.058f to 0.150f, 0.088f to 0.155f, 0.099f to 0.159f, 0.064f to 0.164f, 0.036f to 0.162f, 0.025f to 0.155f),
-    Region(Muscle.FRONT_DELTS, 0.103f to 0.157f, 0.111f to 0.158f, 0.118f to 0.165f, 0.120f to 0.172f, 0.121f to 0.179f, 0.124f to 0.186f, 0.123f to 0.195f, 0.118f to 0.201f, 0.113f to 0.210f, 0.108f to 0.210f, 0.101f to 0.203f, 0.098f to 0.192f, 0.097f to 0.185f, 0.095f to 0.180f, 0.094f to 0.174f, 0.092f to 0.165f, 0.097f to 0.159f, 0.101f to 0.157f),
-    Region(Muscle.SIDE_DELTS, 0.119f to 0.160f, 0.133f to 0.165f, 0.141f to 0.173f, 0.146f to 0.175f, 0.148f to 0.188f, 0.152f to 0.200f, 0.147f to 0.209f, 0.146f to 0.222f, 0.143f to 0.234f, 0.138f to 0.234f, 0.131f to 0.224f, 0.128f to 0.215f, 0.126f to 0.203f, 0.125f to 0.188f, 0.124f to 0.182f, 0.121f to 0.173f, 0.122f to 0.167f, 0.116f to 0.160f),
+    Region(Muscle.TRAPS, 0.027f to 0.150f, 0.035f to 0.146f, 0.050f to 0.150f, 0.067f to 0.153f, 0.087f to 0.157f, 0.104f to 0.160f, 0.113f to 0.163f, 0.104f to 0.167f, 0.087f to 0.167f, 0.064f to 0.165f, 0.040f to 0.163f, 0.028f to 0.157f),
+    Region(Muscle.FRONT_DELTS, 0.108f to 0.165f, 0.121f to 0.164f, 0.127f to 0.172f, 0.128f to 0.188f, 0.127f to 0.204f, 0.125f to 0.216f, 0.118f to 0.211f, 0.110f to 0.208f, 0.102f to 0.202f, 0.098f to 0.192f, 0.096f to 0.180f, 0.098f to 0.170f),
+    Region(Muscle.SIDE_DELTS, 0.130f to 0.166f, 0.139f to 0.168f, 0.147f to 0.174f, 0.153f to 0.184f, 0.156f to 0.198f, 0.156f to 0.214f, 0.154f to 0.230f, 0.148f to 0.236f, 0.141f to 0.234f, 0.136f to 0.228f, 0.132f to 0.220f, 0.130f to 0.205f, 0.129f to 0.185f),
     Region(Muscle.UPPER_CHEST, 0.009f to 0.169f, 0.051f to 0.163f, 0.084f to 0.166f, 0.094f to 0.178f, 0.087f to 0.181f, 0.051f to 0.179f, 0.009f to 0.181f),
     Region(Muscle.MID_CHEST, 0.006f to 0.182f, 0.053f to 0.180f, 0.089f to 0.182f, 0.095f to 0.186f, 0.093f to 0.191f, 0.049f to 0.204f, 0.008f to 0.208f),
     Region(Muscle.LOWER_CHEST, 0.007f to 0.209f, 0.052f to 0.205f, 0.095f to 0.192f, 0.097f to 0.199f, 0.086f to 0.214f, 0.054f to 0.229f, 0.005f to 0.232f),
@@ -189,13 +192,13 @@ private val BACK = listOf(
     Region(Muscle.TRAPS, 0.010f to 0.140f, 0.038f to 0.144f, 0.065f to 0.151f, 0.091f to 0.157f, 0.082f to 0.163f, 0.054f to 0.167f, 0.023f to 0.178f, 0.015f to 0.230f, 0.010f to 0.290f, 0.006f to 0.305f),
     Region(Muscle.RHOMBOIDS, 0.023f to 0.181f, 0.043f to 0.173f, 0.058f to 0.181f, 0.057f to 0.214f, 0.039f to 0.243f, 0.017f to 0.248f),
     Region(Muscle.ROTATOR_CUFF, 0.060f to 0.170f, 0.092f to 0.159f, 0.106f to 0.166f, 0.101f to 0.202f, 0.068f to 0.231f, 0.059f to 0.204f),
-    Region(Muscle.REAR_DELTS, 0.113f to 0.159f, 0.128f to 0.165f, 0.138f to 0.171f, 0.143f to 0.174f, 0.146f to 0.183f, 0.146f to 0.192f, 0.143f to 0.201f, 0.138f to 0.209f, 0.133f to 0.218f, 0.125f to 0.218f, 0.117f to 0.209f, 0.111f to 0.201f, 0.109f to 0.192f, 0.107f to 0.185f, 0.106f to 0.178f, 0.107f to 0.172f, 0.108f to 0.166f, 0.109f to 0.159f),
+    Region(Muscle.REAR_DELTS, 0.109f to 0.160f, 0.122f to 0.161f, 0.134f to 0.164f, 0.144f to 0.171f, 0.150f to 0.181f, 0.154f to 0.195f, 0.154f to 0.212f, 0.151f to 0.228f, 0.145f to 0.231f, 0.138f to 0.224f, 0.128f to 0.215f, 0.118f to 0.215f, 0.110f to 0.206f, 0.106f to 0.192f, 0.105f to 0.178f, 0.106f to 0.166f),
     Region(Muscle.LATS, 0.014f to 0.271f, 0.054f to 0.229f, 0.095f to 0.229f, 0.091f to 0.253f, 0.087f to 0.291f, 0.081f to 0.329f, 0.077f to 0.370f, 0.057f to 0.385f, 0.022f to 0.369f),
     Region(Muscle.TRICEPS, 0.128f to 0.218f, 0.142f to 0.233f, 0.149f to 0.247f, 0.152f to 0.262f, 0.154f to 0.276f, 0.152f to 0.290f, 0.148f to 0.305f, 0.143f to 0.320f, 0.135f to 0.334f, 0.128f to 0.334f, 0.121f to 0.320f, 0.117f to 0.305f, 0.113f to 0.290f, 0.109f to 0.276f, 0.108f to 0.262f, 0.105f to 0.247f, 0.107f to 0.233f, 0.119f to 0.218f),
     Region(Muscle.FOREARMS, 0.135f to 0.340f, 0.156f to 0.342f, 0.159f to 0.364f, 0.158f to 0.378f, 0.159f to 0.393f, 0.156f to 0.411f, 0.153f to 0.433f, 0.144f to 0.449f, 0.135f to 0.462f, 0.126f to 0.462f, 0.120f to 0.449f, 0.112f to 0.433f, 0.111f to 0.411f, 0.113f to 0.393f, 0.113f to 0.378f, 0.113f to 0.360f, 0.114f to 0.338f, 0.129f to 0.340f),
     Region(Muscle.LOWER_BACK, 0.006f to 0.371f, 0.029f to 0.376f, 0.058f to 0.396f, 0.056f to 0.455f, 0.006f to 0.467f),
     Region(Muscle.ABDUCTORS, 0.039f to 0.459f, 0.079f to 0.440f, 0.082f to 0.464f, 0.087f to 0.483f, 0.065f to 0.488f, 0.040f to 0.483f),
-    Region(Muscle.GLUTES, 0.005f to 0.468f, 0.082f to 0.503f, 0.089f to 0.499f, 0.092f to 0.505f, 0.096f to 0.537f, 0.098f to 0.571f, 0.060f to 0.590f, 0.025f to 0.585f, 0.013f to 0.538f, 0.007f to 0.506f),
+    Region(Muscle.GLUTES, 0.005f to 0.468f, 0.040f to 0.484f, 0.074f to 0.497f, 0.088f to 0.505f, 0.094f to 0.520f, 0.097f to 0.540f, 0.098f to 0.571f, 0.060f to 0.590f, 0.025f to 0.585f, 0.013f to 0.538f, 0.007f to 0.506f),
     Region(Muscle.HAMSTRINGS, 0.065f to 0.593f, 0.088f to 0.593f, 0.095f to 0.616f, 0.091f to 0.635f, 0.089f to 0.650f, 0.087f to 0.665f, 0.083f to 0.686f, 0.073f to 0.698f, 0.061f to 0.709f, 0.053f to 0.707f, 0.038f to 0.701f, 0.031f to 0.684f, 0.028f to 0.665f, 0.027f to 0.650f, 0.026f to 0.635f, 0.025f to 0.617f, 0.037f to 0.605f, 0.054f to 0.593f),
     Region(Muscle.CALVES, 0.061f to 0.716f, 0.083f to 0.729f, 0.088f to 0.760f, 0.090f to 0.781f, 0.086f to 0.804f, 0.084f to 0.830f, 0.075f to 0.857f, 0.065f to 0.885f, 0.054f to 0.908f, 0.045f to 0.908f, 0.039f to 0.885f, 0.032f to 0.863f, 0.028f to 0.832f, 0.028f to 0.804f, 0.028f to 0.782f, 0.029f to 0.760f, 0.033f to 0.723f, 0.052f to 0.716f),
 )
@@ -218,7 +221,7 @@ internal val DRAWN: Set<Muscle> = (FRONT + BACK).map { it.muscle }.toSet()
  * torso over a straight-sided trunk read as one wide block, "fat" to a
  * first-time viewer.
  */
-private val HALF_OUTLINE = listOf(
+internal val HALF_OUTLINE = listOf(
     0.000f to 0.000f, // crown
     0.026f to 0.004f,
     0.042f to 0.016f,
@@ -237,11 +240,14 @@ private val HALF_OUTLINE = listOf(
     0.067f to 0.150f,
     0.087f to 0.153f,
     0.106f to 0.156f, // traps meet the shoulder
-    0.125f to 0.160f,
-    0.142f to 0.167f,
-    0.151f to 0.184f, // deltoid cap
-    0.152f to 0.210f,
-    0.156f to 0.240f,
+    0.122f to 0.159f, // acromion
+    0.137f to 0.163f,
+    0.149f to 0.171f,
+    0.156f to 0.183f, // deltoid cap
+    0.160f to 0.198f,
+    0.160f to 0.215f, // deltoid belly
+    0.158f to 0.235f,
+    0.158f to 0.255f,
     0.159f to 0.275f, // upper arm
     0.158f to 0.312f,
     0.155f to 0.333f, // elbow, outer
@@ -279,7 +285,8 @@ private val HALF_OUTLINE = listOf(
     0.112f to 0.365f, // forearm, inner
     0.107f to 0.332f, // elbow, inner
     0.107f to 0.290f,
-    0.094f to 0.228f, // armpit
+    0.094f to 0.228f, // armpit crease: doubled so it stays a crisp corner
+    0.094f to 0.228f,
     0.095f to 0.250f, // lat flare
     0.088f to 0.290f,
     0.082f to 0.330f,
@@ -498,16 +505,83 @@ private fun DrawScope.drawFigure(
         }
     }
 
-    // The hand-drawn outline goes on last, in the app's one brush.
+    // The hand-drawn outline goes on last, in the app's one brush. It follows
+    // the same rounded curve the body is filled with, so the ink and the paper
+    // agree, and the wander lives in the path rather than in straight chords.
     val outline = HALF_OUTLINE + HALF_OUTLINE.reversed().map { (x, y) -> -x to y }
-    (outline + outline.first()).zipWithNext().forEachIndexed { i, (a, b) ->
-        inkStroke(
-            from = at(a.first, a.second),
-            to = at(b.first, b.second),
-            color = IronvellumColors.InkMuted,
-            widthPx = 1.4.dp.toPx(),
-            seed = seed + i,
-            taperEnds = false,
+    inkOutline(smoothSamples(outline.map { (x, y) -> at(x, y) }), IronvellumColors.InkMuted, 1.4.dp.toPx(), seed)
+}
+
+/**
+ * Points along the curve [smoothClosed] draws through [points], [steps] per
+ * edge. A doubled vertex lands the curve exactly on it, which is how a corner
+ * (armpit, crotch) is kept crisp while every other vertex is rounded.
+ */
+internal fun smoothSamples(points: List<Offset>, steps: Int = 8): List<Offset> {
+    fun mid(a: Offset, b: Offset) = Offset((a.x + b.x) / 2f, (a.y + b.y) / 2f)
+    val out = ArrayList<Offset>(points.size * steps)
+    var from = mid(points.last(), points.first())
+    out.add(from)
+    points.indices.forEach { i ->
+        val p = points[i]
+        val to = mid(p, points[(i + 1) % points.size])
+        for (k in 1..steps) {
+            val t = k / steps.toFloat()
+            val u = 1f - t
+            val s = Offset(u * u * from.x + 2f * u * t * p.x + t * t * to.x, u * u * from.y + 2f * u * t * p.y + t * t * to.y)
+            if ((s - out.last()).getDistance() > 0.01f) out.add(s)
+        }
+        from = to
+    }
+    return out
+}
+
+/**
+ * [samples] (a closed curve) as ink: runs of about 26px, each stroked as one
+ * path with its own weight and alpha, the joints between runs nudged
+ * perpendicular to the line. The same wobble [inkStroke] gives a straight run,
+ * but following the curve instead of cutting its corners.
+ */
+private fun DrawScope.inkOutline(samples: List<Offset>, color: Color, widthPx: Float, seed: Int) {
+    val closed = samples + samples.first()
+    if (!InkStyle.enabled) {
+        drawPath(Path().apply { moveTo(closed[0].x, closed[0].y); closed.drop(1).forEach { lineTo(it.x, it.y) } }, color, style = Stroke(widthPx, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        return
+    }
+    val runs = ArrayList<IntRange>()
+    var start = 0
+    var length = 0f
+    for (i in 1 until closed.size) {
+        length += (closed[i] - closed[i - 1]).getDistance()
+        if (length >= 26f || i == closed.lastIndex) {
+            runs.add(start..i)
+            start = i
+            length = 0f
+        }
+    }
+    val rng = Random(seed)
+    val drift = (widthPx * 0.55f).coerceAtMost(1.6f)
+    val joints = FloatArray(runs.size + 1) { (rng.nextFloat() - 0.5f) * 2f * drift }
+    joints[runs.size] = joints[0]
+    runs.forEachIndexed { r, run ->
+        val weight = 0.5f + rng.nextFloat() * 0.5f
+        val path = Path()
+        for (i in run) {
+            val before = closed[maxOf(i - 1, 0)]
+            val after = closed[minOf(i + 1, closed.lastIndex)]
+            val dx = after.x - before.x
+            val dy = after.y - before.y
+            val len = kotlin.math.sqrt(dx * dx + dy * dy).coerceAtLeast(0.001f)
+            val t = (i - run.first) / (run.last - run.first).coerceAtLeast(1).toFloat()
+            val off = joints[r] * (1f - t) + joints[r + 1] * t
+            val x = closed[i].x - dy / len * off
+            val y = closed[i].y + dx / len * off
+            if (i == run.first) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        drawPath(
+            path,
+            color.copy(alpha = color.alpha * (0.55f + 0.45f * weight)),
+            style = Stroke(widthPx * (0.55f + 0.45f * weight), cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
     }
 }
