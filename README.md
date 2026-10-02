@@ -7,9 +7,9 @@
 **An Android training tracker that scores what you actually lift.**
 
 Log a workout, get a number that means something. Body-scaled strength scoring,
-a 106-technique calisthenics tree, and a first-run flow that builds you a cycle.
+a 119-technique calisthenics tree, and a first-run flow that builds you a cycle.
 
-![Gate](https://img.shields.io/badge/gate-523%20unit%20%2B%2090%20instrumented-2E7D32)
+![Gate](https://img.shields.io/badge/gate-1006%20unit%20%2B%20122%20instrumented-2E7D32)
 ![Tested locally](https://img.shields.io/badge/tested-locally%2C%20not%20CI-555555)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
@@ -69,16 +69,16 @@ progress is a **trial**, sealed when you finish and written into your
 |---|---|
 | **The Binding** | A guided first run. Pick your split (full body, upper/lower, push/pull/legs), weekly volume, armoury (the equipment you own) and goal, then review an editable cycle built from the real catalogue. No cycle is imposed on you. |
 | **The Forge** | An evidence-based builder. Hand-written patterns for each split, for strength or muscle, fitted to your weekly volume (low, standard or high) and your armoury: a full gym, nothing, or toggles for a pull-up bar, dip bars, parallettes, rings, dumbbells, barbell, bench and ab wheel, with dumbbell loads capped at your heaviest and reps raised to match. Or forge a cycle or a single rite sized to the 2020-2026 volume research, or temper a rite you already have and see the before and after. Cap the exercises per rite (5 by default) or turn on Compound & technique only to leave isolation work out. Every exercise says in plain words why it was picked and cites the study. Loads come from your own peaks. |
-| **Weekly muscle coverage** | A body map on the Rites tab shows the sets each of 26 muscles gets in your planned cycle or the last seven days, against the range for your volume and goal. The chest counts as upper, mid and lower, and lever and planche holds count toward the muscles they work. Helpers your other exercises mostly train (upper and lower chest, traps, front delts, rotator cuff, serratus, brachialis, forearms, obliques, lower back, hip flexors, adductors, abductors, tibialis) are held to a floor of 3 sets a week instead of a range. Each muscle's sets break down by exercise, and every exercise shows its main and assisting muscles on a figure, on the live trial screen too. |
+| **Weekly muscle coverage** | An anatomical body map, male or female to match your profile, on the Rites tab shows the sets each muscle gets in your planned cycle or the last seven days, against the range for your volume and goal. Tap the map to open Weekly Coverage and swipe between MUSCLES, tiles with the gaps first, and EXERCISES, cards you open for the muscles each works. Tap a muscle on any figure to light it with one line of context. The chest counts as upper, mid and lower, and lever and planche holds count toward the muscles they work. Helpers your other exercises mostly train (upper and lower chest, traps, front delts, rotator cuff, serratus, brachialis, forearms, obliques, lower back, hip flexors, adductors, abductors, tibialis) are held to a floor of 3 sets a week instead of a range, and the neck is tracked with no weekly target. Every exercise and technique has a swipeable info sheet that shows its main and assisting muscles on the figure, on the live trial screen too. |
 | **Live trials** | Type a set's exact load, watch a running timer, and continue a trial you left instead of starting over. Time estimates learn your pace from the trials you seal. After a trial, tick which changes to sets, reps, load and modifiers go back into your cycle. |
-| **244 exercises** | Barbell, dumbbell, cable, plate-loaded, selectorised, smith, assisted, bodyweight, plus cardio, sport, climbing, water and mobility. |
-| **Paths: 106 techniques** | Fourteen paths: pull, push, handstand, lever, planche, rings, movement, legs, core, mobility, plus squat, bench, press and deadlift ladders with bodyweight-relative bars. Each technique is gated on the one before it and carries a written claim standard. |
+| **256 exercises** | Barbell, dumbbell, cable, plate-loaded, selectorised, smith, assisted, bodyweight, plus cardio, sport, climbing, water and mobility. |
+| **Paths: 119 techniques** | Fourteen paths: pull, push, handstand, lever, planche, rings, movement, legs, core, mobility, plus squat, bench, press and deadlift ladders with bodyweight-relative bars. Pick a path from the grid and follow its game-style nodes. Each technique is gated on the one before it and carries a written claim standard. |
 | **105 deeds** | Level, volume, oath (days kept in a row), strength and activity milestones, with progress you can watch rather than a surprise. Each deed grants a title to wear. |
 | **Progressive overload** | Strength and hypertrophy schools with their own rep bands, per-exercise load steps and a stall rule that deloads instead of repeating a failed trial. |
-| **Measurements and health** | Weight, body fat, BMI and FFMI over time; optional Health Connect read for steps, distance, energy and sleep. |
+| **The Ledger** | Scrubbable charts over BODY (weight, body fat, BMI, FFMI), TRAINING (lift records and a calendar) and DAILY tabs; optional Health Connect read for steps, distance, energy and sleep. |
 | **Shareable trials** | A plain text card shaped after Wordle, no link and no image, that states only what you did. |
 | **The Veil** | An idle layer: each trial leaves an echo, and echoes gather essence while you are away, spent on inscriptions for relics and crests. |
-| **Optional cloud** | Sign in to back up training, follow your allies' tidings, form a circle with a shared weekly goal, and stand in the Reckoning, a leaderboard for each lift. Body measurements and health data never leave the device. Delete your cloud account from the app at any time. |
+| **Optional cloud** | Sign in to back up training, follow your allies' tidings, form a circle with a shared weekly goal and a Keeper, and stand in the Reckoning, a leaderboard for each lift. Body measurements and health data never leave the device. Delete your cloud account from the app at any time. |
 
 ## Architecture
 
@@ -234,7 +234,9 @@ Point instrumented runs at an emulator, never a phone with real training on it.
 Ironvellum is free software under the
 [GNU General Public License v3.0 or later](LICENSE). The artwork is original
 or generated for this project and shares that licence; the Chakra Petch font is
-under the SIL Open Font License 1.1. See [NOTICE](NOTICE).
+under the SIL Open Font License 1.1. The muscle map's body shapes and outlines are
+derived from [react-native-body-highlighter](https://github.com/HichamELBSI/react-native-body-highlighter)
+(MIT). See [NOTICE](NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Docs
 

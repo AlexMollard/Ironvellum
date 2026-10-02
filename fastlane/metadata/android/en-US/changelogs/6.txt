@@ -1,6 +1,7 @@
+Anatomical body map, male or female; tap a muscle to light it
+Weekly Coverage: swipeable MUSCLES and EXERCISES tiles
+Swipeable info sheets for exercises and techniques
+Game-style Paths nodes; a rebuilt Ledger with a TRAINING calendar
 Circles replace warbands, with a weekly goal and a Keeper
-A rebuilt Ledger: charts you can scrub and a TRAINING calendar
-Codex deeds grouped by category, and a clearer map of Paths
-Amend a sealed trial; rest timer and a live trial card
-Strength Rank now follows your lifts; the Forge caps sets
-One vocabulary across the app, bigger touch targets, fixes
+Trial report on victory; amend a sealed trial; rest timer
+Strength Rank follows your lifts; compact tabs, fixes
