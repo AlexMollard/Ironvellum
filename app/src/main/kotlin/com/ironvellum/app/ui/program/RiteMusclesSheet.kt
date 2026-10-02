@@ -56,7 +56,7 @@ internal fun RiteMusclesSheet(
             text(null, "No muscle data for this rite yet.", IronvellumColors.InkMuted)
         } else {
             section("WHERE IT LANDS") {
-                RiteMuscleMap(sets, Modifier.fillMaxWidth())
+                RiteMuscleMap(sets, title, Modifier.fillMaxWidth())
                 Spacer(Modifier.height(4.dp))
                 Text(
                     "Brighter means more of this rite's sets. One rite is only part of a week.",

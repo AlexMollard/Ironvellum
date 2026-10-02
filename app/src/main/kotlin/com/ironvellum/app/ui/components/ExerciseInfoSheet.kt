@@ -112,7 +112,7 @@ internal fun InfoSheetScope.formFacts(name: String) {
 internal fun InfoSheetScope.muscleFacts(name: String, modifiers: String = "", showMissingMuscles: Boolean = false) {
     val shares = MuscleMap.profile(name, modifiers)?.muscles.orEmpty()
     if (shares.isNotEmpty()) {
-        section("MUSCLES") { ExerciseMuscles(shares, Modifier.fillMaxWidth(), figureHeight = 180.dp) }
+        section("MUSCLES") { ExerciseMuscles(shares, name, Modifier.fillMaxWidth(), figureHeight = 180.dp) }
     } else if (showMissingMuscles) {
         text("MUSCLES", "The Ledger holds no muscle data for this exercise yet.", IronvellumColors.InkMuted)
     }
