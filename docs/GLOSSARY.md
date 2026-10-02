@@ -209,7 +209,7 @@ server keeps sending them and the client accepts the `circle_*` spellings too.
   someone who typed "Lifter" deliberately is renamed too.
 - **Cloud handles** (approved 2026-09-30). The server seeds new accounts
   `Ironbound` + short id; `Lifter` and `Hunter` handles still count as
-  unclaimed. Needs the hosted project updated.
+  unclaimed. Live on the hosted project since the 2026-10-02 release patch.
 - **Art** (checked 2026-09-30). No art needs changing: the rank emblems named
   in `docs/ART_ATTRIBUTION.md` no longer ship, and the empty-state set fits
   the world as drawn (`art_empty_muster` is a rune circle, used by the Veil).

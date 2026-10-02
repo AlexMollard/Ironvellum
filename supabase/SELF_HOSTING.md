@@ -30,8 +30,9 @@ includes the `schema_version()` beacon the app uses to check your project is
 ready; if it is missing, the app reports "migrations have not been applied"
 instead of sending data into a half-built schema.
 
-To wipe a project back to empty first, run `supabase/reset.sql` (it deletes
-every account and every app table).
+To wipe a throwaway project back to empty first, run `supabase/reset.sql`.
+**It deletes every account and every app table**, so never run it on a project
+holding anyone's real data.
 
 Afterwards you can verify with the SQL editor:
 
