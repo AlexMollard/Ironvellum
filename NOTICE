@@ -18,6 +18,12 @@ Fonts (app/src/main/res/font/chakra_petch_*.ttf)
   (https://github.com/m4rc1e/Chakra-Petch), licensed under the SIL Open Font
   License 1.1. Full text: licenses/OFL-ChakraPetch.txt.
 
+Muscle map shapes (app/src/main/kotlin/com/ironvellum/app/ui/program/BodyMapShapes.kt)
+  Derived from react-native-body-highlighter (https://github.com/HichamELBSI/react-native-body-highlighter),
+  main as fetched 2026-10-02, MIT License, Copyright (c) 2022 ELABBASSI Hicham. The muscle and head shapes and the
+  hand-drawn outline (border) paths of its male and female bodies were converted by tools/bodymap_import.py.
+  Full text: licenses/MIT-react-native-body-highlighter.txt, also shown in the app under Support, Licence.
+
 Artwork
 =======
 

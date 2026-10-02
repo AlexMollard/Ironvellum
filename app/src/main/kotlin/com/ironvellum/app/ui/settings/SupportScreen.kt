@@ -9,6 +9,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -163,6 +167,28 @@ fun SupportScreen(onBack: () -> Unit) {
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
+            Spacer(Modifier.height(10.dp))
+            Text(
+                OpenSourceNotices.BODY_MAP_CREDIT,
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
+            var showMit by remember { mutableStateOf(false) }
+            Spacer(Modifier.height(10.dp))
+            IronvellumButton(
+                label = if (showMit) "Hide the licence text" else "Show the licence text",
+                onClick = { showMit = !showMit },
+                modifier = Modifier.fillMaxWidth(),
+                quiet = true,
+            )
+            if (showMit) {
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    OpenSourceNotices.BODY_MAP_SOURCE + "\n\n" + OpenSourceNotices.BODY_MAP_MIT,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
         }
 
         Spacer(Modifier.height(14.dp))
