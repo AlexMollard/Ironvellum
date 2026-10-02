@@ -28,7 +28,11 @@ a 119-technique calisthenics tree, and a first-run flow that builds you a cycle.
 
 | Paths | Deeds | Share card |
 |:---:|:---:|:---:|
-| <img src="docs/images/skilltree.png" width="230" alt="The Paths technique tree with prerequisite lines" /> | <img src="docs/images/codex.png" width="230" alt="Deeds board grouped by category with progress bars" /> | <img src="docs/images/share.png" width="230" alt="Wordle-style plain text share card" /> |
+| <img src="docs/images/skilltree.png" width="230" alt="The Pull path drawn as game-style nodes with prerequisite lines" /> | <img src="docs/images/codex.png" width="230" alt="Deeds board grouped by category with progress bars" /> | <img src="docs/images/share.png" width="230" alt="Wordle-style plain text share card" /> |
+
+| Weekly Coverage | Muscle tiles | Info sheet |
+|:---:|:---:|:---:|
+| <img src="docs/images/coverage.png" width="230" alt="Weekly Coverage with the anatomical body map and the quads lit with a line of context" /> | <img src="docs/images/coverage_tiles.png" width="230" alt="Swipeable MUSCLES tiles, gaps first, with sets against target range" /> | <img src="docs/images/info.png" width="230" alt="Swipeable exercise info sheet with the muscles worked shown on the figure" /> |
 
 </div>
 
