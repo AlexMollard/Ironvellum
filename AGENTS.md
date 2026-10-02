@@ -28,7 +28,23 @@ python3 tools/gate.py --backend    # plus the Supabase schema assertions
 python3 tools/gate.py --no-device  # no emulator: compiles instrumented instead
 ```
 
-It takes about 75 seconds on this machine.
+It takes about 17 minutes on this machine, most of it the instrumented suite.
+It goes red when any test fails, and also when fewer tests ran than the
+sources declare: a test process that crashes on start reports zero tests and
+zero failures, which used to read as green.
+
+## One emulator, shared between sessions
+
+Parallel sessions all use `emulator-5554`, and an install, `pm clear` or
+uninstall from one kills another's suite part way through. Take the lock before
+touching it, and release it however the run ends:
+
+```bash
+until mkdir .tmp/emulator.lock 2>/dev/null; do sleep 30; done
+trap 'rmdir .tmp/emulator.lock' EXIT
+```
+
+`tools/gate.py` takes this lock itself while the instrumented suite runs.
 
 ## Instrumented tests never touch the owner's phone
 
