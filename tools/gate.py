@@ -19,6 +19,7 @@ refused unless --serial names it explicitly.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import glob
 import os
 import re
@@ -80,6 +81,62 @@ def counts(pattern: str) -> tuple[int, int]:
         total += int(root.get("tests", 0))
         failed += int(root.get("failures", 0)) + int(root.get("errors", 0))
     return total, failed
+
+
+LOCK = os.path.join(ROOT, ".tmp", "emulator.lock")
+
+
+@contextlib.contextmanager
+def emulator_lock(serial: str | None):
+    """Hold the emulator lock that parallel sessions share while the suite runs.
+
+    Several sessions use the one emulator. An install or uninstall from another
+    one mid-suite kills the test process, and the run reports a fraction of its
+    tests. Taking the lock is a mkdir, which is atomic; it is released however
+    the run ends.
+    """
+    if not serial:
+        yield
+        return
+    os.makedirs(os.path.dirname(LOCK), exist_ok=True)
+    waited = False
+    while True:
+        try:
+            os.mkdir(LOCK)
+            break
+        except FileExistsError:
+            if not waited:
+                print(f"-- {LOCK} is held by another session; waiting")
+                waited = True
+            time.sleep(30)
+    try:
+        yield
+    finally:
+        os.rmdir(LOCK)
+
+
+def declared_tests(pattern: str) -> int:
+    """How many @Test methods the sources declare: the floor a full run must reach."""
+    total = 0
+    for path in glob.glob(os.path.join(ROOT, pattern), recursive=True):
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            total += len(re.findall(r"@Test\b", handle.read()))
+    return total
+
+
+def short_run(ran: int, declared: int) -> str | None:
+    """Why a run that reported no failures still proves nothing, or None.
+
+    A test process that crashes before its first test, or is killed part way
+    (another session uninstalling the app), leaves a results file with fewer
+    tests and zero failures, and Gradle can still exit 0. Counting only
+    failures turned that into GATE GREEN.
+    """
+    if ran == 0:
+        return "no tests ran"
+    if ran < declared:
+        return f"only {ran} of {declared} declared tests ran"
+    return None
 
 
 def lint_summary(flavour: str) -> str:
@@ -238,8 +295,9 @@ def main() -> int:
 
     print(f"-- gradle: {' '.join(tasks)}")
     failures = []
-    if gradle(tasks, serial):
-        failures.append("gradle")
+    with emulator_lock(serial):
+        if gradle(tasks, serial):
+            failures.append("gradle")
 
     if args.backend:
         print("-- backend: supabase migrations + assertions")
@@ -255,16 +313,18 @@ def main() -> int:
     inst_total, inst_failed = counts(
         f"app/build/outputs/androidTest-results/connected/debug/flavors/{args.flavour}/**/*.xml"
     )
+    unit_short = short_run(unit_total, declared_tests("app/src/test/**/*.kt"))
+    inst_short = short_run(inst_total, declared_tests("app/src/androidTest/**/*.kt")) if serial else None
     print("\n=== gate ===")
     print(f"  flavour       {args.flavour}")
-    print(f"  unit          {unit_total:>4} tests, {unit_failed} failed")
+    print(f"  unit          {unit_total:>4} tests, {unit_failed} failed" + (f"  !! {unit_short}" if unit_short else ""))
     if serial:
-        print(f"  instrumented  {inst_total:>4} tests, {inst_failed} failed")
+        print(f"  instrumented  {inst_total:>4} tests, {inst_failed} failed" + (f"  !! {inst_short}" if inst_short else ""))
     print(f"  lint          {lint_summary(fl)}")
     if args.backend:
         print(f"  backend       {'FAILED' if 'backend' in failures else 'assertions passed'}")
 
-    if failures or unit_failed or inst_failed:
+    if failures or unit_failed or inst_failed or unit_short or inst_short:
         print("\nGATE RED")
         return 1
     print("\nGATE GREEN")
