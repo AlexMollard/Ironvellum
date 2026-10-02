@@ -1,20 +1,22 @@
 #!/usr/bin/env python
-"""Offline preview of the muscle-map figure, so region shapes can be iterated without an emulator.
+"""Offline preview of the muscle-map figure, so region shapes can be looked at without an emulator.
 
-Parses HALF_OUTLINE and the FRONT / BACK Region lists out of MuscleHeatMap.kt and draws them exactly
-as the app does: the same quadratic-midpoint closed curve (smoothSamples / smoothClosed), the right
-half mirrored across the midline, a seam round every region. Each region gets a distinct colour and
-its Muscle name; --highlight shows only some muscles in the app's green and greys the rest.
+Reads the generated ui/program/BodyMapShapes.kt (packed integer pairs, right half only) and, when it
+exists, the key -> Muscle table in ui/program/BodyFigures.kt, and draws what the app draws: the outline,
+every region, the right half mirrored across the midline, a seam round every region. Each region gets a
+distinct colour and its muscle (or part key) name; --highlight shows only some muscles in the app's green.
 
 Usage:
-    python tools/figure_preview.py                       # large labelled front + back + both -> .tmp/shots/
-    python tools/figure_preview.py --height 360          # in-app size (about 120dp tall at 3x)
+    python tools/figure_preview.py                        # large labelled front + back, both bodies -> .tmp/shots/
+    python tools/figure_preview.py --body female          # one body
+    python tools/figure_preview.py --height 360           # in-app size (about 120dp tall at 3x)
+    python tools/figure_preview.py --silhouette           # the bare outline, no muscles
     python tools/figure_preview.py --highlight BICEPS,LATS,FOREARMS
-    python tools/figure_preview.py --tag after           # file names get a suffix
-    python tools/figure_preview.py --check               # inside-outline / overlap report, no images
-    python tools/figure_preview.py --landmarks           # outline half-width table and canon landmarks
+    python tools/figure_preview.py --tag after            # file names get a suffix
+    python tools/figure_preview.py --check                # inside-outline / overlap report, no images
+    python tools/figure_preview.py --landmarks            # outline half-width table
 
-Output: .tmp/shots/figure_<tag>_front.png, _back.png, _both.png (never committed; .tmp is ignored).
+Output: .tmp/shots/figure_<body>_<tag>_front.png, _back.png, _both.png (never committed; .tmp is ignored).
 """
 import argparse
 import colorsys
@@ -23,67 +25,56 @@ import os
 import re
 import sys
 
-KT = os.path.join("app", "src", "main", "kotlin", "com", "ironvellum", "app", "ui", "program", "MuscleHeatMap.kt")
-PAIR = re.compile(r"(-?\d*\.?\d+)f\s+to\s+(-?\d*\.?\d+)f")
-STEPS = 8
+PROGRAM = os.path.join("app", "src", "main", "kotlin", "com", "ironvellum", "app", "ui", "program")
+SHAPES = os.path.join(PROGRAM, "BodyMapShapes.kt")
+FIGURES = os.path.join(PROGRAM, "BodyFigures.kt")
+UNIT = 10000.0
 
 
-def read_source(path: str) -> str:
+def read(path: str) -> str:
     with open(path, encoding="utf-8", newline="") as fh:
-        text = fh.read().replace("\r\n", "\n")
-    return re.sub(r"//[^\n]*", "", text)
+        return fh.read().replace("\r\n", "\n")
 
 
-def block(text: str, header: str) -> str:
-    start = text.index(header)
-    end = text.index("\n)\n", start)
-    return text[start:end]
+def unpack(text):
+    nums = [int(n) / UNIT for n in text.split()]
+    return list(zip(nums[0::2], nums[1::2]))
 
 
-def parse(path: str):
-    text = read_source(path)
-    outline = [(float(a), float(b)) for a, b in PAIR.findall(block(text, "val HALF_OUTLINE"))]
-    views = {}
-    for name in ("FRONT", "BACK"):
-        regions = []
-        for chunk in block(text, f"val {name} = listOf(").split("Region(")[1:]:
-            muscle = re.match(r"\s*Muscle\.(\w+)", chunk).group(1)
-            regions.append((muscle, [(float(a), float(b)) for a, b in PAIR.findall(chunk)]))
-        views[name] = regions
-    return outline, views
+def parse_shapes(path: str):
+    """{body: (outline_half, {view: [(key, [polygon, ...])]}, {view: [hair polygon, ...]})}"""
+    text = read(path)
+    bodies = {}
+    for m in re.finditer(r"val (\w+) = BodyShapes\(\n(.*?)\n    \)", text, re.S):
+        block = m.group(2)
+        outline = unpack(re.search(r'outline = "([^"]*)"', block).group(1))
+        views = {}
+        for view in ("front", "back"):
+            vm = re.search(view + r" = mapOf\(\n(.*?)\n        \),", block, re.S)
+            entries = []
+            for key, packed in re.findall(r'"([^"]+)" to "([^"]*)"', vm.group(1)):
+                entries.append((key, [unpack(p) for p in packed.split("|") if p]))
+            views[view] = entries
+        hair = {
+            view: [unpack(p) for p in re.search("hair" + view.capitalize() + r' = "([^"]*)"', block).group(1).split("|") if p]
+            for view in ("front", "back")
+        }
+        bodies[m.group(1).lower()] = (outline, views, hair)
+    return bodies
 
 
-def smooth_samples(points, steps=STEPS):
-    """Copy of smoothSamples in MuscleHeatMap.kt: quadratic curves between edge midpoints, vertex as control."""
-    def mid(a, b):
-        return ((a[0] + b[0]) / 2, (a[1] + b[1]) / 2)
-
-    out = []
-    frm = mid(points[-1], points[0])
-    out.append(frm)
-    n = len(points)
-    for i, p in enumerate(points):
-        to = mid(p, points[(i + 1) % n])
-        for k in range(1, steps + 1):
-            t = k / steps
-            u = 1 - t
-            s = (u * u * frm[0] + 2 * u * t * p[0] + t * t * to[0], u * u * frm[1] + 2 * u * t * p[1] + t * t * to[1])
-            if math.dist(s, out[-1]) > 1e-5:
-                out.append(s)
-        frm = to
-    return out
+def key_muscles(path: str):
+    if not os.path.exists(path):
+        return {}
+    return dict(re.findall(r'"([\w.\-]+)"\s+to\s+(?:Muscle\.)?([A-Z_]+)', read(path)))
 
 
 def full_outline(half):
-    return half + [(-x, y) for x, y in reversed(half)]
+    return half + [(-x, y) for x, y in reversed(half[1:-1])]
 
 
-def region_curve(points, side=1.0):
-    return smooth_samples([(x * side, y) for x, y in points])
-
-
-def outline_curve(half):
-    return smooth_samples(full_outline(half))
+def mirrored(poly):
+    return [(-x, y) for x, y in poly]
 
 
 def inside(poly, pt):
@@ -135,48 +126,43 @@ def edge_distance(poly, pt):
     return best
 
 
-def check(outline, views, margin=0.0015, gap=0.0004):
-    """Region samples must be inside the outline by at least `margin` (float32 in the app tests is not exact)."""
-    body = outline_curve(outline)
+def check(name, half, views, margin=0.0015, gap=0.0003):
+    body = full_outline(half)
     bad = 0
-    for view, regions in views.items():
-        curves = [(m, region_curve(pts)) for m, pts in regions]
-        for idx, (m, c) in enumerate(curves):
-            out = [p for p in c if not inside(body, p) or edge_distance(body, p) < margin]
+    for view, entries in views.items():
+        flat = [(k, i, p) for k, polys in entries for i, p in enumerate(polys)]
+        for k, i, p in flat:
+            out = [q for q in p if not inside(body, q) or edge_distance(body, q) < margin]
             if out:
                 bad += 1
-                print(f"{view} {m}#{idx}: {len(out)} samples outside (or within the margin of) the outline, first {out[0][0]:.3f},{out[0][1]:.3f}")
-        for i in range(len(curves)):
-            for j in range(i + 1, len(curves)):
-                if overlaps(curves[i][1], curves[j][1]):
+                print(f"{name} {view} {k}#{i}: {len(out)} points outside or within the margin of the outline, first {out[0]}")
+        for a in range(len(flat)):
+            for b in range(a + 1, len(flat)):
+                pa, pb = flat[a][2], flat[b][2]
+                if overlaps(pa, pb):
                     bad += 1
-                    print(f"{view} {curves[i][0]}#{i} overlaps {curves[j][0]}#{j}")
-                elif min(edge_distance(curves[j][1], p) for p in curves[i][1]) < gap:
+                    print(f"{name} {view} {flat[a][0]}#{flat[a][1]} overlaps {flat[b][0]}#{flat[b][1]}")
+                elif min(edge_distance(pb, q) for q in pa) < gap:
                     bad += 1
-                    print(f"{view} {curves[i][0]}#{i} and {curves[j][0]}#{j} are closer than {gap}")
-    print("OK" if not bad else f"{bad} problems")
+                    print(f"{name} {view} {flat[a][0]}#{flat[a][1]} and {flat[b][0]}#{flat[b][1]} are closer than {gap}")
+    print(f"{name}: " + ("OK" if not bad else f"{bad} problems"))
     return bad
 
 
-def landmarks(outline):
-    body = outline_curve(outline)
-    print("y      outer-x  (outline half-widths; the smoothed curve, right half, rows are every 0.01)")
-    for k in range(0, 100, 1):
+def landmarks(half):
+    body = full_outline(half)
+    print("y      outline crossings right of the midline (every 0.01)")
+    for k in range(0, 100):
         y = k / 100
-        xs = sorted(x for x in (_cross(body, y)) if x >= 0)
-        print(f"{y:.2f}  " + "  ".join(f"{x:.3f}" for x in xs))
+        xs = []
+        for i in range(len(body)):
+            (x0, y0), (x1, y1) = body[i], body[(i + 1) % len(body)]
+            if (y0 > y) != (y1 > y):
+                xs.append(x0 + (y - y0) * (x1 - x0) / (y1 - y0))
+        print(f"{y:.2f}  " + "  ".join(f"{x:.3f}" for x in sorted(x for x in xs if x >= 0)))
 
 
-def _cross(poly, y):
-    xs = []
-    for i in range(len(poly)):
-        (x0, y0), (x1, y1) = poly[i], poly[(i + 1) % len(poly)]
-        if (y0 > y) != (y1 > y):
-            xs.append(x0 + (y - y0) * (x1 - x0) / (y1 - y0))
-    return xs
-
-
-def colour(i, n):
+def colour(i):
     r, g, b = colorsys.hsv_to_rgb((i * 0.61803398875) % 1.0, 0.55, 0.95)
     return int(r * 255), int(g * 255), int(b * 255)
 
@@ -191,13 +177,67 @@ def label_font(size):
     return ImageFont.load_default(size)
 
 
-def render(outline, regions, height, highlight, labels, ss=3):
+def area(q):
+    return abs(sum(q[i][0] * q[(i + 1) % len(q)][1] - q[(i + 1) % len(q)][0] * q[i][1] for i in range(len(q)))) / 2
+
+
+def pole(poly):
+    """The point of a polygon (figure units) furthest from its edge, and that distance: where a label fits best."""
+    from shapely.geometry import Polygon
+    from shapely.ops import polylabel
+    g = Polygon(poly)
+    if not g.is_valid:
+        g = g.buffer(0)
+    pt = polylabel(g, 1e-4)
+    return pt.x, pt.y, g.exterior.distance(pt)
+
+
+def place_labels(d, found, at, font, S, ox, W, side, H):
+    """One label per muscle: inside its largest piece when the text fits, else on a leader line out in the margin.
+
+    Leader labels alternate between the right and the left column (the right half is drawn on both sides, so
+    either is honest), and each column spreads its rows so no two texts collide.
+    """
+    inside, lead = [], []
+    scale = at((1, 0))[0] - at((0, 0))[0]
+    for m, polys in found.items():
+        best = max(polys, key=area)
+        x, y, r = pole(best)
+        text = m.replace("_", " ").title()
+        tw = d.textlength(text, font=font)
+        px, py = at((x, y))
+        if math.hypot(tw / 2, font.size * 0.55) <= r * scale * 1.15:
+            inside.append((px, py, text, tw))
+        else:
+            lead.append([text, px, py])
+    for px, py, text, tw in inside:
+        d.text((px - tw / 2, py - font.size / 2), text, font=font, fill=(0, 0, 0), stroke_width=S, stroke_fill=(255, 255, 255))
+    lead.sort(key=lambda e: e[2])
+    gap = font.size * 1.35
+    ink = (235, 235, 240)
+    for col in (1, -1):
+        mine = [e for k, e in enumerate(lead) if (k % 2 == 0) == (col == 1)]
+        ys = [e[2] for e in mine]
+        for k in range(1, len(ys)):
+            ys[k] = max(ys[k], ys[k - 1] + gap)
+        lift = max(0.0, ys[-1] - (H - gap)) if ys else 0.0
+        for (text, px, py), ty in zip(mine, ys):
+            ty -= lift
+            ax = ox + col * (px - ox)
+            edge = ox + col * (W / 2 - side + 6 * S)
+            tw = d.textlength(text, font=font)
+            d.line([(ax, py), (edge, ty)], fill=ink, width=max(1, S // 2 + 1))
+            d.ellipse([ax - 3 * S, py - 3 * S, ax + 3 * S, py + 3 * S], fill=ink, outline=(0, 0, 0))
+            d.text((edge + 3 * S if col == 1 else edge - 3 * S - tw, ty - font.size / 2), text, font=font, fill=ink,
+                   stroke_width=max(1, S // 2), stroke_fill=(0, 0, 0))
+
+
+def render(half, entries, hair, height, highlight, labels, names, silhouette=False, ss=3, margin=0.03, halfwidth=0.26):
     from PIL import Image, ImageDraw
-    margin = 0.03
-    width = int(height * 0.50)
+    lane = int(height * 0.22) if labels and not silhouette else 0   # room for the leader-line labels beside the figure
+    width = int(height * (2 * halfwidth + 0.04)) + 2 * lane
     S = ss
-    H = height * S
-    W = width * S
+    H, W = height * S, width * S
     img = Image.new("RGB", (W, H), (14, 14, 16))
     d = ImageDraw.Draw(img)
     ox, oy, sc = W / 2, margin * H, H * (1 - 2 * margin)
@@ -205,64 +245,78 @@ def render(outline, regions, height, highlight, labels, ss=3):
     def at(p):
         return (ox + p[0] * sc, oy + p[1] * sc)
 
-    d.polygon([at(p) for p in outline_curve(outline)], fill=(44, 44, 50))
-    muscles = sorted({m for m, _ in regions})
-    texts = []
-    for idx, (m, pts) in enumerate(regions):
-        if highlight:
-            col = (46, 160, 110) if m in highlight else (62, 62, 68)
-        else:
-            col = colour(muscles.index(m), len(muscles))
-        for side in (1.0, -1.0):
-            poly = [at(p) for p in region_curve(pts, side)]
-            d.polygon(poly, fill=col)
-            d.line(poly + [poly[0]], fill=(10, 10, 12), width=max(1, int(1.2 * S * height / 360)))
-        if labels and (not highlight or m in highlight):
-            cx, cy = centroid([at(p) for p in region_curve(pts)])
-            texts.append((cx, cy, m.replace("_", " ").title()))
-    d.line([at(p) for p in outline_curve(outline)] + [at(outline_curve(outline)[0])], fill=(150, 150, 160), width=max(1, int(1.4 * S * height / 360)))
-    if labels:
-        font = label_font(max(8, int(height / 62)) * S)
-        for cx, cy, t in texts:
-            tw = d.textlength(t, font=font)
-            d.text((cx - tw / 2, cy - font.size / 2), t, font=font, fill=(0, 0, 0), stroke_width=S, stroke_fill=(255, 255, 255))
+    line = max(1, int(1.2 * S * height / 360))
+    body = [at(p) for p in full_outline(half)]
+    d.polygon(body, fill=(44, 44, 50) if not silhouette else (70, 70, 78))
+    muscles = sorted({names.get(k, k) for k, _ in entries})
+    found = {}
+    for poly in hair:  # decoration in the darkest ink, never a muscle
+        for side in (poly, mirrored(poly)):
+            d.polygon([at(p) for p in side], fill=(12, 12, 11))
+    if not silhouette:
+        for key, polys in entries:
+            m = names.get(key, key)
+            if highlight:
+                col = (46, 160, 110) if m in highlight else (62, 62, 68)
+            else:
+                col = colour(muscles.index(m))
+            for poly in polys:
+                for side in (poly, mirrored(poly)):
+                    pts = [at(p) for p in side]
+                    d.polygon(pts, fill=col)
+                    d.line(pts + [pts[0]], fill=(10, 10, 12), width=line)
+            if labels and (not highlight or m in highlight):
+                found[m] = found.get(m, []) + [p for p in polys]
+    d.line(body + [body[0]], fill=(170, 170, 180), width=max(1, int(1.4 * S * height / 360)))
+    if labels and not silhouette:
+        place_labels(d, found, at, label_font(max(8, int(height / 70)) * S), S, ox, W, lane * S, H)
     return img.resize((width, height), Image.LANCZOS)
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
+    ap.add_argument("--body", default="")
     ap.add_argument("--height", type=int, default=1800)
     ap.add_argument("--highlight", default="")
     ap.add_argument("--tag", default="")
     ap.add_argument("--no-labels", action="store_true")
+    ap.add_argument("--silhouette", action="store_true")
     ap.add_argument("--check", action="store_true")
     ap.add_argument("--landmarks", action="store_true")
     ap.add_argument("--out", default=os.path.join(".tmp", "shots"))
-    ap.add_argument("--src", default=KT)
+    ap.add_argument("--src", default=SHAPES)
     a = ap.parse_args()
-    outline, views = parse(a.src)
+    bodies = parse_shapes(a.src)
+    wanted = [b.strip().lower() for b in a.body.split(",") if b.strip()] or list(bodies)
+    names = key_muscles(FIGURES)
     if a.landmarks:
-        landmarks(outline)
+        for b in wanted:
+            print(b)
+            landmarks(bodies[b][0])
         return 0
     if a.check:
-        return 1 if check(outline, views) else 0
+        return 1 if sum(check(b, bodies[b][0], bodies[b][1]) for b in wanted) else 0
     from PIL import Image
     os.makedirs(a.out, exist_ok=True)
     hl = {h.strip().upper() for h in a.highlight.split(",") if h.strip()}
-    tag = f"_{a.tag}" if a.tag else ""
-    if hl:
-        tag += "_hl"
-    imgs = []
-    for name in ("FRONT", "BACK"):
-        im = render(outline, views[name], a.height, hl, not a.no_labels and a.height >= 700)
-        im.save(os.path.join(a.out, f"figure{tag}_{name.lower()}.png"))
-        imgs.append(im)
-    both = Image.new("RGB", (imgs[0].width * 2, imgs[0].height))
-    both.paste(imgs[0], (0, 0))
-    both.paste(imgs[1], (imgs[0].width, 0))
-    path = os.path.join(a.out, f"figure{tag}_both.png")
-    both.save(path)
-    print(path)
+    for b in wanted:
+        half, views, hair = bodies[b]
+        tag = f"_{a.tag}" if a.tag else ""
+        if a.silhouette:
+            tag += "_silhouette"
+        if hl:
+            tag += "_hl"
+        imgs = []
+        for view in ("front", "back"):
+            im = render(half, views[view], hair[view], a.height, hl, not a.no_labels and a.height >= 700, names, a.silhouette)
+            im.save(os.path.join(a.out, f"figure_{b}{tag}_{view}.png"))
+            imgs.append(im)
+        both = Image.new("RGB", (imgs[0].width * 2, imgs[0].height))
+        both.paste(imgs[0], (0, 0))
+        both.paste(imgs[1], (imgs[0].width, 0))
+        path = os.path.join(a.out, f"figure_{b}{tag}_both.png")
+        both.save(path)
+        print(path)
     return 0
 
 
