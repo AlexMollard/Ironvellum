@@ -21,8 +21,8 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 /**
  * Facts about one exercise, all read from data the app already holds: the
  * muscle profile, how-to guide, gear table, skill tree and ally boards.
- * They sit on swipeable pages (OVERVIEW, HOW TO, CUES, MISTAKES) so none of it is a
- * long scroll; a page without data is left out. [onPick] null hides the confirm button; otherwise it labels itself
+ * They sit on two swipeable pages, ABOUT (the facts) and FORM (how to, cues, mistakes), so
+ * none of it is a long scroll; a page without data is left out. [onPick] null hides the confirm button; otherwise it labels itself
  * [confirmLabel] and picks the exercise the way tapping the card does.
  * [modifiers] reshape the muscles as they do in the trial (a deficit
  * push-up works the chest at stretch).
@@ -53,12 +53,13 @@ internal fun ExerciseInfoSheet(
             add(InfoAction("CLOSE", onDismiss, quiet = true))
             if (onPick != null) add(InfoAction(confirmLabel, onPick))
         },
-        // Four tabs at most, so they fit a 360dp phone: the gear rides under HOW TO and the
-        // technique under OVERVIEW. The sheet drops a page with nothing on it.
+        // Two pages: the gear rides on ABOUT, and how to, cues and mistakes share FORM. The
+        // sheet drops a page with nothing on it.
         pages = listOf(
-            InfoPage("OVERVIEW") {
+            InfoPage("ABOUT") {
                 if (lastLine != null) text("LAST TRIAL", lastLine, IronvellumColors.SovereignGold)
                 muscleFacts(exercise.name, modifiers, showMissingMuscles = true)
+                gearFacts(exercise.name)
                 if (skill != null) {
                     section("TECHNIQUE") {
                         TechniqueLine("${skill.line} · claim: ${skill.standard}", IronvellumColors.Ink)
@@ -81,12 +82,7 @@ internal fun ExerciseInfoSheet(
                     )
                 }
             },
-            InfoPage("HOW TO") {
-                howToFacts(exercise.name)
-                gearFacts(exercise.name)
-            },
-            InfoPage("CUES") { cueFacts(exercise.name) },
-            InfoPage("MISTAKES") { mistakeFacts(exercise.name) },
+            InfoPage("FORM") { formFacts(exercise.name) },
         ),
     )
 }
@@ -102,18 +98,14 @@ private fun TechniqueLine(text: String, color: Color) {
 }
 
 /**
- * The how-to half of an exercise's facts as sheet sections: the muscle figure,
- * HOW TO, CUES, COMMON MISTAKES and ARMOURY, each left out when the app holds
- * no data for it. Shared by the exercise sheet and the technique detail so the
- * two always agree. [showMissingMuscles] says so when there is no muscle
- * profile instead of leaving the section out.
+ * The FORM page of an exercise or technique sheet: HOW TO (setup and steps), CUES and COMMON
+ * MISTAKES, each left out when the app holds no data for it. Shared by the exercise sheet and the
+ * technique detail so the two always agree.
  */
-internal fun InfoSheetScope.exerciseFacts(name: String, modifiers: String = "", showMissingMuscles: Boolean = false) {
-    muscleFacts(name, modifiers, showMissingMuscles)
+internal fun InfoSheetScope.formFacts(name: String) {
     howToFacts(name)
     cueFacts(name)
     mistakeFacts(name)
-    gearFacts(name)
 }
 
 /** The muscle figure with its MAIN / ASSIST lines: the coverage screen's, so an exercise reads the same wherever the lifter asks. */
@@ -126,17 +118,17 @@ internal fun InfoSheetScope.muscleFacts(name: String, modifiers: String = "", sh
     }
 }
 
-internal fun InfoSheetScope.howToFacts(name: String) {
+private fun InfoSheetScope.howToFacts(name: String) {
     val guide = ExerciseGuides.forName(name) ?: return
     steps("HOW TO", guide.steps, lead = guide.setup)
 }
 
-internal fun InfoSheetScope.cueFacts(name: String) {
+private fun InfoSheetScope.cueFacts(name: String) {
     val guide = ExerciseGuides.forName(name) ?: return
     bullets("CUES", guide.cues)
 }
 
-internal fun InfoSheetScope.mistakeFacts(name: String) {
+private fun InfoSheetScope.mistakeFacts(name: String) {
     val guide = ExerciseGuides.forName(name) ?: return
     bullets("COMMON MISTAKES", guide.commonMistakes, IronvellumColors.InkMuted)
 }

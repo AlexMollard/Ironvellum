@@ -58,7 +58,7 @@ import com.ironvellum.app.ui.components.InfoPage
 import com.ironvellum.app.ui.components.InfoProgress
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.exerciseFacts
+import com.ironvellum.app.ui.components.formFacts
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.theme.inkBorder
@@ -231,7 +231,7 @@ fun SkillDetailSheet(
             else -> listOf(InfoAction("Train it", onTrain, quiet = true))
         },
         pages = listOf(
-            InfoPage("OVERVIEW", summary) {
+            InfoPage("ABOUT", summary) {
                 // A female lifter reads her own published bar, not the male default.
                 text("CLAIM STANDARD", sexBar ?: skill.standard, IronvellumColors.SovereignGold)
                 text("WHY IT MATTERS", skill.why, IronvellumColors.InkMuted)
@@ -299,10 +299,9 @@ fun SkillDetailSheet(
                     )
                 }
             },
-            InfoPage("GUIDE") {
-                // How to do it, what it works and what it needs: the same
-                // facts the exercise info card shows.
-                exerciseFacts(skill.name)
+            InfoPage("FORM") {
+                // How to do it: the same page the exercise info card shows.
+                formFacts(skill.name)
                 if (!mastered && unlocked) {
                     text(
                         "BEFORE YOU CLAIM",
