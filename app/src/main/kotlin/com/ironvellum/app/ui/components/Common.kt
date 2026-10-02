@@ -11,6 +11,8 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.indication
+import androidx.compose.material3.ripple
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -522,7 +524,7 @@ fun metricTotals(sets: List<SessionSet>, metricOf: (SessionSet) -> ExerciseMetri
 }
 
 /**
- * Bounded text+icon navigation chip; 48dp+ tap target.
+ * Bounded text+icon navigation chip: a slim 32dp outline inside a 48dp+ tap target.
  *
  * Shared because the Train screen and the Stats TRAINING tab both route to the
  * workout log, and the owner kept looking for it on the wrong screen.
@@ -541,30 +543,40 @@ fun NavChip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Row(
+    // The tap target stays 48dp; only the drawn outline is slim, so a header chip no longer reads as a slab.
+    // The press ripple is drawn on the outline, not the invisible margin around it.
+    val press = remember { MutableInteractionSource() }
+    Box(
         modifier
             .heightIn(min = 48.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
-            .inkBorder(IronvellumColors.SystemGreen.copy(alpha = 0.55f), MaterialTheme.shapes.extraSmall)
-            .clickable(role = Role.Button) { onClick() }
-            .padding(horizontal = 12.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
+            .clickable(interactionSource = press, indication = null, role = Role.Button) { onClick() },
+        contentAlignment = Alignment.Center,
     ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = IronvellumColors.SystemGreen,
-            modifier = Modifier.size(16.dp),
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
+        Row(
+            Modifier
+                .height(32.dp)
+                .clip(MaterialTheme.shapes.extraSmall)
+                .inkBorder(IronvellumColors.SystemGreen.copy(alpha = 0.55f), MaterialTheme.shapes.extraSmall)
+                .indication(press, ripple())
+                .padding(horizontal = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = IronvellumColors.SystemGreen,
+                modifier = Modifier.size(14.dp),
+            )
+            Spacer(Modifier.width(6.dp))
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SystemGreen,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            )
+        }
     }
 }
 
