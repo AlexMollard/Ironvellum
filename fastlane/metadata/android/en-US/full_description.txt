@@ -39,29 +39,32 @@ Features:
   have, shown before and after. Cap the exercises per rite (5 by default) or
   keep to compound and technique work only. Every exercise explains why it was
   picked, citing 2020-2026 research.
-- Weekly muscle coverage: a body map of the sets each muscle gets, planned or
-  from the last seven days, with a floor for the helper muscles your other
-  exercises mostly train. Lever and planche holds count. Each muscle's sets
-  break down by exercise, and every exercise shows the muscles it works, on
-  the live trial screen too.
+- Weekly muscle coverage: an anatomical body map, male or female to match
+  your profile, of the sets each muscle gets, planned or from the last seven
+  days. Swipe between muscle tiles, gaps first, and exercise cards, and tap a
+  muscle on any figure to light it with a line of context. Helper muscles your
+  other exercises mostly train get a floor instead of a range. Lever and
+  planche holds count. Every exercise and technique has a swipeable info sheet
+  showing the muscles it works, on the live trial screen too.
 - Live trials: type a set's exact load, watch a running timer, and continue a
   trial you left. Time estimates learn your pace from the trials you seal.
   After a trial, pick which changes go back into your cycle.
-- 241 exercises: barbell, dumbbell, cable, plate-loaded, selectorised, smith,
+- 256 exercises: barbell, dumbbell, cable, plate-loaded, selectorised, smith,
   assisted, bodyweight, plus cardio, sport, climbing, water and mobility.
-- 106 techniques on fourteen paths, each gated on the one before it and
-  carrying a written claim standard.
+- 119 techniques on fourteen paths, shown as game-style nodes, each gated on
+  the one before it and carrying a written claim standard.
 - 105 deeds: level, volume, oath (days kept in a row), strength and activity
   milestones, with progress you can watch rather than a surprise.
 - Progressive overload: strength and hypertrophy schools with their own rep
   bands, per-exercise load steps and a stall rule that deloads instead of
   repeating a failed trial.
-- Measurements and health: weight, body fat, BMI and FFMI over time; optional
-  Health Connect read for steps, distance, energy and sleep.
+- The Ledger: scrubbable charts for weight, body fat, BMI and FFMI, a training
+  calendar and lift records; optional Health Connect read for steps, distance,
+  energy and sleep.
 - Shareable trials: a plain text card shaped after Wordle, no link and no
   image, that states only what you did.
-- Optional cloud: sign in to back up training, follow your allies' tidings and
-  stand in the Reckoning, a leaderboard for each lift. Body measurements and
+- Optional cloud: sign in to back up training, follow your allies' tidings,
+  form a circle with a weekly goal and stand in the Reckoning, a leaderboard for each lift. Body measurements and
   health data never leave the device. Delete your cloud account from the app
   at any time.
 
