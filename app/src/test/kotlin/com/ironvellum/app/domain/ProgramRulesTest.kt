@@ -49,6 +49,16 @@ class ProgramRulesTest {
     }
 
     @Test
+    fun `the neck is a muscle with no weekly target`() {
+        // It is on the figure, but no catalogue movement trains it and a target would have the
+        // generator chase it. Not persisted, so the label is all there is to round-trip.
+        assertFalse(Muscle.NECK in ProgramRules.TRACKED)
+        assertFalse(Muscle.NECK in ProgramRules.HELPERS)
+        assertEquals("Neck", Muscle.NECK.label)
+        assertEquals(Muscle.NECK, Muscle.valueOf(Muscle.NECK.name))
+    }
+
+    @Test
     fun `weekly volume counts indirect sets fractionally`() {
         // Bench Press: chest 1.0, front delts 0.7, triceps 0.6, side delts 0.3.
         val week = listOf(
