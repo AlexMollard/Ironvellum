@@ -158,8 +158,8 @@ fun coverageGaps(volume: Map<Muscle, Double>, goal: CoverageGoal): List<Muscle> 
         levelOf(it, volume[it] ?: 0.0, goal).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE }
     }
 
-/** Every muscle either body can colour, front or back. */
-internal val DRAWN: Set<Muscle> by lazy { BodyFigures.MALE.drawn }
+/** Every muscle both bodies can colour, front or back. */
+internal val DRAWN: Set<Muscle> by lazy { BodyFigures.MALE.drawn intersect BodyFigures.FEMALE.drawn }
 
 /**
  * Front and back figures side by side in ONE Canvas of fixed [figureHeight],
@@ -177,7 +177,7 @@ fun BodyHeatMap(
     figureHeight: Dp = 320.dp,
 ) {
     val description = coverageSummary(volume, goal)
-    val figure = BodyFigures.MALE
+    val figure = BodyFigures.of(LocalBodySex.current)
     Column(modifier.semantics { contentDescription = description }) {
         Canvas(
             Modifier
@@ -232,7 +232,7 @@ fun ExerciseMuscleMap(
     // A Canvas says nothing to TalkBack: speak what the fill shows, as
     // BodyHeatMap does, in place of the figure labels and legend.
     val description = exerciseMuscleSummary(shares)
-    val figure = BodyFigures.MALE
+    val figure = BodyFigures.of(LocalBodySex.current)
     Column(modifier.clearAndSetSemantics { contentDescription = description }) {
         Canvas(
             Modifier
@@ -284,7 +284,7 @@ fun RiteMuscleMap(
     figureHeight: Dp = 220.dp,
 ) {
     val top = sets.values.maxOrNull() ?: 0.0
-    val figure = BodyFigures.MALE
+    val figure = BodyFigures.of(LocalBodySex.current)
     val fill = { muscle: Muscle ->
         val alpha = riteAlpha(sets[muscle] ?: 0.0, top)
         if (alpha <= 0f) IronvellumColors.Bracket.copy(alpha = 0.55f) else IronvellumColors.Emerald.copy(alpha = alpha)

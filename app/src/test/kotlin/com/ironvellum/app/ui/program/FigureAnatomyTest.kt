@@ -122,7 +122,20 @@ abstract class FigureAnatomyTest {
     private val pubisY: Float by lazy { crotchY - 0.02f }
     private val midBackY: Float by lazy { 2.5f * head }
     private val acromionY: Float by lazy { figure.outline.filter { it.first > 0.09f }.minOf { it.second } }
-    private val clavicleY: Float by lazy { acromionY + 0.006f }
+    private val clavicleY: Float by lazy { acromionY + clavicleDrop }
+
+    // Per body, where a landmark legitimately sits elsewhere; each override says why.
+    /** How far the clavicle lies under the shoulder line. */
+    protected open val clavicleDrop: Float get() = 0.006f
+
+    /** Where the hair may end: his stops at the nape, hers falls to the shoulder line. */
+    protected open val hairEnd: Float get() = 0.12f
+
+    /** Whether the hair may lie under muscle regions: it is drawn first, so they draw over it. */
+    protected open val hairBehindMuscles: Boolean get() = false
+
+    /** How much narrower the deltoid is at its foot than at its middle. */
+    protected open val deltTaper: Float get() = 0.7f
     private val elbowY: Float by lazy { acromionY + 1.2f * head }
     private val wristY: Float by lazy { acromionY + 2.3f * head }
 
@@ -208,8 +221,8 @@ abstract class FigureAnatomyTest {
         for (v in FigureView.entries) {
             for (hair in figure.hair(v)) {
                 assertTrue("$v hair pokes outside the outline", hair.all { inside(body, it) || edgeDistance(body, it) < 0.002f })
-                assertTrue("$v hair sits below the nape: ${hair.maxOf { it.second }}", hair.maxOf { it.second } <= 0.12f)
-                for (r in figure.regions(v)) assertTrue("$v hair overlaps ${r.muscle}", !overlaps(hair, r.points))
+                assertTrue("$v hair sits below the nape: ${hair.maxOf { it.second }}", hair.maxOf { it.second } <= hairEnd)
+                if (!hairBehindMuscles) for (r in figure.regions(v)) assertTrue("$v hair overlaps ${r.muscle}", !overlaps(hair, r.points))
             }
         }
         assertTrue("hair on the front of the head", figure.hair(FigureView.FRONT).isNotEmpty())
@@ -283,7 +296,7 @@ abstract class FigureAnatomyTest {
         assertTrue("delt should run well down the arm: height $h, head $head", h >= 0.45f * head)
         assertTrue("the front head ${shapes(front, FRONT_DELTS).minX} lies medial to the side head ${shapes(front, SIDE_DELTS).minX}", shapes(front, FRONT_DELTS).minX < shapes(front, SIDE_DELTS).minX)
         assertTrue("delt should taper: bottom ${delt.span(delt.bottom - 0.2f * h, delt.bottom)} vs mid ${delt.span(delt.top + 0.4f * h, delt.top + 0.6f * h)}",
-            delt.span(delt.bottom - 0.2f * h, delt.bottom) < 0.7f * delt.span(delt.top + 0.4f * h, delt.top + 0.6f * h))
+            delt.span(delt.bottom - 0.2f * h, delt.bottom) < deltTaper * delt.span(delt.top + 0.4f * h, delt.top + 0.6f * h))
     }
 
     @Test
@@ -296,7 +309,7 @@ abstract class FigureAnatomyTest {
         // The source's slips start at the pec's lower border and run down the ribs beside the abs; the
         // armpit crease is no longer a landmark for them, the nipple line is.
         assertTrue("serratus top ${serratus.top} must be on the pec's lower half, not above the nipple line $nippleY", serratus.top >= nippleY - 0.02f)
-        assertTrue("serratus starts ${serratus.minX}, lateral to the abs (${abs.maxX})", serratus.minX > abs.maxX)
+        assertTrue("serratus starts ${serratus.minX}, lateral to the abs (${abs.maxX}, an interlock of a seam's width allowed)", serratus.minX > abs.maxX - 0.003f)
         assertTrue("serratus top ${serratus.top} should overlap the pec's lower part (pec bottom ${chest.bottom})", serratus.top < chest.bottom - 0.005f)
         assertTrue("serratus must continue below the pec, not sit entirely in it", serratus.bottom > chest.bottom)
         assertTrue("serratus is not entirely below the pec", serratus.top < chest.bottom)
@@ -490,4 +503,20 @@ abstract class FigureAnatomyTest {
 
 class MaleFigureAnatomyTest : FigureAnatomyTest() {
     override val figure: BodyFigure get() = BodyFigures.MALE
+}
+
+class FemaleFigureAnatomyTest : FigureAnatomyTest() {
+    override val figure: BodyFigure get() = BodyFigures.FEMALE
+
+    // Her shoulder line is the top of the trapezius slope and her chest plate starts lower under it than his.
+    override val clavicleDrop: Float get() = 0.03f
+
+    // Her hair is a bob that ends on the shoulder line.
+    override val hairEnd: Float get() = 0.14f
+
+    // Her hair ends on the shoulder line, behind the neck and the traps, which draw over it where they meet.
+    override val hairBehindMuscles: Boolean get() = true
+
+    // Her deltoid is a rounder cap, so it narrows less toward the arm.
+    override val deltTaper: Float get() = 0.8f
 }

@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui.program
 
+import androidx.compose.runtime.compositionLocalOf
 import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.Muscle.*
 
 /**
@@ -130,7 +132,16 @@ private val BACK_PARTS = listOf(
     "neck" to NECK,
 )
 
-/** The bodies the figures can draw. */
+/** The two bodies; [of] picks the one a profile's sex names. */
 internal object BodyFigures {
     val MALE: BodyFigure by lazy { BodyFigure(BodyMapShapes.MALE) }
+    val FEMALE: BodyFigure by lazy { BodyFigure(BodyMapShapes.FEMALE) }
+
+    fun of(sex: Sex): BodyFigure = when (sex) {
+        Sex.MALE -> MALE
+        Sex.FEMALE -> FEMALE
+    }
 }
+
+/** Which body the muscle figures draw; provided once near the app root from the profile's sex. */
+val LocalBodySex = compositionLocalOf { Sex.MALE }
