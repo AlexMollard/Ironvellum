@@ -339,13 +339,13 @@ internal fun DrawScope.drawFigure(
             for (side in listOf(1f, -1f)) {
                 drawPath(
                     polygon(region.points, side),
-                    IronvellumColors.SystemGreen.copy(alpha = 0.28f),
-                    style = Stroke(width = 6.dp.toPx(), join = StrokeJoin.Round),
+                    IronvellumColors.SystemGreen.copy(alpha = 0.45f),
+                    style = Stroke(width = 7.dp.toPx(), join = StrokeJoin.Round),
                 )
                 inkOutline(
                     region.points.map { (x, y) -> g.toCanvas(view, x, y, side) },
                     IronvellumColors.SystemGreen,
-                    2.dp.toPx(),
+                    2.5.dp.toPx(),
                     seed,
                 )
             }
