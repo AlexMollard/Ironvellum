@@ -34,12 +34,14 @@ class MuscleSelectionTest {
         assertEquals("Quads · not worked in Pull A", riteMuscleLine(Muscle.QUADS, 0.0, "Pull A"))
     }
 
-    @Test fun coverageWordingAgainstTheTargetFloor() {
+    @Test fun coverageWordingShowsTheTargetRange() {
         val goal = CoverageGoal(VolumeLevel.STANDARD, TrainingFocus.MUSCLE)
-        assertEquals("Hamstrings · 6 / 12 sets this week", coverageMuscleLine(Muscle.HAMSTRINGS, 6.0, goal))
-        assertEquals("Lats · 7.5 / 12 sets this week", coverageMuscleLine(Muscle.LATS, 7.5, goal))
-        // A helper reads against its floor.
-        assertEquals("Forearms · 2 / 3 sets this week", coverageMuscleLine(Muscle.FOREARMS, 2.0, goal))
+        assertEquals("Hamstrings · 6 sets this week · target 12–18", coverageMuscleLine(Muscle.HAMSTRINGS, 6.0, goal))
+        assertEquals("Lats · 7.5 sets this week · target 12–18", coverageMuscleLine(Muscle.LATS, 7.5, goal))
+        // Past the range it still reads as a count against a target, never "20 / 12".
+        assertEquals("Lats · 20 sets this week · target 12–18", coverageMuscleLine(Muscle.LATS, 20.0, goal))
+        // A helper reads against its own range.
+        assertEquals("Forearms · 2 sets this week · target 3+", coverageMuscleLine(Muscle.FOREARMS, 2.0, goal))
     }
 
     @Test fun theNeckHasNoTargetSoItShowsJustItsSets() {
