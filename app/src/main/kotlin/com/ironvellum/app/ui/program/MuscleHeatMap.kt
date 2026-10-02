@@ -254,7 +254,7 @@ internal val HALF_OUTLINE = listOf(
     0.161f to 0.360f, // forearm swell
     0.160f to 0.398f,
     0.157f to 0.428f,
-    0.153f to 0.452f, // wrist, outer
+    0.149f to 0.452f, // wrist, outer: pinched well inside forearm and hand, or the smoothing melts it away
     0.155f to 0.466f,
     0.161f to 0.478f,
     0.168f to 0.494f,
@@ -278,8 +278,8 @@ internal val HALF_OUTLINE = listOf(
     0.120f to 0.550f, // little finger
     0.116f to 0.546f,
     0.113f to 0.515f, // heel of the hand
-    0.110f to 0.472f,
-    0.110f to 0.452f, // wrist, inner
+    0.113f to 0.472f,
+    0.117f to 0.452f, // wrist, inner
     0.108f to 0.420f,
     0.110f to 0.400f,
     0.112f to 0.365f, // forearm, inner
