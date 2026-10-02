@@ -56,6 +56,8 @@ class SkillPracticeFlowTest {
         // skill on a fresh profile.
         driver.click(driver.awaitAnyText { it == "Pull" })
         driver.click(driver.awaitAnyText { it == "Dead Hang" })
+        // The attempt form is on the sheet's LOG page.
+        driver.click(driver.awaitAnyText { it == "LOG" })
         driver.awaitText("LOG AN ATTEMPT")
 
         // The quick-set chips fill the field; 15s is the lowest offered.

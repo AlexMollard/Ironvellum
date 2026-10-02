@@ -48,6 +48,8 @@ fun IronvellumTabBar(
     selectedIndex: Int,
     onSelect: (Int) -> Unit,
     modifier: Modifier = Modifier,
+    /** Adds "2 of 4" to each tab's state, for tabs that page content rather than switch screens. */
+    announcePosition: Boolean = false,
 ) {
     val shape = MaterialTheme.shapes.small
     val inner = MaterialTheme.shapes.extraSmall
@@ -88,7 +90,10 @@ fun IronvellumTabBar(
                         onClick = { onSelect(index) },
                     )
                     .semantics {
-                        if (item.badge > 0) stateDescription = "${item.badge} unread"
+                        val unread = if (item.badge > 0) "${item.badge} unread" else null
+                        val place = if (announcePosition) "${if (selected) "Selected" else "Not selected"}, ${index + 1} of ${items.size}" else null
+                        val state = listOfNotNull(place, unread).joinToString(", ")
+                        if (state.isNotEmpty()) stateDescription = state
                     },
                 contentAlignment = Alignment.Center,
             ) {

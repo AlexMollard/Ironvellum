@@ -54,6 +54,7 @@ import com.ironvellum.app.ui.components.InfoAction
 import com.ironvellum.app.ui.components.InfoChip
 import com.ironvellum.app.ui.components.InfoFigure
 import com.ironvellum.app.ui.components.InfoFigures
+import com.ironvellum.app.ui.components.InfoPage
 import com.ironvellum.app.ui.components.InfoProgress
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -211,7 +212,9 @@ fun SkillDetailSheet(
             if (mastered) add(InfoChip("Mastered", IronvellumColors.SovereignGold))
             else if (!unlocked) add(InfoChip("Locked", IronvellumColors.DangerRed))
         },
-        summary = summary,
+        // Fixed in the header, so the question stays on screen whichever page is open.
+        subtitle = if (mastered && confirmUnclaim) "Give the technique back? The $refundXp XP is removed too." else null,
+        subtitleColor = IronvellumColors.DangerRed,
         actions = when {
             mastered && confirmUnclaim -> listOf(
                 InfoAction("Keep it", { confirmUnclaim = false }, quiet = true),
@@ -227,83 +230,90 @@ fun SkillDetailSheet(
             )
             else -> listOf(InfoAction("Train it", onTrain, quiet = true))
         },
-    ) {
-        if (mastered && confirmUnclaim) {
-            text(null, "Give the technique back? The $refundXp XP is removed too.", IronvellumColors.DangerRed)
-        }
-        // A female lifter reads her own published bar, not the male default.
-        text("CLAIM STANDARD", sexBar ?: skill.standard, IronvellumColors.SovereignGold)
-        text("WHY IT MATTERS", skill.why, IronvellumColors.InkMuted)
-        if (terms.isNotEmpty()) {
-            // The words a beginner trips on, each one tap from a plain definition.
-            section("WORDS TO KNOW") {
-                FlowRow(Modifier.fillMaxWidth()) { terms.forEach { TermChip(it) } }
-            }
-        }
-        if (skill.prerequisites.isNotEmpty()) {
-            section("REQUIRES") {
-                FlowRow(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    skill.prerequisites.forEach { name ->
-                        PrerequisiteChip(name, met = name in masteredSkills) { onOpenSkill(name) }
+        pages = listOf(
+            InfoPage("OVERVIEW", summary) {
+                // A female lifter reads her own published bar, not the male default.
+                text("CLAIM STANDARD", sexBar ?: skill.standard, IronvellumColors.SovereignGold)
+                text("WHY IT MATTERS", skill.why, IronvellumColors.InkMuted)
+                if (terms.isNotEmpty()) {
+                    // The words a beginner trips on, each one tap from a plain definition.
+                    section("WORDS TO KNOW") {
+                        FlowRow(Modifier.fillMaxWidth()) { terms.forEach { TermChip(it) } }
                     }
                 }
-            }
-        }
-        if (!mastered && unlocked) {
-            section("LOG AN ATTEMPT") {
-                AttemptLogger(
-                    skill = skill,
-                    attempt = attempt,
-                    touched = touched,
-                    load = load,
-                    showLoad = showLoad,
-                    barLoad = barLoad,
-                    onAttempt = {
-                        attempt = it
-                        touched = true
-                    },
-                    onLoad = { load = it },
-                    onShowLoad = { showLoad = true },
-                    onLog = { onLogPractice(attempt, load.takeIf { it > 0.0 }) },
-                )
-            }
-            text(
-                "BEFORE YOU CLAIM",
-                (if (cleared) "You've cleared this: claim it when you're ready. " else "Claiming is self-declared: the app never claims for you. ") +
-                    "Claim only once you can hit ${SkillGuidance.withUnit(skill.target, skill)} on demand. It awards ${skill.xp} XP and can be undone.",
-                IronvellumColors.InkMuted,
-            )
-        } else if (!mastered) {
-            text(
-                null,
-                "Locked until ${skill.firstUnmetPrerequisite(masteredSkills) ?: skill.prerequisites.joinToString(" and ")} is mastered.",
-                IronvellumColors.InkMuted,
-            )
-        }
-        if (entries.isNotEmpty()) {
-            // Every attempt for this technique, newest first: the sheet folds the
-            // list past six with its own "Show more". The Journal timeline only
-            // holds the last fortnight, so this is the full record.
-            rows(
-                "ATTEMPTS",
-                recent.map { entry ->
-                    formatDate(entry.practicedAtMs, "EEE d MMM · HH:mm") to when {
-                        entry.claimed -> "CLAIMED"
-                        entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${formatLoad(entry.weightKg)}kg"
-                        else -> SkillGuidance.withUnit(entry.value, skill)
+                if (skill.prerequisites.isNotEmpty()) {
+                    section("REQUIRES") {
+                        FlowRow(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            verticalArrangement = Arrangement.spacedBy(6.dp),
+                        ) {
+                            skill.prerequisites.forEach { name ->
+                                PrerequisiteChip(name, met = name in masteredSkills) { onOpenSkill(name) }
+                            }
+                        }
                     }
-                },
-                collapseAfter = 6,
-            )
-        }
-        // How to do it, what it works and what it needs: the same
-        // facts the exercise info card shows.
-        exerciseFacts(skill.name)
-    }
+                }
+                if (!mastered && !unlocked) {
+                    text(
+                        null,
+                        "Locked until ${skill.firstUnmetPrerequisite(masteredSkills) ?: skill.prerequisites.joinToString(" and ")} is mastered.",
+                        IronvellumColors.InkMuted,
+                    )
+                }
+            },
+            InfoPage("LOG") {
+                if (!mastered && unlocked) {
+                    section("LOG AN ATTEMPT") {
+                        AttemptLogger(
+                            skill = skill,
+                            attempt = attempt,
+                            touched = touched,
+                            load = load,
+                            showLoad = showLoad,
+                            barLoad = barLoad,
+                            onAttempt = {
+                                attempt = it
+                                touched = true
+                            },
+                            onLoad = { load = it },
+                            onShowLoad = { showLoad = true },
+                            onLog = { onLogPractice(attempt, load.takeIf { it > 0.0 }) },
+                        )
+                    }
+                }
+                if (entries.isNotEmpty()) {
+                    // Every attempt for this technique, newest first: the sheet folds the
+                    // list past six with its own "Show more". The Journal timeline only
+                    // holds the last fortnight, so this is the full record.
+                    rows(
+                        "ATTEMPTS",
+                        recent.map { entry ->
+                            formatDate(entry.practicedAtMs, "EEE d MMM · HH:mm") to when {
+                                entry.claimed -> "CLAIMED"
+                                entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${formatLoad(entry.weightKg)}kg"
+                                else -> SkillGuidance.withUnit(entry.value, skill)
+                            }
+                        },
+                        collapseAfter = 6,
+                    )
+                }
+            },
+            InfoPage("GUIDE") {
+                // How to do it, what it works and what it needs: the same
+                // facts the exercise info card shows.
+                exerciseFacts(skill.name)
+                if (!mastered && unlocked) {
+                    text(
+                        "BEFORE YOU CLAIM",
+                        (if (cleared) "You've cleared this: claim it when you're ready. " else "Claiming is self-declared: the app never claims for you. ") +
+                            "Claim only once you can hit ${SkillGuidance.withUnit(skill.target, skill)} on demand. It awards ${skill.xp} XP and can be undone.",
+                        IronvellumColors.InkMuted,
+                    )
+                }
+            },
+        ),
+    )
 }
 
 /** The attempt form: a big readout with ± targets, the quick values, an optional added load and LOG. */

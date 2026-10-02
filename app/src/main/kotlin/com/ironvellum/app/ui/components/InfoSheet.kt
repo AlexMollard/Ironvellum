@@ -15,6 +15,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -30,6 +33,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -57,6 +61,7 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkHairline
+import kotlinx.coroutines.launch
 
 /**
  * The one sheet every "info" pop-up uses, so an explainer, an exercise guide, a
@@ -83,18 +88,30 @@ fun InfoSheet(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
+    subtitleColor: Color = IronvellumColors.InkMuted,
     chips: List<InfoChip> = emptyList(),
     size: InfoSheetSize = InfoSheetSize.Full,
     titleColor: Color = IronvellumColors.Ink,
     summary: (@Composable ColumnScope.() -> Unit)? = null,
     actions: List<InfoAction> = emptyList(),
+    /**
+     * Swipeable pages instead of one long scroll: the header and [actions] stay put, a tab row
+     * and a pager sit between them, and the sheet holds its full height. Empty pages are
+     * dropped and a single survivor renders flat, without tabs. Replaces [summary] and
+     * [content] when two or more pages remain; give each page its own summary.
+     */
+    pages: List<InfoPage> = emptyList(),
     content: InfoSheetScope.() -> Unit = {},
 ) {
     require(actions.size <= 2) { "An info sheet pins at most two actions" }
     val compact = size == InfoSheetSize.Compact
     val maxHeight = LocalConfiguration.current.screenHeightDp.dp * size.maxHeightFraction
-    val scroll = rememberScrollState()
-    val sections = InfoSheetBuilder().apply(content).sections
+    // An empty page is dropped; a lone survivor is not worth a tab row, so it renders flat.
+    val built = pages
+        .map { BuiltPage(it.label, it.summary, InfoSheetBuilder().apply(it.content).sections) }
+        .filter { it.sections.isNotEmpty() || it.summary != null }
+    val paged = built.size >= 2
+    val flat = built.singleOrNull() ?: BuiltPage("", summary, InfoSheetBuilder().apply(content).sections)
 
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -110,38 +127,45 @@ fun InfoSheet(
         Column(
             modifier
                 .fillMaxWidth()
-                .heightIn(max = maxHeight)
+                // Pages hold the sheet at its full height, so changing page never makes it jump.
+                .then(if (paged) Modifier.height(maxHeight) else Modifier.heightIn(max = maxHeight))
                 // TalkBack announces the pane by name when it opens.
                 .semantics { paneTitle = title },
         ) {
             Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Bracket, seed = 3, thickness = 2.dp))
-            Column(
-                Modifier
-                    .weight(1f, fill = false)
-                    .fadeWhenMore(scroll.canScrollForward)
-                    .nestedScroll(KeepForwardScrollInside)
-                    .verticalScroll(scroll)
-                    .padding(horizontal = LedgerSpace.Gutter),
-            ) {
-                Spacer(Modifier.height(20.dp))
-                SheetHeader(title, subtitle, chips, compact, titleColor)
-                if (summary != null) {
-                    Spacer(Modifier.height(16.dp))
-                    val strip = MaterialTheme.shapes.small
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .background(Color(0xFF101614), strip)
-                            .inkBorder(IronvellumColors.Rune, strip, 1.dp)
-                            .padding(12.dp),
-                        content = summary,
+            if (paged) {
+                val pagerState = rememberPagerState { built.size }
+                val scope = rememberCoroutineScope()
+                Column(Modifier.padding(horizontal = LedgerSpace.Gutter)) {
+                    Spacer(Modifier.height(20.dp))
+                    SheetHeader(title, subtitle, subtitleColor, chips, compact, titleColor)
+                    Spacer(Modifier.height(14.dp))
+                    IronvellumTabBar(
+                        items = built.map { IronvellumTabItem(it.label) },
+                        selectedIndex = pagerState.currentPage,
+                        onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
+                        announcePosition = true,
                     )
                 }
-                sections.forEachIndexed { index, section ->
-                    Spacer(Modifier.height(if (index == 0 && section.label == null) 14.dp else 20.dp))
-                    section.Render(index, collapsible = !compact)
+                HorizontalPager(state = pagerState, modifier = Modifier.weight(1f).fillMaxWidth()) { index ->
+                    PageBody(built[index], compact)
                 }
-                Spacer(Modifier.height(20.dp))
+            } else {
+                val scroll = rememberScrollState()
+                Column(
+                    Modifier
+                        .weight(1f, fill = false)
+                        .fadeWhenMore(scroll.canScrollForward)
+                        .nestedScroll(KeepForwardScrollInside)
+                        .verticalScroll(scroll)
+                        .padding(horizontal = LedgerSpace.Gutter),
+                ) {
+                    Spacer(Modifier.height(20.dp))
+                    SheetHeader(title, subtitle, subtitleColor, chips, compact, titleColor)
+                    SummaryStrip(flat.summary)
+                    SectionList(flat.sections, compact)
+                    Spacer(Modifier.height(20.dp))
+                }
             }
             if (actions.isNotEmpty()) {
                 Box(Modifier.fillMaxWidth().height(1.dp).inkHairline(IronvellumColors.Rune, seed = 5, thickness = 1.dp))
@@ -167,6 +191,56 @@ fun InfoSheet(
                 Spacer(Modifier.height(4.dp))
             }
         }
+    }
+}
+
+private class BuiltPage(val label: String, val summary: (@Composable ColumnScope.() -> Unit)?, val sections: List<SheetSection>)
+
+/** One page of a paged sheet: its own vertical scroll, so a bounce or a fling never reaches its neighbours. */
+@Composable
+private fun PageBody(page: BuiltPage, compact: Boolean) {
+    val scroll = rememberScrollState()
+    Column(
+        Modifier
+            .fillMaxSize()
+            .fadeWhenMore(scroll.canScrollForward)
+            .nestedScroll(KeepForwardScrollInside)
+            .verticalScroll(scroll)
+            .padding(horizontal = LedgerSpace.Gutter),
+    ) {
+        Spacer(Modifier.height(16.dp))
+        SummaryStrip(page.summary, leadingGap = false)
+        SectionList(page.sections, compact, afterTabs = page.summary == null)
+        Spacer(Modifier.height(20.dp))
+    }
+}
+
+@Composable
+private fun SummaryStrip(summary: (@Composable ColumnScope.() -> Unit)?, leadingGap: Boolean = true) {
+    if (summary == null) return
+    if (leadingGap) Spacer(Modifier.height(16.dp))
+    val strip = MaterialTheme.shapes.small
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF101614), strip)
+            .inkBorder(IronvellumColors.Rune, strip, 1.dp)
+            .padding(12.dp),
+        content = summary,
+    )
+}
+
+/** The sections in order, each under its PanelLabel. [afterTabs] drops the gap above the first: the page already has one. */
+@Composable
+private fun SectionList(sections: List<SheetSection>, compact: Boolean, afterTabs: Boolean = false) {
+    sections.forEachIndexed { index, section ->
+        val gap = when {
+            index == 0 && afterTabs -> 0.dp
+            index == 0 && section.label == null -> 14.dp
+            else -> 20.dp
+        }
+        Spacer(Modifier.height(gap))
+        section.Render(index, collapsible = !compact)
     }
 }
 
@@ -201,6 +275,13 @@ class InfoAction(
     val gold: Boolean = false,
     val danger: Boolean = false,
     val enabled: Boolean = true,
+)
+
+/** One swipeable page of a paged [InfoSheet]: a tab [label], an optional [summary] strip and its sections. */
+class InfoPage(
+    val label: String,
+    val summary: (@Composable ColumnScope.() -> Unit)? = null,
+    val content: InfoSheetScope.() -> Unit,
 )
 
 /** A fact in the header: "Compound", "Tier III", "Rare". The word carries the meaning; [color] only echoes it. */
@@ -287,7 +368,7 @@ private val SheetPaper = Color(0xFF0D1110)
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-private fun SheetHeader(title: String, subtitle: String?, chips: List<InfoChip>, compact: Boolean, titleColor: Color) {
+private fun SheetHeader(title: String, subtitle: String?, subtitleColor: Color, chips: List<InfoChip>, compact: Boolean, titleColor: Color) {
     Text(
         title,
         style = if (compact) MaterialTheme.typography.titleLarge else MaterialTheme.typography.headlineSmall,
@@ -304,7 +385,7 @@ private fun SheetHeader(title: String, subtitle: String?, chips: List<InfoChip>,
         Text(
             subtitle,
             style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
+            color = subtitleColor,
             modifier = Modifier.padding(top = 2.dp),
         )
     }
