@@ -1,6 +1,7 @@
 package com.ironvellum.app.data
 
 import android.content.Context
+import androidx.room.withTransaction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.db.SessionEntity
@@ -49,36 +50,40 @@ class FiveYearsOfTrainingTest {
         // Insert in bulk rather than through the session flow: this measures the
         // read path, and going through completeSession() a thousand times would
         // measure the writes instead.
-        repeat(SESSIONS) { index ->
-            val startedAt = start + index * 2 * day
-            val sessionId = db.sessionDao().insertSession(
-                SessionEntity(
-                    presetId = null,
-                    label = "Session $index",
-                    startedAtMs = startedAt,
-                    completedAtMs = startedAt + 3_600_000L,
-                    xpAwarded = 120,
-                    strengthScore = 400,
-                    title = "",
-                    note = "",
-                    privateNote = "",
-                ),
-            )
-            db.sessionDao().insertSets(
-                (0 until SETS_PER_SESSION).map { setIndex ->
-                    val exercise = exercises[(index + setIndex) % exercises.size]
-                    SetLogEntity(
-                        sessionId = sessionId,
-                        exerciseId = exercise.id,
-                        exercisePosition = setIndex,
-                        setIndex = setIndex,
-                        reps = 8,
-                        weightKg = 20.0,
-                        modifiers = "",
-                        done = true,
-                    )
-                },
-            )
+        // One transaction for the whole fixture: a commit per insert is 2,000 fsyncs, which is
+        // most of this class's runtime on an emulator and says nothing about the read path.
+        db.withTransaction {
+            repeat(SESSIONS) { index ->
+                val startedAt = start + index * 2 * day
+                val sessionId = db.sessionDao().insertSession(
+                    SessionEntity(
+                        presetId = null,
+                        label = "Session $index",
+                        startedAtMs = startedAt,
+                        completedAtMs = startedAt + 3_600_000L,
+                        xpAwarded = 120,
+                        strengthScore = 400,
+                        title = "",
+                        note = "",
+                        privateNote = "",
+                    ),
+                )
+                db.sessionDao().insertSets(
+                    (0 until SETS_PER_SESSION).map { setIndex ->
+                        val exercise = exercises[(index + setIndex) % exercises.size]
+                        SetLogEntity(
+                            sessionId = sessionId,
+                            exerciseId = exercise.id,
+                            exercisePosition = setIndex,
+                            setIndex = setIndex,
+                            reps = 8,
+                            weightKg = 20.0,
+                            modifiers = "",
+                            done = true,
+                        )
+                    },
+                )
+            }
         }
     }
 
