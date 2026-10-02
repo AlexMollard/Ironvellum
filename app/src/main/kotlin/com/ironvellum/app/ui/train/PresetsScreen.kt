@@ -660,6 +660,8 @@ private fun WeeklyCoverageCard(
                 goal = goal,
                 modifier = Modifier.fillMaxWidth(),
                 figureHeight = 190.dp,
+                // The card is the way into Weekly Coverage, so its figure is a picture and a tap opens the screen.
+                interactive = false,
             )
         }
     }

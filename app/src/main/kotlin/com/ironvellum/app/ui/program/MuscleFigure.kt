@@ -41,6 +41,8 @@ import kotlin.math.roundToInt
  * A Canvas says nothing to TalkBack, so every drawn muscle is also an invisible node over its bounds that
  * speaks [lineFor] and its selected state, and selects on activation. Hair, head and hands are no region
  * and get no node.
+ *
+ * Not [interactive], it is only a picture: no taps, no nodes, so a tap falls through to whatever holds it.
  */
 @Composable
 internal fun TappableFigure(
@@ -51,6 +53,7 @@ internal fun TappableFigure(
     onSelect: (Muscle?) -> Unit,
     lineFor: (Muscle) -> String,
     modifier: Modifier = Modifier,
+    interactive: Boolean = true,
 ) {
     val slop = HitSlop.of(LocalDensity.current)
     // The tap handler outlives recompositions, so it reads the latest selection rather than the first.
@@ -61,18 +64,21 @@ internal fun TappableFigure(
             Modifier
                 .matchParentSize()
                 .clearAndSetSemantics {}
-                .pointerInput(figure) {
-                    detectTapGestures { at ->
-                        val g = FigureGeometry(figure, size.width.toFloat(), size.height.toFloat())
-                        select(nextSelection(current, hitMuscle(g, at.x, at.y, slop)))
-                    }
-                },
+                .then(
+                    if (!interactive) Modifier
+                    else Modifier.pointerInput(figure) {
+                        detectTapGestures { at ->
+                            val g = FigureGeometry(figure, size.width.toFloat(), size.height.toFloat())
+                            select(nextSelection(current, hitMuscle(g, at.x, at.y, slop)))
+                        }
+                    },
+                ),
         ) {
             val g = FigureGeometry(figure, size.width, size.height)
             drawFigure(g, FigureView.FRONT, fill, seed = 11, selected = selected)
             drawFigure(g, FigureView.BACK, fill, seed = 23, selected = selected)
         }
-        MuscleNodes(figure, selected, onSelect, lineFor, Modifier.matchParentSize())
+        if (interactive) MuscleNodes(figure, selected, onSelect, lineFor, Modifier.matchParentSize())
     }
 }
 
@@ -104,11 +110,16 @@ private fun MuscleNodes(
         modifier = modifier,
     ) { measurables, constraints ->
         val g = FigureGeometry(figure, constraints.maxWidth.toFloat(), constraints.maxHeight.toFloat())
+        // A small muscle (the neck, a forearm) draws under the 24dp WCAG floor, so its node grows about its
+        // centre to the floor, kept inside the figure. Touch is the canvas's hit test; these only steer TalkBack.
+        val floor = MIN_NODE.roundToPx()
         val placed = measurables.mapIndexed { i, measurable ->
             val bounds = muscleBounds(g, muscles[i])
-            val w = (bounds?.width ?: 1f).roundToInt().coerceAtLeast(1)
-            val h = (bounds?.height ?: 1f).roundToInt().coerceAtLeast(1)
-            measurable.measure(Constraints.fixed(w, h)) to IntOffset((bounds?.left ?: 0f).roundToInt(), (bounds?.top ?: 0f).roundToInt())
+            val w = maxOf((bounds?.width ?: 0f).roundToInt(), floor).coerceAtMost(constraints.maxWidth)
+            val h = maxOf((bounds?.height ?: 0f).roundToInt(), floor).coerceAtMost(constraints.maxHeight)
+            val x = ((bounds?.center?.x ?: 0f) - w / 2f).roundToInt().coerceIn(0, constraints.maxWidth - w)
+            val y = ((bounds?.center?.y ?: 0f) - h / 2f).roundToInt().coerceIn(0, constraints.maxHeight - h)
+            measurable.measure(Constraints.fixed(w, h)) to IntOffset(x, y)
         }
         layout(constraints.maxWidth, constraints.maxHeight) {
             placed.forEach { (placeable, at) -> placeable.place(at) }
@@ -117,8 +128,8 @@ private fun MuscleNodes(
 }
 
 /**
- * The one line under a figure: the lit muscle and a fact about it. It holds its line when empty so the
- * layout does not jump, and is a polite live region so a screen reader hears each change.
+ * The one line under a figure: the lit muscle and a fact about it, shown only while a muscle is lit, and a
+ * polite live region so a screen reader hears each change.
  */
 @Composable
 internal fun SelectedMuscleLine(
@@ -140,3 +151,6 @@ internal fun SelectedMuscleLine(
         overflow = TextOverflow.Ellipsis,
     )
 }
+
+/** The smallest a muscle's accessibility node may be: the WCAG 2.2 target floor. */
+private val MIN_NODE = 24.dp

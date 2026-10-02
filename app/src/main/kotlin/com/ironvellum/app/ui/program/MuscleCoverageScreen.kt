@@ -1,5 +1,22 @@
 package com.ironvellum.app.ui.program
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import com.ironvellum.app.ui.components.InkTabs
+import com.ironvellum.app.ui.theme.inkBorder
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.ironvellum.app.ui.components.NavChip
@@ -179,7 +196,6 @@ fun MuscleCoverageScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val pager = rememberPagerState { CoverageView.entries.size }
-    var openMuscle by rememberSaveable { mutableStateOf<Muscle?>(null) }
     var openExercise by rememberSaveable { mutableStateOf<String?>(null) }
     // One lit muscle per page, kept when the lifter swipes away and back: PLANNED and LAST 7 DAYS are two
     // different weeks, so each remembers what it was showing. Held here because the pager drops pages it
@@ -215,8 +231,6 @@ fun MuscleCoverageScreen(
                 view = CoverageView.entries[page],
                 ui = ui,
                 lit = lit.getValue(CoverageView.entries[page]),
-                openMuscle = openMuscle,
-                onOpenMuscle = { openMuscle = it },
                 openExercise = openExercise,
                 onOpenExercise = { openExercise = it },
                 onGenerateSession = onGenerateSession,
@@ -231,15 +245,12 @@ private fun CoveragePage(
     view: CoverageView,
     ui: CoverageUi,
     lit: MutableState<Muscle?>,
-    openMuscle: Muscle?,
-    onOpenMuscle: (Muscle?) -> Unit,
     openExercise: String?,
     onOpenExercise: (String?) -> Unit,
     onGenerateSession: () -> Unit,
 ) {
     val presets = if (view == CoverageView.PLANNED) ui.plannedPresets else ui.loggedPresets
     val volume = remember(presets) { ProgramRules.weeklyVolume(presets) }
-    val credits = remember(presets) { ProgramRules.muscleCredits(presets) }
     // Each exercise once, in routine order, keyed with its modifiers because
     // a deficit push-up works the chest differently from a flat one.
     val exercisesInView = remember(presets) {
@@ -250,16 +261,16 @@ private fun CoveragePage(
     }
     val goal = CoverageGoal(ui.tier, ui.focus, ui.priorities)
     val target = goal.target
-    val tracked = ProgramRules.TRACKED.sortedBy { volume[it] ?: 0.0 }
-    val helpers = ProgramRules.HELPERS.sortedBy { volume[it] ?: 0.0 }
     val underCount = coverageGaps(volume, goal).size
     val empty = if (view == CoverageView.PLANNED) !ui.hasAnyPreset else !ui.hasLoggedWeek
     val unattributed = if (view == CoverageView.PLANNED) ui.unattributedPlannedSets else ui.unattributedLoggedSets
+    val scroll = rememberScrollState()
+    val scope = rememberCoroutineScope()
 
     Column(
         Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
+            .verticalScroll(scroll)
             .padding(horizontal = 16.dp),
     ) {
         if (empty) {
@@ -314,55 +325,58 @@ private fun CoveragePage(
                 onClear = { lit.value = null },
             )
         } else {
-            SectionHeader("What each exercise trains")
-            Text(
-                "Tap an exercise to see every muscle it works.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            // One list at a time, so the page is a figure and a screenful, not three stacked lists. A swipe
+            // here turns the list; past its last list it hands on to the PLANNED / LAST 7 DAYS pager.
+            val lists = rememberPagerState { 2 }
+            InkTabs(
+                listOf("MUSCLES", "EXERCISES"),
+                selectedIndex = lists.currentPage,
+                onSelect = { scope.launch { lists.animateScrollToPage(it) } },
+                indicatorPosition = { lists.currentPage + lists.currentPageOffsetFraction },
             )
-            exercisesInView.forEach { (name, modifiers, shares) ->
-                val key = "$name|$modifiers"
-                ExerciseRow(
-                    name = name,
-                    modifiers = modifiers,
-                    shares = shares,
-                    open = openExercise == key,
-                    onToggle = { onOpenExercise(if (openExercise == key) null else key) },
-                )
-            }
-
             Spacer(Modifier.height(12.dp))
-            SectionHeader("Sets per muscle")
-            Text(
-                "Tap a muscle to see which exercises train it.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(4.dp))
-            tracked.forEach { muscle ->
-                MuscleRow(
-                    muscle, volume[muscle] ?: 0.0, goal, credits[muscle].orEmpty(),
-                    open = openMuscle == muscle,
-                    onToggle = { onOpenMuscle(if (openMuscle == muscle) null else muscle) },
+            HorizontalPager(lists, verticalAlignment = Alignment.Top) { list ->
+            Column {
+            if (list == 0) {
+                // A tile does what tapping the muscle on the figure does, so the page scrolls up to show it lit.
+                val pick = { muscle: Muscle ->
+                    lit.value = muscle
+                    scope.launch { scroll.animateScrollTo(0) }
+                    Unit
+                }
+                MuscleTiles(ProgramRules.TRACKED.sortedWith(shortFirst(volume, goal)), volume, goal, pick)
+                // Judged against a floor, not the range: see ProgramRules.HELPERS.
+                Text(
+                    "HELPERS",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                    modifier = Modifier.padding(top = 20.dp, bottom = 4.dp),
                 )
+                Text(
+                    "Mostly trained by your other exercises. Under " +
+                        "${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week reads light; none at all is a gap.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 8.dp),
+                )
+                MuscleTiles(ProgramRules.HELPERS.sortedWith(shortFirst(volume, goal)), volume, goal, pick)
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    exercisesInView.forEach { (name, modifiers, shares) ->
+                        val key = "$name|$modifiers"
+                        ExerciseRow(
+                            name = name,
+                            modifiers = modifiers,
+                            shares = shares,
+                            open = openExercise == key,
+                            onToggle = { onOpenExercise(if (openExercise == key) null else key) },
+                        )
+                    }
+                }
             }
-
-            // Judged against a floor, not the range: see ProgramRules.HELPERS.
-            Spacer(Modifier.height(12.dp))
-            SectionHeader("Helper muscles")
-            Text(
-                "Mostly trained by your other exercises. Under " +
-                    "${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week reads light; none at all is a gap.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            Spacer(Modifier.height(4.dp))
-            helpers.forEach { muscle ->
-                MuscleRow(
-                    muscle, volume[muscle] ?: 0.0, goal, credits[muscle].orEmpty(),
-                    open = openMuscle == muscle,
-                    onToggle = { onOpenMuscle(if (openMuscle == muscle) null else muscle) },
-                )
+            }
             }
         }
 
@@ -384,80 +398,102 @@ private fun CoveragePage(
     }
 }
 
+/** Gaps first - untrained, then under, then light - and the least trained first within each. */
+private fun shortFirst(volume: Map<Muscle, Double>, goal: CoverageGoal): Comparator<Muscle> =
+    compareBy<Muscle>(
+        {
+            when (levelOf(it, volume[it] ?: 0.0, goal)) {
+                CoverageLevel.NONE -> 0
+                CoverageLevel.UNDER -> 1
+                CoverageLevel.LIGHT -> 2
+                CoverageLevel.OVER -> 3
+                CoverageLevel.IN_RANGE -> 4
+            }
+        },
+        { volume[it] ?: 0.0 },
+    )
+
+/** [muscles] two to a row. */
+@Composable
+private fun MuscleTiles(
+    muscles: List<Muscle>,
+    volume: Map<Muscle, Double>,
+    goal: CoverageGoal,
+    onPick: (Muscle) -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        muscles.chunked(2).forEach { pair ->
+            Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                pair.forEach { MuscleTile(it, volume[it] ?: 0.0, goal, { onPick(it) }, Modifier.weight(1f).fillMaxHeight()) }
+                if (pair.size == 1) Spacer(Modifier.weight(1f))
+            }
+        }
+    }
+}
+
 /**
- * One muscle's sets against its own range; a helper's open-ended floor reads
- * "3+". Tapped open, it lists the exercises behind the number: each one's
- * sets times its share, main work counting in full and assisting work partly,
- * so the lines add up to the total above them.
+ * One muscle's week as a tile: its name, its sets against its range ("6 / 12–18", a helper's open floor
+ * "2 / 3+"), and the verdict, with a bar in the verdict's colour down its edge. Tapped, it lights the muscle.
  */
 @Composable
-private fun MuscleRow(
+private fun MuscleTile(
     muscle: Muscle,
     sets: Double,
     goal: CoverageGoal,
-    credits: List<ProgramRules.MuscleCredit>,
-    open: Boolean,
-    onToggle: () -> Unit,
+    onPick: () -> Unit,
+    modifier: Modifier,
 ) {
-    val range = rangeFor(muscle, goal)
     val level = levelOf(muscle, sets, goal)
-    val verdict = when (level) {
-        CoverageLevel.NONE -> "UNTRAINED"
-        CoverageLevel.UNDER -> "UNDER"
-        CoverageLevel.LIGHT -> "LIGHT"
-        CoverageLevel.IN_RANGE -> "IN RANGE"
-        CoverageLevel.OVER -> "OVER"
-    }
     val colour = verdictTextColour(level)
-    val bound = if (range.endInclusive == Double.MAX_VALUE) {
-        "${trimSets(range.start)}+"
-    } else {
-        "${trimSets(range.start)}-${trimSets(range.endInclusive)}"
-    }
+    val shape = MaterialTheme.shapes.small
     Row(
-        Modifier
-            .fillMaxWidth()
-            .heightIn(min = 44.dp)
-            .clickable(
-                onClickLabel = if (open) "Hide what trains ${muscle.label}" else "Show what trains ${muscle.label}",
-                onClick = onToggle,
-            ),
+        modifier
+            .heightIn(min = 56.dp)
+            .clip(shape)
+            .background(IronvellumColors.VaultHigh)
+            .inkBorder(IronvellumColors.Bracket, shape, 1.dp)
+            .clickable(onClickLabel = "Show what trains ${muscle.label}", role = Role.Button, onClick = onPick),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            muscle.label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.Ink,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            "${trimSets(sets)} / $bound",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.width(8.dp))
-        Text(
-            verdict,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = colour,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-    }
-    if (open) {
-        Column(Modifier.fillMaxWidth().padding(start = 12.dp, bottom = 8.dp)) {
-            if (credits.isEmpty()) {
-                Text(
-                    "Nothing in this view trains it.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
-            credits.forEach { credit -> CreditRow(credit) }
+        Box(Modifier.width(4.dp).fillMaxHeight().background(colour))
+        Column(Modifier.weight(1f).padding(start = 10.dp, top = 8.dp, bottom = 8.dp)) {
+            Text(
+                muscle.label.uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                "${trimSets(sets)} / ${targetLabel(rangeFor(muscle, goal))}",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+            )
+            Text(
+                verdictLabel(level),
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = colour,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            )
         }
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = IronvellumColors.InkMuted,
+            modifier = Modifier.padding(end = 6.dp).size(18.dp),
+        )
     }
+}
+
+private fun verdictLabel(level: CoverageLevel): String = when (level) {
+    CoverageLevel.NONE -> "UNTRAINED"
+    CoverageLevel.UNDER -> "UNDER"
+    CoverageLevel.LIGHT -> "LIGHT"
+    CoverageLevel.IN_RANGE -> "IN RANGE"
+    CoverageLevel.OVER -> "OVER"
 }
 
 /** One exercise's credit to a muscle: its name, MAIN or ASSIST, and sets times share. */
@@ -515,7 +551,11 @@ private fun MuscleFilter(
     byRite: Boolean,
     onClear: () -> Unit,
 ) {
-    SectionHeader("Trains ${muscle.label}")
+    // The way back sits beside the heading, in reach the moment the page narrows, not past a long list.
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+        SectionHeader("Trains ${muscle.label}", Modifier.weight(1f))
+        NavChip("CLEAR", Icons.Filled.Close, onClick = onClear, modifier = Modifier.padding(bottom = 4.dp))
+    }
     if (rites.isEmpty()) {
         Text(
             "Nothing in this view trains it.",
@@ -548,17 +588,6 @@ private fun MuscleFilter(
     } else {
         rites.flatMap { it.exercises }.sortedByDescending { it.credited }.forEach { CreditRow(it) }
     }
-    Text(
-        "SHOW ALL",
-        style = MaterialTheme.typography.labelSmall,
-        fontFamily = ChakraPetch,
-        color = IronvellumColors.SystemGreen,
-        letterSpacing = IronvellumTracking.InlineLabel,
-        modifier = Modifier
-            .heightIn(min = 44.dp)
-            .clickable(onClickLabel = "Show every rite and exercise", onClick = onClear)
-            .padding(top = 14.dp),
-    )
 }
 
 /**
@@ -573,14 +602,24 @@ private fun ExerciseRow(
     open: Boolean,
     onToggle: () -> Unit,
 ) {
+    val shape = MaterialTheme.shapes.small
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(IronvellumColors.VaultHigh)
+            .inkBorder(if (open) IronvellumColors.SystemGreen else IronvellumColors.Bracket, shape, 1.dp),
+    ) {
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 44.dp)
+            .heightIn(min = 52.dp)
             .clickable(
                 onClickLabel = if (open) "Hide muscles for $name" else "Show muscles for $name",
+                role = Role.Button,
                 onClick = onToggle,
-            ),
+            )
+            .padding(start = 12.dp, end = 6.dp, top = 8.dp, bottom = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
@@ -611,9 +650,16 @@ private fun ExerciseRow(
             textAlign = TextAlign.End,
             modifier = Modifier.weight(1f),
         )
+        Icon(
+            if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            tint = IronvellumColors.InkMuted,
+            modifier = Modifier.padding(start = 4.dp).size(20.dp),
+        )
     }
     if (open) {
-        ExerciseMuscles(shares, name, Modifier.fillMaxWidth().padding(bottom = 10.dp))
+        ExerciseMuscles(shares, name, Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, bottom = 10.dp))
+    }
     }
 }
 
