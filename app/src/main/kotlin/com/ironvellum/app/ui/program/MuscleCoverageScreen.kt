@@ -20,6 +20,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -180,6 +181,12 @@ fun MuscleCoverageScreen(
     val pager = rememberPagerState { CoverageView.entries.size }
     var openMuscle by rememberSaveable { mutableStateOf<Muscle?>(null) }
     var openExercise by rememberSaveable { mutableStateOf<String?>(null) }
+    // One lit muscle per page, kept when the lifter swipes away and back: PLANNED and LAST 7 DAYS are two
+    // different weeks, so each remembers what it was showing. Held here because the pager drops pages it
+    // is not near.
+    val lit = CoverageView.entries.associateWith { view ->
+        rememberSaveable(key = "lit-${view.name}") { mutableStateOf<Muscle?>(null) }
+    }
 
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 16.dp)) {
@@ -207,6 +214,7 @@ fun MuscleCoverageScreen(
             CoveragePage(
                 view = CoverageView.entries[page],
                 ui = ui,
+                lit = lit.getValue(CoverageView.entries[page]),
                 openMuscle = openMuscle,
                 onOpenMuscle = { openMuscle = it },
                 openExercise = openExercise,
@@ -222,6 +230,7 @@ fun MuscleCoverageScreen(
 private fun CoveragePage(
     view: CoverageView,
     ui: CoverageUi,
+    lit: MutableState<Muscle?>,
     openMuscle: Muscle?,
     onOpenMuscle: (Muscle?) -> Unit,
     openExercise: String?,
@@ -275,6 +284,8 @@ private fun CoveragePage(
                 goal = goal,
                 modifier = Modifier.fillMaxWidth(),
                 figureHeight = 380.dp,
+                selection = lit,
+                lineFor = { coverageMuscleLine(it, volume[it] ?: 0.0, goal) },
             )
         }
         Spacer(Modifier.height(8.dp))
@@ -292,55 +303,67 @@ private fun CoveragePage(
         }
         Spacer(Modifier.height(12.dp))
 
-        SectionHeader("What each exercise trains")
-        Text(
-            "Tap an exercise to see every muscle it works.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        exercisesInView.forEach { (name, modifiers, shares) ->
-            val key = "$name|$modifiers"
-            ExerciseRow(
-                name = name,
-                modifiers = modifiers,
-                shares = shares,
-                open = openExercise == key,
-                onToggle = { onOpenExercise(if (openExercise == key) null else key) },
+        // The one place a lit muscle narrows anything: the lists give way to the rites and exercises that
+        // train it, and clearing brings them back.
+        val litMuscle = lit.value
+        if (litMuscle != null) {
+            MuscleFilter(
+                muscle = litMuscle,
+                rites = remember(presets, litMuscle) { ritesTraining(presets, litMuscle) },
+                byRite = view == CoverageView.PLANNED,
+                onClear = { lit.value = null },
             )
-        }
+        } else {
+            SectionHeader("What each exercise trains")
+            Text(
+                "Tap an exercise to see every muscle it works.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            exercisesInView.forEach { (name, modifiers, shares) ->
+                val key = "$name|$modifiers"
+                ExerciseRow(
+                    name = name,
+                    modifiers = modifiers,
+                    shares = shares,
+                    open = openExercise == key,
+                    onToggle = { onOpenExercise(if (openExercise == key) null else key) },
+                )
+            }
 
-        Spacer(Modifier.height(12.dp))
-        SectionHeader("Sets per muscle")
-        Text(
-            "Tap a muscle to see which exercises train it.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(4.dp))
-        tracked.forEach { muscle ->
-            MuscleRow(
-                muscle, volume[muscle] ?: 0.0, goal, credits[muscle].orEmpty(),
-                open = openMuscle == muscle,
-                onToggle = { onOpenMuscle(if (openMuscle == muscle) null else muscle) },
+            Spacer(Modifier.height(12.dp))
+            SectionHeader("Sets per muscle")
+            Text(
+                "Tap a muscle to see which exercises train it.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-        }
+            Spacer(Modifier.height(4.dp))
+            tracked.forEach { muscle ->
+                MuscleRow(
+                    muscle, volume[muscle] ?: 0.0, goal, credits[muscle].orEmpty(),
+                    open = openMuscle == muscle,
+                    onToggle = { onOpenMuscle(if (openMuscle == muscle) null else muscle) },
+                )
+            }
 
-        // Judged against a floor, not the range: see ProgramRules.HELPERS.
-        Spacer(Modifier.height(12.dp))
-        SectionHeader("Helper muscles")
-        Text(
-            "Mostly trained by your other exercises. Under " +
-                "${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week reads light; none at all is a gap.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-        Spacer(Modifier.height(4.dp))
-        helpers.forEach { muscle ->
-            MuscleRow(
-                muscle, volume[muscle] ?: 0.0, goal, credits[muscle].orEmpty(),
-                open = openMuscle == muscle,
-                onToggle = { onOpenMuscle(if (openMuscle == muscle) null else muscle) },
+            // Judged against a floor, not the range: see ProgramRules.HELPERS.
+            Spacer(Modifier.height(12.dp))
+            SectionHeader("Helper muscles")
+            Text(
+                "Mostly trained by your other exercises. Under " +
+                    "${trimSets(ProgramRules.HELPER_FLOOR_SETS)} sets a week reads light; none at all is a gap.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+            Spacer(Modifier.height(4.dp))
+            helpers.forEach { muscle ->
+                MuscleRow(
+                    muscle, volume[muscle] ?: 0.0, goal, credits[muscle].orEmpty(),
+                    open = openMuscle == muscle,
+                    onToggle = { onOpenMuscle(if (openMuscle == muscle) null else muscle) },
+                )
+            }
         }
 
         if (underCount > 0) {
@@ -432,48 +455,110 @@ private fun MuscleRow(
                     color = IronvellumColors.InkMuted,
                 )
             }
-            credits.forEach { credit ->
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            credit.exerciseName,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = IronvellumColors.Ink,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        if (credit.modifiers.isNotBlank()) {
-                            Text(
-                                credit.modifiers.split(",").joinToString(" · ") { it.trim() },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = IronvellumColors.InkMuted,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-                    Text(
-                        shareLevel(credit.share).label,
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = if (shareLevel(credit.share) == ShareLevel.MAIN) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                    )
-                    Text(
-                        "${credit.sets}×${trimSets(credit.share)} = ${trimSets(credit.credited)}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.width(96.dp),
-                    )
-                }
-            }
+            credits.forEach { credit -> CreditRow(credit) }
         }
     }
+}
+
+/** One exercise's credit to a muscle: its name, MAIN or ASSIST, and sets times share. */
+@Composable
+private fun CreditRow(credit: ProgramRules.MuscleCredit) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 3.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                credit.exerciseName,
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (credit.modifiers.isNotBlank()) {
+                Text(
+                    credit.modifiers.split(",").joinToString(" · ") { it.trim() },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        Text(
+            shareLevel(credit.share).label,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = if (shareLevel(credit.share) == ShareLevel.MAIN) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+            letterSpacing = IronvellumTracking.InlineLabel,
+        )
+        Text(
+            "${credit.sets}×${trimSets(credit.share)} = ${trimSets(credit.credited)}",
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+            textAlign = TextAlign.End,
+            modifier = Modifier.width(96.dp),
+        )
+    }
+}
+
+/**
+ * What a lit muscle narrows the page to: every rite that trains it with its sets, and under each the
+ * exercises behind that number. The LAST 7 DAYS page has no rites (its week is one pooled list), so there
+ * [byRite] is false and the exercises stand alone.
+ */
+@Composable
+private fun MuscleFilter(
+    muscle: Muscle,
+    rites: List<RiteContribution>,
+    byRite: Boolean,
+    onClear: () -> Unit,
+) {
+    SectionHeader("Trains ${muscle.label}")
+    if (rites.isEmpty()) {
+        Text(
+            "Nothing in this view trains it.",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
+    } else if (byRite) {
+        rites.forEach { rite ->
+            Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    rite.rite,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                Text(
+                    riteSetsLabel(rite.credited),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.SystemGreen,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                )
+            }
+            Column(Modifier.fillMaxWidth().padding(start = 12.dp)) {
+                rite.exercises.forEach { CreditRow(it) }
+            }
+        }
+    } else {
+        rites.flatMap { it.exercises }.sortedByDescending { it.credited }.forEach { CreditRow(it) }
+    }
+    Text(
+        "SHOW ALL",
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = ChakraPetch,
+        color = IronvellumColors.SystemGreen,
+        letterSpacing = IronvellumTracking.InlineLabel,
+        modifier = Modifier
+            .heightIn(min = 44.dp)
+            .clickable(onClickLabel = "Show every rite and exercise", onClick = onClear)
+            .padding(top = 14.dp),
+    )
 }
 
 /**
@@ -528,7 +613,7 @@ private fun ExerciseRow(
         )
     }
     if (open) {
-        ExerciseMuscles(shares, Modifier.fillMaxWidth().padding(bottom = 10.dp))
+        ExerciseMuscles(shares, name, Modifier.fillMaxWidth().padding(bottom = 10.dp))
     }
 }
 
@@ -546,7 +631,7 @@ internal fun targetCaption(volume: VolumeLevel, focus: TrainingFocus, target: Cl
 }
 
 /** One decimal, trimmed of a trailing .0 - "14" and "14.5", never "14.0000". */
-private fun trimSets(value: Double): String {
+internal fun trimSets(value: Double): String {
     val rounded = (value * 10).toLong() / 10.0
     return if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else rounded.toString()
 }

@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Muscle
@@ -28,17 +29,21 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
 @Composable
 fun ExerciseMuscles(
     shares: Map<Muscle, Double>,
+    exerciseName: String,
     modifier: Modifier = Modifier,
     figureHeight: Dp = 200.dp,
 ) {
     // One spoken summary for the figure, its legend and the lines under it,
-    // which otherwise read the same muscles twice.
+    // which otherwise read the same muscles twice. The figure's own muscle
+    // nodes stay outside the cleared parts so they can be stepped through.
     val description = exerciseMuscleSummary(shares)
-    Column(modifier.clearAndSetSemantics { contentDescription = description }) {
-        ExerciseMuscleMap(shares, Modifier.fillMaxWidth(), figureHeight)
+    Column(modifier.semantics { contentDescription = description }) {
+        ExerciseMuscleMap(shares, exerciseName, Modifier.fillMaxWidth(), figureHeight)
         Spacer(Modifier.height(10.dp))
-        MuscleLine(ShareLevel.MAIN, musclesAt(shares, ShareLevel.MAIN))
-        MuscleLine(ShareLevel.ASSIST, musclesAt(shares, ShareLevel.ASSIST))
+        Column(Modifier.clearAndSetSemantics {}) {
+            MuscleLine(ShareLevel.MAIN, musclesAt(shares, ShareLevel.MAIN))
+            MuscleLine(ShareLevel.ASSIST, musclesAt(shares, ShareLevel.ASSIST))
+        }
     }
 }
 

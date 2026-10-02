@@ -1,6 +1,6 @@
 package com.ironvellum.app.ui.program
 
-import androidx.compose.foundation.Canvas
+import androidx.compose.runtime.MutableState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -175,30 +175,23 @@ fun BodyHeatMap(
     goal: CoverageGoal,
     modifier: Modifier = Modifier,
     figureHeight: Dp = 320.dp,
+    selection: MutableState<Muscle?> = rememberMuscleSelection(),
+    lineFor: (Muscle) -> String = { muscleLine(it) },
 ) {
     val description = coverageSummary(volume, goal)
     val figure = BodyFigures.of(LocalBodySex.current)
+    val fill = { muscle: Muscle ->
+        val sets = volume[muscle] ?: 0.0
+        regionFill(levelOf(muscle, sets, goal), sets, rangeFor(muscle, goal))
+    }
     Column(modifier.semantics { contentDescription = description }) {
-        Canvas(
-            Modifier
-                .fillMaxWidth()
-                .height(figureHeight)
-                .clearAndSetSemantics {},
-        ) {
-            val h = size.height
-            val halfWidth = size.width / 2f
-            val fill = { muscle: Muscle ->
-                val sets = volume[muscle] ?: 0.0
-                regionFill(levelOf(muscle, sets, goal), sets, rangeFor(muscle, goal))
-            }
-            drawFigure(figure, FigureView.FRONT, halfWidth * 0.5f, halfWidth, h, fill, seed = 11)
-            drawFigure(figure, FigureView.BACK, halfWidth * 1.5f, halfWidth, h, fill, seed = 23)
-        }
+        TappableFigure(figure, figureHeight, fill, selection.value, { selection.value = it }, lineFor)
         Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
             FigureLabel("FRONT", Modifier.weight(1f))
             FigureLabel("BACK", Modifier.weight(1f))
         }
-        Legend(Modifier.padding(top = 8.dp))
+        SelectedMuscleLine(selection.value, lineFor)
+        Legend(Modifier.padding(top = 4.dp))
     }
 }
 
@@ -226,32 +219,24 @@ private fun shareFill(share: Double?): Color = when {
 @Composable
 fun ExerciseMuscleMap(
     shares: Map<Muscle, Double>,
+    exerciseName: String,
     modifier: Modifier = Modifier,
     figureHeight: Dp = 220.dp,
+    selection: MutableState<Muscle?> = rememberMuscleSelection(),
 ) {
-    // A Canvas says nothing to TalkBack: speak what the fill shows, as
-    // BodyHeatMap does, in place of the figure labels and legend.
-    val description = exerciseMuscleSummary(shares)
     val figure = BodyFigures.of(LocalBodySex.current)
-    Column(modifier.clearAndSetSemantics { contentDescription = description }) {
-        Canvas(
-            Modifier
-                .fillMaxWidth()
-                .height(figureHeight)
-                .clearAndSetSemantics {},
-        ) {
-            val h = size.height
-            val halfWidth = size.width / 2f
-            val fill = { muscle: Muscle -> shareFill(shares[muscle]) }
-            drawFigure(figure, FigureView.FRONT, halfWidth * 0.5f, halfWidth, h, fill, seed = 11)
-            drawFigure(figure, FigureView.BACK, halfWidth * 1.5f, halfWidth, h, fill, seed = 23)
-        }
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+    val fill = { muscle: Muscle -> shareFill(shares[muscle]) }
+    val lineFor = { muscle: Muscle -> exerciseMuscleLine(muscle, shares[muscle], exerciseName) }
+    // The muscle nodes speak for the figure; the labels and legend only repeat what the caller's summary says.
+    Column(modifier) {
+        TappableFigure(figure, figureHeight, fill, selection.value, { selection.value = it }, lineFor)
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {}) {
             FigureLabel("FRONT", Modifier.weight(1f))
             FigureLabel("BACK", Modifier.weight(1f))
         }
+        SelectedMuscleLine(selection.value, lineFor)
         Row(
-            Modifier.fillMaxWidth().padding(top = 8.dp),
+            Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {},
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -280,8 +265,10 @@ fun riteAlpha(sets: Double, top: Double): Float {
 @Composable
 fun RiteMuscleMap(
     sets: Map<Muscle, Double>,
+    riteName: String,
     modifier: Modifier = Modifier,
     figureHeight: Dp = 220.dp,
+    selection: MutableState<Muscle?> = rememberMuscleSelection(),
 ) {
     val top = sets.values.maxOrNull() ?: 0.0
     val figure = BodyFigures.of(LocalBodySex.current)
@@ -289,23 +276,16 @@ fun RiteMuscleMap(
         val alpha = riteAlpha(sets[muscle] ?: 0.0, top)
         if (alpha <= 0f) IronvellumColors.Bracket.copy(alpha = 0.55f) else IronvellumColors.Emerald.copy(alpha = alpha)
     }
-    Column(modifier.clearAndSetSemantics {}) {
-        Canvas(
-            Modifier
-                .fillMaxWidth()
-                .height(figureHeight),
-        ) {
-            val h = size.height
-            val halfWidth = size.width / 2f
-            drawFigure(figure, FigureView.FRONT, halfWidth * 0.5f, halfWidth, h, fill, seed = 11)
-            drawFigure(figure, FigureView.BACK, halfWidth * 1.5f, halfWidth, h, fill, seed = 23)
-        }
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
+    val lineFor = { muscle: Muscle -> riteMuscleLine(muscle, sets[muscle] ?: 0.0, riteName) }
+    Column(modifier) {
+        TappableFigure(figure, figureHeight, fill, selection.value, { selection.value = it }, lineFor)
+        Row(Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {}) {
             FigureLabel("FRONT", Modifier.weight(1f))
             FigureLabel("BACK", Modifier.weight(1f))
         }
+        SelectedMuscleLine(selection.value, lineFor)
         Row(
-            Modifier.fillMaxWidth().padding(top = 8.dp),
+            Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {},
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -316,32 +296,25 @@ fun RiteMuscleMap(
     }
 }
 
-private fun DrawScope.drawFigure(
-    figure: BodyFigure,
+internal fun DrawScope.drawFigure(
+    g: FigureGeometry,
     view: FigureView,
-    centerX: Float,
-    slotWidth: Float,
-    height: Float,
     fill: (Muscle) -> Color,
     seed: Int,
+    selected: Muscle? = null,
 ) {
-    // As tall as the canvas, unless the hands would then cross into the neighbouring figure's slot: they
-    // reach farther from the midline than the hips do, so the figure shrinks to fit rather than touch.
-    val scale = minOf(height, slotWidth * 0.96f / (2f * figure.halfWidth))
-    val top = (height - scale) / 2f
-
-    fun at(x: Float, y: Float) = Offset(centerX + x * scale, top + y * scale)
+    val figure = g.figure
 
     fun polygon(points: List<Pair<Float, Float>>, side: Float = 1f) = Path().apply {
         points.forEachIndexed { i, (x, y) ->
-            val p = at(x * side, y)
+            val p = g.toCanvas(view, x, y, side)
             if (i == 0) moveTo(p.x, p.y) else lineTo(p.x, p.y)
         }
         close()
     }
 
     // Body paper first, so untrained regions read as part of a figure.
-    val outline = figure.fullOutline.map { (x, y) -> at(x, y) }
+    val outline = figure.fullOutline.map { (x, y) -> g.toCanvas(view, x, y) }
     drawPath(polygon(figure.fullOutline), IronvellumColors.VaultHigh)
     // Hair is decoration, in the darkest ink and never a region, so it takes no colour and no tap.
     figure.hair(view).forEach { hair ->
@@ -356,6 +329,26 @@ private fun DrawScope.drawFigure(
             // A paper-coloured seam between neighbouring muscles keeps the
             // regions legible when two of them share a verdict colour.
             drawPath(path, IronvellumColors.Abyss, style = Stroke(width = 1.2.dp.toPx()))
+        }
+    }
+
+    // The lit muscle: a soft green halo under a crisp ink line, on every piece and both sides, over the
+    // seams so neighbours cannot cut it.
+    if (selected != null) {
+        figure.regionsOf(selected, view).forEach { region ->
+            for (side in listOf(1f, -1f)) {
+                drawPath(
+                    polygon(region.points, side),
+                    IronvellumColors.SystemGreen.copy(alpha = 0.28f),
+                    style = Stroke(width = 6.dp.toPx(), join = StrokeJoin.Round),
+                )
+                inkOutline(
+                    region.points.map { (x, y) -> g.toCanvas(view, x, y, side) },
+                    IronvellumColors.SystemGreen,
+                    2.dp.toPx(),
+                    seed,
+                )
+            }
         }
     }
 
