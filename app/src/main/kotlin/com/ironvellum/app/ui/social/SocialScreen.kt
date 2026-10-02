@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.social
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -23,6 +24,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.pager.rememberPagerState
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -34,7 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.InkTabs
+import com.ironvellum.app.ui.components.InkTabbedPager
 
 private enum class GuildTab(val label: String) {
     FEED("TIDINGS"),
@@ -64,7 +68,9 @@ fun SocialScreen(
 
     // Saveable: opening a workout's comments from the INBOX pushes a route
     // over this one, and a plain remember came back on FEED after BACK.
-    var tab by rememberSaveable { mutableStateOf(GuildTab.FEED) }
+    // The pager state is saveable, so it carries the open tab too.
+    val pager = rememberPagerState { GuildTab.entries.size }
+    val scope = rememberCoroutineScope()
     // Signing in HERE lands on ALLIES, where a fresh Google account's
     // claim-your-name panel lives; a restored session keeps its tab.
     var sawSignedOut by remember { mutableStateOf(!signedIn) }
@@ -72,7 +78,7 @@ fun SocialScreen(
         if (!signedIn) {
             sawSignedOut = true
         } else if (sawSignedOut) {
-            tab = GuildTab.ALLIES
+            pager.scrollToPage(GuildTab.ALLIES.ordinal)
             sawSignedOut = false
         }
     }
@@ -83,7 +89,7 @@ fun SocialScreen(
     LaunchedEffect(inboxRequest) {
         if (inboxRequest > servedInboxRequest) {
             servedInboxRequest = inboxRequest
-            tab = GuildTab.INBOX
+            pager.scrollToPage(GuildTab.INBOX.ordinal)
         }
     }
 
@@ -102,8 +108,10 @@ fun SocialScreen(
     val context = LocalContext.current
     var explainNotifications by rememberSaveable { mutableStateOf(false) }
     val askPermission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
-    LaunchedEffect(tab) {
-        if (tab != GuildTab.INBOX) return@LaunchedEffect
+    // Settled, not current: half a swipe toward INBOX must not clear its notification.
+    val settledTab = GuildTab.entries[pager.settledPage]
+    LaunchedEffect(settledTab) {
+        if (settledTab != GuildTab.INBOX) return@LaunchedEffect
         InboxNotifier.cancel(context)
         if (InboxNotifier.takeFirstAsk(context) && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             explainNotifications = true
@@ -137,33 +145,39 @@ fun SocialScreen(
     }
 
     // Every tab gets the same margins and starts at the same spot under the
-    // pills; the tabs themselves add no outer padding or screen title.
-    Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+    // pills; the tabs themselves add no outer padding or screen title. The
+    // pages run edge to edge so a swipe is not clipped inside the margins.
+    Column(Modifier.fillMaxSize()) {
         Spacer(Modifier.height(18.dp))
-        InkTabs(
+        InkTabbedPager(
             labels = GuildTab.entries.map { it.label },
             badges = GuildTab.entries.map { if (it == GuildTab.INBOX) unread else 0 },
-            selectedIndex = tab.ordinal,
-            onSelect = { tab = GuildTab.entries[it] },
-        )
-        Spacer(Modifier.height(14.dp))
-
-        when (tab) {
-            GuildTab.FEED -> FeedScreen(
-                onOpenLifter = onOpenLifter,
-                onOpenComments = onOpenComments,
-            )
-            GuildTab.INBOX -> InboxScreen(
-                onOpenLifter = onOpenLifter,
-                onOpenComments = onOpenComments,
-                onOpenCircle = { tab = GuildTab.ALLIES },
-            )
-            GuildTab.BOARD -> LeaderboardScreen(onOpenFriend = onOpenLifter)
-            GuildTab.ALLIES -> AccountScreen(
-                onBack = { tab = GuildTab.FEED },
-                onOpenLifter = onOpenLifter,
-                onOpenAccount = onOpenAccount,
-            )
+            state = pager,
+            modifier = Modifier.weight(1f),
+            tabsModifier = Modifier.padding(horizontal = 16.dp),
+            tabsGap = 14.dp,
+        ) { page ->
+            Box(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                when (GuildTab.entries[page]) {
+                    GuildTab.FEED -> FeedScreen(
+                        onOpenLifter = onOpenLifter,
+                        onOpenComments = onOpenComments,
+                    )
+                    GuildTab.INBOX -> InboxScreen(
+                        onOpenLifter = onOpenLifter,
+                        onOpenComments = onOpenComments,
+                        onOpenCircle = { scope.launch { pager.animateScrollToPage(GuildTab.ALLIES.ordinal) } },
+                        // Only once the page has settled: a peek mid-swipe must not read the inbox.
+                        active = settledTab == GuildTab.INBOX,
+                    )
+                    GuildTab.BOARD -> LeaderboardScreen(onOpenFriend = onOpenLifter)
+                    GuildTab.ALLIES -> AccountScreen(
+                        onBack = { scope.launch { pager.animateScrollToPage(GuildTab.FEED.ordinal) } },
+                        onOpenLifter = onOpenLifter,
+                        onOpenAccount = onOpenAccount,
+                    )
+                }
+            }
         }
     }
 }

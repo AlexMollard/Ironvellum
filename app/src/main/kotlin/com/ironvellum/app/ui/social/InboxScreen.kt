@@ -160,14 +160,16 @@ internal fun InboxScreen(
     onOpenComments: (sessionId: String, ownerId: String, headline: String) -> Unit,
     /** A circle missive opens the circle itself, not the member's profile. */
     onOpenCircle: () -> Unit,
+    /** False while the page is only peeking in during a swipe: reading the inbox waits for the visit. */
+    active: Boolean = true,
     viewModel: InboxViewModel = viewModel(
         factory = viewModelFactory { initializer { InboxViewModel(ironvellumCloudSync(), ironvellumAccount()) } },
     ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     // Every visit to the tab reads the inbox and clears the nav dot.
-    LaunchedEffect(ui.signedIn) {
-        if (ui.signedIn) viewModel.open()
+    LaunchedEffect(ui.signedIn, active) {
+        if (ui.signedIn && active) viewModel.open()
     }
 
     Column(Modifier.fillMaxSize()) {

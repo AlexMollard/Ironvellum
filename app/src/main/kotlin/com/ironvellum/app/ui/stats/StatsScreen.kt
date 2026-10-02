@@ -60,7 +60,9 @@ import androidx.lifecycle.viewModelScope
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkListRow
 import androidx.compose.material.icons.outlined.History
-import com.ironvellum.app.ui.components.InkTabs
+import com.ironvellum.app.ui.components.InkTabbedPager
+import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.runtime.rememberCoroutineScope
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.BarChart
@@ -245,12 +247,13 @@ fun StatsScreen(
     // dialog, the tab, the pane, the range, the month and each tab's scroll.
     var showAdd by rememberSaveable { mutableStateOf(false) }
     var drill by rememberSaveable { mutableStateOf<String?>(null) }
-    var tabIndex by rememberSaveable { mutableIntStateOf(0) }
+    // Saveable, so it carries the open tab through rotation and process death.
+    val pager = rememberPagerState { StatsTab.entries.size }
+    val scope = rememberCoroutineScope()
     var pageIndex by rememberSaveable { mutableIntStateOf(0) }
     var rangeIndex by rememberSaveable { mutableIntStateOf(0) }
     var monthsBack by rememberSaveable { mutableIntStateOf(0) }
     var dailyRangeIndex by rememberSaveable { mutableIntStateOf(1) }
-    val tab = StatsTab.entries[tabIndex]
     val page = LedgerPage.entries[pageIndex]
     val range = LedgerRange.entries[rangeIndex]
     val bodyScroll = rememberScrollState()
@@ -324,17 +327,17 @@ fun StatsScreen(
             }
             Spacer(Modifier.height(8.dp))
 
-            InkTabs(
+            // Pages run edge to edge under the strip, each with its own hoisted scroll.
+            InkTabbedPager(
                 labels = StatsTab.entries.map { it.label },
-                selectedIndex = tabIndex,
-                onSelect = { tabIndex = it },
-                modifier = Modifier.padding(horizontal = LedgerSpace.Gutter),
-            )
-
-            // Nothing is drawn until Room has answered: an empty state shown for
-            // a frame reads as "you have no data".
-            if (ui.loaded) {
-                when (tab) {
+                state = pager,
+                modifier = Modifier.weight(1f),
+                tabsModifier = Modifier.padding(horizontal = LedgerSpace.Gutter),
+            ) { index ->
+                // Nothing is drawn until Room has answered: an empty state shown for
+                // a frame reads as "you have no data".
+                if (!ui.loaded) return@InkTabbedPager
+                when (StatsTab.entries[index]) {
                     StatsTab.BODY -> BodyTab(
                         ui = ui,
                         today = today,
@@ -344,9 +347,9 @@ fun StatsScreen(
                         onRange = { rangeIndex = it.ordinal },
                         onDrill = { drill = it },
                         onLogWeight = { showAdd = true },
-                        onOpenTraining = { tabIndex = StatsTab.TRAINING.ordinal },
+                        onOpenTraining = { scope.launch { pager.animateScrollToPage(StatsTab.TRAINING.ordinal) } },
                         onOpenTape = { pageIndex = LedgerPage.TAPE.ordinal },
-                        onOpenDaily = { tabIndex = StatsTab.DAILY.ordinal },
+                        onOpenDaily = { scope.launch { pager.animateScrollToPage(StatsTab.DAILY.ordinal) } },
                         onOpenHistory = { pageIndex = LedgerPage.HISTORY.ordinal },
                     )
                     StatsTab.TRAINING -> TrainingTab(
