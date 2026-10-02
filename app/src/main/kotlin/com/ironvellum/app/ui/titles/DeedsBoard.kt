@@ -529,6 +529,16 @@ private fun EarnedWall(earned: List<TitleDef>, equippedId: String?, onOpenDeed: 
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                     )
+                    // Masterwork is gold too, so worn needs a word, not a colour.
+                    if (worn) {
+                        Text(
+                            "WORN",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            fontWeight = FontWeight.Bold,
+                            color = IronvellumColors.SovereignGold,
+                        )
+                    }
                 }
             }
         }

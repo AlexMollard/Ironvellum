@@ -30,12 +30,16 @@ import com.ironvellum.app.ui.theme.InkCircleShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import java.util.Locale
 
-/** Rarity accent per tier. Gold is kept for what is earned or worn, so the top tier reads as bone ink instead. */
+/**
+ * Rarity accent per tier. Masterwork is gold leaf, as it is on the Veil's
+ * inscriptions: the rarest deed is the most earned thing there is. Worn is
+ * marked in words (WORN), never by colour alone, so the two cannot be confused.
+ */
 internal fun rarityColor(rarity: TitleRarity): Color = when (rarity) {
     TitleRarity.Common -> IronvellumColors.InkMuted
     TitleRarity.Rare -> IronvellumColors.SystemGreen
     TitleRarity.Epic -> IronvellumColors.Emerald
-    TitleRarity.Masterwork -> IronvellumColors.Ink
+    TitleRarity.Masterwork -> IronvellumColors.SovereignGold
 }
 
 /** A small accent dot and the tier's name; the word carries the meaning, the colour only echoes it. */
