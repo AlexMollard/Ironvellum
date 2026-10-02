@@ -115,16 +115,6 @@ internal fun verdictTextColour(level: CoverageLevel): Color = when (level) {
     CoverageLevel.OVER -> IronvellumColors.SovereignGold
 }
 
-/**
- * One muscle region: half of it, in figure space, mirrored across the
- * midline to draw both sides. Figure space is proportioned by height: x runs
- * from the midline (0) outwards in units of the figure's height, y from the
- * crown (0) to the soles (1), so the shapes keep their anatomy at any size.
- */
-internal class Region(val muscle: Muscle, vararg points: Pair<Float, Float>) {
-    val points: List<Pair<Float, Float>> = points.toList()
-}
-
 /** Every muscle the map judges: the ranged majors, then the floored helpers. */
 val JUDGED: List<Muscle> = ProgramRules.TRACKED + ProgramRules.HELPERS
 
@@ -168,380 +158,8 @@ fun coverageGaps(volume: Map<Muscle, Double>, goal: CoverageGoal): List<Muscle> 
         levelOf(it, volume[it] ?: 0.0, goal).let { l -> l == CoverageLevel.UNDER || l == CoverageLevel.NONE }
     }
 
-internal val FRONT = listOf(
-    Region(
-        Muscle.TRAPS,
-        0.030f to 0.134f, 0.030f to 0.134f, 0.038f to 0.143f, 0.053f to 0.149f, 0.070f to 0.153f,
-        0.090f to 0.156f, 0.108f to 0.159f, 0.119f to 0.161f, 0.122f to 0.164f, 0.122f to 0.164f,
-        0.108f to 0.166f, 0.085f to 0.163f, 0.062f to 0.158f, 0.048f to 0.153f, 0.036f to 0.147f,
-    ),
-    Region(
-        Muscle.UPPER_CHEST,
-        0.005f to 0.171f, 0.005f to 0.171f, 0.020f to 0.171f, 0.040f to 0.170f, 0.060f to 0.172f,
-        0.080f to 0.177f, 0.092f to 0.185f, 0.102f to 0.195f, 0.109f to 0.203f, 0.109f to 0.202f,
-        0.109f to 0.202f, 0.102f to 0.199f, 0.092f to 0.194f, 0.080f to 0.192f, 0.060f to 0.193f,
-        0.040f to 0.193f, 0.020f to 0.194f, 0.005f to 0.194f, 0.005f to 0.194f,
-    ),
-    Region(
-        Muscle.MID_CHEST,
-        0.005f to 0.197f, 0.005f to 0.197f, 0.020f to 0.197f, 0.040f to 0.197f, 0.060f to 0.197f,
-        0.080f to 0.196f, 0.092f to 0.198f, 0.102f to 0.202f, 0.109f to 0.206f, 0.109f to 0.204f,
-        0.109f to 0.204f, 0.102f to 0.205f, 0.092f to 0.208f, 0.080f to 0.214f, 0.060f to 0.220f,
-        0.040f to 0.223f, 0.020f to 0.224f, 0.005f to 0.224f, 0.005f to 0.224f,
-    ),
-    Region(
-        Muscle.LOWER_CHEST,
-        0.005f to 0.227f, 0.005f to 0.227f, 0.020f to 0.228f, 0.040f to 0.227f, 0.060f to 0.224f,
-        0.080f to 0.217f, 0.092f to 0.211f, 0.102f to 0.208f, 0.109f to 0.207f, 0.109f to 0.207f,
-        0.109f to 0.207f, 0.102f to 0.214f, 0.092f to 0.226f, 0.080f to 0.241f, 0.060f to 0.255f,
-        0.040f to 0.262f, 0.020f to 0.263f, 0.005f to 0.262f, 0.005f to 0.262f,
-    ),
-    Region(
-        Muscle.FRONT_DELTS,
-        0.110f to 0.172f, 0.122f to 0.166f, 0.133f to 0.166f, 0.137f to 0.185f, 0.140f to 0.210f,
-        0.143f to 0.235f, 0.147f to 0.257f, 0.147f to 0.257f, 0.136f to 0.247f, 0.130f to 0.237f,
-        0.121f to 0.225f, 0.115f to 0.207f, 0.108f to 0.190f, 0.105f to 0.178f,
-    ),
-    Region(
-        Muscle.SIDE_DELTS,
-        0.139f to 0.168f, 0.146f to 0.172f, 0.151f to 0.179f, 0.155f to 0.190f, 0.157f to 0.210f,
-        0.155f to 0.230f, 0.152f to 0.247f, 0.149f to 0.259f, 0.149f to 0.259f, 0.147f to 0.256f,
-        0.145f to 0.232f, 0.142f to 0.205f, 0.140f to 0.182f, 0.138f to 0.170f,
-    ),
-    Region(
-        Muscle.BICEPS,
-        0.122f to 0.236f, 0.122f to 0.236f, 0.130f to 0.250f, 0.139f to 0.265f, 0.142f to 0.280f,
-        0.141f to 0.295f, 0.139f to 0.310f, 0.135f to 0.322f, 0.129f to 0.332f, 0.129f to 0.332f,
-        0.123f to 0.322f, 0.119f to 0.310f, 0.117f to 0.295f, 0.116f to 0.280f, 0.115f to 0.265f,
-        0.116f to 0.250f,
-    ),
-    Region(
-        Muscle.BRACHIALIS,
-        0.147f to 0.266f, 0.147f to 0.266f, 0.153f to 0.275f, 0.155f to 0.290f, 0.155f to 0.310f,
-        0.153f to 0.320f, 0.150f to 0.329f, 0.150f to 0.329f, 0.147f to 0.320f, 0.145f to 0.310f,
-        0.145f to 0.290f, 0.146f to 0.275f,
-    ),
-    Region(
-        Muscle.FOREARMS,
-        0.152f to 0.338f, 0.155f to 0.348f, 0.157f to 0.365f, 0.155f to 0.385f, 0.151f to 0.400f,
-        0.146f to 0.412f, 0.141f to 0.421f, 0.134f to 0.428f, 0.134f to 0.428f, 0.131f to 0.421f,
-        0.127f to 0.412f, 0.120f to 0.400f, 0.116f to 0.385f, 0.114f to 0.365f, 0.114f to 0.348f,
-        0.117f to 0.338f,
-    ),
-    Region(
-        Muscle.SERRATUS,
-        0.091f to 0.242f, 0.091f to 0.259f, 0.058f to 0.273f, 0.058f to 0.259f,
-    ),
-    Region(
-        Muscle.SERRATUS,
-        0.088f to 0.266f, 0.088f to 0.282f, 0.058f to 0.297f, 0.058f to 0.282f,
-    ),
-    Region(
-        Muscle.SERRATUS,
-        0.084f to 0.289f, 0.084f to 0.305f, 0.058f to 0.321f, 0.058f to 0.305f,
-    ),
-    Region(
-        Muscle.ABS,
-        0.005f to 0.276f, 0.008f to 0.272f, 0.039f to 0.272f, 0.043f to 0.276f, 0.043f to 0.296f,
-        0.039f to 0.300f, 0.008f to 0.300f, 0.005f to 0.296f,
-    ),
-    Region(
-        Muscle.ABS,
-        0.005f to 0.308f, 0.008f to 0.304f, 0.042f to 0.304f, 0.046f to 0.308f, 0.046f to 0.330f,
-        0.042f to 0.334f, 0.008f to 0.334f, 0.005f to 0.330f,
-    ),
-    Region(
-        Muscle.ABS,
-        0.005f to 0.342f, 0.008f to 0.338f, 0.043f to 0.338f, 0.048f to 0.342f, 0.048f to 0.364f,
-        0.043f to 0.368f, 0.008f to 0.368f, 0.005f to 0.364f,
-    ),
-    Region(
-        Muscle.ABS,
-        0.005f to 0.385f, 0.009f to 0.382f, 0.044f to 0.382f, 0.048f to 0.386f, 0.048f to 0.405f,
-        0.045f to 0.430f, 0.041f to 0.455f, 0.033f to 0.474f, 0.022f to 0.484f, 0.012f to 0.489f,
-        0.005f to 0.489f,
-    ),
-    Region(
-        Muscle.OBLIQUES,
-        0.056f to 0.328f, 0.070f to 0.321f, 0.082f to 0.314f, 0.078f to 0.335f, 0.074f to 0.370f,
-        0.072f to 0.405f, 0.075f to 0.435f, 0.079f to 0.446f, 0.062f to 0.459f, 0.056f to 0.463f,
-        0.053f to 0.440f, 0.053f to 0.400f, 0.053f to 0.360f, 0.053f to 0.345f,
-    ),
-    Region(
-        Muscle.HIP_FLEXORS,
-        0.078f to 0.466f, 0.066f to 0.470f, 0.046f to 0.479f, 0.026f to 0.489f, 0.018f to 0.493f,
-        0.018f to 0.493f, 0.024f to 0.499f, 0.045f to 0.497f, 0.066f to 0.490f, 0.081f to 0.481f,
-    ),
-    Region(
-        Muscle.ADDUCTORS,
-        0.042f to 0.512f, 0.046f to 0.530f, 0.049f to 0.550f, 0.048f to 0.570f, 0.043f to 0.595f,
-        0.035f to 0.615f, 0.032f to 0.630f, 0.032f to 0.630f, 0.029f to 0.615f, 0.026f to 0.595f,
-        0.022f to 0.570f, 0.017f to 0.550f, 0.013f to 0.530f, 0.009f to 0.512f,
-    ),
-    Region(
-        Muscle.QUADS,
-        0.064f to 0.514f, 0.070f to 0.540f, 0.073f to 0.580f, 0.074f to 0.620f, 0.071f to 0.650f,
-        0.065f to 0.672f, 0.059f to 0.680f, 0.059f to 0.680f, 0.056f to 0.672f, 0.052f to 0.650f,
-        0.050f to 0.620f, 0.049f to 0.580f, 0.050f to 0.540f, 0.052f to 0.514f,
-    ),
-    Region(
-        Muscle.QUADS,
-        0.088f to 0.515f, 0.096f to 0.540f, 0.097f to 0.580f, 0.093f to 0.620f, 0.088f to 0.650f,
-        0.084f to 0.675f, 0.078f to 0.690f, 0.073f to 0.696f, 0.073f to 0.696f, 0.069f to 0.690f,
-        0.070f to 0.675f, 0.074f to 0.650f, 0.076f to 0.620f, 0.075f to 0.580f, 0.072f to 0.540f,
-        0.074f to 0.515f,
-    ),
-    Region(
-        Muscle.QUADS,
-        0.049f to 0.608f, 0.049f to 0.608f, 0.046f to 0.622f, 0.049f to 0.640f, 0.051f to 0.660f,
-        0.051f to 0.675f, 0.050f to 0.690f, 0.046f to 0.698f, 0.043f to 0.698f, 0.037f to 0.690f,
-        0.032f to 0.675f, 0.029f to 0.660f, 0.032f to 0.640f, 0.035f to 0.622f,
-    ),
-    Region(
-        Muscle.TIBIALIS,
-        0.068f to 0.727f, 0.072f to 0.750f, 0.072f to 0.780f, 0.070f to 0.820f, 0.064f to 0.850f,
-        0.051f to 0.878f, 0.051f to 0.878f, 0.052f to 0.850f, 0.054f to 0.820f, 0.053f to 0.780f,
-        0.053f to 0.750f, 0.054f to 0.727f,
-    ),
-    Region(
-        Muscle.CALVES,
-        0.049f to 0.718f, 0.051f to 0.740f, 0.051f to 0.770f, 0.051f to 0.800f, 0.051f to 0.830f,
-        0.048f to 0.855f, 0.044f to 0.875f, 0.044f to 0.875f, 0.039f to 0.855f, 0.034f to 0.830f,
-        0.032f to 0.800f, 0.032f to 0.770f, 0.033f to 0.740f, 0.036f to 0.718f,
-    ),
-    Region(
-        Muscle.CALVES,
-        0.080f to 0.720f, 0.084f to 0.740f, 0.086f to 0.770f, 0.086f to 0.800f, 0.083f to 0.830f,
-        0.075f to 0.855f, 0.061f to 0.880f, 0.061f to 0.880f, 0.067f to 0.855f, 0.070f to 0.830f,
-        0.074f to 0.800f, 0.075f to 0.770f, 0.072f to 0.740f, 0.071f to 0.720f,
-    ),
-)
-
-internal val BACK = listOf(
-    Region(
-        Muscle.TRAPS,
-        0.004f to 0.122f, 0.027f to 0.130f, 0.032f to 0.138f, 0.043f to 0.146f, 0.060f to 0.151f,
-        0.080f to 0.155f, 0.100f to 0.158f, 0.115f to 0.160f, 0.123f to 0.164f, 0.123f to 0.164f,
-        0.112f to 0.168f, 0.092f to 0.181f, 0.070f to 0.190f, 0.052f to 0.196f, 0.040f to 0.202f,
-        0.029f to 0.240f, 0.017f to 0.280f, 0.004f to 0.322f, 0.004f to 0.322f,
-    ),
-    Region(
-        Muscle.RHOMBOIDS,
-        0.042f to 0.204f, 0.049f to 0.204f, 0.049f to 0.240f, 0.048f to 0.262f, 0.024f to 0.270f,
-        0.029f to 0.241f, 0.035f to 0.222f,
-    ),
-    Region(
-        Muscle.ROTATOR_CUFF,
-        0.055f to 0.206f, 0.075f to 0.201f, 0.094f to 0.192f, 0.105f to 0.190f, 0.105f to 0.199f,
-        0.097f to 0.207f, 0.083f to 0.228f, 0.069f to 0.247f, 0.057f to 0.255f, 0.052f to 0.238f,
-        0.052f to 0.220f,
-    ),
-    Region(
-        Muscle.ROTATOR_CUFF,
-        0.103f to 0.213f, 0.107f to 0.218f, 0.102f to 0.224f, 0.095f to 0.225f, 0.092f to 0.222f,
-        0.099f to 0.215f,
-    ),
-    Region(
-        Muscle.REAR_DELTS,
-        0.108f to 0.172f, 0.121f to 0.165f, 0.135f to 0.165f, 0.142f to 0.170f, 0.149f to 0.177f,
-        0.154f to 0.192f, 0.155f to 0.210f, 0.154f to 0.230f, 0.151f to 0.247f, 0.149f to 0.259f,
-        0.149f to 0.259f, 0.141f to 0.243f, 0.130f to 0.227f, 0.119f to 0.208f, 0.112f to 0.190f,
-        0.107f to 0.180f,
-    ),
-    Region(
-        Muscle.LATS,
-        0.092f to 0.239f, 0.090f to 0.255f, 0.087f to 0.270f, 0.084f to 0.300f, 0.079f to 0.330f,
-        0.075f to 0.360f, 0.073f to 0.400f, 0.074f to 0.425f, 0.071f to 0.439f, 0.062f to 0.442f,
-        0.058f to 0.430f, 0.050f to 0.385f, 0.038f to 0.345f, 0.028f to 0.310f, 0.021f to 0.286f,
-        0.030f to 0.281f, 0.045f to 0.273f, 0.062f to 0.262f, 0.078f to 0.249f,
-    ),
-    Region(
-        Muscle.TRICEPS,
-        0.122f to 0.240f, 0.122f to 0.240f, 0.139f to 0.247f, 0.148f to 0.261f, 0.154f to 0.275f,
-        0.155f to 0.290f, 0.153f to 0.305f, 0.149f to 0.318f, 0.145f to 0.327f, 0.141f to 0.324f,
-        0.140f to 0.305f, 0.138f to 0.290f, 0.132f to 0.283f, 0.126f to 0.290f, 0.124f to 0.306f,
-        0.122f to 0.322f, 0.118f to 0.327f, 0.114f to 0.321f, 0.111f to 0.300f, 0.110f to 0.278f,
-        0.111f to 0.260f, 0.116f to 0.244f,
-    ),
-    Region(
-        Muscle.FOREARMS,
-        0.153f to 0.340f, 0.155f to 0.350f, 0.157f to 0.367f, 0.155f to 0.387f, 0.151f to 0.400f,
-        0.146f to 0.412f, 0.141f to 0.421f, 0.134f to 0.428f, 0.134f to 0.428f, 0.131f to 0.421f,
-        0.127f to 0.412f, 0.120f to 0.400f, 0.116f to 0.387f, 0.114f to 0.367f, 0.114f to 0.350f,
-        0.117f to 0.340f,
-    ),
-    Region(
-        Muscle.LOWER_BACK,
-        0.006f to 0.335f, 0.006f to 0.335f, 0.013f to 0.335f, 0.021f to 0.350f, 0.029f to 0.375f,
-        0.035f to 0.400f, 0.035f to 0.420f, 0.032f to 0.440f, 0.025f to 0.458f, 0.017f to 0.466f,
-        0.006f to 0.468f,
-    ),
-    Region(
-        Muscle.ABDUCTORS,
-        0.045f to 0.457f, 0.062f to 0.452f, 0.077f to 0.452f, 0.080f to 0.459f, 0.080f to 0.469f,
-        0.070f to 0.472f, 0.055f to 0.474f, 0.043f to 0.469f,
-    ),
-    Region(
-        Muscle.GLUTES,
-        0.005f to 0.492f, 0.030f to 0.485f, 0.058f to 0.479f, 0.080f to 0.475f, 0.088f to 0.500f,
-        0.092f to 0.520f, 0.094f to 0.540f, 0.095f to 0.560f, 0.092f to 0.575f, 0.085f to 0.582f,
-        0.070f to 0.588f, 0.050f to 0.590f, 0.030f to 0.586f, 0.022f to 0.580f, 0.021f to 0.565f,
-        0.015f to 0.545f, 0.011f to 0.527f, 0.007f to 0.519f, 0.005f to 0.500f,
-    ),
-    Region(
-        Muscle.HAMSTRINGS,
-        0.091f to 0.593f, 0.092f to 0.610f, 0.090f to 0.630f, 0.087f to 0.650f, 0.083f to 0.668f,
-        0.076f to 0.683f, 0.073f to 0.692f, 0.073f to 0.692f, 0.070f to 0.683f, 0.065f to 0.668f,
-        0.062f to 0.650f, 0.061f to 0.630f, 0.062f to 0.610f, 0.063f to 0.593f,
-    ),
-    Region(
-        Muscle.HAMSTRINGS,
-        0.059f to 0.593f, 0.059f to 0.610f, 0.058f to 0.630f, 0.059f to 0.650f, 0.061f to 0.668f,
-        0.066f to 0.683f, 0.049f to 0.692f, 0.049f to 0.692f, 0.039f to 0.683f, 0.034f to 0.668f,
-        0.029f to 0.650f, 0.028f to 0.630f, 0.026f to 0.610f, 0.028f to 0.593f,
-    ),
-    Region(
-        Muscle.CALVES,
-        0.056f to 0.717f, 0.058f to 0.735f, 0.058f to 0.760f, 0.058f to 0.790f, 0.057f to 0.820f,
-        0.054f to 0.845f, 0.051f to 0.855f, 0.046f to 0.868f, 0.046f to 0.868f, 0.043f to 0.855f,
-        0.037f to 0.845f, 0.033f to 0.820f, 0.030f to 0.790f, 0.031f to 0.760f, 0.032f to 0.735f,
-        0.035f to 0.717f,
-    ),
-    Region(
-        Muscle.CALVES,
-        0.080f to 0.717f, 0.083f to 0.735f, 0.086f to 0.760f, 0.086f to 0.785f, 0.086f to 0.810f,
-        0.081f to 0.835f, 0.074f to 0.850f, 0.070f to 0.866f, 0.070f to 0.866f, 0.067f to 0.850f,
-        0.065f to 0.835f, 0.062f to 0.810f, 0.061f to 0.785f, 0.061f to 0.760f, 0.061f to 0.735f,
-        0.061f to 0.717f,
-    ),
-    Region(
-        Muscle.CALVES,
-        0.059f to 0.857f, 0.059f to 0.857f, 0.064f to 0.866f, 0.067f to 0.880f, 0.064f to 0.897f,
-        0.059f to 0.911f, 0.056f to 0.918f, 0.056f to 0.918f, 0.052f to 0.911f, 0.045f to 0.897f,
-        0.041f to 0.880f, 0.053f to 0.866f,
-    ),
-)
-
-/** Every muscle the figure can colour, front or back. */
-internal val DRAWN: Set<Muscle> = (FRONT + BACK).map { it.muscle }.toSet()
-
-/**
- * Right half of the silhouette, crown to crotch, in figure space: a muscular
- * male build, because the map is a lifter's. A straight neck column drops
- * from the jaw before the traps curve out of it (with the traps starting at
- * the jaw, the smoothing swallowed the neck), delts cap the shoulder, lats flare into a narrow waist over
- * straight hips, thighs and calves swell; the jaw is square and the pec
- * regions are flat plates. A hip flare and round pecs read as a mixed
- * physique on device. Head, hands and feet belong to the one outline - a
- * head circle on a flat shoulder line, wedge hands and triangle feet read as
- * a mannequin. Palms face forward (the anatomical position muscle charts
- * use), so the thumb sits on the outside of each hand. The arms hang clear
- * of the lats and the waist sits well inside the shoulders: arms glued to the
- * torso over a straight-sided trunk read as one wide block, "fat" to a
- * first-time viewer.
- */
-internal val HALF_OUTLINE = listOf(
-    0.000f to 0.000f, // crown
-    0.026f to 0.004f,
-    0.042f to 0.016f,
-    0.050f to 0.034f,
-    0.052f to 0.054f, // temple
-    0.055f to 0.062f, // ear
-    0.054f to 0.074f,
-    0.050f to 0.080f,
-    0.049f to 0.089f, // cheek
-    0.046f to 0.098f, // jaw angle
-    0.036f to 0.107f,
-    0.031f to 0.118f, // neck
-    0.031f to 0.130f,
-    0.037f to 0.140f,
-    0.050f to 0.146f, // traps rise into the neck
-    0.067f to 0.150f,
-    0.087f to 0.153f,
-    0.106f to 0.156f, // traps meet the shoulder
-    0.122f to 0.159f, // acromion
-    0.137f to 0.163f,
-    0.149f to 0.171f,
-    0.156f to 0.183f, // deltoid cap
-    0.160f to 0.198f,
-    0.160f to 0.215f, // deltoid belly
-    0.158f to 0.235f,
-    0.158f to 0.255f,
-    0.159f to 0.275f, // upper arm
-    0.158f to 0.312f,
-    0.155f to 0.333f, // elbow, outer
-    0.161f to 0.360f, // forearm swell
-    0.160f to 0.398f,
-    0.157f to 0.428f,
-    0.149f to 0.452f, // wrist, outer: pinched well inside forearm and hand, or the smoothing melts it away
-    0.155f to 0.466f,
-    0.161f to 0.478f,
-    0.168f to 0.494f,
-    0.170f to 0.505f, // thumb tip
-    0.165f to 0.509f,
-    0.159f to 0.498f, // thumb crotch
-    0.158f to 0.512f,
-    0.158f to 0.545f,
-    0.154f to 0.552f, // index finger
-    0.150f to 0.549f,
-    0.149f to 0.523f,
-    0.147f to 0.556f,
-    0.142f to 0.561f, // middle finger
-    0.137f to 0.558f,
-    0.137f to 0.525f,
-    0.135f to 0.554f,
-    0.130f to 0.558f, // ring finger
-    0.126f to 0.555f,
-    0.126f to 0.523f,
-    0.124f to 0.546f,
-    0.120f to 0.550f, // little finger
-    0.116f to 0.546f,
-    0.113f to 0.515f, // heel of the hand
-    0.113f to 0.472f,
-    0.117f to 0.452f, // wrist, inner
-    0.108f to 0.420f,
-    0.110f to 0.400f,
-    0.112f to 0.365f, // forearm, inner
-    0.107f to 0.332f, // elbow, inner
-    0.107f to 0.290f,
-    0.094f to 0.228f, // armpit crease: doubled so it stays a crisp corner
-    0.094f to 0.228f,
-    0.095f to 0.250f, // lat flare
-    0.088f to 0.290f,
-    0.082f to 0.330f,
-    0.078f to 0.370f,
-    0.077f to 0.405f, // waist
-    0.080f to 0.440f,
-    0.084f to 0.470f, // hip
-    0.098f to 0.520f, // thigh sweep
-    0.100f to 0.580f,
-    0.093f to 0.640f,
-    0.082f to 0.700f, // knee, outer
-    0.084f to 0.722f,
-    0.092f to 0.768f, // calf, outer
-    0.089f to 0.812f,
-    0.079f to 0.860f,
-    0.067f to 0.900f,
-    0.058f to 0.922f, // ankle, outer
-    0.062f to 0.938f,
-    0.070f to 0.960f,
-    0.076f to 0.978f, // little toe
-    0.075f to 0.988f,
-    0.065f to 0.993f,
-    0.051f to 0.996f,
-    0.037f to 0.997f, // toe line
-    0.030f to 0.994f,
-    0.025f to 0.986f, // big toe
-    0.024f to 0.966f, // arch
-    0.028f to 0.942f,
-    0.032f to 0.922f, // ankle, inner
-    0.028f to 0.860f,
-    0.025f to 0.790f, // calf, inner
-    0.031f to 0.700f, // knee, inner
-    0.027f to 0.676f,
-    0.018f to 0.560f, // thigh, inner
-    0.000f to 0.505f, // crotch
-)
+/** Every muscle either body can colour, front or back. */
+internal val DRAWN: Set<Muscle> by lazy { BodyFigures.MALE.drawn }
 
 /**
  * Front and back figures side by side in ONE Canvas of fixed [figureHeight],
@@ -559,6 +177,7 @@ fun BodyHeatMap(
     figureHeight: Dp = 320.dp,
 ) {
     val description = coverageSummary(volume, goal)
+    val figure = BodyFigures.MALE
     Column(modifier.semantics { contentDescription = description }) {
         Canvas(
             Modifier
@@ -572,8 +191,8 @@ fun BodyHeatMap(
                 val sets = volume[muscle] ?: 0.0
                 regionFill(levelOf(muscle, sets, goal), sets, rangeFor(muscle, goal))
             }
-            drawFigure(FRONT, Offset(halfWidth * 0.5f, 0f), h, fill, seed = 11)
-            drawFigure(BACK, Offset(halfWidth * 1.5f, 0f), h, fill, seed = 23)
+            drawFigure(figure, FigureView.FRONT, halfWidth * 0.5f, halfWidth, h, fill, seed = 11)
+            drawFigure(figure, FigureView.BACK, halfWidth * 1.5f, halfWidth, h, fill, seed = 23)
         }
         Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
             FigureLabel("FRONT", Modifier.weight(1f))
@@ -613,6 +232,7 @@ fun ExerciseMuscleMap(
     // A Canvas says nothing to TalkBack: speak what the fill shows, as
     // BodyHeatMap does, in place of the figure labels and legend.
     val description = exerciseMuscleSummary(shares)
+    val figure = BodyFigures.MALE
     Column(modifier.clearAndSetSemantics { contentDescription = description }) {
         Canvas(
             Modifier
@@ -623,8 +243,8 @@ fun ExerciseMuscleMap(
             val h = size.height
             val halfWidth = size.width / 2f
             val fill = { muscle: Muscle -> shareFill(shares[muscle]) }
-            drawFigure(FRONT, Offset(halfWidth * 0.5f, 0f), h, fill, seed = 11)
-            drawFigure(BACK, Offset(halfWidth * 1.5f, 0f), h, fill, seed = 23)
+            drawFigure(figure, FigureView.FRONT, halfWidth * 0.5f, halfWidth, h, fill, seed = 11)
+            drawFigure(figure, FigureView.BACK, halfWidth * 1.5f, halfWidth, h, fill, seed = 23)
         }
         Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
             FigureLabel("FRONT", Modifier.weight(1f))
@@ -664,6 +284,7 @@ fun RiteMuscleMap(
     figureHeight: Dp = 220.dp,
 ) {
     val top = sets.values.maxOrNull() ?: 0.0
+    val figure = BodyFigures.MALE
     val fill = { muscle: Muscle ->
         val alpha = riteAlpha(sets[muscle] ?: 0.0, top)
         if (alpha <= 0f) IronvellumColors.Bracket.copy(alpha = 0.55f) else IronvellumColors.Emerald.copy(alpha = alpha)
@@ -676,8 +297,8 @@ fun RiteMuscleMap(
         ) {
             val h = size.height
             val halfWidth = size.width / 2f
-            drawFigure(FRONT, Offset(halfWidth * 0.5f, 0f), h, fill, seed = 11)
-            drawFigure(BACK, Offset(halfWidth * 1.5f, 0f), h, fill, seed = 23)
+            drawFigure(figure, FigureView.FRONT, halfWidth * 0.5f, halfWidth, h, fill, seed = 11)
+            drawFigure(figure, FigureView.BACK, halfWidth * 1.5f, halfWidth, h, fill, seed = 23)
         }
         Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
             FigureLabel("FRONT", Modifier.weight(1f))
@@ -696,27 +317,41 @@ fun RiteMuscleMap(
 }
 
 private fun DrawScope.drawFigure(
-    regions: List<Region>,
-    origin: Offset,
+    figure: BodyFigure,
+    view: FigureView,
+    centerX: Float,
+    slotWidth: Float,
     height: Float,
     fill: (Muscle) -> Color,
     seed: Int,
 ) {
-    fun at(x: Float, y: Float) = Offset(origin.x + x * height, origin.y + y * height)
+    // As tall as the canvas, unless the hands would then cross into the neighbouring figure's slot: they
+    // reach farther from the midline than the hips do, so the figure shrinks to fit rather than touch.
+    val scale = minOf(height, slotWidth * 0.96f / (2f * figure.halfWidth))
+    val top = (height - scale) / 2f
+
+    fun at(x: Float, y: Float) = Offset(centerX + x * scale, top + y * scale)
+
+    fun polygon(points: List<Pair<Float, Float>>, side: Float = 1f) = Path().apply {
+        points.forEachIndexed { i, (x, y) ->
+            val p = at(x * side, y)
+            if (i == 0) moveTo(p.x, p.y) else lineTo(p.x, p.y)
+        }
+        close()
+    }
 
     // Body paper first, so untrained regions read as part of a figure.
-    val body = Path().apply {
-        val right = HALF_OUTLINE
-        val left = HALF_OUTLINE.reversed().map { (x, y) -> -x to y }
-        smoothClosed(this, (right + left).map { (x, y) -> at(x, y) })
+    val outline = figure.fullOutline.map { (x, y) -> at(x, y) }
+    drawPath(polygon(figure.fullOutline), IronvellumColors.VaultHigh)
+    // Hair is decoration, in the darkest ink and never a region, so it takes no colour and no tap.
+    figure.hair(view).forEach { hair ->
+        for (side in listOf(1f, -1f)) drawPath(polygon(hair, side), IronvellumColors.Abyss)
     }
-    drawPath(body, IronvellumColors.VaultHigh)
 
-    regions.forEach { region ->
+    figure.regions(view).forEach { region ->
         val fill = fill(region.muscle)
         for (side in listOf(1f, -1f)) {
-            val path = Path()
-            smoothClosed(path, region.points.map { (x, y) -> at(x * side, y) })
+            val path = polygon(region.points, side)
             drawPath(path, fill)
             // A paper-coloured seam between neighbouring muscles keeps the
             // regions legible when two of them share a verdict colour.
@@ -724,35 +359,10 @@ private fun DrawScope.drawFigure(
         }
     }
 
-    // The hand-drawn outline goes on last, in the app's one brush. It follows
-    // the same rounded curve the body is filled with, so the ink and the paper
-    // agree, and the wander lives in the path rather than in straight chords.
-    val outline = HALF_OUTLINE + HALF_OUTLINE.reversed().map { (x, y) -> -x to y }
-    inkOutline(smoothSamples(outline.map { (x, y) -> at(x, y) }), IronvellumColors.InkMuted, 1.4.dp.toPx(), seed)
-}
-
-/**
- * Points along the curve [smoothClosed] draws through [points], [steps] per
- * edge. A doubled vertex lands the curve exactly on it, which is how a corner
- * (armpit, crotch) is kept crisp while every other vertex is rounded.
- */
-internal fun smoothSamples(points: List<Offset>, steps: Int = 8): List<Offset> {
-    fun mid(a: Offset, b: Offset) = Offset((a.x + b.x) / 2f, (a.y + b.y) / 2f)
-    val out = ArrayList<Offset>(points.size * steps)
-    var from = mid(points.last(), points.first())
-    out.add(from)
-    points.indices.forEach { i ->
-        val p = points[i]
-        val to = mid(p, points[(i + 1) % points.size])
-        for (k in 1..steps) {
-            val t = k / steps.toFloat()
-            val u = 1f - t
-            val s = Offset(u * u * from.x + 2f * u * t * p.x + t * t * to.x, u * u * from.y + 2f * u * t * p.y + t * t * to.y)
-            if ((s - out.last()).getDistance() > 0.01f) out.add(s)
-        }
-        from = to
-    }
-    return out
+    // The hand-drawn outline goes on last, in the app's one brush. The skin
+    // line is already smooth, so the ink follows its points as they are and
+    // the wander lives in the path rather than in straight chords.
+    inkOutline(outline, IronvellumColors.InkMuted, 1.4.dp.toPx(), seed)
 }
 
 /**
@@ -803,25 +413,6 @@ private fun DrawScope.inkOutline(samples: List<Offset>, color: Color, widthPx: F
             style = Stroke(widthPx * (0.55f + 0.45f * weight), cap = StrokeCap.Round, join = StrokeJoin.Round),
         )
     }
-}
-
-/**
- * Closed, rounded outline through [points]: quadratic curves between edge
- * midpoints with each vertex as control point. Straight polygons read as a
- * wireframe; rounded ones read as muscle.
- */
-private fun smoothClosed(path: Path, points: List<Offset>) {
-    if (points.size < 3) return
-    fun mid(a: Offset, b: Offset) = Offset((a.x + b.x) / 2f, (a.y + b.y) / 2f)
-    val start = mid(points.last(), points.first())
-    path.moveTo(start.x, start.y)
-    points.indices.forEach { i ->
-        val p = points[i]
-        val next = points[(i + 1) % points.size]
-        val m = mid(p, next)
-        path.quadraticTo(p.x, p.y, m.x, m.y)
-    }
-    path.close()
 }
 
 /** Screen-reader summary over every judged muscle, each against its own range. */
