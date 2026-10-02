@@ -301,4 +301,28 @@ class WorkoutShareTest {
         assertTrue(card, card.contains("5 attempts · V4"))
         assertTrue(card, card.contains("45 s"))
         assertFalse(card, card.contains("sent"))
-    }}
+    }
+
+    @Test
+    fun `peaks get one line and none means no line`() {
+        val sets = listOf(set(1, "Push-up", 0, 12), set(2, "Dip", 0, 8, position = 1))
+        val catalogue = mapOf(1L to exercise(1, "Push-up"), 2L to exercise(2, "Dip"))
+        val card = WorkoutShare.format(session(), sets, catalogue, zone, peaks = listOf("Push-up", "Dip"))
+        assertTrue(card, card.contains("New peaks: Push-up, Dip"))
+        assertFalse(WorkoutShare.format(session(), sets, catalogue, zone).contains("New peaks"))
+    }
+
+    @Test
+    fun `totals count done sets and keep held seconds apart from reps`() {
+        val plank = exercise(2, "Plank", ExerciseMetric.HOLD)
+        val totals = WorkoutShare.totals(
+            listOf(
+                set(1, "Push-up", 0, 12),
+                set(1, "Push-up", 1, 10, done = false),
+                set(2, "Plank", 0, 0, durationSec = 40, position = 1),
+            ),
+            mapOf(1L to exercise(1, "Push-up"), 2L to plank),
+        )
+        assertEquals(WorkoutShare.Totals(sets = 2, reps = 12, heldSeconds = 40, movedKg = 0), totals)
+    }
+}

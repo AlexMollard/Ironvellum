@@ -13,15 +13,8 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.TextUnit
 import androidx.core.content.ContextCompat
 import android.content.Context
-import androidx.compose.animation.core.Animatable
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
@@ -83,7 +76,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -115,12 +107,12 @@ import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.domain.isStrength
 import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.StrengthIndex
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
-import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.ShareCardDialog
@@ -138,7 +130,6 @@ import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkBorder
-import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -250,6 +241,10 @@ class SessionViewModel(
     private val _completion = MutableStateFlow<Repository.CompletionResult?>(null)
     val completion: StateFlow<Repository.CompletionResult?> = _completion
     private val _finish = MutableStateFlow(Finish.VICTORY)
+
+    /** What the sealed trial set, frozen at the seal so a rotation keeps it. */
+    private val _peaks = MutableStateFlow<List<SessionPeaks.Peak>>(emptyList())
+    val peaks: StateFlow<List<SessionPeaks.Peak>> = _peaks
     val finish: StateFlow<Finish> = _finish
 
     fun advanceFinish(to: Finish) {
@@ -383,6 +378,9 @@ class SessionViewModel(
         // here, and a genuine failure is surfaced rather than crashing.
         if (_claiming.value) return
         _claiming.value = true
+        // Judged on the live trial's own figures, by the rule its badges used.
+        val metrics = exercises.value.associate { it.id to it.metric }
+        val peaks = SessionPeaks.of(ui.value.sets, records.value, bodyweight.value) { metrics[it.exerciseId] }
         viewModelScope.launch {
             runCatching { repo.completeSession(sessionId) }
                 .onSuccess {
@@ -393,6 +391,7 @@ class SessionViewModel(
                     // Asked after the XP is banked: the answer can never
                     // change what the session paid.
                     _routineUpdate.value = runCatching { repo.routineUpdateFor(sessionId) }.getOrNull()
+                    _peaks.value = peaks
                     _completion.value = it
                 }
                 .onFailure { _claiming.value = false }
@@ -458,6 +457,7 @@ fun SessionScreen(
     val routineUpdate by viewModel.routineUpdate.collectAsStateWithLifecycle()
     val completion by viewModel.completion.collectAsStateWithLifecycle()
     val finish by viewModel.finish.collectAsStateWithLifecycle()
+    val peaks by viewModel.peaks.collectAsStateWithLifecycle()
     val claiming by viewModel.claiming.collectAsStateWithLifecycle()
     val lastLogged by viewModel.lastLogged.collectAsStateWithLifecycle()
     val reasons by viewModel.reasons.collectAsStateWithLifecycle()
@@ -1118,6 +1118,9 @@ fun SessionScreen(
         when (finish) {
             SessionViewModel.Finish.VICTORY -> VictoryOverlay(
                 result = result,
+                title = session.title.ifBlank { session.label },
+                peaks = peaks,
+                totals = remember(ui.sets, exercises) { WorkoutShare.totals(ui.sets, exercises.associateBy { it.id }) },
                 onShare = {
                     shareText = WorkoutShare.format(
                         // The session row in the flow may not have refreshed yet;
@@ -1129,6 +1132,7 @@ fun SessionScreen(
                         ),
                         ui.sets,
                         exercises.associateBy { it.id },
+                        peaks = peaks.map { it.exerciseName },
                     )
                 },
                 onContinue = {
@@ -1198,154 +1202,6 @@ private fun awardsFor(result: Repository.CompletionResult, sex: Sex): List<Achie
                 name = title.name,
                 subtitle = title.describeFor(sex).uppercase(),
             ),
-        )
-    }
-}
-
-@Composable
-private fun VictoryOverlay(
-    result: Repository.CompletionResult,
-    onShare: () -> Unit,
-    onContinue: () -> Unit,
-) {
-    val scale = remember { Animatable(0.6f) }
-    val appear = remember { Animatable(0f) }
-    val xpShown = remember { Animatable(0f) }
-    LaunchedEffect(Unit) {
-        launch { scale.animateTo(1f, spring(dampingRatio = 0.45f, stiffness = 380f)) }
-        launch { appear.animateTo(1f, tween(350)) }
-        launch { xpShown.animateTo(result.xpAwarded.toFloat(), tween(1000)) }
-    }
-    val sparkle = rememberInfiniteTransition(label = "sparkle")
-    val rise by sparkle.animateFloat(
-        initialValue = 1f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(tween(1600)),
-        label = "rise",
-    )
-    val classUp = result.classAfter != result.classBefore
-    val levelUp = result.levelAfter > result.levelBefore
-
-    Dialog(
-        onDismissRequest = onContinue,
-        properties = DialogProperties(usePlatformDefaultWidth = false),
-    ) {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(Color(0xD005070A)),
-            contentAlignment = Alignment.Center,
-        ) {
-            Canvas(Modifier.fillMaxSize()) {
-                repeat(14) { i ->
-                    val seed = i * 0.618f
-                    val x = ((seed * 7.13f) % 1f) * size.width
-                    val cycle = (rise + seed) % 1f
-                    val y = cycle * size.height
-                    val alpha = (1f - cycle) * 0.8f
-                    // Brushed dots; colour alpha carries the rise-fade.
-                    inkDot(
-                        center = androidx.compose.ui.geometry.Offset(x, y),
-                        radius = (2.5f + (i % 3)) * 2f,
-                        color = (if (i % 3 == 0) IronvellumColors.SovereignGold else IronvellumColors.SystemGreen).copy(alpha = alpha),
-                        seed = i,
-                    )
-                }
-            }
-            InkPanel(
-                Modifier
-                    .padding(horizontal = 28.dp)
-                    .fillMaxWidth()
-                    .graphicsLayer {
-                        scaleX = scale.value
-                        scaleY = scale.value
-                        alpha = appear.value
-                    },
-                accent = IronvellumColors.SovereignGold,
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        "SEALED",
-                        style = MaterialTheme.typography.displaySmall,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 10.sp,
-                        color = IronvellumColors.SovereignGold,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        "+${xpShown.value.toInt()} XP",
-                        style = MaterialTheme.typography.displaySmall,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White,
-                    )
-                    // Level progress, not the running total: on a first run
-                    // the total is the awarded figure and read as a repeat.
-                    val progress = Xp.progress(result.totalXp)
-                    Text(
-                        "\u23F1 ${result.durationMinutes} min · LEVEL ${progress.level}" +
-                            " · ${progress.intoLevel}/${progress.needed} XP",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = IronvellumColors.InkMuted,
-                    )
-                    Spacer(Modifier.height(12.dp))
-                    if (result.questBonus) {
-                        RewardRow("TODAY'S TRIAL", "+${Xp.QUEST_BONUS} bonus")
-                        Spacer(Modifier.height(6.dp))
-                    }
-                    if (levelUp) {
-                        RewardRow("LEVEL UP", "${result.levelBefore} → ${result.levelAfter}")
-                        Spacer(Modifier.height(6.dp))
-                    }
-                    if (classUp) {
-                        RewardRow("ASCENDED", result.classAfter)
-                        Spacer(Modifier.height(6.dp))
-                    }
-                    result.newTitles.filter { it.name.isNotBlank() }.forEach { title ->
-                        RewardRow("DEED EARNED", title.name)
-                        Spacer(Modifier.height(4.dp))
-                    }
-                    Spacer(Modifier.height(14.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        IronvellumButton(
-                            label = "Share",
-                            quiet = true,
-                            onClick = onShare,
-                            modifier = Modifier.weight(1f),
-                        )
-                        IronvellumButton(
-                            label = "Continue",
-                            onClick = onContinue,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun RewardRow(label: String, value: String) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = 2.sp,
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.titleSmall,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
         )
     }
 }
