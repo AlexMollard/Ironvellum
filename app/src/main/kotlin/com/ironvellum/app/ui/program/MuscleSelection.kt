@@ -43,13 +43,21 @@ internal fun riteMuscleLine(muscle: Muscle, sets: Double, riteName: String): Str
 )
 
 /**
- * The routine's figure: the week's sets against the muscle's own target floor - "Hamstrings · 6 / 10 sets
- * this week". A muscle the map does not judge (the neck) has no target, so it shows just its sets.
+ * The routine's figure: the week's sets against the muscle's own target range - "Hamstrings · 6 sets
+ * this week · target 12–20". A muscle the map does not judge (the neck) has no target, so it shows just its sets.
  */
 internal fun coverageMuscleLine(muscle: Muscle, sets: Double, goal: CoverageGoal): String {
     val count = trimSets(sets)
     val fact = if (muscle in JUDGED) {
-        "$count / ${trimSets(rangeFor(muscle, goal).start)} sets this week"
+        // The range, not just its floor: "20 / 8" read as a broken fraction once a muscle passed it.
+        val range = rangeFor(muscle, goal)
+        // A helper's range is open-ended (a huge sentinel ceiling), so it reads as a floor.
+        val target = if (range.endInclusive < OPEN_ENDED_SETS && range.endInclusive > range.start) {
+            "${trimSets(range.start)}–${trimSets(range.endInclusive)}"
+        } else {
+            "${trimSets(range.start)}+"
+        }
+        "$count ${if (count == "1") "set" else "sets"} this week · target $target"
     } else {
         "$count ${if (count == "1") "set" else "sets"} this week"
     }
@@ -78,3 +86,6 @@ internal fun ritesTraining(presets: List<PlannedPreset>, muscle: Muscle): List<R
         }.sortedByDescending { it.credited }
         if (exercises.isEmpty()) null else RiteContribution(preset.name, exercises)
     }.sortedByDescending { it.credited }
+
+/** A weekly ceiling at or past this many sets is no ceiling at all. */
+private const val OPEN_ENDED_SETS = 100.0
