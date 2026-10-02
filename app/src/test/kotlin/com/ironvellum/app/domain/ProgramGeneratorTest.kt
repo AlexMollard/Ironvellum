@@ -75,6 +75,15 @@ class ProgramGeneratorTest {
         )
     }
 
+    @Test
+    fun `no generated week adds volume for the neck`() {
+        // The neck is on the figure but has no weekly target, so nothing may chase it.
+        allPlans().forEach { plan ->
+            assertEquals(0.0, volumeOf(plan)[Muscle.NECK] ?: 0.0, 0.0)
+            assertTrue("note names the neck: ${plan.note}", "neck" !in plan.note.lowercase())
+        }
+    }
+
     // ------------------------------------------------- acceptance example 1
 
     @Test

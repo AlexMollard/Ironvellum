@@ -95,7 +95,9 @@ enum class TrainingSplit(val label: String, val dayOptions: List<Int>) {
  * chest is over-served. Declared in display order. The chest is split into
  * its clavicular (upper), sternal (mid) and costal (lower) regions, and the
  * upper back into the rhomboids that rows aim at and the whole trapezius,
- * which every pull, row, shrug and overhead lockout works in part. Never
+ * which every pull, row, shrug and overhead lockout works in part. NECK is
+ * on the figure but in neither [ProgramRules.TRACKED] nor [ProgramRules.HELPERS]:
+ * it has no weekly target, so nothing is ever added to chase it. Never
  * persisted, so renames are data-safe.
  */
 enum class Muscle(val label: String) {
@@ -105,6 +107,7 @@ enum class Muscle(val label: String) {
     LATS("Lats"),
     RHOMBOIDS("Rhomboids"),
     TRAPS("Traps"),
+    NECK("Neck"),
     FRONT_DELTS("Front delts"),
     SIDE_DELTS("Side delts"),
     REAR_DELTS("Rear delts"),
