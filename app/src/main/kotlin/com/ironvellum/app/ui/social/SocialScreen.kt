@@ -34,8 +34,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.IronvellumTabBar
-import com.ironvellum.app.ui.components.IronvellumTabItem
+import com.ironvellum.app.ui.components.InkTabs
 
 private enum class GuildTab(val label: String) {
     FEED("TIDINGS"),
@@ -141,10 +140,9 @@ fun SocialScreen(
     // pills; the tabs themselves add no outer padding or screen title.
     Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
         Spacer(Modifier.height(18.dp))
-        IronvellumTabBar(
-            items = GuildTab.entries.map {
-                IronvellumTabItem(it.label, if (it == GuildTab.INBOX) unread else 0)
-            },
+        InkTabs(
+            labels = GuildTab.entries.map { it.label },
+            badges = GuildTab.entries.map { if (it == GuildTab.INBOX) unread else 0 },
             selectedIndex = tab.ordinal,
             onSelect = { tab = GuildTab.entries[it] },
         )

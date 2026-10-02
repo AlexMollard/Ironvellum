@@ -45,7 +45,7 @@ import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.ui.components.InkPanel
-import com.ironvellum.app.ui.components.InkSegmented
+import com.ironvellum.app.ui.components.InkTabs
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.ironvellumRepository
@@ -219,10 +219,10 @@ fun MuscleCoverageScreen(
 
         // The switch comes first: drawn after the empty check, an empty LAST
         // 7 DAYS view hid it and the lifter could not get back to PLANNED.
-        InkSegmented(
-            options = CoverageView.entries.map { it to it.label },
-            selected = view,
-            onPick = { view = it },
+        InkTabs(
+            labels = CoverageView.entries.map { it.label },
+            selectedIndex = view.ordinal,
+            onSelect = { view = CoverageView.entries[it] },
         )
         Spacer(Modifier.height(12.dp))
 

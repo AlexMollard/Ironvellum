@@ -163,12 +163,8 @@ fun InkPanel(
 }
 
 /**
- * The tab pill used by every hub (Allies, Codex, and anything added later).
- *
- * There were two private copies of this, and they had already drifted: one drew
- * a gradient with a border, the other a flat fill - while its own comment
- * claimed the two hubs "read as siblings". Converting both to the ink shape
- * would have preserved that lie, so they share one implementation instead.
+ * A pill for choosing one value from a short list (the report-reason choice). It does not
+ * switch pages: tabs that do are [InkTabs]. One shared implementation, so every pill reads alike.
  */
 @Composable
 fun IronvellumTabPill(
@@ -609,7 +605,8 @@ fun InkSpinner(
 }
 
 /**
- * The app's segmented picker, drawn as ink.
+ * The app's segmented picker, drawn as ink, for CHOOSING AN OPTION (ON/OFF, units, a
+ * who-sees-this answer). A control that shows a different page or view is [InkTabs] instead.
  *
  * There were five hand-rolled copies of this (auth mode, sex, training mode,
  * appearance, stats tabs), each a Row clipped to a shape with a fill per

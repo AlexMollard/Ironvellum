@@ -60,7 +60,7 @@ import androidx.lifecycle.viewModelScope
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkListRow
 import androidx.compose.material.icons.outlined.History
-import com.ironvellum.app.ui.components.InkSegmented
+import com.ironvellum.app.ui.components.InkTabs
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.BarChart
@@ -324,10 +324,10 @@ fun StatsScreen(
             }
             Spacer(Modifier.height(8.dp))
 
-            InkSegmented(
-                options = StatsTab.entries.map { it to it.label },
-                selected = tab,
-                onPick = { tabIndex = it.ordinal },
+            InkTabs(
+                labels = StatsTab.entries.map { it.label },
+                selectedIndex = tabIndex,
+                onSelect = { tabIndex = it },
                 modifier = Modifier.padding(horizontal = LedgerSpace.Gutter),
             )
 

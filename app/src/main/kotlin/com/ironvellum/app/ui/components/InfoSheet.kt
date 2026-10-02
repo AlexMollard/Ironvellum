@@ -1,6 +1,9 @@
 package com.ironvellum.app.ui.components
 
+import android.content.Context
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,6 +33,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,6 +50,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.paneTitle
@@ -61,6 +66,8 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkHairline
+import androidx.core.content.edit
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -136,15 +143,27 @@ fun InfoSheet(
             if (paged) {
                 val pagerState = rememberPagerState { built.size }
                 val scope = rememberCoroutineScope()
+                val context = LocalContext.current
+                // The very first paged sheet a lifter opens leans toward page 2 and back, once, so
+                // the swipe is discoverable. Not under reduced motion; marked seen as it starts.
+                LaunchedEffect(pagerState) {
+                    if (InfoSheetHints.peeked(context) || !animatorsOn(context)) return@LaunchedEffect
+                    delay(PEEK_DELAY_MS)
+                    val nudge = pagerState.layoutInfo.pageSize * PEEK_FRACTION
+                    if (nudge <= 0f) return@LaunchedEffect
+                    InfoSheetHints.markPeeked(context)
+                    pagerState.animateScrollBy(nudge, tween(PEEK_LEG_MS))
+                    pagerState.animateScrollBy(-nudge, tween(PEEK_LEG_MS))
+                }
                 Column(Modifier.padding(horizontal = LedgerSpace.Gutter)) {
                     Spacer(Modifier.height(20.dp))
                     SheetHeader(title, subtitle, subtitleColor, chips, compact, titleColor)
-                    Spacer(Modifier.height(14.dp))
-                    IronvellumTabBar(
-                        items = built.map { IronvellumTabItem(it.label) },
+                    Spacer(Modifier.height(6.dp))
+                    InkTabs(
+                        labels = built.map { it.label },
                         selectedIndex = pagerState.currentPage,
                         onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
-                        announcePosition = true,
+                        indicatorPosition = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
                     )
                 }
                 HorizontalPager(state = pagerState, modifier = Modifier.weight(1f).fillMaxWidth()) { index ->
@@ -191,6 +210,23 @@ fun InfoSheet(
                 Spacer(Modifier.height(4.dp))
             }
         }
+    }
+}
+
+private const val PEEK_DELAY_MS = 500L
+private const val PEEK_LEG_MS = 300
+private const val PEEK_FRACTION = 0.15f
+
+/** Which one-time hints the lifter has already seen. */
+private object InfoSheetHints {
+    private const val PREFS = "info_sheet_hints"
+    private const val KEY_PEEKED = "page_peek"
+
+    fun peeked(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_PEEKED, false)
+
+    fun markPeeked(context: Context) {
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit { putBoolean(KEY_PEEKED, true) }
     }
 }
 

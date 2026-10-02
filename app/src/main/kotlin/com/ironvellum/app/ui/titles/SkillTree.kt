@@ -1,6 +1,5 @@
 package com.ironvellum.app.ui.titles
 
-import android.provider.Settings
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.runtime.State
@@ -60,6 +59,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.InkCircleShape
 import com.ironvellum.app.ui.theme.InkEdgeShape
@@ -216,7 +216,7 @@ internal fun labelLines(name: String): Int = if (name.length <= 12) 1 else 2
 private fun rememberBreath(): State<Float> {
     val context = LocalContext.current
     val animated = remember {
-        Settings.Global.getFloat(context.contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) > 0f
+        animatorsOn(context)
     }
     if (!animated) return remember { mutableFloatStateOf(0.5f) }
     return rememberInfiniteTransition(label = "treeBreath").animateFloat(

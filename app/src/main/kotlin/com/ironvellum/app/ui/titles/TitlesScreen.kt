@@ -59,8 +59,7 @@ import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.ironvellumRepository
-import com.ironvellum.app.ui.components.IronvellumTabBar
-import com.ironvellum.app.ui.components.IronvellumTabItem
+import com.ironvellum.app.ui.components.InkTabs
 import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.plural
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -369,8 +368,8 @@ fun TitlesScreen(
         Spacer(Modifier.height(12.dp))
         // One persistent selector row: the three tabs. Paths are chosen from
         // the grid below.
-        IronvellumTabBar(
-            items = listOf(IronvellumTabItem("DEEDS"), IronvellumTabItem("PATHS"), IronvellumTabItem("JOURNAL")),
+        InkTabs(
+            labels = listOf("DEEDS", "PATHS", "JOURNAL"),
             selectedIndex = tab.ordinal,
             onSelect = { tab = TitlesTab.entries[it] },
         )
