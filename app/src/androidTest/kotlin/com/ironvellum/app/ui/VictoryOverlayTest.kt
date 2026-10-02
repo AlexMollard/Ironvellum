@@ -1,16 +1,11 @@
 package com.ironvellum.app.ui
 
-import android.graphics.Bitmap
-import androidx.compose.ui.graphics.asAndroidBitmap
-import androidx.compose.ui.test.captureToImage
-import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.SetRecords
@@ -21,7 +16,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.io.File
 
 /**
  * The trial report: peaks lead when there are any and vanish when there are
@@ -80,18 +74,10 @@ class VictoryOverlayTest {
         compose.mainClock.advanceTimeBy(6_000)
     }
 
-    private fun screenshot(name: String) {
-        // Capture forces a redraw, which a paused clock never delivers.
-        compose.mainClock.autoAdvance = true
-        val bitmap = compose.onNode(isDialog()).captureToImage().asAndroidBitmap()
-        val dir = InstrumentationRegistry.getInstrumentation().targetContext.getExternalFilesDir(null)
-        File(dir, "victory-$name.png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    }
-
     @Test
     fun peaksLeadTheReport() {
         show(peaks)
-        screenshot("peaks")
+        compose.saveDialogScreenshot("victory-peaks")
         compose.onNodeWithText("NEW PEAKS · 3").assertExists()
         // A peak row reads as one sentence to TalkBack.
         compose.onNodeWithContentDescription(
@@ -105,7 +91,7 @@ class VictoryOverlayTest {
     @Test
     fun noPeaksMeansNoPeakSection() {
         show(emptyList())
-        screenshot("no-peaks")
+        compose.saveDialogScreenshot("victory-no-peaks")
         assertEquals(0, compose.onAllNodesWithText("NEW PEAK", substring = true).fetchSemanticsNodes().size)
         compose.onNodeWithText("SEALED").assertExists()
     }

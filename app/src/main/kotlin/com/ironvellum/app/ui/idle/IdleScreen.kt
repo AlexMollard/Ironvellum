@@ -82,6 +82,7 @@ import com.ironvellum.app.domain.RewardRarity
 import com.ironvellum.app.domain.RollResult
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
+import com.ironvellum.app.ui.components.Reveal
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkPanel
@@ -289,11 +290,11 @@ fun IdleScreen(
  * weights of silence. Accent uses only sanctioned palette tokens.
  */
 private fun achievementFor(result: RollResult): Achievement {
-    val (tagline, accent) = when (result.rarity) {
-        RewardRarity.Common -> "A WHISPER IN THE DARK" to IronvellumColors.InkMuted
-        RewardRarity.Rare -> "THE DARK STIRS" to IronvellumColors.SystemGreen
-        RewardRarity.Epic -> "THE DARK BENDS" to IronvellumColors.Emerald
-        RewardRarity.Masterwork -> "THE LEDGER ANSWERS" to IronvellumColors.SovereignGold
+    val (narrator, reveal) = when (result.rarity) {
+        RewardRarity.Common -> "A WHISPER IN THE DARK" to Reveal.Common
+        RewardRarity.Rare -> "THE DARK STIRS" to Reveal.Rare
+        RewardRarity.Epic -> "THE DARK BENDS" to Reveal.Fabled
+        RewardRarity.Masterwork -> "THE LEDGER ANSWERS" to Reveal.Masterwork
     }
     val notes = when (val reward = result.reward) {
         is Reward.Figures -> listOf("THE VEIL +${reward.count} ECHOES")
@@ -302,11 +303,11 @@ private fun achievementFor(result: RollResult): Achievement {
     }
     return Achievement(
         banner = "INSCRIBED",
-        tagline = tagline,
+        tagline = rarityLabel(result.rarity),
         name = rewardName(result.reward),
-        subtitle = rarityLabel(result.rarity),
         notes = notes,
-        accent = accent,
+        reveal = reveal,
+        narrator = narrator,
         // Only relics. A figures payout is a number, not an object, and a
         // crest already has its own plate treatment in the collection — a
         // generic sigil there would misrepresent the frame that was won.

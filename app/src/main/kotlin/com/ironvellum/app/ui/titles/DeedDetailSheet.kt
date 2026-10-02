@@ -27,6 +27,7 @@ import com.ironvellum.app.ui.components.InfoProgress
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.theme.InkCircleShape
+import com.ironvellum.app.ui.components.reveal
 import com.ironvellum.app.ui.theme.IronvellumColors
 import java.util.Locale
 
@@ -35,12 +36,7 @@ import java.util.Locale
  * inscriptions: the rarest deed is the most earned thing there is. Worn is
  * marked in words (WORN), never by colour alone, so the two cannot be confused.
  */
-internal fun rarityColor(rarity: TitleRarity): Color = when (rarity) {
-    TitleRarity.Common -> IronvellumColors.InkMuted
-    TitleRarity.Rare -> IronvellumColors.SystemGreen
-    TitleRarity.Epic -> IronvellumColors.Emerald
-    TitleRarity.Masterwork -> IronvellumColors.SovereignGold
-}
+internal fun rarityColor(rarity: TitleRarity): Color = rarity.reveal().ink
 
 /** A small accent dot and the tier's name; the word carries the meaning, the colour only echoes it. */
 @Composable

@@ -58,6 +58,9 @@ import com.ironvellum.app.domain.UnlockedTitle
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
+import com.ironvellum.app.ui.components.Reveal
+import com.ironvellum.app.ui.components.deedAchievement
+import com.ironvellum.app.ui.components.levelUpAchievement
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.ironvellumRepository
@@ -453,18 +456,12 @@ fun TitlesScreen(
                         subtitle = "${result.skill.line.uppercase()} PATH",
                         xp = result.xpAwarded,
                         notes = result.unlockedNext.map { "TECHNIQUE OPENED · ${it.name}" },
+                        reveal = Reveal.Fabled,
+                        narrator = "THE LEDGER RECORDS A TECHNIQUE",
                     ),
                 )
                 if (result.levelAfter > result.levelBefore) {
-                    add(
-                        Achievement(
-                            banner = "LEVEL UP",
-                            tagline = "XP LEVEL",
-                            name = "Level ${result.levelAfter}",
-                            subtitle = "${result.totalXp} XP TOTAL",
-                            accent = IronvellumColors.SystemGreen,
-                        ),
-                    )
+                    add(levelUpAchievement(result.levelBefore, result.levelAfter, result.totalXp))
                 }
                 if (result.levelAfter > result.levelBefore) {
                     add(
@@ -477,16 +474,10 @@ fun TitlesScreen(
                         ),
                     )
                 }
-                result.newTitles.forEach { title ->
-                    add(
-                        Achievement(
-                            banner = "DEED EARNED",
-                            name = title.name,
-                            subtitle = "${title.rarity.label.uppercase()} · ${title.describeFor(ui.sex).uppercase()}",
-                        ),
-                    )
-                }
+                result.newTitles.forEach { add(deedAchievement(it, ui.sex)) }
             },
+            wornTitleId = ui.currentTitleId,
+            onWear = viewModel::equip,
             onDone = {
                 viewModel.dismissClaim()
                 // A technique tapped on the way opens once every page is seen.
