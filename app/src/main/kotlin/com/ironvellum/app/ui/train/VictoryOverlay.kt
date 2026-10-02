@@ -413,8 +413,11 @@ private fun XpPanel(result: Repository.CompletionResult, xpShown: Int, levelPos:
         )
         val rewards = buildList {
             if (result.questBonus) add("TODAY'S TRIAL" to "+${Xp.QUEST_BONUS} bonus")
-            if (result.levelAfter > result.levelBefore) add("LEVEL UP" to "${result.levelBefore} → ${result.levelAfter}")
-            if (result.classAfter != result.classBefore) add("ASCENDED" to result.classAfter)
+            if (result.levelAfter > result.levelBefore) {
+                // Ascension is a band of levels: crossing one is part of this line, not a second reward.
+                val tier = result.classAfter.takeIf { it != result.classBefore }?.let { " · ${it.uppercase()}" }.orEmpty()
+                add("LEVEL UP" to "${result.levelBefore} → ${result.levelAfter}$tier")
+            }
             result.newTitles.filter { it.name.isNotBlank() }.forEach { add("DEED EARNED" to it.name) }
         }
         if (rewards.isNotEmpty()) Spacer(Modifier.height(10.dp))

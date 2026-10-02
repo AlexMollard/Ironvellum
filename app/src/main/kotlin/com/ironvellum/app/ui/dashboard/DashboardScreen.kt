@@ -437,8 +437,8 @@ fun DashboardScreen(
                             maxLines = 1,
                         )
                         val worn = profile?.currentTitleId?.let { Titles.byId(it)?.name }
-                        // Strength Rank and ascension are two labelled values,
-                        // never joined into one phrase.
+                        // Strength Rank only: ascension follows level, so it
+                        // sits under the XP rail with the level it comes from.
                         Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f, fill = false)) {
                         Text(
@@ -452,15 +452,6 @@ fun DashboardScreen(
                             color = IronvellumColors.SystemGreen,
                             // Earned, so it wraps at a large font scale
                             // rather than clipping mid-word.
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        Text(
-                            "ASCENSION · ${ArmyClass.forLevel(progress.level).title}",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = ChakraPetch,
-                            letterSpacing = 0.sp,
-                            color = IronvellumColors.SystemGreen,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -516,9 +507,22 @@ fun DashboardScreen(
                 }
                 Spacer(Modifier.height(10.dp))
                 XpBar(progress.intoLevel, progress.needed)
-                // No caption under the rail. It read "25 / 200 XP", then "LV 2
-                // → 3", then "175 XP TO GO" - one fact three ways, when the
-                // sigil beside it already stamps the level.
+                // The rail's one caption is the ascension, not the XP: "25 /
+                // 200 XP", "LV 2 → 3" and "175 XP TO GO" were one fact three
+                // ways beside the sigil. The tier ahead says what levels lead to.
+                val next = ArmyClass.nextFor(progress.level)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    ArmyClass.forLevel(progress.level).title.uppercase() +
+                        next?.let { " · ${it.title.uppercase()} AT ${it.level}" }.orEmpty(),
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.align(Alignment.End),
+                )
             }
         }
 

@@ -55,6 +55,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.TitleRarity
@@ -73,8 +74,8 @@ import kotlin.random.Random
 
 /**
  * How the Ledger writes a moment down. The four rarities escalate the ink -
- * bone, moss with an iron seal, emerald that bleeds, gold leaf - and the last
- * two have pages of their own: a level turns a page, an ascension amends a name.
+ * bone, moss with an iron seal, emerald that bleeds, gold leaf - and a level
+ * has a page of its own that turns, amending the name when it crosses a tier.
  */
 enum class Reveal(val ink: Color, internal val millis: Int) {
     Common(IronvellumColors.InkMuted, 1_100),
@@ -82,10 +83,9 @@ enum class Reveal(val ink: Color, internal val millis: Int) {
     Fabled(IronvellumColors.Emerald, 1_900),
     Masterwork(IronvellumColors.SovereignGold, 2_300),
     LevelUp(IronvellumColors.Emerald, 1_300),
-    Ascension(IronvellumColors.SovereignGold, 1_800),
     ;
 
-    internal val sealed: Boolean get() = this == Rare || this == Fabled || this == Masterwork || this == Ascension
+    internal val sealed: Boolean get() = this == Rare || this == Fabled || this == Masterwork
 }
 
 fun TitleRarity.reveal(): Reveal = when (this) {
@@ -95,7 +95,7 @@ fun TitleRarity.reveal(): Reveal = when (this) {
     TitleRarity.Masterwork -> Reveal.Masterwork
 }
 
-/** Anything worth a full-screen moment: deeds, techniques, levels, ascensions, inscriptions. */
+/** Anything worth a full-screen moment: deeds, techniques, levels, inscriptions. */
 data class Achievement(
     val banner: String,
     val name: String,
@@ -117,8 +117,10 @@ data class Achievement(
     val narrator: String = "",
     /** A deed's title, which the reveal offers to wear. */
     val titleId: String? = null,
-    /** What this replaces: the old level, the old ascension. */
+    /** What this replaces: the old level. */
     val from: String? = null,
+    /** A level that crosses a tier: the old ascension and the new, on the same page. */
+    val ascension: Pair<String, String>? = null,
 )
 
 /** The one way a deed is announced, wherever it was earned. */
@@ -132,24 +134,25 @@ fun deedAchievement(def: TitleDef, sex: Sex): Achievement = Achievement(
     titleId = def.id,
 )
 
-fun levelUpAchievement(levelBefore: Int, levelAfter: Int, totalXp: Long): Achievement = Achievement(
-    banner = "LEVEL UP",
-    name = "$levelAfter",
-    tagline = "LEVEL",
-    subtitle = String.format(Locale.ENGLISH, "%,d XP TOTAL", totalXp),
-    reveal = Reveal.LevelUp,
-    narrator = "THE LEDGER TURNS A PAGE",
-    from = "$levelBefore",
-)
-
-fun ascensionAchievement(classBefore: String, classAfter: String): Achievement = Achievement(
-    banner = "ASCENDED",
-    name = classAfter,
-    tagline = "ASCENSION",
-    reveal = Reveal.Ascension,
-    narrator = "THE LEDGER AMENDS YOUR NAME",
-    from = classBefore,
-)
+/**
+ * Ascension is a band of levels, so a level that crosses a tier announces it
+ * on its own page rather than as a second moment.
+ */
+fun levelUpAchievement(levelBefore: Int, levelAfter: Int, totalXp: Long): Achievement {
+    val tierBefore = ArmyClass.forLevel(levelBefore).title
+    val tierAfter = ArmyClass.forLevel(levelAfter).title
+    val ascends = tierAfter != tierBefore
+    return Achievement(
+        banner = "LEVEL UP",
+        name = "$levelAfter",
+        tagline = "LEVEL",
+        subtitle = String.format(Locale.ENGLISH, "%,d XP TOTAL", totalXp),
+        reveal = Reveal.LevelUp,
+        narrator = if (ascends) "THE LEDGER AMENDS YOUR NAME" else "THE LEDGER TURNS A PAGE",
+        from = "$levelBefore",
+        ascension = (tierBefore to tierAfter).takeIf { ascends },
+    )
+}
 
 /** 0 before [a], 1 after [b], linear between: one beat of a reveal's timeline. */
 private fun beat(p: Float, a: Float, b: Float): Float = ((p - a) / (b - a)).coerceIn(0f, 1f)
@@ -258,7 +261,6 @@ fun AchievementOverlay(
                         ) {
                             when (item.reveal) {
                                 Reveal.LevelUp -> PageTurn(item, p)
-                                Reveal.Ascension -> Amendment(item, p, ink)
                                 else -> Inscription(item, p, ink)
                             }
                         }
@@ -320,7 +322,7 @@ private fun hapticsFor(reveal: Reveal): List<Pair<Float, HapticFeedbackType>> {
     val writing = listOf(0.2f, 0.32f, 0.44f).map { it to HapticFeedbackType.SegmentFrequentTick }
     return when (reveal) {
         Reveal.Common -> writing + (0.6f to HapticFeedbackType.SegmentTick)
-        Reveal.Rare, Reveal.Ascension -> writing + (SEAL_LANDS to HapticFeedbackType.Confirm)
+        Reveal.Rare -> writing + (SEAL_LANDS to HapticFeedbackType.Confirm)
         Reveal.Fabled -> writing + (SEAL_LANDS to HapticFeedbackType.Confirm) + (SEAL_LANDS + 0.07f to HapticFeedbackType.Confirm)
         Reveal.Masterwork -> writing + (SEAL_LANDS to HapticFeedbackType.LongPress)
         Reveal.LevelUp -> listOf(0.3f to HapticFeedbackType.SegmentTick, 0.75f to HapticFeedbackType.Confirm)
@@ -620,6 +622,7 @@ private fun PageTurn(item: Achievement, p: Float) {
             modifier = Modifier.fillMaxWidth(),
         )
     }
+    item.ascension?.let { (old, new) -> Amendment(old, new, p) }
 }
 
 @Composable
@@ -647,62 +650,48 @@ private fun LevelLeaf(label: String, number: String, color: Color, modifier: Mod
     }
 }
 
-/** An ascension: the old name struck through in ink, the new one written beneath, then sealed. */
+/** The level's tier changing: the old ascension struck through, the new one written beneath. */
 @Composable
-private fun Amendment(item: Achievement, p: Float, ink: Color) {
-    Box(Modifier.fillMaxWidth()) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            Text(
-                item.tagline,
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                letterSpacing = IronvellumTracking.SectionHeader,
-                color = IronvellumColors.InkMuted,
-            )
-            item.from?.let { old ->
-                Spacer(Modifier.height(10.dp))
-                val strike = beat(p, 0.15f, 0.4f)
-                Text(
-                    old.uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.drawWithContent {
-                        drawContent()
-                        if (strike > 0f) {
-                            val y = size.height * 0.55f
-                            inkStroke(
-                                Offset(-4.dp.toPx(), y),
-                                Offset(-4.dp.toPx() + (size.width + 8.dp.toPx()) * strike, y - 2.dp.toPx()),
-                                IronvellumColors.Ink,
-                                2.4.dp.toPx(),
-                                seed = old.length,
-                            )
-                        }
-                    },
-                )
-            }
-            Spacer(Modifier.height(8.dp))
-            WrittenName(item.name.uppercase(), beat(p, 0.45f, 0.72f), item.reveal, ink, sheen = 0f)
-            if (item.subtitle.isNotBlank()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    item.subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-            }
-        }
-        Seal(Modifier.align(Alignment.TopEnd), item.reveal, ink, beat(p, SEAL_AT, SEAL_LANDS))
+private fun Amendment(old: String, new: String, p: Float) {
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 14.dp, bottom = 6.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            "YOU ASCEND",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = IronvellumTracking.SectionHeader,
+            color = IronvellumColors.InkMuted,
+        )
+        Spacer(Modifier.height(8.dp))
+        val strike = beat(p, 0.45f, 0.65f)
+        Text(
+            old.uppercase(),
+            style = MaterialTheme.typography.titleMedium,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.SemiBold,
+            letterSpacing = IronvellumTracking.InlineLabel,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.drawWithContent {
+                drawContent()
+                if (strike > 0f) {
+                    val y = size.height * 0.55f
+                    inkStroke(
+                        Offset(-4.dp.toPx(), y),
+                        Offset(-4.dp.toPx() + (size.width + 8.dp.toPx()) * strike, y - 2.dp.toPx()),
+                        IronvellumColors.Ink,
+                        2.4.dp.toPx(),
+                        seed = old.length,
+                    )
+                }
+            },
+        )
+        Spacer(Modifier.height(6.dp))
+        WrittenName(new.uppercase(), beat(p, 0.6f, 0.9f), Reveal.LevelUp, IronvellumColors.SovereignGold, sheen = 0f)
     }
 }
 
