@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -177,6 +178,7 @@ fun BodyHeatMap(
     figureHeight: Dp = 320.dp,
     selection: MutableState<Muscle?> = rememberMuscleSelection(),
     lineFor: (Muscle) -> String = { muscleLine(it) },
+    interactive: Boolean = true,
 ) {
     val description = coverageSummary(volume, goal)
     val figure = BodyFigures.of(LocalBodySex.current)
@@ -184,15 +186,11 @@ fun BodyHeatMap(
         val sets = volume[muscle] ?: 0.0
         regionFill(levelOf(muscle, sets, goal), sets, rangeFor(muscle, goal))
     }
-    Column(modifier.semantics { contentDescription = description }) {
-        TappableFigure(figure, figureHeight, fill, selection.value, { selection.value = it }, lineFor)
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp)) {
-            FigureLabel("FRONT", Modifier.weight(1f))
-            FigureLabel("BACK", Modifier.weight(1f))
-        }
-        SelectedMuscleLine(selection.value, lineFor)
-        Legend(Modifier.padding(top = 4.dp))
-    }
+    FigureBlock(
+        figure, figureHeight, fill, selection, lineFor,
+        modifier.semantics { contentDescription = description },
+        interactive = interactive,
+    ) { Legend() }
 }
 
 /** How much of a muscle one exercise works, in the words the figure's legend uses. */
@@ -228,21 +226,9 @@ fun ExerciseMuscleMap(
     val fill = { muscle: Muscle -> shareFill(shares[muscle]) }
     val lineFor = { muscle: Muscle -> exerciseMuscleLine(muscle, shares[muscle], exerciseName) }
     // The muscle nodes speak for the figure; the labels and legend only repeat what the caller's summary says.
-    Column(modifier) {
-        TappableFigure(figure, figureHeight, fill, selection.value, { selection.value = it }, lineFor)
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {}) {
-            FigureLabel("FRONT", Modifier.weight(1f))
-            FigureLabel("BACK", Modifier.weight(1f))
-        }
-        SelectedMuscleLine(selection.value, lineFor)
-        Row(
-            Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {},
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            listOf(1.0 to "MAIN", 0.5 to "ASSIST", null to "NOT WORKED").forEach { (share, label) ->
-                LegendKey(shareFill(share), label)
-            }
+    FigureBlock(figure, figureHeight, fill, selection, lineFor, modifier, quietKey = true) {
+        listOf(1.0 to "MAIN", 0.5 to "ASSIST", null to "NOT WORKED").forEach { (share, label) ->
+            LegendKey(shareFill(share), label)
         }
     }
 }
@@ -277,22 +263,47 @@ fun RiteMuscleMap(
         if (alpha <= 0f) IronvellumColors.Bracket.copy(alpha = 0.55f) else IronvellumColors.Emerald.copy(alpha = alpha)
     }
     val lineFor = { muscle: Muscle -> riteMuscleLine(muscle, sets[muscle] ?: 0.0, riteName) }
+    FigureBlock(figure, figureHeight, fill, selection, lineFor, modifier, quietKey = true) {
+        LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(0.01, 1.0)), "FEWER")
+        LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(1.0, 1.0)), "MORE")
+        LegendKey(IronvellumColors.Bracket.copy(alpha = 0.55f), "NONE")
+    }
+}
+
+/**
+ * Every figure's one layout: FRONT and BACK sit inside the figure over each half, the lit muscle's line
+ * appears only while one is lit, and the colour key is the single row beneath. [quietKey] hides the key
+ * and labels from TalkBack where the muscle nodes and the caller's summary already say it all.
+ */
+@Composable
+private fun FigureBlock(
+    figure: BodyFigure,
+    height: Dp,
+    fill: (Muscle) -> Color,
+    selection: MutableState<Muscle?>,
+    lineFor: (Muscle) -> String,
+    modifier: Modifier,
+    interactive: Boolean = true,
+    quietKey: Boolean = false,
+    key: @Composable RowScope.() -> Unit,
+) {
+    val quiet = if (quietKey) Modifier.clearAndSetSemantics {} else Modifier
     Column(modifier) {
-        TappableFigure(figure, figureHeight, fill, selection.value, { selection.value = it }, lineFor)
-        Row(Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {}) {
-            FigureLabel("FRONT", Modifier.weight(1f))
-            FigureLabel("BACK", Modifier.weight(1f))
+        Box {
+            TappableFigure(figure, height, fill, selection.value, { selection.value = it }, lineFor, interactive = interactive)
+            // Left-aligned in each half so the word clears the head at the half's centre.
+            Row(Modifier.fillMaxWidth().then(quiet)) {
+                FigureLabel("FRONT", Modifier.weight(1f))
+                FigureLabel("BACK", Modifier.weight(1f))
+            }
         }
-        SelectedMuscleLine(selection.value, lineFor)
+        if (interactive && selection.value != null) SelectedMuscleLine(selection.value, lineFor)
         Row(
-            Modifier.fillMaxWidth().padding(top = 4.dp).clearAndSetSemantics {},
+            Modifier.fillMaxWidth().padding(top = 6.dp).then(quiet),
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,
-        ) {
-            LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(0.01, 1.0)), "FEWER")
-            LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(1.0, 1.0)), "MORE")
-            LegendKey(IronvellumColors.Bracket.copy(alpha = 0.55f), "NONE")
-        }
+            content = key,
+        )
     }
 }
 
@@ -427,7 +438,7 @@ private fun FigureLabel(text: String, modifier: Modifier) {
     Text(
         text,
         modifier = modifier,
-        textAlign = TextAlign.Center,
+        textAlign = TextAlign.Start,
         style = MaterialTheme.typography.labelSmall,
         fontFamily = ChakraPetch,
         color = IronvellumColors.InkMuted,
@@ -436,26 +447,20 @@ private fun FigureLabel(text: String, modifier: Modifier) {
 }
 
 @Composable
-private fun Legend(modifier: Modifier = Modifier) {
-    Row(
-        modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceEvenly,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        listOf(
-            CoverageLevel.NONE to "NONE",
-            CoverageLevel.UNDER to "UNDER",
-            CoverageLevel.LIGHT to "LIGHT",
-            CoverageLevel.IN_RANGE to "IN RANGE",
-            CoverageLevel.OVER to "OVER",
-        ).forEach { (level, label) ->
-            val swatch = if (level == CoverageLevel.UNDER) {
-                levelColor(level).copy(alpha = underAlpha(0.6, 0.0..1.0))
-            } else {
-                levelColor(level).copy(alpha = 0.9f)
-            }
-            LegendKey(swatch, label)
+private fun Legend() {
+    listOf(
+        CoverageLevel.NONE to "NONE",
+        CoverageLevel.UNDER to "UNDER",
+        CoverageLevel.LIGHT to "LIGHT",
+        CoverageLevel.IN_RANGE to "IN RANGE",
+        CoverageLevel.OVER to "OVER",
+    ).forEach { (level, label) ->
+        val swatch = if (level == CoverageLevel.UNDER) {
+            levelColor(level).copy(alpha = underAlpha(0.6, 0.0..1.0))
+        } else {
+            levelColor(level).copy(alpha = 0.9f)
         }
+        LegendKey(swatch, label)
     }
 }
 
