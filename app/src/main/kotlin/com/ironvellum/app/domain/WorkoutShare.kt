@@ -23,12 +23,15 @@ object WorkoutShare {
     /**
      * @param exercises catalogue by id, for metric and unit rendering. A set
      *   whose exercise is missing renders as reps, which is the default metric.
+     * @param peaks movements that set a record this trial, in session order.
+     *   Only the victory screen knows them; a later share from history passes none.
      */
     fun format(
         session: WorkoutSession,
         sets: List<SessionSet>,
         exercises: Map<Long, Exercise>,
         zone: ZoneId = ZoneId.systemDefault(),
+        peaks: List<String> = emptyList(),
     ): String = buildString {
         val done = sets.filter { it.done }
         val at = session.completedAtMs ?: session.startedAtMs
@@ -51,21 +54,9 @@ object WorkoutShare {
             append('\n')
         }
 
-        val counted = done.filter { repCounted(exercises[it.exerciseId], it) }
-        val reps = counted.sumOf { it.reps }
-        // Seconds are their own figure, never added to the rep total: doing so
-        // printed "140 reps" for a session that was 65 reps and 75 seconds of
-        // hollow hold.
-        val heldSeconds = done.filter { holdSet(exercises[it.exerciseId], it) }.sumOf { heldSeconds(it) }
-        // Kilograms moved counts only lifts whose load is the whole weight
-        // (a barbell, a dumbbell): a belt on a pull-up is added load on top of
-        // a bodyweight the card does not know, so it would undercount.
-        val moved = counted
-            .filter { exercises[it.exerciseId]?.isWeighted == true }
-            .sumOf { (it.weightKg ?: 0.0) * it.reps }
-            .toInt()
+        val (setCount, reps, heldSeconds, moved) = totals(sets, exercises)
         val effort = buildList {
-            if (done.isNotEmpty()) add("${done.size} ${if (done.size == 1) "set" else "sets"}")
+            if (setCount > 0) add("$setCount ${if (setCount == 1) "set" else "sets"}")
             if (reps > 0) add("${format(reps)} reps")
             if (heldSeconds > 0) add("${format(heldSeconds)}s held")
         }
@@ -77,9 +68,30 @@ object WorkoutShare {
         if (effort.isNotEmpty()) append(effort.joinToString(" \u00B7 ")).append('\n')
         if (load.isNotEmpty()) append(load.joinToString(" \u00B7 ")).append('\n')
         if (session.xpAwarded > 0) append('+').append(format(session.xpAwarded)).append(" XP").append('\n')
+        if (peaks.isNotEmpty()) append("New peaks: ").append(peaks.joinToString(", ")).append('\n')
 
         if (session.note.isNotBlank()) append('\n').append('\u201C').append(session.note.trim()).append('\u201D').append('\n')
     }.trimEnd('\n')
+
+    /** A trial's done-set figures; the card and the victory screen print the same ones. */
+    data class Totals(val sets: Int, val reps: Int, val heldSeconds: Int, val movedKg: Int)
+
+    fun totals(sets: List<SessionSet>, exercises: Map<Long, Exercise>): Totals {
+        val done = sets.filter { it.done }
+        val counted = done.filter { repCounted(exercises[it.exerciseId], it) }
+        // Seconds are their own figure, never added to the rep total: doing so
+        // printed "140 reps" for a session that was 65 reps and 75 seconds of
+        // hollow hold.
+        val heldSeconds = done.filter { holdSet(exercises[it.exerciseId], it) }.sumOf { heldSeconds(it) }
+        // Kilograms moved counts only lifts whose load is the whole weight
+        // (a barbell, a dumbbell): a belt on a pull-up is added load on top of
+        // a bodyweight the card does not know, so it would undercount.
+        val moved = counted
+            .filter { exercises[it.exerciseId]?.isWeighted == true }
+            .sumOf { (it.weightKg ?: 0.0) * it.reps }
+            .toInt()
+        return Totals(done.size, counted.sumOf { it.reps }, heldSeconds, moved)
+    }
 
     private fun durationMinutes(session: WorkoutSession): Long? =
         session.completedAtMs?.let { ((it - session.startedAtMs) / 60_000L).coerceAtLeast(1) }
