@@ -115,7 +115,6 @@ import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
-import com.ironvellum.app.ui.components.ascensionAchievement
 import com.ironvellum.app.ui.components.deedAchievement
 import com.ironvellum.app.ui.components.levelUpAchievement
 import com.ironvellum.app.ui.components.ShareCardDialog
@@ -1190,7 +1189,6 @@ fun SessionScreen(
 /** One page per honour the completion earned, shown after the victory. */
 private fun awardsFor(result: Repository.CompletionResult, sex: Sex): List<Achievement> = buildList {
     if (result.levelAfter > result.levelBefore) add(levelUpAchievement(result.levelBefore, result.levelAfter, result.totalXp))
-    if (result.classAfter != result.classBefore) add(ascensionAchievement(result.classBefore, result.classAfter))
     result.newTitles.forEach { add(deedAchievement(it, sex)) }
 }
 

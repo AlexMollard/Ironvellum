@@ -9,7 +9,6 @@ import com.ironvellum.app.domain.TitleRarity
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
-import com.ironvellum.app.ui.components.ascensionAchievement
 import com.ironvellum.app.ui.components.deedAchievement
 import com.ironvellum.app.ui.components.levelUpAchievement
 import com.ironvellum.app.ui.theme.IronvellumTheme
@@ -59,7 +58,7 @@ class AchievementOverlayTest {
     @Test fun fabled() { show(listOf(deed(TitleRarity.Epic))); finishAndCapture("fabled") }
     @Test fun masterwork() { show(listOf(deed(TitleRarity.Masterwork))); finishAndCapture("masterwork") }
     @Test fun levelUp() { show(listOf(levelUpAchievement(13, 14, 9_140))); finishAndCapture("level") }
-    @Test fun ascension() { show(listOf(ascensionAchievement("Acolyte", "Adept"))); finishAndCapture("ascension") }
+    @Test fun ascension() { show(listOf(levelUpAchievement(4, 5, 1_000))); finishAndCapture("ascension") }
 
     @Test
     fun aTapFinishesTheWritingBeforeMovingOn() {
