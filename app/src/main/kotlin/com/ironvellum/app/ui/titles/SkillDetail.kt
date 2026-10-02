@@ -59,6 +59,8 @@ import com.ironvellum.app.ui.components.InfoProgress
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.formFacts
+import com.ironvellum.app.ui.components.gearFacts
+import com.ironvellum.app.ui.components.muscleFacts
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.theme.inkBorder
@@ -235,6 +237,9 @@ fun SkillDetailSheet(
                 // A female lifter reads her own published bar, not the male default.
                 text("CLAIM STANDARD", sexBar ?: skill.standard, IronvellumColors.SovereignGold)
                 text("WHY IT MATTERS", skill.why, IronvellumColors.InkMuted)
+                // The same figure and gear line the exercise sheet shows.
+                muscleFacts(skill.name)
+                gearFacts(skill.name)
                 if (terms.isNotEmpty()) {
                     // The words a beginner trips on, each one tap from a plain definition.
                     section("WORDS TO KNOW") {
