@@ -54,17 +54,24 @@ Run all three; all must pass before anything is uploaded:
 
 ## 4. Supabase schema
 
-The whole schema is ONE file, `supabase/migrations/0001_baseline.sql`, and the
-hosted project holds disposable debug data only. There is no upgrade path: a
-schema change edits the baseline, bumps the `schema_version()` literal and
-`NEEDED_SCHEMA_VERSION` in `Cloud.kt` together, and the project is rebuilt.
+The whole schema is ONE file, `supabase/migrations/0001_baseline.sql`, the
+source of truth for a fresh project. The hosted project holds real accounts and
+is upgraded in place: a schema change edits the baseline, bumps the
+`schema_version()` literal and `NEEDED_SCHEMA_VERSION` in `Cloud.kt` together,
+and ships an idempotent patch in `supabase/hosted/` cut verbatim from the
+baseline (`HostedPatchTest` fails the unit gate if one drifts). The hosted
+project is at schema 28 (2026-10-02).
 
-1. In the Supabase SQL editor, paste and run `supabase/reset.sql` (deletes every
-   account and every object the baseline creates, in one transaction), then
-   paste and run `supabase/migrations/0001_baseline.sql`. The baseline is
-   idempotent, so re-running it on a project that already carries it is a no-op.
-   Turn "Confirm email" off or leave it on: the sign-up trigger makes the
-   profile either way. Sign up again afterwards, then use RE-UPLOAD EVERYTHING.
+**Never paste `supabase/reset.sql` into the hosted project.** It deletes every
+account. It exists for a throwaway project and for the gate's round trip.
+
+1. If this release bumps the schema, paste the new `supabase/hosted/` patch into
+   the Supabase SQL editor once, BEFORE the build that needs it ships. Each
+   patch is one transaction and idempotent. Confirm with
+   `select public.schema_version();`, which must return the new number. Apply
+   only patches newer than the version the project reports: older ones can no
+   longer run (the circles patch renamed `warbands`, so the inbox patch fails
+   with `42P01` and rolls back, harmlessly).
 2. Re-run the assertion suite against a throwaway database first if the schema
    changed at all — nothing on a server does this any more (CI is manual-only
    because the repo is private and every runner minute is billed), and it is
@@ -75,9 +82,10 @@ schema change edits the baseline, bumps the `schema_version()` literal and
    ```
 
    That stands up `postgres:16` in Docker, applies the stub and the baseline,
-   re-applies it, runs `assert_all.sql`, then seeds data, runs `reset.sql`,
-   checks it left nothing behind, re-applies the baseline and asserts again. By
-   hand, if you want the steps separately:
+   re-applies it, runs `assert_all.sql`, applies the newest hosted patch twice
+   and asserts again, then seeds data, runs `reset.sql`, checks it left nothing
+   behind, re-applies the baseline and asserts again. It never touches the
+   hosted project. By hand, if you want the steps separately:
 
    ```bash
    docker run -d --rm --name pg -e POSTGRES_PASSWORD=probe -p 5432:5432 postgres:16

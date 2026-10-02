@@ -41,7 +41,7 @@ so it ships before the shared cloud is promoted to strangers.
 | 03 | [Bring your own backend](03-bring-your-own-backend.md): runtime Supabase URL and key, schema version check | the BYO fallback | code |
 | 04 | [Funding and costs](04-funding-and-costs.md): ledger, Support screen, donation platforms, Play policy | asking for money | code + OWNER |
 | 05 | [Import from Strong and Hevy](05-import-from-strong-hevy.md): CSV merge import | nothing; biggest adoption lever | code |
-| 06 | [Board fairness](06-board-fairness.md): idle cap, stale strength TODO, visibility | public leaderboards | OWNER decision + code |
+| 06 | [Board fairness](06-board-fairness.md): idle cap, strength scoring, visibility | public leaderboards | OWNER decision + code |
 
 01 must finish before the repository becomes public. 02, 03 and 05 are
 independent of each other and can run in parallel, each owning its own files.

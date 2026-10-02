@@ -6,9 +6,12 @@ training, and the docs describe the scoring the code actually runs.
 **Done when:**
 
 - idle accrual is bounded by the owner's chosen rule, and the Muster board
-  ranks on it;
-- `docs/TODO.md`'s stale strength row is closed;
+  ranks on it (done: option (c), `Idle.MAX_EFFECTIVE_HOURS = 72`);
+- the strength score counts holds as rep equivalents (done:
+  `SCORING_VERSION = 2`; the old TODO row is gone);
 - the visibility default is a deliberate decision rather than a leftover.
+
+Sections 1 and 2 are kept as the record of why; only section 3 is open.
 
 ## 1. Idle accrual pays for absence (OWNER decision, then code)
 
@@ -20,12 +23,12 @@ training, and the docs describe the scoring the code actually runs.
 - then 10% **forever**, with no cap (`accruedExact`, `:125-153`).
 
 Measured effective hours paid: 1 week 60.0, 1 month 115.2, **1 year 919.2,
-which is 38 times a capped day** (`docs/TODO.md` row 33). That essence is
+which is 38 times a capped day**. That essence is
 pushed as `shadow_essence` (`CloudSync.kt:122`) and the `shadow_board` view
 orders by it (`shadow_board` in `0001_baseline.sql`), so absence climbs the board.
 
 The stated product rule is "accumulation caps at 24 hours, the rate decays
-every few hours away". Options, from TODO row 33:
+every few hours away". Options:
 
 | Option | Behaviour | Year away pays |
 |---|---|---|
@@ -50,10 +53,10 @@ restate already-banked essence. The cap applies to future collections only.
 - Unit-test the boundaries at 71 h, 72 h, 1 week and 1 year of absence.
 - Mutation-prove the cap by removing it, which must fail the 1-year case.
 
-## 2. Strength score and holds: the TODO row is stale (code)
+## 2. Strength score and holds (code)
 
-`docs/TODO.md` row 28 says `StrengthIndex.repScore` counts a 45 s hollow hold
-as 45 reps. That is no longer true. The current code
+The old TODO said `StrengthIndex.repScore` counts a 45 s hollow hold as 45
+reps. That is no longer true. The current code
 (`SCORING_VERSION = 2`, `StrengthIndex.kt:42`) routes holds through
 `holdScore` (`:84-85`), which applies
 `MovementDifficulty.holdRepEquivalents` at 5 s per rep equivalent
@@ -61,7 +64,7 @@ as 45 reps. That is no longer true. The current code
 caller (`Repository.kt:1055-1066`, `SetRecords.kt:64-67`, `Models.kt:247-251`,
 `SessionScreen.kt:375-382`) branch on holds first.
 
-Also stale: the row claims "nothing recomputes history".
+Also stale: it claimed "nothing recomputes history".
 `rescoreStrengthScores` runs once per `SCORING_VERSION` bump from
 `ensureSeeded` (`Repository.kt:136-155`).
 
@@ -70,9 +73,7 @@ Also stale: the row claims "nothing recomputes history".
 - Add one unit test pinning the owner's real case: a 45 s hollow hold scores
   as 9 rep equivalents, not 45. It must fail if `sessionScore` stops
   converting.
-- Move row 28 out of "Open decisions", noting the option taken (b) and the
-  scoring version it shipped in.
-- Correct the "nothing recomputes history" sentence.
+- Retire the TODO row (done: the TODO no longer carries it).
 
 ## 3. Who can see the boards (OWNER decision)
 
@@ -87,6 +88,6 @@ Also stale: the row claims "nothing recomputes history".
 
 ## 4. Ship order
 
-The baseline schema goes live first (plan 01), together with the next app
-build, and that build also carries the idle cap from section 1, so
-the first build that can write to a public board is already the fair one.
+The baseline schema is live on the hosted project (schema 28, 2026-10-02) and
+the idle cap from section 1 has shipped, so the first build that can write to
+a public board is already the fair one.

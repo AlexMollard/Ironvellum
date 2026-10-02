@@ -115,4 +115,6 @@ gh release create v1.1.0 app/build/outputs/apk/foss/release/app-foss-release.apk
 Follow `docs/RELEASE_CHECKLIST.md` using `bundlePlayRelease`. It needs the
 keystore, the hosted privacy policy URL (the GitHub URL of `PRIVACY.md` is
 public and not editable by third parties), the health-apps declaration, and
-the OAuth consent screen out of Testing. Ship the baseline schema together with this build.
+the OAuth consent screen out of Testing. The hosted project is already at the
+schema this build needs; a later schema bump ships its `supabase/hosted/` patch
+first (`docs/RELEASE_CHECKLIST.md` §4).

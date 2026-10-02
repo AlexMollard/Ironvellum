@@ -3,28 +3,27 @@
 **Goal:** the repository can be made public without exposing a live security
 hole, a secret, or unlicensed third-party work.
 
-**Done when:** the hosted project runs the baseline schema, the history sweep below comes back clean, a
+**Done when:** `is_friend` refuses `anon` on the hosted project, the history sweep below comes back clean, a
 `LICENSE` and `NOTICE` exist, and the owner has flipped the repository to
 public.
 
 ## 1. Close the live exposure first (OWNER)
 
-Until the hosted project is on `supabase/migrations/0001_baseline.sql`
-(`docs/TODO.md` #1), anyone holding the publishable key can
-enumerate the accepted-friendship graph through `is_friend`, including for
-lifters set to `private`. The key ships inside every APK, and a public repo
-makes it trivial to find.
+Before the baseline, anyone holding the publishable key could enumerate the
+accepted-friendship graph through `is_friend`, including for lifters set to
+`private`. The key ships inside every APK, and a public repo makes it trivial
+to find. The baseline closes the hole: Supabase grants functions to `anon`
+directly, so every revoke in it names `anon` and `authenticated`, not only
+`public`.
+
+The hosted project now carries the baseline's grants: it is at schema 28
+(owner-verified 2026-10-02), reached through the `supabase/hosted/` patches.
+What is left is proof, not a migration:
 
 1. Prove the schema still holds: `python3 tools/gate.py --backend`.
-2. In the Supabase SQL editor run `supabase/reset.sql`, then
-   `supabase/migrations/0001_baseline.sql`. The baseline is what actually
-   closes the hole: Supabase grants functions to `anon` directly, so every
-   revoke in it names `anon` and `authenticated`, not only `public`.
-3. **Do not** apply it ahead of the app build that no longer inserts its own
-   profile row. The baseline revokes the direct profile writes (the ranked
-   columns and the insert), so it goes out together with that release
-   (`docs/RELEASE_CHECKLIST.md` §4).
-4. Confirm it landed with a real user's token rather than trusting the editor.
+2. **Do not** run `supabase/reset.sql` on the hosted project to get here. It
+   deletes every account, and the project is already on the baseline.
+3. Confirm the revoke with a real call rather than trusting the editor.
    The editor runs the whole script as one transaction, so one failure rolls
    back everything before it. See skill `supabase-applied-state-from-device-jwt`.
 
