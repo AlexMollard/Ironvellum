@@ -23,8 +23,8 @@ class BackupRulesTest {
     /** Meaningless, or actively wrong, without the database beside it. */
     private val dbDependent = setOf("onboarding", "program_answers", "reminders", "inbox_notifier", "warband_payout", "circle_payout")
 
-    /** Safe to restore alone: a custom backend URL/key, not training state. */
-    private val restorable = setOf("cloud_config")
+    /** Safe to restore alone: a custom backend URL/key or a seen-this-hint flag, not training state. */
+    private val restorable = setOf("cloud_config", "info_sheet_hints")
 
     @Test
     fun `every prefs file the app opens is classified`() {
