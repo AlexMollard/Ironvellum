@@ -45,7 +45,8 @@ import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.ui.components.InkPanel
-import com.ironvellum.app.ui.components.InkTabs
+import com.ironvellum.app.ui.components.InkTabbedPager
+import androidx.compose.foundation.pager.rememberPagerState
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.ironvellumRepository
@@ -176,8 +177,57 @@ fun MuscleCoverageScreen(
         }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
-    var view by remember { mutableStateOf(CoverageView.PLANNED) }
+    val pager = rememberPagerState { CoverageView.entries.size }
+    var openMuscle by rememberSaveable { mutableStateOf<Muscle?>(null) }
+    var openExercise by rememberSaveable { mutableStateOf<String?>(null) }
 
+    Column(Modifier.fillMaxSize()) {
+        Column(Modifier.padding(horizontal = 16.dp)) {
+            Spacer(Modifier.height(20.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "WEEKLY COVERAGE",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = IronvellumColors.SystemGreen,
+                    letterSpacing = IronvellumTracking.ScreenTitle,
+                )
+                NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() })
+            }
+            Spacer(Modifier.height(12.dp))
+        }
+        // The switch comes first: drawn after the empty check, an empty LAST
+        // 7 DAYS view hid it and the lifter could not get back to PLANNED.
+        InkTabbedPager(
+            labels = CoverageView.entries.map { it.label },
+            state = pager,
+            modifier = Modifier.weight(1f),
+            tabsModifier = Modifier.padding(horizontal = 16.dp),
+            tabsGap = 12.dp,
+        ) { page ->
+            CoveragePage(
+                view = CoverageView.entries[page],
+                ui = ui,
+                openMuscle = openMuscle,
+                onOpenMuscle = { openMuscle = it },
+                openExercise = openExercise,
+                onOpenExercise = { openExercise = it },
+                onGenerateSession = onGenerateSession,
+            )
+        }
+    }
+}
+
+/** One view's page: its own scroll and numbers, both read through the same rules. */
+@Composable
+private fun CoveragePage(
+    view: CoverageView,
+    ui: CoverageUi,
+    openMuscle: Muscle?,
+    onOpenMuscle: (Muscle?) -> Unit,
+    openExercise: String?,
+    onOpenExercise: (String?) -> Unit,
+    onGenerateSession: () -> Unit,
+) {
     val presets = if (view == CoverageView.PLANNED) ui.plannedPresets else ui.loggedPresets
     val volume = remember(presets) { ProgramRules.weeklyVolume(presets) }
     val credits = remember(presets) { ProgramRules.muscleCredits(presets) }
@@ -189,8 +239,6 @@ fun MuscleCoverageScreen(
             .distinct()
             .mapNotNull { (name, modifiers) -> MuscleMap.profile(name, modifiers)?.let { Triple(name, modifiers, it.muscles) } }
     }
-    var openMuscle by rememberSaveable { mutableStateOf<Muscle?>(null) }
-    var openExercise by rememberSaveable { mutableStateOf<String?>(null) }
     val goal = CoverageGoal(ui.tier, ui.focus, ui.priorities)
     val target = goal.target
     val tracked = ProgramRules.TRACKED.sortedBy { volume[it] ?: 0.0 }
@@ -205,27 +253,6 @@ fun MuscleCoverageScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
     ) {
-        Spacer(Modifier.height(20.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "WEEKLY COVERAGE",
-                style = MaterialTheme.typography.labelLarge,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.ScreenTitle,
-            )
-            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() })
-        }
-        Spacer(Modifier.height(12.dp))
-
-        // The switch comes first: drawn after the empty check, an empty LAST
-        // 7 DAYS view hid it and the lifter could not get back to PLANNED.
-        InkTabs(
-            labels = CoverageView.entries.map { it.label },
-            selectedIndex = view.ordinal,
-            onSelect = { view = CoverageView.entries[it] },
-        )
-        Spacer(Modifier.height(12.dp))
-
         if (empty) {
             InkPanel(Modifier.fillMaxWidth()) {
                 Text(
@@ -278,7 +305,7 @@ fun MuscleCoverageScreen(
                 modifiers = modifiers,
                 shares = shares,
                 open = openExercise == key,
-                onToggle = { openExercise = if (openExercise == key) null else key },
+                onToggle = { onOpenExercise(if (openExercise == key) null else key) },
             )
         }
 
@@ -294,7 +321,7 @@ fun MuscleCoverageScreen(
             MuscleRow(
                 muscle, volume[muscle] ?: 0.0, goal, credits[muscle].orEmpty(),
                 open = openMuscle == muscle,
-                onToggle = { openMuscle = if (openMuscle == muscle) null else muscle },
+                onToggle = { onOpenMuscle(if (openMuscle == muscle) null else muscle) },
             )
         }
 
@@ -312,7 +339,7 @@ fun MuscleCoverageScreen(
             MuscleRow(
                 muscle, volume[muscle] ?: 0.0, goal, credits[muscle].orEmpty(),
                 open = openMuscle == muscle,
-                onToggle = { openMuscle = if (openMuscle == muscle) null else muscle },
+                onToggle = { onOpenMuscle(if (openMuscle == muscle) null else muscle) },
             )
         }
 

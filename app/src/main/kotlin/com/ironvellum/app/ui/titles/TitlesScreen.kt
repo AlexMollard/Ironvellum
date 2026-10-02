@@ -28,6 +28,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.key
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -59,7 +61,7 @@ import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.ironvellumRepository
-import com.ironvellum.app.ui.components.InkTabs
+import com.ironvellum.app.ui.components.InkTabbedPager
 import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.plural
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -267,13 +269,15 @@ fun TitlesScreen(
     val mastered = ui.claimedSkills
     // Saveable like openLine: a rotation must not drop the lifter off their tab,
     // out of the technique sheet or the rite picker.
-    var tab by rememberSaveable { mutableStateOf(TitlesTab.DEEDS) }
+    // The pager state is saveable and carries the open tab.
+    val pager = rememberPagerState { TitlesTab.entries.size }
+    val scope = rememberCoroutineScope()
     // The path opened from the grid, null while the grid shows. Saveable so it
     // survives a tab switch and a rotation: PATHS reopens where it was left.
     var openLine by rememberSaveable { mutableStateOf<String?>(null) }
     // The grid marks the path of the most recent attempt or claim; it never opens it.
     val recentLine = remember(ui.log) { SkillGuidance.initialLine(ui.log) }
-    BackHandler(enabled = tab == TitlesTab.TREE && openLine != null) { openLine = null }
+    BackHandler(enabled = pager.currentPage == TitlesTab.TREE.ordinal && openLine != null) { openLine = null }
     var openSkill by rememberSaveable { mutableStateOf<String?>(null) }
     var trainSkill by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingOpen by rememberSaveable { mutableStateOf<String?>(null) }
@@ -336,106 +340,107 @@ fun TitlesScreen(
         InfoNotice("Still claimed", message, onDismiss = viewModel::dismissUnclaimRefusal)
     }
 
-    // The deeds board owns a LazyColumn so a growing catalogue stays lazy, and
-    // a lazy list inside a verticalScroll parent is measured with infinite
-    // height — which crashed the Codex outright. So DEEDS gets a non-scrolling
-    // shell while the other tabs keep the scrolling one.
-    val deedsTab = tab == TitlesTab.DEEDS
-    // A fresh scroll for each path, so the graph opens at its own top (and its
-    // next node) rather than wherever the grid was scrolled to.
-    val pageScroll = key(openLine) { rememberScrollState() }
-    Column(
-        Modifier
-            .fillMaxSize()
-            .then(if (deedsTab) Modifier else Modifier.verticalScroll(pageScroll))
-            .padding(horizontal = 16.dp),
-    ) {
-        Spacer(Modifier.height(20.dp))
-        Text(
-            "CODEX",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = 6.sp,
-        )
-        Text(
-            // The deed count lives on the Deeds board now, beside its overall bar.
-            "${mastered.size} ${if (mastered.size == 1) "technique" else "techniques"} mastered",
-            style = MaterialTheme.typography.bodyMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-        )
-        Spacer(Modifier.height(12.dp))
-        // One persistent selector row: the three tabs. Paths are chosen from
-        // the grid below.
-        InkTabs(
-            labels = listOf("DEEDS", "PATHS", "JOURNAL"),
-            selectedIndex = tab.ordinal,
-            onSelect = { tab = TitlesTab.entries[it] },
-        )
-
-        if (tab == TitlesTab.JOURNAL) {
-            SkillJournal(
-                log = ui.log,
-                claimed = ui.claimedSkills,
-                practiceCounts = ui.practiceCounts,
-                onOpenLine = { line ->
-                    openLine = line
-                    tab = TitlesTab.TREE
-                },
-                onSelect = { openSkill = it },
-                bodyweightKg = ui.bodyweightKg,
-                female = ui.sex == Sex.FEMALE,
+    // Header and tabs stay put; every page runs edge to edge under them and owns its scroll,
+    // so swiping never drags the title along. The deeds board owns a LazyColumn so a growing
+    // catalogue stays lazy, and a lazy list inside a verticalScroll parent is measured with
+    // infinite height (which crashed the Codex outright), so DEEDS gets a non-scrolling page
+    // while the other two scroll.
+    Column(Modifier.fillMaxSize()) {
+        Column(Modifier.padding(horizontal = 16.dp)) {
+            Spacer(Modifier.height(20.dp))
+            Text(
+                "CODEX",
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                letterSpacing = 6.sp,
             )
-            Spacer(Modifier.height(28.dp))
-            return@Column
-        }
-
-
-        if (tab == TitlesTab.TREE) {
-            val line = openLine
+            Text(
+                // The deed count lives on the Deeds board now, beside its overall bar.
+                "${mastered.size} ${if (mastered.size == 1) "technique" else "techniques"} mastered",
+                style = MaterialTheme.typography.bodyMedium,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SystemGreen,
+            )
             Spacer(Modifier.height(12.dp))
-            if (line == null) {
-                // No "Skill Tree" heading: the selected pill above already says it.
-                // The tally is the line worth keeping here.
-                Text(
-                    "${mastered.count { it in Skills.BY_NAME }} of ${Skills.ALL.size} techniques mastered",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = IronvellumColors.InkMuted,
-                )
-                Spacer(Modifier.height(10.dp))
-                PathGrid(
-                    mastered = mastered,
-                    recentLine = recentLine,
-                    onOpen = { openLine = it },
-                )
-            } else {
-                PathHeader(line = line, mastered = mastered, onBack = { openLine = null })
-                Spacer(Modifier.height(6.dp))
-                SkillTreeGraph(
-                    line = line,
-                    mastered = mastered,
-                    onSelect = { openSkill = it },
-                    modifier = Modifier.fillMaxWidth(),
-                    best = ui.bestEffort,
-                    bodyweightKg = ui.bodyweightKg,
-                    female = ui.sex == Sex.FEMALE,
-                )
-            }
-            Spacer(Modifier.height(28.dp))
-            return@Column
         }
-
-        DeedsBoard(
-            unlocked = ui.unlocked,
-            equippedId = ui.currentTitleId,
-            ledger = ui.ledger,
-            onEquip = { viewModel.equip(it) },
-            sex = ui.sex,
-            // weight(1f) gives the lazy list a real height inside the
-            // non-scrolling shell; fillMaxSize here would fight the header.
-            modifier = Modifier.fillMaxWidth().weight(1f),
-        )
+        // One persistent selector row: the three tabs. Paths are chosen from the grid below.
+        // A path drilled into does not stop the swipe: the tabs stay live there too, and a swipe
+        // is the same move as tapping one. PATHS reopens on that path when swiped back to.
+        InkTabbedPager(
+            labels = listOf("DEEDS", "PATHS", "JOURNAL"),
+            state = pager,
+            modifier = Modifier.weight(1f),
+            tabsModifier = Modifier.padding(horizontal = 16.dp),
+        ) { page ->
+            when (TitlesTab.entries[page]) {
+                TitlesTab.DEEDS -> Column(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
+                    DeedsBoard(
+                        unlocked = ui.unlocked,
+                        equippedId = ui.currentTitleId,
+                        ledger = ui.ledger,
+                        onEquip = { viewModel.equip(it) },
+                        sex = ui.sex,
+                        // weight(1f) gives the lazy list a real height inside the non-scrolling page.
+                        modifier = Modifier.fillMaxWidth().weight(1f),
+                    )
+                }
+                TitlesTab.TREE -> {
+                    val line = openLine
+                    // A fresh scroll for each path, so the graph opens at its own top (and its
+                    // next node) rather than wherever the grid was scrolled to.
+                    val pageScroll = key(line) { rememberScrollState() }
+                    Column(Modifier.fillMaxSize().verticalScroll(pageScroll).padding(horizontal = 16.dp)) {
+                        Spacer(Modifier.height(12.dp))
+                        if (line == null) {
+                            // No "Skill Tree" heading: the selected pill above already says it.
+                            // The tally is the line worth keeping here.
+                            Text(
+                                "${mastered.count { it in Skills.BY_NAME }} of ${Skills.ALL.size} techniques mastered",
+                                style = MaterialTheme.typography.labelMedium,
+                                color = IronvellumColors.InkMuted,
+                            )
+                            Spacer(Modifier.height(10.dp))
+                            PathGrid(
+                                mastered = mastered,
+                                recentLine = recentLine,
+                                onOpen = { openLine = it },
+                            )
+                        } else {
+                            PathHeader(line = line, mastered = mastered, onBack = { openLine = null })
+                            Spacer(Modifier.height(6.dp))
+                            SkillTreeGraph(
+                                line = line,
+                                mastered = mastered,
+                                onSelect = { openSkill = it },
+                                modifier = Modifier.fillMaxWidth(),
+                                best = ui.bestEffort,
+                                bodyweightKg = ui.bodyweightKg,
+                                female = ui.sex == Sex.FEMALE,
+                            )
+                        }
+                        Spacer(Modifier.height(28.dp))
+                    }
+                }
+                TitlesTab.JOURNAL -> Column(
+                    Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp),
+                ) {
+                    SkillJournal(
+                        log = ui.log,
+                        claimed = ui.claimedSkills,
+                        practiceCounts = ui.practiceCounts,
+                        onOpenLine = { line ->
+                            openLine = line
+                            scope.launch { pager.animateScrollToPage(TitlesTab.TREE.ordinal) }
+                        },
+                        onSelect = { openSkill = it },
+                        bodyweightKg = ui.bodyweightKg,
+                        female = ui.sex == Sex.FEMALE,
+                    )
+                    Spacer(Modifier.height(28.dp))
+                }
+            }
+        }
     }
     claimResult?.let { result ->
         AchievementOverlay(

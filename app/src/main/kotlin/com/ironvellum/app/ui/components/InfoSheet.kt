@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -37,7 +36,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -68,7 +66,6 @@ import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkHairline
 import androidx.core.content.edit
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 /**
  * The one sheet every "info" pop-up uses, so an explainer, an exercise guide, a
@@ -142,7 +139,6 @@ fun InfoSheet(
             Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Bracket, seed = 3, thickness = 2.dp))
             if (paged) {
                 val pagerState = rememberPagerState { built.size }
-                val scope = rememberCoroutineScope()
                 val context = LocalContext.current
                 // The very first paged sheet a lifter opens leans toward page 2 and back, once, so
                 // the swipe is discoverable. Not under reduced motion; marked seen as it starts.
@@ -159,14 +155,13 @@ fun InfoSheet(
                     Spacer(Modifier.height(20.dp))
                     SheetHeader(title, subtitle, subtitleColor, chips, compact, titleColor)
                     Spacer(Modifier.height(6.dp))
-                    InkTabs(
-                        labels = built.map { it.label },
-                        selectedIndex = pagerState.currentPage,
-                        onSelect = { index -> scope.launch { pagerState.animateScrollToPage(index) } },
-                        indicatorPosition = { pagerState.currentPage + pagerState.currentPageOffsetFraction },
-                    )
                 }
-                HorizontalPager(state = pagerState, modifier = Modifier.weight(1f).fillMaxWidth()) { index ->
+                InkTabbedPager(
+                    labels = built.map { it.label },
+                    state = pagerState,
+                    modifier = Modifier.weight(1f),
+                    tabsModifier = Modifier.padding(horizontal = LedgerSpace.Gutter),
+                ) { index ->
                     PageBody(built[index], compact)
                 }
             } else {
