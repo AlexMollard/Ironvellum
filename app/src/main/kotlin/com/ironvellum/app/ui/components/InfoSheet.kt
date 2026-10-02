@@ -35,8 +35,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -47,6 +51,7 @@ import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -114,6 +119,7 @@ fun InfoSheet(
                 Modifier
                     .weight(1f, fill = false)
                     .fadeWhenMore(scroll.canScrollForward)
+                    .nestedScroll(KeepForwardScrollInside)
                     .verticalScroll(scroll)
                     .padding(horizontal = LedgerSpace.Gutter),
             ) {
@@ -461,4 +467,21 @@ private fun ShowMore(label: String?, expanded: Boolean, hidden: String, onToggle
             tint = IronvellumColors.SystemGreen,
         )
     }
+}
+
+/**
+ * Stops the content's leftover forward scroll at the bottom from reaching the sheet. A fling that runs
+ * out of content hands its spare velocity up the nested-scroll chain, and the sheet answers by settling
+ * on it: it overshoots its expanded edge and keeps springing back and forth. Only forward (finger-up)
+ * leftovers are eaten; a backward flick at the top still reaches the sheet, so swipe-to-dismiss works.
+ */
+private val KeepForwardScrollInside = object : NestedScrollConnection {
+    override fun onPostScroll(
+        consumed: Offset,
+        available: Offset,
+        source: NestedScrollSource,
+    ) = if (available.y < 0f) available else Offset.Zero
+
+    override suspend fun onPostFling(consumed: Velocity, available: Velocity) =
+        if (available.y < 0f) available else Velocity.Zero
 }
