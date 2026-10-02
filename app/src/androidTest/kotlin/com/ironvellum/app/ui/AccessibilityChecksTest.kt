@@ -422,9 +422,10 @@ class AccessibilityChecksTest {
             // sheet and the preset editor are wall-to-wall glyph steppers,
             // which is exactly where an unannounceable control hides.
             listOf("Codex", "PATHS", "Pull", "Dead Hang"),
-            // The load stepper only composes once load is on: reach it through
-            // its own entry point rather than leaving those glyphs unmeasured.
-            listOf("Codex", "PATHS", "Pull", "Dead Hang", "ADD LOAD"),
+            // The attempt form lives on the sheet's LOG page, and the load stepper only
+            // composes once load is on: reach both through their own entry points
+            // rather than leaving those glyphs unmeasured.
+            listOf("Codex", "PATHS", "Pull", "Dead Hang", "LOG", "ADD LOAD"),
             listOf("Rites", "[ EDIT ]"),
             // Settings and the Muster roll replace the nav bar, so they go late.
             listOf("Today", "Settings"),
