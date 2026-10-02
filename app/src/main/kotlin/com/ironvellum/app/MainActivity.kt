@@ -12,6 +12,11 @@ import com.ironvellum.app.ui.theme.FIXED_FONT_SCALE
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.ui.program.LocalBodySex
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.SystemBarStyle
 import android.graphics.Color
@@ -68,9 +73,13 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
+        val sexes = (application as IronvellumApp).repository.observeSex()
         setContent {
+            val bodySex by sexes.collectAsState(initial = Sex.MALE)
             IronvellumTheme {
-                IronvellumRoot(inboxRequest = inboxRequest, todayRequest = todayRequest, trialRequest = trialRequest)
+                CompositionLocalProvider(LocalBodySex provides bodySex) {
+                    IronvellumRoot(inboxRequest = inboxRequest, todayRequest = todayRequest, trialRequest = trialRequest)
+                }
             }
         }
     }

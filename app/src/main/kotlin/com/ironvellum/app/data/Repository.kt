@@ -99,6 +99,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.firstOrNull
@@ -1581,6 +1582,9 @@ class Repository(
             val sex = p?.sex?.let { s -> runCatching { Sex.valueOf(s) }.getOrNull() } ?: Sex.MALE
             p?.heightCm to sex
         }
+
+    /** The profile's sex alone, which picks the body the muscle figures draw. Changes only when the sex does. */
+    fun observeSex(): Flow<Sex> = observeBodyProfile().map { it.second }.distinctUntilChanged()
 
     suspend fun setHeight(heightCm: Double) {
         require(BodyLimits.validHeight(heightCm)) { "height $heightCm cm is outside ${BodyLimits.HEIGHT_CM}" }
