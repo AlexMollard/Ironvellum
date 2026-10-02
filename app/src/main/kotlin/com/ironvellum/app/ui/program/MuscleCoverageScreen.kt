@@ -1,5 +1,10 @@
 package com.ironvellum.app.ui.program
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.ironvellum.app.ui.components.NavChip
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -9,20 +14,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -49,7 +50,6 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import java.time.Instant
@@ -213,19 +213,7 @@ fun MuscleCoverageScreen(
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = IronvellumTracking.ScreenTitle,
             )
-            Text(
-                "BACK",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                modifier = Modifier
-                    .heightIn(min = 48.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-                    .clickable { onBack() }
-                    .wrapContentHeight(Alignment.CenterVertically)
-                    .padding(horizontal = 12.dp, vertical = 6.dp),
-            )
+            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() })
         }
         Spacer(Modifier.height(12.dp))
 

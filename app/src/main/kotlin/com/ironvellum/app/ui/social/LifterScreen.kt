@@ -1,5 +1,11 @@
 package com.ironvellum.app.ui.social
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import com.ironvellum.app.data.cloud.FriendRow
+import com.ironvellum.app.ui.components.NavChip
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.Icons
 import com.ironvellum.app.domain.fmt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -21,13 +27,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -42,7 +45,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.AccountRepository
 import com.ironvellum.app.data.cloud.CloudSync
-import com.ironvellum.app.data.cloud.FriendRow
 import com.ironvellum.app.data.cloud.FriendSession
 import com.ironvellum.app.data.cloud.ReportReason
 import com.ironvellum.app.domain.Titles
@@ -268,7 +270,7 @@ internal fun LifterScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            GhostBackButton(onBack)
+            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = onBack)
             IdentityRow(
                 displayName = displayName,
                 userId = userId,
@@ -648,38 +650,6 @@ private fun InlineErrorBanner(message: String) {
     }
 }
 
-/** Small ghost back control in the header row — bordered, never a gradient slab. */
-@Composable
-private fun GhostBackButton(onBack: () -> Unit) {
-    val shape = MaterialTheme.shapes.small
-    Box(
-        Modifier
-            .clip(shape)
-            .background(Brush.verticalGradient(listOf(IronvellumColors.VaultHigh, IronvellumColors.Vault)), shape)
-            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
-            .clickable(onClick = onBack)
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "←",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = IronvellumColors.EmeraldBright,
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                "BACK",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
-        }
-    }
-}
 
 /**
  * Ally status chip: compact and clearly non-CTA. Only the ADD ALLY state is

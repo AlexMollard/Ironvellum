@@ -1,10 +1,21 @@
 package com.ironvellum.app.ui.train
 
-import com.ironvellum.app.domain.fmt
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.ui.draw.clip
+import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.NavChip
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.theme.ChakraPetch
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
@@ -19,19 +30,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -47,10 +49,8 @@ import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.SetRecords
-import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.components.ExercisePickerPanel
-import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.TrendChart
@@ -59,7 +59,6 @@ import com.ironvellum.app.ui.components.formatLoadKg
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.map
@@ -140,19 +139,7 @@ fun ExerciseExplorerScreen(
                 color = IronvellumColors.SystemGreen,
                 letterSpacing = 6.sp,
             )
-            Text(
-                "BACK",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                letterSpacing = 2.sp,
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-                    .clickable { onBack() }
-                    // 44dp minimum touch target; the text alone measured ~30dp.
-                    .padding(horizontal = 12.dp, vertical = 14.dp),
-            )
+            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() })
         }
         Spacer(Modifier.height(12.dp))
 
