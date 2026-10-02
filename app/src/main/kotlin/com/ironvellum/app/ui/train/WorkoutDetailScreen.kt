@@ -1,5 +1,12 @@
 package com.ironvellum.app.ui.train
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.unit.sp
+import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.formatBodyValue
+import com.ironvellum.app.ui.components.NavChip
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,17 +30,14 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -57,7 +61,6 @@ import com.ironvellum.app.ui.components.InfoAction
 import com.ironvellum.app.ui.components.InfoNotice
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.InfoSheetSize
-import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.lifecycle.ViewModelProvider
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.domain.SessionAudience
@@ -67,7 +70,6 @@ import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.ShareCardDialog
 import com.ironvellum.app.ui.components.InkPanel
-import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.formatLoadKg
 import com.ironvellum.app.ui.components.metricTotals
@@ -288,18 +290,7 @@ fun WorkoutDetailScreen(
                     )
                 }
             }
-            Text(
-                "BACK",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.InlineLabel,
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable { onBack() }
-                    // 44dp minimum touch target; the text alone measured ~30dp.
-                    .padding(horizontal = 12.dp, vertical = 14.dp),
-            )
+            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() })
         }
         Spacer(Modifier.height(12.dp))
 

@@ -1,10 +1,17 @@
 package com.ironvellum.app.ui.idle
+import androidx.compose.ui.graphics.drawscope.Stroke
+import com.ironvellum.app.ui.social.crestFrameTreatment
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.StrokeCap
+import kotlinx.coroutines.delay
+import com.ironvellum.app.ui.components.NavChip
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.drawscope.Stroke
 import com.ironvellum.app.domain.Gacha
 import kotlin.random.Random
 import kotlin.math.PI
@@ -13,7 +20,6 @@ import kotlin.math.sin
 import androidx.compose.ui.geometry.Size
 import androidx.compose.animation.core.Animatable
 import com.ironvellum.app.ui.social.CrestFrameTreatment
-import com.ironvellum.app.ui.social.crestFrameTreatment
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,12 +40,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,7 +70,6 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.core.animateFloat
-import androidx.compose.ui.graphics.StrokeCap
 import com.ironvellum.app.data.IdleInputs
 import com.ironvellum.app.data.IdleSnapshot
 import com.ironvellum.app.data.Repository
@@ -94,7 +97,6 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.components.RelicSigil
 import com.ironvellum.app.ui.components.CrestRail
 import com.ironvellum.app.ui.components.MusterBackdrop
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -227,18 +229,7 @@ fun IdleScreen(
         // Opened from Today's footer, not a tab, so it carries its own way out.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             SectionHeader("THE VEIL", Modifier.weight(1f))
-            Text(
-                "BACK",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.InlineLabel,
-                modifier = Modifier
-                    .padding(top = 18.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable { onBack() }
-                    .padding(horizontal = 12.dp, vertical = 14.dp),
-            )
+            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() }, Modifier.padding(top = 18.dp))
         }
 
         // The circle's pooled week, one line under the header; a tap opens the
