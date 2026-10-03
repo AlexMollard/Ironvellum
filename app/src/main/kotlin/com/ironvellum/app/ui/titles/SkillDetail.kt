@@ -7,6 +7,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,6 +35,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.ui.semantics.contentDescription
@@ -234,6 +237,16 @@ fun SkillDetailSheet(
         },
         pages = listOf(
             InfoPage("ABOUT", summary) {
+                techniqueArtwork(skill.name)?.let { artwork ->
+                    section(null) {
+                        Image(
+                            painter = painterResource(artwork),
+                            contentDescription = null,
+                            contentScale = ContentScale.Fit,
+                            modifier = Modifier.fillMaxWidth().height(176.dp),
+                        )
+                    }
+                }
                 // A female lifter reads her own published bar, not the male default.
                 text("CLAIM STANDARD", sexBar ?: skill.standard, IronvellumColors.SovereignGold)
                 text("WHY IT MATTERS", skill.why, IronvellumColors.InkMuted)

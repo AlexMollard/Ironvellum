@@ -8,6 +8,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -37,6 +38,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -47,6 +49,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -351,15 +354,24 @@ private fun SkillNode(
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                SkillGlyph(
-                    family = glyphFamily(skill),
-                    color = when (state) {
-                        NodeState.MASTERED -> IronvellumColors.Abyss
-                        NodeState.NEXT -> IronvellumColors.Ink
-                        NodeState.LOCKED -> LockedGlyph
-                    },
-                    modifier = Modifier.size(32.dp),
-                )
+                val artwork = techniqueArtwork(skill.name)
+                if (artwork != null) {
+                    Image(
+                        painter = painterResource(artwork),
+                        contentDescription = null,
+                        modifier = Modifier.size(48.dp).alpha(if (state == NodeState.LOCKED) 0.45f else 1f),
+                    )
+                } else {
+                    SkillGlyph(
+                        family = glyphFamily(skill),
+                        color = when (state) {
+                            NodeState.MASTERED -> IronvellumColors.Abyss
+                            NodeState.NEXT -> IronvellumColors.Ink
+                            NodeState.LOCKED -> LockedGlyph
+                        },
+                        modifier = Modifier.size(40.dp),
+                    )
+                }
             }
 
             // State as a badge, not the colour alone: a check, or a lock.

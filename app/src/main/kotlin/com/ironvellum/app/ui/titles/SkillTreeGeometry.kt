@@ -18,7 +18,7 @@ internal data class Cubic(val p0: Pt, val c1: Pt, val c2: Pt, val p3: Pt) {
     }
 }
 
-internal const val NODE_DP = 54f
+internal const val NODE_DP = 64f
 internal const val TOP_PAD_DP = 5f
 internal const val TEXT_GAP_DP = 2f
 internal const val EDGE_GAP_DP = 20f
