@@ -372,7 +372,6 @@ fun IronvellumButton(
     val shape = MaterialTheme.shapes.small
     Box(
         modifier
-            .heightIn(min = 48.dp)
             .scale(scale)
             .clip(shape)
             .background(

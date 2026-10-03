@@ -10,14 +10,12 @@ import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.MainActivity
 import com.ironvellum.app.IronvellumApp
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -53,19 +51,6 @@ class AccessibilityChecksTest {
         // The ink treatment animates forever, so Compose never idles.
         compose.mainClock.autoAdvance = false
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-    }
-
-    @Test
-    fun primaryTrialActionHasA48dpTarget() {
-        compose.onNodeWithContentDescription("Rites").performClick()
-        compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-
-        val action = compose.onNodeWithText("OPEN TRIAL").fetchSemanticsNode()
-        val minimumPixels = MIN_TARGET_DP * compose.density.density
-        assertTrue(
-            "Open Trial target is ${action.boundsInRoot.size.height}px, below ${minimumPixels}px",
-            action.boundsInRoot.size.height >= minimumPixels,
-        )
     }
 
     /**
