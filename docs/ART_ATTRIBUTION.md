@@ -1,9 +1,11 @@
 # Art Attribution
 
-Ironvellum ships no third-party artwork. Every image is either generated for
-this project with Google **`gemini-3.1-flash-image`** (via `tools/art.py`) or
-hand-authored as an Android VectorDrawable, and all of it is released under
-the project licence (GPL-3.0-or-later, see `LICENSE`).
+Ironvellum ships no third-party artwork. The existing empty-state and crest
+images were generated for this project with Google **`gemini-3.1-flash-image`**
+(via `tools/art.py`); the technique illustrations below were generated
+with Codex's built-in image-generation tool; other glyphs include hand-authored
+Android VectorDrawables. All ship under the project licence (GPL-3.0-or-later,
+see `LICENSE`).
 
 ## Assets
 
@@ -14,10 +16,26 @@ the project licence (GPL-3.0-or-later, see `LICENSE`).
 | `mipmap-anydpi-v26/ic_launcher.xml`, `ic_launcher_round.xml` | adaptive icon composition, no artwork of its own | project licence |
 | `drawable-nodpi/art_empty_*.png` (quests, stats, skills, board, chronicle, allies, muster) | generated with `tools/art.py` in the house ink style below | project licence |
 | `drawable-nodpi/art_crest_*.png` (ten crest frames) | generated with `tools/art.py` from `tools/art_batches/crests.txt` | project licence |
+| `drawable-nodpi/skill_*.webp` (119 technique illustrations across all 14 Paths) | generated individually with Codex's built-in image-generation tool. The owner chose the first Dead Hang pilot (`exec-d14e11a6-fc99-47fe-b8ca-ffb581007096.png`) as the style reference. Shipped WebP files retain the generated warm-bone/charcoal colours and transparency, with a maximum edge of 640 px. The [technique art manifest](art/skill-technique-art.json) records source image identifiers, prompts, dimensions and file hashes. | project licence |
+
+### Technique illustrations
+
+The technique set follows the owner's approved detailed bone-ink athlete style.
+The earlier crest/empty-state generator and its tinting rules remain unchanged.
+Each technique owns a distinct bundled image, shared by its 48dp tree illustration
+and 176dp About preview. Node states, tier labels, progression and actions stay in
+code. No runtime image generation or remote image hosting is required.
+
+For another technique, use the built-in image generator with the approved Dead
+Hang source as a **style-only reference**, a genuinely transparent background,
+the technique's published standard and a precise full-body pose description.
+Retain the raw generated PNG, preserve alpha when reducing it to WebP, and update
+the manifest and `TechniqueArtwork.kt` together. Do not apply the older generator's
+automatic tinting to this set.
 
 ## House style: monochrome ink (adopted)
 
-Original artwork for this project is generated with `tools/art.py`, which wraps
+The earlier empty-state and crest artwork was generated with `tools/art.py`, which wraps
 Google `gemini-3.1-flash-image` through omp's `google-antigravity` provider
 (local headroom proxy -> Cloud Code Assist). Generated pieces are project-licensed.
 
