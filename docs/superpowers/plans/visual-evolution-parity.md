@@ -100,7 +100,7 @@ Route wiring is `ui/IronvellumNav.kt:457`–`:508`: `presets`, `muscle_coverage`
 | Visible control/state | Current action and destination | Source anchor |
 | --- | --- | --- |
 | Rites header/Open Trial | Starts a freeform `Open Trial` through `beginQuick`, then `onQuickSession(id)` → session. | `ui/train/PresetsScreen.kt:210`–`:226`; `:141`–`:144` |
-| Weekly Coverage tile | Planned muscle summary, no-cycle/covered/gap caption and heat map; whole min-220 dp tile → `muscle_coverage`. | `ui/train/PresetsScreen.kt:227`–`:233`; `:596`–`:668` |
+| Weekly Coverage tile | Planned muscle summary, no-cycle/covered/gap caption and heat map; whole tile → `muscle_coverage`. Baseline minimum 220 dp became 190 dp in Task 5. | `ui/train/PresetsScreen.kt:227`–`:233`; `:596`–`:668` |
 | Catalogue and Chronicle links | Exercises → `exercises`; Full Chronicle → `workout_log`. | `ui/train/PresetsScreen.kt:237`–`:253` |
 | Empty board and Rite cards | Empty board offers Forge a Cycle (`week`); each Rite keeps name/day, 2-line wrapping, plan duration/sets, movement targets and `+N MORE`; muscle info opens `RiteMusclesSheet` with map/sets and Close. | `ui/train/PresetsScreen.kt:254`–`:405`; `ui/program/RiteMusclesSheet.kt:29`–`:70` |
 | Rite edit/begin/continue | Edit → `preset_editor` with ID; live matching preset → session with live ID; otherwise `begin(preset.id)` → session. | `ui/train/PresetsScreen.kt:385`–`:406` |
