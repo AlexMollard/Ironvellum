@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -458,7 +459,7 @@ fun OnboardingScreen(
         ) {
             Spacer(Modifier.height(16.dp))
             StepHeader(step = step, onSkip = viewModel::skip)
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(16.dp))
 
             // System back belongs to the flow, not the task stack: with a field
             // focused it puts the keyboard away, past the first step it walks a
@@ -632,7 +633,7 @@ private fun StepHeader(step: Int, onSkip: () -> Unit) {
         // The filled portion grows with her progress; the rail is the same
         // brushed stroke the dashboard and the Codex use.
         InkRail(fraction = (step + 1f) / 3f, seed = step + 1, height = 4.dp)
-        Spacer(Modifier.height(22.dp))
+        Spacer(Modifier.height(16.dp))
         Text(
             stepTitle(step),
             style = MaterialTheme.typography.titleLarge,
@@ -767,7 +768,11 @@ private fun ProfileStep(
         Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        InkPanel(Modifier.fillMaxWidth()) {
+        InkPanel(
+            modifier = Modifier.fillMaxWidth(),
+            accent = IronvellumColors.SystemGreen,
+            contentPadding = PaddingValues(12.dp),
+        ) {
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
                 value = name,
@@ -834,7 +839,11 @@ private fun TrainingStep(
         Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        InkPanel(Modifier.fillMaxWidth()) {
+        InkPanel(
+            modifier = Modifier.fillMaxWidth(),
+            accent = IronvellumColors.SystemGreen,
+            contentPadding = PaddingValues(12.dp),
+        ) {
             FieldLabel("HOW YOU DIVIDE THE WEEK")
             Spacer(Modifier.height(8.dp))
             SplitPicker(split = split, days = daysPerWeek, onPick = onSplit)
@@ -845,7 +854,7 @@ private fun TrainingStep(
                 color = IronvellumColors.InkMuted,
             )
         }
-        InkPanel(Modifier.fillMaxWidth()) {
+        InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(12.dp)) {
             FieldLabel("WEEKLY VOLUME")
             Spacer(Modifier.height(8.dp))
             InkSegmented(
@@ -860,12 +869,12 @@ private fun TrainingStep(
                 color = IronvellumColors.InkMuted,
             )
         }
-        InkPanel(Modifier.fillMaxWidth()) {
+        InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(12.dp)) {
             FieldLabel("YOUR ARMOURY")
             Spacer(Modifier.height(8.dp))
             GearPicker(equipment = equipment, onChange = onEquipment)
         }
-        InkPanel(Modifier.fillMaxWidth()) {
+        InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(12.dp)) {
             FieldLabel("WHAT YOU ARE CHASING")
             Spacer(Modifier.height(8.dp))
             InkSegmented(
@@ -978,7 +987,11 @@ private fun ProposalStep(
     ) {
         val current = plan
         if (current == null) {
-            InkPanel(Modifier.fillMaxWidth()) {
+            InkPanel(
+                modifier = Modifier.fillMaxWidth(),
+                accent = IronvellumColors.SystemGreen,
+                contentPadding = PaddingValues(12.dp),
+            ) {
                 Text(
                     "Consulting the catalogue…",
                     style = MaterialTheme.typography.bodySmall,

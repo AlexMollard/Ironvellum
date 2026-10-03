@@ -55,3 +55,40 @@ Existing `docs/images/*.png` screen captures were refreshed in `f3c9f1a` and are
 ## Shared control contract (Task 2)
 
 `ui/components/Common.kt:103` keeps `InkPanel`'s surface, brush, grain, border, accent, click behavior and 16 dp default inset; an optional `contentPadding` before trailing `content` lets later screen slices adjust only inner spacing. Existing trailing-lambda and named `content =` calls retain their behavior. `Common.kt:350` keeps `IronvellumButton`'s signature and color priority. Its sizing is unchanged; later screen slices measure target bounds and adjust the affected caller where needed. `ui/components/InfoSheet.kt:193` already gives its pinned actions a 48 dp target; the sheet retains its current paper and section/action order. `ui/theme/Theme.kt:57` still declares `onPrimary = Color.White`; no current UI reads `colorScheme.onPrimary` or uses a standard filled Material button, while the shared primary button explicitly uses dark ink. This palette pairing is an audit candidate, not a verified live contrast regression. Runtime target bounds and `INK`/`CLEAN` rendering await the emulator check.
+
+## Task 4 exact checklist — Today
+
+All anchors below are in `ui/dashboard/DashboardScreen.kt`; route callbacks are wired in `ui/IronvellumNav.kt:424`–`:454`. Keep these controls in Today or their current linked destination.
+
+| Visible control/state | Current branch and exact result | Anchor |
+| --- | --- | --- |
+| Identity, worn Title, rank | Name and optional worn Title; tap identity → `onOpenCodex`/`titles`. Empty rank initially blank, then Unranked or rank; rank term info remains. No-title hint appears only after a deed is unlocked. Long rank may wrap, Title ellipsizes. | `:419`–`:480` |
+| Settings, level/crest/XP | 48 dp settings icon → `onOpenSettings`; `LifterSigil` shows level/equipped crest; XP rail and Ascension/current-next tier remain immediately below. | `:481`–`:525` |
+| Steps/oath/Deeds | Normal-height radial steps gauge plus sync-as-of and Oath/Deeds; tight height uses rail-format steps and Oath; tiny height suppresses gauge cluster. Values come from Health days, titles and common streak calculation. | `:529`–`:615`; `:191`–`:239` |
+| Seven-day rail | Each weekday → `viewModel.selectDay(day)`; selected/today/scheduled/sealed colors and stroke, done checkmark and full-day TalkBack description. Foreground across a weekday change resets selection to current day. | `:347`–`:364`; `:619`–`:694` |
+| Body-data gap | Missing height, weight or both → explanatory strip. Weight-only `Add reading` → Ledger; missing height `Set height` → Settings hub/Profile. | `:268`–`:277`; `:696`–`:705`; `:1297`–`:1319` |
+| Quest header/recent Trial | Selected day and plan time; recent live `RESUME` → `onStartSession(id)`, sealed `LAST` → `onOpenWorkout(id)`. Long headline ellipsizes. | `:740`–`:782` |
+| Scheduled Rite, not sealed | Name, optional two-line note, complete-movement manifest with `+N MORE` when room is limited; `Continue {live.label}` → existing live ID, else `Begin Trial` → `viewModel.beginPreset(selectedPreset.id, onStartSession)`. Manifest keeps the button measured; short window scrolls. | `:836`–`:953`; `:719`–`:734` |
+| Today sealed | Name, optional note, `SEALED` state, actual earned XP/STR from `questSessionToday`; no begin button. Only same scheduled preset completed today qualifies. | `:706`–`:717`; `:783`–`:835` |
+| No Cycle | `Build a Cycle` → `onOpenForge` (`program_builder?mode=week`); `Begin an Open Trial` → `viewModel.beginOpen(onStartSession)`/`session/{id}`. | `:954`–`:981`; `:289`–`:295` |
+| Respite/next Rite | Oath/respite message; `Next: …` → select that scheduled day. On current respite before any Trial sealed today, `Begin {next.name} now` → `beginPreset(next.id, onStartSession)`; otherwise offer absent. Decorative respite art has no spoken label. | `:982`–`:1047` |
+| Veil footer | Whole 54 dp strip → `onOpenGarrison`/`idle`; rate and waiting inscription count remain visible. | `:1051`–`:1115` |
+| Deferred awards | Pending Deeds overlay; Done → `celebrationsSeen`, Wear → `wearTitle`, retaining award reconciliation on opening Today. | `:1121`–`:1131`; `:243`–`:283` |
+
+## Task 4 exact checklist — The Binding
+
+`ui/IronvellumNav.kt:159`–`:195` renders the gate outside the route stack. Anchors below are in `ui/onboarding/OnboardingScreen.kt`. No first-run gate, persistence, proposal or validation change is part of visual work.
+
+| Visible control/state | Current branch and exact result | Anchor |
+| --- | --- | --- |
+| Gate and state | Null height opens gate until skip/accept; `step`, identity and training answers are saveable. Existing profile height is saved on Continue while `_flowActive` keeps the remaining steps open. | `:145`–`:156`; `:374`–`:388`; `:200`–`:212` |
+| Header/progress/skip | Roman I/II/III announces `Step N of 3`; title/prose per step; visible skip consequence and 48 dp `SKIP` → `viewModel.skip`, persisting dismissal. Decorative crest is silent. | `:428`–`:461`; `:548`–`:652`; `:325`–`:328` |
+| Back/scroll/focus | Whole form scrolls with IME/status/nav insets. System back clears focused field first, then decrements step; on untouched step 0 the system owns back. Footer Back on steps 1/2 decrements. | `:445`–`:480`; `:534`; `:708`–`:722` |
+| Identity step | Name ≤24 chars; height/weight sanitized decimal, sex segment; invalid name/height/weight identified by inline missing list and disabled Continue. Valid Continue → `saveProfile` then step 1; write order name/sex/height/today's weight is retained. | `:414`–`:421`; `:483`–`:492`; `:528`–`:533`; `:682`–`:697`; `:770`–`:811`; `:195`–`:212` |
+| Training step | Split/days and caption, weekly-volume tier and caption, required Armoury picker, focus Power/Muscle/Techniques/Mixed with explanation. Back → step 0; Continue disabled until Armoury picked, then step 2. Defaults (3 days, full body, no Armoury, Mixed, low volume) stay. | `:382`–`:388`; `:493`–`:503`; `:699`–`:718`; `:821`–`:900` |
+| Proposal generation | Wait for catalogue; same answers preserve hand edits, changed answers rebuild. Loading `Consulting the catalogue…`; every proposed day and movement visible. | `:214`–`:251`; `:937`–`:990` |
+| Proposal edits/empty | Generated plan: change sets (1–10), reps (1–30), remove exercise/day; empty message and `Rebuild from my answers` force generation. Starter preview is read-only and retains hand-written notes. | `:950`–`:1024`; `:254`–`:265` |
+| Proposal alternatives/sources | `Use the starter cycle` → `previewStarter`; when starter shown `Forge from my answers` → force generation; plan notes, progression guidance and sources remain visible. | `:1025`–`:1062` |
+| Completion/error/replace | Back → training. `Take this cycle` disabled until takeable; existing Rites trigger `Replace your rites?` confirm/keep dialog; otherwise accept. Generated/starter use separate repository write paths; failure stays on review with error and no partial write, success dismisses gate. | `:393`–`:411`; `:520`–`:540`; `:719`–`:745`; `:267`–`:323` |
+
+Task 4 captured on locked `Medium_Phone_API_37.0` (1080×2400, density 420 dpi, font scale 1.0): [Binding before](../../images/visual-evolution/binding-profile-before.png), [Binding after](../../images/visual-evolution/binding-profile-after.png), [Today no-cycle before](../../images/visual-evolution/today-no-cycle-before.png), [Today no-cycle after](../../images/visual-evolution/today-no-cycle-after.png), and [scheduled Monday after](../../images/visual-evolution/today-scheduled-after.png). The before captures use Task 1's product-baseline APK; after captures use Task 4's build. The no-cycle state is intentionally unchanged by the scheduled-card edit. The scheduled capture verifies the action panel, one complete movement row and `+4 MORE`; tapping `Begin Trial` reached Trial in Progress. Binding training/proposal, sealed/resume and compact/high-font Today states remain source-mapped but uncaptured here; verify them at the final device gate.

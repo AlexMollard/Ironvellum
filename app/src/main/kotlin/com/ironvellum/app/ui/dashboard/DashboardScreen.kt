@@ -15,6 +15,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -834,32 +835,47 @@ fun DashboardScreen(
                         )
                     }
                 } else {
-                    Text(
-                        selectedPreset.name.uppercase(),
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = IronvellumColors.EmeraldBright,
-                        letterSpacing = 1.sp,
-                    )
-                    if (selectedPreset.note.isNotBlank()) {
+                    // Keep the decision and its explanation together, ahead of
+                    // the manifest. The flexible movement list below still owns
+                    // only the remaining height on a normal window.
+                    InkPanel(
+                        modifier = Modifier.fillMaxWidth(),
+                        accent = IronvellumColors.SystemGreen,
+                        contentPadding = PaddingValues(12.dp),
+                    ) {
                         Text(
-                            selectedPreset.note,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = IronvellumColors.InkMuted,
-                            // The note also lives on the Train card, so it is
-                            // the lifter's own words: two lines, readable,
-                            // before any mark that more follows.
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
+                            selectedPreset.name.uppercase(),
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontFamily = ChakraPetch,
+                            fontWeight = FontWeight.Bold,
+                            color = IronvellumColors.EmeraldBright,
+                            letterSpacing = 1.sp,
+                        )
+                        if (selectedPreset.note.isNotBlank()) {
+                            Text(
+                                selectedPreset.note,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = IronvellumColors.InkMuted,
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
+                        Spacer(Modifier.height(8.dp))
+                        val resume = live
+                        IronvellumButton(
+                            label = if (resume != null) "Continue ${resume.label}" else "Begin Trial",
+                            onClick = {
+                                if (resume != null) onStartSession(resume.id)
+                                else viewModel.beginPreset(selectedPreset.id, onStartSession)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
                         )
                     }
-                    // The manifest is the ONLY flexible child, so the button
-                    // below is measured first and always lands on screen. With
-                    // the header unweighted and the button last, a large system
-                    // font scale let the header eat the card and the button was
-                    // measured at zero height: the app's primary action simply
-                    // vanished at 2.0x.
+                    Spacer(Modifier.height(10.dp))
+                    // The manifest is the only flexible child. The action panel
+                    // above is measured first and remains visible. With the
+                    // header unweighted, the action remains measured before
+                    // the movement list even on a short window.
                     //
                     // Whole rows only. A scroll here clipped the last movement
                     // through its middle - on a 320dp screen the card had room
@@ -929,27 +945,6 @@ fun DashboardScreen(
                             }
                         }
                     }
-                    // A clipped last row sitting flush against the button read
-                    // as the button covering the row. The gap makes the clip
-                    // look like scrolling, which is what it is.
-                    Spacer(Modifier.height(10.dp))
-                    val resume = live
-                    IronvellumButton(
-                        // "Start Anyway" read as an apology: the day header
-                        // already says which day this is, so the button just
-                        // states the act. A trial already under way is
-                        // continued, never offered as a fresh start.
-                        label = when {
-                            resume != null -> "Continue ${resume.label}"
-                            isTodaySelected -> "Begin Trial"
-                            else -> "Begin Trial"
-                        },
-                        onClick = {
-                            if (resume != null) onStartSession(resume.id)
-                            else viewModel.beginPreset(selectedPreset.id, onStartSession)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
                 }
             } else if (ui.presets.isEmpty()) {
                 // A lifter who skipped onboarding has no routine at all: every
