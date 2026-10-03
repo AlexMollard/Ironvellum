@@ -606,7 +606,7 @@ private fun WeeklyCoverageCard(
         modifier
             // A min height keeps the tappable figure from shrinking to a strip
             // on short panes; the card is the button that opens the full view.
-            .heightIn(min = 220.dp)
+            .heightIn(min = 190.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
@@ -659,7 +659,7 @@ private fun WeeklyCoverageCard(
                 volume = volume,
                 goal = goal,
                 modifier = Modifier.fillMaxWidth(),
-                figureHeight = 190.dp,
+                figureHeight = 150.dp,
                 // The card is the way into Weekly Coverage, so its figure is a picture and a tap opens the screen.
                 interactive = false,
             )

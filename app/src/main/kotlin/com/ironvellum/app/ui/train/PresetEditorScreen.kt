@@ -369,29 +369,28 @@ fun PresetEditorScreen(
             )
             Spacer(Modifier.height(8.dp))
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        IronvellumButton(
+            label = "Save Rite",
+            onClick = { viewModel.save(onDone) },
+            enabled = ui.canSave(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        if (ui.presetId != null) {
+            Spacer(Modifier.height(8.dp))
+            // Deletion stays two-step and visually subordinate to saving.
+            var armedDelete by remember { mutableStateOf(false) }
             IronvellumButton(
-                label = "Save Rite",
-                onClick = { viewModel.save(onDone) },
-                enabled = ui.canSave(),
-                modifier = Modifier.weight(1f),
+                label = if (armedDelete) "Confirm delete" else "Delete",
+                onClick = {
+                    if (armedDelete) {
+                        viewModel.delete(onDone)
+                    } else {
+                        armedDelete = true
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                quiet = true,
             )
-            if (ui.presetId != null) {
-                // Delete used to fire on the first tap; a new user prodding the
-                // button lost the whole training day. Arm first, name the cost.
-                var armedDelete by remember { mutableStateOf(false) }
-                IronvellumButton(
-                    label = if (armedDelete) "Confirm delete" else "Delete",
-                    onClick = {
-                        if (armedDelete) {
-                            viewModel.delete(onDone)
-                        } else {
-                            armedDelete = true
-                        }
-                    },
-                    quiet = true,
-                )
-            }
         }
         Spacer(Modifier.height(24.dp))
     }

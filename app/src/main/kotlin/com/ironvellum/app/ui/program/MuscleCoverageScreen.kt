@@ -289,7 +289,7 @@ private fun CoveragePage(
             return@Column
         }
 
-        InkPanel(Modifier.fillMaxWidth()) {
+        InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SystemGreen) {
             BodyHeatMap(
                 volume = volume,
                 goal = goal,

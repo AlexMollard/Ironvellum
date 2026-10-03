@@ -156,6 +156,7 @@ fun ExerciseExplorerScreen(
                 Modifier
                     .fillMaxWidth()
                     .padding(bottom = 6.dp),
+                accent = IronvellumColors.SystemGreen,
                 onClick = { viewModel.pick(selectedExercise) },
             ) {
                 Row(
