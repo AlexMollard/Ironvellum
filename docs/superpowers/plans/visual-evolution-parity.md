@@ -1,6 +1,8 @@
 # Visual evolution preservation baseline
 
-Source baseline: `d318855` as named in the implementation brief. This inventory was checked against the clean `main` checkout at `08643f3` on 2026-10-03. The [approved design inventory](../specs/2026-10-03-visual-evolution-design.md) is the screen-level capability contract; this page pins routes, key callbacks, evidence, and visual gaps. Every implementation slice must expand the exact controls and state branches in its own screen before editing it. A row's post-change location means the same current destination, sheet, or dialog, with visual treatment only.
+**Scope reset, 2026-10-03:** The owner cancelled the broad layout rollout. Current authorized work is limited to the social feed/Tidings and selected screen art; all Task 2, 4, and 5 product layout changes were restored to `08643f3` in a forward commit. The Task 4 and 5 “after” captures and checklists below document superseded experiments, not the current app appearance. Task 6 was never committed. This document remains a historical preservation reference; any later social or art change must map its own exact controls before editing.
+
+Source baseline: `d318855` as named in the former implementation brief. This inventory was checked against the clean `main` checkout at `08643f3` on 2026-10-03. The [former design inventory](../specs/2026-10-03-visual-evolution-design.md) records the larger cancelled scope. Routes, callbacks, and state inventories below remain source references; a row's “post-change location” was the earlier plan, not a statement that the visual treatment is still deployed.
 
 ## Navigation and entry contract
 

@@ -1,5 +1,7 @@
 # Ironvellum visual evolution — design specification
 
+> **SUPERSEDED — scope changed 3 October 2026.** The owner chose to keep the existing layout and all current features. Only the social feed/Tidings and skill-tree technique illustrations remain in scope. The broader visual and art proposals below are retained for history and do not authorize implementation.
+
 **Status:** proposed for owner review, 3 October 2026. This specifies a modest visual evolution of the existing Android app. The browser preview at `C:\Users\alexm\.codex\visualizations\2026\10\03\01a10155-d832-70e1-b787-3bfacee8cbf0\ironvellum-evolution.html` illustrates rhythm, art direction and a possible Tidings card; it is not a feature inventory or an approved replacement for any screen.
 
 ## Intent and boundaries

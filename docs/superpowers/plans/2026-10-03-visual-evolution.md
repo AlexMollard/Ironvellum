@@ -1,5 +1,7 @@
 # Ironvellum Visual Evolution Implementation Plan
 
+> **SUPERSEDED — scope changed 3 October 2026.** The owner chose to keep the existing layout and all current features. Only the social feed/Tidings and skill-tree technique illustrations remain in scope. The 14-task rollout and worker instructions below are historical; do not execute them without a new owner decision.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use `superpowers:subagent-driven-development` to implement this plan task by task. Steps use checkbox (`- [ ]`) syntax for tracking. The owner has selected subagent-driven execution; use `gpt-6-sol` for every implementation and review agent.
 
 **Goal:** Make the existing Ledger easier to scan and visually coherent, while keeping every game-like dark-fantasy capability, route, state, rule, reward, and glossary term reachable.

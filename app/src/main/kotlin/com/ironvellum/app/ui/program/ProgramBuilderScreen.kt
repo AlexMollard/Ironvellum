@@ -11,13 +11,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -583,33 +581,27 @@ fun ProgramBuilderScreen(
         }
         Spacer(Modifier.height(12.dp))
 
-        QuestionPanel("WHAT YOU ARE CHASING", accent = IronvellumColors.SystemGreen) {
-            // Two columns keep the full scientific choice label legible at 360 dp.
-            // Patterns retain only their two supported goals.
-            val goals = if (mode == "template") {
-                listOf(TrainingFocus.STRENGTH to "Power", TrainingFocus.MUSCLE to "Muscle")
-            } else {
-                listOf(
-                    TrainingFocus.STRENGTH to "Power",
-                    TrainingFocus.MUSCLE to "Muscle",
-                    TrainingFocus.SKILL to "Techniques",
-                    TrainingFocus.GENERAL to "Mixed",
-                )
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                goals.chunked(2).forEach { pair ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        pair.forEach { (goal, label) ->
-                            PickCell(
-                                label = label,
-                                selected = focus == goal,
-                                modifier = Modifier.weight(1f).heightIn(min = 48.dp).semantics { selected = focus == goal },
-                                onClick = { viewModel.setFocus(goal) },
-                            )
-                        }
-                    }
-                }
-            }
+        QuestionPanel("WHAT YOU ARE CHASING") {
+            InkSegmented(
+                // Templates are hand-authored for strength and hypertrophy
+                // only; offering Skills / Mixed here composed questions
+                // that matched no template.
+                options = if (mode == "template") {
+                    listOf(
+                        TrainingFocus.STRENGTH to "Power",
+                        TrainingFocus.MUSCLE to "Muscle",
+                    )
+                } else {
+                    listOf(
+                        TrainingFocus.STRENGTH to "Power",
+                        TrainingFocus.MUSCLE to "Muscle",
+                        TrainingFocus.SKILL to "Techniques",
+                        TrainingFocus.GENERAL to "Mixed",
+                    )
+                },
+                selected = focus,
+                onPick = viewModel::setFocus,
+            )
             Spacer(Modifier.height(8.dp))
             Caption(
                 when (focus) {
@@ -1031,16 +1023,8 @@ private const val ARMOURY_PICK_CAPTION =
     "Pick your armoury to see a preview. Nothing means bodyweight only."
 
 @Composable
-private fun QuestionPanel(
-    label: String,
-    accent: Color = IronvellumColors.Rune,
-    content: @Composable () -> Unit,
-) {
-    InkPanel(
-        modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
-        accent = accent,
-        contentPadding = PaddingValues(12.dp),
-    ) {
+private fun QuestionPanel(label: String, content: @Composable () -> Unit) {
+    InkPanel(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,

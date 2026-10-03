@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -106,7 +105,6 @@ fun InkPanel(
     modifier: Modifier = Modifier,
     accent: Color = IronvellumColors.Rune,
     onClick: (() -> Unit)? = null,
-    contentPadding: PaddingValues = PaddingValues(16.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     // Salt the wobble per accent so neighbouring panels are not traced from the
@@ -116,7 +114,7 @@ fun InkPanel(
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(contentPadding),
+                .padding(16.dp),
             content = content,
         )
     }
