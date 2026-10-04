@@ -2,7 +2,7 @@
   "tool": "Codex built-in imagegen",
   "style_reference": "exec-d14e11a6-fc99-47fe-b8ca-ffb581007096.png",
   "count": 119,
-  "total_bytes": 5475770,
+  "total_bytes": 5470850,
   "format": "RGBA WebP, max edge 640 px, quality 88",
   "assets": [
     {
@@ -306,15 +306,16 @@
       "name": "Wall Handstand",
       "path": "Handstand",
       "resource": "skill_wall_handstand",
-      "source": "exec-7abc4bbb-c037-42ec-bca2-782de97f0a27.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Wall Handstand.\nPose: Side three-quarter full inverted handstand, palms on ground with straight arms and straight vertical body, toes touching a simple wall plane.\nApp technique standard: Chest-to-wall hold, 45s unbroken, straight line\nPurpose: Builds the overhead position and shoulder endurance every handstand rests on.",
+      "source": "exec-a403fa23-9e72-4719-841d-08fecf344d2b.png",
+      "prompt": "Use case: stylized-concept. Create a NEW anatomically accurate calisthenics technique illustration, not an edit. Reference image is STYLE ONLY; do not copy its pose. Ironvellum house style: warm bone-ivory engraved ink, charcoal contours and crosshatched anatomical shading, rugged athletic man dark wavy hair, dark tank top and shorts, serious shadowed face. Strong fine engraved detail, same contrast as reference. One full-body figure on genuine transparent alpha-zero background. No background pixels, NO glow, NO halo, NO haze, no shadow, no floor line, no text or arrows. Portrait full figure with all equipment/extremities inside small margins. CRITICAL anatomy: use ONE consistent side profile, athlete anterior side (face, chest, quadriceps, KNEECAPS, front of ankles and toes) faces IMAGE RIGHT; posterior side (back, buttocks, hamstrings, BACK OF KNEES, rounded calf bellies and heels) faces IMAGE LEFT. Clear kneecap on RIGHT outline of each knee, calves on LEFT outline. No axial twisting at hips, no backward knees, no skull rotation. Inverting the athlete does NOT swap front/back anatomy. Technique: wall_handstand. Wall Handstand hold in clean SIDE PROFILE, anterior RIGHT. Thin wall strip at RIGHT. Straight arms palms planted about 20cm LEFT away from wall, elevated shoulders, straight body and joined legs with slight inclination toward wall, ONLY toe tips contact wall. Visible transparent air gap between body and wall, no torso or hip wall contact. Kneecaps on RIGHT outlines, rounded calves on LEFT, heels LEFT, toes RIGHT. Head in line with spine, gaze toward grounded hands with modest natural extension. No snapped neck.",
       "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
+      "review": "Reviewed full-body anatomy, neck alignment, knee/calf/foot orientation, wall clearance where applicable, and 48px icon; RGBA transparency verified",
       "width": 427,
       "height": 640,
-      "bytes": 38158,
+      "bytes": 33238,
       "alpha_min": 0,
-      "sha256": "426e8775ee5e7ed75a0d71a37986040f465b1aaa3aa5dfd5b1647eb8c980196e"
+      "sha256": "8aa36ece447219eeb20d9463b1bf6f644d47e0d4e70de64daeeff9f25ad0091f",
+      "notes": "Regenerated 2026-10-05 to correct reversed head and limb anatomy; matched approved Dead Hang engraving style."
     },
     {
       "name": "Crow Pose",
