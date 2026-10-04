@@ -27,7 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.key
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -284,6 +283,19 @@ fun TitlesScreen(
     var openSkill by rememberSaveable { mutableStateOf<String?>(null) }
     var trainSkill by rememberSaveable { mutableStateOf<String?>(null) }
     var pendingOpen by rememberSaveable { mutableStateOf<String?>(null) }
+    // The technique the tree is asked to scroll into view; the graph clears it once it has.
+    var focusSkill by rememberSaveable { mutableStateOf<String?>(null) }
+    // Open a technique, taking the Codex to it first when the PATHS tab is the one showing:
+    // its path opens, the tree scrolls to it, and its sheet opens over it. From the journal
+    // the sheet alone opens, so a tap there does not move the lifter to another tab.
+    val jumpTo: (String) -> Unit = { name ->
+        val target = Skills.forName(name)?.line
+        if (target != null && pager.currentPage == TitlesTab.TREE.ordinal) {
+            openLine = target
+            focusSkill = name
+        }
+        openSkill = name
+    }
 
     openSkill?.let { name ->
         Skills.forName(name)?.let { def ->
@@ -311,7 +323,7 @@ fun TitlesScreen(
                 },
                 onUnclaim = { viewModel.unclaim(name) },
                 onDismiss = { openSkill = null },
-                onOpenSkill = { openSkill = it },
+                onOpenSkill = jumpTo,
                 onTrain = {
                     trainSkill = name
                     openSkill = null
@@ -390,12 +402,9 @@ fun TitlesScreen(
                 }
                 TitlesTab.TREE -> {
                     val line = openLine
-                    // A fresh scroll for each path, so the graph opens at its own top (and its
-                    // next node) rather than wherever the grid was scrolled to.
-                    val pageScroll = key(line) { rememberScrollState() }
-                    Column(Modifier.fillMaxSize().verticalScroll(pageScroll).padding(horizontal = 16.dp)) {
-                        Spacer(Modifier.height(12.dp))
-                        if (line == null) {
+                    if (line == null) {
+                        Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
+                            Spacer(Modifier.height(12.dp))
                             // No "Skill Tree" heading: the selected pill above already says it.
                             // The tally is the line worth keeping here.
                             Text(
@@ -408,21 +417,31 @@ fun TitlesScreen(
                                 mastered = mastered,
                                 recentLine = recentLine,
                                 onOpen = { openLine = it },
+                                onOpenNeed = { jumpTo(it.skill) },
                             )
-                        } else {
-                            PathHeader(line = line, mastered = mastered, onBack = { openLine = null })
-                            Spacer(Modifier.height(6.dp))
-                            SkillTreeGraph(
+                            Spacer(Modifier.height(28.dp))
+                        }
+                    } else {
+                        // The header and the path strip stay put; each path's tree scrolls in its own page.
+                        Column(Modifier.fillMaxSize()) {
+                            Column(Modifier.padding(horizontal = 16.dp)) {
+                                Spacer(Modifier.height(12.dp))
+                                PathHeader(line = line, mastered = mastered, onBack = { openLine = null })
+                            }
+                            PathPager(
                                 line = line,
+                                onLine = { openLine = it },
                                 mastered = mastered,
                                 onSelect = { openSkill = it },
-                                modifier = Modifier.fillMaxWidth(),
+                                onOpenPrerequisite = jumpTo,
+                                focus = focusSkill,
+                                onFocusHandled = { focusSkill = null },
                                 best = ui.bestEffort,
                                 bodyweightKg = ui.bodyweightKg,
                                 female = ui.sex == Sex.FEMALE,
+                                modifier = Modifier.weight(1f),
                             )
                         }
-                        Spacer(Modifier.height(28.dp))
                     }
                 }
                 TitlesTab.JOURNAL -> Column(

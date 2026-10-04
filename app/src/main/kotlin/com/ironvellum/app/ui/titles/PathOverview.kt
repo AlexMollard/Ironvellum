@@ -13,9 +13,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -29,10 +29,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.ui.components.NavChip
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkBorder
@@ -59,10 +61,19 @@ internal fun pathStatus(done: Int, total: Int, next: String?, blocker: CrossNeed
 }
 
 /** [pathStatus] for a path as the tile reads it, from the graph's own reading order. */
-internal fun pathStatusOf(line: String, mastered: Set<String>): String {
+internal fun pathStatusOf(line: String, mastered: Set<String>): String = pathReading(line, mastered).first
+
+/**
+ * The tile's status line and, when the path is stuck waiting on another one,
+ * the technique it waits for, so the tile can offer to jump there.
+ */
+private fun pathReading(line: String, mastered: Set<String>): Pair<String, CrossNeed?> {
     val (done, total) = SkillGuidance.lineProgress(line, mastered)
     val layout = treeLayout(line, columns = 4)
-    return pathStatus(done, total, layout.firstNext(mastered)?.name, layout.firstBlocker(mastered))
+    val next = layout.firstNext(mastered)?.name
+    val blocker = layout.firstBlocker(mastered)
+    val status = pathStatus(done, total, next, blocker)
+    return status to blocker.takeIf { done < total && next == null }
 }
 
 /**
@@ -75,11 +86,13 @@ internal fun PathGrid(
     mastered: Set<String>,
     recentLine: String?,
     onOpen: (String) -> Unit,
+    /** A path stuck on another path's technique: jump to that technique. */
+    onOpenNeed: (CrossNeed) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // The status per path, in the order the graph reads. Four slots is the
     // phone layout; a wider one only re-orders within a row.
-    val status = remember(mastered) { Skills.LINES.associateWith { pathStatusOf(it, mastered) } }
+    val reading = remember(mastered) { Skills.LINES.associateWith { pathReading(it, mastered) } }
     Column(modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Skills.LINES.chunked(2).forEach { pair ->
             // fillMaxHeight inside an intrinsic-height row would need the same
@@ -91,8 +104,10 @@ internal fun PathGrid(
                         line = line,
                         done = done,
                         total = total,
-                        status = status.getValue(line),
+                        status = reading.getValue(line).first,
                         recent = line == recentLine,
+                        blocker = reading.getValue(line).second,
+                        onOpenBlocker = onOpenNeed,
                         onClick = { onOpen(line) },
                         modifier = Modifier.weight(1f),
                     )
@@ -110,20 +125,29 @@ private fun PathTile(
     total: Int,
     status: String,
     recent: Boolean,
+    blocker: CrossNeed?,
+    onOpenBlocker: (CrossNeed) -> Unit,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val shape = MaterialTheme.shapes.small
     val complete = done >= total
+    // The tile is one button; a blocked path's "needs ..." line is its own, so the
+    // line sits outside the tile's merged semantics and keeps its own click.
     Column(
         modifier
             .heightIn(min = 96.dp)
             .clip(shape)
             .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
-            .inkBorder(if (recent) IronvellumColors.SovereignGold else IronvellumColors.Bracket, shape, if (recent) 1.5.dp else 1.dp)
+            .inkBorder(if (recent) IronvellumColors.SovereignGold else IronvellumColors.Bracket, shape, if (recent) 1.5.dp else 1.dp),
+        verticalArrangement = Arrangement.SpaceBetween,
+    ) {
+    Column(
+        Modifier
+            .fillMaxWidth()
             .clickable(role = Role.Button, onClickLabel = "Open path") { onClick() }
             .semantics(mergeDescendants = true) { contentDescription = tileDescription(line, done, total, status, recent) }
-            .padding(horizontal = 12.dp, vertical = 10.dp),
+            .padding(start = 12.dp, end = 12.dp, top = 10.dp, bottom = if (blocker != null) 0.dp else 10.dp),
         verticalArrangement = Arrangement.SpaceBetween,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -148,14 +172,16 @@ private fun PathTile(
         Spacer(Modifier.height(6.dp))
         ProgressBar(done, total, Modifier.fillMaxWidth())
         Spacer(Modifier.height(6.dp))
-        Text(
-            status,
-            style = MaterialTheme.typography.labelSmall,
-            fontSize = 11.sp,
-            color = if (complete) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
+        if (blocker == null) {
+            Text(
+                status,
+                style = MaterialTheme.typography.labelSmall,
+                fontSize = 11.sp,
+                color = if (complete) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         if (recent) {
             Text(
                 "RECENT",
@@ -168,6 +194,24 @@ private fun PathTile(
                 maxLines = 1,
             )
         }
+    }
+    if (blocker != null) {
+        Text(
+            status,
+            style = MaterialTheme.typography.labelSmall,
+            fontSize = 11.sp,
+            color = IronvellumColors.SystemGreen,
+            textDecoration = TextDecoration.Underline,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .clickable(role = Role.Button, onClickLabel = "Open ${blocker.skill}") { onOpenBlocker(blocker) }
+                .padding(horizontal = 12.dp)
+                .wrapContentHeight(Alignment.CenterVertically),
+        )
+    }
     }
 }
 
@@ -193,27 +237,7 @@ internal fun PathHeader(line: String, mastered: Set<String>, onBack: () -> Unit)
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .heightIn(min = 48.dp)
-                .clip(MaterialTheme.shapes.small)
-                .clickable(role = Role.Button, onClickLabel = "Back to the paths") { onBack() }
-                .padding(end = 12.dp),
-        ) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = null,
-                tint = IronvellumColors.SovereignGold,
-                modifier = Modifier.padding(horizontal = 8.dp),
-            )
-            Text(
-                "BACK",
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SovereignGold,
-            )
-        }
+        NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = onBack)
         Spacer(Modifier.weight(1f))
         Text(
             line,
