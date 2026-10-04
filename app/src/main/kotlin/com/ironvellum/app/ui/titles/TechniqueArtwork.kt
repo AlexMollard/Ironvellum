@@ -1,7 +1,29 @@
 package com.ironvellum.app.ui.titles
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
+import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.inkBorder
 
 /** Bundled, technique-specific art shared by tree nodes and the About preview. */
 @DrawableRes
@@ -126,4 +148,78 @@ internal fun techniqueArtwork(name: String): Int? = when (name) {
     "German Hang" -> R.drawable.skill_german_hang
     "Wrist Prep" -> R.drawable.skill_wrist_prep
     else -> null
+}
+
+/** Where a technique stands for the lifter, as its art shows it: earned, open to claim, or out of reach. */
+internal enum class ArtState { MASTERED, OPEN, LOCKED }
+
+/** The state's own colour: gold earned, green open, grey locked. The same ring the tree draws. */
+internal fun artRing(state: ArtState): Color = when (state) {
+    ArtState.MASTERED -> IronvellumColors.SovereignGold
+    ArtState.OPEN -> IronvellumColors.SystemGreen
+    ArtState.LOCKED -> LockedDot
+}
+
+/**
+ * A locked technique's engraving drained of its parchment and dimmed, so the art says "not yet" in the
+ * tree and the sheet alike instead of looking merely faded.
+ */
+internal fun artFilter(state: ArtState): ColorFilter? =
+    if (state == ArtState.LOCKED) ColorFilter.colorMatrix(ColorMatrix().apply { setToSaturation(0f) }) else null
+
+internal fun artAlpha(state: ArtState): Float = if (state == ArtState.LOCKED) 0.5f else 1f
+
+/**
+ * A technique's engraving set in a plate rather than left floating on the sheet: a dark paper ground lit
+ * from behind in the state's colour, a floor shadow so the figure stands on something, and an ink edge.
+ * The plate takes the art's own shape (most are 2:3 portraits), never squarer than 1:1.
+ */
+@Composable
+internal fun TechniquePlate(@DrawableRes artwork: Int, state: ArtState, modifier: Modifier = Modifier) {
+    val painter = painterResource(artwork)
+    val ratio = painter.intrinsicSize.let { if (it.height > 0f) it.width / it.height else 2f / 3f }.coerceIn(2f / 3f, 1f)
+    val glow = artRing(state)
+    val shape = MaterialTheme.shapes.small
+    Box(
+        modifier
+            .aspectRatio(ratio)
+            .clip(shape)
+            .background(IronvellumColors.Abyss)
+            .drawBehind {
+                // A soft light behind the figure, in the state's colour; none for a locked one.
+                if (state != ArtState.LOCKED) {
+                    drawRect(
+                        Brush.radialGradient(
+                            0f to glow.copy(alpha = if (state == ArtState.MASTERED) 0.22f else 0.12f),
+                            1f to Color.Transparent,
+                            center = Offset(size.width / 2f, size.height * 0.45f),
+                            radius = size.maxDimension * 0.6f,
+                        ),
+                    )
+                }
+                // The floor: a flat shadow under the feet.
+                val floorW = size.width * 0.7f
+                val floorH = size.height * 0.06f
+                drawOval(
+                    Brush.radialGradient(
+                        0f to Color.Black.copy(alpha = 0.55f),
+                        1f to Color.Transparent,
+                        center = Offset(size.width / 2f, size.height * 0.91f),
+                        radius = floorW / 2f,
+                    ),
+                    topLeft = Offset((size.width - floorW) / 2f, size.height * 0.91f - floorH / 2f),
+                    size = Size(floorW, floorH),
+                )
+            }
+            .inkBorder(glow.copy(alpha = if (state == ArtState.LOCKED) 0.6f else 0.45f), shape, 1.dp),
+    ) {
+        Image(
+            painter = painter,
+            contentDescription = null,
+            contentScale = ContentScale.Fit,
+            colorFilter = artFilter(state),
+            alpha = artAlpha(state),
+            modifier = Modifier.fillMaxSize().padding(10.dp),
+        )
+    }
 }
