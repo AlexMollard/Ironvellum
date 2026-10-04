@@ -248,7 +248,7 @@ private const val SETTLE_MS = 2500L
 private const val SCROLL_LEAD_DP = 16f
 
 /** The scrolling page share of the screen height: the rest is the title, tabs and nav bar. */
-private const val VIEWPORT_SHARE = 0.66f
+private const val VIEWPORT_SHARE = 0.70f
 
 /** The window requested from the target down, as a share of the page: the target then lands a third of the way down. */
 private const val SCROLL_WINDOW = 2f / 3f
@@ -502,7 +502,8 @@ private fun SkillNode(
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .widthIn(max = width)
-                    .height(textH / 2 * crossLines)
+                    // a minimum, not a fixed height: a rounding pixel short of the text's own height would cut its last line
+                    .heightIn(min = textH / 2 * crossLines)
                     .clip(plate)
                     .background(plateColour)
                     .padding(horizontal = LabelPad),
