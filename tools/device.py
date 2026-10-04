@@ -61,7 +61,7 @@ def up(timeout: int = 300) -> str:
         return target()
     subprocess.Popen(
         [str(EMULATOR), "-avd", AVD, "-no-window", "-no-audio", "-no-boot-anim",
-         "-gpu", "swiftshader_indirect", "-port", PORT],
+         "-gpu", "host", "-port", PORT],
         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
     )
     serial = f"emulator-{PORT}"

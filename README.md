@@ -158,9 +158,9 @@ python tools/device.py labels    # visible text, for finding a tap target
 ```
 
 > [!NOTE]
-> Emulator screenshots are not pixel-comparable with a real device. The software
-> rasteriser differs and the ink seeds resolve per pixel size, so only compare
-> shots taken on the same target.
+> The emulator renders on the host GPU (`-gpu host`). Its screenshots are still not
+> pixel-comparable with a real device: the GL translation differs and the ink seeds
+> resolve per pixel size, so only compare shots taken on the same target.
 
 > [!WARNING]
 > The instrumented suite calls `pm clear` and writes to the app's own database.
