@@ -24,8 +24,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.relocation.BringIntoViewRequester
-import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
@@ -37,9 +35,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.withFrameNanos
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.platform.LocalConfiguration
 import android.os.SystemClock
+import androidx.compose.foundation.ScrollState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -120,6 +118,14 @@ fun SkillTreeGraph(
      * Without it the tree opens on [openTarget] and then leaves scrolling to the user.
      */
     scrollToSkill: String? = null,
+    /**
+     * The vertical scroll of the page holding this tree, and how far down that page the tree starts.
+     * The graph scrolls exactly this page to its target. Without it there is no auto-scroll: a
+     * bring-into-view request would also be honoured by every pager around the tree, and dragged
+     * the Codex back to PATHS whenever its tabs swept past this page.
+     */
+    pageScroll: ScrollState? = null,
+    treeTopInPage: Dp = 0.dp,
     /** Taps a "needs X (Path)" caption: the callee takes the lifter to that technique, wherever it lives. */
     onOpenPrerequisite: (String) -> Unit = {},
     /**
@@ -182,32 +188,29 @@ fun SkillTreeGraph(
 
         // Where the eye should land when a path opens: the next open technique, an
         // explicit request winning (a prerequisite followed from elsewhere, via [focus] or
-        // [scrollToSkill]). Bringing a node into view only scrolls as far as "visible", which
-        // leaves a node already on screen at the bottom, so ask for a tall window that starts
-        // at the node: the page then lands it in the upper third. The open target is keyed so
-        // a late-arriving mastered set still moves it, but only while the path is settling;
-        // after that the lifter's own scroll is left alone.
+        // [scrollToSkill]). Only [pageScroll] moves, so the node lands in the upper third of its own
+        // page and no pager around it is touched. The open target is keyed so a late-arriving mastered
+        // set still moves it, but only while the path is settling; after that the lifter's own scroll
+        // is left alone. Saved with the page, so swiping back to a path does not yank it again.
         val openTarget = remember(layout, mastered) { layout.openTarget(mastered) }
         val density = LocalDensity.current.density
-        val screenDp = LocalConfiguration.current.screenHeightDp
-        val treeRequester = remember { BringIntoViewRequester() }
-        val openedAt = remember(line) { SystemClock.uptimeMillis() }
+        val openedAt = rememberSaveable(line) { SystemClock.uptimeMillis() }
         // A focus request names any technique; only the page that owns it acts on it.
         val focusName = focus?.takeIf { f -> layout.nodes.any { it.skill.name == f } }
         val requested = focusName ?: scrollToSkill
         val goTo = requested ?: openTarget
         LaunchedEffect(line, goTo, requested != null) {
+            val page = pageScroll ?: return@LaunchedEffect
             val y = goTo?.let { layout.discTopOf(it, metrics) } ?: return@LaunchedEffect
             if (requested == null && SystemClock.uptimeMillis() - openedAt > SETTLE_MS) return@LaunchedEffect
             withFrameNanos { }
             withFrameNanos { }
-            val top = (y - SCROLL_LEAD_DP) * density
-            val window = screenDp * VIEWPORT_SHARE * SCROLL_WINDOW * density
-            treeRequester.bringIntoView(Rect(0f, top, maxWidth.value * density, top + window))
+            val top = (treeTopInPage.value + y - SCROLL_LEAD_DP) * density
+            page.animateScrollTo((top - page.viewportSize * UPPER_SHARE).toInt().coerceIn(0, page.maxValue))
             if (focusName != null) onFocusHandled()
         }
 
-        Box(Modifier.fillMaxWidth().height(tops.last().dp).bringIntoViewRequester(treeRequester)) {
+        Box(Modifier.fillMaxWidth().height(tops.last().dp)) {
             Canvas(Modifier.fillMaxSize()) {
                 val stroke = EdgeW.toPx()
                 val dp = density
@@ -278,11 +281,8 @@ private const val SETTLE_MS = 2500L
 /** Clear space kept above the target disc (its tier chip and halo) when scrolling to it. */
 private const val SCROLL_LEAD_DP = 16f
 
-/** The scrolling page share of the screen height: the rest is the title, tabs and nav bar. */
-private const val VIEWPORT_SHARE = 0.70f
-
-/** The window requested from the target down, as a share of the page: the target then lands a third of the way down. */
-private const val SCROLL_WINDOW = 2f / 3f
+/** Where the target lands in its page, as a share of the page's visible height from the top. */
+private const val UPPER_SHARE = 0.25f
 
 /**
  * A 0..1 breath, 2s each way, for the open nodes. Held still at mid-breath when
