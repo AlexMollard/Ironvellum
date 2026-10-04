@@ -125,9 +125,10 @@ class SkillTreeEdgeTest {
             val d = Drawn(line, w)
             val xs = d.layout.nodes.map { it.x }
             if (xs.max() - xs.min() < 0.5f) continue // a lone chain stays centred
-            // the outermost node sits within a slot of an edge, or the stretch hit its cap
+            // the stretch stops short of the edge on purpose (EDGE_REACH), and a side lane takes some of
+            // that margin, so half the width is the floor that still tells a spread tree from a huddle
             val reach = (xs.max() - xs.min()) / (d.columns - 1)
-            assertTrue("$line @${w.toInt()}dp uses ${"%.0f".format(reach * 100)}% of the width", reach >= 0.55f)
+            assertTrue("$line @${w.toInt()}dp uses ${"%.0f".format(reach * 100)}% of the width", reach >= 0.5f)
         }
     }
 

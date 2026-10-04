@@ -61,6 +61,12 @@ private const val MAX_PERMUTED = 7
 private const val MAX_SPREAD = 2.2
 
 /**
+ * How far toward the edge slot the outermost node may be stretched, as a share of the half-width. All the way
+ * to the edge left two-branch paths (Push) hugging the screen sides with an empty channel between them.
+ */
+private const val EDGE_REACH = 0.7
+
+/**
  * How many node slots fit across [availableDp]. A path's widest row is three
  * techniques, so four slots on a 360dp phone never wrap; a wider screen gets
  * more slots rather than stretched ones.
@@ -362,13 +368,14 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
     xOf.keys.toList().forEach { xOf[it] = xOf.getValue(it) + shift }
 
     // Spread: a branchy path packs into the middle of the row, leaving the margins empty. Stretch the whole
-    // drawing about its centre until its outermost node (or lane) meets the edge. Only gaps grow, so nothing
-    // that was clear of anything else closes up, and a lone chain (nothing off-centre) stays where it is.
+    // drawing about its centre until its outermost node (or lane) reaches [EDGE_REACH] of the way to the edge.
+    // Only gaps grow, so nothing that was clear of anything else closes up, and a lone chain (nothing
+    // off-centre) stays where it is.
     val mid = (columns - 1) / 2.0
     var spread = MAX_SPREAD
     xOf.forEach { (n, x) ->
         val off = kotlin.math.abs(x - mid)
-        if (off > 1e-9) spread = minOf(spread, (mid + if (isLane(n)) LANE_MARGIN else 0.0) / off)
+        if (off > 1e-9) spread = minOf(spread, (mid * EDGE_REACH + if (isLane(n)) LANE_MARGIN else 0.0) / off)
     }
     if (spread > 1.0) xOf.keys.toList().forEach { xOf[it] = mid + (xOf.getValue(it) - mid) * spread * (1 - 1e-6) }
 
