@@ -54,6 +54,12 @@ private const val LANE_NODE_GAP = 0.7
 /** How far past an end column's centre a waypoint may sit. */
 private const val LANE_MARGIN = 0.4
 
+/** Levels up to this many entries (nodes and waypoints) have every order tried when settling the crossings. */
+private const val MAX_PERMUTED = 7
+
+/** The most the drawing may be stretched sideways to fill the row; past this a fork reads as a flat bar. */
+private const val MAX_SPREAD = 2.2
+
 /**
  * How many node slots fit across [availableDp]. A path's widest row is three
  * techniques, so four slots on a 360dp phone never wrap; a wider screen gets
@@ -99,7 +105,17 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
             .maxOfOrNull { depthOf(it) + 1 } ?: 0
     }
 
-    val edges = onLine.flatMap { s -> parents.getValue(s.name).map { TreeEdge(it, s.name) } }
+    // An edge whose prerequisite is already an ancestor of another prerequisite of the same technique says
+    // nothing the path does not already say (Wall Handstand leads to Wall HSPU through the negative), so it
+    // is not drawn; every prerequisite is still listed on the technique itself.
+    val ancestors = HashMap<String, Set<String>>()
+    fun ancestorsOf(n: String): Set<String> = ancestors.getOrPut(n) {
+        parents.getValue(n).flatMap { setOf(it) + ancestorsOf(it) }.toSet()
+    }
+    val edges = onLine.flatMap { s ->
+        val direct = parents.getValue(s.name)
+        direct.filter { p -> direct.none { q -> q != p && p in ancestorsOf(q) } }.map { TreeEdge(it, s.name) }
+    }
     val groups = onLine.groupBy { it.tier to depthOf(it) }
         .toSortedMap(compareBy({ it.first }, { it.second }))
     val limit = groups.keys.associateWith { columns }.toMutableMap()
@@ -168,9 +184,12 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
     val upstream = HashMap<String, MutableList<String>>()
     val downstream = HashMap<String, MutableList<String>>()
     val links = LinkedHashSet<Pair<String, String>>()
+    // how many edges ride each link: a crossing of two shared trunks is every pair of their edges crossing
+    val riders = HashMap<Pair<String, String>, Int>()
     chainOf.values.flatten().toSet().forEach { order[it.substringAfterLast('@').toInt()] += it }
     edges.forEach { e ->
         (listOf(e.from) + chainOf.getValue(e) + e.to).zipWithNext().forEach { (a, b) ->
+            riders.merge(a to b, 1, Int::plus)
             if (links.add(a to b)) {
                 upstream.getOrPut(b) { mutableListOf() } += a
                 downstream.getOrPut(a) { mutableListOf() } += b
@@ -197,7 +216,7 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
             if (levelOf[a.first] != levelOf[b.first]) continue
             val top = p.getValue(a.first) - p.getValue(b.first)
             val bottom = p.getValue(a.second) - p.getValue(b.second)
-            if (top * bottom < 0) count++
+            if (top * bottom < 0) count += riders.getValue(a) * riders.getValue(b)
         }
         return count
     }
@@ -210,7 +229,8 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
         order[l] = order[l].sortedBy { key.getValue(it) }.toMutableList()
     }
 
-    var best = order.map { it.toList() }
+    val declared = order.map { it.toList() }
+    var best = declared
     var bestCrossings = orderCrossings()
     repeat(4) {
         for (l in 1 until order.size) sweep(l, ::parentsOf)
@@ -221,7 +241,61 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
             best = order.map { it.toList() }
         }
     }
-    best.forEachIndexed { l, names -> order[l] = names.toMutableList() }
+    // The barycentre order is often a swap or two short of the best. Settle each level in turn: try every
+    // order of a level small enough to try and keep the one that crosses least against its neighbours.
+    fun crossingsAround(l: Int): Int {
+        val index = HashMap<String, Int>()
+        for (k in maxOf(0, l - 1)..minOf(order.lastIndex, l + 1)) order[k].forEachIndexed { i, n -> index[n] = i }
+        val near = linkList.filter { levelOf[it.first] == l - 1 || levelOf[it.first] == l }
+        var count = 0
+        for (i in near.indices) for (j in i + 1 until near.size) {
+            val a = near[i]
+            val b = near[j]
+            if (levelOf[a.first] != levelOf[b.first]) continue
+            val top = index.getValue(a.first) - index.getValue(b.first)
+            val bottom = index.getValue(a.second) - index.getValue(b.second)
+            if (top * bottom < 0) count += riders.getValue(a) * riders.getValue(b)
+        }
+        return count
+    }
+    fun permutations(items: List<String>): Sequence<List<String>> =
+        if (items.size <= 1) sequenceOf(items)
+        else items.asSequence().flatMap { head -> permutations(items - head).map { listOf(head) + it } }
+    fun settle() {
+    var rounds = 0
+    do {
+        var improved = false
+        for (l in order.indices) {
+            if (order[l].size !in 2..MAX_PERMUTED) continue
+            var least = crossingsAround(l)
+            var keep = order[l].toList()
+            for (candidate in permutations(keep)) {
+                order[l] = candidate.toMutableList()
+                val c = crossingsAround(l)
+                if (c < least) {
+                    least = c
+                    keep = candidate
+                    improved = true
+                }
+            }
+            order[l] = keep.toMutableList()
+        }
+    } while (improved && ++rounds < 4)
+    }
+    // From the swept order, from declaration order and from the swept order mirrored: they settle in
+    // different valleys, and the least-crossed one wins (the swept one on a tie).
+    var chosen = best
+    var chosenCrossings = Int.MAX_VALUE
+    listOf(best, declared, best.map { it.reversed() }).forEach { start ->
+        start.forEachIndexed { l, names -> order[l] = names.toMutableList() }
+        settle()
+        val c = orderCrossings()
+        if (c < chosenCrossings) {
+            chosenCrossings = c
+            chosen = order.map { it.toList() }
+        }
+    }
+    chosen.forEachIndexed { l, names -> order[l] = names.toMutableList() }
 
     // ---- slots
 
@@ -287,6 +361,17 @@ internal fun treeLayout(line: String, columns: Int): TreeLayout {
     val shift = (columns - 1) / 2.0 - (xOf.values.min() + xOf.values.max()) / 2.0
     xOf.keys.toList().forEach { xOf[it] = xOf.getValue(it) + shift }
 
+    // Spread: a branchy path packs into the middle of the row, leaving the margins empty. Stretch the whole
+    // drawing about its centre until its outermost node (or lane) meets the edge. Only gaps grow, so nothing
+    // that was clear of anything else closes up, and a lone chain (nothing off-centre) stays where it is.
+    val mid = (columns - 1) / 2.0
+    var spread = MAX_SPREAD
+    xOf.forEach { (n, x) ->
+        val off = kotlin.math.abs(x - mid)
+        if (off > 1e-9) spread = minOf(spread, (mid + if (isLane(n)) LANE_MARGIN else 0.0) / off)
+    }
+    if (spread > 1.0) xOf.keys.toList().forEach { xOf[it] = mid + (xOf.getValue(it) - mid) * spread * (1 - 1e-6) }
+
     val nodes = order.flatMapIndexed { l, names ->
         names.filterNot(::isLane).map { n -> PlacedSkill(Skills.forName(n)!!, l, xOf.getValue(n).toFloat()) }
     }
@@ -345,3 +430,11 @@ internal fun TreeLayout.firstBlocker(mastered: Set<String>): CrossNeed? =
  */
 internal fun TreeLayout.firstNext(mastered: Set<String>): Skills.SkillDef? =
     nodes.firstOrNull { SkillGuidance.isFrontier(it.skill, mastered) }?.skill
+
+/**
+ * The technique a path should open on: the first available, unmastered one;
+ * failing that the furthest mastered one in reading order (the lifter's most
+ * recent ground, there being no claim dates here). Null for an empty path.
+ */
+internal fun TreeLayout.openTarget(mastered: Set<String>): String? =
+    firstNext(mastered)?.name ?: nodes.lastOrNull { it.skill.name in mastered }?.skill?.name

@@ -134,4 +134,27 @@ class SkillTreeLayoutTest {
         val pull = treeLayout("Pull", phoneColumns)
         assertFalse(pull.firstNext(setOf("Dead Hang"))!!.name == "Dead Hang")
     }
+
+    @Test
+    fun `a path opens on its first open technique, else the furthest it has mastered`() {
+        val pull = treeLayout("Pull", phoneColumns)
+        assertEquals("Dead Hang", pull.openTarget(emptySet()))
+        val done = setOf("Dead Hang", "Scapular Pull", "Australian Pull-up", "Negative Pull-up", "Pull-up")
+        assertEquals(pull.firstNext(done)!!.name, pull.openTarget(done))
+        val all = Skills.ALL.filter { it.line == "Pull" }.map { it.name }.toSet()
+        assertEquals(pull.nodes.last().skill.name, pull.openTarget(all))
+        // the scroll offset of a target grows down the graph and is absent for a skill on another path
+        val m = treeMetrics(pull, 82f, 12f)
+        val tops = listOf("Dead Hang", "Pull-up", "One-Arm Pull-up").map { pull.discTopOf(it, m)!! }
+        assertEquals(tops, tops.sorted())
+        assertNull(pull.discTopOf("Back Squat", m))
+    }
+
+    @Test
+    fun `the wrap estimate breaks at spaces and hyphens and never counts past three lines`() {
+        assertEquals(1, estimateLines("Dead Hang", 76f, LABEL_SP, bold = true))
+        assertEquals(2, estimateLines("Australian Pull-up", 76f, LABEL_SP, bold = true))
+        assertEquals(3, estimateLines("Triple-Bodyweight Deadlift", 76f, LABEL_SP, bold = true))
+        assertEquals(3, estimateLines("A".repeat(200), 76f, LABEL_SP, bold = true))
+    }
 }
