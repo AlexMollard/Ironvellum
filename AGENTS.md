@@ -28,7 +28,8 @@ python3 tools/gate.py --backend    # plus the Supabase schema assertions
 python3 tools/gate.py --no-device  # no emulator: compiles instrumented instead
 ```
 
-It takes about 17 minutes on this machine, most of it the instrumented suite.
+It takes about 2 minutes on this machine with the emulator on the host GPU
+(`tools/device.py up` boots it with `-gpu host`); on the software renderer it took 17.
 It goes red when any test fails, and also when fewer tests ran than the
 sources declare: a test process that crashes on start reports zero tests and
 zero failures, which used to read as green.
