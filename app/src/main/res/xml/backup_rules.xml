@@ -25,4 +25,7 @@
     <!-- Paid-circle-week flags are meaningless, and double-paying-adjacent, without the database. -->
     <exclude domain="sharedpref" path="warband_payout.xml" />
     <exclude domain="sharedpref" path="circle_payout.xml" />
+    <!-- The cloud sign-in: supabase-kt keeps its access and refresh token here (its default
+         SettingsSessionManager). Restored elsewhere, two installs would share one rotating token. -->
+    <exclude domain="sharedpref" path="com.ironvellum.app_preferences.xml" />
 </full-backup-content>
