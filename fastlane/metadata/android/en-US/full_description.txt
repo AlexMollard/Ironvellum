@@ -1,9 +1,8 @@
 An Android training tracker that scores what you actually lift. Seal a trial,
 get a number that means something.
 
-Most trackers add up kilograms. That rewards being heavy and rewards machines
-that hide how much load you are really moving, so the number you chase drifts
-away from the training that earned it.
+Most trackers add up kilograms, which rewards being heavy and machines that
+hide the load you really move.
 
 Ironvellum scores a set by what it costs you:
 
@@ -33,19 +32,14 @@ Features:
   (the equipment you own) and goal, and the app proposes an editable cycle
   built from the real catalogue. No cycle is imposed on you.
 - The Forge, an evidence-based builder: full body, upper/lower and
-  push/pull/legs patterns for strength or muscle, fitted to your weekly volume
-  and your armoury, from a full gym to a pull-up bar and one dumbbell; a
-  forged cycle or single rite; or a tempered version of a rite you already
-  have, shown before and after. Cap the exercises per rite (5 by default) or
-  keep to compound and technique work only. Every exercise explains why it was
-  picked, citing 2020-2026 research.
+  push/pull/legs for strength or muscle, fitted to your volume and armoury,
+  from a full gym to a pull-up bar. Forge a cycle or a rite, or temper one you
+  have. Every exercise explains why it was picked, citing 2020-2026 research.
 - Weekly muscle coverage: an anatomical body map, male or female to match
   your profile, of the sets each muscle gets, planned or from the last seven
-  days. Swipe between muscle tiles, gaps first, and exercise cards, and tap a
-  muscle on any figure to light it with a line of context. Helper muscles your
-  other exercises mostly train get a floor instead of a range. Lever and
-  planche holds count. Every exercise and technique has a swipeable info sheet
-  showing the muscles it works, on the live trial screen too.
+  days, as muscle tiles (gaps first) and exercise cards. Tap a muscle on any
+  figure to light it. Every exercise and technique has a swipeable info sheet
+  showing the muscles it works.
 - Live trials: type a set's exact load, watch a running timer, and continue a
   trial you left. Time estimates learn your pace from the trials you seal.
   After a trial, pick which changes go back into your cycle.
@@ -65,8 +59,8 @@ Features:
 - Shareable trials: a plain text card shaped after Wordle, no link and no
   image, that states only what you did.
 - Optional cloud: sign in to back up training, follow your allies' tidings,
-  form a circle with a weekly goal and stand in the Reckoning, a leaderboard for each lift. Body measurements and
-  health data never leave the device. Delete your cloud account from the app
+  form a circle with a weekly goal and stand in the Reckoning, a leaderboard
+  for each lift. Body measurements and health data never leave the device. Delete your cloud account from the app
   at any time.
 
 Ironvellum is free software under GPL-3.0-or-later. It has no ads, no trackers
