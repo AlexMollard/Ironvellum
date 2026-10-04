@@ -35,6 +35,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.platform.LocalConfiguration
+import android.os.SystemClock
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -107,6 +111,13 @@ fun SkillTreeGraph(
     /** The lifter, so a load-bearing standard is judged against their bodyweight. */
     bodyweightKg: Double? = null,
     female: Boolean = false,
+    /**
+     * Scroll the enclosing page so this technique sits in the upper third of the
+     * view; null leaves it alone. Set it (and set it again after clearing it to
+     * repeat) to jump to a skill, e.g. a prerequisite followed from another path.
+     * Without it the tree opens on [openTarget] and then leaves scrolling to the user.
+     */
+    scrollToSkill: String? = null,
 ) {
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val columns = columnsFor(maxWidth.value)
@@ -136,8 +147,21 @@ fun SkillTreeGraph(
                 ).lineCount.coerceIn(1, MAX_LABEL_LINES)
             }
         }
-        val metrics = remember(layout, cellW, lineH, measured) {
-            treeMetrics(layout, cellW.value, lineH) { measured.getValue(it.skill.name) }
+        // The marker under a name ("needs L-sit (Core)") wraps too, at its own size; its longest form is reserved.
+        val crossStyle = MaterialTheme.typography.labelSmall.copy(fontSize = CrossSize, lineHeight = LabelLine, letterSpacing = 0.sp)
+        val measuredCross = remember(layout, cellW, uiDensity, crossStyle) {
+            val textW = with(uiDensity) { (cellW - LabelPad * 2).roundToPx() }.coerceAtLeast(1)
+            layout.nodes.associate { n ->
+                n.skill.name to (layout.crossMarker(n.skill.name)?.let {
+                    measurer.measure(it, crossStyle, constraints = Constraints(maxWidth = textW), maxLines = MAX_LABEL_LINES)
+                        .lineCount.coerceIn(1, MAX_LABEL_LINES)
+                } ?: 0)
+            }
+        }
+        val metrics = remember(layout, cellW, lineH, measured, measuredCross) {
+            treeMetrics(layout, cellW.value, lineH, crossLinesOf = { measuredCross.getValue(it.skill.name) }) {
+                measured.getValue(it.skill.name)
+            }
         }
         val tops = metrics.tops
         val levelLines = metrics.levelLines
@@ -145,16 +169,29 @@ fun SkillTreeGraph(
         // One breathing phase for every open node, so they pulse together.
         val pulse = rememberBreath()
 
-        // Where the eye should land when a path opens. Keyed on the target too:
-        // the mastered set can arrive after the first frame, and a claim moves
-        // the frontier on.
-        val firstNext = remember(layout, mastered) { layout.firstNext(mastered)?.name }
-        val nextRequester = remember { BringIntoViewRequester() }
-        LaunchedEffect(line, firstNext) {
-            if (firstNext != null) nextRequester.bringIntoView()
+        // Where the eye should land when a path opens: the next open technique, an
+        // explicit request winning. Bringing a node into view only scrolls as far as
+        // "visible", which leaves a node already on screen at the bottom, so ask for a
+        // tall window that starts at the node: the page then lands it in the upper third.
+        // The target is keyed so a late-arriving mastered set still moves it, but only
+        // while the path is settling; after that the lifter's own scroll is left alone.
+        val openTarget = remember(layout, mastered) { layout.openTarget(mastered) }
+        val density = LocalDensity.current.density
+        val screenDp = LocalConfiguration.current.screenHeightDp
+        val treeRequester = remember { BringIntoViewRequester() }
+        val openedAt = remember(line) { SystemClock.uptimeMillis() }
+        val goTo = scrollToSkill ?: openTarget
+        LaunchedEffect(line, goTo, scrollToSkill != null) {
+            val y = goTo?.let { layout.discTopOf(it, metrics) } ?: return@LaunchedEffect
+            if (scrollToSkill == null && SystemClock.uptimeMillis() - openedAt > SETTLE_MS) return@LaunchedEffect
+            withFrameNanos { }
+            withFrameNanos { }
+            val top = (y - SCROLL_LEAD_DP) * density
+            val window = screenDp * VIEWPORT_SHARE * SCROLL_WINDOW * density
+            treeRequester.bringIntoView(Rect(0f, top, maxWidth.value * density, top + window))
         }
 
-        Box(Modifier.fillMaxWidth().height(tops.last().dp)) {
+        Box(Modifier.fillMaxWidth().height(tops.last().dp).bringIntoViewRequester(treeRequester)) {
             Canvas(Modifier.fillMaxSize()) {
                 val stroke = EdgeW.toPx()
                 val dp = density
@@ -184,13 +221,13 @@ fun SkillTreeGraph(
                     },
                     description = rowDescription(skill, isMastered, unlocked, needs, cue),
                     crossNeed = if (isMastered) null else crossNeedMarker(layout.crossNeeds[skill.name].orEmpty(), mastered),
+                    crossLines = if (skill.name in layout.crossNeeds) metrics.crossLines[node.level] else 0,
                     width = cellW,
                     lines = levelLines[node.level],
                     pulse = pulse,
                     onClick = { onSelect(skill.name) },
                     modifier = Modifier
-                        .offset(x = cellW * node.x, y = tops[node.level].dp)
-                        .then(if (skill.name == firstNext) Modifier.bringIntoViewRequester(nextRequester) else Modifier),
+                        .offset(x = cellW * node.x, y = tops[node.level].dp),
                 )
             }
         }
@@ -198,16 +235,23 @@ fun SkillTreeGraph(
 }
 
 private val LabelLine = 12.sp
-private val LabelSize = 11.sp
+private val LabelSize = LABEL_SP.sp
+private val CrossSize = CROSS_SP.sp
 
 /** Side padding inside a label plate. */
-private val LabelPad = 3.dp
+private val LabelPad = LABEL_PAD_DP.dp
 
-/** The most lines a technique's name may take under its node before it is cut. */
-private const val MAX_LABEL_LINES = 3
+/** How long after a path opens its target may still move (the lifter data can arrive a beat late). */
+private const val SETTLE_MS = 2500L
 
-/** A character-count guess at a label's lines, for callers that cannot measure. The tree itself measures. */
-internal fun labelLines(name: String): Int = if (name.length <= 12) 1 else 2
+/** Clear space kept above the target disc (its tier chip and halo) when scrolling to it. */
+private const val SCROLL_LEAD_DP = 16f
+
+/** The scrolling page share of the screen height: the rest is the title, tabs and nav bar. */
+private const val VIEWPORT_SHARE = 0.66f
+
+/** The window requested from the target down, as a share of the page: the target then lands a third of the way down. */
+private const val SCROLL_WINDOW = 2f / 3f
 
 /**
  * A 0..1 breath, 2s each way, for the open nodes. Held still at mid-breath when
@@ -277,6 +321,7 @@ private fun SkillNode(
     state: NodeState,
     description: String,
     crossNeed: String?,
+    crossLines: Int,
     width: Dp,
     lines: Int,
     pulse: State<Float>,
@@ -442,23 +487,25 @@ private fun SkillNode(
                 .background(plateColour)
                 .padding(horizontal = LabelPad),
         )
-        if (crossNeed != null) {
+        // The marker room is always reserved (and painted page-coloured once nothing is outstanding),
+        // so the line leaving this node starts below it in either case.
+        if (crossLines > 0) {
             Text(
-                crossNeed,
+                crossNeed.orEmpty(),
                 style = MaterialTheme.typography.labelSmall,
-                fontSize = 10.sp,
+                fontSize = CrossSize,
                 lineHeight = LabelLine,
                 letterSpacing = 0.sp,
                 color = IronvellumColors.InkMuted,
                 textAlign = TextAlign.Center,
-                maxLines = 2,
+                maxLines = MAX_LABEL_LINES,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
                     .widthIn(max = width)
-                    .height(textH)
+                    .height(textH / 2 * crossLines)
                     .clip(plate)
                     .background(plateColour)
-                    .padding(horizontal = 3.dp),
+                    .padding(horizontal = LabelPad),
             )
         }
     }
