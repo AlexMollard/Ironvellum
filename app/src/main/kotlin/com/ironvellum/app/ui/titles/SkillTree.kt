@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -59,6 +60,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -118,6 +120,15 @@ fun SkillTreeGraph(
      * Without it the tree opens on [openTarget] and then leaves scrolling to the user.
      */
     scrollToSkill: String? = null,
+    /** Taps a "needs X (Path)" caption: the callee takes the lifter to that technique, wherever it lives. */
+    onOpenPrerequisite: (String) -> Unit = {},
+    /**
+     * Scroll-to-skill seam: name a technique of this path and the graph scrolls it into view,
+     * then calls [onFocusHandled]. A name that is not on this path is ignored, so one request
+     * can be offered to every page of a pager and only the owning path acts on it.
+     */
+    focus: String? = null,
+    onFocusHandled: () -> Unit = {},
 ) {
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val columns = columnsFor(maxWidth.value)
@@ -170,25 +181,30 @@ fun SkillTreeGraph(
         val pulse = rememberBreath()
 
         // Where the eye should land when a path opens: the next open technique, an
-        // explicit request winning. Bringing a node into view only scrolls as far as
-        // "visible", which leaves a node already on screen at the bottom, so ask for a
-        // tall window that starts at the node: the page then lands it in the upper third.
-        // The target is keyed so a late-arriving mastered set still moves it, but only
-        // while the path is settling; after that the lifter's own scroll is left alone.
+        // explicit request winning (a prerequisite followed from elsewhere, via [focus] or
+        // [scrollToSkill]). Bringing a node into view only scrolls as far as "visible", which
+        // leaves a node already on screen at the bottom, so ask for a tall window that starts
+        // at the node: the page then lands it in the upper third. The open target is keyed so
+        // a late-arriving mastered set still moves it, but only while the path is settling;
+        // after that the lifter's own scroll is left alone.
         val openTarget = remember(layout, mastered) { layout.openTarget(mastered) }
         val density = LocalDensity.current.density
         val screenDp = LocalConfiguration.current.screenHeightDp
         val treeRequester = remember { BringIntoViewRequester() }
         val openedAt = remember(line) { SystemClock.uptimeMillis() }
-        val goTo = scrollToSkill ?: openTarget
-        LaunchedEffect(line, goTo, scrollToSkill != null) {
+        // A focus request names any technique; only the page that owns it acts on it.
+        val focusName = focus?.takeIf { f -> layout.nodes.any { it.skill.name == f } }
+        val requested = focusName ?: scrollToSkill
+        val goTo = requested ?: openTarget
+        LaunchedEffect(line, goTo, requested != null) {
             val y = goTo?.let { layout.discTopOf(it, metrics) } ?: return@LaunchedEffect
-            if (scrollToSkill == null && SystemClock.uptimeMillis() - openedAt > SETTLE_MS) return@LaunchedEffect
+            if (requested == null && SystemClock.uptimeMillis() - openedAt > SETTLE_MS) return@LaunchedEffect
             withFrameNanos { }
             withFrameNanos { }
             val top = (y - SCROLL_LEAD_DP) * density
             val window = screenDp * VIEWPORT_SHARE * SCROLL_WINDOW * density
             treeRequester.bringIntoView(Rect(0f, top, maxWidth.value * density, top + window))
+            if (focusName != null) onFocusHandled()
         }
 
         Box(Modifier.fillMaxWidth().height(tops.last().dp).bringIntoViewRequester(treeRequester)) {
@@ -212,23 +228,38 @@ fun SkillTreeGraph(
                 val unlocked = Skills.unlocked(skill, mastered)
                 val needs = skill.firstUnmetPrerequisite(mastered)
                 val cue = if (isMastered) null else SkillGuidance.progressCue(skill, best[skill.name], bodyweightKg, female)
-                SkillNode(
-                    skill = skill,
-                    state = when {
-                        isMastered -> NodeState.MASTERED
-                        unlocked -> NodeState.NEXT
-                        else -> NodeState.LOCKED
-                    },
-                    description = rowDescription(skill, isMastered, unlocked, needs, cue),
-                    crossNeed = if (isMastered) null else crossNeedMarker(layout.crossNeeds[skill.name].orEmpty(), mastered),
-                    crossLines = if (skill.name in layout.crossNeeds) metrics.crossLines[node.level] else 0,
-                    width = cellW,
-                    lines = levelLines[node.level],
-                    pulse = pulse,
-                    onClick = { onSelect(skill.name) },
-                    modifier = Modifier
-                        .offset(x = cellW * node.x, y = tops[node.level].dp),
-                )
+                val openNeeds = if (isMastered) emptyList() else layout.crossNeeds[skill.name].orEmpty().filter { it.skill !in mastered }
+                val crossLines = if (skill.name in layout.crossNeeds) metrics.crossLines[node.level] else 0
+                // The caption is a sibling of the node, not a child: the node merges its
+                // descendants into one button, which would swallow the caption's own tap.
+                Column(
+                    Modifier.offset(x = cellW * node.x, y = tops[node.level].dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    SkillNode(
+                        skill = skill,
+                        state = when {
+                            isMastered -> NodeState.MASTERED
+                            unlocked -> NodeState.NEXT
+                            else -> NodeState.LOCKED
+                        },
+                        description = rowDescription(skill, isMastered, unlocked, needs, cue),
+                        width = cellW,
+                        lines = levelLines[node.level],
+                        pulse = pulse,
+                        onClick = { onSelect(skill.name) },
+                    )
+                    // The marker room is always reserved, so the line leaving this node starts below it
+                    // whether or not anything is still outstanding.
+                    if (crossLines > 0) {
+                        val marker = crossNeedMarker(openNeeds, mastered)
+                        if (marker != null) {
+                            CrossNeedCaption(marker, openNeeds.first(), cellW, crossLines) { onOpenPrerequisite(openNeeds.first().skill) }
+                        } else {
+                            Spacer(Modifier.height(with(LocalDensity.current) { (LabelLine * crossLines).toDp() }))
+                        }
+                    }
+                }
             }
         }
     }
@@ -320,8 +351,6 @@ private fun SkillNode(
     skill: Skills.SkillDef,
     state: NodeState,
     description: String,
-    crossNeed: String?,
-    crossLines: Int,
     width: Dp,
     lines: Int,
     pulse: State<Float>,
@@ -487,27 +516,35 @@ private fun SkillNode(
                 .background(plateColour)
                 .padding(horizontal = LabelPad),
         )
-        // The marker room is always reserved (and painted page-coloured once nothing is outstanding),
-        // so the line leaving this node starts below it in either case.
-        if (crossLines > 0) {
-            Text(
-                crossNeed.orEmpty(),
-                style = MaterialTheme.typography.labelSmall,
-                fontSize = CrossSize,
-                lineHeight = LabelLine,
-                letterSpacing = 0.sp,
-                color = IronvellumColors.InkMuted,
-                textAlign = TextAlign.Center,
-                maxLines = MAX_LABEL_LINES,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .widthIn(max = width)
-                    // a minimum, not a fixed height: a rounding pixel short of the text's own height would cut its last line
-                    .heightIn(min = textH / 2 * crossLines)
-                    .clip(plate)
-                    .background(plateColour)
-                    .padding(horizontal = LabelPad),
-            )
-        }
     }
+}
+
+/**
+ * The "needs L-sit (Core)" line under a locked node, as a link to that technique. It fills the
+ * lines the tree's rows reserve for it; the touch target is Compose's own 48dp minimum around
+ * it, so the rows do not grow.
+ */
+@Composable
+private fun CrossNeedCaption(text: String, need: CrossNeed, width: Dp, lines: Int, onClick: () -> Unit) {
+    val textH = with(LocalDensity.current) { (LabelLine * 2f).toDp() }
+    Text(
+        text,
+        style = MaterialTheme.typography.labelSmall,
+        fontSize = CrossSize,
+        lineHeight = LabelLine,
+        letterSpacing = 0.sp,
+        color = IronvellumColors.SystemGreen,
+        textDecoration = TextDecoration.Underline,
+        textAlign = TextAlign.Center,
+        maxLines = MAX_LABEL_LINES,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier
+            .widthIn(max = width)
+            // The rows reserve [lines] for this marker; a minimum, so a rounding pixel never cuts the last line.
+            .heightIn(min = textH / 2 * lines)
+            .clip(remember { inkCorners(4.dp, 11) })
+            .background(MaterialTheme.colorScheme.background)
+            .clickable(role = Role.Button, onClickLabel = "Open ${need.skill}, ${need.line} path") { onClick() }
+            .padding(horizontal = 3.dp),
+    )
 }

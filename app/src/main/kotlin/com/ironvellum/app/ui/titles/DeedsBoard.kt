@@ -63,6 +63,7 @@ import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.LedgerSpace
+import com.ironvellum.app.ui.components.NavChip
 import com.ironvellum.app.ui.components.RangeChips
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.StatSize
@@ -588,25 +589,7 @@ private fun CategoryScreen(
             Column(
                 Modifier.fillMaxWidth(),
             ) {
-                Row(
-                    Modifier
-                        .heightIn(min = LedgerSpace.Target)
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .semantics(mergeDescendants = true) { contentDescription = "Back to all deeds" }
-                        .clickable(role = Role.Button, onClick = onBack)
-                        .padding(end = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = null, tint = IronvellumColors.SystemGreen)
-                    Text(
-                        "BACK",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.SystemGreen,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                    )
-                }
+                NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = onBack)
                 Column(
                     Modifier.semantics(mergeDescendants = true) {
                         contentDescription = "$category deeds: $earned of $total earned. $blurb."
