@@ -120,6 +120,8 @@ internal fun PathPager(
                     onOpenPrerequisite = onOpenPrerequisite,
                     focus = focus,
                     onFocusHandled = onFocusHandled,
+                    pageScroll = scroll,
+                    treeTopInPage = 6.dp,
                 )
                 Spacer(Modifier.height(28.dp))
             }
