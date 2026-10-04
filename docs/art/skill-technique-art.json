@@ -2,7 +2,7 @@
   "tool": "Codex built-in imagegen",
   "style_reference": "exec-d14e11a6-fc99-47fe-b8ca-ffb581007096.png",
   "count": 119,
-  "total_bytes": 5440430,
+  "total_bytes": 5475770,
   "format": "RGBA WebP, max edge 640 px, quality 88",
   "assets": [
     {
@@ -1540,15 +1540,17 @@
       "name": "Toes-to-Bar",
       "path": "Core",
       "resource": "skill_toes_to_bar",
-      "source": "exec-a1781ad0-c97c-4fe9-a180-ef4a82716553.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Toes-to-Bar.\nPose: Hanging from bar with two straight arms, straight legs lifted high in front with toes touching the bar between hands.\nApp technique standard: 3 sets of 8 reps, feet touch the bar, controlled descent\nPurpose: Full-range hanging compression that also loads grip and lats.",
+      "source": "exec-9ed9ce8e-3d7e-473e-b3a7-8822a8e527ea.png",
+      "prompt": "Use case: stylized-concept. Generate a replacement illustration for Toes-to-Bar in Ironvellum's dark fantasy fitness skill tree. The input is STYLE REFERENCE ONLY: match approved first Dead Hang's detailed warm bone-ivory engraved ink, charcoal outlines, textured anatomical shading, athletic tank top and shorts, shadowed face. DO NOT COPY its pose. Full-body SIDE THREE-QUARTER view at the top of a toes-to-bar repetition. Two hands grasp an overhead horizontal bar at shoulder width, both elbows straight. The upper body reclines slightly backward beneath the bar, hips distinctly below the shoulders. Both legs fold forward and upward at the hips, knees nearly straight, with BOTH TOE TIPS lightly touching the underside/front edge of the bar between the hands. The feet do NOT grip, stand on or wrap around the bar. Make the folded torso and lifted legs clearly separate readable shapes; correct attachment of thighs to hips, two legs and two arms only, no overlapping frontal anatomy illusion. Only the bar and one athlete. Strong clear silhouette readable at 48dp, detailed enough at 176dp. Genuinely transparent background; one full-body figure with all hands and feet inside frame and comfortable margins. No text, numbers, arrows, frame, aura, scenery, logos or watermark. No abstract stick figures.\n\nRefinement: Edit only the gymnastics grip in this Toes-to-Bar illustration. Keep the current full-body three-quarter pose, two raised legs, clear physique, clothing, bone-ink engraving colours and transparency. Both TOE TIPS must lightly meet the bar BETWEEN the two gripping hands. Move the hand currently just to the left of the feet outward along the bar to the RIGHT of both feet, and redraw that straight arm with physically plausible shoulder-to-wrist alignment. Keep the other hand at left. Widen and reposition the horizontal bar as needed to keep hands and toes in frame with margins. Feet do not grip or stand on the bar. One athlete, exactly two arms and two legs; preserve the style and no lettering/background/aura. All required contacts clearly visible at small size.\n\nAlpha cleanup: Use case: background-extraction. Preserve this exact Toes-to-Bar athlete illustration, pose, hands, feet, bar, clothing, engraving lines and native warm-bone colours. Remove all background haze and residual near-transparent black rectangular fill. Every pixel outside the athlete and bar must be fully transparent with alpha ZERO, including all corners and the gaps between arms and legs. Preserve dark charcoal shading INSIDE the athlete, do not erase internal anatomy. No redraw, no pose change, no new elements, no white/black backdrop, no aura. Output a genuine RGBA transparent cutout.",
       "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
+      "review": "Replacement reviewed for pose clarity and small-icon readability",
       "width": 427,
       "height": 640,
-      "bytes": 46870,
+      "bytes": 53550,
       "alpha_min": 0,
-      "sha256": "78fa1dbf5785edd0343e3e0174c55a3dc74b0bc1e9bb19c9aaee70f8eb187a5d"
+      "sha256": "08f7ad03f205077ea439cd2a0395e5bedddd1469ec2ce4a13f72a2043aeab165",
+      "supersedes_source": "exec-a1781ad0-c97c-4fe9-a180-ef4a82716553.png",
+      "edit_reference": "exec-74513df1-22a5-4e78-bacc-1b7b2349f28a.png"
     },
     {
       "name": "Dragon Flag",
@@ -1596,15 +1598,17 @@
       "name": "Bridge",
       "path": "Mobility",
       "resource": "skill_bridge",
-      "source": "exec-713fd472-0ba7-4edb-be05-c2078775e114.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Bridge.\nPose: Full back bridge with palms and feet planted on floor, elbows straight, hips high and spine smoothly arched, head hanging between arms.\nApp technique standard: Hold 60s, arms straight, shoulders over hands\nPurpose: Spinal extension that offsets years of pressing and hanging volume.",
+      "source": "exec-5cba66bd-af1a-4041-87a2-b06155dc6cfc.png",
+      "prompt": "Use case: stylized-concept. Generate a replacement illustration for Bridge in Ironvellum's dark fantasy fitness skill tree. The input is STYLE REFERENCE ONLY: match approved first Dead Hang's detailed warm bone-ivory engraved ink, charcoal outlines, textured anatomical shading, athletic tank top and shorts, shadowed face. DO NOT COPY its pose. Full-body clean SIDE PROFILE of a conventional full back bridge (wheel pose), facing sideways so the support geometry is immediately clear. Both palms planted flat on a common horizontal ground plane at left, both feet planted flat with heels down at right. Straight arms rise almost vertically from palms to shoulders; shoulders stacked above hands. Knees bent naturally, shins nearly vertical above feet. Hips high, belly and chest facing UP, spine forming a smooth natural arch across the space between hands and feet. Neck relaxed, head hanging freely between arms, never resting on the floor. Only two arms and two legs, all four contact points believable, no twisting or extreme contorted spine. No equipment or drawn floor, just the athlete. Strong clear silhouette readable at 48dp, detailed enough at 176dp. Genuinely transparent background; one full-body figure with all hands and feet inside frame and comfortable margins. No text, numbers, arrows, frame, aura, scenery, logos or watermark. No abstract stick figures.\n\nRefinement: Reframe this full back-bridge illustration on a SQUARE canvas, tightly composed with the complete athlete filling about 85% of the image width. Preserve the clean side-profile pose and detailed warm bone-ink athlete style. Both palms at left and both fully flat feet at right share the SAME horizontal contact plane. Straight elbows, shoulders directly above hands, comfortably bent knees, smooth anatomical spine arch, belly and chest face upward, neck/head relaxed between arms and not touching floor. No exaggerated twisting. Keep all limbs inside frame, ample small margin but no large empty areas above/below. Transparent background, no floor/scenery/aura/text/frames. This is for a tiny 48px icon: ensure a wide, clear recognizable arch.",
       "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
-      "width": 427,
+      "review": "Replacement reviewed for pose clarity and small-icon readability",
+      "width": 640,
       "height": 640,
-      "bytes": 57248,
+      "bytes": 85908,
       "alpha_min": 0,
-      "sha256": "528757e57535045216102d1b67bcc6aac46d8f9e50405728b48d60bf455666ae"
+      "sha256": "ed6aec729fb2cc4e4a6f753dbb2f01c6b0fdd7710f08b41a2a4eec97445eb513",
+      "supersedes_source": "exec-713fd472-0ba7-4edb-be05-c2078775e114.png",
+      "edit_reference": "exec-05fcf50f-9e6b-4624-9f3a-82e4af542bd7.png"
     },
     {
       "name": "Half Split",
