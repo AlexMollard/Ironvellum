@@ -38,7 +38,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -332,34 +331,41 @@ private fun SkillNode(
                 },
             contentAlignment = Alignment.Center,
         ) {
+            val artwork = techniqueArtwork(skill.name)
+            val art = when (state) {
+                NodeState.MASTERED -> ArtState.MASTERED
+                NodeState.NEXT -> ArtState.OPEN
+                NodeState.LOCKED -> ArtState.LOCKED
+            }
             Box(
                 Modifier
                     .size(NodeSize)
                     .clip(shape)
                     .background(
-                        when (state) {
-                            NodeState.MASTERED -> IronvellumColors.SovereignGold
-                            NodeState.NEXT -> Color(0xFF15251F)
-                            NodeState.LOCKED -> LockedRowBg
+                        // Engraved art keeps one dark ground in every state, so the cream figure reads the
+                        // same on all of them; the state is the ring. A glyph node keeps its gold fill.
+                        when {
+                            artwork != null && state == NodeState.LOCKED -> LockedRowBg
+                            artwork != null -> Color(0xFF15251F)
+                            state == NodeState.MASTERED -> IronvellumColors.SovereignGold
+                            state == NodeState.NEXT -> Color(0xFF15251F)
+                            else -> LockedRowBg
                         },
                     )
                     .inkBorder(
-                        when (state) {
-                            NodeState.MASTERED -> IronvellumColors.SovereignGold
-                            NodeState.NEXT -> IronvellumColors.SystemGreen
-                            NodeState.LOCKED -> LockedDot
-                        },
+                        artRing(art),
                         shape,
-                        if (state == NodeState.NEXT) 3.dp else 1.5.dp,
+                        if (state == NodeState.NEXT || (artwork != null && state == NodeState.MASTERED)) 3.dp else 1.5.dp,
                     ),
                 contentAlignment = Alignment.Center,
             ) {
-                val artwork = techniqueArtwork(skill.name)
                 if (artwork != null) {
                     Image(
                         painter = painterResource(artwork),
                         contentDescription = null,
-                        modifier = Modifier.size(48.dp).alpha(if (state == NodeState.LOCKED) 0.45f else 1f),
+                        colorFilter = artFilter(art),
+                        alpha = artAlpha(art),
+                        modifier = Modifier.size(NodeSize - 10.dp),
                     )
                 } else {
                     SkillGlyph(

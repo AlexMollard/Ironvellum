@@ -7,13 +7,14 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import com.ironvellum.app.ui.components.PanelLabel
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,8 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.ui.semantics.contentDescription
@@ -237,19 +236,39 @@ fun SkillDetailSheet(
         },
         pages = listOf(
             InfoPage("ABOUT", summary) {
-                techniqueArtwork(skill.name)?.let { artwork ->
-                    section(null) {
-                        Image(
-                            painter = painterResource(artwork),
-                            contentDescription = null,
-                            contentScale = ContentScale.Fit,
-                            modifier = Modifier.fillMaxWidth().height(176.dp),
-                        )
-                    }
-                }
                 // A female lifter reads her own published bar, not the male default.
-                text("CLAIM STANDARD", sexBar ?: skill.standard, IronvellumColors.SovereignGold)
-                text("WHY IT MATTERS", skill.why, IronvellumColors.InkMuted)
+                val standard = sexBar ?: skill.standard
+                val artwork = techniqueArtwork(skill.name)
+                if (artwork != null) {
+                    // The engraving in its plate, with the standard and the reason beside it: the art fills
+                    // the width the text leaves, instead of a band of its own above the text.
+                    section(null) {
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            TechniquePlate(
+                                artwork,
+                                when {
+                                    mastered -> ArtState.MASTERED
+                                    unlocked -> ArtState.OPEN
+                                    else -> ArtState.LOCKED
+                                },
+                                Modifier.weight(0.42f),
+                            )
+                            Spacer(Modifier.width(16.dp))
+                            Column(Modifier.weight(0.58f)) {
+                                PanelLabel("CLAIM STANDARD")
+                                Spacer(Modifier.height(8.dp))
+                                Text(standard, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.SovereignGold)
+                                Spacer(Modifier.height(20.dp))
+                                PanelLabel("WHY IT MATTERS")
+                                Spacer(Modifier.height(8.dp))
+                                Text(skill.why, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.InkMuted)
+                            }
+                        }
+                    }
+                } else {
+                    text("CLAIM STANDARD", standard, IronvellumColors.SovereignGold)
+                    text("WHY IT MATTERS", skill.why, IronvellumColors.InkMuted)
+                }
                 // The same figure and gear line the exercise sheet shows.
                 muscleFacts(skill.name)
                 gearFacts(skill.name)
