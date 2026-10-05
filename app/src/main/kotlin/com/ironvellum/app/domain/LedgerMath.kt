@@ -257,28 +257,6 @@ object Ledger {
 
     // ------------------------------------------------------------ summary text
 
-    /** 8240 -> "8.2k", 950 -> "950": a step count short enough for a row. */
-    fun compactCount(n: Int): String =
-        if (n >= 1000) String.format(java.util.Locale.US, "%.1fk", n / 1000.0) else n.toString()
-
     /** 430 -> "7h 10m". */
     fun sleepText(minutes: Int): String = "${minutes / 60}h ${minutes % 60}m"
-
-    /**
-     * What the Daily row on the body tab says: the 7-day average of steps,
-     * sleep and active kcal, only the parts that have data. Today is left out
-     * of the cumulative figures (steps, kcal) because it is partial. Null when
-     * Health Connect has delivered nothing in the window.
-     */
-    fun dailyAverageSummary(days: List<HealthDay>, today: LocalDate): String? {
-        val steps = average(days, today, 7, includeToday = false) { it.steps.toDouble() }
-        val sleep = average(days, today, 7, includeToday = true) { it.sleepMinutes.toDouble() }
-        val kcal = average(days, today, 7, includeToday = false) { it.activeKcal.toDouble() }
-        val parts = listOfNotNull(
-            steps?.let { "${compactCount(it.value.toInt())} steps" },
-            sleep?.let { sleepText(it.value.toInt()) },
-            kcal?.let { "${it.value.toInt()} kcal" },
-        )
-        return parts.takeIf { it.isNotEmpty() }?.joinToString(" \u00B7 ")
-    }
 }

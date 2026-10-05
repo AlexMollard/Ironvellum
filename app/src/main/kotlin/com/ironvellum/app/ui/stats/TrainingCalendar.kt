@@ -52,7 +52,6 @@ import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.TextStyle
-import java.time.temporal.WeekFields
 import java.util.Locale
 
 /**
@@ -62,6 +61,9 @@ import java.util.Locale
  * font size rather than clipping its date.
  */
 private val CellHeight = LedgerSpace.Target
+
+/** A week with no trial to open: no tap targets, so no 48dp to hold. */
+private val QuietCellHeight = 36.dp
 
 /**
  * First date the calendar marks a scheduled weekday: the lifter's first
@@ -128,7 +130,8 @@ internal fun TrainingCalendar(
     val inMonth = remember(byDay, month, today) { trialsInMonth(byDay, month, today) }
     val oath = remember(completedDates, today) { Streak.current(completedDates, today) }
     val scheduleStart = remember(completedDates, today) { calendarScheduleStart(completedDates, today) }
-    val weekStart = remember(locale) { WeekFields.of(locale).firstDayOfWeek }
+    // Monday, as on Today's rail; the locale's Sunday put the two at odds.
+    val weekStart = java.time.DayOfWeek.MONDAY
     val weeks = remember(month, weekStart) { calendarWeeks(month, weekStart) }
     val weekdayLabels = remember(weekStart, locale) {
         (0L..6L).map { weekStart.plus(it).getDisplayName(TextStyle.NARROW, locale) }
@@ -196,13 +199,17 @@ internal fun TrainingCalendar(
             }
         }
         weeks.forEach { week ->
+            // A week with a trial in it keeps the 48dp target its days open
+            // with; a week with none has no controls, so it sits tighter.
+            val rowHeight = if (week.any { it != null && byDay[it].orEmpty().isNotEmpty() }) CellHeight else QuietCellHeight
             Row(Modifier.fillMaxWidth()) {
                 week.forEach { date ->
                     Box(Modifier.weight(1f)) {
                         if (date == null) {
-                            Spacer(Modifier.height(CellHeight))
+                            Spacer(Modifier.height(rowHeight))
                         } else {
                             DayCell(
+                                height = rowHeight,
                                 date = date,
                                 trialIds = byDay[date].orEmpty(),
                                 rite = date >= scheduleStart && date.dayOfWeek.value in scheduledDays,
@@ -229,6 +236,7 @@ internal fun TrainingCalendar(
 
 @Composable
 private fun DayCell(
+    height: androidx.compose.ui.unit.Dp,
     date: LocalDate,
     trialIds: List<Long>,
     rite: Boolean,
@@ -246,7 +254,7 @@ private fun DayCell(
     Column(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = CellHeight)
+            .heightIn(min = height)
             .clip(MaterialTheme.shapes.extraSmall)
             // A day with a trial opens its latest one; the rest are not controls.
             .then(

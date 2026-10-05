@@ -1,6 +1,9 @@
 package com.ironvellum.app.ui.stats
 
 import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.background
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -94,12 +97,25 @@ internal fun ActivityTab(
                 PanelLabel("DAILY")
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    "Steps, sleep and resting heart rate show here once Health Connect is linked in Settings.",
+                    "Link Health Connect and your days fill in here.",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = IronvellumColors.Ink,
+                )
+                Spacer(Modifier.height(LedgerSpace.Panel))
+                // A ghost of what the tab will hold, so the empty tab says what
+                // it is for instead of being one sentence on a black page.
+                Row(horizontalArrangement = Arrangement.spacedBy(LedgerSpace.Panel)) {
+                    listOf("Steps" to listOf(5, 7, 4, 8, 6, 9, 7), "Sleep" to listOf(7, 6, 8, 7, 5, 8, 7), "Resting HR" to listOf(6, 6, 5, 6, 5, 5, 4))
+                        .forEach { (label, bars) -> GhostChart(label, bars, Modifier.weight(1f)) }
+                }
+                Spacer(Modifier.height(LedgerSpace.Panel))
+                Text(
+                    "Steps, sleep and resting heart rate, read from Health Connect on this phone.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
                 Spacer(Modifier.height(10.dp))
-                IronvellumButton(label = "Open Settings", onClick = onOpenSettings, quiet = true)
+                IronvellumButton(label = "Link Health Connect", onClick = onOpenSettings, modifier = Modifier.fillMaxWidth())
             }
         }
 
@@ -298,3 +314,28 @@ private fun shortDate(date: LocalDate): String =
     date.format(java.time.format.DateTimeFormatter.ofPattern("d MMM", Locale.getDefault()))
 
 private fun fmtInt(v: Int): String = "%,d".fmt(v)
+
+/** A faint chart with no data in it: the shape of what linking will show. */
+@Composable
+private fun GhostChart(label: String, bars: List<Int>, modifier: Modifier) {
+    Column(
+        modifier.clearAndSetSemantics { },
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Text(label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+        Row(
+            Modifier.fillMaxWidth().height(36.dp),
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+            verticalAlignment = Alignment.Bottom,
+        ) {
+            bars.forEach { h ->
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(36.dp * (h / 10f))
+                        .background(IronvellumColors.Rune.copy(alpha = 0.7f)),
+                )
+            }
+        }
+    }
+}
