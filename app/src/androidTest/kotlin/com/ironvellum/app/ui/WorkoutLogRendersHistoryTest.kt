@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui
 
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
@@ -84,7 +86,7 @@ class WorkoutLogRendersHistoryTest {
     fun theLogListsACompletedSessionUnderItsMonth() {
         compose.onAllNodesWithContentDescription("Train").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-        compose.onAllNodesWithText("FULL CHRONICLE", substring = true).onFirst().performClick()
+        compose.onAllNodes(hasText("FULL CHRONICLE", substring = true) or hasContentDescription("FULL CHRONICLE")).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         val onScreen = compose.onAllNodesWithText("", substring = true).fetchSemanticsNodes().size
@@ -114,7 +116,7 @@ class WorkoutLogRendersHistoryTest {
 
         compose.onAllNodesWithContentDescription("Train").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
-        compose.onAllNodesWithText("FULL CHRONICLE", substring = true).onFirst().performClick()
+        compose.onAllNodes(hasText("FULL CHRONICLE", substring = true) or hasContentDescription("FULL CHRONICLE")).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         // The ledger pluralises its own label, so one set trained reads "SET".

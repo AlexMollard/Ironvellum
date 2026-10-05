@@ -3,10 +3,13 @@ package com.ironvellum.app.ui.train
 import androidx.compose.material.icons.outlined.FitnessCenter
 import com.ironvellum.app.ui.components.formatDate
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AccessibilityNew
 import androidx.compose.foundation.layout.Arrangement
+import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.ui.dashboard.trialLength
 import kotlin.math.ceil
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -231,8 +234,8 @@ fun PresetsScreen(
                     recentRows = when {
                         // Over: give back whole rows until it fits.
                         slack < 0.dp -> (recentRows - ceil(-slack / RECENT_PITCH).toInt()).coerceAtLeast(0)
-                        // Under: take whole rows.
-                        else -> (recentRows + (slack / RECENT_PITCH).toInt())
+                        // Under: take whole rows; the first also pays for the card.
+                        else -> (recentRows + ((slack - if (recentRows == 0) RECENT_CHROME else 0.dp) / RECENT_PITCH).toInt().coerceAtLeast(0))
                             .coerceAtMost(available)
                     }
                 }
@@ -306,7 +309,7 @@ fun PresetsScreen(
                 )
                 // Sit with the list they add to and export.
                 TrainLink("+ NEW", "New rite") { showNewChooser = true }
-                TrainLink("SHARE ›", "Share cycle", share)
+                TrainLink("SHARE ›", "Share cycle", onClick = share)
             }
             shareRefusal?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
@@ -408,6 +411,13 @@ fun PresetsScreen(
             // rather than buttons, so nothing here competes with Begin. The body
             // map was a third of the screen on every visit; its row says the one
             // fact it answers and opens the full map.
+            // The latest trials fill what the page has left, a whole row at a
+            // time, and never push it into a scroll: the cycle is what Train is
+            // for. Measured, not estimated - content over the viewport is
+            // exactly the rows to give back - so it settles in a pass.
+            val trials = ui.history.filter { it.first.completedAtMs != null }
+                .sortedByDescending { it.first.completedAtMs }
+                .take(recentRows)
             val volume = remember(ui.plannedPresets) { ProgramRules.weeklyVolume(ui.plannedPresets) }
             val gaps = coverageGaps(volume, CoverageGoal(ui.tier, ui.focus, ui.priorities)).size
             InkPanel(Modifier.fillMaxWidth()) {
@@ -424,60 +434,35 @@ fun PresetsScreen(
                 )
                 RowRule(seed = 41)
                 WayOutRow(icon = Icons.Outlined.FitnessCenter, label = "EXERCISES", onClick = onOpenExercises)
-                RowRule(seed = 42)
-                WayOutRow(icon = Icons.Outlined.History, label = "FULL CHRONICLE", onClick = onOpenLog)
-                // The chronicle's latest entries fill what the page has left, a
-                // whole row at a time, and never push it into a scroll: the cycle
-                // is what Train is for. Measured, not estimated - content over the
-                // viewport is exactly the rows to give back - so it settles in a pass.
-                sessions.filter { it.completedAtMs != null }
-                    .sortedByDescending { it.completedAtMs }
-                    .take(recentRows)
-                    .forEach { trial ->
-                        RowRule(seed = trial.id.toInt())
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .clip(MaterialTheme.shapes.extraSmall)
-                                .clickable(onClickLabel = "Open ${trial.label}") { onOpenWorkout(trial.id) }
-                                .heightIn(min = ROW_HEIGHT),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            Text(
-                                formatDate(trial.completedAtMs ?: trial.startedAtMs, "EEE").uppercase(),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = ChakraPetch,
-                                letterSpacing = IronvellumTracking.InlineLabel,
-                                color = IronvellumColors.InkMuted,
-                                modifier = Modifier.width(DAY_COLUMN),
-                            )
-                            Text(
-                                trial.label,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = IronvellumColors.Ink,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Text(
-                                formatDate(trial.completedAtMs ?: trial.startedAtMs, "MMM d").uppercase(),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = ChakraPetch,
-                                letterSpacing = IronvellumTracking.InlineLabel,
-                                color = IronvellumColors.InkMuted,
-                            )
-                            Text(
-                                "+${trial.xpAwarded} XP",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = ChakraPetch,
-                                letterSpacing = IronvellumTracking.InlineLabel,
-                                color = IronvellumColors.SovereignGold,
-                            )
-                        }
-                    }
+                // The recent trials card links the same chronicle from its header,
+                // so the row only stands when that card does not.
+                if (trials.isEmpty()) {
+                    RowRule(seed = 42)
+                    WayOutRow(icon = Icons.Outlined.History, label = "FULL CHRONICLE", onClick = onOpenLog)
+                }
             }
 
+            if (trials.isNotEmpty()) {
+                Spacer(Modifier.height(SECTION_GAP))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "RECENT TRIALS",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        letterSpacing = IronvellumTracking.SectionHeader,
+                        modifier = Modifier.weight(1f).semantics { heading() },
+                    )
+                    // Named for where it goes: "All" alone says nothing to a screen reader.
+                    TrainLink("ALL ›", "Open", description = "FULL CHRONICLE", onClick = onOpenLog)
+                }
+                InkPanel(Modifier.fillMaxWidth()) {
+                    trials.forEach { (trial, sets) ->
+                        if (trial != trials.first().first) RowRule(seed = trial.id.toInt())
+                        TrialRow(trial, sets) { onOpenWorkout(trial.id) }
+                    }
+                }
+            }
             Spacer(Modifier.height(END_GAP))
         }
     }
@@ -562,7 +547,7 @@ private fun trainStatus(focus: TrainFocus): Pair<String, androidx.compose.ui.gra
 
 /** A section's action as a green text link, as SHARE always was: nothing here competes with Begin. */
 @Composable
-private fun TrainLink(label: String, clickLabel: String, onClick: () -> Unit) {
+private fun TrainLink(label: String, clickLabel: String, description: String? = null, onClick: () -> Unit) {
     Text(
         label,
         style = MaterialTheme.typography.labelSmall,
@@ -572,10 +557,64 @@ private fun TrainLink(label: String, clickLabel: String, onClick: () -> Unit) {
         modifier = Modifier
             .clip(MaterialTheme.shapes.extraSmall)
             .clickable(onClickLabel = clickLabel, onClick = onClick)
+            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier)
             .heightIn(min = 44.dp)
             .padding(start = 12.dp)
             .wrapContentHeight(Alignment.CenterVertically),
     )
+}
+
+/** A recent trial: its day as a calendar tile, what it was, and what it paid. */
+@Composable
+private fun TrialRow(
+    trial: com.ironvellum.app.domain.WorkoutSession,
+    sets: List<com.ironvellum.app.domain.SessionSet>,
+    onOpen: () -> Unit,
+) {
+    val at = trial.completedAtMs ?: trial.startedAtMs
+    val done = sets.filter { it.done }
+    val volumeKg = done.sumOf { (it.weightKg ?: 0.0) * it.reps }
+    val detail = listOfNotNull(
+        trialLength(trial),
+        done.size.takeIf { it > 0 }?.let { if (it == 1) "1 set" else "$it sets" },
+        volumeKg.takeIf { it > 0.0 }?.let { if (it < 1000) "${it.toInt()} kg" else "${"%.1f".format(java.util.Locale.US, it / 1000)} t" },
+    ).joinToString(" · ")
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraSmall)
+            .clickable(onClickLabel = "Open ${trial.label}", onClick = onOpen)
+            .heightIn(min = TRIAL_ROW_HEIGHT),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(
+            Modifier
+                .width(DAY_TILE)
+                .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
+                .padding(vertical = 3.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            Text(
+                formatDate(at, "EEE").uppercase(),
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                fontSize = 9.sp,
+            )
+            Text(formatDate(at, "d"), style = MaterialTheme.typography.titleMedium, fontFamily = ChakraPetch, color = IronvellumColors.Ink)
+        }
+        Column(Modifier.weight(1f)) {
+            Text(trial.label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            if (detail.isNotEmpty()) {
+                Text(detail, style = MaterialTheme.typography.labelSmall, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted, maxLines = 1)
+            }
+        }
+        Column(horizontalAlignment = Alignment.End) {
+            Text("+${trial.xpAwarded} XP", style = MaterialTheme.typography.labelMedium, fontFamily = ChakraPetch, color = IronvellumColors.SovereignGold)
+            Text("STR ${trial.strengthScore}", style = MaterialTheme.typography.labelSmall, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted)
+        }
+    }
 }
 
 /**
@@ -774,6 +813,14 @@ internal val ROW_HEIGHT = 48.dp
 /** The cycle list's weekday column; the opened rite's plan line aligns past it. */
 private val DAY_COLUMN = 36.dp
 
-/** Recent trials under the chronicle: a row and its rule, and the most it lists. */
-private val RECENT_PITCH = ROW_HEIGHT + 2.dp
+/** A recent trial's row, and the calendar tile that leads it. */
+private val TRIAL_ROW_HEIGHT = 56.dp
+private val DAY_TILE = 38.dp
+
+/**
+ * Recent trials: a row and its rule, what the card costs before its first row
+ * (the gap, the header and its 44dp link, the panel's padding), and the most it lists.
+ */
+private val RECENT_PITCH = TRIAL_ROW_HEIGHT + 2.dp
+private val RECENT_CHROME = 92.dp
 private const val RECENT_MAX = 6
