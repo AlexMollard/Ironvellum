@@ -346,4 +346,38 @@ class LiftBoardsTest {
         assertTrue(LiftBoards.BoardEntry(Lift.DIP, null, 0) in LiftBoards.boardsFor("Weighted Dip"))
         assertTrue(LiftBoards.boardsFor("Face Pull").isEmpty())
     }
+
+    @Test
+    fun `ratioForStep is the floor stepFor reads`() {
+        for (sex in Sex.entries) for (lift in Lift.entries.filter { it.kind == LiftKind.TIERED }) {
+            for (step in 1..LiftBoards.MAX_STEP) {
+                val r = LiftBoards.ratioForStep(lift, sex, step)
+                assertEquals("$lift $sex $step", step, LiftBoards.stepFor(lift, sex, r + 1e-9))
+                assertEquals("$lift $sex under $step", step - 1, LiftBoards.stepFor(lift, sex, r - 1e-6))
+            }
+        }
+    }
+
+    @Test
+    fun `tieredScore carries the figures behind the step`() {
+        val set = SessionSet(exerciseId = 1, exerciseName = "Pull-up", setIndex = 0, reps = 5, weightKg = 15.2, done = true)
+        val score = LiftBoards.tieredScore(set, 78.9, Sex.MALE)!!
+        assertEquals(Lift.PULL_UP, score.lift)
+        assertEquals(4, score.step)
+        assertEquals(94.1, score.movedKg, 1e-9)
+        assertEquals(78.9, score.bodyweightKg, 1e-9)
+        assertEquals(94.1 * (1 + 5 / 30.0) / 78.9, score.ratio, 1e-9)
+        assertEquals("Pull-up", score.exerciseName)
+    }
+
+    @Test
+    fun `tieredScore skips what the boards skip`() {
+        fun s(name: String, reps: Int = 5, done: Boolean = true, mods: String = "") =
+            SessionSet(exerciseId = 1, exerciseName = name, setIndex = 0, reps = reps, weightKg = 20.0, modifiers = mods, done = done)
+        assertNull(LiftBoards.tieredScore(s("Bench Press", done = false), 80.0, Sex.MALE))
+        assertNull(LiftBoards.tieredScore(s("Pull-up", mods = "assisted"), 80.0, Sex.MALE))
+        assertNull(LiftBoards.tieredScore(s("Bench Press", reps = 13), 80.0, Sex.MALE))
+        assertNull(LiftBoards.tieredScore(s("Bench Press"), 0.0, Sex.MALE))
+        assertNull(LiftBoards.tieredScore(s("Incline Bench Press"), 80.0, Sex.MALE))
+    }
 }

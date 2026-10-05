@@ -155,7 +155,45 @@ object LiftBoards {
         return 1 + 2 * tier + if (second) 1 else 0
     }
 
-    private fun isAssisted(set: SessionSet): Boolean =
+    /** The smallest bodyweight multiple that scores [step] (1..[MAX_STEP]) on [lift]: the inverse of [stepFor]. */
+    internal fun ratioForStep(lift: Lift, sex: Sex, step: Int): Double {
+        require(step in 1..MAX_STEP) { "step $step outside 1..$MAX_STEP" }
+        val f = floors(lift, sex)
+        val tier = (step - 1) / 2
+        if ((step - 1) % 2 == 0) return f[tier]
+        val next = if (tier < f.lastIndex) f[tier + 1] else f[tier] * (f[tier] / f[tier - 1])
+        return sqrt(f[tier] * next)
+    }
+
+    /** True when the moved load is bodyweight + added kilos (pull-up, dip). */
+    internal fun movesBodyweight(lift: Lift): Boolean = lift in BODYWEIGHT_LIFTS
+
+    /** A qualifying set on a TIERED board, scored, with the figures behind its step. */
+    data class TieredScore(
+        val lift: Lift,
+        val step: Int,
+        val exerciseName: String,
+        val reps: Int,
+        val movedKg: Double,
+        val bodyweightKg: Double,
+        /** Epley e1RM over bodyweight. */
+        val ratio: Double,
+    )
+
+    /** [set] scored on its TIERED board; null when it does not qualify for one. */
+    internal fun tieredScore(set: SessionSet, bodyweight: Double, sex: Sex): TieredScore? {
+        if (!set.done || isAssisted(set) || bodyweight <= 0.0) return null
+        // Epley's rep term stops being honest past 12 (ProgramRules.MAX_E1RM_REPS).
+        if (set.reps < 1 || set.reps > ProgramRules.MAX_E1RM_REPS) return null
+        val lift = LIFT_BY_NAME[Titles.normaliseName(set.exerciseName)] ?: return null
+        val added = (set.weightKg ?: 0.0).coerceAtLeast(0.0)
+        val load = if (lift in BODYWEIGHT_LIFTS) bodyweight + added else added
+        if (load <= 0.0) return null
+        val ratio = ProgramRules.epley(load, set.reps) / bodyweight
+        return TieredScore(lift, stepFor(lift, sex, ratio), set.exerciseName, set.reps, load, bodyweight, ratio)
+    }
+
+    internal fun isAssisted(set: SessionSet): Boolean =
         set.exerciseName.contains("assisted", ignoreCase = true) ||
             set.modifiers.split(",").any { it.trim().equals("assisted", ignoreCase = true) }
 
@@ -294,15 +332,7 @@ object LiftBoards {
                     if (step > 0) record(lift, step, workoutAt, isRecent)
                 }
 
-                if (bodyweight <= 0.0) continue
-                // Epley's rep term stops being honest past 12 (ProgramRules.MAX_E1RM_REPS).
-                if (set.reps < 1 || set.reps > ProgramRules.MAX_E1RM_REPS) continue
-                val lift = LIFT_BY_NAME[name] ?: continue
-                val added = (set.weightKg ?: 0.0).coerceAtLeast(0.0)
-                val load = if (lift in BODYWEIGHT_LIFTS) bodyweight + added else added
-                if (load <= 0.0) continue
-                val e1rm = ProgramRules.epley(load, set.reps)
-                record(lift, stepFor(lift, sex, e1rm / bodyweight), workoutAt, isRecent)
+                tieredScore(set, bodyweight, sex)?.let { record(it.lift, it.step, workoutAt, isRecent) }
             }
         }
 
