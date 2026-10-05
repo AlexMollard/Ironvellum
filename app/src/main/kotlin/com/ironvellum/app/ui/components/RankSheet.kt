@@ -1,8 +1,10 @@
 package com.ironvellum.app.ui.components
 
 import androidx.compose.runtime.Composable
+import com.ironvellum.app.domain.LiftBoards
 import com.ironvellum.app.domain.Rank
 import com.ironvellum.app.domain.RankBreakdown
+import com.ironvellum.app.domain.RankPatterns
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /** Strength Rank written out: each pattern's mark, what earned it, and what lifts it next. */
@@ -15,7 +17,7 @@ fun RankSheet(breakdown: RankBreakdown?, onDismiss: () -> Unit) {
         summary = if (breakdown != null) ({ RankProgress(breakdown) }) else null,
     ) {
         if (breakdown == null) {
-            text(null, "Seal a trial with a pull, push or leg lift, or clear a pull, push or leg technique, to earn a rank.")
+            text(null, "Seal a trial with a pull, push or leg technique you cleared, or with a squat, bench press, deadlift, overhead press, pull-up or dip after logging your bodyweight, to earn a rank.")
             return@InfoSheet
         }
         breakdown.patterns.forEach { p ->
@@ -26,7 +28,15 @@ fun RankSheet(breakdown: RankBreakdown?, onDismiss: () -> Unit) {
                     "From" to p.source,
                     p.liftTarget?.let { "Next lift" to it },
                     p.skillTarget?.let { "Next technique" to it },
-                    ("Next" to "Top of the scale").takeIf { p.liftTarget == null && p.skillTarget == null },
+                    if (p.liftTarget == null && p.skillTarget == null) {
+                        "Next" to if (p.step >= LiftBoards.MAX_STEP) {
+                            "Top of the scale"
+                        } else {
+                            "Log a ${RankPatterns.lifts(p.pattern).joinToString(" or ") { it.label }} to climb further"
+                        }
+                    } else {
+                        null
+                    },
                 ),
             )
         }

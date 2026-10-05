@@ -201,6 +201,24 @@ class RankTest {
     }
 
     @Test
+    fun `a skills-only pattern at step 7 has no target left`() {
+        val b = breakdown(listOf(trial(1, set("Dragon Squat", 3), set("Nordic Curl", 3))))!!
+        val legs = b.patterns.single()
+        assertEquals(7, legs.step)
+        assertNull(legs.liftTarget)
+        assertNull(legs.skillTarget)
+    }
+
+    @Test
+    fun `a lift that does not drive the step gives no lift target`() {
+        val b = breakdown(listOf(trial(1, set("Handstand Push-up", 8), at("Bench Press", 1.0))))!!
+        val push = b.patterns.single { it.pattern == Pattern.PUSH }
+        assertEquals(7, push.step)
+        assertNull(push.liftTarget)
+        assertTrue(push.skillTarget != null)
+    }
+
+    @Test
     fun `the lift target is enough to clear the boundary`() {
         // 94.1 kg moved needs 0.58 kg more; 0.6 kg must reach Silver I.
         val bumped = LiftBoards.tieredScore(set("Pull-up", 5, 15.8, "weighted"), 78.9, Sex.MALE)!!

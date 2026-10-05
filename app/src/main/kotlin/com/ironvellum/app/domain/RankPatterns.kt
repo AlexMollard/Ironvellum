@@ -57,6 +57,9 @@ object RankPatterns {
 
     fun forLift(lift: Lift): Pattern? = LIFTS[lift]
 
+    /** The tiered lifts that feed [pattern], in [Lift.entries] order. */
+    fun lifts(pattern: Pattern): List<Lift> = Lift.entries.filter { LIFTS[it] == pattern }
+
     fun forSkill(skill: Skills.SkillDef): Pattern? = when {
         skill.name in EXCLUDED_SKILLS || skill.line in EXCLUDED_LINES -> null
         skill.metric == Skills.Metric.METRES -> null

@@ -140,7 +140,7 @@ object Rank {
             val step = maxOf(liftStep, skillStep)
             if (step < 0) return@mapNotNull null
             val source = if (liftStep >= skillStep) liftSource(lifts.filter { it.step == liftStep }.maxBy { it.ratio }) else skill!!.name
-            PatternScore(pattern, step, source, liftTarget(lifts, step, sex), skillTarget(pattern, step, cleared))
+            PatternScore(pattern, step, source, liftTarget(lifts.filter { it.step == step }, step, sex), skillTarget(pattern, step, cleared))
         }
         if (patterns.isEmpty()) return null
 

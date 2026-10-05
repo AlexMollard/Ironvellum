@@ -119,6 +119,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import com.ironvellum.app.ui.launchGuarded
 import kotlinx.coroutines.launch
@@ -275,13 +276,16 @@ class DashboardViewModel(
         .map { it.second }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Sex.MALE)
 
+    private val breakdownFlow = repo.observeRankBreakdown()
+        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
+
     /** Strength Rank band, "Unranked" without one; blank until first read. */
-    val strengthRank: StateFlow<String> = repo.observeStrengthRank()
-        .map { it ?: Rank.UNRANKED }
+    val strengthRank: StateFlow<String> = breakdownFlow
+        .map { it?.band ?: Rank.UNRANKED }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
 
     /** The rank written out for [RankSheet]; null while unranked. */
-    val rankBreakdown: StateFlow<RankBreakdown?> = repo.observeRankBreakdown()
+    val rankBreakdown: StateFlow<RankBreakdown?> = breakdownFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** The Garrison at a glance: its live rate and the inscriptions waiting to be spent. */
