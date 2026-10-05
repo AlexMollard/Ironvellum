@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Train tab's glyph: one blade, point up and to the right. Original
+     artwork; the tint comes from the nav slot. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp" android:height="24dp"
+    android:viewportWidth="24" android:viewportHeight="24">
+    <group android:rotation="45" android:pivotX="12" android:pivotY="12">
+        <path android:fillColor="#FFFFFFFF"
+            android:pathData="M12,0.5 L13.5,3.5 L13.5,14.5 L10.5,14.5 L10.5,3.5 Z" />
+        <path android:fillColor="#FFFFFFFF"
+            android:pathData="M7,14.5 H17 V16.5 H7 Z" />
+        <path android:fillColor="#FFFFFFFF"
+            android:pathData="M11,16.5 H13 V20.5 H11 Z" />
+        <path android:fillColor="#FFFFFFFF"
+            android:pathData="M10.5,21.75 A1.5,1.5 0 1,0 13.5,21.75 A1.5,1.5 0 1,0 10.5,21.75 Z" />
+    </group>
+</vector>

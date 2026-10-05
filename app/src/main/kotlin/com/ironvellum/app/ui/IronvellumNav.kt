@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.Groups
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.WorkspacePremium
@@ -71,6 +70,11 @@ import com.ironvellum.app.ui.social.LifterScreen
 import com.ironvellum.app.ui.social.CommentsScreen
 import com.ironvellum.app.ui.theme.InkCircleShape
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.ui.res.vectorResource
+import com.ironvellum.app.R
 import kotlinx.coroutines.flow.first
 import com.ironvellum.app.ui.train.WorkoutLogScreen
 import com.ironvellum.app.ui.train.WorkoutDetailScreen
@@ -148,7 +152,12 @@ object Routes {
  */
 data class TrialRequest(val serial: Int, val sessionId: Long, val seal: Boolean)
 
-private data class BottomDestination(val route: String, val label: String, val icon: ImageVector)
+private data class BottomDestination(
+    val route: String,
+    val label: String,
+    val icon: ImageVector,
+    val raised: Boolean = false,
+)
 
 @Composable
 fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: TrialRequest? = null) {
@@ -175,8 +184,10 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
 
     val destinations = listOf(
         BottomDestination(Routes.DASHBOARD, "Today", Icons.Outlined.Home),
-        BottomDestination(Routes.PRESETS, "Rites", Icons.Outlined.FitnessCenter),
         BottomDestination(Routes.STATS, "Ledger", Icons.Outlined.BarChart),
+        // Training is what the app is for, so its tab takes the middle slot,
+        // under the thumb, and stands proud of the bar.
+        BottomDestination(Routes.PRESETS, "Train", ImageVector.vectorResource(R.drawable.ic_sword), raised = true),
         BottomDestination(Routes.TITLES, "Codex", Icons.Outlined.AutoStories),
         BottomDestination(Routes.SOCIAL, "Allies", Icons.Outlined.Groups),
         // The Garrison is reached from Today's footer, not a tab: five is the
@@ -304,9 +315,12 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                             Column(
                                 modifier = Modifier
                                     .weight(1f)
-                                    .clip(slotShape)
+                                    // Not on the raised slot: the clip would cut
+                                    // off the plate standing above it.
+                                    .then(if (destination.raised) Modifier else Modifier.clip(slotShape))
                                     .then(
-                                        if (selected) {
+                                        // The raised plate is its own highlight.
+                                        if (selected && !destination.raised) {
                                             Modifier.background(
                                                 Brush.verticalGradient(listOf(Color(0xFF1E3A2C), Color(0xFF16281E))),
                                             )
@@ -315,7 +329,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                         },
                                     )
                                     .then(
-                                        if (selected) Modifier.inkBorder(IronvellumColors.Emerald, slotShape) else Modifier,
+                                        if (selected && !destination.raised) Modifier.inkBorder(IronvellumColors.Emerald, slotShape) else Modifier,
                                     )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
@@ -356,7 +370,26 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                 // reader; with nothing unread it stays plain
                                 // "Allies", which is how tests find the tab.
                                 val unreadHere = destination.route == Routes.SOCIAL && inboxUnread > 0
-                                Box {
+                                Box(
+                                    if (destination.raised) {
+                                        // Lifted half out of the bar on an emerald
+                                        // plate. The plate overflows an icon-sized
+                                        // slot and offset() moves the drawing only,
+                                        // so the bar keeps its height and the label
+                                        // stays in line with the other four.
+                                        Modifier
+                                            .size(24.dp)
+                                            .wrapContentSize(unbounded = true)
+                                            .offset(y = (-14).dp)
+                                            .requiredSize(width = 52.dp, height = 40.dp)
+                                            .clip(slotShape)
+                                            .background(IronvellumColors.Emerald)
+                                            .inkBorder(IronvellumColors.EmeraldBright, slotShape)
+                                    } else {
+                                        Modifier
+                                    },
+                                    contentAlignment = Alignment.Center,
+                                ) {
                                     Icon(
                                         destination.icon,
                                         contentDescription = if (unreadHere) {
@@ -364,7 +397,11 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                         } else {
                                             destination.label
                                         },
-                                        tint = if (selected) IronvellumColors.Emerald else IronvellumColors.InkMuted,
+                                        tint = when {
+                                            destination.raised -> IronvellumColors.Vault
+                                            selected -> IronvellumColors.Emerald
+                                            else -> IronvellumColors.InkMuted
+                                        },
                                     )
                                     if (unreadHere) {
                                         Box(

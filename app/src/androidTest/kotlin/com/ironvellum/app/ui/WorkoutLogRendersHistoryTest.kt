@@ -82,7 +82,7 @@ class WorkoutLogRendersHistoryTest {
 
     @Test
     fun theLogListsACompletedSessionUnderItsMonth() {
-        compose.onAllNodesWithContentDescription("Rites").onFirst().performClick()
+        compose.onAllNodesWithContentDescription("Train").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         compose.onAllNodesWithText("FULL CHRONICLE", substring = true).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
@@ -112,7 +112,7 @@ class WorkoutLogRendersHistoryTest {
             plannedSetCount > 1,
         )
 
-        compose.onAllNodesWithContentDescription("Rites").onFirst().performClick()
+        compose.onAllNodesWithContentDescription("Train").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         compose.onAllNodesWithText("FULL CHRONICLE", substring = true).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
