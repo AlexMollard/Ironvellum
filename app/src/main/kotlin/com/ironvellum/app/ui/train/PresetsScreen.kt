@@ -632,7 +632,7 @@ private fun WayOutRow(
 private val SECTION_GAP = 16.dp
 private val GROUP_GAP = 12.dp
 
-/** The page's end clears the raised Train plate, which overhangs the bar by 14dp. */
+/** The page's end clears the raised Train plate, which overhangs the bar by 18dp. */
 private val END_GAP = 40.dp
 
 /** A list row: the 48dp touch target, the same in both panels. */

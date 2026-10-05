@@ -380,16 +380,18 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                 val unreadHere = destination.route == Routes.SOCIAL && inboxUnread > 0
                                 Box(
                                     if (destination.raised) {
-                                        // Lifted half out of the bar on an emerald
-                                        // plate. The plate overflows an icon-sized
+                                        // Lifted out of the bar on a square emerald
+                                        // plate, the height of a selected tab's,
+                                        // raised just clear of its label. The plate
+                                        // overflows an icon-sized
                                         // slot and offset() moves the drawing only,
                                         // so the bar keeps its height and the label
                                         // stays in line with the other four.
                                         Modifier
                                             .size(24.dp)
                                             .wrapContentSize(unbounded = true)
-                                            .offset(y = (-14).dp)
-                                            .requiredSize(width = 52.dp, height = 40.dp)
+                                            .offset(y = (-20).dp)
+                                            .requiredSize(56.dp)
                                             .clip(slotShape)
                                             .background(IronvellumColors.Emerald)
                                             .inkBorder(IronvellumColors.EmeraldBright, slotShape)
@@ -417,6 +419,9 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                             selected -> IronvellumColors.Emerald
                                             else -> IronvellumColors.InkMuted
                                         },
+                                        // The sword scales with its plate so it does
+                                        // not sit lost in the middle of it.
+                                        modifier = if (destination.raised) Modifier.size(28.dp) else Modifier,
                                     )
                                     if (unreadHere) {
                                         Box(
