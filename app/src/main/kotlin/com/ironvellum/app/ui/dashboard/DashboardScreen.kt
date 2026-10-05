@@ -89,6 +89,10 @@ import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.program.toPlanned
+import androidx.compose.ui.unit.Dp
+import com.ironvellum.app.ui.program.RiteMuscleMap
+import com.ironvellum.app.domain.ProgramRules
+import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.deedAchievement
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -337,6 +341,19 @@ private val QUEST_ROW_HEIGHT = 24.dp
 /** The widest a manifest row is spaced when the card has room to spare. */
 private val QUEST_ROW_MAX_PITCH = 44.dp
 
+/** A manifest row's pitch when the muscle map shares the card: a list, not a spread. */
+private val QUEST_ROW_COMFORT = 32.dp
+
+/**
+ * The day card's muscle map: the figure's floor and full height, the FRONT /
+ * BACK labels and key that ride with it, and the gap above it. Below the floor
+ * the muscles stop being legible, so the map is left out rather than shrunk.
+ */
+private val DAY_MAP_FIGURE_MIN = 120.dp
+private val DAY_MAP_FIGURE_MAX = 220.dp
+private val DAY_MAP_KEY = 28.dp
+private val DAY_MAP_GAP = 12.dp
+
 /** One line of the run-together movement names: bodySmall's 16sp line, rounded up. */
 private val QUEST_LINE_HEIGHT = 18.dp
 
@@ -354,7 +371,12 @@ private val REST_TEXT_HEIGHT = 112.dp
  * them as sealed rather than ahead.
  */
 @Composable
-private fun ColumnScope.Manifest(entries: List<com.ironvellum.app.domain.PresetEntry>, done: Boolean, fill: Boolean) {
+private fun ColumnScope.Manifest(
+    entries: List<com.ironvellum.app.domain.PresetEntry>,
+    done: Boolean,
+    fill: Boolean,
+    rowPitch: Dp = QUEST_ROW_HEIGHT,
+) {
     BoxWithConstraints(if (fill) Modifier.weight(1f) else Modifier) {
         val fits = if (fill) (maxHeight / QUEST_ROW_HEIGHT).toInt() else entries.size
         // Too short for a list that says anything: one row read as if the rite
@@ -373,7 +395,7 @@ private fun ColumnScope.Manifest(entries: List<com.ironvellum.app.domain.PresetE
         // Spaced to the card, but never further apart than a list reads:
         // five rows strung across a tall card looked like five loose lines.
         val slots = moves.size + if (moves.size < entries.size) 1 else 0
-        val pitch = if (fill) minOf(maxHeight / slots.coerceAtLeast(1), QUEST_ROW_MAX_PITCH) else QUEST_ROW_HEIGHT
+        val pitch = if (fill) minOf(maxHeight / slots.coerceAtLeast(1), QUEST_ROW_MAX_PITCH) else rowPitch
         Column(
             verticalArrangement = Arrangement.Top,
             modifier = if (fill) Modifier.fillMaxHeight() else Modifier,
@@ -933,7 +955,34 @@ fun DashboardScreen(
                     }
                     Spacer(Modifier.height(10.dp))
                     // Sealed, the same list reads as what was done.
-                    Manifest(selectedPreset.entries, done = questSessionToday != null, fill = !shortWindow)
+                    val done = questSessionToday != null
+                    if (shortWindow) {
+                        Manifest(selectedPreset.entries, done = done, fill = false)
+                    } else {
+                        // With room to spare under the whole list, the rite's
+                        // muscle map fills it, as on its own page. The list
+                        // always wins: the map is the first thing to go.
+                        val sets = remember(selectedPreset) {
+                            ProgramRules.weeklyVolume(listOf(PlannedPreset(selectedPreset.name, "", null, selectedPreset.toPlanned().entries)))
+                        }
+                        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                            val mapRoom = maxHeight - QUEST_ROW_COMFORT * selectedPreset.entries.size - DAY_MAP_GAP
+                            Column(Modifier.fillMaxSize()) {
+                                if (sets.values.any { it > 0.0 } && mapRoom >= DAY_MAP_FIGURE_MIN + DAY_MAP_KEY) {
+                                    Manifest(selectedPreset.entries, done = done, fill = false, rowPitch = QUEST_ROW_COMFORT)
+                                    Spacer(Modifier.height(DAY_MAP_GAP))
+                                    RiteMuscleMap(
+                                        sets,
+                                        selectedPreset.name,
+                                        Modifier.fillMaxWidth(),
+                                        figureHeight = (mapRoom - DAY_MAP_KEY).coerceAtMost(DAY_MAP_FIGURE_MAX),
+                                    )
+                                } else {
+                                    Manifest(selectedPreset.entries, done = done, fill = true)
+                                }
+                            }
+                        }
+                    }
                 }
                 ui.presets.isEmpty() -> {
                     // A lifter who skipped onboarding has no routine at all:
