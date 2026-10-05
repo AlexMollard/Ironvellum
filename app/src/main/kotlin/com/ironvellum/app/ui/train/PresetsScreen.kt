@@ -222,6 +222,8 @@ fun PresetsScreen(
             style = MaterialTheme.typography.labelLarge,
             color = IronvellumColors.SystemGreen,
             letterSpacing = 6.sp,
+            // The one heading on an empty board, where the cycle's is hidden.
+            modifier = Modifier.semantics { heading() },
         )
         Spacer(Modifier.height(16.dp))
         // The screen leads with the one thing to do now: today's rite, the
