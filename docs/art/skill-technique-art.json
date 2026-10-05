@@ -2,7 +2,7 @@
   "tool": "Codex built-in imagegen",
   "style_reference": "exec-d14e11a6-fc99-47fe-b8ca-ffb581007096.png",
   "count": 119,
-  "total_bytes": 5584860,
+  "total_bytes": 5556656,
   "format": "RGBA WebP, max edge 640 px, quality 88",
   "assets": [
     {
@@ -407,29 +407,31 @@
       "name": "Freestanding Handstand",
       "path": "Handstand",
       "resource": "skill_freestanding_handstand",
-      "source": "exec-a5a74f00-227e-4ed1-807a-4e3fd6f75190.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Freestanding Handstand.\nPose: Balanced full vertical inverted handstand on floor, both arms locked straight, legs and pointed feet together overhead, no wall.\nApp technique standard: Hold 30s free of any support, balancing with fingers\nPurpose: The gateway technique: every advanced hand-balance is built on a 30s handstand.",
+      "source": "exec-4a4dc434-4fd9-4c35-9714-69f739ea1e7b.png",
+      "prompt": "Use case: scientific-educational. Generate ONE replacement transparent calisthenics skill icon freestanding handstand. Reference is approved style and anatomically coherent handstand base. Match warm bone ivory antique engraving, crisp charcoal contours, fine crosshatching, dark wavy hair, dark tank top and shorts. Lean naturally proportioned athlete, normal shoulders continuously attached to torso. FREESTANDING HANDSTAND: use the approved reference's clean side profile, rotated only slightly toward camera to show both palms. REMOVE THE WALL entirely. Two straight arms shoulder-width, palms flat, shoulders stacked over hands, ribs and pelvis stacked, joined straight legs vertical, ankles together and pointed toes. Preserve reference's correct side-view leg anatomy: front of torso, kneecaps and toes toward RIGHT; back of torso, calves and heels toward LEFT. No body twist. Neck neutral, face looks at floor between palms, head naturally inverted. Critical: user rejected old art for backwards knees. Trace each leg continuously hip to thigh to kneecap to shin to ankle to foot; every joint and limb shares the torso's front/back direction, no 180-degree rotation. Exactly2arms2hands2legs2feet, secure normal wrist placement and normal elbow anatomy. Whole athlete visible with modest margin, no equipment, no wall, no labels/text, no halo/glow/haze. Genuine alpha transparent background, isolated figure.",
       "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
+      "review": "Owner approved 2026-10-06; full-pose and 48px visual review; RGBA WebP size, transparent corners and hash verified.",
       "width": 427,
       "height": 640,
-      "bytes": 35352,
+      "bytes": 24840,
       "alpha_min": 0,
-      "sha256": "01bc70a04b5bed38517bd165ce9eaf83f580296032d1fd03c8b10e00bccc570e"
+      "sha256": "f6880668c4909970e2a3b5d9fc9417d7753b3f8c6327194aeb107b9f6d73d50a",
+      "notes": "Replaced backwards-knee handstand art using approved Wall Handstand engraving reference; final straddle uses a three-quarter mid-press pose."
     },
     {
       "name": "Handstand Walk",
       "path": "Handstand",
       "resource": "skill_handstand_walk",
-      "source": "exec-1d9c2b51-9a35-4252-a4db-840c1e0a1b5b.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Handstand Walk.\nPose: Inverted handstand walking moment: one palm firmly on floor, other palm slightly lifted forward, straight arms, legs overhead with small balance split.\nApp technique standard: 10 metres unbroken\nPurpose: Proves you can correct balance dynamically, not just hold still.",
+      "source": "exec-1a631efc-6758-48a1-9813-9e267e8ff7c3.png",
+      "prompt": "Use case: scientific-educational. Generate ONE replacement transparent calisthenics skill icon handstand walk. Reference is approved style and anatomically coherent handstand base. Match warm bone ivory antique engraving, crisp charcoal contours, fine crosshatching, dark wavy hair, dark tank top and shorts. Lean naturally proportioned athlete, normal shoulders continuously attached to torso. HANDSTAND WALK: clear SIDE THREEQUARTER profile, front of body facing RIGHT, back LEFT, both legs drawn in the same sagittal orientation as approved reference. Weight on one straight planted arm, shoulder directly above palm; second arm reaches one short step RIGHT with palm slightly lifted just above floor. Subtle forward weight shift. Both legs mostly vertical with small fore/aft separation, one knee SLIGHTLY flexed. Kneecaps and quadriceps face RIGHT with chest; calves and heels face LEFT, knees flex only with heel moving toward back of thigh LEFT. Never show backwards knee or opposite-facing lower leg. Both legs attached to consistent pelvis. Head naturally inverted, gaze down at floor. Critical: user rejected old art for backwards knees. Trace each leg continuously hip to thigh to kneecap to shin to ankle to foot; every joint and limb shares the torso's front/back direction, no 180-degree rotation. Exactly2arms2hands2legs2feet, secure normal wrist placement and normal elbow anatomy. Whole athlete visible with modest margin, no equipment, no wall, no labels/text, no halo/glow/haze. Genuine alpha transparent background, isolated figure.",
       "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
+      "review": "Owner approved 2026-10-06; full-pose and 48px visual review; RGBA WebP size, transparent corners and hash verified.",
       "width": 427,
       "height": 640,
-      "bytes": 38320,
+      "bytes": 29164,
       "alpha_min": 0,
-      "sha256": "1851f170a61deda5d8d0d9f8e21262fc7333bc74ed5b169907aeeffbe638a163"
+      "sha256": "0f454a82c9797c84dd285d5291bd657cccd9260cbd232c74c6a3429ad2d82d97",
+      "notes": "Replaced backwards-knee handstand art using approved Wall Handstand engraving reference; final straddle uses a three-quarter mid-press pose."
     },
     {
       "name": "Handstand Push-up",
@@ -479,15 +481,16 @@
       "name": "Straddle Press to Handstand",
       "path": "Handstand",
       "resource": "skill_straddle_press_to_handstand",
-      "source": "exec-623e6aa0-186b-4c2f-917a-3fe64e6881de.png",
-      "prompt": "Use case: stylized-concept. Asset type: a single technique illustration for Ironvellum's dark fantasy skill tree, displayed at 48dp and enlarged to 176dp on its skill information screen.\nInput image 1 is STYLE REFERENCE ONLY, the owner-approved first Dead Hang illustration. Match its detailed warm bone ivory ink engraving, textured anatomical shading, charcoal outlines, athletic figure in dark tank top and shorts, shadowed face, serious dark-fantasy game mood. Generate a NEW distinct pose for the requested technique rather than copying the hanging pose.\nGenuinely transparent background. One full-body athlete and only the equipment necessary for this technique. All hands, fingers, feet and required equipment must remain inside the canvas with comfortable margins. Compose tightly, with a clear strong silhouette readable at tiny size; use restrained internal detail with strong broad highlights. Physically plausible joint angles, correct technique grip and anatomy. No lettering, numbers, arrows, borders, aura, scenery, background halo, logos or watermarks. No stick figures or abstract brush-stroke substitutes.\nTechnique: Straddle Press to Handstand.\nPose: Straight-arm press transition with palms on ground, hips stacked high above shoulders, straight legs straddled wide as they lift upward, no feet touching ground.\nApp technique standard: 3 presses from a straddle fold on the floor to handstand, no jump\nPurpose: Straight-arm pressing strength and compression fused into one entry.",
+      "source": "exec-12c7cd94-0e53-451e-becf-9f9511bdf4a1.png",
+      "prompt": "Create ONE Straddle Press to Handstand skill illustration, warm ivory antique engraving matching supplied approved handstand style, dark tank top and shorts, dark wavy hair, lean natural athlete, transparent background. Use a clear SIDE THREE-QUARTER view of the MID-PRESS rather than a frontal split handstand: both palms firmly planted, both elbows straight, shoulders slightly forward of wrists, hips raised above shoulders, torso inverted leaning forward with neutral neck looking at floor. Hips are flexed in a PIKE. Both legs completely straight and opening laterally into a straddle, feet airborne near HIP HEIGHT, so the legs extend outward and slightly forward from pelvis instead of straight overhead. View from the athlete's front-side sufficiently to distinguish both legs and both knees. All body parts belong to one coherent normal human pose. Chest, front pelvis, quadriceps, kneecaps and tops of feet share one consistent anterior direction; heels and calves on the posterior side. No front kneecaps drawn on the backs of legs; no 180 degree hip/knee twisting, no dislocated shoulders, no extra limbs. Preserve normal inverted head connected continuously to neck; crown down and gaze between palms. Reference is STYLE and anatomical base ONLY: remove wall, change legs to correct mid-straddle-press pike, keep arm support mechanically real. Whole body visible, no equipment, no wall, no text, no halo, genuine alpha-transparent cutout.",
       "tool": "built-in imagegen",
-      "review": "Visually reviewed at full pose and 48px icon size; transparent WebP checked",
+      "review": "Owner approved 2026-10-06; full-pose and 48px visual review; RGBA WebP size, transparent corners and hash verified.",
       "width": 427,
       "height": 640,
-      "bytes": 41824,
+      "bytes": 33288,
       "alpha_min": 0,
-      "sha256": "f6b9e094faf5475f7a63b2dac3b602f46f66be4ca74d78ab6bed6dd877393178"
+      "sha256": "e456abd56807a5c7a8bee876f1110c463192f88074dd46914947f25379adb681",
+      "notes": "Replaced backwards-knee handstand art using approved Wall Handstand engraving reference; final straddle uses a three-quarter mid-press pose."
     },
     {
       "name": "Front Row Hold",

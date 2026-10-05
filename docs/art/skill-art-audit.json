@@ -1,6 +1,6 @@
 {
   "date": "2026-10-06",
-  "scope": "All 119 skill illustrations reviewed by the owner on 2026-10-06. Only Freestanding Handstand, Handstand Walk and Straddle Press to Handstand require correction for backwards knees; the other 116 are accepted.",
+  "scope": "All 119 skill illustrations accepted by the owner. The three backwards-knee handstand illustrations were regenerated and approved on 2026-10-06; no open correction flags remain.",
   "sources": [
     {
       "title": "App movement standards",
@@ -409,28 +409,28 @@
       "name": "Freestanding Handstand",
       "line": "Handstand",
       "resource": "skill_freestanding_handstand",
-      "status": "review",
-      "category": "Backwards knees",
-      "reason": "Owner identified backwards knees on 6 October 2026. The knee orientation conflicts with the torso and pelvis direction. Regenerate with consistent hips, kneecaps, calves, heels and toes; retain the existing engraving style.",
-      "image": "../../app/src/main/res/drawable-nodpi/skill_freestanding_handstand.webp?v=01bc70a04b5b",
+      "status": "approved",
+      "category": "Replacement approved",
+      "reason": "Owner approved the regenerated replacement on 6 October 2026 after review for backwards knees. Correction complete.",
+      "image": "../../app/src/main/res/drawable-nodpi/skill_freestanding_handstand.webp?v=f6880668c490",
       "width": 427,
       "height": 640,
-      "sha256": "01bc70a04b5bed38517bd165ce9eaf83f580296032d1fd03c8b10e00bccc570e",
-      "review_source": "Owner feedback, 2026-10-06"
+      "sha256": "f6880668c4909970e2a3b5d9fc9417d7753b3f8c6327194aeb107b9f6d73d50a",
+      "review_source": "Owner approval, 2026-10-06"
     },
     {
       "number": 30,
       "name": "Handstand Walk",
       "line": "Handstand",
       "resource": "skill_handstand_walk",
-      "status": "review",
-      "category": "Backwards knees",
-      "reason": "Owner identified backwards knees on 6 October 2026. The knee orientation conflicts with the torso and pelvis direction. Regenerate with consistent hips, kneecaps, calves, heels and toes; retain the existing engraving style.",
-      "image": "../../app/src/main/res/drawable-nodpi/skill_handstand_walk.webp?v=1851f170a61d",
+      "status": "approved",
+      "category": "Replacement approved",
+      "reason": "Owner approved the regenerated replacement on 6 October 2026 after review for backwards knees. Correction complete.",
+      "image": "../../app/src/main/res/drawable-nodpi/skill_handstand_walk.webp?v=0f454a82c979",
       "width": 427,
       "height": 640,
-      "sha256": "1851f170a61deda5d8d0d9f8e21262fc7333bc74ed5b169907aeeffbe638a163",
-      "review_source": "Owner feedback, 2026-10-06"
+      "sha256": "0f454a82c9797c84dd285d5291bd657cccd9260cbd232c74c6a3429ad2d82d97",
+      "review_source": "Owner approval, 2026-10-06"
     },
     {
       "number": 31,
@@ -479,14 +479,14 @@
       "name": "Straddle Press to Handstand",
       "line": "Handstand",
       "resource": "skill_straddle_press_to_handstand",
-      "status": "review",
-      "category": "Backwards knees",
-      "reason": "Owner identified backwards knees on 6 October 2026. The knee orientation conflicts with the torso and pelvis direction. Regenerate with consistent hips, kneecaps, calves, heels and toes; retain the existing engraving style.",
-      "image": "../../app/src/main/res/drawable-nodpi/skill_straddle_press_to_handstand.webp?v=f6b9e094faf5",
+      "status": "approved",
+      "category": "Replacement approved",
+      "reason": "Owner approved the regenerated replacement on 6 October 2026 after review for backwards knees. Correction complete.",
+      "image": "../../app/src/main/res/drawable-nodpi/skill_straddle_press_to_handstand.webp?v=e456abd56807",
       "width": 427,
       "height": 640,
-      "sha256": "f6b9e094faf5475f7a63b2dac3b602f46f66be4ca74d78ab6bed6dd877393178",
-      "review_source": "Owner feedback, 2026-10-06"
+      "sha256": "e456abd56807a5c7a8bee876f1110c463192f88074dd46914947f25379adb681",
+      "review_source": "Owner approval, 2026-10-06"
     },
     {
       "number": 35,
