@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui
 
 import androidx.compose.ui.test.hasScrollAction
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -132,7 +134,7 @@ class CappedListsHoldAtScaleTest {
             onTrain <= CAP_CEILING,
         )
 
-        compose.onAllNodesWithText("FULL CHRONICLE", substring = true).onFirst().performClick()
+        compose.onAllNodes(hasText("FULL CHRONICLE", substring = true) or hasContentDescription("FULL CHRONICLE")).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         // A lazy list composes only the viewport, so counting once would say

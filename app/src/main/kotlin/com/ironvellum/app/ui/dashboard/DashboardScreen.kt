@@ -463,7 +463,7 @@ private fun shortWhen(ms: Long): String =
     if (System.currentTimeMillis() - ms < 6L * 24 * 60 * 60 * 1000) formatDate(ms, "EEE") else formatDate(ms, "MMM d")
 
 /** "48m", "1h 12m"; null for a trial with no sensible length (imports carry none). */
-private fun trialLength(trial: WorkoutSession): String? {
+internal fun trialLength(trial: WorkoutSession): String? {
     val minutes = ((trial.completedAtMs ?: return null) - trial.startedAtMs) / 60_000
     return when {
         minutes < 1 || minutes > 24 * 60 -> null
