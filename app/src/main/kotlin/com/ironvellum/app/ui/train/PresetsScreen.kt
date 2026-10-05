@@ -216,7 +216,7 @@ fun PresetsScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
     ) {
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(12.dp))
         Text(
             "TRAIN",
             style = MaterialTheme.typography.labelLarge,
@@ -283,7 +283,6 @@ fun PresetsScreen(
                 )
             }
         }
-        Spacer(Modifier.height(4.dp))
         shareRefusal?.let { line ->
             Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
         }
@@ -379,7 +378,7 @@ fun PresetsScreen(
             RowRule(seed = 42)
             WayOutRow(icon = Icons.Outlined.History, label = "FULL CHRONICLE", onClick = onOpenLog)
         }
-        Spacer(Modifier.height(SECTION_GAP))
+        Spacer(Modifier.height(END_GAP))
     }
 
     if (showNewChooser) {
@@ -631,9 +630,12 @@ private fun WayOutRow(
     }
 }
 
-/** Train's rhythm: groups sit a section apart; controls inside one, a group gap. */
-private val SECTION_GAP = 24.dp
+/** Train's rhythm: panels sit a section apart; controls inside a group, a group gap. */
+private val SECTION_GAP = 16.dp
 private val GROUP_GAP = 12.dp
+
+/** The page's end clears the raised Train plate, which overhangs the bar by 14dp. */
+private val END_GAP = 40.dp
 
 /** A list row: the 48dp touch target, the same in both panels. */
 private val ROW_HEIGHT = 48.dp
