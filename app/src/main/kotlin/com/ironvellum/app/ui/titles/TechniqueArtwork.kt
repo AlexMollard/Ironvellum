@@ -13,7 +13,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
@@ -171,7 +170,8 @@ internal fun artAlpha(state: ArtState): Float = if (state == ArtState.LOCKED) 0.
 
 /**
  * A technique's engraving set in a plate rather than left floating on the sheet: a dark paper ground lit
- * from behind in the state's colour, a floor shadow so the figure stands on something, and an ink edge.
+ * from behind in the state's colour, and an ink edge. No floor shadow: hangs, levers and holds have no
+ * floor, and a shadow under them read as the figure floating.
  * The plate takes the art's own shape (most are 2:3 portraits), never squarer than 1:1.
  */
 @Composable
@@ -197,19 +197,6 @@ internal fun TechniquePlate(@DrawableRes artwork: Int, state: ArtState, modifier
                         ),
                     )
                 }
-                // The floor: a flat shadow under the feet.
-                val floorW = size.width * 0.7f
-                val floorH = size.height * 0.06f
-                drawOval(
-                    Brush.radialGradient(
-                        0f to Color.Black.copy(alpha = 0.55f),
-                        1f to Color.Transparent,
-                        center = Offset(size.width / 2f, size.height * 0.91f),
-                        radius = floorW / 2f,
-                    ),
-                    topLeft = Offset((size.width - floorW) / 2f, size.height * 0.91f - floorH / 2f),
-                    size = Size(floorW, floorH),
-                )
             }
             .inkBorder(glow.copy(alpha = if (state == ArtState.LOCKED) 0.6f else 0.45f), shape, 1.dp),
     ) {
