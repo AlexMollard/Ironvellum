@@ -28,7 +28,7 @@ a 119-technique calisthenics tree, and a first-run flow that builds you a cycle.
 
 | Paths | Deeds | Share card |
 |:---:|:---:|:---:|
-| <img src="docs/images/skilltree.png" width="230" alt="The Pull path drawn as game-style nodes with prerequisite lines" /> | <img src="docs/images/codex.png" width="230" alt="Deeds board grouped by category with progress bars" /> | <img src="docs/images/share.png" width="230" alt="Wordle-style plain text share card" /> |
+| <img src="docs/images/skilltree.png" width="230" alt="The Pull path as illustrated technique nodes, with the path strip and prerequisite lines" /> | <img src="docs/images/codex.png" width="230" alt="Deeds board grouped by category with progress bars" /> | <img src="docs/images/share.png" width="230" alt="Wordle-style plain text share card" /> |
 
 | Weekly Coverage | Muscle tiles | Info sheet |
 |:---:|:---:|:---:|
