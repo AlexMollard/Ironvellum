@@ -71,6 +71,8 @@ import com.ironvellum.app.ui.social.CommentsScreen
 import com.ironvellum.app.ui.theme.InkCircleShape
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.ui.res.vectorResource
@@ -90,6 +92,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.train.ExerciseExplorerScreen
 import com.ironvellum.app.ui.train.PresetsScreen
+import com.ironvellum.app.ui.train.RiteDetailScreen
 import com.ironvellum.app.ui.train.PresetEditorScreen
 import com.ironvellum.app.ui.program.ProgramBuilderScreen
 import com.ironvellum.app.ui.program.MuscleCoverageScreen
@@ -116,6 +119,7 @@ object Routes {
     const val COMMENTS = "comments/{sessionId}?owner={ownerId}&headline={headline}"
     const val MEASUREMENT = "measurement/{site}"
     const val PRESET_EDITOR = "preset_editor?presetId={presetId}"
+    const val RITE_DETAIL = "rite/{presetId}"
     const val SESSION = "session/{sessionId}"
     const val PROGRAM_BUILDER = "program_builder?mode={mode}&presetId={presetId}"
 
@@ -126,6 +130,8 @@ object Routes {
         if (presetId == null) "preset_editor" else "preset_editor?presetId=$presetId"
 
     fun session(sessionId: Long): String = "session/$sessionId"
+
+    fun riteDetail(presetId: Long): String = "rite/$presetId"
 
     fun settingsSection(section: SettingsSection): String = "settings/${section.key}"
 
@@ -312,6 +318,21 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                             // the one chrome element on every screen, so it has
                             // to carry the same hand-drawn edge as the panels.
                             val slotShape = MaterialTheme.shapes.small
+                            val open = {
+                                // Home is the graph start: saving and
+                                // restoring its state would restore the
+                                // stack pushed ON TOP of it (e.g. the
+                                // presets screen), stranding the user.
+                                val isHome = destination.route == Routes.DASHBOARD
+                                navController.navigate(destination.route) {
+                                    popUpTo(Routes.DASHBOARD) {
+                                        inclusive = isHome
+                                        saveState = !isHome
+                                    }
+                                    launchSingleTop = true
+                                    restoreState = !isHome
+                                }
+                            }
                             Column(
                                 modifier = Modifier
                                     .weight(1f)
@@ -334,21 +355,8 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
                                         indication = null,
-                                    ) {
-                                        // Home is the graph start: saving and
-                                        // restoring its state would restore the
-                                        // stack pushed ON TOP of it (e.g. the
-                                        // presets screen), stranding the user.
-                                        val isHome = destination.route == Routes.DASHBOARD
-                                        navController.navigate(destination.route) {
-                                            popUpTo(Routes.DASHBOARD) {
-                                                inclusive = isHome
-                                                saveState = !isHome
-                                            }
-                                            launchSingleTop = true
-                                            restoreState = !isHome
-                                        }
-                                    }
+                                        onClick = open,
+                                    )
                                     // 48dp is the documented minimum touch
                                     // target; the icon and label together only
                                     // came to 31dp, and this is the one control
@@ -385,6 +393,13 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                             .clip(slotShape)
                                             .background(IronvellumColors.Emerald)
                                             .inkBorder(IronvellumColors.EmeraldBright, slotShape)
+                                            // The plate stands above the slot's
+                                            // bounds, so it takes taps itself:
+                                            // otherwise its top third was dead.
+                                            // A bare tap detector, not clickable(),
+                                            // so a screen reader still meets one
+                                            // Train tab - the slot - not two.
+                                            .pointerInput(destination.route) { detectTapGestures { open() } }
                                     } else {
                                         Modifier
                                     },
@@ -462,6 +477,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     DashboardScreen(
                         onStartSession = { id -> navController.navigate(Routes.session(id)) },
                         onOpenPresets = { navController.navigate(Routes.PRESETS) { launchSingleTop = true } },
+                        onOpenRite = { id -> navController.navigate(Routes.riteDetail(id)) },
                         onOpenForge = { navController.navigate(Routes.programBuilder("week", null)) },
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                         onOpenCodex = {
@@ -492,7 +508,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
                 composable(Routes.PRESETS) {
                     PresetsScreen(
-                        onEdit = { id -> navController.navigate(Routes.presetEditor(id)) },
+                        onOpenRite = { id -> navController.navigate(Routes.riteDetail(id)) },
                         onNew = { navController.navigate(Routes.presetEditor()) },
                         onGenerate = { mode, presetId ->
                             navController.navigate(Routes.programBuilder(mode, presetId))
@@ -501,8 +517,18 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onQuickSession = { id -> navController.navigate(Routes.session(id)) },
                         onOpenExercises = { navController.navigate(Routes.EXERCISES) },
                         onOpenLog = { navController.navigate(Routes.WORKOUT_LOG) },
-                        onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                         onOpenCoverage = { navController.navigate(Routes.MUSCLE_COVERAGE) },
+                    )
+                }
+                composable(
+                    Routes.RITE_DETAIL,
+                    arguments = listOf(navArgument("presetId") { type = NavType.LongType }),
+                ) { entry ->
+                    RiteDetailScreen(
+                        presetId = entry.arguments?.getLong("presetId") ?: 0L,
+                        onBack = { navController.popBackStack() },
+                        onEdit = { id -> navController.navigate(Routes.presetEditor(id)) },
+                        onStartSession = { id -> navController.navigate(Routes.session(id)) },
                     )
                 }
                 composable(Routes.MUSCLE_COVERAGE) {

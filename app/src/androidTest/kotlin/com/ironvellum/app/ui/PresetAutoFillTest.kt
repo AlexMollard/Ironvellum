@@ -52,14 +52,12 @@ class PresetAutoFillTest {
 
         // "Heavy Pull" belongs to the starter week, which a fresh install no
         // longer imposes - TestProfile writes it for every UI test instead.
-        val preset = driver.awaitAnyText { it == "Heavy Pull" }
+        // Each rite is one row in the cycle list; its page lists every
+        // movement and carries the BEGIN.
+        driver.click(driver.awaitAnyText { it == "Heavy Pull" })
+        driver.awaitAnyText { it == "BEGIN HEAVY PULL" }
         val exercisesOnCard = driver.allText()
-
-        // The preset cards are not themselves clickable: each carries its own
-        // BEGIN. Presets are served in name order, so the first card is the one
-        // asserted above.
-        assertTrue("Heavy Pull must be the first preset card", preset == "Heavy Pull")
-        driver.click(driver.awaitAnyText { it == "BEGIN" })
+        driver.click("BEGIN HEAVY PULL")
         driver.awaitText("TRIAL IN PROGRESS")
 
         // The session must carry the preset's own movements. Pull-up is the

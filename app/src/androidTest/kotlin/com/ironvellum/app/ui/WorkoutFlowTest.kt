@@ -109,7 +109,7 @@ class WorkoutFlowTest {
         // Decide only once the day card has loaded. Sampled on the first
         // frame, a rest day had not rendered yet, so the walk was skipped and
         // the test then waited for a quest that never came.
-        awaitAnyText { it == "RESPITE" || isQuestCta(it) }
+        awaitAnyText { it == "RESPITE" || isQuestCard(it) }
         if (allText().none { it == "RESPITE" }) return
         val rail = listOf("M", "T", "W", "T", "F", "S", "S")
         for (index in rail.indices) {
@@ -155,7 +155,13 @@ class WorkoutFlowTest {
         selectATrainingDay()
         // The quest card arrives after seeding, so poll for the CTA rather
         // than sampling the tree once on the first frame.
-        val cta = awaitAnyText(predicate = ::isQuestCta)
+        // Today's card has no Begin of its own: it opens the rite's page,
+        // which does.
+        val plan = awaitAnyText(predicate = ::isQuestCard)
+        compose.onAllNodesWithText(plan).onFirst()
+            .performSemanticsAction(SemanticsActions.OnClick)
+        settle()
+        val cta = awaitAnyText { it.startsWith("BEGIN ") || it.startsWith("CONTINUE ") }
         compose.onAllNodesWithText(cta).onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
         settle()
@@ -219,8 +225,8 @@ class WorkoutFlowTest {
         return line.substringBefore('/').trim().toInt()
     }
 
-    private fun isQuestCta(label: String): Boolean =
-        label == "BEGIN TRIAL" || label == "BEGIN TRIAL" || label.startsWith("RESUME")
+    /** The day card's plan line, "5 EXERCISES · 19 SETS · ~54 MIN": a scheduled rite is showing. */
+    private fun isQuestCard(label: String): Boolean = label.contains(" SETS · ~")
 
     /** Polls until some string matches, and returns it. */
     private fun awaitAnyText(attempts: Int = 60, predicate: (String) -> Boolean): String {
