@@ -477,7 +477,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                         },
                                         // The sword scales with its plate so it does
                                         // not sit lost in the middle of it.
-                                        modifier = if (destination.raised) Modifier.size(androidx.compose.ui.unit.lerp(24.dp, 28.dp, p)) else Modifier,
+                                        modifier = if (destination.raised) Modifier.size(androidx.compose.ui.unit.lerp(24.dp, 34.dp, p)) else Modifier,
                                     )
                                     if (unreadHere) {
                                         Box(
