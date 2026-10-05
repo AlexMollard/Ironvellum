@@ -24,13 +24,14 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import com.ironvellum.app.data.CrashJournal
+import com.ironvellum.app.data.PrefsHighestBandStore
 
 
 class IronvellumApp : Application() {
 
     val database: IronvellumDatabase by lazy { IronvellumDatabase.create(this) }
     val healthSync: HealthSync by lazy { HealthSync(this) }
-    val repository: Repository by lazy { Repository(database, healthSync) }
+    val repository: Repository by lazy { Repository(database, healthSync, PrefsHighestBandStore(this)) }
 
     /**
      * Cloud objects are app-scoped so the auth session is shared: two clients
