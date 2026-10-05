@@ -334,6 +334,7 @@ private fun RestDayArt(modifier: Modifier) {
 fun DashboardScreen(
     onStartSession: (Long) -> Unit,
     onOpenPresets: () -> Unit,
+    onOpenRite: (Long) -> Unit,
     onOpenForge: () -> Unit,
     onOpenCodex: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -737,6 +738,11 @@ fun DashboardScreen(
         // weighted panel is measured after the unweighted content above it,
         // gets nothing, and takes the button down with it. There it wraps its
         // content and the page scrolls instead.
+        // The card has no Begin of its own: the act lives on Train, under the
+        // raised tab. A tap opens the rite it shows - on a rest day, the next
+        // one - where it can be read whole and begun.
+        val cardRite = selectedPreset ?: (1..7).map { (selectedDay - 1 + it) % 7 + 1 }
+            .firstNotNullOfOrNull { day -> ui.presets.firstOrNull { it.scheduledDay == day } }
         InkPanel(
             if (shortWindow) Modifier.fillMaxWidth() else Modifier.fillMaxWidth().weight(1f),
             accent = when {
@@ -744,6 +750,7 @@ fun DashboardScreen(
                 isTodaySelected -> IronvellumColors.SystemGreen
                 else -> IronvellumColors.Rune
             },
+            onClick = cardRite?.let { rite -> { onOpenRite(rite.id) } },
         ) {
             // The day and the plan line each get a line: side by side, the
             // plan's time estimate was the part that fell off ("~31…").
@@ -867,12 +874,9 @@ fun DashboardScreen(
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    // The manifest is the ONLY flexible child, so the button
-                    // below is measured first and always lands on screen. With
-                    // the header unweighted and the button last, a large system
-                    // font scale let the header eat the card and the button was
-                    // measured at zero height: the app's primary action simply
-                    // vanished at 2.0x.
+                    // The manifest is the ONLY flexible child: it takes what
+                    // the header leaves. (The card's Begin moved to Train; it
+                    // was once measured at zero height at 2.0x font scale.)
                     //
                     // Whole rows only. A scroll here clipped the last movement
                     // through its middle - on a 320dp screen the card had room
@@ -880,10 +884,9 @@ fun DashboardScreen(
                     // rendering fault rather than as "there is more". Text does
                     // not scale (the app pins one font size), so a row is a
                     // constant height and how many fit is arithmetic.
-                    // The card owns the page's slack (that is what keeps its
-                    // button measured), so the manifest spends it: rows spread
-                    // over the slot rather than stacking at the top and leaving
-                    // a void above the button.
+                    // The card owns the page's slack, so the manifest spends
+                    // it: rows spread over the slot rather than stacking at the
+                    // top and leaving a void below.
                     //
                     // No weight once the page scrolls, though: a weighted child
                     // in an unbounded column is measured with no space at all,
@@ -942,27 +945,6 @@ fun DashboardScreen(
                             }
                         }
                     }
-                    // A clipped last row sitting flush against the button read
-                    // as the button covering the row. The gap makes the clip
-                    // look like scrolling, which is what it is.
-                    Spacer(Modifier.height(10.dp))
-                    val resume = live
-                    IronvellumButton(
-                        // "Start Anyway" read as an apology: the day header
-                        // already says which day this is, so the button just
-                        // states the act. A trial already under way is
-                        // continued, never offered as a fresh start.
-                        label = when {
-                            resume != null -> "Continue ${resume.label}"
-                            isTodaySelected -> "Begin Trial"
-                            else -> "Begin Trial"
-                        },
-                        onClick = {
-                            if (resume != null) onStartSession(resume.id)
-                            else viewModel.beginPreset(selectedPreset.id, onStartSession)
-                        },
-                        modifier = Modifier.fillMaxWidth(),
-                    )
                 }
             } else if (ui.presets.isEmpty()) {
                 // A lifter who skipped onboarding has no routine at all: every
@@ -1049,18 +1031,6 @@ fun DashboardScreen(
                         }
                         if (size != null) RestDayArt(Modifier.size(size))
                     }
-                }
-                // A respite is a suggestion, not a lock: someone who wants to
-                // train today can take the next rite early. Once a trial is
-                // sealed today the offer is spent.
-                val trainedToday = ui.recent.any { (it.completedAtMs ?: 0L) >= todayStart }
-                if (isTodaySelected && next != null && !trainedToday) {
-                    IronvellumButton(
-                        label = "Begin ${next.name} now",
-                        onClick = { viewModel.beginPreset(next.id, onStartSession) },
-                        quiet = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
                 }
             }
         }

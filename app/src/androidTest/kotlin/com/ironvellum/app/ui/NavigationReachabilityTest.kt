@@ -67,7 +67,7 @@ class NavigationReachabilityTest {
         // Today is the launch destination; assert it rendered before navigating.
         assertShows("STEPS")
 
-        open("Train", "YOUR RITES")
+        open("Train", "YOUR CYCLE")
         open("Ledger", "THE LEDGER")
         open("Codex", "PATHS")
         // Signed out (the test profile is), Allies is the account screen alone.

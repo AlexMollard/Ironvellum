@@ -1,5 +1,11 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.ui.components.formatDate
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.AccessibilityNew
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,27 +17,24 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.runtime.remember
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.outlined.FitnessCenter
 import androidx.compose.material.icons.outlined.History
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.style.TextOverflow
-import com.ironvellum.app.domain.Evidence
+import com.ironvellum.app.domain.TrainFocus
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -50,7 +53,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.Muscle
-import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
@@ -60,19 +62,15 @@ import com.ironvellum.app.domain.RoutineCode
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
-import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.program.BodyHeatMap
 import com.ironvellum.app.ui.program.CoverageGoal
-import com.ironvellum.app.ui.program.RiteMusclesSheet
 import com.ironvellum.app.ui.program.coverageGaps
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.ui.theme.inkHairline
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import kotlinx.coroutines.flow.SharingStarted
-import com.ironvellum.app.ui.components.NavChip
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
@@ -170,6 +168,8 @@ internal fun weekOrder(presets: List<WorkoutPreset>): List<WorkoutPreset> =
 
 private val DAY_LABELS = mapOf(1 to "MON", 2 to "TUE", 3 to "WED", 4 to "THU", 5 to "FRI", 6 to "SAT", 7 to "SUN")
 
+internal fun dayLabel(day: Int): String = DAY_LABELS[day].orEmpty()
+
 internal fun formatKg(kg: Double?): String =
     when {
         kg == null -> "BW"
@@ -179,14 +179,13 @@ internal fun formatKg(kg: Double?): String =
 
 @Composable
 fun PresetsScreen(
-    onEdit: (Long) -> Unit,
+    onOpenRite: (Long) -> Unit,
     onNew: () -> Unit,
     onGenerate: (mode: String, presetId: Long?) -> Unit,
     onStartSession: (Long) -> Unit,
     onQuickSession: (Long) -> Unit,
     onOpenExercises: () -> Unit,
     onOpenLog: () -> Unit,
-    onOpenWorkout: (Long) -> Unit,
     onOpenCoverage: () -> Unit,
     viewModel: PresetsViewModel =
         viewModel(factory = viewModelFactory {
@@ -203,319 +202,202 @@ fun PresetsScreen(
     var importResult by remember { mutableStateOf<String?>(null) }
     var shareRefusal by remember { mutableStateOf<String?>(null) }
 
-    Box(Modifier.fillMaxSize()) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-        ) {
-            Spacer(Modifier.height(20.dp))
-            Text(
-                "YOUR RITES",
-                style = MaterialTheme.typography.labelLarge,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = 6.sp,
-            )
-            Spacer(Modifier.height(12.dp))
-            IronvellumButton(
-                label = "Open Trial",
-                onClick = { viewModel.beginQuick(onQuickSession) },
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(12.dp))
-            WeeklyCoverageCard(
-                ui = ui,
-                onOpen = onOpenCoverage,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            Spacer(Modifier.height(12.dp))
-            // The two navigation destinations sat here as full-width primary
-            // buttons, fighting the one real action (Quick Session); they are
-            // now quiet links below it.
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                NavChip(
-                    label = "EXERCISES",
-                    icon = Icons.Outlined.FitnessCenter,
-                    onClick = onOpenExercises,
-                    modifier = Modifier.weight(1f),
-                )
-                NavChip(
-                    label = "FULL CHRONICLE",
-                    icon = Icons.Outlined.History,
-                    onClick = onOpenLog,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            SectionHeader("Rites")
-            if (ui.presets.isEmpty()) {
-                Text(
-                    "No rites are written yet. The Forge can build a whole week for you.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Spacer(Modifier.height(8.dp))
-                IronvellumButton(
-                    label = "Forge a Cycle",
-                    onClick = { onGenerate("week", null) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(10.dp))
-            }
-            importResult?.let { line ->
-                Text(
-                    line,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.SystemGreen,
-                    modifier = Modifier.padding(bottom = 10.dp),
-                )
-            }
-            // The generator's rest-and-effort note is the same for every card,
-            // so it prints once here, up to two lines, instead of ellipsising
-            // on each card and burying the exercises under repeated prose.
-            ui.presets.map { Evidence.split(it.note).first }
-                .filter { it.isNotBlank() }
-                .distinct()
-                .forEach { note ->
-                    Text(
-                        note,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(bottom = 8.dp),
-                    )
-                }
-            ui.presets.forEach { preset ->
-                InkPanel(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        // Weighted and capped: a long name used to run into
-                        // the day chip instead of wrapping beside it.
-                        Text(
-                            preset.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            color = IronvellumColors.Ink,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f).padding(end = 8.dp),
-                        )
-                        preset.scheduledDay?.let {
-                            Box(
-                                Modifier
-                                    .clip(MaterialTheme.shapes.extraSmall)
-                                    .inkBorder(IronvellumColors.SovereignGold, MaterialTheme.shapes.extraSmall, 1.dp)
-                                    .padding(horizontal = 8.dp, vertical = 4.dp),
-                            ) {
-                                Text(DAY_LABELS[it] ?: "", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.SovereignGold)
-                            }
-                        }
-                        var showMuscles by remember { mutableStateOf(false) }
-                        IconButton(onClick = { showMuscles = true }, modifier = Modifier.size(44.dp)) {
-                            Icon(
-                                Icons.Outlined.Info,
-                                contentDescription = "Muscles in ${preset.name}",
-                                tint = IronvellumColors.InkMuted,
-                                modifier = Modifier.size(18.dp),
-                            )
-                        }
-                        if (showMuscles) {
-                            RiteMusclesSheet(
-                                title = preset.name,
-                                entries = preset.toPlanned().entries,
-                                onDismiss = { showMuscles = false },
-                            )
-                        }
-                    }
-                    Text(
-                        SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id)),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    preset.entries.take(PRESET_CARD_MOVEMENTS).forEach { entry ->
-                        Row(
-                            Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Column(Modifier.weight(1f)) {
-                                Text(entry.exerciseName, style = MaterialTheme.typography.bodyMedium)
-                                if (entry.modifiers.isNotBlank()) {
-                                    Text(
-                                        entry.modifiers.split(",").joinToString(" · ") { it.trim() },
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = IronvellumColors.SystemGreen,
-                                    )
-                                }
-                            }
-                            Text(
-                                "${entry.targetSets}×${entry.targetReps}" +
-                                    (if (MovementDifficulty.isHoldByName(entry.exerciseName)) "s" else "") +
-                                    (entry.targetWeightKg?.let { "  @${formatKg(it)}" } ?: ""),
-                                style = MaterialTheme.typography.labelLarge,
-                                fontFamily = ChakraPetch,
-                                color = IronvellumColors.InkMuted,
-                            )
-                        }
-                    }
-                    if (preset.entries.size > PRESET_CARD_MOVEMENTS) {
-                        Text(
-                            "+${preset.entries.size - PRESET_CARD_MOVEMENTS} MORE",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.InkMuted,
-                            letterSpacing = IronvellumTracking.InlineLabel,
-                            modifier = Modifier.padding(top = 3.dp),
-                        )
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                        Box(
-                            Modifier
-                                .heightIn(min = 44.dp)
-                                .clickable(
-                                    interactionSource = remember { MutableInteractionSource() },
-                                    indication = null,
-                                    onClickLabel = "Edit ${preset.name}",
-                                ) { onEdit(preset.id) },
-                            contentAlignment = Alignment.CenterStart,
-                        ) {
-                            Text(
-                                "[ EDIT ]",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontFamily = ChakraPetch,
-                                color = IronvellumColors.InkMuted,
-                                modifier = Modifier
-                                    .clip(MaterialTheme.shapes.extraSmall)
-                                    .inkBorder(IronvellumColors.InkMuted.copy(alpha = 0.4f), MaterialTheme.shapes.extraSmall, 1.dp)
-                                    .padding(horizontal = 12.dp, vertical = 6.dp),
-                            )
-                        }
-                        val resume = live?.takeIf { it.presetId == preset.id }
-                        if (resume != null) {
-                            IronvellumButton("Continue", onClick = { onStartSession(resume.id) })
-                        } else {
-                            IronvellumButton("Begin", onClick = { viewModel.begin(preset.id, onStartSession) })
-                        }
-                    }
-                }
-            }
+    val zone = java.time.ZoneId.systemDefault()
+    val todayDate = LocalDate.now()
+    val today = todayDate.dayOfWeek.value
+    val todayStart = todayDate.atStartOfDay(zone).toInstant().toEpochMilli()
+    val weekStart = todayDate.minusDays((today - 1).toLong()).atStartOfDay(zone).toInstant().toEpochMilli()
+    val sessions = ui.history.map { it.first }
+    val focus = TrainFocus.resolve(ui.presets, sessions, live, today, todayStart)
 
+    Column(
+        Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+    ) {
+        Spacer(Modifier.height(20.dp))
+        Text(
+            "TRAIN",
+            style = MaterialTheme.typography.labelLarge,
+            color = IronvellumColors.SystemGreen,
+            letterSpacing = 6.sp,
+        )
+        Spacer(Modifier.height(12.dp))
+        // The screen leads with the one thing to do now: today's rite, the
+        // trial under way, or what a rest day allows. Open Trial used to be
+        // the lead button, which put the side door ahead of the plan.
+        TrainLeadCard(
+            focus = focus,
+            ui = ui,
+            today = today,
+            onOpenRite = onOpenRite,
+            onBegin = { id -> viewModel.begin(id, onStartSession) },
+            onContinue = onStartSession,
+            onForge = { onGenerate("week", null) },
+            last = sessions.filter { it.completedAtMs != null }.maxByOrNull { it.completedAtMs ?: 0L },
+        )
+        Spacer(Modifier.height(8.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // No second trial while one is under way.
+            if (focus !is TrainFocus.Live) {
+                IronvellumButton(
+                    label = "Open Trial",
+                    onClick = { viewModel.beginQuick(onQuickSession) },
+                    quiet = true,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+            IronvellumButton(label = "New Rite", onClick = { showNewChooser = true }, quiet = true, modifier = Modifier.weight(1f))
+        }
+
+        Spacer(Modifier.height(20.dp))
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "YOUR CYCLE",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                letterSpacing = IronvellumTracking.SectionHeader,
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
             // Sits with the list it exports, and only when there is something
             // to export: an empty board would share a code that imports nothing.
             if (ui.presets.isNotEmpty()) {
                 val context = androidx.compose.ui.platform.LocalContext.current
-                IronvellumButton(
-                    label = "Share cycle",
-                    onClick = {
-                        shareRefusal = null
-                        viewModel.shareRoutine(onRefused = { shareRefusal = it }) { code -> shareRoutineCode(context, code) }
-                    },
-                    modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
-                    quiet = true,
+                Text(
+                    "SHARE ›",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.SystemGreen,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                    modifier = Modifier
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .clickable(onClickLabel = "Share cycle") {
+                            shareRefusal = null
+                            viewModel.shareRoutine(onRefused = { shareRefusal = it }) { code -> shareRoutineCode(context, code) }
+                        }
+                        .heightIn(min = 44.dp)
+                        .padding(horizontal = 8.dp)
+                        .wrapContentHeight(Alignment.CenterVertically),
                 )
-                shareRefusal?.let { line ->
+            }
+        }
+        shareRefusal?.let { line ->
+            Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
+        }
+        importResult?.let { line ->
+            Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SystemGreen, modifier = Modifier.padding(bottom = 8.dp))
+        }
+        // One line a rite: the week at a glance. The whole rite - every
+        // movement, its note, Begin and Edit - is one tap away on its page.
+        InkPanel(Modifier.fillMaxWidth()) {
+            ui.presets.forEach { preset ->
+                val sealedThisWeek = sessions.any { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStart }
+                val isToday = preset.scheduledDay == today
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clip(MaterialTheme.shapes.extraSmall)
+                        .then(if (isToday) Modifier.background(IronvellumColors.SystemGreen.copy(alpha = 0.10f)) else Modifier)
+                        .clickable(onClickLabel = "Open ${preset.name}") { onOpenRite(preset.id) }
+                        .heightIn(min = 48.dp)
+                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
                     Text(
-                        line,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.DangerRed,
-                        modifier = Modifier.padding(bottom = 10.dp),
+                        preset.scheduledDay?.let(::dayLabel) ?: "—",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                        color = when {
+                            isToday -> IronvellumColors.SovereignGold
+                            sealedThisWeek -> IronvellumColors.SystemGreen
+                            else -> IronvellumColors.InkMuted
+                        },
+                        modifier = Modifier.width(36.dp),
+                    )
+                    Text(
+                        preset.name,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = IronvellumColors.Ink,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(
+                        when {
+                            sealedThisWeek -> "SEALED"
+                            isToday -> "TODAY"
+                            // "~54 MIN": the tail of the rite's plan line.
+                            else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id))
+                                .substringAfterLast(" · ")
+                        },
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                        color = if (sealedThisWeek) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                        maxLines = 1,
                     )
                 }
+                if (preset != ui.presets.last()) {
+                    Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = preset.id.toInt()))
+                }
             }
+            if (ui.presets.isEmpty()) {
+                Text(
+                    "No rites are written yet.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
+        }
 
-            // "New Workout" used to float over the list, and it parked itself on
-            // top of a card's BEGIN button. A tile at the end of the workouts
-            // covers nothing and needs no clearance spacer underneath.
-            InkPanel(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 10.dp)
-                    .heightIn(min = 48.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                        onClickLabel = "New Rite",
-                    ) { showNewChooser = true },
+        Spacer(Modifier.height(12.dp))
+        // The body map was a third of the screen on every visit; here it is
+        // the one fact it answers, and a tap opens the full map.
+        val volume = remember(ui.plannedPresets) { ProgramRules.weeklyVolume(ui.plannedPresets) }
+        val gaps = coverageGaps(volume, CoverageGoal(ui.tier, ui.focus, ui.priorities)).size
+        InkPanel(Modifier.fillMaxWidth(), onClick = onOpenCoverage) {
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        Icons.Filled.Add,
-                        contentDescription = null,
-                        tint = IronvellumColors.SystemGreen,
-                    )
-                    Spacer(Modifier.width(8.dp))
+                Icon(
+                    Icons.Outlined.AccessibilityNew,
+                    contentDescription = null,
+                    tint = IronvellumColors.SystemGreen,
+                    modifier = Modifier.size(26.dp),
+                )
+                Column(Modifier.weight(1f)) {
                     Text(
-                        "NEW RITE",
-                        style = MaterialTheme.typography.labelMedium,
+                        "WEEKLY COVERAGE",
+                        style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.SystemGreen,
                         letterSpacing = IronvellumTracking.InlineLabel,
                     )
+                    Text(
+                        when {
+                            ui.plannedPresets.isEmpty() -> "No cycle yet"
+                            gaps == 0 -> "Every muscle covered"
+                            else -> "$gaps short or missing"
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (gaps > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                    )
                 }
+                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
             }
-
-            // Was "Activity Log", which collided head-on with the Stats
-            // screen's ACTIVITY tab (steps and sleep) - the owner kept going
-            // there hunting for his workouts.
-            SectionHeader("Recent Trials")
-            if (ui.history.isEmpty()) {
-                Text(
-                    "The Chronicle is blank. Seal a trial and it lands here.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            // Only the latest few: this screen is a plain scrolling Column, so
-            // every row it lists is composed whether or not it is on screen.
-            // After a few years of training that is a thousand rows built to
-            // show the top five, and FULL LOG above already leads to
-            // the complete, month-grouped history.
-            ui.history.take(ACTIVITY_LOG_ROWS).forEach { (session, sets) ->
-                // The same rows are tappable in the full log; here they only
-                // informed. A completed row now opens what it names.
-                InkPanel(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                        .clickable { onOpenWorkout(session.id) },
-                ) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Column(Modifier.weight(1f)) {
-                            Text(session.label, style = MaterialTheme.typography.titleSmall)
-                            Text(
-                                formatDate(session.startedAtMs) + " · " +
-                                    sets.count { it.done } + "/" + sets.size + " sets · " +
-                                    sets.filter { it.done }.sumOf { it.reps } + " reps" +
-                                    sets.filter { it.done }.sumOf { it.durationSec ?: 0 }
-                                        .let { held -> if (held > 0) " · ${held}s held" else "" },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Text("+${session.xpAwarded} XP", style = MaterialTheme.typography.labelLarge, color = IronvellumColors.SovereignGold)
-                    }
-                }
-            }
-            Spacer(Modifier.height(20.dp))
         }
+        Spacer(Modifier.height(12.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            IronvellumButton(label = "Exercises", onClick = onOpenExercises, quiet = true, modifier = Modifier.weight(1f))
+            IronvellumButton(label = "Full Chronicle", onClick = onOpenLog, quiet = true, modifier = Modifier.weight(1f))
+        }
+        Spacer(Modifier.height(20.dp))
     }
 
     if (showNewChooser) {
@@ -584,94 +466,147 @@ fun PresetsScreen(
     }
 }
 
-/** Enough to show the week's work; the full log carries the rest. */
-private const val ACTIVITY_LOG_ROWS = 6
-
 /**
- * The at-a-glance muscle map. The planned routine only - the full view (with
- * the PLANNED / LAST 7 DAYS switch and per-muscle tiles) opens from here.
- * The figure gets a wide aspect so the card stays compact; the shapes are
- * normalised, so they stretch rather than clip.
+ * Train's lead: the one rite to act on now, with its button. The body opens
+ * the rite's page; the button begins or continues it there and then.
  */
 @Composable
-private fun WeeklyCoverageCard(
+private fun TrainLeadCard(
+    focus: TrainFocus,
     ui: TrainUi,
-    onOpen: () -> Unit,
-    modifier: Modifier = Modifier,
+    today: Int,
+    onOpenRite: (Long) -> Unit,
+    onBegin: (Long) -> Unit,
+    onContinue: (Long) -> Unit,
+    onForge: () -> Unit,
+    last: com.ironvellum.app.domain.WorkoutSession?,
 ) {
-    val volume = remember(ui.plannedPresets) { ProgramRules.weeklyVolume(ui.plannedPresets) }
-    val goal = CoverageGoal(ui.tier, ui.focus, ui.priorities)
-    val gaps = coverageGaps(volume, goal).size
+    val rite = when (focus) {
+        is TrainFocus.Live -> focus.preset
+        is TrainFocus.Begin -> focus.preset
+        is TrainFocus.Sealed -> focus.preset
+        is TrainFocus.Respite -> focus.next
+        TrainFocus.NoCycle -> null
+    }
     InkPanel(
-        modifier
-            // A min height keeps the tappable figure from shrinking to a strip
-            // on short panes; the card is the button that opens the full view.
-            .heightIn(min = 220.dp)
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClickLabel = "Open weekly coverage",
-            ) { onOpen() },
+        Modifier.fillMaxWidth(),
+        accent = when (focus) {
+            is TrainFocus.Sealed -> IronvellumColors.SovereignGold
+            is TrainFocus.Live, is TrainFocus.Begin -> IronvellumColors.SystemGreen
+            else -> IronvellumColors.Rune
+        },
+        onClick = rite?.let { { onOpenRite(it.id) } },
     ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "WEEKLY COVERAGE",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SystemGreen,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-                // The chevron is the tap affordance: without it the card read
-                // as a static summary even though it opens the full screen.
-                Text(
-                    " ›",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SystemGreen,
-                )
-            }
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                when {
-                    ui.plannedPresets.isEmpty() -> "NO CYCLE YET"
-                    gaps == 0 -> "ALL COVERED"
-                    else -> "$gaps SHORT OR MISSING"
+                when (focus) {
+                    is TrainFocus.Live -> "TRIAL IN PROGRESS"
+                    else -> "TODAY · ${dayLabel(today)}"
                 },
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
-                color = if (gaps > 0) IronvellumColors.SovereignGold else IronvellumColors.SystemGreen,
+                color = IronvellumColors.SovereignGold,
+                letterSpacing = IronvellumTracking.SectionHeader,
+                maxLines = 1,
+            )
+            Spacer(Modifier.weight(1f))
+            if (focus !is TrainFocus.Live && last != null) {
+                Text(
+                    "LAST · ${last.label} · ${formatDate(last.completedAtMs ?: last.startedAtMs, "MMM d")}",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(start = 12.dp),
+                )
+            }
+        }
+        Text(
+            when (focus) {
+                is TrainFocus.Live -> (focus.preset?.name ?: focus.session.label).uppercase()
+                is TrainFocus.Begin -> focus.preset.name.uppercase()
+                is TrainFocus.Sealed -> focus.preset.name.uppercase()
+                is TrainFocus.Respite -> "RESPITE"
+                TrainFocus.NoCycle -> "NO CYCLE YET"
+            },
+            style = MaterialTheme.typography.headlineSmall,
+            fontFamily = ChakraPetch,
+            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+            color = IronvellumColors.EmeraldBright,
+            letterSpacing = 1.sp,
+        )
+        val detail = when (focus) {
+            is TrainFocus.Begin, is TrainFocus.Live -> rite?.let {
+                SessionClock.planLine(it.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(it.id))
+            }
+            is TrainFocus.Sealed -> "SEALED · +${focus.session.xpAwarded} XP · ${focus.session.strengthScore} STR"
+            is TrainFocus.Respite -> focus.next?.let { "NEXT · ${it.name.uppercase()} · ${dayLabel(focus.nextDay ?: 0)}" }
+            TrainFocus.NoCycle -> null
+        }
+        detail?.let {
+            Text(
+                it,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = if (focus is TrainFocus.Sealed) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                 letterSpacing = IronvellumTracking.InlineLabel,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 4.dp),
             )
         }
-        Spacer(Modifier.height(8.dp))
-        if (ui.plannedPresets.isEmpty()) {
+        // The first few movements, enough to recognise the rite; its page
+        // carries the whole list.
+        if (focus is TrainFocus.Begin || (focus is TrainFocus.Live && rite != null)) {
+            rite?.entries?.let { entries ->
+                Text(
+                    entries.take(LEAD_MOVEMENTS).joinToString(" · ") { it.exerciseName } +
+                        (if (entries.size > LEAD_MOVEMENTS) "  +${entries.size - LEAD_MOVEMENTS}" else ""),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.Ink,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 8.dp),
+                )
+            }
+        }
+        if (focus is TrainFocus.Respite && focus.next == null) {
             Text(
-                "Build a cycle to see which muscles it covers.",
+                "No rite falls on a day yet. Open one below or start an open trial.",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = IronvellumColors.InkMuted,
+                modifier = Modifier.padding(top = 4.dp),
             )
-        } else {
-            BodyHeatMap(
-                volume = volume,
-                goal = goal,
-                modifier = Modifier.fillMaxWidth(),
-                figureHeight = 190.dp,
-                // The card is the way into Weekly Coverage, so its figure is a picture and a tap opens the screen.
-                interactive = false,
+        }
+        if (focus is TrainFocus.NoCycle) {
+            Text(
+                "Your cycle is unwritten. The Forge builds a whole week for you.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+                modifier = Modifier.padding(top = 4.dp),
             )
+        }
+        when (focus) {
+            is TrainFocus.Live -> LeadButton("Continue ${focus.preset?.name ?: focus.session.label}") { onContinue(focus.session.id) }
+            is TrainFocus.Begin -> LeadButton("Begin ${focus.preset.name}") { onBegin(focus.preset.id) }
+            // A respite is a suggestion, not a lock: the next rite can be taken
+            // early, until a trial is sealed today.
+            is TrainFocus.Respite -> if (focus.canTakeEarly && focus.next != null) {
+                LeadButton("Begin ${focus.next.name} early", quiet = true) { onBegin(focus.next.id) }
+            }
+            TrainFocus.NoCycle -> LeadButton("Forge a Cycle") { onForge() }
+            is TrainFocus.Sealed -> Unit
         }
     }
 }
 
-/**
- * Per-card movement cap. Presets can hold many exercises and rendering every
- * one turned each card into a wall of identical rows; three movements is
- * enough to recognise the preset. The full manifest still lives in the preset
- * editor and on the Today quest card.
- */
-private const val PRESET_CARD_MOVEMENTS = 3
+@Composable
+private fun LeadButton(label: String, quiet: Boolean = false, onClick: () -> Unit) {
+    Spacer(Modifier.height(12.dp))
+    IronvellumButton(label = label, onClick = onClick, quiet = quiet, modifier = Modifier.fillMaxWidth())
+}
 
+/** Movements named on the lead card before "+N". */
+private const val LEAD_MOVEMENTS = 3

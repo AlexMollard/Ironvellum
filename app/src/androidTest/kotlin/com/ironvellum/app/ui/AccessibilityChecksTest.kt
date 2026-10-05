@@ -426,7 +426,8 @@ class AccessibilityChecksTest {
             // composes once load is on: reach both through their own entry points
             // rather than leaving those glyphs unmeasured.
             listOf("Codex", "PATHS", "Pull", "Dead Hang", "LOG", "ADD LOAD"),
-            listOf("Train", "[ EDIT ]"),
+            // A rite's own page, opened from its row in the cycle list.
+            listOf("Train", "Heavy Pull"),
             // Settings and the Muster roll replace the nav bar, so they go late.
             listOf("Today", "Settings"),
             // One level into the Settings hub: the sub-screens with fields,
