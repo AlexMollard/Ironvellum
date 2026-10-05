@@ -864,6 +864,8 @@ class Repository(
                 durationSec = s.durationSec,
                 distanceM = s.distanceM,
                 grade = s.grade,
+                warmup = s.warmup,
+                supersetGroup = s.supersetGroup,
             )
         }.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
     }
@@ -1275,6 +1277,8 @@ class Repository(
                     durationSec = s.durationSec,
                     distanceM = s.distanceM,
                     grade = s.grade,
+                    warmup = s.warmup,
+                    supersetGroup = s.supersetGroup,
                 )
             }
         }
@@ -2025,10 +2029,13 @@ class Repository(
                     reps = s.reps.coerceAtLeast(0),
                     weightKg = s.weightKg?.takeIf { it > 0.0 },
                     modifiers = block.modifiers,
-                    done = s.done,
+                    // A warm-up never counts, however the editor left its tick.
+                    done = s.done && !s.warmup,
                     durationSec = s.durationSec?.coerceAtLeast(0),
                     distanceM = s.distanceM?.coerceAtLeast(0.0),
                     grade = s.grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
+                    warmup = s.warmup,
+                    supersetGroup = block.supersetGroup,
                 )
             }
         }
@@ -2085,6 +2092,8 @@ class Repository(
                     durationSec = s.durationSec,
                     distanceM = s.distanceM,
                     grade = s.grade,
+                    warmup = s.warmup,
+                    supersetGroup = s.supersetGroup,
                 )
             }
         }
@@ -2376,6 +2385,8 @@ class Repository(
                                 durationSec = s.durationSec,
                                 distanceM = s.distanceM,
                                 grade = s.grade,
+                                warmup = s.warmup,
+                                supersetGroup = s.supersetGroup,
                             )
                         },
                     ).size
@@ -2593,23 +2604,24 @@ class Repository(
                     imported = true,
                 ),
             )
-            // exercisePosition groups each movement's sets together, in
-            // first-appearance order like the exporting apps.
-            val positionByExercise = HashMap<Long, Int>()
-            val setEntities = mapped.map { (set, exerciseId, mods) ->
-                val position = positionByExercise.getOrPut(exerciseId) { positionByExercise.size }
+            val placements = CsvWorkoutReader.blockPlacements(mapped.map { it.second })
+            val setEntities = mapped.zip(placements) { (set, exerciseId, mods), (position, index) ->
+                val warmup = set.setType == "warmup"
                 SetLogEntity(
                     sessionId = sessionId,
                     exerciseId = exerciseId,
                     exercisePosition = position,
-                    setIndex = set.setIndex,
+                    setIndex = index,
                     reps = set.reps,
                     weightKg = set.weightKg,
                     modifiers = mods,
-                    done = set.setType != "warmup",
+                    // A warm-up is kept, unticked, so nothing that counts sets counts it.
+                    done = !warmup,
                     durationSec = set.durationSec,
                     distanceM = set.distanceM,
                     grade = null,
+                    warmup = warmup,
+                    supersetGroup = set.supersetGroup,
                 )
             }
             sessionDao.insertSets(setEntities)

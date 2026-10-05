@@ -7,8 +7,9 @@ package com.ironvellum.app.domain
 object ExportWriter {
 
     // 5: adds idle/gacha/cosmetic state, profile height/sex/inkStyle and real
-    // per-exercise metadata. ExportReader still accepts 4 and below.
-    const val FORMAT_VERSION = 5
+    // per-exercise metadata. 6: per-set warmup and supersetGroup. ExportReader
+    // still accepts 5 and below.
+    const val FORMAT_VERSION = 6
 
     /** Real catalogue attributes for one movement, matched by name on import. */
     data class ExerciseMeta(
@@ -274,6 +275,10 @@ object ExportWriter {
                 append(",\"grade\":").appendNullable(set.grade) { appendEscaped(it) }
                 append(",\"modifiers\":").appendEscaped(set.modifiers)
                 append(",\"done\":").append(set.done)
+                // Only a warm-up or a superset member carries these, so plain
+                // sets stay byte-identical to a v5 archive.
+                if (set.warmup) append(",\"warmup\":true")
+                set.supersetGroup?.let { append(",\"supersetGroup\":").append(it) }
                 append("}")
             }
             append("]}")

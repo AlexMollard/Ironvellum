@@ -112,11 +112,14 @@ internal fun TrialAmendEditor(
                     color = IronvellumColors.SystemGreen,
                 )
             }
+            // Warm-ups read W and working sets count from 1 after them.
+            val labels = block.sets.runningFold(0) { n, s -> if (s.warmup) n else n + 1 }.drop(1)
             block.sets.forEachIndexed { setIdx, set ->
+                // A warm-up never counts, so its tick does not stick.
                 fun update(change: (TrialDraft.DraftSet) -> TrialDraft.DraftSet) =
-                    onChange { it.updateSet(blockIdx, setIdx, change) }
+                    onChange { it.updateSet(blockIdx, setIdx) { s -> change(s).let { r -> r.copy(done = r.done && !r.warmup) } } }
                 SetRow(
-                    label = "${setIdx + 1}",
+                    label = if (set.warmup) "W" else "${labels[setIdx]}",
                     exerciseName = block.exerciseName,
                     setIndex = setIdx,
                     // No PR line while amending: the records include this

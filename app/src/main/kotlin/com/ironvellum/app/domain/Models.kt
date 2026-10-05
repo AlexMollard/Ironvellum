@@ -71,6 +71,10 @@ data class SessionSet(
     val durationSec: Int? = null,
     val distanceM: Double? = null,
     val grade: String? = null,
+    /** A warm-up: always unticked, shown as a warm-up rather than a skipped set. */
+    val warmup: Boolean = false,
+    /** Shared by the sets of adjacent blocks done as one superset; null when not in one. */
+    val supersetGroup: Int? = null,
 )
 
 data class WorkoutSession(

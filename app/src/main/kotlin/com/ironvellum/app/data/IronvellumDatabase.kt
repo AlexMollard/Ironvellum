@@ -78,7 +78,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 34
+        const val VERSION = 35
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -90,6 +90,17 @@ abstract class IronvellumDatabase : RoomDatabase() {
          * lifters start with their current level as already paid: every level
          * up to it paid (or was knowingly forgone) under the old rules.
          */
+        /**
+         * Warm-ups and supersets, kept from a Hevy import. Every existing set
+         * is a plain working set outside any superset, which the defaults say.
+         */
+        private val MIGRATION_34_35 = object : Migration(34, 35) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN warmup INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE set_logs ADD COLUMN supersetGroup INTEGER")
+            }
+        }
+
         private val MIGRATION_33_34 = object : Migration(33, 34) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE gacha_state ADD COLUMN rollLevelMark INTEGER NOT NULL DEFAULT 0")
@@ -491,6 +502,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_31_32,
             MIGRATION_32_33,
             MIGRATION_33_34,
+            MIGRATION_34_35,
         )
 
         const val NAME = "ironvellum.db"

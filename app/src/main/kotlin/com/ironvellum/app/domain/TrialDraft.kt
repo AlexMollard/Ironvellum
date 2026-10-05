@@ -14,6 +14,8 @@ data class TrialDraft(val blocks: List<Block>) {
         /** Describes the movement, so it applies to every set of the block. */
         val modifiers: String,
         val sets: List<DraftSet>,
+        /** Shared with the adjacent blocks done as one superset; null when not in one. */
+        val supersetGroup: Int? = null,
     )
 
     /** One set's figures; which of them count depends on the movement's metric. */
@@ -25,6 +27,8 @@ data class TrialDraft(val blocks: List<Block>) {
         val distanceM: Double? = null,
         val grade: String? = null,
         val done: Boolean = true,
+        /** A warm-up: shown as one and never ticked. */
+        val warmup: Boolean = false,
     )
 
     val tickedCount: Int get() = blocks.sumOf { b -> b.sets.count { it.done } }
@@ -38,7 +42,7 @@ data class TrialDraft(val blocks: List<Block>) {
     /** A copy of the block's last set, unticked, so the lifter decides whether it counted. */
     fun addSet(block: Int): TrialDraft = replaceBlock(block) { b ->
         val template = b.sets.lastOrNull() ?: DraftSet(reps = 0)
-        b.copy(sets = b.sets + template.copy(done = false))
+        b.copy(sets = b.sets + template.copy(done = false, warmup = false))
     }
 
     /** Removing a block's last set removes the movement. */
@@ -94,6 +98,7 @@ data class TrialDraft(val blocks: List<Block>) {
                         exerciseId = first.exerciseId,
                         exerciseName = first.exerciseName,
                         modifiers = first.modifiers,
+                        supersetGroup = first.supersetGroup,
                         sets = ordered.map {
                             DraftSet(
                                 reps = it.reps,
@@ -102,23 +107,29 @@ data class TrialDraft(val blocks: List<Block>) {
                                 distanceM = it.distanceM,
                                 grade = it.grade,
                                 done = it.done,
+                                warmup = it.warmup,
                             )
                         },
                     )
                 }
             // A rite may list one movement twice. The cloud keys sets on
             // (movement, index), so such entries fold into one block when they
-            // are described alike; [hasRepeatedMovement] flags the rest.
+            // are described alike and in the same superset; [hasRepeatedMovement]
+            // flags the rest.
             val merged = mutableListOf<Block>()
             for (b in blocks) {
-                val at = merged.indexOfFirst { it.exerciseId == b.exerciseId && it.modifiers == b.modifiers }
+                val at = merged.indexOfFirst {
+                    it.exerciseId == b.exerciseId && it.modifiers == b.modifiers && it.supersetGroup == b.supersetGroup
+                }
                 if (at >= 0) merged[at] = merged[at].copy(sets = merged[at].sets + b.sets) else merged += b
             }
             return TrialDraft(merged)
         }
 
         /** One set carried across a metric change: the new metric's figure is always set. */
-        internal fun reshape(set: DraftSet, to: ExerciseMetric): DraftSet = when (to) {
+        internal fun reshape(set: DraftSet, to: ExerciseMetric): DraftSet = reshapeFigures(set, to).copy(warmup = set.warmup)
+
+        private fun reshapeFigures(set: DraftSet, to: ExerciseMetric): DraftSet = when (to) {
             ExerciseMetric.HOLD -> DraftSet(
                 reps = 0,
                 weightKg = set.weightKg,

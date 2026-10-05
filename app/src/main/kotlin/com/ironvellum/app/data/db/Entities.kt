@@ -118,6 +118,10 @@ data class SetLogEntity(
     val durationSec: Int? = null,
     val distanceM: Double? = null,
     val grade: String? = null,
+    /** A warm-up, stored unticked so nothing that counts ticked sets counts it. */
+    val warmup: Boolean = false,
+    /** Shared by the sets of adjacent blocks done as one superset; null when not in one. */
+    val supersetGroup: Int? = null,
 )
 
 @Entity(tableName = "stats")

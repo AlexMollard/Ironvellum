@@ -535,8 +535,12 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
         .groupBy { it.exercisePosition }
         .toSortedMap()
         .map { (_, groupSets) -> groupSets.sortedBy { it.setIndex } }
-    groups.forEach { groupSets ->
+    // Supersets are numbered in the order the trial reached them.
+    val supersetNumber = groups.mapNotNull { it.firstOrNull()?.supersetGroup }.distinct()
+        .withIndex().associate { (i, group) -> group to i + 1 }
+    groups.forEachIndexed { groupIndex, groupSets ->
         val name = groupSets.firstOrNull()?.exerciseName.orEmpty()
+        val superset = groupSets.firstOrNull()?.supersetGroup
         val hold = groupSets.firstOrNull()?.let { set ->
             MovementDifficulty.isHoldSet(exercises[set.exerciseId]?.metric, set.exerciseName, set.modifiers)
         } == true
@@ -551,6 +555,16 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
         val totals = metricTotals(doneInGroup) { metric }
         val volumeKg = if (metric.isStrength) doneInGroup.sumOf { set -> (set.weightKg ?: 0.0) * set.reps } else 0.0
         InkPanel(Modifier.fillMaxWidth()) {
+            supersetNumber[superset]?.let { number ->
+                Text(
+                    "SUPERSET $number",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.SovereignGold,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                )
+                Spacer(Modifier.height(4.dp))
+            }
             Row(
                 Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -600,15 +614,23 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
                 verticalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 val weighted = groupSets.firstOrNull()?.let { exercises[it.exerciseId]?.isWeighted } == true
-                groupSets.forEach { set -> SetChip(set, metric, hold, weighted) }
+                // Warm-ups read W and working sets count from 1 after them, as Hevy shows them.
+                var working = 0
+                groupSets.forEach { set ->
+                    val label = if (set.warmup) "W" else (++working).toString()
+                    SetChip(set, metric, hold, weighted, label)
+                }
             }
         }
-        Spacer(Modifier.height(10.dp))
+        // Members of one superset sit closer together than separate movements.
+        val nextInSuperset = superset != null &&
+            groups.getOrNull(groupIndex + 1)?.firstOrNull()?.supersetGroup == superset
+        Spacer(Modifier.height(if (nextInSuperset) 4.dp else 10.dp))
     }
 }
 
 @Composable
-private fun SetChip(set: SessionSet, metric: ExerciseMetric, hold: Boolean, weighted: Boolean) {
+private fun SetChip(set: SessionSet, metric: ExerciseMetric, hold: Boolean, weighted: Boolean, label: String) {
     val weight = if (set.weightKg == null || set.weightKg == 0.0) "BW" else "${formatLoadKg(set.weightKg)} kg"
     Column(
         Modifier
@@ -642,8 +664,13 @@ private fun SetChip(set: SessionSet, metric: ExerciseMetric, hold: Boolean, weig
         )
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(
-                // Completed sets get the emerald diamond; skipped ones stay bare.
-                if (set.done) "\u25C6 ${set.setIndex + 1}" else "\u25C7 ${set.setIndex + 1}",
+                // Completed sets get the emerald diamond; skipped ones stay bare;
+                // a warm-up says so rather than reading as skipped.
+                when {
+                    set.warmup -> "$label \u00B7 WARM-UP"
+                    set.done -> "\u25C6 $label"
+                    else -> "\u25C7 $label"
+                },
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = if (set.done) IronvellumColors.Emerald else IronvellumColors.InkMuted,

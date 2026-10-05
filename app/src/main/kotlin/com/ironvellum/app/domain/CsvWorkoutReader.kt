@@ -50,6 +50,8 @@ object CsvWorkoutReader {
         val rpe: Double?,
         /** Per-set note (Strong `Notes`, Hevy `exercise_notes`). */
         val notes: String,
+        /** Hevy `superset_id`: shared by the adjacent exercises done as one superset. */
+        val supersetGroup: Int? = null,
     )
 
     data class ParsedWorkout(
@@ -201,7 +203,9 @@ object CsvWorkoutReader {
                 weightKg = str("Weight").toDoubleOrNull()?.let { round3(it * factor) },
                 distanceM = str("Distance").toDoubleOrNull()?.let { round3(it * 1000.0) },
                 durationSec = str("Seconds").toDoubleOrNull()?.toInt(),
-                setType = "normal",
+                // Strong itself writes no set type; Ironvellum's own export adds
+                // a trailing `Set Type` column so its warm-ups read back.
+                setType = str("Set Type").lowercase().ifBlank { "normal" },
                 rpe = null,
                 notes = "",
             )
@@ -299,6 +303,7 @@ object CsvWorkoutReader {
                     setType = str("set_type").lowercase().ifBlank { "normal" },
                     rpe = dbl("rpe"),
                     notes = str("exercise_notes"),
+                    supersetGroup = str("superset_id").toDoubleOrNull()?.toInt(),
                 ),
             )
         }
@@ -336,6 +341,24 @@ object CsvWorkoutReader {
         val mon = HEVY_MONTHS[monName.take(3).lowercase()] ?: return null
         return LocalDateTime.of(y.toInt(), mon, d.toInt(), hh.toInt(), mm.toInt())
             .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    }
+
+    /**
+     * Where each imported set lands, as (exercisePosition, setIndex), for the
+     * movement ids of a workout's sets in file order. Each run of one movement
+     * is its own block, so a movement done twice stays two blocks; its set
+     * numbers count on across both, because the cloud keys a set on
+     * (movement, setIndex) and two blocks numbered from 0 would collide.
+     */
+    fun blockPlacements(exerciseIds: List<Long>): List<Pair<Int, Int>> {
+        val nextIndex = HashMap<Long, Int>()
+        var position = -1
+        return exerciseIds.mapIndexed { i, id ->
+            if (i == 0 || exerciseIds[i - 1] != id) position++
+            val index = nextIndex.getOrDefault(id, 0)
+            nextIndex[id] = index + 1
+            position to index
+        }
     }
 
     const val LB_TO_KG = 0.45359237
