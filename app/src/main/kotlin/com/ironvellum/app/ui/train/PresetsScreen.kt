@@ -628,12 +628,12 @@ private fun WayOutRow(
     }
 }
 
-/** Train's rhythm: panels sit a section apart; controls inside a group, a group gap. */
-private val SECTION_GAP = 16.dp
-private val GROUP_GAP = 12.dp
+/** Train's rhythm, shared with the rite page: panels sit a section apart; controls inside a group, a group gap. */
+internal val SECTION_GAP = 16.dp
+internal val GROUP_GAP = 12.dp
 
 /** The page's end clears the raised Train plate, which overhangs the bar by 18dp. */
 private val END_GAP = 40.dp
 
 /** A list row: the 48dp touch target, the same in both panels. */
-private val ROW_HEIGHT = 48.dp
+internal val ROW_HEIGHT = 48.dp
