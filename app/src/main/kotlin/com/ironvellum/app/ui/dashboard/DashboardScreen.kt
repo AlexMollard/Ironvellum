@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -76,6 +77,7 @@ import com.ironvellum.app.domain.HealthDay
 import com.ironvellum.app.domain.STEP_GOAL
 import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.Rank
+import com.ironvellum.app.domain.RankBreakdown
 import com.ironvellum.app.domain.Streak
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
@@ -99,6 +101,7 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.LifterSigil
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.RankSheet
 import com.ironvellum.app.ui.components.XpBar
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.components.InkRail
@@ -272,10 +275,14 @@ class DashboardViewModel(
         .map { it.second }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), Sex.MALE)
 
-    /** Strength Rank from the lift boards, "Unranked" without one; blank until first read. */
+    /** Strength Rank band, "Unranked" without one; blank until first read. */
     val strengthRank: StateFlow<String> = repo.observeStrengthRank()
         .map { it ?: Rank.UNRANKED }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "")
+
+    /** The rank written out for [RankSheet]; null while unranked. */
+    val rankBreakdown: StateFlow<RankBreakdown?> = repo.observeRankBreakdown()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** The Garrison at a glance: its live rate and the inscriptions waiting to be spent. */
     val garrison: StateFlow<GarrisonGlance?> = combine(repo.observeIdleRate(), repo.observeRolls()) { rate, rolls ->
@@ -602,6 +609,8 @@ fun DashboardScreen(
     val live by viewModel.live.collectAsStateWithLifecycle()
     val bodyGap by viewModel.bodyGap.collectAsStateWithLifecycle()
     val strengthRank by viewModel.strengthRank.collectAsStateWithLifecycle()
+    val rankBreakdown by viewModel.rankBreakdown.collectAsStateWithLifecycle()
+    var rankOpen by remember { mutableStateOf(false) }
     val profile = ui.profile
     val progress = Xp.progress(profile?.totalXp ?: 0L)
     val today = LocalDate.now()
@@ -670,10 +679,14 @@ fun DashboardScreen(
                                 letterSpacing = 0.sp,
                                 color = IronvellumColors.SystemGreen,
                                 maxLines = 1,
-                                modifier = Modifier.padding(start = 10.dp),
+                                modifier = Modifier
+                                    .padding(start = 10.dp)
+                                    .heightIn(min = 32.dp)
+                                    .clickable(role = Role.Button, onClickLabel = "Show Strength Rank") { rankOpen = true },
                             )
                             TermInfo(Term.RANKS)
                         }
+                        if (rankOpen) RankSheet(rankBreakdown) { rankOpen = false }
                         profile?.currentTitleId?.let { Titles.byId(it)?.name }?.let { worn ->
                             Text(
                                 worn.uppercase(),

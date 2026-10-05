@@ -21,7 +21,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.ArmyClass
-import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.Rank
 import com.ironvellum.app.ui.theme.IronvellumColors
 
@@ -70,12 +69,13 @@ enum class Term(
     RANKS(
         "Strength Rank and Ascension",
         "Strength Rank is how strong you are now: Untrained, Novice, Intermediate, Advanced or " +
-            "Elite, the strength-standard bands. Each squat, bench press, deadlift, overhead " +
-            "press, pull-up and dip you sealed in the last ${Rank.WINDOW_DAYS} days counts its " +
-            "best estimated 1-rep max against your bodyweight, and the rank is their average, " +
-            "rounded down. It can fall if you stop training a lift. Until " +
-            "you log your bodyweight and seal one of those lifts at ${ProgramRules.MAX_E1RM_REPS} reps or fewer, you are " +
-            "Unranked. Ascension follows your level, which rises with the XP each trial " +
+            "Elite, the strength-standard bands. It reads three patterns, Pull, Push and Legs, " +
+            "over the last ${Rank.WINDOW_DAYS} days. Each takes its best mark: a squat, bench press, " +
+            "deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your " +
+            "bodyweight, or a pull, push or leg technique you cleared, at its tier. Your rank " +
+            "is the average of the patterns you trained, rounded down. One you skipped is left out, " +
+            "and core work never lowers it. Tap your rank to see each pattern and what lifts it next. " +
+            "Ascension follows your level, which rises with the XP each trial " +
             "earns: " + ArmyClass.LADDER.joinToString(", ") { "${it.title} at ${it.level}" } + ".",
     ),
     TUCK(
