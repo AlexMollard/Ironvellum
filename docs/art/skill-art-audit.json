@@ -381,26 +381,28 @@
       "name": "Freestanding Handstand",
       "line": "Handstand",
       "resource": "skill_freestanding_handstand",
-      "status": "uncertain",
-      "category": "Head / torso orientation",
-      "reason": "The rear-facing shirt and shorts combined with the shadowed head make the neck and face direction hard to read. Check an enlarged view for a head pasted in the opposite orientation. No definite 180-degree reversal established.",
+      "status": "review",
+      "category": "Backwards knees",
+      "reason": "Owner identified backwards knees on 6 October 2026. The knee orientation conflicts with the torso and pelvis direction. Regenerate with consistent hips, kneecaps, calves, heels and toes; retain the existing engraving style.",
       "image": "../../app/src/main/res/drawable-nodpi/skill_freestanding_handstand.webp?v=01bc70a04b5b",
       "width": 427,
       "height": 640,
-      "sha256": "01bc70a04b5bed38517bd165ce9eaf83f580296032d1fd03c8b10e00bccc570e"
+      "sha256": "01bc70a04b5bed38517bd165ce9eaf83f580296032d1fd03c8b10e00bccc570e",
+      "review_source": "Owner feedback, 2026-10-06"
     },
     {
       "number": 30,
       "name": "Handstand Walk",
       "line": "Handstand",
       "resource": "skill_handstand_walk",
-      "status": "uncertain",
-      "category": "Feet / pelvis orientation",
-      "reason": "One foot shows its sole and the other a different surface while the pelvis is viewed from behind. Hip rotation could explain it, but the knee-to-ankle orientation deserves a closer review. The face is also obscured.",
+      "status": "review",
+      "category": "Backwards knees",
+      "reason": "Owner identified backwards knees on 6 October 2026. The knee orientation conflicts with the torso and pelvis direction. Regenerate with consistent hips, kneecaps, calves, heels and toes; retain the existing engraving style.",
       "image": "../../app/src/main/res/drawable-nodpi/skill_handstand_walk.webp?v=1851f170a61d",
       "width": 427,
       "height": 640,
-      "sha256": "1851f170a61deda5d8d0d9f8e21262fc7333bc74ed5b169907aeeffbe638a163"
+      "sha256": "1851f170a61deda5d8d0d9f8e21262fc7333bc74ed5b169907aeeffbe638a163",
+      "review_source": "Owner feedback, 2026-10-06"
     },
     {
       "number": 31,
@@ -446,13 +448,14 @@
       "name": "Straddle Press to Handstand",
       "line": "Handstand",
       "resource": "skill_straddle_press_to_handstand",
-      "status": "uncertain",
-      "category": "Head / torso orientation",
-      "reason": "As with the freestanding handstand, the rear-facing torso and shadowed head make the neck orientation ambiguous. Check face direction before treating this as a reversed-head defect.",
+      "status": "review",
+      "category": "Backwards knees",
+      "reason": "Owner identified backwards knees on 6 October 2026. The knee orientation conflicts with the torso and pelvis direction. Regenerate with consistent hips, kneecaps, calves, heels and toes; retain the existing engraving style.",
       "image": "../../app/src/main/res/drawable-nodpi/skill_straddle_press_to_handstand.webp?v=f6b9e094faf5",
       "width": 427,
       "height": 640,
-      "sha256": "f6b9e094faf5475f7a63b2dac3b602f46f66be4ca74d78ab6bed6dd877393178"
+      "sha256": "f6b9e094faf5475f7a63b2dac3b602f46f66be4ca74d78ab6bed6dd877393178",
+      "review_source": "Owner feedback, 2026-10-06"
     },
     {
       "number": 35,
