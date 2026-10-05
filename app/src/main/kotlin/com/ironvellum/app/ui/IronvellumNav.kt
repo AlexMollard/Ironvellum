@@ -473,10 +473,14 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                             destination.label
                                         },
                                         tint = when {
-                                            // Dark on the plate, emerald once settled:
-                                            // the sword keeps its colour either way, so
-                                            // Train still reads as the app's own tab.
-                                            destination.raised -> androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, p)
+                                            // Dark on the plate; once settled, the same
+                                            // tint as every other tab, so a bar at rest
+                                            // reads as one row rather than one green sword.
+                                            destination.raised -> androidx.compose.ui.graphics.lerp(
+                                                if (selected) IronvellumColors.Emerald else IronvellumColors.InkMuted,
+                                                IronvellumColors.Vault,
+                                                p,
+                                            )
                                             selected -> IronvellumColors.Emerald
                                             else -> IronvellumColors.InkMuted
                                         },
