@@ -9,9 +9,11 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.TemporalAdjusters
 
 /**
- * Writes trials as a Strong-format CSV, one row per ticked set — the layout
- * [CsvWorkoutReader] reads, so the app (and Strong-aware tools) can take its
- * own export back in. Weight is kg and distance km, as the reader expects.
+ * Writes trials as a Strong-format CSV, one row per ticked set or warm-up — the
+ * layout [CsvWorkoutReader] reads, so the app (and Strong-aware tools) can take
+ * its own export back in. Weight is kg and distance km, as the reader expects.
+ * Strong has no documented warm-up marker, so a trailing `Set Type` column
+ * carries it; tools that do not know the column ignore it.
  *
  * Only the PUBLIC note is written: a CSV is made to be shared, and the private
  * note stays in the JSON archive. Grade and modifiers have no Strong column.
@@ -34,7 +36,7 @@ object WorkoutCsvWriter {
     }
 
     const val HEADER =
-        "Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes"
+        "Date,Workout Name,Duration,Exercise Name,Set Order,Weight,Reps,Distance,Seconds,Notes,Workout Notes,Set Type"
 
     private val DATE = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
 
@@ -51,17 +53,17 @@ object WorkoutCsvWriter {
 
     fun write(sessions: List<Pair<WorkoutSession, List<SessionSet>>>, zone: ZoneId): String = buildString {
         // BOM so Excel reads names and notes as UTF-8; the reader strips it.
-        append('﻿').append(HEADER).append("\r\n")
+        append('\uFEFF').append(HEADER).append("\r\n")
         sessions.sortedBy { it.first.startedAtMs }.forEach { (session, sets) ->
             val date = DATE.format(Instant.ofEpochMilli(session.startedAtMs).atZone(zone))
             val name = session.title.ifBlank { session.label }
             val duration = session.completedAtMs?.let { duration((it - session.startedAtMs) / 1000) } ?: ""
-            sets.filter { it.done }
+            sets.filter { it.done || it.warmup }
                 .sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
                 .groupBy { it.exercisePosition }
                 .values
                 .forEach { block ->
-                    // Set Order restarts at 1 per movement, counting ticked sets only.
+                    // Set Order restarts at 1 per movement, counting exported sets only.
                     block.forEachIndexed { i, set ->
                         appendRow(
                             date,
@@ -75,6 +77,7 @@ object WorkoutCsvWriter {
                             set.durationSec?.toString() ?: "",
                             "",
                             session.note,
+                            if (set.warmup) "warmup" else "",
                         )
                     }
                 }

@@ -157,6 +157,9 @@ object ExportReader {
             grade = set.str("grade"),
             modifiers = set.str("modifiers") ?: "",
             done = set.bool("done") ?: false,
+            // v6, written only when set: an older archive reads as plain sets.
+            warmup = set.bool("warmup") ?: false,
+            supersetGroup = set.int("supersetGroup"),
         )
     }
 

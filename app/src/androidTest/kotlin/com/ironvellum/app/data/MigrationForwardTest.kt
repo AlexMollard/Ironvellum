@@ -678,4 +678,34 @@ class MigrationForwardTest {
         }
         InstrumentationRegistry.getInstrumentation().targetContext.deleteDatabase("$dbName-norow")
     }
+
+    /** Schema 34 -> 35: every existing set reads back as a working set outside any superset. */
+    @Test
+    fun upgradeTo35KeepsEverySetAPlainWorkingSet() = runTest {
+        helper.createDatabase(dbName, 34).use { old ->
+            old.execSQL(
+                "INSERT INTO exercises (id, name, muscleGroup, isWeighted, metric, category) " +
+                    "VALUES (1, 'Bench Press', 'PUSH', 1, 'REPS', '')",
+            )
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, xpAwarded, " +
+                    "strengthScore, title, note, privateNote, imported, audience, editedAtMs, sealedXp) " +
+                    "VALUES (2, NULL, 'Push', 1789782608320, 1789785525853, 330, 610, '', '', '', 0, 'profile', NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade) " +
+                    "VALUES (7, 2, 1, 0, 0, 5, 80.0, '', 1, NULL, NULL, NULL)",
+            )
+        }
+        helper.runMigrationsAndValidate(dbName, IronvellumDatabase.VERSION, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT reps, done, warmup, supersetGroup FROM set_logs WHERE id = 7").use { c ->
+                assertTrue("the set must survive", c.moveToFirst())
+                assertEquals(5, c.getInt(0))
+                assertEquals("its tick must not move", 1, c.getInt(1))
+                assertEquals("it is not a warm-up", 0, c.getInt(2))
+                assertTrue("it is in no superset", c.isNull(3))
+            }
+        }
+    }
 }
