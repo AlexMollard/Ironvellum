@@ -60,6 +60,8 @@ import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.Progression
 import com.ironvellum.app.domain.Rank
+import com.ironvellum.app.domain.RankBreakdown
+import com.ironvellum.app.domain.RankUp
 import com.ironvellum.app.domain.Reward
 import com.ironvellum.app.domain.RollResult
 import com.ironvellum.app.domain.RoutineCode
@@ -140,6 +142,7 @@ internal fun techniqueEvidence(records: List<SetRecords.Record>, skill: Skills.S
 class Repository(
     private val db: IronvellumDatabase,
     private val health: HealthSync? = null,
+    private val highestBand: HighestBandStore? = null,
 ) {
 
     private val exerciseDao = db.exerciseDao()
@@ -1093,6 +1096,7 @@ class Repository(
         val strengthScore: Int,
         val questBonus: Boolean,
         val durationMinutes: Long,
+        val rankUp: String? = null,
     )
 
     suspend fun completeSession(sessionId: Long): CompletionResult = db.withTransaction {
@@ -1128,6 +1132,8 @@ class Repository(
 
         val finishedAt = System.currentTimeMillis()
         val durationMinutes = ((finishedAt - session.startedAtMs) / 60000L).coerceAtLeast(1)
+        // Before the seal: observeHistory holds sealed trials only, so this one is not in it yet.
+        val rankBefore = if (highestBand != null) rankNow() else null
         sessionDao.updateSession(
             session.copy(completedAtMs = finishedAt, xpAwarded = totalXpGain, strengthScore = sessionStrength),
         )
@@ -1153,6 +1159,12 @@ class Repository(
         // Without this, levelling through sessions never paid out at all.
         bankLevelRolls(levelBefore, Xp.levelFor(newTotal))
 
+        val rankUp = highestBand?.let { store ->
+            val outcome = RankUp.check(store.get(), rankBefore, rankNow())
+            store.set(outcome.highest)
+            outcome.rankUp
+        }
+
         CompletionResult(
             xpAwarded = totalXpGain,
             levelBefore = levelBefore,
@@ -1164,6 +1176,7 @@ class Repository(
             strengthScore = sessionStrength,
             questBonus = questBonus,
             durationMinutes = durationMinutes,
+            rankUp = rankUp,
         )
     }
 
@@ -1345,11 +1358,22 @@ class Repository(
             list.map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
         }
 
-    /** The current Strength Rank ([Rank.current]); null while unranked. */
-    fun observeStrengthRank(): Flow<String?> =
-        combine(observeHistory(), observeStats(), observeBodyProfile()) { history, stats, body ->
-            Rank.current(history, SetRecords.bodyweightLookup(stats), body.second, System.currentTimeMillis())
+    /** The Strength Rank written out ([Rank.breakdown]); null while unranked. */
+    fun observeRankBreakdown(): Flow<RankBreakdown?> =
+        combine(observeHistory(), observeStats(), observeBodyProfile(), observeSkillPractices()) { history, stats, body, practices ->
+            Rank.breakdown(history, SetRecords.bodyweightLookup(stats), body.second, System.currentTimeMillis(), practices)
         }
+
+    /** The current Strength Rank band; null while unranked. */
+    fun observeStrengthRank(): Flow<String?> = observeRankBreakdown().map { it?.band }
+
+    private suspend fun rankNow(): String? = Rank.current(
+        observeHistory().first(),
+        bodyweightLookup(),
+        profileSex(),
+        System.currentTimeMillis(),
+        observeSkillPractices().first(),
+    )
 
     /**
      * Height is profile-owned (Settings), so the caller never supplies it: the
