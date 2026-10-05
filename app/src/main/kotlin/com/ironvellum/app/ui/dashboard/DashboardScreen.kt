@@ -83,6 +83,7 @@ import com.ironvellum.app.domain.UnlockedTitle
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.SessionClock
+import com.ironvellum.app.domain.TrainFocus
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.fmt
@@ -143,37 +144,29 @@ class DashboardUi(
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
     /** The lifter's own seconds per set; times the quest estimate. */
     val pace: SessionClock.Pace = SessionClock.Pace(),
-    /** Weekdays (1 = Monday) whose scheduled rite was sealed this week. */
-    val weekDone: Set<Int> = emptySet(),
+    /** Weekdays (1 = Monday) whose scheduled rite was sealed this week, to the trial that sealed it. */
+    val weekDone: Map<Int, WorkoutSession> = emptyMap(),
     /** Lifts whose peak was set lately AND beat an earlier trial: a first trial is not a peak. */
     val newPeaks: List<com.ironvellum.app.domain.LiftRecord> = emptyList(),
 )
 
 /**
- * Weekdays of the week containing [today] whose scheduled rite has a SEALED
- * trial on that day. Only completed trials count, from the whole history, so
- * a long cycle cannot push Monday's tick out and an unsealed trial cannot
- * light one.
+ * Weekdays of the week containing [today] whose scheduled rite is sealed this
+ * week, by [TrainFocus.sealing], mapped to the trial that sealed it. Only
+ * completed trials count, from the whole history, so a long cycle cannot push
+ * Monday's tick out and an unsealed trial cannot light one.
  */
 internal fun weekDoneDays(
     sessions: List<WorkoutSession>,
     presets: List<WorkoutPreset>,
     today: LocalDate,
     zone: ZoneId,
-): Set<Int> {
-    val monday = today.with(java.time.DayOfWeek.MONDAY)
+): Map<Int, WorkoutSession> {
+    val weekStart = today.with(java.time.DayOfWeek.MONDAY).atStartOfDay(zone).toInstant().toEpochMilli()
     return presets.mapNotNull { preset ->
         val day = preset.scheduledDay ?: return@mapNotNull null
-        val date = monday.plusDays((day - 1).toLong())
-        val start = date.atStartOfDay(zone).toInstant().toEpochMilli()
-        val end = date.plusDays(1).atStartOfDay(zone).toInstant().toEpochMilli()
-        day.takeIf {
-            sessions.any { s ->
-                val at = s.completedAtMs
-                s.presetId == preset.id && at != null && at >= start && at < end
-            }
-        }
-    }.toSet()
+        TrainFocus.sealing(preset, sessions, weekStart)?.let { day to it }
+    }.toMap()
 }
 
 /**
@@ -848,17 +841,12 @@ fun DashboardScreen(
             )
             Spacer(Modifier.height(10.dp))
         }
-        // Today's quest counts as done when a session started from THIS preset
-        // was completed today — otherwise the panel kept offering the same
-        // quest after it was already finished.
-        val todayStart = java.time.LocalDate.now().atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+        // Today's quest counts as done when THIS preset was sealed this week,
+        // the same rule as the tick above it, so a rite taken early is not
+        // offered again on its day.
         // Keep the session itself, not only the fact that one exists: the done
         // card reports what it actually earned.
-        val questSessionToday = selectedPreset?.takeIf { isTodaySelected }?.let { preset ->
-            ui.recent.firstOrNull {
-                it.presetId == preset.id && (it.completedAtMs ?: 0L) >= todayStart
-            }
-        }
+        val questSessionToday = if (isTodaySelected) ui.weekDone[selectedDay] else null
         // The next scheduled rite after the selected day, wrapping the week.
         val nextRite = (1..7).map { (selectedDay - 1 + it) % 7 + 1 }
             .firstNotNullOfOrNull { day -> ui.presets.firstOrNull { it.scheduledDay == day } }

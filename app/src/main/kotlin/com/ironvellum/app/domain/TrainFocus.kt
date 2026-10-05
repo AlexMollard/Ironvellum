@@ -8,10 +8,10 @@ sealed interface TrainFocus {
     /** A trial is under way: it is continued, never offered fresh. */
     data class Live(val session: WorkoutSession, val preset: WorkoutPreset?) : TrainFocus
 
-    /** Today's scheduled rite, not yet sealed. */
+    /** Today's scheduled rite, not yet sealed this week. */
     data class Begin(val preset: WorkoutPreset) : TrainFocus
 
-    /** Today's rite is sealed; [session] is the trial that sealed it. */
+    /** Today's rite is sealed this week; [session] is the trial that sealed it. */
     data class Sealed(val preset: WorkoutPreset, val session: WorkoutSession) : TrainFocus
 
     /**
@@ -25,8 +25,20 @@ sealed interface TrainFocus {
 
     companion object {
         /**
+         * The trial that seals [preset] for the Mon-Sun week opened at
+         * [weekStartMs]: a rite counts on any day of its own week, taken early
+         * or made up late, so a Friday rite done on Sunday still seals Friday.
+         * The latest such trial, or null.
+         */
+        fun sealing(preset: WorkoutPreset, sessions: List<WorkoutSession>, weekStartMs: Long): WorkoutSession? =
+            sessions
+                .filter { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStartMs }
+                .maxByOrNull { it.completedAtMs ?: 0L }
+
+        /**
          * [today] is the ISO day of week; [todayStartMs] the local midnight that
-         * opened it. [sessions] may be in any order and include unfinished ones.
+         * opened it, and [weekStartMs] the Monday midnight that opened its week.
+         * [sessions] may be in any order and include unfinished ones.
          */
         fun resolve(
             presets: List<WorkoutPreset>,
@@ -34,13 +46,14 @@ sealed interface TrainFocus {
             live: WorkoutSession?,
             today: Int,
             todayStartMs: Long,
+            weekStartMs: Long,
         ): TrainFocus {
             if (live != null) return Live(live, presets.firstOrNull { it.id == live.presetId })
             if (presets.isEmpty()) return NoCycle
             val sealedToday = sessions.filter { (it.completedAtMs ?: 0L) >= todayStartMs }
             val scheduled = presets.firstOrNull { it.scheduledDay == today }
             if (scheduled != null) {
-                val sealing = sealedToday.firstOrNull { it.presetId == scheduled.id }
+                val sealing = sealing(scheduled, sessions, weekStartMs)
                 return if (sealing != null) Sealed(scheduled, sealing) else Begin(scheduled)
             }
             // The next scheduled day after today, wrapping the week.
