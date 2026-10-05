@@ -14,14 +14,14 @@ RepoType: git
 Repo: https://github.com/AlexMollard/Ironvellum.git
 
 Builds:
-  - versionName: '1.4'
-    versionCode: 5
-    commit: 4fa17fbce7b5a0383a6a2bf9588f9a6ba4cad122
+  - versionName: '1.5'
+    versionCode: 6
+    commit: ec53803331bc66ccd1e195061996a7abed969707
     subdir: app
     gradle:
       - foss
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: '1.4'
-CurrentVersionCode: 5
+CurrentVersion: '1.5'
+CurrentVersionCode: 6
