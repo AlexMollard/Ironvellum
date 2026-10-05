@@ -416,8 +416,8 @@ class AccessibilityChecksTest {
             // test profile has none, so the pane is not on the sweep.)
             listOf("Ledger", "TRAINING"),
             listOf("Ledger", "DAILY"),
-            listOf("Train", "EXERCISES"),
-            listOf("Train", "FULL CHRONICLE"),
+            listOf("Train", "Exercises"),
+            listOf("Train", "Full chronicle"),
             // Two levels down, and the densest screens in the app: the skill
             // sheet and the preset editor are wall-to-wall glyph steppers,
             // which is exactly where an unannounceable control hides.
@@ -438,7 +438,7 @@ class AccessibilityChecksTest {
             listOf("Today", "THE VEIL"),
             // Truly last: starting a session leaves a live trial whose abandon
             // prompt sits between the sweep and the nav bar.
-            listOf("Train", "OPEN TRIAL"),
+            listOf("Train", "Open trial"),
         )
 
         /** destination to the tab labels of one row inside it. */

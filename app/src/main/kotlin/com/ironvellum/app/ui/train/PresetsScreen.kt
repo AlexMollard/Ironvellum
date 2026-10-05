@@ -8,6 +8,9 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AccessibilityNew
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.material.icons.outlined.Share
+import androidx.compose.material.icons.outlined.PlayArrow
+import androidx.compose.material.icons.outlined.Add
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.dashboard.trialLength
 import kotlin.math.ceil
@@ -231,13 +234,14 @@ fun PresetsScreen(
                 .wrapContentHeight(Alignment.Top)
                 .onSizeChanged { size ->
                     val slack = viewport - with(density) { size.height.toDp() }
+                    // One trial always shows when there is one - a near miss on the
+                    // fit left a third of the screen bare - and more fill the room.
                     recentRows = when {
                         // Over: give back whole rows until it fits.
-                        slack < 0.dp -> (recentRows - ceil(-slack / RECENT_PITCH).toInt()).coerceAtLeast(0)
+                        slack < 0.dp -> recentRows - ceil(-slack / RECENT_PITCH).toInt()
                         // Under: take whole rows; the first also pays for the card.
-                        else -> (recentRows + ((slack - if (recentRows == 0) RECENT_CHROME else 0.dp) / RECENT_PITCH).toInt().coerceAtLeast(0))
-                            .coerceAtMost(available)
-                    }
+                        else -> recentRows + ((slack - if (recentRows == 0) RECENT_CHROME else 0.dp) / RECENT_PITCH).toInt().coerceAtLeast(0)
+                    }.coerceIn(minOf(1, available), available)
                 }
                 .padding(horizontal = 16.dp),
         ) {
@@ -259,22 +263,14 @@ fun PresetsScreen(
                     modifier = Modifier.weight(1f).semantics { heading() },
                 )
                 // With no cycle there is no cycle header to carry New.
-                if (ui.presets.isEmpty()) TrainLink("+ NEW", "New rite") { showNewChooser = true }
+                if (ui.presets.isEmpty()) TrainChip("New", "New rite", Icons.Outlined.Add) { showNewChooser = true }
                 // No second trial while one is under way.
-                if (focus !is TrainFocus.Live) TrainLink("OPEN TRIAL ›", "Begin an open trial") { viewModel.beginQuick(onQuickSession) }
+                if (focus !is TrainFocus.Live) TrainChip("Open trial", "Begin an open trial", Icons.Outlined.PlayArrow) { viewModel.beginQuick(onQuickSession) }
             }
             // What the day is when it is not a rite to begin: the rite to begin
             // opens in the cycle itself, below.
             trainStatus(focus)?.let { (line, color) ->
-                Text(
-                    line,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = color,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                )
+                Text(line, style = MaterialTheme.typography.bodySmall, color = color, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             importResult?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SystemGreen, modifier = Modifier.padding(top = GROUP_GAP))
@@ -300,16 +296,18 @@ fun PresetsScreen(
             val scheduled = ui.presets.filter { it.scheduledDay != null }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    if (scheduled.isEmpty()) "YOUR CYCLE" else "YOUR CYCLE · ${scheduled.count(sealedThisWeek)} OF ${scheduled.size}",
+                    "YOUR CYCLE",
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
                     letterSpacing = IronvellumTracking.SectionHeader,
-                    modifier = Modifier.weight(1f).semantics { heading() },
+                    modifier = Modifier.semantics { heading() },
                 )
+                if (scheduled.isNotEmpty()) WeekSegments(scheduled.count(sealedThisWeek), scheduled.size)
+                Spacer(Modifier.weight(1f))
                 // Sit with the list they add to and export.
-                TrainLink("+ NEW", "New rite") { showNewChooser = true }
-                TrainLink("SHARE ›", "Share cycle", onClick = share)
+                TrainChip("New", "New rite", Icons.Outlined.Add) { showNewChooser = true }
+                TrainChip("Share", "Share cycle", Icons.Outlined.Share, onClick = share)
             }
             shareRefusal?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
@@ -321,7 +319,7 @@ fun PresetsScreen(
             val opened: Triple<Long, String, Boolean>? = when (focus) {
                 is TrainFocus.Begin -> Triple(focus.preset.id, "Begin ${focus.preset.name}", false)
                 is TrainFocus.Live -> focus.preset?.let { Triple(it.id, "Continue ${it.name}", false) }
-                is TrainFocus.Respite -> focus.next?.takeIf { focus.canTakeEarly }?.let { Triple(it.id, "Begin ${it.name} early", true) }
+                is TrainFocus.Respite -> focus.next?.takeIf { focus.canTakeEarly }?.let { Triple(it.id, "Begin ${it.name} early", false) }
                 else -> null
             }
             InkPanel(Modifier.fillMaxWidth()) {
@@ -361,16 +359,15 @@ fun PresetsScreen(
                         )
                         Text(
                             when {
-                                sealed -> "SEALED"
-                                isToday && focus is TrainFocus.Live -> "UNDER WAY"
-                                isToday -> "TODAY"
-                                // "~54 MIN": the tail of the rite's plan line.
+                                sealed -> "\u2713 Sealed"
+                                isToday && focus is TrainFocus.Live -> "Under way"
+                                isToday -> "Today"
+                                // "~54 min": the tail of the rite's plan line.
                                 else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id))
-                                    .substringAfterLast(" · ")
+                                    .substringAfterLast(" · ").lowercase()
                             },
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
-                            letterSpacing = IronvellumTracking.InlineLabel,
                             color = when {
                                 sealed -> IronvellumColors.SystemGreen
                                 isToday -> IronvellumColors.SovereignGold
@@ -380,17 +377,17 @@ fun PresetsScreen(
                         )
                     }
                     if (opened != null && isOpen) {
+                        // "7 exercises · 21 sets": the time already sits on the row.
                         Text(
-                            SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id)),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
+                            SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id))
+                                .substringBeforeLast(" · ").lowercase(),
+                            style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
-                            letterSpacing = IronvellumTracking.InlineLabel,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.padding(start = DAY_COLUMN + 10.dp),
                         )
-                        Spacer(Modifier.height(GROUP_GAP))
+                        Spacer(Modifier.height(OPEN_ROW_GAP))
                         IronvellumButton(
                             label = opened.second,
                             onClick = {
@@ -399,7 +396,7 @@ fun PresetsScreen(
                             quiet = opened.third,
                             modifier = Modifier.fillMaxWidth(),
                         )
-                        Spacer(Modifier.height(GROUP_GAP))
+                        Spacer(Modifier.height(OPEN_ROW_GAP))
                     }
                     if (preset != ui.presets.last()) RowRule(seed = preset.id.toInt())
                 }
@@ -407,23 +404,20 @@ fun PresetsScreen(
             }
 
             Spacer(Modifier.height(SECTION_GAP))
-            // The ways out: what the cycle covers, the catalogue, the record. Rows
-            // rather than buttons, so nothing here competes with Begin. The body
-            // map was a third of the screen on every visit; its row says the one
-            // fact it answers and opens the full map.
             // The latest trials fill what the page has left, a whole row at a
-            // time, and never push it into a scroll: the cycle is what Train is
-            // for. Measured, not estimated - content over the viewport is
+            // time. Measured, not estimated - content over the viewport is
             // exactly the rows to give back - so it settles in a pass.
             val trials = ui.history.filter { it.first.completedAtMs != null }
                 .sortedByDescending { it.first.completedAtMs }
                 .take(recentRows)
             val volume = remember(ui.plannedPresets) { ProgramRules.weeklyVolume(ui.plannedPresets) }
             val gaps = coverageGaps(volume, CoverageGoal(ui.tier, ui.focus, ui.priorities)).size
+            // The ways out: what the cycle covers, the catalogue, the record. Rows
+            // rather than buttons, so nothing here competes with Begin.
             InkPanel(Modifier.fillMaxWidth()) {
                 WayOutRow(
                     icon = Icons.Outlined.AccessibilityNew,
-                    label = "WEEKLY COVERAGE",
+                    label = "Weekly coverage",
                     detail = when {
                         ui.plannedPresets.isEmpty() -> "No cycle yet"
                         gaps == 0 -> "Every muscle covered"
@@ -433,12 +427,12 @@ fun PresetsScreen(
                     onClick = onOpenCoverage,
                 )
                 RowRule(seed = 41)
-                WayOutRow(icon = Icons.Outlined.FitnessCenter, label = "EXERCISES", onClick = onOpenExercises)
+                WayOutRow(icon = Icons.Outlined.FitnessCenter, label = "Exercises", onClick = onOpenExercises)
                 // The recent trials card links the same chronicle from its header,
                 // so the row only stands when that card does not.
                 if (trials.isEmpty()) {
                     RowRule(seed = 42)
-                    WayOutRow(icon = Icons.Outlined.History, label = "FULL CHRONICLE", onClick = onOpenLog)
+                    WayOutRow(icon = Icons.Outlined.History, label = "Full chronicle", onClick = onOpenLog)
                 }
             }
 
@@ -454,7 +448,7 @@ fun PresetsScreen(
                         modifier = Modifier.weight(1f).semantics { heading() },
                     )
                     // Named for where it goes: "All" alone says nothing to a screen reader.
-                    TrainLink("ALL ›", "Open", description = "FULL CHRONICLE", onClick = onOpenLog)
+                    TrainChip("All", "Open", description = "Full chronicle", onClick = onOpenLog)
                 }
                 InkPanel(Modifier.fillMaxWidth()) {
                     trials.forEach { (trial, sets) ->
@@ -534,37 +528,76 @@ fun PresetsScreen(
 }
 
 /**
- * The day's state as one line under the title, when it is not a rite to
- * begin - that one opens in the cycle. Null when the cycle says it all.
+ * The day's state as one line under the title, when the cycle below does not
+ * already show it: a sealed day, or a respite with nothing to take early.
  */
 private fun trainStatus(focus: TrainFocus): Pair<String, androidx.compose.ui.graphics.Color>? = when (focus) {
     is TrainFocus.Sealed ->
-        "TODAY SEALED · +${focus.session.xpAwarded} XP · ${focus.session.strengthScore} STR" to IronvellumColors.SovereignGold
-    is TrainFocus.Respite -> focus.next?.let { "RESPITE · NEXT ${it.name.uppercase()} · ${dayLabel(focus.nextDay ?: 0)}" to IronvellumColors.InkMuted }
-        ?: ("RESPITE · NO RITE FALLS ON A DAY YET" to IronvellumColors.InkMuted)
+        "Sealed today · +${focus.session.xpAwarded} XP · ${focus.session.strengthScore} STR" to IronvellumColors.SovereignGold
+    is TrainFocus.Respite -> when {
+        focus.next == null -> "Respite · no rite falls on a day yet" to IronvellumColors.InkMuted
+        focus.canTakeEarly -> null
+        else -> "Respite · next is ${focus.next.name} on ${dayName(focus.nextDay ?: 0)}" to IronvellumColors.InkMuted
+    }
     else -> null
 }
 
-/** A section's action as a green text link, as SHARE always was: nothing here competes with Begin. */
+/** "Wed" for 3. */
+private fun dayName(day: Int): String = dayLabel(day).lowercase().replaceFirstChar { it.uppercase() }
+
+/** The week's sealed rites as segments: filled for each sealed, read aloud as a count. */
 @Composable
-private fun TrainLink(label: String, clickLabel: String, description: String? = null, onClick: () -> Unit) {
-    Text(
-        label,
-        style = MaterialTheme.typography.labelSmall,
-        fontFamily = ChakraPetch,
-        color = IronvellumColors.SystemGreen,
-        letterSpacing = IronvellumTracking.InlineLabel,
-        modifier = Modifier
+private fun WeekSegments(sealed: Int, total: Int) {
+    Row(
+        Modifier
+            .padding(start = 10.dp)
+            .semantics { contentDescription = "$sealed of $total sealed this week" },
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+    ) {
+        repeat(total) { i ->
+            Box(
+                Modifier
+                    .size(width = 14.dp, height = 4.dp)
+                    .inkHairline(if (i < sealed) IronvellumColors.SystemGreen else IronvellumColors.Rune, seed = 60 + i, thickness = 3.dp),
+            )
+        }
+    }
+}
+
+/**
+ * A section's action as an outlined chip: it reads as something to press,
+ * where a green caption read as one more label, and it never outweighs Begin.
+ */
+@Composable
+private fun TrainChip(
+    label: String,
+    clickLabel: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    description: String? = null,
+    onClick: () -> Unit,
+) {
+    Box(
+        Modifier
+            .padding(start = 8.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .clickable(onClickLabel = clickLabel, onClick = onClick)
             .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier)
-            .heightIn(min = 44.dp)
-            .padding(start = 12.dp)
-            .wrapContentHeight(Alignment.CenterVertically),
-    )
+            .heightIn(min = 44.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Row(
+            Modifier
+                .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
+                .padding(horizontal = 10.dp, vertical = 5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            icon?.let { Icon(it, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(16.dp)) }
+            Text(label, style = MaterialTheme.typography.labelMedium, color = IronvellumColors.SystemGreen, letterSpacing = 0.5.sp)
+        }
+    }
 }
 
-/** A recent trial: its day as a calendar tile, what it was, and what it paid. */
 @Composable
 private fun TrialRow(
     trial: com.ironvellum.app.domain.WorkoutSession,
@@ -780,20 +813,14 @@ private fun WayOutRow(
         Modifier
             .fillMaxWidth()
             .clip(MaterialTheme.shapes.extraSmall)
-            .clickable(onClickLabel = label.lowercase().replaceFirstChar { it.uppercase() }, onClick = onClick)
+            .clickable(onClickLabel = label, onClick = onClick)
             .heightIn(min = ROW_HEIGHT),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         Icon(icon, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(22.dp))
         Column(Modifier.weight(1f)) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.Ink,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
             detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = detailColor) }
         }
         Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
@@ -804,14 +831,17 @@ private fun WayOutRow(
 internal val SECTION_GAP = 16.dp
 internal val GROUP_GAP = 12.dp
 
-/** The page's end clears the raised Train plate, which overhangs the bar by 10dp. */
-private val END_GAP = 40.dp
+/** The page's end clears the raised Train plate, which overhangs the bar by 10dp, with room to spare. */
+private val END_GAP = 24.dp
 
 /** A list row: the 48dp touch target, the same in both panels. */
 internal val ROW_HEIGHT = 48.dp
 
 /** The cycle list's weekday column; the opened rite's plan line aligns past it. */
 private val DAY_COLUMN = 36.dp
+
+/** The gap around the opened rite's line and button: a group, held tight. */
+private val OPEN_ROW_GAP = 8.dp
 
 /** A recent trial's row, and the calendar tile that leads it. */
 private val TRIAL_ROW_HEIGHT = 56.dp
