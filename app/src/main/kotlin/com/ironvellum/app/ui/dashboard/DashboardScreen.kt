@@ -317,6 +317,19 @@ internal fun stepsAsOfCaption(syncedAtMs: Long?, today: LocalDate, zone: ZoneId 
  */
 private val QUEST_ROW_HEIGHT = 24.dp
 
+/** The rest-day art's two sizes: it steps between them, never scales. */
+private val REST_ART_LARGE = 200.dp
+private val REST_ART_SMALL = 120.dp
+
+@Composable
+private fun RestDayArt(modifier: Modifier) {
+    Image(
+        painter = painterResource(R.drawable.art_empty_quests),
+        contentDescription = null,
+        modifier = modifier.alpha(0.6f),
+    )
+}
+
 @Composable
 fun DashboardScreen(
     onStartSession: (Long) -> Unit,
@@ -1015,24 +1028,28 @@ fun DashboardScreen(
                 // The rest-day art was drawn for this panel. It lives in this
                 // branch only: outside it, it rendered on training days too
                 // and its weighted spacers starved the manifest to zero rows.
-                if (shortWindow) Spacer(Modifier.weight(1f))
-                Image(
-                    painter = painterResource(R.drawable.art_empty_quests),
-                    contentDescription = null,
-                    // Explicit size: fillMaxWidth + heightIn let the intrinsic
-                    // size win and it rendered postage-stamp small. The rest-day
-                    // panel owns the page's slack, so the art gets most of it —
-                    // but only when there IS slack: below the short-window
-                    // threshold the page scrolls, so the art gives the room back.
-                    // In the weighted panel the art takes what slack is left, up to
-                    // 280dp: a fixed 280dp pushed the panel's own button off screen
-                    // once the body prompt sat above it.
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .then(if (shortWindow) Modifier.size(160.dp) else Modifier.weight(1f).fillMaxWidth().heightIn(max = 280.dp).padding(vertical = 8.dp))
-                        .alpha(0.6f),
-                )
-                if (shortWindow) Spacer(Modifier.weight(1f))
+                // The art is a fixed size, centred in whatever slack the panel
+                // has. Sized to the slack, it grew and shrank with everything
+                // else in the card (the streak line, "Next:", the take-it-early
+                // button), so every rest day drew it differently. It steps down
+                // only when the slack cannot hold it, and is dropped below that
+                // rather than squeezing the panel's button off screen.
+                // On a short window the page scrolls, so there is no slack to
+                // centre in and it takes the small size.
+                if (shortWindow) {
+                    Spacer(Modifier.height(16.dp))
+                    RestDayArt(Modifier.align(Alignment.CenterHorizontally).size(REST_ART_SMALL))
+                    Spacer(Modifier.height(16.dp))
+                } else {
+                    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                        val size = when {
+                            maxHeight >= REST_ART_LARGE + 16.dp -> REST_ART_LARGE
+                            maxHeight >= REST_ART_SMALL + 16.dp -> REST_ART_SMALL
+                            else -> null
+                        }
+                        if (size != null) RestDayArt(Modifier.size(size))
+                    }
+                }
                 // A respite is a suggestion, not a lock: someone who wants to
                 // train today can take the next rite early. Once a trial is
                 // sealed today the offer is spent.
