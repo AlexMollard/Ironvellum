@@ -155,6 +155,13 @@ class InkEdgeShape(
     override fun hashCode(): Int = salt
 }
 
+/**
+ * The ink edge at its quietest: no corner size, so the wander falls to its
+ * floor. For Today's HUD line - the level chip and the XP bar - where the
+ * theme's wobble on a 20dp-tall bar read as pointed ends.
+ */
+val HudEdgeShape = InkEdgeShape(salt = 29, CornerSize(0.dp), CornerSize(0.dp), CornerSize(0.dp), CornerSize(0.dp))
+
 /** Target length of one hand-drawn facet, in px. Keeps the wander frequency constant. */
 private const val FACET_PX = 55f
 

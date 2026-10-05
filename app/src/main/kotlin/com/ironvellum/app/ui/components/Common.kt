@@ -14,6 +14,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.indication
 import androidx.compose.material3.ripple
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import com.ironvellum.app.ui.theme.HudEdgeShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -286,7 +287,10 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
 fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
     val fraction = if (needed <= 0) 0f else (into.toFloat() / needed).coerceIn(0f, 1f)
     val animated by animateFloatAsState(fraction, tween(900), label = "xpFill")
-    val shape = MaterialTheme.shapes.small
+    // Still inked, but with no corner to wander from: on a bar this short the
+    // theme's wobble read as pointed ends. It rides beside the level chip as
+    // one clean HUD line.
+    val shape = HudEdgeShape
 
     Box(
         modifier
