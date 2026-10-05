@@ -12,6 +12,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import com.ironvellum.app.ui.theme.inkDot
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -138,8 +139,6 @@ class DashboardUi(
     val presets: List<WorkoutPreset> = emptyList(),
     val streak: Int = 0,
     val stepsToday: Int = 0,
-    /** When Health Connect was last read; the step count is only as fresh as this. */
-    val stepsSyncedAtMs: Long? = null,
     /** The focus the quest estimate is timed at. */
     val focus: TrainingFocus = TrainingFocus.MUSCLE,
     /** The lifter's own seconds per set; times the quest estimate. */
@@ -214,7 +213,6 @@ class DashboardViewModel(
         repo.observeHistory(),
         repo.observeHealthDays(),
         selectedDay,
-        repo.observeHealthSyncedAt(),
         repo.observeExercises(),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
@@ -250,11 +248,10 @@ class DashboardViewModel(
                 today,
             ),
             stepsToday = healthDays.firstOrNull { it.date == today }?.steps ?: 0,
-            stepsSyncedAtMs = values[7] as Long?,
             focus = SessionClock.focusFor(savedFocus, profile?.trainingMode),
             pace = SessionClock.pace(history),
             weekDone = weekDoneDays(history.map { it.first }, presets, today, ZoneId.systemDefault()),
-            newPeaks = newPeaks(history, values[8] as List<com.ironvellum.app.domain.Exercise>, System.currentTimeMillis()),
+            newPeaks = newPeaks(history, values[7] as List<com.ironvellum.app.domain.Exercise>, System.currentTimeMillis()),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
 
@@ -337,6 +334,9 @@ internal fun stepsAsOfCaption(syncedAtMs: Long?, today: LocalDate, zone: ZoneId 
  */
 private val QUEST_ROW_HEIGHT = 24.dp
 
+/** The widest a manifest row is spaced when the card has room to spare. */
+private val QUEST_ROW_MAX_PITCH = 44.dp
+
 /** One line of the run-together movement names: bodySmall's 16sp line, rounded up. */
 private val QUEST_LINE_HEIGHT = 18.dp
 
@@ -370,13 +370,17 @@ private fun ColumnScope.Manifest(entries: List<com.ironvellum.app.domain.PresetE
             return@BoxWithConstraints
         }
         val moves = entries.take(if (fits < entries.size) fits - 1 else fits)
+        // Spaced to the card, but never further apart than a list reads:
+        // five rows strung across a tall card looked like five loose lines.
+        val slots = moves.size + if (moves.size < entries.size) 1 else 0
+        val pitch = if (fill) minOf(maxHeight / slots.coerceAtLeast(1), QUEST_ROW_MAX_PITCH) else QUEST_ROW_HEIGHT
         Column(
-            verticalArrangement = if (fill) Arrangement.SpaceEvenly else Arrangement.Top,
+            verticalArrangement = Arrangement.Top,
             modifier = if (fill) Modifier.fillMaxHeight() else Modifier,
         ) {
             moves.forEachIndexed { index, entry ->
                 Row(
-                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    Modifier.fillMaxWidth().height(pitch - 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
@@ -415,6 +419,71 @@ private fun ColumnScope.Manifest(entries: List<com.ironvellum.app.domain.PresetE
                 )
             }
         }
+    }
+}
+
+/** Points of a peak's climb drawn beside it: enough to read the trend, few enough to stay a glance. */
+private const val PEAK_SPARK_POINTS = 8
+
+/** "Sat" within the week, "Oct 3" beyond it. */
+private fun shortWhen(ms: Long): String =
+    if (System.currentTimeMillis() - ms < 6L * 24 * 60 * 60 * 1000) formatDate(ms, "EEE") else formatDate(ms, "MMM d")
+
+/** "48m", "1h 12m"; null for a trial with no sensible length (imports carry none). */
+private fun trialLength(trial: WorkoutSession): String? {
+    val minutes = ((trial.completedAtMs ?: return null) - trial.startedAtMs) / 60_000
+    return when {
+        minutes < 1 || minutes > 24 * 60 -> null
+        minutes < 60 -> "${minutes}m"
+        else -> "${minutes / 60}h ${minutes % 60}m"
+    }
+}
+
+/** RECENT's label, with what it is about on the right. */
+@Composable
+private fun RecentHeader(label: String, right: String, rightColor: Color) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+            letterSpacing = IronvellumTracking.SectionHeader,
+            modifier = Modifier.weight(1f).semantics { heading() },
+        )
+        Text(right, style = MaterialTheme.typography.labelSmall, fontFamily = ChakraPetch, color = rightColor, letterSpacing = IronvellumTracking.InlineLabel)
+    }
+}
+
+/** One of the last trial's figures: a label over its value. */
+@Composable
+private fun RecentFigure(label: String, value: String, color: Color, modifier: Modifier) {
+    Column(modifier) {
+        Text(label, style = MaterialTheme.typography.labelSmall, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted, letterSpacing = IronvellumTracking.InlineLabel)
+        Text(value, style = MaterialTheme.typography.titleMedium, fontFamily = ChakraPetch, color = color)
+    }
+}
+
+/** A peak's climb: each trial's best, oldest first, ending on the dot that is the peak. */
+@Composable
+private fun PeakSpark(series: List<Double>, modifier: Modifier) {
+    androidx.compose.foundation.Canvas(modifier) {
+        if (series.size < 2) return@Canvas
+        val lo = series.min()
+        val span = (series.max() - lo).takeIf { it > 0.0 } ?: 1.0
+        val inset = 4.dp.toPx()
+        val points = series.mapIndexed { i, v ->
+            androidx.compose.ui.geometry.Offset(
+                inset + (size.width - 2 * inset) * i / (series.size - 1),
+                size.height - inset - ((v - lo) / span).toFloat() * (size.height - 2 * inset),
+            )
+        }
+        val path = androidx.compose.ui.graphics.Path().apply {
+            moveTo(points.first().x, points.first().y)
+            points.drop(1).forEach { lineTo(it.x, it.y) }
+        }
+        drawPath(path, IronvellumColors.SystemGreen, style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.dp.toPx()))
+        inkDot(points.last(), 3.dp.toPx(), IronvellumColors.EmeraldBright)
     }
 }
 
@@ -529,11 +598,6 @@ fun DashboardScreen(
     // The scale is pinned app-wide, so this is just the window's height in
     // design-size text lines.
     val linesOfRoom = windowHeightDp / FIXED_FONT_SCALE
-    val roomForGauges = linesOfRoom >= 400f
-    // A 320dp-class phone reports ~693, a 360dp one ~780, the owner's ~891.
-    // Below this the page is still whole but has no dp to spare, so the
-    // informative half of it gets thinner rather than the quest card starving.
-    val tightHome = linesOfRoom < 740f
     // Below this the column cannot hold the dashboard at all: landscape
     // measures ~411, a small display at 2x text ~347, a 320dp phone 693,
     // stock portrait 891. Only there does the page scroll; everywhere else it
@@ -552,78 +616,55 @@ fun DashboardScreen(
         // rather than on a border.
         AnimatedVisibility(shown, enter = fadeIn(tween(300)) + slideInVertically(tween(300)) { it / 12 }) {
             Column {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    // The name and what is worn are also the way to the Codex:
+                    // there was no other route from here to its board.
                     Column(
                         Modifier
                             .weight(1f)
-                            // the worn title is also the way to change it:
-                            // there was no route from here to the Codex board
                             .clickable(
                                 interactionSource = remember { MutableInteractionSource() },
                                 indication = null,
                             ) { onOpenCodex() },
                     ) {
-                        Text(
-                            (profile?.name ?: "Ironbound").uppercase(),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            // headlineMedium inherits a near-black onSurface here
-                            color = IronvellumColors.Ink,
-                            letterSpacing = 1.sp,
-                            maxLines = 1,
-                        )
-                        val worn = profile?.currentTitleId?.let { Titles.byId(it)?.name }
-                        // Strength Rank only: ascension names the level on
-                        // the sigil, so it is never a stat beside this one.
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                        Column(Modifier.weight(1f, fill = false)) {
-                        Text(
-                            if (strengthRank.isEmpty()) "STRENGTH RANK" else "STRENGTH RANK · $strengthRank",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = ChakraPetch,
-                            // No tracking: labelMedium's 2sp is pure letter
-                            // spacing that wrapped the line at 360dp and
-                            // crowded the worn title underneath it.
-                            letterSpacing = 0.sp,
-                            color = IronvellumColors.SystemGreen,
-                            // Earned, so it wraps at a large font scale
-                            // rather than clipping mid-word.
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        }
-                        TermInfo(Term.RANKS)
-                        }
-                        // A third line only when it says something: with no
-                        // title worn AND none earned, "NO TITLE EARNED YET" was
-                        // a line telling the lifter about a thing they cannot
-                        // do yet - and the line the rank had to wrap around.
-                        val titleLine = worn?.uppercase()
-                            ?: "TAP TO WEAR A TITLE".takeIf { ui.unlockedCount > 0 }
-                        if (titleLine != null) {
                             Text(
-                                titleLine,
+                                (profile?.name ?: "Ironbound").uppercase(),
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontFamily = ChakraPetch,
+                                fontWeight = FontWeight.Bold,
+                                color = IronvellumColors.Ink,
+                                letterSpacing = 1.sp,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false),
+                            )
+                            // Strength Rank only: ascension names the level on
+                            // the chip below, so it is never a stat beside this one.
+                            Text(
+                                strengthRank.ifEmpty { "Unranked" },
+                                style = MaterialTheme.typography.labelMedium,
+                                fontFamily = ChakraPetch,
+                                letterSpacing = 0.sp,
+                                color = IronvellumColors.SystemGreen,
+                                maxLines = 1,
+                                modifier = Modifier.padding(start = 10.dp),
+                            )
+                            TermInfo(Term.RANKS)
+                        }
+                        profile?.currentTitleId?.let { Titles.byId(it)?.name }?.let { worn ->
+                            Text(
+                                worn.uppercase(),
                                 style = MaterialTheme.typography.labelSmall,
                                 fontFamily = ChakraPetch,
-                                color = if (worn != null) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                                color = IronvellumColors.SovereignGold,
                                 letterSpacing = IronvellumTracking.InlineLabel,
                                 maxLines = 1,
-                                // Ellipsis, not a hard cut: a truncated title should
-                                // look truncated rather than misspelt.
                                 overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }
-                    // The settings gear: settings left the bottom nav, so
-                    // this fixed-size tap target rides at the end of the
-                    // identity strip — the weighted name column absorbs it,
-                    // so the player card itself never moves.
-                    // The glyph stays 22dp; the TARGET is 48dp. .size() before
-                    // .clickable() made the tappable area the glyph itself.
+                    // The settings gear: the glyph stays 22dp; the TARGET is 48dp.
                     Box(
                         Modifier
                             .size(48.dp)
@@ -641,118 +682,46 @@ fun DashboardScreen(
                             modifier = Modifier.size(22.dp),
                         )
                     }
-                    // Level and crest as one insignia: the worn crest supplies
-                    // the plate this level sits on.
-                    LifterSigil(level = progress.level, frameId = equippedFrame)
                 }
-                Spacer(Modifier.height(10.dp))
-                XpBar(progress.intoLevel, progress.needed)
-                // The rail's one caption is the next ascension, not the XP: "25
-                // / 200 XP", "LV 2 → 3" and "175 XP TO GO" were one fact three
-                // ways beside the sigil, which already names the current one.
-                ArmyClass.nextFor(progress.level)?.let { next ->
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        "${next.title.uppercase()} AT ${next.level}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.align(Alignment.End),
-                    )
+                Spacer(Modifier.height(6.dp))
+                // The level rides the bar it is climbing, like a game HUD: the
+                // worn crest still supplies the chip it sits on.
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    LifterSigil(level = progress.level, frameId = equippedFrame, compact = true)
+                    Spacer(Modifier.width(8.dp))
+                    XpBar(progress.intoLevel, progress.needed, Modifier.weight(1f))
                 }
             }
         }
 
-        // A lifter on the largest display size AND 2x text has roughly 320dp
-        // by 390dp of usable space. Everything above the quest panel is
-        // unweighted, so it wins the measure pass and the panel's own button
-        // ends up measured at zero height — the primary action, gone. The step
-        // gauge is the largest thing that is purely informative (the same count
-        // is on Stats), so it is what gives way. Scrolling the page instead is
-        // not an option here: the panel below is weighted, and a weight inside
-        // a scrolling column gets an infinite height and collapses.
-        // Height in dp alone is the wrong measure: the largest display size
-        // still reports 693dp tall, it is the 2x TEXT inside it that overflows.
-        // What matters is how many lines of text the screen can hold, so divide
-        // the height by the font scale. Stock reads 891, largest display with
-        // 2x text reads 347 — the only configuration measured to lose the
-        // button, and the only one that drops the gauges.
-
-        if (roomForGauges) {
-            Spacer(Modifier.height(if (tightHome) 10.dp else 16.dp))
+        // The day's counters as one ruled line rather than a panel: a dial of
+        // mostly empty arc cost the day card its movement list. The full
+        // figures live on the Ledger.
+        Spacer(Modifier.height(10.dp))
+        Row(
+            Modifier.fillMaxWidth().padding(vertical = 6.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            HudStat(
+                "STEPS",
+                "%,d".fmt(ui.stepsToday),
+                if (ui.stepsToday >= STEP_GOAL) IronvellumColors.SovereignGold else IronvellumColors.EmeraldBright,
+            )
+            HudDivider()
+            HudStat(
+                "OATH",
+                if (ui.streak > 0) "${ui.streak}d" else "—",
+                if (ui.streak > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+            )
+            HudDivider()
+            HudStat(
+                "DEEDS",
+                "${ui.unlockedCount}/${Titles.ALL.size}",
+                IronvellumColors.EmeraldBright,
+            )
         }
-
-        // Gauge cluster: one radial dial carries the day's steps, the column
-        // beside it carries the counters — different shapes, one panel.
-        //
-        // The dial is 104dp of pure readout. On a 320dp-class screen that is
-        // the difference between the quest card listing movements and listing
-        // none, so there it becomes a rail like its neighbours: same two
-        // numbers, a third of the height. The count and the goal stay on the
-        // screen either way.
-        if (roomForGauges) {
-        AnimatedVisibility(shown, enter = fadeIn(tween(300, delayMillis = 90))) {
-            InkPanel(Modifier.fillMaxWidth()) {
-                if (tightHome) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        GaugeStat(
-                            label = "STEPS",
-                            // Grouped, like the dial it replaces: "10000" read as a raw field.
-                            value = "${"%,d".fmt(ui.stepsToday)} / ${"%,d".fmt(STEP_GOAL)}",
-                            accent = if (ui.stepsToday >= STEP_GOAL) IronvellumColors.SovereignGold
-                            else IronvellumColors.EmeraldBright,
-                            fraction = (ui.stepsToday.toFloat() / STEP_GOAL).coerceIn(0f, 1f),
-                        )
-                        StepsAsOf(ui.stepsSyncedAtMs, today)
-                        GaugeStat(
-                            label = "OATH",
-                            value = if (ui.streak > 0) "${ui.streak}d" else "—",
-                            accent = if (ui.streak > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                            fraction = (ui.streak / 7f).coerceIn(0f, 1f),
-                            note = if (ui.streak > 0) null else "seal a trial to swear it",
-                        )
-                    }
-                } else {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        StepGauge(
-                            steps = ui.stepsToday,
-                            goal = STEP_GOAL,
-                            modifier = Modifier.size(104.dp),
-                        )
-                        StepsAsOf(ui.stepsSyncedAtMs, today)
-                    }
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        GaugeStat(
-                            label = "OATH",
-                            value = if (ui.streak > 0) "${ui.streak}d" else "—",
-                            accent = if (ui.streak > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                            fraction = (ui.streak / 7f).coerceIn(0f, 1f),
-                            note = if (ui.streak > 0) null else "seal a trial to swear it",
-                        )
-                        GaugeStat(
-                            label = "DEEDS",
-                            value = "${ui.unlockedCount}/${Titles.ALL.size}",
-                            accent = IronvellumColors.EmeraldBright,
-                            fraction = (ui.unlockedCount.toFloat() / Titles.ALL.size).coerceIn(0f, 1f),
-                        )
-                        // PROGRAMS counted the user's own preset list - a number
-                        // they set, not one they earn, and the Train tab is a list
-                        // of exactly those. Two rails beside the dial, both of
-                        // things that move.
-                    }
-                }
-                }
-            }
-        }
-        }
+        Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = 9))
 
         Spacer(Modifier.height(12.dp))
 
@@ -1058,31 +1027,72 @@ fun DashboardScreen(
         // entirely before there is anything to show, rather than an empty box.
         // Not the trial the day card is already reporting as sealed.
         val lastSealed = ui.recent.firstOrNull { it.completedAtMs != null && it.id != questSessionToday?.id }
-        if (lastSealed != null || ui.newPeaks.isNotEmpty()) {
+        // A fresh peak takes the card - the climb that earned it drawn beside
+        // the number - with the last trial as its footer; without one, the
+        // last trial's own figures fill it.
+        val peak = ui.newPeaks.firstOrNull()
+        if (lastSealed != null || peak != null) {
             Spacer(Modifier.height(12.dp))
             InkPanel(Modifier.fillMaxWidth()) {
-                Text(
-                    "RECENT",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.SectionHeader,
-                    modifier = Modifier.semantics { heading() },
-                )
-                ui.newPeaks.take(if (lastSealed != null) 1 else 2).forEach { peak ->
-                    RecentRow(
-                        left = "NEW PEAK · ${peak.name}",
-                        right = "${"%.0f".format(java.util.Locale.US, peak.bestE1rmKg)} KG",
-                        rightColor = IronvellumColors.EmeraldBright,
-                    )
-                }
-                lastSealed?.let { trial ->
-                    RecentRow(
-                        left = "${trial.label} · ${formatDate(trial.completedAtMs ?: trial.startedAtMs, "MMM d")}",
-                        right = "+${trial.xpAwarded} XP",
-                        rightColor = IronvellumColors.SovereignGold,
-                        onClick = { onOpenWorkout(trial.id) },
-                    )
+                if (peak != null) {
+                    val best = peak.series.indexOfFirst { it == peak.bestE1rmKg }
+                    val gain = peak.bestE1rmKg - (peak.series.take(best).maxOrNull() ?: peak.bestE1rmKg)
+                    RecentHeader("NEW PEAK", shortWhen(peak.bestAtMs), IronvellumColors.InkMuted)
+                    Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.Bottom) {
+                        Column(Modifier.weight(1f)) {
+                            Text(peak.name, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Row(verticalAlignment = Alignment.Bottom) {
+                                Text(
+                                    "${"%.0f".format(java.util.Locale.US, peak.bestE1rmKg)} KG",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontFamily = ChakraPetch,
+                                    fontWeight = FontWeight.Bold,
+                                    color = IronvellumColors.EmeraldBright,
+                                )
+                                if (gain >= 0.5) {
+                                    Text(
+                                        "+${"%.0f".format(java.util.Locale.US, gain)}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        fontFamily = ChakraPetch,
+                                        color = IronvellumColors.SystemGreen,
+                                        modifier = Modifier.padding(start = 6.dp, bottom = 3.dp),
+                                    )
+                                }
+                            }
+                        }
+                        PeakSpark(peak.series.takeLast(PEAK_SPARK_POINTS), Modifier.size(width = 88.dp, height = 36.dp))
+                    }
+                    lastSealed?.let { trial ->
+                        Box(Modifier.padding(top = 8.dp).fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = 3))
+                        RecentRow(
+                            left = listOfNotNull(trial.label, shortWhen(trial.completedAtMs ?: trial.startedAtMs), trialLength(trial)).joinToString(" · "),
+                            right = "+${trial.xpAwarded} XP",
+                            rightColor = IronvellumColors.SovereignGold,
+                            onClick = { onOpenWorkout(trial.id) },
+                        )
+                    }
+                } else if (lastSealed != null) {
+                    Column(
+                        Modifier
+                            .fillMaxWidth()
+                            .clip(MaterialTheme.shapes.extraSmall)
+                            .clickable(onClickLabel = "Open ${lastSealed.label}") { onOpenWorkout(lastSealed.id) },
+                    ) {
+                        RecentHeader("LAST TRIAL", "OPEN ›", IronvellumColors.SystemGreen)
+                        Text(
+                            "${lastSealed.label} · ${shortWhen(lastSealed.completedAtMs ?: lastSealed.startedAtMs)}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = IronvellumColors.Ink,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 6.dp, bottom = 8.dp),
+                        )
+                        Row(Modifier.fillMaxWidth()) {
+                            RecentFigure("TIME", trialLength(lastSealed) ?: "—", IronvellumColors.Ink, Modifier.weight(1f))
+                            RecentFigure("STR", "${lastSealed.strengthScore}", IronvellumColors.Ink, Modifier.weight(1f))
+                            RecentFigure("XP", "+${lastSealed.xpAwarded}", IronvellumColors.SovereignGold, Modifier.weight(1f))
+                        }
+                    }
                 }
             }
         }
@@ -1169,110 +1179,34 @@ fun DashboardScreen(
     )
 }
 
-/**
- * Radial day gauge: sweep of the step goal with the count in the middle.
- * A dial next to flat meters is what stops the page reading as stacked cards.
- */
+/** One of the day's counters: its label, then its value. */
 @Composable
-private fun StepGauge(steps: Int, goal: Int, modifier: Modifier = Modifier) {
-    val fraction = (steps.toFloat() / goal).coerceIn(0f, 1f)
-    val hit = steps >= goal
-    val ring = if (hit) IronvellumColors.SovereignGold else IronvellumColors.EmeraldBright
-    Box(modifier, contentAlignment = Alignment.Center) {
-        Canvas(Modifier.fillMaxSize()) {
-            val stroke = 7.dp.toPx()
-            val inset = stroke / 2
-            val arcSize = Size(size.width - stroke, size.height - stroke)
-            // Brushed sweeps: a constant-width, constant-radius ring is as
-            // machine-made as a ruled line. The gradient is dropped because a
-            // brush carries one colour at a time; the ring hue still reports
-            // whether the goal was met.
-            val centre = Offset(size.width / 2f, size.height / 2f)
-            val radius = (minOf(arcSize.width, arcSize.height)) / 2f
-            inkArc(centre, radius, 135f, 270f, IronvellumColors.Rune, stroke, seed = 71, taperEnds = false)
-            if (fraction > 0f) {
-                inkArc(centre, radius, 135f, 270f * fraction, ring, stroke, seed = 73)
-            }
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(
-                "%,d".fmt(steps),
-                style = MaterialTheme.typography.titleLarge,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = if (hit) IronvellumColors.SovereignGold else IronvellumColors.Ink,
-            )
-            Text(
-                "/ ${"%,d".fmt(goal)}",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-            )
-            Text(
-                "STEPS",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.InlineLabel,
-                fontSize = 8.sp,
-            )
-        }
-    }
-}
-
-/** The steps' age under the count; nothing until Health Connect has been read. */
-@Composable
-private fun StepsAsOf(syncedAtMs: Long?, today: LocalDate) {
-    val caption = stepsAsOfCaption(syncedAtMs, today) ?: return
-    Text(
-        caption,
-        style = MaterialTheme.typography.labelSmall,
-        fontFamily = ChakraPetch,
-        color = IronvellumColors.InkMuted,
-        fontSize = 9.sp,
-        maxLines = 1,
-    )
-}
-
-/** Counter row with its own hairline meter, so the cluster reads as instruments. */
-@Composable
-private fun GaugeStat(label: String, value: String, accent: Color, fraction: Float, note: String? = null) {
-    Column {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
-            Text(
-                value,
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = accent,
-            )
-        }
-        Spacer(Modifier.height(3.dp))
-        InkRail(
-            fraction = fraction,
-            height = 3.dp,
-            fill = Brush.horizontalGradient(listOf(accent, accent)),
-            seed = label.hashCode(),
+private fun HudStat(label: String, value: String, color: Color) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+            letterSpacing = IronvellumTracking.InlineLabel,
+            maxLines = 1,
         )
-        // A caption under the rail: for a bare "—" it names what would move it.
-        if (note != null) {
-            Text(
-                note,
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
+        Text(
+            value,
+            style = MaterialTheme.typography.labelLarge,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = color,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 6.dp),
+        )
     }
+}
+
+/** The rule between two counters. */
+@Composable
+private fun HudDivider() {
+    Box(Modifier.padding(horizontal = 6.dp).size(width = 1.dp, height = 14.dp).background(IronvellumColors.Rune))
 }
 
 /** Step-goal track: the same inked rail as every other progress bar. */
