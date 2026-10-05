@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.stats
 
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.components.InkChip
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -96,7 +97,6 @@ internal fun BodyTab(
     onLogWeight: () -> Unit,
     onOpenTraining: () -> Unit,
     onOpenTape: () -> Unit,
-    onOpenDaily: () -> Unit,
     onOpenHistory: () -> Unit,
 ) {
     val latest = ui.stats.firstOrNull()
@@ -106,8 +106,9 @@ internal fun BodyTab(
     val heightKnown = (ui.profileHeight ?: 0.0) > 0.0 || (latest?.heightCm ?: 0.0) > 0.0
     val strength = remember(ui.sessions) { Ledger.strengthTrend(ui.sessions) }
     // The calendar's week start, so the strip and the grid cut the same weeks.
-    val locale = androidx.compose.ui.platform.LocalConfiguration.current.locales[0]
-    val weekStart = remember(locale) { java.time.temporal.WeekFields.of(locale).firstDayOfWeek }
+    // Monday, as everywhere else in the app: the locale's Sunday split the
+    // weeks differently from Today's rail.
+    val weekStart = java.time.DayOfWeek.MONDAY
     val weeks = remember(ui.completedDates, today, weekStart) {
         Ledger.weeklyCounts(ui.completedDates, today, weekStart = weekStart)
     }
@@ -115,7 +116,6 @@ internal fun BodyTab(
     val month = remember(ui.sessions, today, zone) {
         trialsInMonth(trialsByDay(ui.sessions, zone), java.time.YearMonth.from(today), today)
     }
-    val daily = remember(ui.healthDays, today) { Ledger.dailyAverageSummary(ui.healthDays, today) }
 
     Column(
         Modifier
@@ -164,27 +164,7 @@ internal fun BodyTab(
                         modifier = Modifier.weight(1f),
                     )
                     // The readings behind the chart, with delete, one tap away.
-                    Row(
-                        Modifier
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .clickable(role = Role.Button, onClick = onOpenHistory)
-                            .heightIn(min = LedgerSpace.Target)
-                            .padding(start = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            "History",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.SystemGreen,
-                            letterSpacing = IronvellumTracking.InlineLabel,
-                        )
-                        Icon(
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = IronvellumColors.SystemGreen,
-                        )
-                    }
+                    InkChip("History", "Open weight history", onClick = onOpenHistory)
                 }
                 Spacer(Modifier.height(4.dp))
                 when {
@@ -211,16 +191,17 @@ internal fun BodyTab(
                 StatChip(
                     "BMI",
                     bmi?.let { formatBodyValue(it) } ?: "\u2014",
-                    bmi?.let { BodyStats.bmiCategory(it) } ?: if (heightKnown) "log a weight" else "set height in Settings",
-                    onClick = { onDrill("BMI") },
+                    bmi?.let { BodyStats.bmiCategory(it) } ?: if (heightKnown) "tap to log a weight" else "set height in Settings",
+                    onClick = { if (bmi == null && heightKnown) onLogWeight() else onDrill("BMI") },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
                 StatChip(
                     "FFMI",
                     ffmi?.let { formatBodyValue(it.value) } ?: "\u2014",
                     ffmi?.let { "from ${formatDate(it.takenAtMs, "d MMM")}" }
-                        ?: if (heightKnown) "log body fat %" else "set height in Settings",
-                    onClick = { onDrill("FFMI") },
+                        ?: if (heightKnown) "tap to log body fat %" else "set height in Settings",
+                    // The weight dialog takes body fat too: the hint opens it.
+                    onClick = { if (ffmi == null && heightKnown) onLogWeight() else onDrill("FFMI") },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
@@ -237,7 +218,7 @@ internal fun BodyTab(
                 onClick = onOpenTraining,
             )
             InkDivider()
-            ConsistencyRow(weeks, month, onClick = onOpenTraining)
+            ConsistencyRow(weeks, onClick = onOpenTraining)
         }
 
         InkPanel(Modifier.fillMaxWidth()) {
@@ -247,13 +228,6 @@ internal fun BodyTab(
                 value = "$logged of ${MeasurementSite.entries.size} logged",
                 supporting = "stays on this device",
                 onClick = onOpenTape,
-            )
-            InkDivider()
-            InkListRow(
-                label = "Daily",
-                value = null,
-                supporting = daily?.let { "7-day average \u00B7 $it" } ?: "Not synced",
-                onClick = onOpenDaily,
             )
         }
         Spacer(Modifier.height(LedgerSpace.Section))
@@ -317,20 +291,32 @@ private fun StatChip(label: String, value: String, hint: String, onClick: () -> 
 }
 
 @Composable
-private fun ConsistencyRow(weeks: List<Int>, sealedThisMonth: Int, onClick: () -> Unit) {
+private fun ConsistencyRow(weeks: List<Int>, onClick: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
             .clickable(role = Role.Button, onClick = onClick)
             .padding(bottom = 12.dp),
     ) {
+        // The weekly average, not this month's count: Training's calendar
+        // already leads with that number.
+        val perWeek = if (weeks.isEmpty()) 0.0 else weeks.sum().toDouble() / weeks.size
         InkListRow(
             label = "Consistency",
-            value = "$sealedThisMonth ${plural(sealedThisMonth, "trial", "trials")} this month",
+            value = if (perWeek == 0.0) "\u2014" else "${"%.1f".format(java.util.Locale.US, perWeek)} a week",
             supporting = "sealed days per week, last 12 weeks",
             onClick = null,
         )
-        WeekStrip(weeks)
+        // Twelve flat dashes said nothing; until a week has a trial, say what fills it.
+        if (weeks.any { it > 0 }) {
+            WeekStrip(weeks)
+        } else {
+            Text(
+                "Each week fills in here as you seal trials.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
+        }
     }
 }
 

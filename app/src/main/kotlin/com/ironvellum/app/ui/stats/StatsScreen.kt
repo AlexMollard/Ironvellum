@@ -1,6 +1,9 @@
 package com.ironvellum.app.ui.stats
 
 import com.ironvellum.app.domain.fmt
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.material.icons.outlined.Add
+import com.ironvellum.app.ui.components.InkChip
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -293,37 +296,21 @@ fun StatsScreen(
         LedgerPage.MAIN -> Column(Modifier.fillMaxSize()) {
             Spacer(Modifier.height(20.dp))
             Row(
-                Modifier.fillMaxWidth().padding(start = LedgerSpace.Gutter, end = 4.dp),
+                Modifier.fillMaxWidth().padding(horizontal = LedgerSpace.Gutter),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
                     "THE LEDGER",
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.headlineSmall,
                     fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.ScreenTitle,
+                    fontWeight = FontWeight.Bold,
+                    color = IronvellumColors.Ink,
+                    letterSpacing = 1.sp,
                     modifier = Modifier.weight(1f).semantics { heading() },
                 )
-                Text(
-                    "+ WEIGHT",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SystemGreen,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    modifier = Modifier
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .clickable(role = androidx.compose.ui.semantics.Role.Button) { showAdd = true }
-                        .heightIn(min = LedgerSpace.Target)
-                        .padding(horizontal = 12.dp)
-                        .wrapContentHeight(),
-                )
-                IconButton(onClick = onOpenLog) {
-                    Icon(
-                        Icons.Outlined.History,
-                        contentDescription = "Full chronicle",
-                        tint = IronvellumColors.SystemGreen,
-                    )
-                }
+                InkChip("Weight", "Log weight", Icons.Outlined.Add) { showAdd = true }
+                // The one way to the chronicle from the Ledger: Training's row repeated it.
+                InkChip("Chronicle", "Open", Icons.Outlined.History, description = "Full chronicle", onClick = onOpenLog)
             }
             Spacer(Modifier.height(8.dp))
 
@@ -349,7 +336,6 @@ fun StatsScreen(
                         onLogWeight = { showAdd = true },
                         onOpenTraining = { scope.launch { pager.animateScrollToPage(StatsTab.TRAINING.ordinal) } },
                         onOpenTape = { pageIndex = LedgerPage.TAPE.ordinal },
-                        onOpenDaily = { scope.launch { pager.animateScrollToPage(StatsTab.DAILY.ordinal) } },
                         onOpenHistory = { pageIndex = LedgerPage.HISTORY.ordinal },
                     )
                     StatsTab.TRAINING -> TrainingTab(
@@ -358,7 +344,6 @@ fun StatsScreen(
                         month = YearMonth.from(today).minusMonths(monthsBack.toLong()),
                         onMonth = { monthsBack = (monthsBack - it).coerceAtLeast(0) },
                         scroll = trainingScroll,
-                        onOpenLog = onOpenLog,
                         onOpenWorkout = onOpenWorkout,
                     )
                     StatsTab.DAILY -> ActivityTab(
@@ -517,7 +502,6 @@ private fun TrainingTab(
     month: YearMonth,
     onMonth: (Int) -> Unit,
     scroll: androidx.compose.foundation.ScrollState,
-    onOpenLog: () -> Unit,
     onOpenWorkout: (Long) -> Unit,
 ) {
     val nowMs = remember(today) { System.currentTimeMillis() }
@@ -574,16 +558,6 @@ private fun TrainingTab(
             }
         }
 
-        // The owner's instinct is that his workout history lives under the
-        // Ledger. It lives under Train, so put the door here too.
-        InkPanel(Modifier.fillMaxWidth()) {
-            InkListRow(
-                label = "Full chronicle",
-                value = null,
-                supporting = "every sealed trial",
-                onClick = onOpenLog,
-            )
-        }
         Spacer(Modifier.height(LedgerSpace.Section))
     }
 }

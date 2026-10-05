@@ -209,16 +209,6 @@ class LedgerMathTest {
     }
 
     @Test
-    fun `daily summary is the seven day average, leaves out partial today and names only what arrived`() {
-        val rows = listOf(day(0, steps = 100, kcal = 5, sleep = 480)) +
-            (1L..2L).map { day(it, steps = 8000, kcal = 400, sleep = 420) }
-        assertEquals("8.0k steps \u00B7 7h 20m \u00B7 400 kcal", Ledger.dailyAverageSummary(rows, today))
-        assertEquals("7h 0m", Ledger.dailyAverageSummary(listOf(day(1, sleep = 420)), today))
-        assertNull(Ledger.dailyAverageSummary(emptyList(), today))
-        assertNull("only today's partial row", Ledger.dailyAverageSummary(listOf(day(0, steps = 10)), today))
-    }
-
-    @Test
     fun `readings are placed by the days between them`() {
         val d = LocalDate.of(2026, 9, 1)
         assertEquals(listOf(0.0, 0.1, 1.0), Ledger.datePositions(listOf(d, d.plusDays(3), d.plusDays(30))))

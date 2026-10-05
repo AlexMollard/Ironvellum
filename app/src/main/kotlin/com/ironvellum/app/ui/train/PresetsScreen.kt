@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.train
 
 import androidx.compose.material.icons.outlined.FitnessCenter
+import com.ironvellum.app.ui.components.InkChip
 import com.ironvellum.app.ui.components.formatDate
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.contentDescription
@@ -263,9 +264,9 @@ fun PresetsScreen(
                     modifier = Modifier.weight(1f).semantics { heading() },
                 )
                 // With no cycle there is no cycle header to carry New.
-                if (ui.presets.isEmpty()) TrainChip("New", "New rite", Icons.Outlined.Add) { showNewChooser = true }
+                if (ui.presets.isEmpty()) InkChip("New", "New rite", Icons.Outlined.Add) { showNewChooser = true }
                 // No second trial while one is under way.
-                if (focus !is TrainFocus.Live) TrainChip("Open trial", "Begin an open trial", Icons.Outlined.PlayArrow) { viewModel.beginQuick(onQuickSession) }
+                if (focus !is TrainFocus.Live) InkChip("Open trial", "Begin an open trial", Icons.Outlined.PlayArrow) { viewModel.beginQuick(onQuickSession) }
             }
             // What the day is when it is not a rite to begin: the rite to begin
             // opens in the cycle itself, below.
@@ -306,8 +307,8 @@ fun PresetsScreen(
                 if (scheduled.isNotEmpty()) WeekSegments(scheduled.count(sealedThisWeek), scheduled.size)
                 Spacer(Modifier.weight(1f))
                 // Sit with the list they add to and export.
-                TrainChip("New", "New rite", Icons.Outlined.Add) { showNewChooser = true }
-                TrainChip("Share", "Share cycle", Icons.Outlined.Share, onClick = share)
+                InkChip("New", "New rite", Icons.Outlined.Add) { showNewChooser = true }
+                InkChip("Share", "Share cycle", Icons.Outlined.Share, onClick = share)
             }
             shareRefusal?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
@@ -448,7 +449,7 @@ fun PresetsScreen(
                         modifier = Modifier.weight(1f).semantics { heading() },
                     )
                     // Named for where it goes: "All" alone says nothing to a screen reader.
-                    TrainChip("All", "Open", description = "Full chronicle", onClick = onOpenLog)
+                    InkChip("All", "Open", description = "Full chronicle", onClick = onOpenLog)
                 }
                 InkPanel(Modifier.fillMaxWidth()) {
                     trials.forEach { (trial, sets) ->
@@ -560,40 +561,6 @@ private fun WeekSegments(sealed: Int, total: Int) {
                     .size(width = 14.dp, height = 4.dp)
                     .inkHairline(if (i < sealed) IronvellumColors.SystemGreen else IronvellumColors.Rune, seed = 60 + i, thickness = 3.dp),
             )
-        }
-    }
-}
-
-/**
- * A section's action as an outlined chip: it reads as something to press,
- * where a green caption read as one more label, and it never outweighs Begin.
- */
-@Composable
-private fun TrainChip(
-    label: String,
-    clickLabel: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
-    description: String? = null,
-    onClick: () -> Unit,
-) {
-    Box(
-        Modifier
-            .padding(start = 8.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
-            .clickable(onClickLabel = clickLabel, onClick = onClick)
-            .then(if (description != null) Modifier.semantics { contentDescription = description } else Modifier)
-            .heightIn(min = 44.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(
-            Modifier
-                .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-                .padding(horizontal = 10.dp, vertical = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
-            icon?.let { Icon(it, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(16.dp)) }
-            Text(label, style = MaterialTheme.typography.labelMedium, color = IronvellumColors.SystemGreen, letterSpacing = 0.5.sp)
         }
     }
 }
