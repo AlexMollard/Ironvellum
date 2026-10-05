@@ -130,11 +130,10 @@ A pure function returns, alongside the band:
 
 - Persist the highest band ever held as an index in SharedPreferences
   (`rank_state.xml`, key `highest_band`).
-- First computation after this ships: if the key is absent, write the current
-  band silently. The scoring change itself is not a rank-up.
+- When no mark is stored yet, the band before the seal (computed with the new rules) stands in for it, so the scoring change itself is never a rank-up, while a real gain on that first seal still is.
 - On sealing a session, compute the rank after the seal. If its band index is
   above `highest_band`, set `rankUp: String?` on `Repository.CompletionResult`
-  and store the new highest.
+  and, on every seal, store the higher of the stand-in and the new band.
 - `VictoryOverlay` shows a "RANK UP · Intermediate" beat with a
   `HapticFeedbackType.Confirm`, after the peaks and before the XP bar.
 - Fires once per band ever: dropping and regaining a band does not repeat it.

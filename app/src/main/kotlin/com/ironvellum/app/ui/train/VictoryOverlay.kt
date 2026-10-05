@@ -28,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -85,6 +86,7 @@ internal fun VictoryOverlay(
     val haptic = LocalHapticFeedback.current
     val land = remember { Animatable(0f) }
     var peaksShown by remember { mutableIntStateOf(0) }
+    var rankShown by remember { mutableStateOf(false) }
     // Level progress as one number, level + fraction, so a level-up animates
     // as the bar running out and refilling instead of jumping backwards.
     val before = remember(result) { levelPosition(result.totalXp - result.xpAwarded) }
@@ -100,6 +102,11 @@ internal fun VictoryOverlay(
             peaksShown = i + 1
             haptic.performHapticFeedback(HapticFeedbackType.SegmentTick)
             delay(220)
+        }
+        if (result.rankUp != null) {
+            rankShown = true
+            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            delay(400)
         }
         // XP figure and bar run together over the same second.
         coroutineScope {
@@ -146,6 +153,10 @@ internal fun VictoryOverlay(
                         if (peaks.isNotEmpty()) {
                             Spacer(Modifier.height(24.dp))
                             PeaksPanel(peaks, peaksShown)
+                        }
+                        result.rankUp?.let { band ->
+                            Spacer(Modifier.height(16.dp))
+                            RankUpBanner(band, rankShown)
                         }
                         Spacer(Modifier.height(16.dp))
                         TotalsStrip(totals, result.strengthScore)
@@ -242,6 +253,45 @@ private fun PeaksPanel(peaks: List<SessionPeaks.Peak>, shown: Int) {
             Spacer(Modifier.height(12.dp))
             PeakRow(peak, visible = i < shown)
         }
+    }
+}
+
+/** A band never held before, announced once. */
+@Composable
+private fun RankUpBanner(band: String, visible: Boolean) {
+    val t by animateFloatAsState(if (visible) 1f else 0f, tween(320), label = "rank")
+    InkPanel(
+        Modifier
+            .fillMaxWidth()
+            .graphicsLayer {
+                alpha = t
+                val s = 0.92f + 0.08f * t
+                scaleX = s
+                scaleY = s
+            },
+        accent = IronvellumColors.SovereignGold,
+    ) {
+        Text(
+            "RANK UP",
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = IronvellumTracking.SectionHeader,
+            color = IronvellumColors.SovereignGold,
+        )
+        Spacer(Modifier.height(6.dp))
+        Text(
+            band.uppercase(),
+            style = MaterialTheme.typography.headlineSmall,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = IronvellumColors.Ink,
+        )
+        Text(
+            "Strength Rank",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
     }
 }
 
