@@ -588,6 +588,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onOpenExercises = { navController.navigate(Routes.EXERCISES) },
                         onOpenLog = { navController.navigate(Routes.WORKOUT_LOG) },
                         onOpenCoverage = { navController.navigate(Routes.MUSCLE_COVERAGE) },
+                        onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
                     )
                 }
                 composable(
