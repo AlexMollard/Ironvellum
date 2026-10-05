@@ -1364,9 +1364,6 @@ class Repository(
             Rank.breakdown(history, SetRecords.bodyweightLookup(stats), body.second, System.currentTimeMillis(), practices)
         }
 
-    /** The current Strength Rank band; null while unranked. */
-    fun observeStrengthRank(): Flow<String?> = observeRankBreakdown().map { it?.band }
-
     private suspend fun rankNow(): String? = Rank.current(
         observeHistory().first(),
         bodyweightLookup(),
