@@ -443,8 +443,8 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                         Modifier
                                             .size(24.dp)
                                             .wrapContentSize(unbounded = true)
-                                            .offset(y = androidx.compose.ui.unit.lerp(0.dp, (-20).dp, p))
-                                            .requiredSize(androidx.compose.ui.unit.lerp(24.dp, 56.dp, p))
+                                            .offset(y = androidx.compose.ui.unit.lerp(0.dp, (-16).dp, p))
+                                            .requiredSize(androidx.compose.ui.unit.lerp(24.dp, 48.dp, p))
                                             .clip(slotShape)
                                             .background(IronvellumColors.Emerald.copy(alpha = p))
                                             .inkBorder(IronvellumColors.EmeraldBright.copy(alpha = p), slotShape)
@@ -477,7 +477,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                         },
                                         // The sword scales with its plate so it does
                                         // not sit lost in the middle of it.
-                                        modifier = if (destination.raised) Modifier.size(androidx.compose.ui.unit.lerp(24.dp, 34.dp, p)) else Modifier,
+                                        modifier = if (destination.raised) Modifier.size(androidx.compose.ui.unit.lerp(24.dp, 30.dp, p)) else Modifier,
                                     )
                                     if (unreadHere) {
                                         Box(
