@@ -686,7 +686,8 @@ fun DashboardScreen(
                                 modifier = Modifier
                                     .padding(start = 10.dp)
                                     .heightIn(min = 32.dp)
-                                    .clickable(role = Role.Button, onClickLabel = "Show Strength Rank") { rankOpen = true },
+                                    .clickable(role = Role.Button, onClickLabel = "Show Strength Rank") { rankOpen = true }
+                                    .wrapContentHeight(Alignment.CenterVertically),
                             )
                             TermInfo(Term.RANKS)
                         }
