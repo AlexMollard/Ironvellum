@@ -251,6 +251,12 @@ fun PresetsScreen(
             IronvellumButton(label = "New Rite", onClick = { showNewChooser = true }, quiet = true, modifier = Modifier.weight(1f))
         }
 
+        importResult?.let { line ->
+            Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SystemGreen, modifier = Modifier.padding(top = GROUP_GAP))
+        }
+        // With no rites the lead card already says so and offers the Forge;
+        // an empty list under it would say it twice.
+        if (ui.presets.isNotEmpty()) {
         Spacer(Modifier.height(SECTION_GAP))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -261,9 +267,8 @@ fun PresetsScreen(
                 letterSpacing = IronvellumTracking.SectionHeader,
                 modifier = Modifier.weight(1f).semantics { heading() },
             )
-            // Sits with the list it exports, and only when there is something
-            // to export: an empty board would share a code that imports nothing.
-            if (ui.presets.isNotEmpty()) {
+            // Sits with the list it exports.
+            run {
                 val context = androidx.compose.ui.platform.LocalContext.current
                 Text(
                     "SHARE ›",
@@ -285,9 +290,6 @@ fun PresetsScreen(
         }
         shareRefusal?.let { line ->
             Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
-        }
-        importResult?.let { line ->
-            Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SystemGreen, modifier = Modifier.padding(bottom = 8.dp))
         }
         // One line a rite: the week at a glance. The whole rite - every
         // movement, its note, Begin and Edit - is one tap away on its page.
@@ -345,13 +347,7 @@ fun PresetsScreen(
                 }
                 if (preset != ui.presets.last()) RowRule(seed = preset.id.toInt())
             }
-            if (ui.presets.isEmpty()) {
-                Text(
-                    "No rites are written yet.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
+        }
         }
 
         Spacer(Modifier.height(SECTION_GAP))
