@@ -87,6 +87,7 @@ import com.ironvellum.app.domain.Circle
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.WeighIn
+import com.ironvellum.app.domain.WorkoutCsvWriter
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.Relics
@@ -2065,6 +2066,36 @@ class Repository(
 
     suspend fun exportJson(): String = exportArchive().json
 
+    private suspend fun completedSessionsWithSets(names: Map<Long, String>): List<Pair<WorkoutSession, List<SessionSet>>> =
+        sessionDao.observeCompletedWithSets().first().map { sws ->
+            sws.session.toDomain() to sws.sets.map { s ->
+                SessionSet(
+                    id = s.id,
+                    exerciseId = s.exerciseId,
+                    exerciseName = names[s.exerciseId] ?: "Unknown",
+                    // Which block a set belongs to: without it a restored
+                    // backup lands every set on position 0 and merges the
+                    // movements into one block.
+                    exercisePosition = s.exercisePosition,
+                    setIndex = s.setIndex,
+                    reps = s.reps,
+                    weightKg = s.weightKg,
+                    modifiers = s.modifiers,
+                    done = s.done,
+                    durationSec = s.durationSec,
+                    distanceM = s.distanceM,
+                    grade = s.grade,
+                )
+            }
+        }
+
+    /** One period of trials as a Strong-format CSV, or null when the period holds none. */
+    suspend fun exportCsv(period: WorkoutCsvWriter.Period, today: LocalDate, zone: ZoneId): String? {
+        val names = exerciseDao.observeAll().first().associate { it.id to it.name }
+        val sessions = WorkoutCsvWriter.inPeriod(completedSessionsWithSets(names), period, today, zone)
+        return if (sessions.isEmpty()) null else WorkoutCsvWriter.write(sessions, zone)
+    }
+
     // includeDeviceOnly = false is the CLOUD copy (see ExportWriter.write): the
     // private note, body readings, measurements, height, sex and Health
     // Connect days are promised never to leave this device, so a cloud backup
@@ -2105,27 +2136,7 @@ class Repository(
                 },
             )
         }
-        val sessions = sessionDao.observeCompletedWithSets().first().map { sws ->
-            sws.session.toDomain() to sws.sets.map { s ->
-                SessionSet(
-                    id = s.id,
-                    exerciseId = s.exerciseId,
-                    exerciseName = names[s.exerciseId] ?: "Unknown",
-                    // Which block a set belongs to: without it a restored
-                    // backup lands every set on position 0 and merges the
-                    // movements into one block.
-                    exercisePosition = s.exercisePosition,
-                    setIndex = s.setIndex,
-                    reps = s.reps,
-                    weightKg = s.weightKg,
-                    modifiers = s.modifiers,
-                    done = s.done,
-                    durationSec = s.durationSec,
-                    distanceM = s.distanceM,
-                    grade = s.grade,
-                )
-            }
-        }
+        val sessions = completedSessionsWithSets(names)
         val stats = statDao.observeAll().first().map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
         val skills = skillPracticeDao.observeAll().first().map {
             SkillPractice(it.skillName, it.practicedAtMs, it.claimed, it.value, it.weightKg)
