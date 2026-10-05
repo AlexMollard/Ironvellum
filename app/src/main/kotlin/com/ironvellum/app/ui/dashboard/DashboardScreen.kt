@@ -337,6 +337,9 @@ internal fun stepsAsOfCaption(syncedAtMs: Long?, today: LocalDate, zone: ZoneId 
  */
 private val QUEST_ROW_HEIGHT = 24.dp
 
+/** One line of the run-together movement names: bodySmall's 16sp line, rounded up. */
+private val QUEST_LINE_HEIGHT = 18.dp
+
 /** The rest-day art's two sizes: it steps between them, never scales. */
 private val REST_ART_LARGE = 200.dp
 private val REST_ART_SMALL = 96.dp
@@ -354,9 +357,19 @@ private val REST_TEXT_HEIGHT = 112.dp
 private fun ColumnScope.Manifest(entries: List<com.ironvellum.app.domain.PresetEntry>, done: Boolean, fill: Boolean) {
     BoxWithConstraints(if (fill) Modifier.weight(1f) else Modifier) {
         val fits = if (fill) (maxHeight / QUEST_ROW_HEIGHT).toInt() else entries.size
-        // Below two slots there is no room for both: one real movement beats a
-        // line saying how many there are.
-        val moves = entries.take(if (fits < entries.size) (fits - 1).coerceAtLeast(1) else fits)
+        // Too short for a list that says anything: one row read as if the rite
+        // were a single movement. Name them all, run together, instead.
+        if (fits < minOf(entries.size, 3)) {
+            Text(
+                (if (done) "✓ " else "") + entries.joinToString(" · ") { it.exerciseName },
+                style = MaterialTheme.typography.bodySmall,
+                color = if (done) IronvellumColors.InkMuted else IronvellumColors.Ink,
+                maxLines = (maxHeight / QUEST_LINE_HEIGHT).toInt().coerceAtLeast(1),
+                overflow = TextOverflow.Ellipsis,
+            )
+            return@BoxWithConstraints
+        }
+        val moves = entries.take(if (fits < entries.size) fits - 1 else fits)
         Column(
             verticalArrangement = if (fill) Arrangement.SpaceEvenly else Arrangement.Top,
             modifier = if (fill) Modifier.fillMaxHeight() else Modifier,
@@ -391,7 +404,7 @@ private fun ColumnScope.Manifest(entries: List<com.ironvellum.app.domain.PresetE
                 }
             }
             val hidden = entries.size - moves.size
-            if (hidden > 0 && fits >= 2) {
+            if (hidden > 0) {
                 Text(
                     "+$hidden MORE",
                     style = MaterialTheme.typography.labelSmall,
@@ -880,6 +893,18 @@ fun DashboardScreen(
                     maxLines = 1,
                 )
                 Spacer(Modifier.weight(1f))
+                // Sealed, what it earned sits in the header, so a short card
+                // still has room for what comes next.
+                if (questSessionToday != null && live == null) {
+                    Text(
+                        "+${questSessionToday.xpAwarded} XP · ${questSessionToday.strengthScore} STR",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.SovereignGold,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                        maxLines = 1,
+                    )
+                }
                 // A trial under way is continued from here in one tap; the last
                 // sealed one now lives in RECENT below.
                 live?.let { trial ->
@@ -910,7 +935,7 @@ fun DashboardScreen(
                         letterSpacing = 1.sp,
                     )
                     if (questSessionToday != null) {
-                        Text(
+                        if (live != null) Text(
                             "+${questSessionToday.xpAwarded} XP · ${questSessionToday.strengthScore} STR",
                             style = MaterialTheme.typography.labelSmall,
                             fontFamily = ChakraPetch,
@@ -922,7 +947,8 @@ fun DashboardScreen(
                                 "Next: ${next.name} · ${dayName(next.scheduledDay!!)}",
                                 style = MaterialTheme.typography.bodySmall,
                                 color = IronvellumColors.InkMuted,
-                                modifier = Modifier.padding(top = 6.dp),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     } else {
