@@ -1,11 +1,11 @@
 package com.ironvellum.app.ui.train
 
+import androidx.compose.material.icons.outlined.FitnessCenter
 import com.ironvellum.app.ui.components.formatDate
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AccessibilityNew
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -223,7 +223,7 @@ fun PresetsScreen(
             color = IronvellumColors.SystemGreen,
             letterSpacing = 6.sp,
         )
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
         // The screen leads with the one thing to do now: today's rite, the
         // trial under way, or what a rest day allows. Open Trial used to be
         // the lead button, which put the side door ahead of the plan.
@@ -237,8 +237,8 @@ fun PresetsScreen(
             onForge = { onGenerate("week", null) },
             last = sessions.filter { it.completedAtMs != null }.maxByOrNull { it.completedAtMs ?: 0L },
         )
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Spacer(Modifier.height(GROUP_GAP))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GROUP_GAP)) {
             // No second trial while one is under way.
             if (focus !is TrainFocus.Live) {
                 IronvellumButton(
@@ -251,7 +251,7 @@ fun PresetsScreen(
             IronvellumButton(label = "New Rite", onClick = { showNewChooser = true }, quiet = true, modifier = Modifier.weight(1f))
         }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(SECTION_GAP))
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
                 "YOUR CYCLE",
@@ -278,11 +278,12 @@ fun PresetsScreen(
                             viewModel.shareRoutine(onRefused = { shareRefusal = it }) { code -> shareRoutineCode(context, code) }
                         }
                         .heightIn(min = 44.dp)
-                        .padding(horizontal = 8.dp)
+                        .padding(start = 8.dp)
                         .wrapContentHeight(Alignment.CenterVertically),
                 )
             }
         }
+        Spacer(Modifier.height(4.dp))
         shareRefusal?.let { line ->
             Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
         }
@@ -299,10 +300,8 @@ fun PresetsScreen(
                     Modifier
                         .fillMaxWidth()
                         .clip(MaterialTheme.shapes.extraSmall)
-                        .then(if (isToday) Modifier.background(IronvellumColors.SystemGreen.copy(alpha = 0.10f)) else Modifier)
                         .clickable(onClickLabel = "Open ${preset.name}") { onOpenRite(preset.id) }
-                        .heightIn(min = 48.dp)
-                        .padding(horizontal = 8.dp, vertical = 6.dp),
+                        .heightIn(min = ROW_HEIGHT),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
@@ -321,7 +320,7 @@ fun PresetsScreen(
                     Text(
                         preset.name,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = IronvellumColors.Ink,
+                        color = if (isToday) IronvellumColors.EmeraldBright else IronvellumColors.Ink,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
@@ -337,13 +336,15 @@ fun PresetsScreen(
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         letterSpacing = IronvellumTracking.InlineLabel,
-                        color = if (sealedThisWeek) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                        color = when {
+                            sealedThisWeek -> IronvellumColors.SystemGreen
+                            isToday -> IronvellumColors.SovereignGold
+                            else -> IronvellumColors.InkMuted
+                        },
                         maxLines = 1,
                     )
                 }
-                if (preset != ui.presets.last()) {
-                    Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = preset.id.toInt()))
-                }
+                if (preset != ui.presets.last()) RowRule(seed = preset.id.toInt())
             }
             if (ui.presets.isEmpty()) {
                 Text(
@@ -354,50 +355,31 @@ fun PresetsScreen(
             }
         }
 
-        Spacer(Modifier.height(12.dp))
-        // The body map was a third of the screen on every visit; here it is
-        // the one fact it answers, and a tap opens the full map.
+        Spacer(Modifier.height(SECTION_GAP))
+        // The ways out: what the cycle covers, the catalogue, the record. Rows
+        // rather than buttons, so nothing here competes with Begin. The body
+        // map was a third of the screen on every visit; its row says the one
+        // fact it answers and opens the full map.
         val volume = remember(ui.plannedPresets) { ProgramRules.weeklyVolume(ui.plannedPresets) }
         val gaps = coverageGaps(volume, CoverageGoal(ui.tier, ui.focus, ui.priorities)).size
-        InkPanel(Modifier.fillMaxWidth(), onClick = onOpenCoverage) {
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                Icon(
-                    Icons.Outlined.AccessibilityNew,
-                    contentDescription = null,
-                    tint = IronvellumColors.SystemGreen,
-                    modifier = Modifier.size(26.dp),
-                )
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "WEEKLY COVERAGE",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.SystemGreen,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                    )
-                    Text(
-                        when {
-                            ui.plannedPresets.isEmpty() -> "No cycle yet"
-                            gaps == 0 -> "Every muscle covered"
-                            else -> "$gaps short or missing"
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = if (gaps > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                    )
-                }
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
-            }
+        InkPanel(Modifier.fillMaxWidth()) {
+            WayOutRow(
+                icon = Icons.Outlined.AccessibilityNew,
+                label = "WEEKLY COVERAGE",
+                detail = when {
+                    ui.plannedPresets.isEmpty() -> "No cycle yet"
+                    gaps == 0 -> "Every muscle covered"
+                    else -> "$gaps short or missing"
+                },
+                detailColor = if (gaps > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                onClick = onOpenCoverage,
+            )
+            RowRule(seed = 41)
+            WayOutRow(icon = Icons.Outlined.FitnessCenter, label = "EXERCISES", onClick = onOpenExercises)
+            RowRule(seed = 42)
+            WayOutRow(icon = Icons.Outlined.History, label = "FULL CHRONICLE", onClick = onOpenLog)
         }
-        Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            IronvellumButton(label = "Exercises", onClick = onOpenExercises, quiet = true, modifier = Modifier.weight(1f))
-            IronvellumButton(label = "Full Chronicle", onClick = onOpenLog, quiet = true, modifier = Modifier.weight(1f))
-        }
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(SECTION_GAP))
     }
 
     if (showNewChooser) {
@@ -610,3 +592,48 @@ private fun LeadButton(label: String, quiet: Boolean = false, onClick: () -> Uni
 
 /** Movements named on the lead card before "+N". */
 private const val LEAD_MOVEMENTS = 3
+
+@Composable
+private fun RowRule(seed: Int) {
+    Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = seed))
+}
+
+/** One way out of Train: icon, label, an optional fact, and a chevron. */
+@Composable
+private fun WayOutRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    detail: String? = null,
+    detailColor: androidx.compose.ui.graphics.Color = IronvellumColors.InkMuted,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraSmall)
+            .clickable(onClickLabel = label.lowercase().replaceFirstChar { it.uppercase() }, onClick = onClick)
+            .heightIn(min = ROW_HEIGHT),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(22.dp))
+        Column(Modifier.weight(1f)) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.Ink,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            )
+            detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = detailColor) }
+        }
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
+    }
+}
+
+/** Train's rhythm: groups sit a section apart; controls inside one, a group gap. */
+private val SECTION_GAP = 24.dp
+private val GROUP_GAP = 12.dp
+
+/** A list row: the 48dp touch target, the same in both panels. */
+private val ROW_HEIGHT = 48.dp
