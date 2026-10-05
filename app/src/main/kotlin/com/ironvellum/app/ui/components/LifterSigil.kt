@@ -17,6 +17,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.ui.social.crestFrameTreatment
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.inkBorder
@@ -35,6 +36,9 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
  *
  * With no crest equipped this is the same object in neutral palette colours, so
  * the player card never reflows when one is equipped or removed.
+ *
+ * The level's ascension names it in place of "LV": ascension is a band of
+ * levels, so it labels the number rather than standing as a stat of its own.
  */
 @Composable
 fun LifterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier) {
@@ -86,7 +90,7 @@ fun LifterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier) {
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                "LV",
+                ArmyClass.forLevel(level).title.uppercase(),
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 letterSpacing = IronvellumTracking.InlineLabel,

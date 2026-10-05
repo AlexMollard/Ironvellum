@@ -57,7 +57,7 @@ Settings keeps the name **Settings**.
 | **True name** | The public display name | "Take your true name", "True name (2–24)", "That true name is taken" | lifter name, handle, username |
 | **Folio** | An Ironbound's public page | "Open folio", "Manage folio", "This folio is private" | profile page, lifter page, record sealed |
 | **Frame** | The body being measured | "YOUR FRAME", "Frame rating" | body, vessel |
-| **Ascension** | The tier ladder that follows level: Acolyte · Adept · Warden · Magister · Archon · Exarch · Sovereign. A band of levels, never a second kind of progress | under the XP rail: "ADEPT · WARDEN AT 15"; on reaching one, on the level-up page itself: "YOU ASCEND", the old tier struck through; reward line "LEVEL UP 4 → 5 · ADEPT" | class, army class, promotion, Recruit…Grand Marshal |
+| **Ascension** | The tier ladder that follows level: Acolyte · Adept · Warden · Magister · Archon · Exarch · Sovereign. A band of levels, never a second kind of progress: it names the level, never a stat beside it | on the level sigil in place of "LV": "ADEPT 13"; under the XP rail, the next one: "WARDEN AT 15"; on reaching one, on the level-up page itself: "YOU ASCEND", the old tier struck through; reward line "LEVEL UP 4 → 5 · ADEPT" | class, army class, promotion, Recruit…Grand Marshal |
 | **Strength Rank** | Current strength from the barbell, pull-up and dip reckonings (best estimated 1-rep max over bodyweight per lift in the last 90 days, averaged): Untrained, Novice, Intermediate, Advanced, Elite; **Unranked** before any | its own labelled value, never joined to the ascension; "STRENGTH RANK · Unranked" | rank alone; never for level |
 
 ## Training

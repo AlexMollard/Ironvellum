@@ -437,8 +437,8 @@ fun DashboardScreen(
                             maxLines = 1,
                         )
                         val worn = profile?.currentTitleId?.let { Titles.byId(it)?.name }
-                        // Strength Rank only: ascension follows level, so it
-                        // sits under the XP rail with the level it comes from.
+                        // Strength Rank only: ascension names the level on
+                        // the sigil, so it is never a stat beside this one.
                         Row(verticalAlignment = Alignment.CenterVertically) {
                         Column(Modifier.weight(1f, fill = false)) {
                         Text(
@@ -507,22 +507,22 @@ fun DashboardScreen(
                 }
                 Spacer(Modifier.height(10.dp))
                 XpBar(progress.intoLevel, progress.needed)
-                // The rail's one caption is the ascension, not the XP: "25 /
-                // 200 XP", "LV 2 → 3" and "175 XP TO GO" were one fact three
-                // ways beside the sigil. The tier ahead says what levels lead to.
-                val next = ArmyClass.nextFor(progress.level)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    ArmyClass.forLevel(progress.level).title.uppercase() +
-                        next?.let { " · ${it.title.uppercase()} AT ${it.level}" }.orEmpty(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.align(Alignment.End),
-                )
+                // The rail's one caption is the next ascension, not the XP: "25
+                // / 200 XP", "LV 2 → 3" and "175 XP TO GO" were one fact three
+                // ways beside the sigil, which already names the current one.
+                ArmyClass.nextFor(progress.level)?.let { next ->
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        "${next.title.uppercase()} AT ${next.level}",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.align(Alignment.End),
+                    )
+                }
             }
         }
 
