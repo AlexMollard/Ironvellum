@@ -33,6 +33,13 @@ class RankPatternsTest {
     }
 
     @Test
+    fun `a pattern lists its tiered lifts in lift order`() {
+        assertEquals(listOf(Lift.SQUAT, Lift.DEADLIFT), RankPatterns.lifts(Pattern.LEGS))
+        assertEquals(listOf(Lift.DIP, Lift.BENCH, Lift.OVERHEAD_PRESS), RankPatterns.lifts(Pattern.PUSH))
+        assertEquals(listOf(Lift.PULL_UP), RankPatterns.lifts(Pattern.PULL))
+    }
+
+    @Test
     fun `patterns read as a coach would`() {
         fun p(name: String) = RankPatterns.forSkill(Skills.forName(name)!!)
         assertEquals(Pattern.PUSH, p("Handstand Push-up"))

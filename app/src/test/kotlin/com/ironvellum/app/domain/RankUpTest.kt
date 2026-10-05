@@ -14,7 +14,22 @@ class RankUpTest {
     @Test
     fun `the first seal still celebrates a real gain`() {
         assertEquals(RankUp.Outcome(2, Rank.INTERMEDIATE), RankUp.check(null, Rank.NOVICE, Rank.INTERMEDIATE))
-        assertEquals(RankUp.Outcome(0, Rank.UNTRAINED), RankUp.check(null, null, Rank.UNTRAINED))
+        assertEquals(RankUp.Outcome(1, Rank.NOVICE), RankUp.check(null, null, Rank.NOVICE))
+    }
+
+    @Test
+    fun `untrained never celebrates`() {
+        assertEquals(RankUp.Outcome(0, null), RankUp.check(null, null, Rank.UNTRAINED))
+    }
+
+    @Test
+    fun `a gain an import caused is stored silently`() {
+        assertEquals(RankUp.Outcome(2, null), RankUp.check(1, Rank.INTERMEDIATE, Rank.INTERMEDIATE))
+    }
+
+    @Test
+    fun `a seal that climbs past an import-raised band still celebrates`() {
+        assertEquals(RankUp.Outcome(3, Rank.ADVANCED), RankUp.check(1, Rank.INTERMEDIATE, Rank.ADVANCED))
     }
 
     @Test

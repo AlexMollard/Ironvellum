@@ -263,6 +263,7 @@ private fun RankUpBanner(band: String, visible: Boolean) {
     InkPanel(
         Modifier
             .fillMaxWidth()
+            .semantics(mergeDescendants = true) {}
             .graphicsLayer {
                 alpha = t
                 val s = 0.92f + 0.08f * t
