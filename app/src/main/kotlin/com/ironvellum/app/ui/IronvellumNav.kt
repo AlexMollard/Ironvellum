@@ -250,16 +250,64 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
             }
         }
-        // A tapped Summons lands on Today, where the scheduled rite begins.
+        // A tapped Summons lands on Train, where the scheduled rite begins.
         var servedTodayRequest by androidx.compose.runtime.saveable.rememberSaveable { androidx.compose.runtime.mutableIntStateOf(0) }
         androidx.compose.runtime.LaunchedEffect(todayRequest) {
             if (todayRequest <= servedTodayRequest) return@LaunchedEffect
             servedTodayRequest = todayRequest
             lifecycle.withStarted {
-                navController.navigate(Routes.DASHBOARD) {
-                    popUpTo(Routes.DASHBOARD) { inclusive = true }
+                // The same options as tapping the tab, so Back returns to Today.
+                navController.navigate(Routes.PRESETS) {
+                    popUpTo(Routes.DASHBOARD) { saveState = true }
                     launchSingleTop = true
+                    restoreState = true
                 }
+            }
+        }
+        // Train stands proud of the bar only while today asks something of the
+        // lifter: a scheduled rite not yet sealed, or a trial under way. Sealed,
+        // resting or with no cycle, it settles in with the other tabs, so a
+        // finished day is not still being shouted at. The same rule and the same
+        // recent-sessions source as Today's card, so the two never disagree.
+        // shortcut: the day is read when a source emits, so the plate does not
+        // rise at midnight on its own; it catches up on the next emission.
+        val trainRaised by androidx.compose.runtime.remember(repo) {
+            kotlinx.coroutines.flow.combine(
+                repo.observePresets(),
+                repo.observeRecentSessions(5),
+                repo.observeLiveSession(),
+            ) { presets, recent, live ->
+                val day = java.time.LocalDate.now()
+                val start = day.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
+                when (com.ironvellum.app.domain.TrainFocus.resolve(presets, recent, live, day.dayOfWeek.value, start)) {
+                    is com.ironvellum.app.domain.TrainFocus.Begin, is com.ironvellum.app.domain.TrainFocus.Live -> true
+                    else -> false
+                }
+            }
+        }.collectAsStateWithLifecycle(initialValue = null)
+        // 0 = settled, 1 = raised. Snapped to the first real reading so a cold
+        // start does not play the rise; animated on every change after that.
+        // A trial is sealed on a screen with no bar, so the change waits for the
+        // bar to come back and plays where it can be seen: the plate sinks in as
+        // the lifter returns from a finished day.
+        val lift = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(0f) }
+        var liftLoaded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
+        val barShown = currentRoute in destinations.map { it.route }
+        androidx.compose.runtime.LaunchedEffect(trainRaised, barShown) {
+            val target = if (trainRaised ?: return@LaunchedEffect) 1f else 0f
+            if (!liftLoaded) {
+                lift.snapTo(target)
+                liftLoaded = true
+            } else if (barShown && lift.targetValue != target) {
+                // Past the screen transition, so the eye is on the bar.
+                kotlinx.coroutines.delay(350)
+                lift.animateTo(
+                    target,
+                    androidx.compose.animation.core.spring(
+                        dampingRatio = 0.7f,
+                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
+                    ),
+                )
             }
         }
         // A tapped trial notification reopens the live trial; its Seal action
@@ -318,6 +366,10 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                             // the one chrome element on every screen, so it has
                             // to carry the same hand-drawn edge as the panels.
                             val slotShape = MaterialTheme.shapes.small
+                            // How far this slot's plate stands out: only Train's
+                            // moves, and only while today asks for a trial.
+                            val p = if (destination.raised) lift.value else 0f
+                            val plated = p > 0f
                             val open = {
                                 // Home is the graph start: saving and
                                 // restoring its state would restore the
@@ -338,10 +390,11 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                     .weight(1f)
                                     // Not on the raised slot: the clip would cut
                                     // off the plate standing above it.
-                                    .then(if (destination.raised) Modifier else Modifier.clip(slotShape))
+                                    .then(if (plated) Modifier else Modifier.clip(slotShape))
                                     .then(
-                                        // The raised plate is its own highlight.
-                                        if (selected && !destination.raised) {
+                                        // A plate past halfway is its own highlight;
+                                        // settled, Train wears the usual one.
+                                        if (selected && p < 0.5f) {
                                             Modifier.background(
                                                 Brush.verticalGradient(listOf(Color(0xFF1E3A2C), Color(0xFF16281E))),
                                             )
@@ -350,7 +403,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                         },
                                     )
                                     .then(
-                                        if (selected && !destination.raised) Modifier.inkBorder(IronvellumColors.Emerald, slotShape) else Modifier,
+                                        if (selected && p < 0.5f) Modifier.inkBorder(IronvellumColors.Emerald, slotShape) else Modifier,
                                     )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
@@ -379,7 +432,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                 // "Allies", which is how tests find the tab.
                                 val unreadHere = destination.route == Routes.SOCIAL && inboxUnread > 0
                                 Box(
-                                    if (destination.raised) {
+                                    if (plated) {
                                         // Lifted out of the bar on a square emerald
                                         // plate, the height of a selected tab's,
                                         // raised just clear of its label. The plate
@@ -390,11 +443,11 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                         Modifier
                                             .size(24.dp)
                                             .wrapContentSize(unbounded = true)
-                                            .offset(y = (-20).dp)
-                                            .requiredSize(56.dp)
+                                            .offset(y = androidx.compose.ui.unit.lerp(0.dp, (-20).dp, p))
+                                            .requiredSize(androidx.compose.ui.unit.lerp(24.dp, 56.dp, p))
                                             .clip(slotShape)
-                                            .background(IronvellumColors.Emerald)
-                                            .inkBorder(IronvellumColors.EmeraldBright, slotShape)
+                                            .background(IronvellumColors.Emerald.copy(alpha = p))
+                                            .inkBorder(IronvellumColors.EmeraldBright.copy(alpha = p), slotShape)
                                             // The plate stands above the slot's
                                             // bounds, so it takes taps itself:
                                             // otherwise its top third was dead.
@@ -415,13 +468,16 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                             destination.label
                                         },
                                         tint = when {
-                                            destination.raised -> IronvellumColors.Vault
+                                            // Dark on the plate, emerald once settled:
+                                            // the sword keeps its colour either way, so
+                                            // Train still reads as the app's own tab.
+                                            destination.raised -> androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, p)
                                             selected -> IronvellumColors.Emerald
                                             else -> IronvellumColors.InkMuted
                                         },
                                         // The sword scales with its plate so it does
                                         // not sit lost in the middle of it.
-                                        modifier = if (destination.raised) Modifier.size(28.dp) else Modifier,
+                                        modifier = if (destination.raised) Modifier.size(androidx.compose.ui.unit.lerp(24.dp, 28.dp, p)) else Modifier,
                                     )
                                     if (unreadHere) {
                                         Box(
