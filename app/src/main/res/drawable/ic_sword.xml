@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- The Train tab's glyph: one blade, point up and to the right. Original
-     artwork; the tint comes from the nav slot. -->
+     artwork, drawn on the diagonal so it spans the box corner to corner rather
+     than sitting small in its middle; the tint comes from the nav slot. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp" android:height="24dp"
     android:viewportWidth="24" android:viewportHeight="24">
-    <group android:rotation="45" android:pivotX="12" android:pivotY="12">
-        <path android:fillColor="#FFFFFFFF"
-            android:pathData="M12,0.5 L13.5,3.5 L13.5,14.5 L10.5,14.5 L10.5,3.5 Z" />
-        <path android:fillColor="#FFFFFFFF"
-            android:pathData="M7,14.5 H17 V16.5 H7 Z" />
-        <path android:fillColor="#FFFFFFFF"
-            android:pathData="M11,16.5 H13 V20.5 H11 Z" />
-        <path android:fillColor="#FFFFFFFF"
-            android:pathData="M10.5,21.75 A1.5,1.5 0 1,0 13.5,21.75 A1.5,1.5 0 1,0 10.5,21.75 Z" />
-    </group>
+    <!-- Blade, tip to guard. -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M21.5,2.5 L20.86,5.4 L10.13,16.13 L7.87,13.87 L18.6,3.14 Z" />
+    <!-- Crossguard. -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M12.25,17.69 L10.69,19.25 L4.75,13.31 L6.31,11.75 Z" />
+    <!-- Grip. -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M9.21,16.21 L6.01,19.41 L4.59,17.99 L7.79,14.79 Z" />
+    <!-- Pommel. -->
+    <path android:fillColor="#FFFFFFFF"
+        android:pathData="M2.2,20.1 A1.7,1.7 0 1,0 5.6,20.1 A1.7,1.7 0 1,0 2.2,20.1 Z" />
 </vector>
