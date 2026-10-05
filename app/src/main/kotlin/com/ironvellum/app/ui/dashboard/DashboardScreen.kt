@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -116,9 +117,10 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.BoxWithConstraints
 import com.ironvellum.app.ui.components.Term
 import com.ironvellum.app.ui.components.TermInfo
 
@@ -143,6 +145,8 @@ class DashboardUi(
     val pace: SessionClock.Pace = SessionClock.Pace(),
     /** Weekdays (1 = Monday) whose scheduled rite was sealed this week. */
     val weekDone: Set<Int> = emptySet(),
+    /** Lifts whose peak was set lately AND beat an earlier trial: a first trial is not a peak. */
+    val newPeaks: List<com.ironvellum.app.domain.LiftRecord> = emptyList(),
 )
 
 /**
@@ -172,6 +176,27 @@ internal fun weekDoneDays(
     }.toSet()
 }
 
+/**
+ * Peaks to name on Today: set within the Ledger's fresh window, and higher than
+ * an earlier trial of the same lift - the first trial of anything is its best
+ * by default and is not news.
+ */
+internal fun newPeaks(
+    history: List<Pair<WorkoutSession, List<com.ironvellum.app.domain.SessionSet>>>,
+    exercises: List<com.ironvellum.app.domain.Exercise>,
+    nowMs: Long,
+    limit: Int = 2,
+): List<com.ironvellum.app.domain.LiftRecord> =
+    com.ironvellum.app.domain.LiftRecords.board(
+        sessions = history.map { it.first }.filter { it.completedAtMs != null },
+        sessionSets = history.associate { it.first.id to it.second },
+        exercises = exercises.associateBy { it.id },
+        nowMs = nowMs,
+    )
+        .filter { com.ironvellum.app.domain.LiftRecords.isFresh(it, nowMs) && it.series.indexOfFirst { v -> v == it.bestE1rmKg } > 0 }
+        .sortedByDescending { it.bestAtMs }
+        .take(limit)
+
 class DashboardViewModel(
     private val repo: Repository,
     /** What the lifter last told the generator; times the quest estimate. */
@@ -197,6 +222,7 @@ class DashboardViewModel(
         repo.observeHealthDays(),
         selectedDay,
         repo.observeHealthSyncedAt(),
+        repo.observeExercises(),
     ) { values ->
         @Suppress("UNCHECKED_CAST")
         val profile = values[0] as PlayerProfile?
@@ -235,6 +261,7 @@ class DashboardViewModel(
             focus = SessionClock.focusFor(savedFocus, profile?.trainingMode),
             pace = SessionClock.pace(history),
             weekDone = weekDoneDays(history.map { it.first }, presets, today, ZoneId.systemDefault()),
+            newPeaks = newPeaks(history, values[8] as List<com.ironvellum.app.domain.Exercise>, System.currentTimeMillis()),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
 
@@ -312,14 +339,112 @@ internal fun stepsAsOfCaption(syncedAtMs: Long?, today: LocalDate, zone: ZoneId 
  * Pitch of one manifest row, measured on device: 12sp of label between 3dp of
  * padding, plus the 2dp hairline under it. Fixed, because the app pins a single
  * text scale - which is what makes "how many rows fit" arithmetic instead of a
- * measure pass. Measured at 23.4dp on device and rounded up: over-counting rows clips the
+ * measure pass. Measured at 23.4dp and rounded up: over-counting rows clips the
  * last one, under-counting only wastes a slot.
  */
 private val QUEST_ROW_HEIGHT = 24.dp
 
 /** The rest-day art's two sizes: it steps between them, never scales. */
 private val REST_ART_LARGE = 200.dp
-private val REST_ART_SMALL = 120.dp
+private val REST_ART_SMALL = 96.dp
+
+/** RESPITE, the oath line and the 44dp "Next:" target, as measured on device. */
+private val REST_TEXT_HEIGHT = 112.dp
+
+/**
+ * The day's movements, whole rows only, spread over the card's remaining
+ * height when [fill]. A clipped half row reads as a rendering fault, so rows
+ * that do not fit give way to a "+N MORE" line in the last slot. [done] marks
+ * them as sealed rather than ahead.
+ */
+@Composable
+private fun ColumnScope.Manifest(entries: List<com.ironvellum.app.domain.PresetEntry>, done: Boolean, fill: Boolean) {
+    BoxWithConstraints(if (fill) Modifier.weight(1f) else Modifier) {
+        val fits = if (fill) (maxHeight / QUEST_ROW_HEIGHT).toInt() else entries.size
+        // Below two slots there is no room for both: one real movement beats a
+        // line saying how many there are.
+        val moves = entries.take(if (fits < entries.size) (fits - 1).coerceAtLeast(1) else fits)
+        Column(
+            verticalArrangement = if (fill) Arrangement.SpaceEvenly else Arrangement.Top,
+            modifier = if (fill) Modifier.fillMaxHeight() else Modifier,
+        ) {
+            moves.forEachIndexed { index, entry ->
+                Row(
+                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                ) {
+                    if (done) {
+                        Text("\u2713", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.SovereignGold)
+                    } else {
+                        Box(Modifier.size(4.dp).background(IronvellumColors.SystemGreen))
+                    }
+                    Text(
+                        entry.exerciseName,
+                        style = MaterialTheme.typography.labelMedium,
+                        color = if (done) IronvellumColors.InkMuted else IronvellumColors.Ink,
+                        modifier = Modifier.weight(1f),
+                        maxLines = 1,
+                    )
+                    Text(
+                        "${entry.targetSets}\u00D7${entry.targetReps}",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = ChakraPetch,
+                        color = if (done) IronvellumColors.InkMuted else IronvellumColors.SystemGreen,
+                    )
+                }
+                if (index != moves.lastIndex) {
+                    Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = index))
+                }
+            }
+            val hidden = entries.size - moves.size
+            if (hidden > 0 && fits >= 2) {
+                Text(
+                    "+$hidden MORE",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    letterSpacing = IronvellumTracking.InlineLabel,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
+    }
+}
+
+/** "Wed" for 3. */
+private fun dayName(day: Int): String =
+    DAY_LABELS[day].orEmpty().lowercase().replaceFirstChar { it.uppercase() }
+
+/** One line of RECENT: what, and what it came to. */
+@Composable
+private fun RecentRow(left: String, right: String, rightColor: Color, onClick: (() -> Unit)? = null) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(MaterialTheme.shapes.extraSmall)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
+            .heightIn(min = 44.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            left,
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.Ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+        Text(
+            right,
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            color = rightColor,
+            letterSpacing = IronvellumTracking.InlineLabel,
+            modifier = Modifier.padding(start = 12.dp),
+        )
+    }
+}
 
 @Composable
 private fun RestDayArt(modifier: Modifier) {
@@ -405,13 +530,8 @@ fun DashboardScreen(
     val tightHome = linesOfRoom < 740f
     // Below this the column cannot hold the dashboard at all: landscape
     // measures ~411, a small display at 2x text ~347, a 320dp phone 693,
-    // stock portrait 891.
-    //
-    // 520 was too low. Measured at 533 the page still refused to scroll, the
-    // quest card's unweighted text ate its slot, and the Accept button was
-    // measured down to a 14dp bar with no label on it - the exact failure the
-    // weighted manifest exists to prevent, one threshold below where it was
-    // being watched for.
+    // stock portrait 891. Only there does the page scroll; everywhere else it
+    // is one screen, filled.
     val shortWindow = linesOfRoom < 620f
 
     Column(
@@ -636,7 +756,18 @@ fun DashboardScreen(
         // workout saw a bright tick above a quest still offering to start.
         fun questDoneFor(day: Int): Boolean = day in ui.weekDone
 
-        // Week rail: a hairline, not a fourth card.
+        // Week rail: a hairline, not a fourth card, under how the week stands.
+        val scheduled = ui.presets.mapNotNull { it.scheduledDay }.toSet()
+        if (scheduled.isNotEmpty()) {
+            Text(
+                "THIS WEEK · ${ui.weekDone.size} OF ${scheduled.size}",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                letterSpacing = IronvellumTracking.SectionHeader,
+                modifier = Modifier.padding(bottom = 2.dp),
+            )
+        }
         AnimatedVisibility(shown, enter = fadeIn(tween(300, delayMillis = 140))) {
             Row(
                 Modifier.fillMaxWidth(),
@@ -728,39 +859,32 @@ fun DashboardScreen(
                 it.presetId == preset.id && (it.completedAtMs ?: 0L) >= todayStart
             }
         }
-        val questDoneToday = questSessionToday != null
-
-        // The quest panel takes every remaining pixel - which is what keeps its
-        // button measured and on screen - and the manifest inside spreads into
-        // them, so the slack becomes row spacing instead of a void.
-        //
-        // On a short window (landscape, or a small display at 2x text) a
-        // weighted panel is measured after the unweighted content above it,
-        // gets nothing, and takes the button down with it. There it wraps its
-        // content and the page scrolls instead.
-        // The card has no Begin of its own: the act lives on Train, under the
-        // raised tab. A tap opens the rite it shows - on a rest day, the next
-        // one - where it can be read whole and begun.
-        val cardRite = selectedPreset ?: (1..7).map { (selectedDay - 1 + it) % 7 + 1 }
+        // The next scheduled rite after the selected day, wrapping the week.
+        val nextRite = (1..7).map { (selectedDay - 1 + it) % 7 + 1 }
             .firstNotNullOfOrNull { day -> ui.presets.firstOrNull { it.scheduledDay == day } }
+
+        // The day card takes the page's remaining height, so Today is one full
+        // screen with no scroll. What it holds is drawn at fixed sizes - whole
+        // movement rows, the rest-day art at one of two sizes - and only the
+        // gaps between them grow: stretched content was why the art changed
+        // size from day to day. A tap opens the rite it shows - on a rest day,
+        // the next one - where it can be read whole and begun on Train.
         InkPanel(
             if (shortWindow) Modifier.fillMaxWidth() else Modifier.fillMaxWidth().weight(1f),
             accent = when {
-                questDoneToday -> IronvellumColors.SovereignGold
+                questSessionToday != null -> IronvellumColors.SovereignGold
                 isTodaySelected -> IronvellumColors.SystemGreen
                 else -> IronvellumColors.Rune
             },
-            onClick = cardRite?.let { rite -> { onOpenRite(rite.id) } },
+            onClick = (selectedPreset ?: nextRite)?.let { rite -> { onOpenRite(rite.id) } },
         ) {
-            // The day and the plan line each get a line: side by side, the
-            // plan's time estimate was the part that fell off ("~31…").
-            // The last workout shares the day's line, right-aligned: as its own
-            // row between the card and the Garrison strip it read as a stray
-            // caption squeezed between two panels.
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    if (isTodaySelected) "TODAY · ${DAY_LABELS[selectedDay].orEmpty()}"
-                    else DAY_LABELS[selectedDay].orEmpty(),
+                    when {
+                        questSessionToday != null -> "TODAY · SEALED"
+                        isTodaySelected -> "TODAY · ${DAY_LABELS[selectedDay].orEmpty()}"
+                        else -> DAY_LABELS[selectedDay].orEmpty()
+                    },
                     style = MaterialTheme.typography.labelSmall,
                     fontFamily = ChakraPetch,
                     color = if (isTodaySelected) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
@@ -768,92 +892,27 @@ fun DashboardScreen(
                     maxLines = 1,
                 )
                 Spacer(Modifier.weight(1f))
-                ui.recent.firstOrNull()?.let { last ->
-                    val live = last.completedAtMs == null
+                // A trial under way is continued from here in one tap; the last
+                // sealed one now lives in RECENT below.
+                live?.let { trial ->
                     Text(
-                        if (live) "RESUME · ${last.label}"
-                        else "LAST · ${last.label} · ${formatDate(last.completedAtMs ?: last.startedAtMs, "MMM d")}",
+                        "RESUME · ${trial.label}",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
-                        color = if (live) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                        color = IronvellumColors.SovereignGold,
                         letterSpacing = IronvellumTracking.InlineLabel,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .padding(start = 12.dp)
                             .clip(MaterialTheme.shapes.extraSmall)
-                            // A finished workout opens its record; a live one
-                            // is continued.
-                            .clickable { if (live) onStartSession(last.id) else onOpenWorkout(last.id) }
+                            .clickable { onStartSession(trial.id) }
                             .padding(horizontal = 4.dp, vertical = 6.dp),
                     )
                 }
             }
-            if (selectedPreset != null) {
-                Text(
-                    SessionClock.planLine(selectedPreset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(selectedPreset.id)),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (selectedPreset != null) {
-                if (questDoneToday) {
-                    // The done state replaces the manifest entirely: the
-                    // SpaceEvenly rows Column is weighted, so rendering both
-                    // made six exercises collide with the complete text.
-                    Column(
-                        Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(
-                            selectedPreset.name.uppercase(),
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = IronvellumColors.EmeraldBright,
-                            letterSpacing = 1.sp,
-                        )
-                        if (selectedPreset.note.isNotBlank()) {
-                            Text(
-                                selectedPreset.note,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = IronvellumColors.InkMuted,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                        Text(
-                            "SEALED",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = IronvellumColors.SovereignGold,
-                            letterSpacing = 1.sp,
-                        )
-                        Text(
-                            "The ink is dry on today's trial. Tomorrow's page waits.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = IronvellumColors.InkMuted,
-                        )
-                        Spacer(Modifier.weight(1f))
-                        Text(
-                            // Was the literal "6 MOVES · 22 SETS · DONE": a
-                            // layout stand-in that shipped, telling every lifter
-                            // the same invented tally whatever she trained.
-                            "+${questSessionToday.xpAwarded} XP · ${questSessionToday.strengthScore} STR · DONE",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            letterSpacing = IronvellumTracking.InlineLabel,
-                            color = IronvellumColors.InkMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                } else {
+            when {
+                selectedPreset != null -> {
                     Text(
                         selectedPreset.name.uppercase(),
                         style = MaterialTheme.typography.headlineSmall,
@@ -862,178 +921,158 @@ fun DashboardScreen(
                         color = IronvellumColors.EmeraldBright,
                         letterSpacing = 1.sp,
                     )
-                    if (selectedPreset.note.isNotBlank()) {
+                    if (questSessionToday != null) {
                         Text(
-                            selectedPreset.note,
-                            style = MaterialTheme.typography.bodySmall,
+                            "+${questSessionToday.xpAwarded} XP · ${questSessionToday.strengthScore} STR",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
+                            color = IronvellumColors.SovereignGold,
+                            letterSpacing = IronvellumTracking.InlineLabel,
+                        )
+                        nextRite?.takeIf { it.id != selectedPreset.id }?.let { next ->
+                            Text(
+                                "Next: ${next.name} · ${dayName(next.scheduledDay!!)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = IronvellumColors.InkMuted,
+                                modifier = Modifier.padding(top = 6.dp),
+                            )
+                        }
+                    } else {
+                        Text(
+                            SessionClock.planLine(selectedPreset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(selectedPreset.id)),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontFamily = ChakraPetch,
                             color = IronvellumColors.InkMuted,
-                            // The note also lives on the Train card, so it is
-                            // the lifter's own words: two lines, readable,
-                            // before any mark that more follows.
-                            maxLines = 2,
+                            letterSpacing = IronvellumTracking.InlineLabel,
+                            maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
                     }
-                    // The manifest is the ONLY flexible child: it takes what
-                    // the header leaves. (The card's Begin moved to Train; it
-                    // was once measured at zero height at 2.0x font scale.)
-                    //
-                    // Whole rows only. A scroll here clipped the last movement
-                    // through its middle - on a 320dp screen the card had room
-                    // for one and a half rows, and half a row reads as a
-                    // rendering fault rather than as "there is more". Text does
-                    // not scale (the app pins one font size), so a row is a
-                    // constant height and how many fit is arithmetic.
-                    // The card owns the page's slack, so the manifest spends
-                    // it: rows spread over the slot rather than stacking at the
-                    // top and leaving a void below.
-                    //
-                    // No weight once the page scrolls, though: a weighted child
-                    // in an unbounded column is measured with no space at all,
-                    // and the manifest rendered as nothing. Unweighted it sees
-                    // an infinite slot, lists every movement, and the page
-                    // scrolls - which is the deal at that size.
-                    BoxWithConstraints(if (shortWindow) Modifier else Modifier.weight(1f)) {
-                        val fits = (maxHeight / QUEST_ROW_HEIGHT).toInt()
-                        val all = selectedPreset.entries
-                        // The space is the cap. A fixed limit of three left a
-                        // band of dead card below the button on a roomy screen
-                        // and showed nothing at all on a cramped one.
-                        //
-                        // When rows are dropped the "+N MORE" line takes the
-                        // last slot, so it is never the thing that clips. Below
-                        // two slots there is no room for both: one real movement
-                        // beats a line saying how many there are, since the
-                        // header already reads "5 MOVES · 18 SETS".
-                        val moves = all.take(if (fits < all.size) (fits - 1).coerceAtLeast(1) else fits)
-                        Column(verticalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxHeight()) {
-                            moves.forEachIndexed { index, entry ->
-                                Row(
-                                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                                ) {
-                                    Box(Modifier.size(4.dp).background(IronvellumColors.SystemGreen))
-                                    Text(
-                                        entry.exerciseName,
-                                        style = MaterialTheme.typography.labelMedium,
-                                        color = IronvellumColors.Ink,
-                                        modifier = Modifier.weight(1f),
-                                        maxLines = 1,
-                                    )
-                                    Text(
-                                        "${entry.targetSets}\u00D7${entry.targetReps}",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontFamily = ChakraPetch,
-                                        color = IronvellumColors.SystemGreen,
-                                    )
-                                }
-                                if (index != moves.lastIndex) {
-                                    Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = index))
-                                }
-                            }
-                            val hidden = all.size - moves.size
-                            if (hidden > 0 && fits >= 2) {
-                                Text(
-                                    "+$hidden MORE",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontFamily = ChakraPetch,
-                                    letterSpacing = IronvellumTracking.InlineLabel,
-                                    color = IronvellumColors.InkMuted,
-                                    modifier = Modifier.padding(top = 4.dp),
-                                )
-                            }
-                        }
-                    }
+                    Spacer(Modifier.height(10.dp))
+                    // Sealed, the same list reads as what was done.
+                    Manifest(selectedPreset.entries, done = questSessionToday != null, fill = !shortWindow)
                 }
-            } else if (ui.presets.isEmpty()) {
-                // A lifter who skipped onboarding has no routine at all: every
-                // day reads REST DAY and "pick another day above" dead-ends on
-                // the same card. Name the real state and offer the way out.
-                Text(
-                    "NO CYCLE YET",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = IronvellumColors.SystemGreen,
-                    letterSpacing = 1.sp,
-                )
-                Text(
-                    "Your cycle is unwritten. Build one and its rites land here.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
-                Spacer(Modifier.weight(1f))
-                IronvellumButton(label = "Build a Cycle", onClick = onOpenForge, modifier = Modifier.fillMaxWidth())
-                // Not everyone wants a plan first: a trial can be logged
-                // exercise by exercise with no cycle at all.
-                Spacer(Modifier.height(8.dp))
-                IronvellumButton(
-                    label = "Begin an Open Trial",
-                    onClick = { viewModel.beginOpen(onStartSession) },
-                    quiet = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            } else {
-                Text(
-                    "RESPITE",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = IronvellumColors.SystemGreen,
-                    letterSpacing = 1.sp,
-                )
-                // Owner rule: a rest day keeps the streak and says so.
-                Text(
-                    if (ui.streak > 0) "Your oath holds through respite — ${plural(ui.streak, "1 day", "${ui.streak} days")} kept." else "A day of respite.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
-                // The next scheduled day after this one, wrapping the week.
-                val next = (1..7).map { (selectedDay - 1 + it) % 7 + 1 }
-                    .firstNotNullOfOrNull { day -> ui.presets.firstOrNull { it.scheduledDay == day } }
-                if (next != null) {
-                    val nextDay = next.scheduledDay!!
-                    val dayName = DAY_LABELS[nextDay].orEmpty().lowercase().replaceFirstChar { it.uppercase() }
+                ui.presets.isEmpty() -> {
+                    // A lifter who skipped onboarding has no routine at all:
+                    // name the real state and offer the way out.
                     Text(
-                        "Next: ${next.name} · $dayName",
-                        style = MaterialTheme.typography.bodySmall,
+                        "NO CYCLE YET",
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
                         color = IronvellumColors.SystemGreen,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .heightIn(min = 44.dp)
-                            .clickable(onClickLabel = "Show $dayName") { viewModel.selectDay(nextDay) }
-                            .wrapContentHeight(Alignment.CenterVertically),
+                        letterSpacing = 1.sp,
+                    )
+                    Text(
+                        "Your cycle is unwritten. Build one and its rites land here.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                    )
+                    Spacer(if (shortWindow) Modifier.height(12.dp) else Modifier.weight(1f))
+                    IronvellumButton(label = "Build a Cycle", onClick = onOpenForge, modifier = Modifier.fillMaxWidth())
+                    // Not everyone wants a plan first: a trial can be logged
+                    // exercise by exercise with no cycle at all.
+                    Spacer(Modifier.height(8.dp))
+                    IronvellumButton(
+                        label = "Begin an Open Trial",
+                        onClick = { viewModel.beginOpen(onStartSession) },
+                        quiet = true,
+                        modifier = Modifier.fillMaxWidth(),
                     )
                 }
-                // The rest-day art was drawn for this panel. It lives in this
-                // branch only: outside it, it rendered on training days too
-                // and its weighted spacers starved the manifest to zero rows.
-                // The art is a fixed size, centred in whatever slack the panel
-                // has. Sized to the slack, it grew and shrank with everything
-                // else in the card (the streak line, "Next:", the take-it-early
-                // button), so every rest day drew it differently. It steps down
-                // only when the slack cannot hold it, and is dropped below that
-                // rather than squeezing the panel's button off screen.
-                // On a short window the page scrolls, so there is no slack to
-                // centre in and it takes the small size.
-                if (shortWindow) {
-                    Spacer(Modifier.height(16.dp))
-                    RestDayArt(Modifier.align(Alignment.CenterHorizontally).size(REST_ART_SMALL))
-                    Spacer(Modifier.height(16.dp))
-                } else {
-                    BoxWithConstraints(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                        val size = when {
-                            maxHeight >= REST_ART_LARGE + 16.dp -> REST_ART_LARGE
-                            maxHeight >= REST_ART_SMALL + 16.dp -> REST_ART_SMALL
-                            else -> null
+                else -> {
+                    // The rest-day art is drawn at one of two fixed sizes, never
+                    // scaled, so every rest day draws it the same: large under the
+                    // text when the card has the height, small beside it when
+                    // RECENT has taken that height.
+                    @Composable
+                    fun RespiteText() {
+                        Text(
+                            "RESPITE",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontFamily = ChakraPetch,
+                            fontWeight = FontWeight.Bold,
+                            color = IronvellumColors.SystemGreen,
+                            letterSpacing = 1.sp,
+                        )
+                        // Owner rule: a rest day keeps the streak and says so.
+                        Text(
+                            if (ui.streak > 0) "Your oath holds through respite — ${plural(ui.streak, "1 day", "${ui.streak} days")} kept." else "A day of respite.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                        )
+                        nextRite?.let { next ->
+                            val nextDay = next.scheduledDay!!
+                            Text(
+                                "Next: ${next.name} · ${dayName(nextDay)}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = IronvellumColors.SystemGreen,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier
+                                    .heightIn(min = 44.dp)
+                                    .clickable(onClickLabel = "Show ${dayName(nextDay)}") { viewModel.selectDay(nextDay) }
+                                    .wrapContentHeight(Alignment.CenterVertically),
+                            )
                         }
-                        if (size != null) RestDayArt(Modifier.size(size))
+                    }
+                    if (shortWindow) {
+                        RespiteText()
+                        RestDayArt(Modifier.align(Alignment.CenterHorizontally).padding(vertical = 12.dp).size(REST_ART_SMALL))
+                    } else {
+                        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
+                            if (maxHeight >= REST_TEXT_HEIGHT + REST_ART_LARGE + 8.dp) {
+                                Column(Modifier.fillMaxHeight()) {
+                                    RespiteText()
+                                    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
+                                        RestDayArt(Modifier.size(REST_ART_LARGE))
+                                    }
+                                }
+                            } else {
+                                Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+                                    Column(Modifier.weight(1f)) { RespiteText() }
+                                    RestDayArt(Modifier.padding(start = 12.dp).size(REST_ART_SMALL))
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
+
+        // What happened lately: the last sealed trial and any fresh peak. Gone
+        // entirely before there is anything to show, rather than an empty box.
+        // Not the trial the day card is already reporting as sealed.
+        val lastSealed = ui.recent.firstOrNull { it.completedAtMs != null && it.id != questSessionToday?.id }
+        if (lastSealed != null || ui.newPeaks.isNotEmpty()) {
+            Spacer(Modifier.height(12.dp))
+            InkPanel(Modifier.fillMaxWidth()) {
+                Text(
+                    "RECENT",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                    letterSpacing = IronvellumTracking.SectionHeader,
+                    modifier = Modifier.semantics { heading() },
+                )
+                ui.newPeaks.take(if (lastSealed != null) 1 else 2).forEach { peak ->
+                    RecentRow(
+                        left = "NEW PEAK · ${peak.name}",
+                        right = "${"%.0f".format(java.util.Locale.US, peak.bestE1rmKg)} KG",
+                        rightColor = IronvellumColors.EmeraldBright,
+                    )
+                }
+                lastSealed?.let { trial ->
+                    RecentRow(
+                        left = "${trial.label} · ${formatDate(trial.completedAtMs ?: trial.startedAtMs, "MMM d")}",
+                        right = "+${trial.xpAwarded} XP",
+                        rightColor = IronvellumColors.SovereignGold,
+                        onClick = { onOpenWorkout(trial.id) },
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(12.dp))
 
         // The Garrison's way in. It left the nav bar and took the footer that
         // used to repeat the Train tab ("routine, workouts & full log"), so
@@ -1043,7 +1082,6 @@ fun DashboardScreen(
         val waiting = garrison?.inscriptions ?: 0
         Row(
             Modifier
-                .padding(top = 8.dp)
                 .fillMaxWidth()
                 // A filled plate with a green edge and a chevron, so it reads as
                 // a control to press rather than a caption under the quest.
@@ -1100,9 +1138,8 @@ fun DashboardScreen(
                 modifier = Modifier.size(20.dp),
             )
         }
-        // The page's side margin again below the last strip, so it sits clear
-        // of the nav bar instead of reading as content cut off mid-scroll.
-        Spacer(Modifier.height(16.dp))
+        // Clear of the raised Train plate, which stands 18dp above the bar.
+        Spacer(Modifier.height(28.dp))
     }
 
     // Titles reconciled at startup (health data, imports) have no session to
