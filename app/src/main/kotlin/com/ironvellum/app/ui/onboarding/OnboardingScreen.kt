@@ -622,7 +622,7 @@ private fun StepHeader(step: Int, onSkip: () -> Unit) {
         }
         // Sighted people get the cost of skipping too, not only TalkBack.
         Text(
-            "Skipping leaves your scores blank and builds no cycle. Add your body in Settings and build a cycle in Rites any time.",
+            "Skipping leaves your scores blank and builds no cycle. Add your body in Settings and build a cycle in Train any time.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             textAlign = TextAlign.End,

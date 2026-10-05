@@ -44,7 +44,7 @@ internal fun shareRoutineCode(context: Context, code: String) {
         type = "text/plain"
         putExtra(
             Intent.EXTRA_TEXT,
-            "Ironvellum cycle \u2014 paste into Rites \u203A New Rite \u203A Import code\n$code",
+            "Ironvellum cycle \u2014 paste into Train \u203A New Rite \u203A Import code\n$code",
         )
     }
     context.startActivity(Intent.createChooser(intent, "Share cycle"))

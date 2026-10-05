@@ -118,7 +118,7 @@ class CappedListsHoldAtScaleTest {
 
     @Test
     fun theActivityLogIsBoundedWhileTheFullLogIsNot() {
-        compose.onAllNodesWithContentDescription("Rites").onFirst().performClick()
+        compose.onAllNodesWithContentDescription("Train").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
         // Every seeded session is labelled "Campaign N", so counting those rows

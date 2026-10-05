@@ -374,7 +374,7 @@ class AccessibilityChecksTest {
     fun longScreensExposeTheirSectionsAsHeadings() {
         val without = mutableListOf<String>()
         // Muster is no longer a tab: it opens from Today's footer.
-        for (path in listOf(listOf("Ledger"), listOf("Today", "THE VEIL"), listOf("Rites"))) {
+        for (path in listOf(listOf("Ledger"), listOf("Today", "THE VEIL"), listOf("Train"))) {
             returnToNavigation()
             compose.onNodeWithContentDescription(path.first()).performClick()
             if (path.drop(1).any { !openSurface(it) }) {
@@ -393,7 +393,7 @@ class AccessibilityChecksTest {
         firstOrNull { it.key == key }?.value as? T
 
     private companion object {
-        val DESTINATIONS = listOf("Rites", "Ledger", "Codex", "Allies", "Today")
+        val DESTINATIONS = listOf("Train", "Ledger", "Codex", "Allies", "Today")
 
         /**
          * Click paths: the destination's content description, then each label
@@ -416,8 +416,8 @@ class AccessibilityChecksTest {
             // test profile has none, so the pane is not on the sweep.)
             listOf("Ledger", "TRAINING"),
             listOf("Ledger", "DAILY"),
-            listOf("Rites", "EXERCISES"),
-            listOf("Rites", "FULL CHRONICLE"),
+            listOf("Train", "EXERCISES"),
+            listOf("Train", "FULL CHRONICLE"),
             // Two levels down, and the densest screens in the app: the skill
             // sheet and the preset editor are wall-to-wall glyph steppers,
             // which is exactly where an unannounceable control hides.
@@ -426,7 +426,7 @@ class AccessibilityChecksTest {
             // composes once load is on: reach both through their own entry points
             // rather than leaving those glyphs unmeasured.
             listOf("Codex", "PATHS", "Pull", "Dead Hang", "LOG", "ADD LOAD"),
-            listOf("Rites", "[ EDIT ]"),
+            listOf("Train", "[ EDIT ]"),
             // Settings and the Muster roll replace the nav bar, so they go late.
             listOf("Today", "Settings"),
             // One level into the Settings hub: the sub-screens with fields,
@@ -437,7 +437,7 @@ class AccessibilityChecksTest {
             listOf("Today", "THE VEIL"),
             // Truly last: starting a session leaves a live trial whose abandon
             // prompt sits between the sweep and the nav bar.
-            listOf("Rites", "OPEN TRIAL"),
+            listOf("Train", "OPEN TRIAL"),
         )
 
         /** destination to the tab labels of one row inside it. */

@@ -42,8 +42,8 @@ the techniques to master. Allies gather in **Circles** and are measured in
 | Tab | Holds |
 |---|---|
 | **Today** | Today's Trial, your oath, ascension, the way to the Veil |
-| **Rites** | Your rites and cycle, the Forge, the Chronicle, muscle coverage |
 | **Ledger** | Frame, Training and Daily readings |
+| **Train** | The centre tab, raised: today's rite to begin, your rites and cycle, the Forge, the Chronicle, muscle coverage |
 | **Codex** | Deeds, Paths, Journal |
 | **Allies** | Tidings, the Reckoning, your Circle, Missives |
 
