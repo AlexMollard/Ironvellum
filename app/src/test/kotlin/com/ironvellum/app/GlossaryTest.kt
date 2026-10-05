@@ -39,6 +39,7 @@ class GlossaryTest {
     /** Files whose literals are data formats, not copy. */
     private val exemptFiles = mapOf(
         "domain/CsvWorkoutReader.kt" to "parses other apps' CSV headers (\"Workout Name\")",
+        "domain/WorkoutCsvWriter.kt" to "writes Strong's CSV header (\"Workout Name\")",
         "domain/ImportAliases.kt" to "maps other apps' exercise names on import",
         "domain/ExportReader.kt" to "reads archive JSON keys",
         "domain/ExportWriter.kt" to "writes archive JSON keys",

@@ -36,6 +36,7 @@ import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.ImportAliases
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrainingMode
+import com.ironvellum.app.domain.WorkoutCsvWriter
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
@@ -54,6 +55,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.time.LocalDate
+import java.time.ZoneId
 
 private val HEALTH_PERMISSIONS = setOf(
     HealthPermission.getReadPermission(WeightRecord::class),
@@ -278,6 +281,28 @@ class SettingsViewModel(
                 _exporting.value = false
             }
             if (json != null) onReady(json)
+        }
+    }
+
+    fun exportCsv(period: WorkoutCsvWriter.Period, onReady: (fileName: String, csv: String) -> Unit) {
+        if (_exporting.value) return
+        viewModelScope.launch {
+            _exporting.value = true
+            _exportError.value = null
+            val today = LocalDate.now()
+            val csv = try {
+                repo.exportCsv(period, today, ZoneId.systemDefault())
+                    .also { if (it == null) _exportError.value = "No trials logged this ${period.noun}." }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.w("Ironvellum", "csv export failed: ${e.message}")
+                _exportError.value = "Could not export: ${e.message ?: "the CSV could not be built"}"
+                null
+            } finally {
+                _exporting.value = false
+            }
+            if (csv != null) onReady("ironvellum_${period.noun}_$today.csv", csv)
         }
     }
 

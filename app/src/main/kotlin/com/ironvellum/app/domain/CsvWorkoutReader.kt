@@ -129,8 +129,10 @@ object CsvWorkoutReader {
     }
 
     fun read(text: String, strongWeightIsLbs: Boolean = false): ParsedImport {
-        val rows = parseCsv(text)
-        val header = rows.firstOrNull()?.map { it.trim().trimStart('\uFEFF') }
+        // A BOM (Excel's "CSV UTF-8") is dropped once here: left in, it hid the
+        // Date column from the per-format column lookup and every row was skipped.
+        val rows = parseCsv(text.removePrefix("\uFEFF"))
+        val header = rows.firstOrNull()?.map { it.trim() }
             ?: return ParsedImport(Source.STRONG, emptyList(), null, listOf(unrelated("The file is empty.")))
         return when {
             header.firstOrNull()?.equals("Date", true) == true &&

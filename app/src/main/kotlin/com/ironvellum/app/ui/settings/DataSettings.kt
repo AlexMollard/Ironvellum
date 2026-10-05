@@ -4,6 +4,8 @@ import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -18,6 +20,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.domain.WorkoutCsvWriter
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SettingsCaption
@@ -106,6 +109,27 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                     },
                     modifier = Modifier.fillMaxWidth(),
                 )
+                Spacer(Modifier.height(14.dp))
+                SettingsCaption("Trials as a CSV that spreadsheets and Strong can open.")
+                Spacer(Modifier.height(10.dp))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    listOf(
+                        WorkoutCsvWriter.Period.WEEK to "Week",
+                        WorkoutCsvWriter.Period.MONTH to "Month",
+                        WorkoutCsvWriter.Period.YEAR to "Year",
+                    ).forEach { (period, label) ->
+                        IronvellumButton(
+                            label = label,
+                            onClick = {
+                                viewModel.exportCsv(period) { fileName, csv ->
+                                    scope.launch { shareExport(context, "Export trials", fileName, csv, "text/csv") }
+                                }
+                            },
+                            quiet = true,
+                            modifier = Modifier.weight(1f),
+                        )
+                    }
+                }
             }
             exportError?.let {
                 Spacer(Modifier.height(6.dp))
