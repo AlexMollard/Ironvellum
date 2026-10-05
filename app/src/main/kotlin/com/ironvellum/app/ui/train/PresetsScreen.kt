@@ -217,88 +217,93 @@ fun PresetsScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(12.dp))
-        Text(
-            "TRAIN",
-            style = MaterialTheme.typography.labelLarge,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = 6.sp,
-            // The one heading on an empty board, where the cycle's is hidden.
-            modifier = Modifier.semantics { heading() },
-        )
-        Spacer(Modifier.height(16.dp))
-        // The screen leads with the one thing to do now: today's rite, the
-        // trial under way, or what a rest day allows. Open Trial used to be
-        // the lead button, which put the side door ahead of the plan.
-        TrainLeadCard(
-            focus = focus,
-            ui = ui,
-            today = today,
-            onOpenRite = onOpenRite,
-            onBegin = { id -> viewModel.begin(id, onStartSession) },
-            onContinue = onStartSession,
-            onForge = { onGenerate("week", null) },
-            last = sessions.filter { it.completedAtMs != null }.maxByOrNull { it.completedAtMs ?: 0L },
-        )
-        Spacer(Modifier.height(GROUP_GAP))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(GROUP_GAP)) {
-            // No second trial while one is under way.
-            if (focus !is TrainFocus.Live) {
-                IronvellumButton(
-                    label = "Open Trial",
-                    onClick = { viewModel.beginQuick(onQuickSession) },
-                    quiet = true,
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            IronvellumButton(label = "New Rite", onClick = { showNewChooser = true }, quiet = true, modifier = Modifier.weight(1f))
+        val context = androidx.compose.ui.platform.LocalContext.current
+        val share = {
+            shareRefusal = null
+            viewModel.shareRoutine(onRefused = { shareRefusal = it }) { code -> shareRoutineCode(context, code) }
         }
-
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "TRAIN",
+                style = MaterialTheme.typography.headlineSmall,
+                fontFamily = ChakraPetch,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                color = IronvellumColors.Ink,
+                letterSpacing = 1.sp,
+                // The one heading on an empty board, where the cycle's is hidden.
+                modifier = Modifier.weight(1f).semantics { heading() },
+            )
+            // With no cycle there is no cycle header to carry New.
+            if (ui.presets.isEmpty()) TrainLink("+ NEW", "New rite") { showNewChooser = true }
+            // No second trial while one is under way.
+            if (focus !is TrainFocus.Live) TrainLink("OPEN TRIAL ›", "Begin an open trial") { viewModel.beginQuick(onQuickSession) }
+        }
+        // What the day is when it is not a rite to begin: the rite to begin
+        // opens in the cycle itself, below.
+        trainStatus(focus)?.let { (line, color) ->
+            Text(
+                line,
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = color,
+                letterSpacing = IronvellumTracking.InlineLabel,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
         importResult?.let { line ->
             Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SystemGreen, modifier = Modifier.padding(top = GROUP_GAP))
         }
-        // With no rites the lead card already says so and offers the Forge;
-        // an empty list under it would say it twice.
+        // The lead card is kept for the two states the cycle cannot show: no
+        // cycle at all, and an open trial under way, which belongs to no rite.
+        if (focus is TrainFocus.NoCycle || (focus is TrainFocus.Live && focus.preset == null)) {
+            Spacer(Modifier.height(GROUP_GAP))
+            TrainLeadCard(
+                focus = focus,
+                ui = ui,
+                today = today,
+                onOpenRite = onOpenRite,
+                onBegin = { id -> viewModel.begin(id, onStartSession) },
+                onContinue = onStartSession,
+                onForge = { onGenerate("week", null) },
+                last = sessions.filter { it.completedAtMs != null }.maxByOrNull { it.completedAtMs ?: 0L },
+            )
+        }
         if (ui.presets.isNotEmpty()) {
         Spacer(Modifier.height(SECTION_GAP))
+        val sealedThisWeek = { preset: WorkoutPreset -> sessions.any { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStart } }
+        val scheduled = ui.presets.filter { it.scheduledDay != null }
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                "YOUR CYCLE",
+                if (scheduled.isEmpty()) "YOUR CYCLE" else "YOUR CYCLE · ${scheduled.count(sealedThisWeek)} OF ${scheduled.size}",
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.InkMuted,
                 letterSpacing = IronvellumTracking.SectionHeader,
                 modifier = Modifier.weight(1f).semantics { heading() },
             )
-            // Sits with the list it exports.
-            run {
-                val context = androidx.compose.ui.platform.LocalContext.current
-                Text(
-                    "SHARE ›",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SystemGreen,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    modifier = Modifier
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .clickable(onClickLabel = "Share cycle") {
-                            shareRefusal = null
-                            viewModel.shareRoutine(onRefused = { shareRefusal = it }) { code -> shareRoutineCode(context, code) }
-                        }
-                        .heightIn(min = 44.dp)
-                        .padding(start = 8.dp)
-                        .wrapContentHeight(Alignment.CenterVertically),
-                )
-            }
+            // Sit with the list they add to and export.
+            TrainLink("+ NEW", "New rite") { showNewChooser = true }
+            TrainLink("SHARE ›", "Share cycle", share)
         }
         shareRefusal?.let { line ->
             Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
         }
-        // One line a rite: the week at a glance. The whole rite - every
-        // movement, its note, Begin and Edit - is one tap away on its page.
+        // The rite to act on now opens in place, with its button: today's to
+        // begin, the one under way to continue, or on a rest day the next one,
+        // which may be taken early. Every other rite is one line, the whole of
+        // it one tap away on its page.
+        val opened: Triple<Long, String, Boolean>? = when (focus) {
+            is TrainFocus.Begin -> Triple(focus.preset.id, "Begin ${focus.preset.name}", false)
+            is TrainFocus.Live -> focus.preset?.let { Triple(it.id, "Continue ${it.name}", false) }
+            is TrainFocus.Respite -> focus.next?.takeIf { focus.canTakeEarly }?.let { Triple(it.id, "Begin ${it.name} early", true) }
+            else -> null
+        }
         InkPanel(Modifier.fillMaxWidth()) {
             ui.presets.forEach { preset ->
-                val sealedThisWeek = sessions.any { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStart }
+                val sealed = sealedThisWeek(preset)
                 val isToday = preset.scheduledDay == today
+                val isOpen = opened?.first == preset.id
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -315,22 +320,24 @@ fun PresetsScreen(
                         letterSpacing = IronvellumTracking.InlineLabel,
                         color = when {
                             isToday -> IronvellumColors.SovereignGold
-                            sealedThisWeek -> IronvellumColors.SystemGreen
+                            sealed -> IronvellumColors.SystemGreen
                             else -> IronvellumColors.InkMuted
                         },
-                        modifier = Modifier.width(36.dp),
+                        modifier = Modifier.width(DAY_COLUMN),
                     )
                     Text(
                         preset.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = if (isToday) IronvellumColors.EmeraldBright else IronvellumColors.Ink,
+                        style = if (isOpen) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
+                        fontWeight = if (isOpen) androidx.compose.ui.text.font.FontWeight.Bold else null,
+                        color = if (isToday || isOpen) IronvellumColors.EmeraldBright else IronvellumColors.Ink,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.weight(1f),
                     )
                     Text(
                         when {
-                            sealedThisWeek -> "SEALED"
+                            sealed -> "SEALED"
+                            isToday && focus is TrainFocus.Live -> "UNDER WAY"
                             isToday -> "TODAY"
                             // "~54 MIN": the tail of the rite's plan line.
                             else -> SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id))
@@ -340,12 +347,34 @@ fun PresetsScreen(
                         fontFamily = ChakraPetch,
                         letterSpacing = IronvellumTracking.InlineLabel,
                         color = when {
-                            sealedThisWeek -> IronvellumColors.SystemGreen
+                            sealed -> IronvellumColors.SystemGreen
                             isToday -> IronvellumColors.SovereignGold
                             else -> IronvellumColors.InkMuted
                         },
                         maxLines = 1,
                     )
+                }
+                if (opened != null && isOpen) {
+                    Text(
+                        SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id)),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(start = DAY_COLUMN + 10.dp),
+                    )
+                    Spacer(Modifier.height(GROUP_GAP))
+                    IronvellumButton(
+                        label = opened.second,
+                        onClick = {
+                            if (focus is TrainFocus.Live) onStartSession(focus.session.id) else viewModel.begin(preset.id, onStartSession)
+                        },
+                        quiet = opened.third,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Spacer(Modifier.height(GROUP_GAP))
                 }
                 if (preset != ui.presets.last()) RowRule(seed = preset.id.toInt())
             }
@@ -443,6 +472,36 @@ fun PresetsScreen(
             onDismiss = { showImport = false },
         )
     }
+}
+
+/**
+ * The day's state as one line under the title, when it is not a rite to
+ * begin - that one opens in the cycle. Null when the cycle says it all.
+ */
+private fun trainStatus(focus: TrainFocus): Pair<String, androidx.compose.ui.graphics.Color>? = when (focus) {
+    is TrainFocus.Sealed ->
+        "TODAY SEALED · +${focus.session.xpAwarded} XP · ${focus.session.strengthScore} STR" to IronvellumColors.SovereignGold
+    is TrainFocus.Respite -> focus.next?.let { "RESPITE · NEXT ${it.name.uppercase()} · ${dayLabel(focus.nextDay ?: 0)}" to IronvellumColors.InkMuted }
+        ?: ("RESPITE · NO RITE FALLS ON A DAY YET" to IronvellumColors.InkMuted)
+    else -> null
+}
+
+/** A section's action as a green text link, as SHARE always was: nothing here competes with Begin. */
+@Composable
+private fun TrainLink(label: String, clickLabel: String, onClick: () -> Unit) {
+    Text(
+        label,
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = ChakraPetch,
+        color = IronvellumColors.SystemGreen,
+        letterSpacing = IronvellumTracking.InlineLabel,
+        modifier = Modifier
+            .clip(MaterialTheme.shapes.extraSmall)
+            .clickable(onClickLabel = clickLabel, onClick = onClick)
+            .heightIn(min = 44.dp)
+            .padding(start = 12.dp)
+            .wrapContentHeight(Alignment.CenterVertically),
+    )
 }
 
 /**
@@ -637,3 +696,6 @@ private val END_GAP = 40.dp
 
 /** A list row: the 48dp touch target, the same in both panels. */
 internal val ROW_HEIGHT = 48.dp
+
+/** The cycle list's weekday column; the opened rite's plan line aligns past it. */
+private val DAY_COLUMN = 36.dp

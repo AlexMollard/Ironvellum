@@ -124,9 +124,12 @@ class CappedListsHoldAtScaleTest {
         // Every seeded session is labelled "Campaign N", so counting those rows
         // counts exactly the history this screen chose to render.
         val onTrain = countRowsWhenSettled("Campaign")
+        // Train names no past session since its cycle took the lead card's
+        // place (the last trial lives in Today's RECENT), so none is fine; what
+        // must never happen is the whole history composing there.
         assertTrue(
             "the Train activity log rendered $onTrain of $SEEDED sessions; it is supposed to be capped",
-            onTrain in 1..CAP_CEILING,
+            onTrain <= CAP_CEILING,
         )
 
         compose.onAllNodesWithText("FULL CHRONICLE", substring = true).onFirst().performClick()
