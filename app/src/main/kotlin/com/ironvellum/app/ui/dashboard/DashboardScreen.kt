@@ -1138,7 +1138,7 @@ fun DashboardScreen(
                 modifier = Modifier.size(20.dp),
             )
         }
-        // Clear of the raised Train plate, which stands 18dp above the bar.
+        // Clear of the raised Train plate, which stands 10dp above the bar.
         Spacer(Modifier.height(28.dp))
     }
 
