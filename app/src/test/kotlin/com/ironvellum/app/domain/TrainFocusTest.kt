@@ -15,8 +15,11 @@ class TrainFocusTest {
     private fun sealed(presetId: Long?, atMs: Long = midnight + 10) =
         WorkoutSession(id = 9, presetId = presetId, label = "x", startedAtMs = atMs - 5, completedAtMs = atMs)
 
+    private val day = 86_400_000L
+
+    // Midnight opens [today]; the week opened at the Monday before it.
     private fun resolve(today: Int, sessions: List<WorkoutSession> = emptyList(), live: WorkoutSession? = null) =
-        TrainFocus.resolve(cycle, sessions, live, today, midnight)
+        TrainFocus.resolve(cycle, sessions, live, today, midnight, weekStartMs = midnight - (today - 1) * day)
 
     @Test
     fun `a live trial is continued whatever the day`() {
@@ -34,6 +37,14 @@ class TrainFocusTest {
     }
 
     @Test
+    fun `a rite taken early in its week is sealed on its own day, but not one from last week`() {
+        val early = sealed(wed.id, atMs = midnight - 2 * day + 10)
+        assertEquals(TrainFocus.Sealed(wed, early), resolve(today = 3, sessions = listOf(early)))
+        val lastWeek = sealed(wed.id, atMs = midnight - 3 * day)
+        assertEquals(TrainFocus.Begin(wed), resolve(today = 3, sessions = listOf(lastWeek)))
+    }
+
+    @Test
     fun `a rest day offers the next rite early, wrapping the week, until anything is sealed today`() {
         assertEquals(TrainFocus.Respite(wed, 3, canTakeEarly = true), resolve(today = 2))
         assertEquals(TrainFocus.Respite(mon, 1, canTakeEarly = true), resolve(today = 6))
@@ -42,7 +53,7 @@ class TrainFocusTest {
 
     @Test
     fun `nothing scheduled is a respite with no next rite, and no rites is no cycle`() {
-        assertEquals(TrainFocus.Respite(null, null, canTakeEarly = false), TrainFocus.resolve(listOf(loose), emptyList(), null, 2, midnight))
-        assertEquals(TrainFocus.NoCycle, TrainFocus.resolve(emptyList(), emptyList(), null, 2, midnight))
+        assertEquals(TrainFocus.Respite(null, null, canTakeEarly = false), TrainFocus.resolve(listOf(loose), emptyList(), null, 2, midnight, midnight))
+        assertEquals(TrainFocus.NoCycle, TrainFocus.resolve(emptyList(), emptyList(), null, 2, midnight, midnight))
     }
 }

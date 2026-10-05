@@ -274,12 +274,17 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
         val trainRaised by androidx.compose.runtime.remember(repo) {
             kotlinx.coroutines.flow.combine(
                 repo.observePresets(),
-                repo.observeRecentSessions(5),
+                // The whole sealed history: a rite sealed early in the week can
+                // sit behind more than a handful of later trials.
+                repo.observeHistory(),
                 repo.observeLiveSession(),
-            ) { presets, recent, live ->
+            ) { presets, history, live ->
                 val day = java.time.LocalDate.now()
-                val start = day.atStartOfDay(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli()
-                when (com.ironvellum.app.domain.TrainFocus.resolve(presets, recent, live, day.dayOfWeek.value, start)) {
+                val zone = java.time.ZoneId.systemDefault()
+                val start = day.atStartOfDay(zone).toInstant().toEpochMilli()
+                val weekStart = day.with(java.time.DayOfWeek.MONDAY).atStartOfDay(zone).toInstant().toEpochMilli()
+                val sessions = history.map { it.first }
+                when (com.ironvellum.app.domain.TrainFocus.resolve(presets, sessions, live, day.dayOfWeek.value, start, weekStart)) {
                     is com.ironvellum.app.domain.TrainFocus.Begin, is com.ironvellum.app.domain.TrainFocus.Live -> true
                     else -> false
                 }

@@ -16,6 +16,7 @@ import com.ironvellum.app.MainActivity
 import com.ironvellum.app.R
 import com.ironvellum.app.domain.Streak
 import com.ironvellum.app.domain.Summons
+import com.ironvellum.app.domain.TrainFocus
 import kotlinx.coroutines.flow.firstOrNull
 import java.time.Instant
 import java.time.LocalDate
@@ -121,11 +122,14 @@ object Reminders {
 
         val history = repo.observeHistory().firstOrNull() ?: emptyList()
         val dates = history.mapNotNull { it.first.completedAtMs?.let(::dayOf) }.toSet()
+        // Today's rite already taken early this week has nothing left to summon to.
+        val weekStart = today.with(java.time.DayOfWeek.MONDAY).atStartOfDay(zone).toInstant().toEpochMilli()
+        val riteSealed = rite != null && TrainFocus.sealing(rite, history.map { it.first }, weekStart) != null
         // Sealed today, or mid-trial: the kindest notification is silence.
         val live = repo.observeLiveSession().firstOrNull()
         if (!Summons.wanted(
                 riteScheduledToday = rite != null,
-                sealedToday = today in dates,
+                sealedToday = today in dates || riteSealed,
                 liveToday = live != null && dayOf(live.startedAtMs) == today,
                 canPost = canPost,
             )

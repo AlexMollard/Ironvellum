@@ -208,7 +208,7 @@ fun PresetsScreen(
     val todayStart = todayDate.atStartOfDay(zone).toInstant().toEpochMilli()
     val weekStart = todayDate.minusDays((today - 1).toLong()).atStartOfDay(zone).toInstant().toEpochMilli()
     val sessions = ui.history.map { it.first }
-    val focus = TrainFocus.resolve(ui.presets, sessions, live, today, todayStart)
+    val focus = TrainFocus.resolve(ui.presets, sessions, live, today, todayStart, weekStart)
 
     Column(
         Modifier
