@@ -21,15 +21,14 @@ fun RankSheet(breakdown: RankBreakdown?, onDismiss: () -> Unit) {
             return@InfoSheet
         }
         breakdown.patterns.forEach { p ->
-            rows(
+            bullets(
                 p.pattern.label,
                 listOfNotNull(
-                    "Holds" to Rank.forStep(p.step),
-                    "From" to p.source,
-                    p.liftTarget?.let { "Next lift" to it },
-                    p.skillTarget?.let { "Next technique" to it },
+                    "${Rank.forStep(p.step)}, from ${p.source}",
+                    p.liftTarget?.let { "Next lift: $it" },
+                    p.skillTarget?.let { "Next technique: $it" },
                     if (p.liftTarget == null && p.skillTarget == null) {
-                        "Next" to if (p.step >= LiftBoards.MAX_STEP) {
+                        "Next: " + if (p.step >= LiftBoards.MAX_STEP) {
                             "Top of the scale"
                         } else {
                             "Log a ${RankPatterns.lifts(p.pattern).joinToString(" or ") { it.label }} to climb further"
