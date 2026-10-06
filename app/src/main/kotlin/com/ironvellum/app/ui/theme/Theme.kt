@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -176,8 +177,9 @@ fun IronvellumTheme(palette: AccentPalette = IronvellumColors.accents, content: 
         colorScheme = ironvellumColorScheme(palette),
         typography = IronvellumTypography,
         shapes = IronvellumShapes,
-        content = content,
-    )
+    ) {
+        CompositionLocalProvider(LocalIndication provides InkPressIndication, content = content)
+    }
 }
 
 /** The single scale every Ironvellum layout is designed and verified at. */

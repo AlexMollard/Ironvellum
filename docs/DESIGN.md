@@ -147,6 +147,10 @@ leading icon. For secondary actions in a header ("Open trial", "Share",
 
 ## 7. Feedback and safety
 
+Press feedback covers the whole control immediately with a faint ink wash,
+clipped to its existing shape. Buttons and rows share this treatment instead
+of an expanding Android ripple. Disabled controls stay unchanged.
+
 - Logging, ticking and other reversible actions show "Set 2 logged · Undo" for
   about 5 seconds. Any done row can be tapped to edit or un-log it.
 - Back from an editor with changes asks "Discard your changes?" (Keep editing /
