@@ -615,7 +615,7 @@ private fun PodiumSlot(
         2 -> "\u265B" // queen
         else -> "\u265C" // rook
     }
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.medium
     // ONE card per slot, not a cap welded to a plinth: the two-box version left a
     // visible seam and squeezed an IdentityRow so hard that the lifter's NAME was
     // ellipsized away entirely, leaving bare initials. A podium slot is a vertical
@@ -1265,6 +1265,7 @@ private fun LiftPicker(
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
+            letterSpacing = IronvellumTracking.SectionHeader,
             color = IronvellumColors.SovereignGold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -1354,11 +1355,11 @@ private fun BoardPickerRow(lift: Lift, isSelected: Boolean, ranked: Int, onClick
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clip(MaterialTheme.shapes.small)
+            .clip(MaterialTheme.shapes.medium)
             .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
             .inkBorder(
                 if (isSelected) IronvellumColors.SovereignGold else IronvellumColors.Rune,
-                MaterialTheme.shapes.small,
+                MaterialTheme.shapes.medium,
                 1.dp,
             )
             .selectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)

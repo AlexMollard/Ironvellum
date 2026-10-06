@@ -136,7 +136,7 @@ fun InfoSheet(
                 // TalkBack announces the pane by name when it opens.
                 .semantics { paneTitle = title },
         ) {
-            Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Bracket, seed = 3, thickness = 2.dp))
+            Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, thickness = 2.dp))
             if (paged) {
                 val pagerState = rememberPagerState { built.size }
                 val context = LocalContext.current
@@ -182,7 +182,7 @@ fun InfoSheet(
                 }
             }
             if (actions.isNotEmpty()) {
-                Box(Modifier.fillMaxWidth().height(1.dp).inkHairline(IronvellumColors.Rune, seed = 5, thickness = 1.dp))
+                Box(Modifier.fillMaxWidth().height(1.dp).inkHairline(IronvellumColors.Rune, thickness = 1.dp))
                 Row(
                     Modifier
                         .fillMaxWidth()

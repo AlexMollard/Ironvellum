@@ -91,8 +91,8 @@ fun ShareCardDialog(
                     modifier = Modifier
                         .fillMaxWidth()
                         .heightIn(max = 320.dp)
-                        .background(IronvellumColors.Vault, MaterialTheme.shapes.extraSmall)
-                        .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
+                        .background(IronvellumColors.Vault, MaterialTheme.shapes.medium)
+                        .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.medium, 1.dp)
                         .verticalScroll(rememberScrollState())
                         .padding(10.dp),
                 )

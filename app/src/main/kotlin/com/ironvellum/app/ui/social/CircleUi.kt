@@ -75,6 +75,7 @@ import com.ironvellum.app.ui.program.TapPad
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.ui.theme.ironvellumFieldColors
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.ZoneId
@@ -755,6 +756,7 @@ private fun CircleNameDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
+                    colors = ironvellumFieldColors(),
                     value = name,
                     onValueChange = { name = it.take(24) },
                     label = { Text("Circle name (1–24)") },
@@ -821,6 +823,7 @@ private fun JoinCircleDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
+                    colors = ironvellumFieldColors(),
                     value = code,
                     onValueChange = { raw ->
                         code = raw.uppercase().filter { it.isLetterOrDigit() }.take(8)

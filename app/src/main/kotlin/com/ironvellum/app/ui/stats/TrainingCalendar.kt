@@ -42,7 +42,7 @@ import com.ironvellum.app.ui.components.PanelLabel
 import com.ironvellum.app.ui.components.StatSize
 import com.ironvellum.app.ui.components.StatValue
 import com.ironvellum.app.ui.components.plural
-import com.ironvellum.app.ui.theme.InkCircleShape
+import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkBorder
 import java.time.DayOfWeek
@@ -215,7 +215,7 @@ internal fun TrainingCalendar(
             LegendItem("sealed") { SealedMark() }
             LegendItem("rite day") { RiteMark() }
             LegendItem("today") {
-                Box(Modifier.size(12.dp).inkBorder(IronvellumColors.Ink, InkCircleShape(7), 1.5.dp))
+                Box(Modifier.size(12.dp).inkBorder(IronvellumColors.Ink, DotShape, 1.5.dp))
             }
         }
     }
@@ -259,7 +259,7 @@ private fun DayCell(
             // sizeIn, not size: at a large font a two-digit date widens the ring instead of overflowing it
             Modifier
                 .sizeIn(minWidth = 28.dp, minHeight = 28.dp)
-                .inkBorder(IronvellumColors.Ink, InkCircleShape(7), if (isToday) 1.5.dp else 0.dp),
+                .inkBorder(IronvellumColors.Ink, DotShape, if (isToday) 1.5.dp else 0.dp),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -284,13 +284,13 @@ private fun DayCell(
 /** A sealed day: a small filled ink dot. */
 @Composable
 private fun SealedMark() {
-    Box(Modifier.size(6.dp).clip(InkCircleShape(7)).background(IronvellumColors.Ink))
+    Box(Modifier.size(6.dp).clip(DotShape).background(IronvellumColors.Ink))
 }
 
 /** A rite day with nothing sealed on it (yet): the same dot, hollow. */
 @Composable
 private fun RiteMark() {
-    Box(Modifier.size(6.dp).inkBorder(IronvellumColors.InkMuted, InkCircleShape(7), 1.dp))
+    Box(Modifier.size(6.dp).inkBorder(IronvellumColors.InkMuted, DotShape, 1.dp))
 }
 
 @Composable

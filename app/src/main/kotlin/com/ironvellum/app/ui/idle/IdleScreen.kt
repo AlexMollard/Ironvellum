@@ -34,7 +34,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import com.ironvellum.app.ui.theme.InkCircleShape
+import com.ironvellum.app.ui.theme.DotShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -560,8 +560,8 @@ private fun RateDial(
             val gaugeRadius = minOf(arcSize.width, arcSize.height) / 2f
             // Rune, not Vault: against this panel a Vault track was invisible,
             // so the sweep read as a stroke floating in space with no scale.
-            inkArc(gaugeCentre, gaugeRadius, start, span, IronvellumColors.Rune, stroke, seed = 81, taperEnds = false)
-            inkArc(gaugeCentre, gaugeRadius, start, span * sweep.value, IronvellumColors.EmeraldBright, stroke, seed = 83)
+            inkArc(gaugeCentre, gaugeRadius, start, span, IronvellumColors.Rune, stroke)
+            inkArc(gaugeCentre, gaugeRadius, start, span * sweep.value, IronvellumColors.EmeraldBright, stroke)
             // Quarter ticks on the track: a gauge with no scale can't be read
             // even once the fill is legible.
             // Same centre and radius as the arcs above: deriving these from
@@ -579,7 +579,6 @@ private fun RateDial(
                     to = Offset(cx + cos(a) * outer, cy + sin(a) * outer),
                     color = IronvellumColors.Rune,
                     widthPx = stroke * 0.18f,
-                    seed = 89,
                 )
             }
             // The needle tip: an unambiguous marker for where the value sits.
@@ -589,7 +588,7 @@ private fun RateDial(
             // left on a hand-drawn dial.
             val tip = ((start + span * sweep.value) * PI / 180.0).toFloat()
             val tipAt = Offset(cx + cos(tip) * radius, cy + sin(tip) * radius)
-            inkDot(center = tipAt, radius = stroke * 0.52f, color = IronvellumColors.EmeraldBright, seed = 91)
+            inkDot(center = tipAt, radius = stroke * 0.52f, color = IronvellumColors.EmeraldBright)
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
@@ -642,7 +641,7 @@ private fun LivePulse(active: Boolean) {
             Modifier
                 .size(8.dp)
                 .alpha(alpha)
-                .background(IronvellumColors.EmeraldBright, InkCircleShape(7)),
+                .background(IronvellumColors.EmeraldBright, DotShape),
         )
         Text(
             "WORKING",
@@ -673,11 +672,11 @@ private fun RollStat(label: String, value: String, modifier: Modifier = Modifier
         modifier
             .background(
                 Brush.verticalGradient(listOf(IronvellumColors.VaultHigh, IronvellumColors.Vault)),
-                MaterialTheme.shapes.small,
+                MaterialTheme.shapes.medium,
             )
             // Clipped to an ink shape but never inked: without the bleed-plus-firm
             // border pass this tile read flat beside every other inked surface.
-            .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
+            .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.medium, 1.dp)
             .padding(12.dp),
     ) {
         Text(

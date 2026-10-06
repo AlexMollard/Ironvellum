@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -67,8 +66,8 @@ import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.InkCircleShape
-import com.ironvellum.app.ui.theme.InkEdgeShape
+import com.ironvellum.app.ui.theme.DotShape
+import com.ironvellum.app.ui.theme.TileShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkBorder
@@ -87,9 +86,6 @@ internal val LockedRowBg = Color(0xFF101512)
 
 /** A locked glyph: part of the silhouette, deliberately close to its disc. */
 internal val LockedGlyph = Color(0xFF3A3A36)
-
-private fun inkCorners(r: androidx.compose.ui.unit.Dp, salt: Int) =
-    InkEdgeShape(salt, CornerSize(r), CornerSize(r), CornerSize(r), CornerSize(r))
 
 /** What a node is, in shape, glyph and badge as well as colour. */
 private enum class NodeState { MASTERED, NEXT, LOCKED }
@@ -357,12 +353,12 @@ private fun SkillNode(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = remember(skill.name) { InkCircleShape(skill.name.hashCode() and 0xFF) }
+    val shape = DotShape
     val textH = with(LocalDensity.current) { (LabelLine * 2f).toDp() }
     // The page tone: a label on it hides its own node's line passing under, so the line never cuts text.
     val plateColour = MaterialTheme.colorScheme.background
-    val chip = remember { inkCorners(3.dp, 13) }
-    val plate = remember { inkCorners(4.dp, 11) }
+    val chip = TileShape
+    val plate = TileShape
     // The whole cell is the touch target, so the node's hit area is well past 48dp.
     Column(
         modifier
@@ -397,7 +393,6 @@ private fun SkillNode(
                             inkArc(
                                 center, r + 2.dp.toPx() + 5.dp.toPx() * t, 0f, 360f,
                                 IronvellumColors.SystemGreen.copy(alpha = 0.55f - 0.4f * t), 1.5.dp.toPx(),
-                                seed = 3, taperEnds = false,
                             )
                         }
                         NodeState.LOCKED -> Unit
@@ -461,9 +456,9 @@ private fun SkillNode(
                         .align(Alignment.BottomEnd)
                         .offset(x = 3.dp, y = 3.dp)
                         .size(20.dp)
-                        .clip(InkCircleShape(5))
+                        .clip(DotShape)
                         .background(IronvellumColors.Abyss)
-                        .inkBorder(if (state == NodeState.MASTERED) IronvellumColors.SovereignGold else LockedDot, InkCircleShape(5), 1.5.dp),
+                        .inkBorder(if (state == NodeState.MASTERED) IronvellumColors.SovereignGold else LockedDot, DotShape, 1.5.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -542,7 +537,7 @@ private fun CrossNeedCaption(text: String, need: CrossNeed, width: Dp, lines: In
             .widthIn(max = width)
             // The rows reserve [lines] for this marker; a minimum, so a rounding pixel never cuts the last line.
             .heightIn(min = textH / 2 * lines)
-            .clip(remember { inkCorners(4.dp, 11) })
+            .clip(TileShape)
             .background(MaterialTheme.colorScheme.background)
             .clickable(role = Role.Button, onClickLabel = "Open ${need.skill}, ${need.line} path") { onClick() }
             .padding(horizontal = 3.dp),

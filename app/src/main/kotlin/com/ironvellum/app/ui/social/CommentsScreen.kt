@@ -74,6 +74,7 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.ui.theme.ironvellumFieldColors
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -431,6 +432,7 @@ internal fun CommentsScreen(
         ) {
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
+                colors = ironvellumFieldColors(),
                 value = ui.draft,
                 onValueChange = viewModel::onDraft,
                 label = { Text("Remark") },
@@ -918,6 +920,7 @@ internal fun ReportDialog(
                 }
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
+                    colors = ironvellumFieldColors(),
                     value = note,
                     onValueChange = { note = it.take(WireLimits.REPORT_NOTE_MAX) },
                     label = { Text("Note (optional)") },

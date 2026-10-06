@@ -412,7 +412,6 @@ private fun Inscription(item: Achievement, p: Float, ink: Color) {
                         to = Offset(size.width * run, size.height / 2f),
                         color = ink.copy(alpha = 0.8f),
                         widthPx = (if (reveal == Reveal.Common) 2.2f else 3f).dp.toPx(),
-                        seed = item.name.length,
                     )
                 }
             }
@@ -514,7 +513,6 @@ private fun InkBleed(modifier: Modifier, reveal: Reveal, ink: Color, spread: Flo
                 center = Offset(c.x + dx * size.width * 0.42f, c.y + dy * size.height * 0.45f),
                 radius = r.dp.toPx(),
                 color = ink.copy(alpha = 0.55f * fling),
-                seed = seed + i,
             )
         }
     }
@@ -539,9 +537,9 @@ private fun Seal(modifier: Modifier, reveal: Reveal, ink: Color, pressed: Float)
     ) {
         val c = Offset(size.width / 2f, size.height / 2f)
         val r = size.minDimension / 2f - 2.dp.toPx()
-        if (reveal == Reveal.Masterwork) inkDot(c, r, Color(0xFF2A1D06), seed = 7)
-        inkArc(c, r, 0f, 360f, ink, 2.dp.toPx(), seed = 3, taperEnds = false)
-        inkArc(c, r * 0.64f, 20f, 330f, ink.copy(alpha = 0.8f), 1.dp.toPx(), seed = 5)
+        if (reveal == Reveal.Masterwork) inkDot(c, r, Color(0xFF2A1D06))
+        inkArc(c, r, 0f, 360f, ink, 2.dp.toPx())
+        inkArc(c, r * 0.64f, 20f, 330f, ink.copy(alpha = 0.8f), 1.dp.toPx())
         sealMark(reveal, c, r * 0.5f, ink)
     }
 }
@@ -550,9 +548,9 @@ private fun DrawScope.sealMark(reveal: Reveal, c: Offset, r: Float, ink: Color) 
     val w = 1.6.dp.toPx()
     when (reveal) {
         Reveal.Rare -> {
-            inkStroke(Offset(c.x, c.y - r), Offset(c.x, c.y + r), ink, w, seed = 1)
-            inkStroke(Offset(c.x - r * 0.85f, c.y - r * 0.5f), Offset(c.x + r * 0.85f, c.y + r * 0.5f), ink, w, seed = 2)
-            inkStroke(Offset(c.x + r * 0.85f, c.y - r * 0.5f), Offset(c.x - r * 0.85f, c.y + r * 0.5f), ink, w, seed = 3)
+            inkStroke(Offset(c.x, c.y - r), Offset(c.x, c.y + r), ink, w)
+            inkStroke(Offset(c.x - r * 0.85f, c.y - r * 0.5f), Offset(c.x + r * 0.85f, c.y + r * 0.5f), ink, w)
+            inkStroke(Offset(c.x + r * 0.85f, c.y - r * 0.5f), Offset(c.x - r * 0.85f, c.y + r * 0.5f), ink, w)
         }
         Reveal.Fabled -> drawPath(
             Path().apply {
@@ -578,8 +576,8 @@ private fun DrawScope.sealMark(reveal: Reveal, c: Offset, r: Float, ink: Color) 
             ink,
         )
         else -> {
-            inkStroke(Offset(c.x, c.y - r), Offset(c.x, c.y + r), ink, w, seed = 4)
-            inkStroke(Offset(c.x - r, c.y), Offset(c.x + r, c.y), ink, w, seed = 5)
+            inkStroke(Offset(c.x, c.y - r), Offset(c.x, c.y + r), ink, w)
+            inkStroke(Offset(c.x - r, c.y), Offset(c.x + r, c.y), ink, w)
         }
     }
 }
@@ -685,7 +683,6 @@ private fun Amendment(old: String, new: String, p: Float) {
                         Offset(-4.dp.toPx() + (size.width + 8.dp.toPx()) * strike, y - 2.dp.toPx()),
                         IronvellumColors.Ink,
                         2.4.dp.toPx(),
-                        seed = old.length,
                     )
                 }
             },
@@ -750,7 +747,6 @@ internal fun LedgerEmbers() {
                 center = Offset(x, cycle * size.height),
                 radius = (2f + (i % 3)) * 1.6f,
                 color = IronvellumColors.SovereignGold.copy(alpha = (1f - cycle) * 0.35f),
-                seed = i,
             )
         }
     }

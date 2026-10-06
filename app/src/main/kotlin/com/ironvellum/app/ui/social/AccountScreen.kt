@@ -89,6 +89,7 @@ import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.wholeKeyboard
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.ui.theme.ironvellumFieldColors
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.DecimalInput
@@ -646,6 +647,7 @@ private fun AuthPanels(
         if (googleEnabled && mode != AuthMode.RESET) GoogleSignInButton(onToken = onGoogleSignIn)
         OutlinedTextField(
             shape = MaterialTheme.shapes.small,
+            colors = ironvellumFieldColors(),
             value = email,
             onValueChange = { email = it.trim() },
             label = { Text("Email") },
@@ -657,6 +659,7 @@ private fun AuthPanels(
             Spacer(Modifier.height(10.dp))
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
+                colors = ironvellumFieldColors(),
                 value = code,
                 onValueChange = { typed -> code = DecimalInput.sanitizeCode(typed, 10) },
                 label = { Text("Code from email") },
@@ -690,6 +693,7 @@ private fun AuthPanels(
             Spacer(Modifier.height(10.dp))
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
+                colors = ironvellumFieldColors(),
                 value = displayName,
                 onValueChange = { displayName = it.take(24) },
                 label = { Text("True name") },
@@ -776,6 +780,7 @@ private fun PasswordField(
 ) {
     OutlinedTextField(
         shape = MaterialTheme.shapes.small,
+        colors = ironvellumFieldColors(),
         value = value,
         onValueChange = onValueChange,
         label = { Text(label) },
@@ -980,6 +985,7 @@ private fun ClaimNamePanel(
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(
             shape = MaterialTheme.shapes.small,
+            colors = ironvellumFieldColors(),
             value = name,
             onValueChange = { name = it.take(24) },
             label = { Text("True name (2–24)") },
@@ -1031,6 +1037,7 @@ private fun AddAllyPanel(loading: Boolean, onRequest: (String) -> Unit) {
         ) {
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
+                colors = ironvellumFieldColors(),
                 value = friendName,
                 onValueChange = { friendName = it.take(24) },
                 label = { Text("Add an ally by true name") },

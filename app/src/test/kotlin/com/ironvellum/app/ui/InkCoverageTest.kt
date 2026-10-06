@@ -12,10 +12,16 @@ import org.junit.Test
  * fails a build and none of it fails a behavioural test, so it only ever
  * surfaced by eyeballing screenshots on a phone.
  *
+ * The contract is "geometry comes from the theme and its primitives, not from
+ * an ad-hoc shape at the call site". Clean uses plain rectangles and true
+ * circles on purpose (docs/DESIGN.md section 2), so those classes are no
+ * longer banned outright: they may be named only inside `ui/theme/` (Theme.kt
+ * and Ink.kt), where the named shapes live: `MaterialTheme.shapes`, `DotShape`
+ * and `TileShape`. UI code uses those names instead of building its own.
+ *
  * These are source scans, which is unusual for a test, and they are justified
- * narrowly: the contract being defended is "no stock geometry reaches the
- * screen", the violation is textual, and the alternative is a human noticing a
- * stray rectangle. Every exception is listed with the reason it stays.
+ * narrowly: the violation is textual, and the alternative is a human noticing
+ * a stray shape. Every exception is listed with the reason it stays.
  */
 class InkCoverageTest {
 
@@ -34,17 +40,17 @@ class InkCoverageTest {
     }
 
     @Test
-    fun `no geometric shape classes reach the ui`() {
-        // These are the exact classes the ink shapes replaced. `MaterialTheme.shapes`
-        // is already wired to InkEdgeShape, so a bare one here is always a regression.
+    fun `no ad-hoc shape classes outside the theme`() {
+        // Raw shape classes are legitimate in ui/theme/ (Theme.kt, Ink.kt), where
+        // `MaterialTheme.shapes`, `DotShape` and `TileShape` are defined. Anywhere
+        // else one is a call site inventing its own geometry: use a named shape.
         val banned = listOf(
             Regex("""RoundedCornerShape\("""),
             Regex("""CutCornerShape\("""),
             Regex("""(?<!\w)RectangleShape"""),
-            // InkCircleShape is the drawn one; the bare Material class is not.
-            Regex("""(?<!Ink)(?<!\w)CircleShape"""),
+            Regex("""(?<!\w)CircleShape"""),
         )
-        assertEquals(emptyList<String>(), offenders(banned, exempt = emptyMap()))
+        assertEquals(emptyList<String>(), offenders(banned, exempt = emptyMap(), themeMayUse = true))
     }
 
     @Test
@@ -125,9 +131,14 @@ class InkCoverageTest {
         return false
     }
 
-    private fun offenders(banned: List<Regex>, exempt: Map<String, Set<String>>): List<String> {
+    private fun offenders(
+        banned: List<Regex>,
+        exempt: Map<String, Set<String>>,
+        themeMayUse: Boolean = false,
+    ): List<String> {
         val found = mutableListOf<String>()
         for (file in sources) {
+            if (themeMayUse && file.invariantSeparatorsPath.contains("/ui/theme/")) continue
             val allowed = exempt[file.name].orEmpty()
             file.readTextLines().forEachIndexed { index, line ->
                 if (line.isComment()) return@forEachIndexed

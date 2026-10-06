@@ -433,7 +433,7 @@ private fun ColumnScope.Manifest(
                     )
                 }
                 if (index != moves.lastIndex) {
-                    Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = index))
+                    Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune))
                 }
             }
             val hidden = entries.size - moves.size
@@ -720,7 +720,7 @@ fun DashboardScreen(
                 term = Term.DEED,
             )
         }
-        Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = 9))
+        Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune))
 
         Spacer(Modifier.height(12.dp))
 
@@ -803,7 +803,6 @@ fun DashboardScreen(
                                         preset != null -> IronvellumColors.SystemGreen
                                         else -> IronvellumColors.Rune
                                     },
-                                    seed = day,
                                     thickness = if (isSelected || isDone) 3.dp else 2.dp,
                                 ),
                         )
@@ -1123,11 +1122,11 @@ fun DashboardScreen(
                 .fillMaxWidth()
                 // A filled plate with a green edge and a chevron, so it reads as
                 // a control to press rather than a caption under the quest.
-                .clip(MaterialTheme.shapes.extraSmall)
+                .clip(MaterialTheme.shapes.medium)
                 .background(Brush.verticalGradient(listOf(Color(0xFF16221C), Color(0xFF111914))))
                 .inkBorder(
                     if (waiting > 0) IronvellumColors.SovereignGold.copy(alpha = 0.7f) else IronvellumColors.Emerald.copy(alpha = 0.55f),
-                    MaterialTheme.shapes.extraSmall,
+                    MaterialTheme.shapes.medium,
                     1.dp,
                 )
                 .clickable(onClickLabel = "Open the Veil") { onOpenGarrison() }

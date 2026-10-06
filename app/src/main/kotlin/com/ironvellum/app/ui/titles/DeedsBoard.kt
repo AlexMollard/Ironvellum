@@ -71,7 +71,7 @@ import com.ironvellum.app.ui.components.StatValue
 import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.InkCircleShape
+import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkBorder
@@ -814,7 +814,7 @@ private fun RungState.word(): String = when (this) {
 private fun RungMarker(state: RungState) {
     when (state) {
         RungState.Earned -> Box(
-            Modifier.size(18.dp).clip(InkCircleShape(7)).background(IronvellumColors.SovereignGold),
+            Modifier.size(18.dp).clip(DotShape).background(IronvellumColors.SovereignGold),
             contentAlignment = Alignment.Center,
         ) {
             Icon(
@@ -825,13 +825,13 @@ private fun RungMarker(state: RungState) {
             )
         }
         RungState.Next -> Box(
-            Modifier.size(18.dp).inkBorder(IronvellumColors.SystemGreen, InkCircleShape(7), 2.dp),
+            Modifier.size(18.dp).inkBorder(IronvellumColors.SystemGreen, DotShape, 2.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Box(Modifier.size(8.dp).clip(InkCircleShape(7)).background(IronvellumColors.SystemGreen))
+            Box(Modifier.size(8.dp).clip(DotShape).background(IronvellumColors.SystemGreen))
         }
         RungState.Locked -> Box(
-            Modifier.size(18.dp).inkBorder(LockedRung, InkCircleShape(7), 1.5.dp),
+            Modifier.size(18.dp).inkBorder(LockedRung, DotShape, 1.5.dp),
         )
     }
 }

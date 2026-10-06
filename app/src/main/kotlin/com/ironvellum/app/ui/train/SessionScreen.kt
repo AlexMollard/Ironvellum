@@ -2092,7 +2092,7 @@ private fun OpenExerciseCard(
     modifier: Modifier = Modifier,
 ) {
     val first = block.first
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.medium
     Column(
         modifier
             .fillMaxWidth()
@@ -2723,7 +2723,7 @@ private fun NextSetStrip(setNumber: Int, line: String, onLog: () -> Unit) {
         Box(
             Modifier
                 .size(52.dp)
-                .clip(MaterialTheme.shapes.small)
+                .clip(MaterialTheme.shapes.medium)
                 .background(IronvellumColors.Emerald)
                 .clickable(role = Role.Button, onClick = onLog)
                 .semantics { contentDescription = "Log set $setNumber" },

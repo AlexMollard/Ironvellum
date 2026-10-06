@@ -130,7 +130,7 @@ private fun PathTile(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.medium
     val complete = done >= total
     // The tile is one button; a blocked path's "needs ..." line is its own, so the
     // line sits outside the tile's merged semantics and keeps its own click.

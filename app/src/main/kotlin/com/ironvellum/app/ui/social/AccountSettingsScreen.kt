@@ -57,6 +57,7 @@ import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.ui.theme.ironvellumFieldColors
 import java.text.DateFormat
 import java.util.Date
 import com.ironvellum.app.domain.fmt
@@ -484,6 +485,7 @@ private fun EditNameDialog(
             Column {
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
+                    colors = ironvellumFieldColors(),
                     value = name,
                     onValueChange = { name = it.take(24) },
                     label = { Text("True name (2–24)") },

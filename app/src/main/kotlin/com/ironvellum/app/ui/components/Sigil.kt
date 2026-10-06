@@ -100,8 +100,6 @@ fun RelicSigil(
                     startDeg = 0f,
                     sweepDeg = 360f,
                     color = accent.copy(alpha = 0.22f + 0.12f * ring),
-                    seed = ring * 17,
-                    taperEnds = false,
                     widthPx = radius * 0.05f,
                 )
             }
@@ -120,8 +118,6 @@ fun RelicSigil(
                     ),
                     color = accent.copy(alpha = 0.35f),
                     widthPx = radius * 0.04f,
-                    seed = i * 23,
-                    taperEnds = false,
                 )
             }
 
@@ -146,7 +142,6 @@ fun RelicSigil(
                 center = centre,
                 radius = radius * 0.10f * (1f + spec.innerScale),
                 color = accent,
-                seed = seedOf(name),
             )
         }
     }

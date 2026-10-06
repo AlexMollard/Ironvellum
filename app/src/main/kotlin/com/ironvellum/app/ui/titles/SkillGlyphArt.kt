@@ -26,10 +26,10 @@ private fun DrawScope.drawGlyph(family: GlyphFamily, color: Color) {
     fun p(x: Float, y: Float) = Offset(x * u, y * u)
     var n = 0
     fun ln(x1: Float, y1: Float, x2: Float, y2: Float) =
-        inkStroke(p(x1, y1), p(x2, y2), color, pen.width, seed = family.ordinal * 31 + n++, taperEnds = false)
-    fun head(x: Float, y: Float) = inkDot(p(x, y), 2.2f * u, color, seed = family.ordinal)
+        inkStroke(p(x1, y1), p(x2, y2), color, pen.width)
+    fun head(x: Float, y: Float) = inkDot(p(x, y), 2.2f * u, color)
     fun ring(x: Float, y: Float, r: Float) =
-        inkArc(p(x, y), r * u, 0f, 360f, color, pen.width, seed = family.ordinal, taperEnds = false)
+        inkArc(p(x, y), r * u, 0f, 360f, color, pen.width)
 
     // Every figure is a stick person drawn to one scale (head radius 2.2, pen 2.1) and
     // centred on the 24-unit grid by its own extent, so a row of them reads as one set.

@@ -120,7 +120,7 @@ fun TrendChart(
             // two quiet gridlines, a third of the way in from each edge
             repeat(2) { i ->
                 val y = size.height * (i + 1) / 3f
-                inkStroke(Offset(0f, y), Offset(size.width, y), grid.copy(alpha = 0.6f), 1.4f, seed = i * 13)
+                inkStroke(Offset(0f, y), Offset(size.width, y), grid.copy(alpha = 0.6f), 1.4f)
             }
 
             // contiguous runs between gaps: each is filled and stroked on its own
@@ -139,7 +139,7 @@ fun TrendChart(
             for (run in runs) {
                 if (run.first == run.last) {
                     // an isolated reading has no neighbour to join: a dot, not nothing
-                    inkDot(Offset(xFor(run.first), yFor(values[run.first]!!)), 4f, color, seed = run.first)
+                    inkDot(Offset(xFor(run.first), yFor(values[run.first]!!)), 4f, color)
                     continue
                 }
                 val area = Path().apply {
@@ -172,8 +172,6 @@ fun TrendChart(
                         Offset((x + dash / 2).coerceAtMost(size.width), y),
                         gold.copy(alpha = 0.8f),
                         1.8f,
-                        seed = x.toInt(),
-                        taperEnds = false,
                     )
                     x += dash
                 }
@@ -183,10 +181,10 @@ fun TrendChart(
             // occurrence — a tied record flags the most recent achievement,
             // not the first time the lifter hit it back in mid-history.
             if (recordMarker && bestIndex != lastIndex) {
-                inkDot(Offset(xFor(bestIndex), yFor(values[bestIndex]!!)), 5.5f, gold, seed = bestIndex)
+                inkDot(Offset(xFor(bestIndex), yFor(values[bestIndex]!!)), 5.5f, gold)
             }
             val endColor = if (recordMarker && bestIndex == lastIndex) gold else IronvellumColors.Ink
-            inkDot(Offset(xFor(lastIndex), yFor(values[lastIndex]!!)), 5.5f, endColor, seed = lastIndex)
+            inkDot(Offset(xFor(lastIndex), yFor(values[lastIndex]!!)), 5.5f, endColor)
 
             val at = scrubState.index
             val atValue = values.getOrNull(at)
@@ -265,7 +263,7 @@ fun BarChart(
             fun yFor(v: Double): Float = (pad + (base - pad) * (1.0 - v / top)).toFloat()
             repeat(2) { i ->
                 val y = size.height * (i + 1) / 3f
-                inkStroke(Offset(0f, y), Offset(size.width, y), IronvellumColors.Rune.copy(alpha = 0.6f), 1.4f, seed = i * 13)
+                inkStroke(Offset(0f, y), Offset(size.width, y), IronvellumColors.Rune.copy(alpha = 0.6f), 1.4f)
             }
             val slot = size.width / values.size
             val barW = (slot * 0.62f).coerceAtLeast(2.dp.toPx())
@@ -288,7 +286,7 @@ fun BarChart(
                 while (x < size.width) {
                     inkStroke(
                         Offset(x, y), Offset((x + dash / 2).coerceAtMost(size.width), y),
-                        gold.copy(alpha = 0.8f), 1.8f, seed = x.toInt(), taperEnds = false,
+                        gold.copy(alpha = 0.8f), 1.8f,
                     )
                     x += dash
                 }

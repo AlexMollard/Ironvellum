@@ -123,7 +123,7 @@ fun LifterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier, com
                 Modifier
                     .size(width = 3.dp, height = 30.dp)
                     // Vertical brush stroke; inkHairline reads its own orientation.
-                    .inkHairline(frameColor.copy(alpha = 0.45f), seed = 21, thickness = 1.5.dp),
+                    .inkHairline(frameColor.copy(alpha = 0.45f), thickness = 1.5.dp),
             )
         }
         Column(Modifier.width(labelWidth), horizontalAlignment = Alignment.CenterHorizontally) {

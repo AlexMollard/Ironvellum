@@ -30,6 +30,7 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.ui.theme.ironvellumFieldColors
 
 /**
  * Copies [code] first, then opens the chooser: some targets (notes apps,
@@ -120,6 +121,7 @@ internal fun ImportRoutineDialog(
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
+                    colors = ironvellumFieldColors(),
                     value = text,
                     onValueChange = { text = it.take(RoutineCode.MAX_DECODED_BYTES) },
                     label = { Text("Cycle code") },

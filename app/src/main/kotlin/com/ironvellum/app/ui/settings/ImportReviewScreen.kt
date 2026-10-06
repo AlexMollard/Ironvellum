@@ -138,6 +138,7 @@ fun ImportReviewOverlay(
                         style = MaterialTheme.typography.labelMedium,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.SystemGreen,
+                        letterSpacing = IronvellumTracking.InlineLabel,
                     )
                     Spacer(Modifier.height(8.dp))
                     InkSegmented<CsvWorkoutReader.WeightUnit>(
@@ -249,6 +250,7 @@ private fun UnmatchedRow(
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
+            letterSpacing = IronvellumTracking.InlineLabel,
             modifier = Modifier
                 .heightIn(min = 44.dp)
                 .clickable { picking = true }
@@ -288,6 +290,7 @@ private fun UnmatchedRow(
                             style = MaterialTheme.typography.labelMedium,
                             fontFamily = ChakraPetch,
                             color = IronvellumColors.SystemGreen,
+                            letterSpacing = IronvellumTracking.InlineLabel,
                         )
                         Text(
                             "measured in ${name.inferredMetric.lowercase()}",

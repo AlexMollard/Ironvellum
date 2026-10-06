@@ -29,6 +29,7 @@ import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.decimalKeyboard
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.ironvellumFieldColors
 
 /**
  * Name, height and sex. The text fields save on IME Done and on leaving the
@@ -72,6 +73,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
         SettingsGroup("NAME", topSpace = 12.dp) {
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
+                colors = ironvellumFieldColors(),
                 value = name,
                 onValueChange = {
                     name = it.take(24)
@@ -98,6 +100,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
         SettingsGroup("BODY") {
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
+                colors = ironvellumFieldColors(),
                 value = heightInput,
                 onValueChange = {
                     heightInput = DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)

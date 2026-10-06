@@ -102,6 +102,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.ui.theme.ironvellumFieldColors
 import kotlinx.coroutines.flow.stateIn
 import com.ironvellum.app.ui.launchGuarded
 import kotlinx.coroutines.launch
@@ -649,8 +650,6 @@ private fun BandBar(value: Double, bands: List<Band>, scaleMax: Double, descript
             to = Offset(markerX, size.height + 6f),
             color = IronvellumColors.Ink,
             widthPx = 3.dp.toPx(),
-            seed = markerX.toInt(),
-            taperEnds = false,
         )
     }
 }
@@ -719,6 +718,7 @@ private fun AddStatDialog(
                 // something has actually been typed.
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
+                    colors = ironvellumFieldColors(),
                     value = weight.value,
                     onValueChange = { weight.value = decimalInput(it) },
                     label = { Text("Weight (kg)") },
@@ -734,6 +734,7 @@ private fun AddStatDialog(
                 )
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
+                    colors = ironvellumFieldColors(),
                     value = bodyFat.value,
                     onValueChange = { bodyFat.value = decimalInput(it) },
                     label = { Text("Body fat % — optional") },
@@ -787,6 +788,7 @@ private fun AddStatDialog(
                     listOf("NECK (cm)" to neck, "WAIST (cm)" to waist).forEach { (label, field) ->
                         OutlinedTextField(
                             shape = MaterialTheme.shapes.small,
+                            colors = ironvellumFieldColors(),
                             value = field.value,
                             onValueChange = { field.value = decimalInput(it) },
                             label = { Text(label) },
@@ -798,6 +800,7 @@ private fun AddStatDialog(
                     if (sex == Sex.FEMALE) {
                         OutlinedTextField(
                             shape = MaterialTheme.shapes.small,
+                            colors = ironvellumFieldColors(),
                             value = hips.value,
                             onValueChange = { hips.value = decimalInput(it) },
                             label = { Text("HIPS (cm)") },

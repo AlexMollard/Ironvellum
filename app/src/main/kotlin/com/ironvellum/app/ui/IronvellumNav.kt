@@ -69,7 +69,7 @@ import com.ironvellum.app.ui.social.AccountSettingsScreen
 import com.ironvellum.app.ui.social.SocialScreen
 import com.ironvellum.app.ui.social.LifterScreen
 import com.ironvellum.app.ui.social.CommentsScreen
-import com.ironvellum.app.ui.theme.InkCircleShape
+import com.ironvellum.app.ui.theme.DotShape
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -359,10 +359,8 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                 inkStroke(
                                     from = Offset(0f, 0f),
                                     to = Offset(size.width, 0f),
-                                    color = IronvellumColors.Bracket,
+                                    color = IronvellumColors.Rune,
                                     widthPx = 2.dp.toPx(),
-                                    seed = 61,
-                                    taperEnds = false,
                                 )
                             }
                             .navigationBarsPadding()
@@ -500,7 +498,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                             Modifier
                                                 .align(Alignment.TopEnd)
                                                 .size(8.dp)
-                                                .clip(InkCircleShape(7))
+                                                .clip(DotShape)
                                                 .background(IronvellumColors.SovereignGold),
                                         )
                                     }
@@ -509,7 +507,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                     destination.label,
                                     style = MaterialTheme.typography.labelMedium,
                                     fontFamily = ChakraPetch,
-                                    color = if (selected) IronvellumColors.EmeraldBright else IronvellumColors.InkMuted,
+                                    color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
                                     // Five slots share one screen width, so the
                                     // label must never wrap. It cannot grow
                                     // either: the app pins the text scale

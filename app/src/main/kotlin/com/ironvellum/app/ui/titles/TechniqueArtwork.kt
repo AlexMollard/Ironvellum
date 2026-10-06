@@ -179,7 +179,7 @@ internal fun TechniquePlate(@DrawableRes artwork: Int, state: ArtState, modifier
     val painter = painterResource(artwork)
     val ratio = painter.intrinsicSize.let { if (it.height > 0f) it.width / it.height else 2f / 3f }.coerceIn(2f / 3f, 1f)
     val glow = artRing(state)
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.medium
     Box(
         modifier
             .aspectRatio(ratio)
