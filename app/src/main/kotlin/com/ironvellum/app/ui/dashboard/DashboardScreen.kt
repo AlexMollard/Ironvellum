@@ -1,6 +1,5 @@
 package com.ironvellum.app.ui.dashboard
 
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,12 +32,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -47,8 +45,9 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -95,7 +94,6 @@ import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
-import com.ironvellum.app.ui.theme.inkDot
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -313,9 +311,6 @@ internal fun trialLength(trial: WorkoutSession): String? {
     }
 }
 
-/** Points of a peak's climb drawn beside it: enough to read the trend, few enough to stay a glance. */
-private const val PEAK_SPARK_POINTS = 8
-
 /** A movement's mini bar stops growing here; a long block just reads as a long bar. */
 private const val MINI_BAR_SEGMENTS = 8
 
@@ -386,11 +381,85 @@ fun DashboardScreen(
     val strengthRank by viewModel.strengthRank.collectAsStateWithLifecycle()
     val rankBreakdown by viewModel.rankBreakdown.collectAsStateWithLifecycle()
     val veil by viewModel.veil.collectAsStateWithLifecycle()
+
+    TodayContent(
+        ui = ui,
+        selectedDay = selectedDay,
+        today = LocalDate.now(),
+        live = live,
+        liveSets = liveSets,
+        bodyGap = bodyGap,
+        strengthRank = strengthRank,
+        rankBreakdown = rankBreakdown,
+        veil = veil,
+        actions = TodayActions(
+            onStartSession = onStartSession,
+            onOpenRite = onOpenRite,
+            onOpenForge = onOpenForge,
+            onOpenCodex = onOpenCodex,
+            onOpenSettings = onOpenSettings,
+            onOpenLedger = onOpenLedger,
+            onOpenGarrison = onOpenGarrison,
+            onOpenWorkout = onOpenWorkout,
+            onSetHeight = onSetHeight,
+            onOpenLift = onOpenLift,
+            onSelectDay = viewModel::selectDay,
+            onBeginPreset = { presetId -> viewModel.beginPreset(presetId, onStartSession) },
+            onBeginOpen = { viewModel.beginOpen(onStartSession) },
+        ),
+    )
+
+    // Titles reconciled at startup (health data, imports) have no session to
+    // celebrate in, so the moment is paid out here on the first screen.
+    val owed by viewModel.pendingCelebrations.collectAsStateWithLifecycle()
+    val sex by viewModel.sex.collectAsStateWithLifecycle()
+    AchievementOverlay(
+        items = owed.map { deedAchievement(it, sex) },
+        onDone = { viewModel.celebrationsSeen() },
+        wornTitleId = ui.profile?.currentTitleId,
+        onWear = viewModel::wearTitle,
+    )
+}
+
+/** What Today's controls do. Every one defaults to nothing, so a test can render the page alone. */
+internal class TodayActions(
+    val onStartSession: (Long) -> Unit = {},
+    val onOpenRite: (Long) -> Unit = {},
+    val onOpenForge: () -> Unit = {},
+    val onOpenCodex: () -> Unit = {},
+    val onOpenSettings: () -> Unit = {},
+    val onOpenLedger: () -> Unit = {},
+    val onOpenGarrison: () -> Unit = {},
+    val onOpenWorkout: (Long) -> Unit = {},
+    val onSetHeight: () -> Unit = {},
+    val onOpenLift: (String) -> Unit = {},
+    val onSelectDay: (Int) -> Unit = {},
+    val onBeginPreset: (Long) -> Unit = {},
+    val onBeginOpen: () -> Unit = {},
+)
+
+/**
+ * Today with everything handed in, so a test can set up any state. It does not scroll while it can
+ * fit: [TodayLayout] shares the height it is given between the parts and sheds exercise rows first.
+ */
+@Composable
+internal fun TodayContent(
+    ui: DashboardUi,
+    selectedDay: Int,
+    today: LocalDate,
+    live: WorkoutSession?,
+    liveSets: List<SessionSet>,
+    bodyGap: BodyGap?,
+    strengthRank: String,
+    rankBreakdown: RankBreakdown?,
+    veil: VeilGlance?,
+    actions: TodayActions,
+    nowMs: Long = System.currentTimeMillis(),
+) {
     var rankOpen by remember { mutableStateOf(false) }
     var oathOpen by remember { mutableStateOf(false) }
     val profile = ui.profile
     val progress = Xp.progress(profile?.totalXp ?: 0L)
-    val today = LocalDate.now()
     val selectedPreset = ui.presets.firstOrNull { it.scheduledDay == selectedDay }
     val isTodaySelected = selectedDay == today.dayOfWeek.value
     // The tick, the card and the sealed state all answer one question: was THIS
@@ -404,22 +473,23 @@ fun DashboardScreen(
     val kind = dayKind(ui.presets.isNotEmpty(), selectedPreset, isTodaySelected, liveTrial, sealedTrial)
     val liveWork = liveSets.filter { !it.warmup }
     val liveDone = liveWork.count { it.done }
+    val sealedSets = sealedTrial?.let { ui.sealedSets[it.id].orEmpty() }.orEmpty()
+    val cardRows: List<DayRow> = when (kind) {
+        DayKind.LIVE -> trialRows(liveSets, ui.exercises, sealed = false)
+        DayKind.SEALED -> trialRows(sealedSets, ui.exercises, sealed = true)
+        DayKind.BEGIN, DayKind.PLANNED -> plannedRows(selectedPreset!!.entries)
+        DayKind.RESPITE, DayKind.NO_CYCLE -> emptyList()
+    }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
-    ) {
+    // Header: the name and what is worn are also the way to the Codex (there
+    // was no other route from here to its board), then the rank link and the gear.
+    val head: @Composable () -> Unit = {
         Spacer(Modifier.height(8.dp))
-
-        // Header: the name and what is worn are also the way to the Codex (there
-        // was no other route from here to its board), then the rank link and the gear.
         Row(Modifier.fillMaxWidth().heightIn(min = 56.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(
                 Modifier
                     .weight(1f)
-                    .clickable(onClickLabel = "Open the Codex") { onOpenCodex() },
+                    .clickable(onClickLabel = "Open the Codex") { actions.onOpenCodex() },
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
@@ -468,7 +538,7 @@ fun DashboardScreen(
             Box(
                 Modifier
                     .size(48.dp)
-                    .clickable(role = Role.Button, onClickLabel = "Open settings") { onOpenSettings() },
+                    .clickable(role = Role.Button, onClickLabel = "Open settings") { actions.onOpenSettings() },
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
@@ -479,7 +549,6 @@ fun DashboardScreen(
                 )
             }
         }
-        if (rankOpen) RankSheet(rankBreakdown) { rankOpen = false }
 
         // The level rides a thin rail it is climbing.
         Row(Modifier.fillMaxWidth().height(24.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -518,24 +587,25 @@ fun DashboardScreen(
                 color = IronvellumColors.InkMuted,
             )
         }
-        if (oathOpen) TermDialog(Term.OATH) { oathOpen = false }
 
         WeekRail(
             selectedDay = selectedDay,
             today = today.dayOfWeek.value,
             scheduled = ui.presets.mapNotNull { it.scheduledDay }.toSet(),
             done = ui.weekDone.keys,
-            onSelect = viewModel::selectDay,
+            onSelect = actions.onSelectDay,
         )
+    }
 
-        // The day card: the only boxed area, sized to what it holds.
-        val cardClick: (() -> Unit)? = when (kind) {
-            DayKind.SEALED -> sealedTrial?.let { trial -> { onOpenWorkout(trial.id) } }
-            DayKind.LIVE -> selectedPreset?.takeIf { it.id == liveTrial?.presetId }?.let { rite -> { onOpenRite(rite.id) } }
-            DayKind.BEGIN, DayKind.PLANNED -> selectedPreset?.let { rite -> { onOpenRite(rite.id) } }
-            DayKind.RESPITE -> nextRite?.let { rite -> { onOpenRite(rite.id) } }
-            DayKind.NO_CYCLE -> null
-        }
+    // The day card: the only boxed area, sized to what it holds. `rows` is where its exercise block goes.
+    val cardClick: (() -> Unit)? = when (kind) {
+        DayKind.SEALED -> sealedTrial?.let { trial -> { actions.onOpenWorkout(trial.id) } }
+        DayKind.LIVE -> selectedPreset?.takeIf { it.id == liveTrial?.presetId }?.let { rite -> { actions.onOpenRite(rite.id) } }
+        DayKind.BEGIN, DayKind.PLANNED -> selectedPreset?.let { rite -> { actions.onOpenRite(rite.id) } }
+        DayKind.RESPITE -> nextRite?.let { rite -> { actions.onOpenRite(rite.id) } }
+        DayKind.NO_CYCLE -> null
+    }
+    val card: @Composable (rows: @Composable () -> Unit) -> Unit = { rows ->
         InkPanel(Modifier.fillMaxWidth().padding(top = 8.dp), onClick = cardClick) {
             when (kind) {
                 DayKind.LIVE -> {
@@ -544,18 +614,17 @@ fun DashboardScreen(
                     CardTitle(trial.label, chevron = cardClick != null)
                     PlanText("$liveDone of ${liveWork.size} sets logged")
                     SegmentBar(liveDone, liveWork.size)
-                    DayRows(trialRows(liveSets, ui.exercises, sealed = false))
+                    rows()
                     Spacer(Modifier.height(12.dp))
                     IronvellumButton(
                         label = "Continue ${trial.label}",
-                        onClick = { onStartSession(trial.id) },
+                        onClick = { actions.onStartSession(trial.id) },
                         modifier = Modifier.fillMaxWidth(),
                     )
                 }
                 DayKind.SEALED -> {
                     val trial = sealedTrial!!
                     val rite = selectedPreset!!
-                    val sets = ui.sealedSets[trial.id].orEmpty()
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Filled.Check,
@@ -574,11 +643,11 @@ fun DashboardScreen(
                         )
                     }
                     CardTitle(rite.name, chevron = true)
-                    val done = sets.count { it.done && !it.warmup }
+                    val done = sealedSets.count { it.done && !it.warmup }
                     PlanText(listOfNotNull("$done ${plural(done, "set", "sets")}", trialLength(trial)).joinToString(" · "))
-                    DayRows(trialRows(sets, ui.exercises, sealed = true))
+                    rows()
                     nextRite?.takeIf { it.id != rite.id }?.let { next ->
-                        NextLink(next, chevron = false) { viewModel.selectDay(next.scheduledDay!!) }
+                        NextLink(next, chevron = false) { actions.onSelectDay(next.scheduledDay!!) }
                     }
                 }
                 DayKind.BEGIN, DayKind.PLANNED -> {
@@ -586,13 +655,13 @@ fun DashboardScreen(
                     CardLabel(if (isTodaySelected) "Today's trial" else dayLong(selectedDay))
                     CardTitle(rite.name, chevron = true)
                     PlanText(sentencePlan(SessionClock.planLine(rite.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(rite.id))))
-                    DayRows(plannedRows(rite.entries))
+                    rows()
                     // Today is where the day's rite is begun: Train only plans it.
                     if (kind == DayKind.BEGIN) {
                         Spacer(Modifier.height(12.dp))
                         IronvellumButton(
                             label = "Begin ${rite.name}",
-                            onClick = { viewModel.beginPreset(rite.id, onStartSession) },
+                            onClick = { actions.onBeginPreset(rite.id) },
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -606,7 +675,7 @@ fun DashboardScreen(
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(top = 2.dp),
                     )
-                    nextRite?.let { next -> NextLink(next, chevron = true) { viewModel.selectDay(next.scheduledDay!!) } }
+                    nextRite?.let { next -> NextLink(next, chevron = true) { actions.onSelectDay(next.scheduledDay!!) } }
                 }
                 DayKind.NO_CYCLE -> {
                     CardTitle("No cycle yet", chevron = false)
@@ -617,66 +686,175 @@ fun DashboardScreen(
                         modifier = Modifier.padding(top = 2.dp),
                     )
                     Spacer(Modifier.height(16.dp))
-                    IronvellumButton(label = "Forge a cycle", onClick = onOpenForge, modifier = Modifier.fillMaxWidth())
+                    IronvellumButton(label = "Forge a cycle", onClick = actions.onOpenForge, modifier = Modifier.fillMaxWidth())
                 }
             }
         }
+    }
 
-        // Plain rows under the card, divided by hairlines: no panels.
-        val peak = ui.newPeaks.firstOrNull()
-        val rows = buildList<@Composable () -> Unit> {
-            if (kind == DayKind.NO_CYCLE) {
-                add {
-                    // Not everyone wants a plan first: a trial can be logged
-                    // exercise by exercise with no cycle at all.
-                    ListRow(
-                        label = "Begin an open trial",
-                        subline = "Log exercises as you go, no cycle needed",
-                        onClick = { viewModel.beginOpen(onStartSession) },
-                    )
-                }
+    // Plain rows under the card, divided by hairlines: no panels. Never dropped to make room.
+    val peak = ui.newPeaks.firstOrNull()
+    val plainRows = buildList<@Composable () -> Unit> {
+        if (kind == DayKind.NO_CYCLE) {
+            add {
+                // Not everyone wants a plan first: a trial can be logged
+                // exercise by exercise with no cycle at all.
+                ListRow(
+                    label = "Begin an open trial",
+                    subline = "Log exercises as you go, no cycle needed",
+                    onClick = actions.onBeginOpen,
+                )
             }
-            // A trial under way off the card (another day selected) is one tap from here.
-            if (liveTrial != null && kind != DayKind.LIVE) {
-                add {
-                    ListRow(
-                        label = "Continue ${liveTrial.label}",
-                        subline = "$liveDone of ${liveWork.size} sets logged",
-                        onClick = { onStartSession(liveTrial.id) },
-                    )
-                }
-            }
-            // Height lives in Settings and weight is a Ledger reading, so the link
-            // goes to whichever one is still missing, height first.
-            bodyGap?.let { gap ->
-                add { BodyGapRow(gap, onFix = if (gap == BodyGap.WEIGHT) onOpenLedger else onSetHeight) }
-            }
-            if (peak != null) add { PeakRow(peak) { onOpenLift(peak.name) } }
         }
-        if (rows.isNotEmpty()) {
+        // A trial under way off the card (another day selected) is one tap from here.
+        if (liveTrial != null && kind != DayKind.LIVE) {
+            add {
+                ListRow(
+                    label = "Continue ${liveTrial.label}",
+                    subline = "$liveDone of ${liveWork.size} sets logged",
+                    onClick = { actions.onStartSession(liveTrial.id) },
+                )
+            }
+        }
+        // Height lives in Settings and weight is a Ledger reading, so the link
+        // goes to whichever one is still missing, height first.
+        bodyGap?.let { gap ->
+            add { BodyGapRow(gap, onFix = if (gap == BodyGap.WEIGHT) actions.onOpenLedger else actions.onSetHeight) }
+        }
+        if (peak != null) add { PeakRow(peak) { actions.onOpenLift(peak.name) } }
+    }
+    val plain: @Composable () -> Unit = {
+        if (plainRows.isNotEmpty()) {
             Column(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                rows.forEachIndexed { index, row ->
+                plainRows.forEachIndexed { index, row ->
                     if (index > 0) InkDivider()
                     row()
                 }
             }
         }
-
-        VeilSection(veil, hero = kind == DayKind.RESPITE, onOpen = onOpenGarrison)
-        // Clear of the raised Train plate, which stands 10dp above the bar.
-        Spacer(Modifier.height(28.dp))
     }
 
-    // Titles reconciled at startup (health data, imports) have no session to
-    // celebrate in, so the moment is paid out here on the first screen.
-    val owed by viewModel.pendingCelebrations.collectAsStateWithLifecycle()
-    val sex by viewModel.sex.collectAsStateWithLifecycle()
-    AchievementOverlay(
-        items = owed.map { deedAchievement(it, sex) },
-        onDone = { viewModel.celebrationsSeen() },
-        wornTitleId = profile?.currentTitleId,
-        onWear = viewModel::wearTitle,
+    TodayLayout(
+        rows = cardRows,
+        hero = kind == DayKind.RESPITE,
+        head = head,
+        card = card,
+        plain = plain,
+        veil = { full -> VeilSection(veil, full, nowMs, actions.onOpenGarrison) },
     )
+    if (rankOpen) RankSheet(rankBreakdown) { rankOpen = false }
+    if (oathOpen) TermDialog(Term.OATH) { oathOpen = false }
+}
+
+/** Beneath this the exercise rows stop tightening and start folding into "+N more". Rows are not tap targets, the card is. */
+private val TIGHT_ROW = 40.dp
+
+/** The gap above the card's exercise block. */
+private val ROWS_TOP_PAD = 10.dp
+
+/** The "+N more" line's least height. */
+private val MORE_LINE = 28.dp
+
+/** Clear of the raised Train plate, which stands 10dp above the bar. */
+private val BOTTOM_CLEARANCE = 28.dp
+
+/** The page's side margin; the card pads its content another 16dp inside it. */
+private val GUTTER = 16.dp
+
+/** One pass of the page: head, card, plain rows, Veil (absent when probing the rest), bottom clearance. */
+@Composable
+private fun TodayPage(
+    head: @Composable () -> Unit,
+    card: @Composable (rows: @Composable () -> Unit) -> Unit,
+    plain: @Composable () -> Unit,
+    rows: @Composable () -> Unit,
+    veil: (@Composable () -> Unit)?,
+) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) {
+        head()
+        card(rows)
+        plain()
+        veil?.invoke()
+        Spacer(Modifier.height(BOTTOM_CLEARANCE))
+    }
+}
+
+/**
+ * Lays Today out to the height it is given, never scrolling while it can fit. It measures the page
+ * without its exercise rows and Veil, one row, the "+N more" line and both Veil forms, hands those
+ * heights to [fitToday] and composes the page once with what fits. The probes sit in slots of their
+ * own and are never placed.
+ *
+ * Degradation, in order: exercise rows tighten from 52dp toward 40dp; the Veil's full form (respite
+ * only, when there are no rows) gives way to the compact one; rows fold into "+N more". Plain rows
+ * are never dropped.
+ */
+@Composable
+private fun TodayLayout(
+    rows: List<DayRow>,
+    hero: Boolean,
+    head: @Composable () -> Unit,
+    card: @Composable (rows: @Composable () -> Unit) -> Unit,
+    plain: @Composable () -> Unit,
+    veil: @Composable (full: Boolean) -> Unit,
+) {
+    SubcomposeLayout(Modifier.fillMaxSize()) { constraints ->
+        val width = constraints.maxWidth
+        val bounded = constraints.hasBoundedHeight
+        val available = if (bounded) constraints.maxHeight else Int.MAX_VALUE / 4
+        val loose = Constraints(minWidth = width, maxWidth = width)
+        // A probe stays composed while it is measured but is never placed, so it must expose nothing
+        // to semantics: a screen reader and a test would otherwise meet every probed part twice.
+        fun heightOf(slot: Any, content: @Composable () -> Unit): Int =
+            subcompose(slot) { Box(Modifier.clearAndSetSemantics {}) { content() } }.sumOf { it.measure(loose).height }
+
+        val chrome = heightOf("chrome") { TodayPage(head, card, plain, rows = {}, veil = null) }
+        val veilCompact = heightOf("veilCompact") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(false) } }
+        val veilFull =
+            if (hero) heightOf("veilFull") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(true) } } else null
+        // A row sits inside the page gutter and the card's own padding; only its content height matters here.
+        val rowContent =
+            if (rows.isEmpty()) 0
+            else heightOf("row") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER * 2)) { ExerciseRow(rows.first(), height = null, divider = false) } }
+        val moreLine =
+            if (rows.isEmpty()) 0
+            else heightOf("more") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER * 2)) { MoreLine(hidden = 1, divider = false) } }
+        val naturalRow = maxOf(ListRowHeight.roundToPx(), rowContent)
+        val tightRow = maxOf(TIGHT_ROW.roundToPx(), rowContent)
+
+        val fit = fitToday(
+            TodayBudget(
+                available = available,
+                chrome = chrome,
+                rowCount = rows.size,
+                rowsTopPad = ROWS_TOP_PAD.roundToPx(),
+                naturalRow = naturalRow,
+                tightRow = tightRow,
+                moreLine = moreLine,
+                veilFull = veilFull,
+                veilCompact = veilCompact,
+            ),
+        )
+        val placeables = if (fit != null) {
+            val rowHeight = fit.rowHeight.toDp()
+            subcompose("page") {
+                TodayPage(head, card, plain, rows = { ExerciseBlock(rows, fit.rows, rowHeight, hidden = rows.size - fit.rows) }, veil = { veil(fit.fullVeil) })
+            }.map { it.measure(Constraints(minWidth = width, maxWidth = width, maxHeight = available)) }
+        } else {
+            // The least this page can be still does not fit (a very large font, a very small screen):
+            // scroll the whole of it. Scrolling is a worse day than a squeezed one, but clipping a row,
+            // a button or the Veil is worse than scrolling.
+            val rowHeight = naturalRow.toDp()
+            subcompose("scroll") {
+                Column(Modifier.verticalScroll(rememberScrollState())) {
+                    TodayPage(head, card, plain, rows = { ExerciseBlock(rows, rows.size, rowHeight, hidden = 0) }, veil = { veil(hero) })
+                }
+            }.map { it.measure(Constraints.fixed(width, available)) }
+        }
+        layout(width, if (bounded) available else placeables.maxOf { it.height }) {
+            placeables.forEach { it.place(0, 0) }
+        }
+    }
 }
 
 /**
@@ -800,54 +978,77 @@ private fun SegmentBar(done: Int, total: Int) {
     }
 }
 
-/** The day's movements, 52dp rows folded to one line: a check when done, a mini bar when part way. */
+/**
+ * The day's movements: the first [shown] of [rows], each [rowHeight] tall with its hairline inside that
+ * height, then a muted "+N more" line for the [hidden] rest. Nothing at all when there is nothing to show.
+ */
 @Composable
-private fun DayRows(rows: List<DayRow>) {
-    Column(Modifier.fillMaxWidth().padding(top = 10.dp)) {
-        rows.forEachIndexed { index, row ->
-            if (index > 0) InkDivider()
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = ListRowHeight),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Box(Modifier.width(26.dp)) {
-                    if (row.checked) {
-                        Icon(
-                            Icons.Filled.Check,
-                            contentDescription = null,
-                            tint = IronvellumColors.Emerald,
-                            modifier = Modifier.size(14.dp),
+private fun ExerciseBlock(rows: List<DayRow>, shown: Int, rowHeight: Dp, hidden: Int) {
+    if (shown == 0 && hidden == 0) return
+    Column(Modifier.fillMaxWidth().padding(top = ROWS_TOP_PAD)) {
+        rows.take(shown).forEachIndexed { index, row -> ExerciseRow(row, rowHeight, divider = index > 0) }
+        if (hidden > 0) MoreLine(hidden, divider = shown > 0)
+    }
+}
+
+/** One movement folded to a line: a check when done, a mini bar when part way. [height] null measures its content. */
+@Composable
+private fun ExerciseRow(row: DayRow, height: Dp?, divider: Boolean) {
+    Box(Modifier.fillMaxWidth().then(if (height != null) Modifier.height(height) else Modifier)) {
+        if (divider) InkDivider(Modifier.align(Alignment.TopStart))
+        Row(Modifier.fillMaxWidth().align(Alignment.CenterStart), verticalAlignment = Alignment.CenterVertically) {
+            Box(Modifier.width(26.dp)) {
+                if (row.checked) {
+                    Icon(
+                        Icons.Filled.Check,
+                        contentDescription = null,
+                        tint = IronvellumColors.Emerald,
+                        modifier = Modifier.size(14.dp),
+                    )
+                }
+            }
+            Text(
+                row.name,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (row.checked) IronvellumColors.InkMuted else IronvellumColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            if (row.partly) {
+                Row(Modifier.padding(start = 8.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                    repeat(row.total.coerceAtMost(MINI_BAR_SEGMENTS)) { segment ->
+                        Box(
+                            Modifier
+                                .size(width = 8.dp, height = 3.dp)
+                                .background(if (segment < row.done) IronvellumColors.Emerald else IronvellumColors.Rune),
                         )
                     }
                 }
-                Text(
-                    row.name,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = if (row.checked) IronvellumColors.InkMuted else IronvellumColors.Ink,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(1f),
-                )
-                if (row.partly) {
-                    Row(Modifier.padding(start = 8.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
-                        repeat(row.total.coerceAtMost(MINI_BAR_SEGMENTS)) { segment ->
-                            Box(
-                                Modifier
-                                    .size(width = 8.dp, height = 3.dp)
-                                    .background(if (segment < row.done) IronvellumColors.Emerald else IronvellumColors.Rune),
-                            )
-                        }
-                    }
-                }
-                Text(
-                    row.value,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = IronvellumColors.InkMuted,
-                    maxLines = 1,
-                    modifier = Modifier.padding(start = 8.dp),
-                )
             }
+            Text(
+                row.value,
+                style = MaterialTheme.typography.labelMedium,
+                color = IronvellumColors.InkMuted,
+                maxLines = 1,
+                modifier = Modifier.padding(start = 8.dp),
+            )
         }
+    }
+}
+
+/** "+3 more": the rows that did not fit; the card's own tap opens the rite or trial that lists them. */
+@Composable
+private fun MoreLine(hidden: Int, divider: Boolean) {
+    Box(Modifier.fillMaxWidth().heightIn(min = MORE_LINE), contentAlignment = Alignment.CenterStart) {
+        if (divider) InkDivider(Modifier.align(Alignment.TopStart))
+        Text(
+            "+$hidden more",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 26.dp),
+        )
     }
 }
 
@@ -881,28 +1082,22 @@ private fun NextLink(next: WorkoutPreset, chevron: Boolean, onClick: () -> Unit)
     }
 }
 
-/** A fresh peak: gold tag, the lift, its figure and the climb that earned it. Opens the lift. */
+/**
+ * A fresh peak as one 52dp plain row: the lift, "New peak" in gold over when and how far it rose, and
+ * the set that did it. Opens the lift.
+ */
 @Composable
 private fun PeakRow(peak: LiftRecord, onOpen: () -> Unit) {
-    val best = peak.series.indexOfFirst { it == peak.bestE1rmKg }
-    val gain = peak.bestE1rmKg - (peak.series.take(best).maxOrNull() ?: peak.bestE1rmKg)
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = ListRowHeight)
             .clickable(role = Role.Button, onClickLabel = "Open ${peak.name}", onClick = onOpen)
-            .padding(vertical = 6.dp),
+            .heightIn(min = ListRowHeight)
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Column(Modifier.weight(1f)) {
-            Text(
-                "New peak · ${shortWhen(peak.bestAtMs)}",
-                style = MaterialTheme.typography.labelSmall,
-                fontWeight = FontWeight.SemiBold,
-                color = IronvellumColors.SovereignGold,
-                maxLines = 1,
-            )
             Text(
                 peak.name,
                 style = MaterialTheme.typography.bodyMedium,
@@ -910,54 +1105,24 @@ private fun PeakRow(peak: LiftRecord, onOpen: () -> Unit) {
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
-        }
-        Row(verticalAlignment = Alignment.Bottom) {
             Text(
-                "${"%.0f".format(Locale.US, peak.bestE1rmKg)} kg",
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-                color = IronvellumColors.SovereignGold,
+                buildAnnotatedString {
+                    withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append("New peak") }
+                    append(" · ${shortWhen(peak.bestAtMs)} · up ${peakGainText(peak)}")
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
                 maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            if (gain >= 0.5) {
-                Text(
-                    "+${"%.0f".format(Locale.US, gain)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.padding(start = 4.dp, bottom = 3.dp),
-                )
-            }
         }
-        PeakSpark(peak.series.takeLast(PEAK_SPARK_POINTS), Modifier.size(width = 72.dp, height = 28.dp))
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = IronvellumColors.InkMuted,
-            modifier = Modifier.size(18.dp),
+        Text(
+            peakSetText(peak),
+            style = MaterialTheme.typography.labelMedium,
+            color = IronvellumColors.Ink,
+            maxLines = 1,
         )
-    }
-}
-
-/** A peak's climb in grey, each trial's best oldest first, ending on the gold dot that is the peak. */
-@Composable
-private fun PeakSpark(series: List<Double>, modifier: Modifier) {
-    Canvas(modifier) {
-        if (series.size < 2) return@Canvas
-        val lo = series.min()
-        val span = (series.max() - lo).takeIf { it > 0.0 } ?: 1.0
-        val inset = 4.dp.toPx()
-        val points = series.mapIndexed { i, v ->
-            Offset(
-                inset + (size.width - 2 * inset) * i / (series.size - 1),
-                size.height - inset - ((v - lo) / span).toFloat() * (size.height - 2 * inset),
-            )
-        }
-        val path = Path().apply {
-            moveTo(points.first().x, points.first().y)
-            points.drop(1).forEach { lineTo(it.x, it.y) }
-        }
-        drawPath(path, IronvellumColors.InkMuted, style = Stroke(width = 1.8.dp.toPx()))
-        inkDot(points.last(), 3.2.dp.toPx(), IronvellumColors.SovereignGold)
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
     }
 }
 
@@ -993,12 +1158,13 @@ private fun BodyGapRow(gap: BodyGap, onFix: () -> Unit) {
 }
 
 /**
- * The Veil under the day card, unboxed behind a hairline: essence, the hourly rate, the full-strength
- * bar, and inscriptions waiting with the way to inscribe them. On a respite day it grows to the main
- * element: a large essence figure with echoes and the relic multiplier. Tapping it opens the Veil.
+ * The Veil under the day card, unboxed behind a hairline. Compact: "The Veil", essence and rate on one
+ * line, the full-strength bar with its caption, and inscriptions waiting with the way to inscribe them.
+ * [full] (a respite day, when it is the main element and there is room) grows it: the essence as the
+ * hero figure with the rate beside the name, echoes and the relic multiplier. Tapping it opens the Veil.
  */
 @Composable
-private fun VeilSection(veil: VeilGlance?, hero: Boolean, onOpen: () -> Unit) {
+private fun VeilSection(veil: VeilGlance?, full: Boolean, nowMs: Long, onOpen: () -> Unit) {
     Column(Modifier.fillMaxWidth().padding(top = 14.dp)) {
         InkDivider()
         Column(
@@ -1015,12 +1181,14 @@ private fun VeilSection(veil: VeilGlance?, hero: Boolean, onOpen: () -> Unit) {
                     color = IronvellumColors.Ink,
                     modifier = Modifier.weight(1f),
                 )
-                veil?.let {
-                    Text(
-                        "${rateLabel(it.snapshot.rate.perHour)}/h",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = IronvellumColors.InkMuted,
-                    )
+                if (full) {
+                    veil?.let {
+                        Text(
+                            "${rateLabel(it.snapshot.rate.perHour)}/h",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = IronvellumColors.InkMuted,
+                        )
+                    }
                 }
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -1031,30 +1199,41 @@ private fun VeilSection(veil: VeilGlance?, hero: Boolean, onOpen: () -> Unit) {
             }
             if (veil != null) {
                 val state = veil.snapshot.state
-                // Banked plus what is accruing now: the same headline the Veil shows. Read when
-                // this recomposes, not every frame.
-                val now = System.currentTimeMillis()
-                val essence = Idle.collect(state, veil.snapshot.rate, now).essence
-                Row(Modifier.padding(top = if (hero) 14.dp else 8.dp), verticalAlignment = Alignment.Bottom) {
+                // Banked plus what is accruing now: the same headline the Veil shows.
+                val essence = "%,d".fmt(Idle.collect(state, veil.snapshot.rate, nowMs).essence)
+                if (full) {
+                    Row(Modifier.padding(top = 14.dp), verticalAlignment = Alignment.Bottom) {
+                        Text(
+                            essence,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = IronvellumColors.Ink,
+                            maxLines = 1,
+                        )
+                        Text(
+                            "essence",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                            modifier = Modifier.padding(start = 6.dp, bottom = 4.dp),
+                        )
+                    }
+                } else {
                     Text(
-                        "%,d".fmt(essence),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = if (hero) 44.sp else 22.sp,
-                        color = IronvellumColors.Ink,
-                        maxLines = 1,
-                    )
-                    Text(
-                        "essence",
-                        style = MaterialTheme.typography.bodySmall,
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = IronvellumColors.Ink, fontWeight = FontWeight.SemiBold)) { append(essence) }
+                            append(" essence · ${rateLabel(veil.snapshot.rate.perHour)}/h")
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
                         color = IronvellumColors.InkMuted,
-                        modifier = Modifier.padding(start = 6.dp, bottom = 4.dp),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 2.dp),
                     )
                 }
-                veilStrength(state.lastCollectedAtMs, now)?.let { strength ->
+                veilStrength(state.lastCollectedAtMs, nowMs)?.let { strength ->
                     InkRail(
                         fraction = strength.fraction,
-                        modifier = Modifier.padding(top = 12.dp),
+                        modifier = Modifier.padding(top = if (full) 12.dp else 8.dp),
                         height = 3.dp,
                         fill = SolidColor(IronvellumColors.InkMuted),
                     )
@@ -1062,10 +1241,10 @@ private fun VeilSection(veil: VeilGlance?, hero: Boolean, onOpen: () -> Unit) {
                         strength.caption,
                         style = MaterialTheme.typography.bodySmall,
                         color = IronvellumColors.InkMuted,
-                        modifier = Modifier.padding(top = 6.dp),
+                        modifier = Modifier.padding(top = if (full) 6.dp else 4.dp),
                     )
                 }
-                if (hero) {
+                if (full) {
                     Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
                         VeilFigure("Echoes", state.figures.toString())
                         if (state.relicMultiplier > 1.0) VeilFigure("Relic", "×${"%.2f".fmt(state.relicMultiplier)}")
