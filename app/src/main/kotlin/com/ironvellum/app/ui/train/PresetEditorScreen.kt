@@ -286,7 +286,7 @@ fun PresetEditorScreen(
     ) {
         Spacer(Modifier.height(20.dp))
         Text(
-            if (ui.presetId == null) "FORGE A RITE" else "REFORGE THIS RITE",
+            if (ui.presetId == null) "NEW RITE" else "REFORGE THIS RITE",
             style = MaterialTheme.typography.labelLarge,
             color = IronvellumColors.SystemGreen,
         )
