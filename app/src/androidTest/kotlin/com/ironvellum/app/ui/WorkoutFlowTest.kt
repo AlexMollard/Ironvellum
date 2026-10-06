@@ -209,8 +209,8 @@ class WorkoutFlowTest {
             Thread.sleep(POLL_MS)
         }
         check(claimed) { "the unlogged-sets confirm never composed; on screen: ${allText()}" }
-        // Completion stacks celebrations: the victory screen, then one page per
-        // award earned. Drain them by their own buttons.
+        // Completion stacks pages: level-up and deeds when earned, then the
+        // summary. Drain them by their own buttons.
         drainCelebrations()
 
         // Completion pays XP. The dashboard header is the user-visible proof,
@@ -243,19 +243,22 @@ class WorkoutFlowTest {
     }
 
     /**
-     * Clicks through every celebration overlay until the dashboard is back.
-     * Each overlay's advance button reads "Continue", or "Next (1/3)" while
-     * more award pages remain. A session that differs from its preset then
-     * offers a routine update; this test keeps the routine so the seeded preset
-     * stays as later tests expect it.
+     * Clicks through the celebration until the dashboard is back: "Continue" on
+     * the level-up and deeds pages (when the seal earned them), "Done" on the
+     * summary. A session that differs from its preset then offers a routine
+     * update; this test keeps the routine so the seeded preset stays as later
+     * tests expect it. It is finished once something was clicked and nothing
+     * left to click is on screen.
      */
-    private fun drainCelebrations(rounds: Int = 12) {
+    private fun drainCelebrations(rounds: Int = 24) {
+        var clicked = 0
         repeat(rounds) {
-            if (allText().any { it.endsWith("XP") && it.contains('/') }) return
-            val advance = allText().firstOrNull { it == "CONTINUE" || it.startsWith("NEXT (") || it == "KEEP ROUTINE" }
+            val advance = allText().firstOrNull { it == "Continue" || it == "Done" || it == "KEEP RITE" }
+            if (advance == null && clicked > 0) return
             if (advance != null) {
                 compose.onAllNodesWithText(advance).onFirst()
                     .performSemanticsAction(SemanticsActions.OnClick)
+                clicked += 1
             }
             settle()
             Thread.sleep(POLL_MS)

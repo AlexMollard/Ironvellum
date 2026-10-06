@@ -127,6 +127,7 @@ import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.domain.isStrength
 import com.ironvellum.app.domain.RoutineUpdate
+import com.ironvellum.app.domain.SealedReopen
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.SetRecords
@@ -134,9 +135,6 @@ import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.ui.components.Achievement
-import com.ironvellum.app.ui.components.AchievementOverlay
-import com.ironvellum.app.ui.components.deedAchievement
-import com.ironvellum.app.ui.components.levelUpAchievement
 import com.ironvellum.app.ui.components.ShareCardDialog
 import com.ironvellum.app.ui.components.ExerciseInfoSheet
 import com.ironvellum.app.ui.components.ExercisePickerSheet
@@ -157,6 +155,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -249,8 +248,12 @@ class SessionViewModel(
         SessionClock.pace(history).secondsPerSet(session?.presetId)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    /** How far the finish has got: celebrate first, then ask about the routine, then leave. */
-    enum class Finish { VICTORY, AWARDS, ROUTINE }
+    /**
+     * How far the finish has got: the level-up page, the deeds page and the
+     * summary (each only when the seal earned it, see [CelebrationFlow]), then
+     * the question about the routine, then leave.
+     */
+    enum class Finish { LEVEL, DEEDS, SUMMARY, ROUTINE }
 
     /**
      * The completion result and the finish stage. Held here, not in the
@@ -259,7 +262,7 @@ class SessionViewModel(
      */
     private val _completion = MutableStateFlow<Repository.CompletionResult?>(null)
     val completion: StateFlow<Repository.CompletionResult?> = _completion
-    private val _finish = MutableStateFlow(Finish.VICTORY)
+    private val _finish = MutableStateFlow(Finish.LEVEL)
 
     /** What the sealed trial set, frozen at the seal so a rotation keeps it. */
     private val _peaks = MutableStateFlow<List<SessionPeaks.Peak>>(emptyList())
@@ -426,6 +429,31 @@ class SessionViewModel(
         }
     }
 
+    /**
+     * "Sealed too soon? Keep going": takes the seal back (see
+     * [Repository.reopenSealedTrial]) and puts the screen back to a live trial.
+     * [claiming] stays up until the live row is back, so the "already sealed"
+     * guard on the screen never sees a sealed trial with no result and leaves.
+     */
+    fun reopen(onReopened: () -> Unit, onRefused: (SealedReopen.Refusal) -> Unit) {
+        viewModelScope.launchGuarded("reopen trial") {
+            when (val decision = repo.reopenSealedTrial(sessionId)) {
+                is SealedReopen.Decision.Refuse -> onRefused(decision.reason)
+                is SealedReopen.Decision.Reopen -> {
+                    ui.first { it.session?.completedAtMs == null }
+                    _routineUpdate.value = null
+                    _peaks.value = emptyList()
+                    _finish.value = Finish.LEVEL
+                    _completion.value = null
+                    _claiming.value = false
+                    // The seal stopped the trial notification; the live trial wants it back.
+                    WorkoutSessionService.start(appContext, sessionId)
+                    onReopened()
+                }
+            }
+        }
+    }
+
     // Save-on-blur handlers: one write per field edit, never per keystroke.
     fun setSessionTitle(title: String) {
         viewModelScope.launch { repo.setSessionTitle(sessionId, title) }
@@ -496,6 +524,8 @@ fun SessionScreen(
     val rest by viewModel.rest.collectAsStateWithLifecycle()
     var confirmAbandon by remember { mutableStateOf(false) }
     var confirmClaim by remember { mutableStateOf(false) }
+    var confirmReopen by remember { mutableStateOf(false) }
+    var reopenRefusal by remember { mutableStateOf<SealedReopen.Refusal?>(null) }
     var showExercisePicker by remember { mutableStateOf(false) }
     var editModifiersFor by remember { mutableStateOf<Long?>(null) }
     var showRiteMuscles by remember { mutableStateOf(false) }
@@ -1081,39 +1111,9 @@ fun SessionScreen(
     // in the view model, so a rotation resumes where the lifter was; the
     // session is already completed and paid, whatever the answer.
     completion?.let { result ->
-        val awards = remember(result, sex) { awardsFor(result, sex) }
-        when (finish) {
-            SessionViewModel.Finish.VICTORY -> VictoryOverlay(
-                result = result,
-                title = session.title.ifBlank { session.label },
-                peaks = peaks,
-                totals = remember(ui.sets, exercises) { WorkoutShare.totals(ui.sets, exercises.associateBy { it.id }) },
-                onShare = {
-                    shareText = WorkoutShare.format(
-                        // The session row in the flow may not have refreshed yet;
-                        // the completion result carries the authoritative figures.
-                        session.copy(
-                            completedAtMs = session.completedAtMs ?: System.currentTimeMillis(),
-                            xpAwarded = result.xpAwarded,
-                            strengthScore = result.strengthScore,
-                        ),
-                        ui.sets,
-                        exercises.associateBy { it.id },
-                        peaks = peaks.map { it.exerciseName },
-                    )
-                },
-                onContinue = {
-                    viewModel.advanceFinish(
-                        if (awards.isEmpty()) SessionViewModel.Finish.ROUTINE else SessionViewModel.Finish.AWARDS,
-                    )
-                },
-            )
-            SessionViewModel.Finish.AWARDS -> AchievementOverlay(
-                items = awards,
-                onDone = { viewModel.advanceFinish(SessionViewModel.Finish.ROUTINE) },
-                wornTitleId = wornTitleId,
-                onWear = viewModel::wearTitle,
-            )
+        val hasLevel = CelebrationFlow.hasLevelUp(result)
+        val hasDeeds = CelebrationFlow.deedsOf(result).isNotEmpty()
+        when (val stage = CelebrationFlow.resolve(finish, hasLevel, hasDeeds)) {
             SessionViewModel.Finish.ROUTINE -> {
                 val offer = routineUpdate
                 if (offer != null) {
@@ -1133,7 +1133,73 @@ fun SessionScreen(
                     LaunchedEffect(result) { onSealed() }
                 }
             }
+            else -> TrialCelebration(
+                stage = stage,
+                result = result,
+                title = session.title.ifBlank { session.label },
+                peaks = peaks,
+                totals = remember(ui.sets, exercises) { WorkoutShare.totals(ui.sets, exercises.associateBy { it.id }) },
+                sex = sex,
+                wornTitleId = wornTitleId,
+                reopenUntilMs = session.completedAtMs?.let { it + SealedReopen.WINDOW_MS },
+                onContinue = { viewModel.advanceFinish(CelebrationFlow.after(stage, hasLevel, hasDeeds)) },
+                onSkipToSummary = { viewModel.advanceFinish(SessionViewModel.Finish.SUMMARY) },
+                onWear = viewModel::wearTitle,
+                onShare = {
+                    shareText = WorkoutShare.format(
+                        // The session row in the flow may not have refreshed yet;
+                        // the completion result carries the authoritative figures.
+                        session.copy(
+                            completedAtMs = session.completedAtMs ?: System.currentTimeMillis(),
+                            xpAwarded = result.xpAwarded,
+                            strengthScore = result.strengthScore,
+                        ),
+                        ui.sets,
+                        exercises.associateBy { it.id },
+                        peaks = peaks.map { it.exerciseName },
+                    )
+                },
+                onReopen = { confirmReopen = true },
+            )
         }
+    }
+
+    if (confirmReopen) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = { confirmReopen = false },
+            title = { Text("Reopen this trial?") },
+            text = { Text("The XP it paid is taken back until you seal again.") },
+            // Keeping it sealed is the filled action: a reflex tap changes nothing.
+            confirmButton = {
+                IronvellumButton("Keep it sealed", onClick = { confirmReopen = false })
+            },
+            dismissButton = {
+                IronvellumButton(
+                    "Reopen",
+                    quiet = true,
+                    onClick = {
+                        confirmReopen = false
+                        viewModel.reopen(
+                            onReopened = { slideReset++ },
+                            onRefused = { reopenRefusal = it },
+                        )
+                    },
+                )
+            },
+        )
+    }
+
+    reopenRefusal?.let { reason ->
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = { reopenRefusal = null },
+            title = { Text("This trial stays sealed") },
+            text = { Text(reopenRefusalText(reason)) },
+            confirmButton = { IronvellumButton("OK", onClick = { reopenRefusal = null }) },
+        )
     }
 
     shareText?.let { text ->
@@ -1141,10 +1207,13 @@ fun SessionScreen(
     }
 }
 
-/** One page per honour the completion earned, shown after the victory. */
-private fun awardsFor(result: Repository.CompletionResult, sex: Sex): List<Achievement> = buildList {
-    if (result.levelAfter > result.levelBefore) add(levelUpAchievement(result.levelBefore, result.levelAfter, result.totalXp))
-    result.newTitles.forEach { add(deedAchievement(it, sex)) }
+/** Why a trial cannot be reopened, in the words the dialog shows. */
+private fun reopenRefusalText(reason: SealedReopen.Refusal): String = when (reason) {
+    SealedReopen.Refusal.NOT_SEALED -> "This trial is already open."
+    SealedReopen.Refusal.WINDOW_CLOSED -> "Ten minutes have passed. Amend it from the Chronicle instead."
+    SealedReopen.Refusal.ANOTHER_LIVE -> "Another trial is open. Seal or abandon it first."
+    SealedReopen.Refusal.AMENDED -> "It was amended after sealing, so it cannot be taken back."
+    SealedReopen.Refusal.LEDGER_SHORT -> "The XP it paid has been spent, so it cannot be taken back."
 }
 
 @Composable
@@ -1698,6 +1767,9 @@ private const val UNDO_MS = 5_000L
 /** Four digits is more than any reps, seconds, minutes or attempts figure needs. */
 private const val FIGURE_INPUT_MAX = 9_999
 
+/** A stepper's figure: room for "102.5" between its glyphs, and no more. */
+private val FIGURE_WIDTH = 56.dp
+
 /** Every footer state is this tall, so the bar never shifts as its slot changes. */
 private val FOOTER_HEIGHT = 76.dp
 
@@ -2220,7 +2292,7 @@ private fun TrialSetRow(
                             figure.kind.typable() -> ({ onTypeFigure(figure.kind) })
                             else -> null
                         },
-                        modifier = Modifier.weight(if (figure.kind == FigureKind.LOAD) 1.2f else 1f),
+                        modifier = Modifier.weight(1f),
                     )
                 }
                 if (metric == ExerciseMetric.ATTEMPTS_GRADE) {
@@ -2307,11 +2379,13 @@ private fun FigureStepper(
     onType: (() -> Unit)?,
     modifier: Modifier = Modifier,
 ) {
-    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+    // The glyphs hug the figure, and the group sits centred in its half: spread
+    // to the edges, one figure's + read as the next figure's −.
+    Row(modifier, horizontalArrangement = Arrangement.Center, verticalAlignment = Alignment.CenterVertically) {
         StepButton("−", "Decrease ${figure.what}") { onEdit(figure.minus) }
         Column(
             Modifier
-                .weight(1f)
+                .widthIn(min = FIGURE_WIDTH)
                 .heightIn(min = 48.dp)
                 .then(
                     if (onType != null) {

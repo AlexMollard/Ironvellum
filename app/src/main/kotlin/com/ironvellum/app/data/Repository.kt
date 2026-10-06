@@ -73,6 +73,7 @@ import com.ironvellum.app.domain.loadsToCarry
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SealedEdit
+import com.ironvellum.app.domain.SealedReopen
 import com.ironvellum.app.domain.TrialDraft
 import com.ironvellum.app.domain.SkillClaimResult
 import com.ironvellum.app.domain.SkillPractice
@@ -1556,7 +1557,10 @@ class Repository(
      * uploaded.
      */
     suspend fun recordPushWatermark(fingerprints: Map<Long, Int>) = db.withTransaction {
-        syncStateDao.upsertAll(fingerprints.map { SyncStateEntity(it.key, it.value) })
+        // A tombstone written while this push ran (a delete, or a reopen) must
+        // outlive it, or the cloud row it still has to remove would be forgotten.
+        val tombstoned = syncStateDao.tombstoned().toSet()
+        syncStateDao.upsertAll(fingerprints.filterKeys { it !in tombstoned }.map { SyncStateEntity(it.key, it.value) })
         syncStateDao.pruneExcept(fingerprints.keys.toList())
     }
 
@@ -1920,6 +1924,52 @@ class Repository(
         sessionDao.deleteSetsFor(sessionId)
         syncStateDao.upsertAll(listOf(SyncStateEntity(sessionId, SyncStateEntity.TOMBSTONE)))
         sessionDao.deleteCompleted(sessionId)
+    }
+
+    /**
+     * "Sealed too soon? Keep going": reverses [completeSession] for one trial in
+     * ONE transaction, within [SealedReopen.WINDOW_MS] of the seal, and returns
+     * the decision instead of throwing so the screen can say why it refused.
+     *
+     * What the seal applied, and what undoes it:
+     * - the row's completedAtMs, xpAwarded (quest bonus included) and
+     *   strengthScore: cleared, so the quest bonus is judged afresh on re-seal
+     *   (it is derived from completed trials, not stored);
+     * - the profile's totalXp and lifetimeStrength: the same two figures
+     *   subtracted, unclamped (a ledger that cannot pay it back refuses);
+     * - the push watermark: a tombstone, as for a delete, so the cloud row
+     *   goes on the next push and a re-seal uploads it fresh.
+     *
+     * Kept, as everywhere else: deeds and the title worn, inscriptions
+     * (rollLevelMark stops a re-seal paying a level twice) and the highest
+     * rank band, so the end state equals a single seal.
+     */
+    suspend fun reopenSealedTrial(
+        sessionId: Long,
+        nowMs: Long = System.currentTimeMillis(),
+    ): SealedReopen.Decision = db.withTransaction {
+        val session = sessionDao.byId(sessionId)
+            ?: return@withTransaction SealedReopen.Decision.Refuse(SealedReopen.Refusal.NOT_SEALED)
+        val profile = profileDao.get() ?: error("Profile missing")
+        val decision = SealedReopen.decide(
+            completedAtMs = session.completedAtMs,
+            xpAwarded = session.xpAwarded,
+            strengthScore = session.strengthScore,
+            amended = session.editedAtMs != null || session.sealedXp != null,
+            anotherLive = sessionDao.liveSession() != null,
+            totalXp = profile.totalXp,
+            lifetimeStrength = profile.lifetimeStrength,
+            nowMs = nowMs,
+        )
+        if (decision is SealedReopen.Decision.Reopen) {
+            sessionDao.updateSession(
+                session.copy(completedAtMs = null, xpAwarded = 0, strengthScore = 0, sealedXp = null),
+            )
+            profileDao.addXp(-decision.xp.toLong())
+            profileDao.setLifetimeStrength(profile.lifetimeStrength - decision.strength)
+            syncStateDao.upsertAll(listOf(SyncStateEntity(sessionId, SyncStateEntity.TOMBSTONE)))
+        }
+        decision
     }
 
     /** What amending a sealed trial did, for the screen that asked. */
