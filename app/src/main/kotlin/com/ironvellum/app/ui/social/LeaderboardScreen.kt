@@ -124,7 +124,7 @@ data class LiftsBoardUi(
 /** Which board the BOARD tab shows; the muster roll is deliberately a separate board, not a metric. */
 private enum class Board(val label: String) {
     Training("TRAINING"),
-    Lifts("STRENGTH"),
+    Lifts("LIFTS"),
     Muster("THE VEIL"),
 }
 
@@ -133,8 +133,8 @@ private enum class BoardMetric(val label: String) {
     Xp("XP"),
     Level("LEVEL"),
     Streak("OATH"),
-    Titles("TITLES"),
-    Strength("STRENGTH"),
+    Titles("DEEDS"),
+    Strength("STRENGTH SCORE"),
     Last7("7-DAY"),
     ;
 
@@ -153,7 +153,7 @@ private enum class BoardMetric(val label: String) {
         Xp -> "${row.totalXp} XP"
         Level -> "LV ${row.level}"
         Streak -> "${row.streakDays} " + plural(row.streakDays, "DAY", "DAYS")
-        Titles -> "${row.titlesCount} " + plural(row.titlesCount, "TITLE", "TITLES")
+        Titles -> "${row.titlesCount} " + plural(row.titlesCount, "DEED", "DEEDS")
         Strength -> "STR ${row.lifetimeStrength}"
         Last7 -> "${row.sessionsLast7d} IN 7D"
     }

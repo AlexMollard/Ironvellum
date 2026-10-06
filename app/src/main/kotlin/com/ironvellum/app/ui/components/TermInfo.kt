@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.Rank
+import com.ironvellum.app.domain.Streak
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
@@ -121,6 +122,42 @@ enum class Term(
             "eccentric; the lifting half is the concentric. You can lower more than you can " +
             "lift, so negatives build a rep you cannot do yet.",
         stems = listOf("negative", "eccentric", "concentric"),
+    ),
+    TRIAL(
+        "Trial",
+        "One time through your training: you begin it, log your sets, then seal it. Only a sealed trial " +
+            "counts toward your XP, strength score, oath and deeds.",
+    ),
+    RITE(
+        "Rite",
+        "A saved trial to repeat: its movements and the sets set out for each. Begin a trial from a " +
+            "rite, and edit it any time without touching the trials you have already sealed.",
+    ),
+    CYCLE(
+        "Cycle",
+        "Your week of rites, each set on a day. Sealing the rite that falls on today " +
+            "earns a bonus on top of the trial's XP.",
+    ),
+    OATH(
+        "Oath",
+        "The days you have kept training without a break. Every sealed trial keeps it, and so does a day of respite: " +
+            "it only breaks when more than ${Streak.MAX_GAP_DAYS} days pass without one. " +
+            "The count is the days since the chain began, so it grows every morning it lives.",
+    ),
+    DEED(
+        "Deed",
+        "A mark of something reached: a lift, an oath held, a total. Some deeds " +
+            "grant a title you can wear on your folio.",
+    ),
+    SEAL(
+        "Seal",
+        "Finishing a trial. Sealing banks its XP and adds its strength score to your lifetime " +
+            "total. A sealed trial can still be amended later, and the difference is settled.",
+    ),
+    THE_VEIL(
+        "The Veil",
+        "Where echoes gather essence while you are away. Your recent training sets the pace, " +
+            "so seal trials to raise it, then return to collect.",
     ),
 }
 
