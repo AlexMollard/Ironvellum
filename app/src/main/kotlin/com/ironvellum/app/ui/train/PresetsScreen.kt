@@ -263,15 +263,8 @@ fun PresetsScreen(
                     // The one heading on an empty board, where the cycle's is hidden.
                     modifier = Modifier.weight(1f).semantics { heading() },
                 )
-                // With no cycle there is no cycle header to carry New.
-                if (ui.presets.isEmpty()) InkChip("New", "New rite", Icons.Outlined.Add) { showNewChooser = true }
                 // No second trial while one is under way.
                 if (focus !is TrainFocus.Live) InkChip("Open trial", "Begin an open trial", Icons.Outlined.PlayArrow) { viewModel.beginQuick(onQuickSession) }
-            }
-            // What the day is when it is not a rite to begin: the rite to begin
-            // opens in the cycle itself, below.
-            trainStatus(focus)?.let { (line, color) ->
-                Text(line, style = MaterialTheme.typography.bodySmall, color = color, maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
             importResult?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SystemGreen, modifier = Modifier.padding(top = GROUP_GAP))
@@ -287,14 +280,13 @@ fun PresetsScreen(
                     onOpenRite = onOpenRite,
                     onBegin = { id -> viewModel.begin(id, onStartSession) },
                     onContinue = onStartSession,
-                    onForge = { onGenerate("week", null) },
+                    onForge = { showNewChooser = true },
                     last = sessions.filter { it.completedAtMs != null }.maxByOrNull { it.completedAtMs ?: 0L },
                 )
             }
             if (ui.presets.isNotEmpty()) {
             Spacer(Modifier.height(SECTION_GAP))
             val sealedThisWeek = { preset: WorkoutPreset -> sessions.any { it.presetId == preset.id && (it.completedAtMs ?: 0L) >= weekStart } }
-            val scheduled = ui.presets.filter { it.scheduledDay != null }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "YOUR CYCLE",
@@ -304,7 +296,6 @@ fun PresetsScreen(
                     letterSpacing = IronvellumTracking.SectionHeader,
                     modifier = Modifier.semantics { heading() },
                 )
-                if (scheduled.isNotEmpty()) WeekSegments(scheduled.count(sealedThisWeek), scheduled.size)
                 Spacer(Modifier.weight(1f))
                 // Sit with the list they add to and export.
                 InkChip("New", "New rite", Icons.Outlined.Add) { showNewChooser = true }
@@ -528,42 +519,8 @@ fun PresetsScreen(
     }
 }
 
-/**
- * The day's state as one line under the title, when the cycle below does not
- * already show it: a sealed day, or a respite with nothing to take early.
- */
-private fun trainStatus(focus: TrainFocus): Pair<String, androidx.compose.ui.graphics.Color>? = when (focus) {
-    is TrainFocus.Sealed ->
-        "Sealed today · +${focus.session.xpAwarded} XP · ${focus.session.strengthScore} STR" to IronvellumColors.SovereignGold
-    is TrainFocus.Respite -> when {
-        focus.next == null -> "Respite · no rite falls on a day yet" to IronvellumColors.InkMuted
-        focus.canTakeEarly -> null
-        else -> "Respite · next is ${focus.next.name} on ${dayName(focus.nextDay ?: 0)}" to IronvellumColors.InkMuted
-    }
-    else -> null
-}
-
 /** "Wed" for 3. */
 private fun dayName(day: Int): String = dayLabel(day).lowercase().replaceFirstChar { it.uppercase() }
-
-/** The week's sealed rites as segments: filled for each sealed, read aloud as a count. */
-@Composable
-private fun WeekSegments(sealed: Int, total: Int) {
-    Row(
-        Modifier
-            .padding(start = 10.dp)
-            .semantics { contentDescription = "$sealed of $total sealed this week" },
-        horizontalArrangement = Arrangement.spacedBy(3.dp),
-    ) {
-        repeat(total) { i ->
-            Box(
-                Modifier
-                    .size(width = 14.dp, height = 4.dp)
-                    .inkHairline(if (i < sealed) IronvellumColors.SystemGreen else IronvellumColors.Rune, seed = 60 + i, thickness = 3.dp),
-            )
-        }
-    }
-}
 
 @Composable
 private fun TrialRow(
@@ -733,7 +690,7 @@ private fun TrainLeadCard(
         }
         if (focus is TrainFocus.NoCycle) {
             Text(
-                "Your cycle is unwritten. The Forge builds a whole week for you.",
+                "Your cycle is unwritten. Forge a week, start from a pattern, or import one.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 modifier = Modifier.padding(top = 4.dp),
@@ -747,7 +704,7 @@ private fun TrainLeadCard(
             is TrainFocus.Respite -> if (focus.canTakeEarly && focus.next != null) {
                 LeadButton("Begin ${focus.next.name} early", quiet = true) { onBegin(focus.next.id) }
             }
-            TrainFocus.NoCycle -> LeadButton("Forge a Cycle") { onForge() }
+            TrainFocus.NoCycle -> LeadButton("Build a Cycle") { onForge() }
             is TrainFocus.Sealed -> Unit
         }
     }

@@ -28,6 +28,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -104,17 +105,12 @@ internal fun BodyTab(
     val ffmi = remember(ui.stats, ui.profileHeight) { Ledger.latestFfmi(ui.stats, ui.profileHeight) }
     val bmi = latest?.let { Ledger.bmiOf(it, ui.profileHeight) }
     val heightKnown = (ui.profileHeight ?: 0.0) > 0.0 || (latest?.heightCm ?: 0.0) > 0.0
-    val strength = remember(ui.sessions) { Ledger.strengthTrend(ui.sessions) }
     // The calendar's week start, so the strip and the grid cut the same weeks.
     // Monday, as everywhere else in the app: the locale's Sunday split the
     // weeks differently from Today's rail.
     val weekStart = java.time.DayOfWeek.MONDAY
     val weeks = remember(ui.completedDates, today, weekStart) {
         Ledger.weeklyCounts(ui.completedDates, today, weekStart = weekStart)
-    }
-    // The calendar's own count (one per trial), so the two tabs never disagree.
-    val month = remember(ui.sessions, today, zone) {
-        trialsInMonth(trialsByDay(ui.sessions, zone), java.time.YearMonth.from(today), today)
     }
 
     Column(
@@ -163,7 +159,9 @@ internal fun BodyTab(
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.weight(1f),
                     )
-                    // The readings behind the chart, with delete, one tap away.
+                    // The one way to log a weight once there is one, beside the
+                    // readings behind the chart.
+                    InkChip("Log", "Log weight", Icons.Outlined.Add, onClick = onLogWeight)
                     InkChip("History", "Open weight history", onClick = onOpenHistory)
                 }
                 Spacer(Modifier.height(4.dp))
@@ -191,33 +189,22 @@ internal fun BodyTab(
                 StatChip(
                     "BMI",
                     bmi?.let { formatBodyValue(it) } ?: "\u2014",
-                    bmi?.let { BodyStats.bmiCategory(it) } ?: if (heightKnown) "tap to log a weight" else "set height in Settings",
-                    onClick = { if (bmi == null && heightKnown) onLogWeight() else onDrill("BMI") },
+                    bmi?.let { BodyStats.bmiCategory(it) } ?: if (heightKnown) "needs a weight" else "set height in Settings",
+                    onClick = { onDrill("BMI") },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
                 StatChip(
                     "FFMI",
                     ffmi?.let { formatBodyValue(it.value) } ?: "\u2014",
                     ffmi?.let { "from ${formatDate(it.takenAtMs, "d MMM")}" }
-                        ?: if (heightKnown) "tap to log body fat %" else "set height in Settings",
-                    // The weight dialog takes body fat too: the hint opens it.
-                    onClick = { if (ffmi == null && heightKnown) onLogWeight() else onDrill("FFMI") },
+                        ?: if (heightKnown) "needs a body fat %" else "set height in Settings",
+                    onClick = { onDrill("FFMI") },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
         }
 
         InkPanel(Modifier.fillMaxWidth()) {
-            InkListRow(
-                label = "Strength",
-                value = strength?.latest?.toString() ?: "\u2014",
-                supporting = strength?.let { t ->
-                    t.delta?.let { "${signedInt(it)} vs ${t.trialsBack} ${plural(t.trialsBack, "trial", "trials")} ago" }
-                        ?: "first scored trial"
-                } ?: "seal a scored trial",
-                onClick = onOpenTraining,
-            )
-            InkDivider()
             ConsistencyRow(weeks, onClick = onOpenTraining)
         }
 
@@ -236,8 +223,6 @@ internal fun BodyTab(
 
 private fun shortDay(date: LocalDate): String =
     date.format(java.time.format.DateTimeFormatter.ofPattern("d MMM", java.util.Locale.getDefault()))
-
-private fun signedInt(v: Int): String = if (v >= 0) "+$v" else "\u2212${-v}"
 
 @Composable
 private fun ChartNote(text: String) {

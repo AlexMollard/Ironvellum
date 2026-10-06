@@ -1,9 +1,8 @@
 package com.ironvellum.app.ui.stats
 
+import com.ironvellum.app.ui.settings.SettingsSection
 import com.ironvellum.app.domain.fmt
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.material.icons.outlined.Add
-import com.ironvellum.app.ui.components.InkChip
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -62,7 +61,6 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.lifecycle.viewModelScope
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkListRow
-import androidx.compose.material.icons.outlined.History
 import com.ironvellum.app.ui.components.InkTabbedPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.rememberCoroutineScope
@@ -233,9 +231,9 @@ fun StatsScreen(
     // No default: a defaulted no-op lets a forgotten nav wiring compile clean,
     // which is how five screens ended up unreachable earlier.
     onOpenMeasurement: (MeasurementSite) -> Unit,
-    onOpenLog: () -> Unit,
     onOpenWorkout: (Long) -> Unit,
-    onOpenSettings: () -> Unit,
+    // Straight to the page that answers: Health Connect, or height on Profile.
+    onOpenSettings: (SettingsSection) -> Unit,
     viewModel: StatsViewModel =
         viewModel(factory = viewModelFactory { initializer { StatsViewModel(ironvellumRepository()) } }),
 ) {
@@ -295,23 +293,16 @@ fun StatsScreen(
         )
         LedgerPage.MAIN -> Column(Modifier.fillMaxSize()) {
             Spacer(Modifier.height(20.dp))
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = LedgerSpace.Gutter),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    "THE LEDGER",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = IronvellumColors.Ink,
-                    letterSpacing = 1.sp,
-                    modifier = Modifier.weight(1f).semantics { heading() },
-                )
-                InkChip("Weight", "Log weight", Icons.Outlined.Add) { showAdd = true }
-                // The one way to the chronicle from the Ledger: Training's row repeated it.
-                InkChip("Chronicle", "Open", Icons.Outlined.History, description = "Full chronicle", onClick = onOpenLog)
-            }
+            // Only the title: weight is logged on its card, the chronicle lives on Train.
+            Text(
+                "THE LEDGER",
+                style = MaterialTheme.typography.headlineSmall,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = IronvellumColors.Ink,
+                letterSpacing = 1.sp,
+                modifier = Modifier.padding(horizontal = LedgerSpace.Gutter).heightIn(min = 44.dp).wrapContentHeight().semantics { heading() },
+            )
             Spacer(Modifier.height(8.dp))
 
             // Pages run edge to edge under the strip, each with its own hoisted scroll.
@@ -355,7 +346,7 @@ fun StatsScreen(
                         sessions = ui.sessions,
                         sessionSets = ui.sessionSets,
                         exercises = ui.exercises,
-                        onOpenSettings = onOpenSettings,
+                        onOpenSettings = { onOpenSettings(SettingsSection.HEALTH_CONNECT) },
                         scroll = dailyScroll,
                         rangeIndex = dailyRangeIndex,
                         onRange = { dailyRangeIndex = it },
@@ -376,7 +367,7 @@ fun StatsScreen(
             onDismiss = { showAdd = false },
             onOpenSettings = {
                 showAdd = false
-                onOpenSettings()
+                onOpenSettings(SettingsSection.PROFILE)
             },
             onConfirm = { weight, bf ->
                 viewModel.addStat(weight, bf)

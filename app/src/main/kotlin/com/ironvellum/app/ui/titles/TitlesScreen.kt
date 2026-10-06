@@ -370,13 +370,7 @@ fun TitlesScreen(
                 color = IronvellumColors.InkMuted,
                 letterSpacing = 6.sp,
             )
-            Text(
-                // The deed count lives on the Deeds board now, beside its overall bar.
-                "${mastered.size} ${if (mastered.size == 1) "technique" else "techniques"} mastered",
-                style = MaterialTheme.typography.bodyMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-            )
+            // Techniques mastered are counted on PATHS, deeds on DEEDS.
             Spacer(Modifier.height(12.dp))
         }
         // One persistent selector row: the three tabs. Paths are chosen from the grid below.
