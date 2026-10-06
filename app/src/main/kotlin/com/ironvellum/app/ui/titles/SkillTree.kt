@@ -440,7 +440,7 @@ private fun SkillNode(
                     SkillGlyph(
                         family = glyphFamily(skill),
                         color = when (state) {
-                            NodeState.MASTERED -> IronvellumColors.Abyss
+                            NodeState.MASTERED -> MaterialTheme.colorScheme.onTertiary
                             NodeState.NEXT -> IronvellumColors.Ink
                             NodeState.LOCKED -> LockedGlyph
                         },

@@ -2717,7 +2717,7 @@ private fun NextSetStrip(setNumber: Int, line: String, onLog: () -> Unit) {
                 .semantics { contentDescription = "Log set $setNumber" },
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Filled.Check, contentDescription = null, tint = IronvellumColors.Abyss, modifier = Modifier.size(26.dp))
+            Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.onPrimary, modifier = Modifier.size(26.dp))
         }
     }
 }
@@ -3080,7 +3080,7 @@ private fun ModifierPickerDialog(
                                     .weight(1f)
                                     .background(
                                         if (on) {
-                                            Brush.verticalGradient(listOf(Color(0xFF2C7A5A), Color(0xFF1B4D3A)))
+                                            Brush.verticalGradient(listOf(androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.6f), androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.8f)))
                                         } else {
                                             Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
                                         },
@@ -3202,7 +3202,7 @@ private fun RoutineUpdateDialog(
                                 .padding(bottom = 4.dp)
                                 .background(
                                     if (on) {
-                                        Brush.verticalGradient(listOf(Color(0xFF2C7A5A), Color(0xFF1B4D3A)))
+                                        Brush.verticalGradient(listOf(androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.6f), androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.8f)))
                                     } else {
                                         Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
                                     },

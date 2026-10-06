@@ -23,6 +23,7 @@ import com.ironvellum.app.ui.components.PushedHeader
 /** The Settings sub-screens, each its own `settings/{section}` route under the hub. */
 enum class SettingsSection(val key: String, val title: String) {
     PROFILE("profile", "PROFILE"),
+    APPEARANCE("appearance", "APPEARANCE"),
     TRAINING_MODE("training_mode", "TRAINING MODE"),
     ARMOURY("armoury", "ARMOURY"),
     SUMMONS("summons", "THE SUMMONS"),
@@ -44,6 +45,7 @@ enum class SettingsSection(val key: String, val title: String) {
 fun SettingsSectionScreen(section: SettingsSection, onBack: () -> Unit, viewModel: SettingsViewModel) {
     when (section) {
         SettingsSection.PROFILE -> ProfileSettings(viewModel, onBack)
+        SettingsSection.APPEARANCE -> AppearanceSettings(viewModel, onBack)
         SettingsSection.TRAINING_MODE -> TrainingModeSettings(viewModel, onBack)
         SettingsSection.ARMOURY -> ArmourySettings(onBack)
         SettingsSection.SUMMONS -> SummonsSettings(onBack)

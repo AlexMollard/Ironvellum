@@ -816,7 +816,7 @@ private fun BoardSelector(
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                    color = if (active) IronvellumColors.Abyss else IronvellumColors.InkMuted,
+                    color = if (active) MaterialTheme.colorScheme.onTertiary else IronvellumColors.InkMuted,
                     modifier = Modifier
                         // 44dp hit area around a compact pill: the visual stays small.
                         .heightIn(min = 44.dp)
@@ -1275,7 +1275,7 @@ private fun <T> CompactSegmented(
                 style = MaterialTheme.typography.labelSmall,
                 fontFamily = ChakraPetch,
                 fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                color = if (active) IronvellumColors.Abyss else IronvellumColors.InkMuted,
+                color = if (active) MaterialTheme.colorScheme.onTertiary else IronvellumColors.InkMuted,
                 modifier = Modifier
                     // 44dp hit area around a compact pill: the visual stays small.
                     .heightIn(min = 44.dp)

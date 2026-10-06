@@ -2,6 +2,10 @@ package com.ironvellum.app.ui.settings
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.ui.platform.LocalContext
+import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.data.AppearanceStore
+import com.ironvellum.app.ui.theme.AccentPalette
 import androidx.compose.runtime.Composable
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.HealthConnectFeatures
@@ -146,21 +150,31 @@ data class CloudUi(
  * review and sync state the hub does instead of a fresh copy.
  */
 @Composable
-fun settingsViewModel(owner: ViewModelStoreOwner): SettingsViewModel = viewModel(
-    viewModelStoreOwner = owner,
-    factory = viewModelFactory {
-        initializer {
-            SettingsViewModel(ironvellumRepository(), ironvellumHealthSync(), ironvellumCloudSync(), ironvellumAccount())
-        }
-    },
-)
+fun settingsViewModel(owner: ViewModelStoreOwner): SettingsViewModel {
+    val appearanceStore = (LocalContext.current.applicationContext as IronvellumApp).appearanceStore
+    return viewModel(
+        viewModelStoreOwner = owner,
+        factory = viewModelFactory {
+            initializer {
+                SettingsViewModel(
+                    ironvellumRepository(), ironvellumHealthSync(), ironvellumCloudSync(),
+                    ironvellumAccount(), appearanceStore,
+                )
+            }
+        },
+    )
+}
 
 class SettingsViewModel(
     private val repo: Repository,
     private val healthSync: HealthSync,
     private val cloudSync: CloudSync,
     private val accountRepo: AccountRepository,
+    private val appearanceStore: AppearanceStore,
 ) : ViewModel() {
+
+    val appearance = appearanceStore.palette
+    fun setAppearance(palette: AccentPalette) = appearanceStore.set(palette)
 
     private val _exporting = MutableStateFlow(false)
     val exporting: StateFlow<Boolean> = _exporting.asStateFlow()

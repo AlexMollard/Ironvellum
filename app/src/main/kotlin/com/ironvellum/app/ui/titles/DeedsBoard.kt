@@ -806,7 +806,7 @@ private fun RungMarker(state: RungState) {
             Icon(
                 Icons.Filled.Check,
                 contentDescription = null,
-                tint = IronvellumColors.Abyss,
+                tint = MaterialTheme.colorScheme.onTertiary,
                 modifier = Modifier.size(12.dp),
             )
         }

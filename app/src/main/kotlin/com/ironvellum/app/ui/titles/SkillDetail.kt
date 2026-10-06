@@ -527,7 +527,7 @@ private fun QuickChip(
         modifier
             .background(
                 if (selected) {
-                    Brush.verticalGradient(listOf(Color(0xFF2C7A5A), Color(0xFF1B4D3A)))
+                    Brush.verticalGradient(listOf(androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.6f), androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.8f)))
                 } else {
                     Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
                 },

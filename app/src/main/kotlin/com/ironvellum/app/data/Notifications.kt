@@ -54,7 +54,7 @@ object Notifications {
     const val TAB_TRIAL = "trial"
 
     /** The accent the shade tints the small icon and actions with: the theme's own emerald. */
-    val ACCENT: Int = IronvellumColors.Emerald.toArgb()
+    val ACCENT: Int get() = IronvellumColors.Emerald.toArgb()
 
     /**
      * Idempotent; called from Application.onCreate so every channel exists
