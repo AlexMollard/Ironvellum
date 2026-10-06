@@ -52,6 +52,8 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.heading
+import com.ironvellum.app.ui.components.NavChip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
@@ -96,6 +98,7 @@ internal fun BodyTab(
     onRange: (LedgerRange) -> Unit,
     onDrill: (String) -> Unit,
     onLogWeight: () -> Unit,
+    onSetHeight: () -> Unit,
     onOpenTraining: () -> Unit,
     onOpenTape: () -> Unit,
     onOpenHistory: () -> Unit,
@@ -189,16 +192,16 @@ internal fun BodyTab(
                 StatChip(
                     "BMI",
                     bmi?.let { formatBodyValue(it) } ?: "\u2014",
-                    bmi?.let { BodyStats.bmiCategory(it) } ?: if (heightKnown) "needs a weight" else "set height in Settings",
-                    onClick = { onDrill("BMI") },
+                    bmi?.let { BodyStats.bmiCategory(it) } ?: if (heightKnown) "needs a weight" else "tap to set your height",
+                    onClick = { if (heightKnown) onDrill("BMI") else onSetHeight() },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
                 StatChip(
                     "FFMI",
                     ffmi?.let { formatBodyValue(it.value) } ?: "\u2014",
                     ffmi?.let { "from ${formatDate(it.takenAtMs, "d MMM")}" }
-                        ?: if (heightKnown) "needs a body fat %" else "set height in Settings",
-                    onClick = { onDrill("FFMI") },
+                        ?: if (heightKnown) "needs a body fat %" else "tap to set your height",
+                    onClick = { if (heightKnown) onDrill("FFMI") else onSetHeight() },
                     modifier = Modifier.weight(1f).fillMaxHeight(),
                 )
             }
@@ -336,23 +339,25 @@ private fun WeekStrip(weeks: List<Int>) {
 /** The standard pane bar: a 48dp back target and the title. */
 @Composable
 internal fun LedgerTopBar(title: String, onBack: () -> Unit, backDescription: String = "Back to Ledger") {
+    // Title left, BACK right: the header every pushed screen uses (PushedHeader).
     Row(
-        Modifier.fillMaxWidth().padding(top = 12.dp, start = 4.dp, end = LedgerSpace.Gutter),
+        Modifier.fillMaxWidth().padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter),
+        horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        IconButton(onClick = onBack) {
-            Icon(
-                Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = backDescription,
-                tint = IronvellumColors.SystemGreen,
-            )
-        }
         Text(
             title,
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.SectionHeader,
+            color = IronvellumColors.SystemGreen,
+            letterSpacing = IronvellumTracking.ScreenTitle,
+            modifier = Modifier.semantics { heading() },
+        )
+        NavChip(
+            "BACK",
+            Icons.AutoMirrored.Filled.ArrowBack,
+            onClick = onBack,
+            modifier = Modifier.semantics { contentDescription = backDescription },
         )
     }
 }

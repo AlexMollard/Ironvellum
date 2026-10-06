@@ -232,8 +232,12 @@ fun StatsScreen(
     // which is how five screens ended up unreachable earlier.
     onOpenMeasurement: (MeasurementSite) -> Unit,
     onOpenWorkout: (Long) -> Unit,
+    onOpenLift: (String) -> Unit,
     // Straight to the page that answers: Health Connect, or height on Profile.
     onOpenSettings: (SettingsSection) -> Unit,
+    // Today's "Add reading" opens the weigh-in itself, not just the tab.
+    logWeightRequested: Boolean = false,
+    onLogWeightServed: () -> Unit = {},
     viewModel: StatsViewModel =
         viewModel(factory = viewModelFactory { initializer { StatsViewModel(ironvellumRepository()) } }),
 ) {
@@ -250,7 +254,17 @@ fun StatsScreen(
     var drill by rememberSaveable { mutableStateOf<String?>(null) }
     // Saveable, so it carries the open tab through rotation and process death.
     val pager = rememberPagerState { StatsTab.entries.size }
+    androidx.compose.runtime.LaunchedEffect(logWeightRequested) {
+        if (logWeightRequested) {
+            pager.scrollToPage(StatsTab.BODY.ordinal)
+            showAdd = true
+            onLogWeightServed()
+        }
+    }
     val scope = rememberCoroutineScope()
+    // Back walks a sub-tab home before it leaves the screen. Declared first,
+    // so any deeper page's own handler below still wins.
+    BackHandler(enabled = pager.currentPage != 0) { scope.launch { pager.animateScrollToPage(0) } }
     var pageIndex by rememberSaveable { mutableIntStateOf(0) }
     var rangeIndex by rememberSaveable { mutableIntStateOf(0) }
     var monthsBack by rememberSaveable { mutableIntStateOf(0) }
@@ -325,6 +339,7 @@ fun StatsScreen(
                         onRange = { rangeIndex = it.ordinal },
                         onDrill = { drill = it },
                         onLogWeight = { showAdd = true },
+                        onSetHeight = { onOpenSettings(SettingsSection.PROFILE) },
                         onOpenTraining = { scope.launch { pager.animateScrollToPage(StatsTab.TRAINING.ordinal) } },
                         onOpenTape = { pageIndex = LedgerPage.TAPE.ordinal },
                         onOpenHistory = { pageIndex = LedgerPage.HISTORY.ordinal },
@@ -336,6 +351,7 @@ fun StatsScreen(
                         onMonth = { monthsBack = (monthsBack - it).coerceAtLeast(0) },
                         scroll = trainingScroll,
                         onOpenWorkout = onOpenWorkout,
+                        onOpenLift = onOpenLift,
                     )
                     StatsTab.DAILY -> ActivityTab(
                         days = ui.healthDays,
@@ -406,7 +422,7 @@ fun StatsScreen(
  * Gold appears only as the PEAK tag on a peak set in the last fortnight.
  */
 @Composable
-private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long) {
+private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift: (String) -> Unit) {
     InkPanel(Modifier.fillMaxWidth()) {
         PanelLabel("LIFT PEAKS")
         Text(
@@ -424,15 +440,16 @@ private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long) {
         }
         records.forEachIndexed { i, record ->
             if (i > 0) InkDivider()
-            LiftRecordRow(record, fresh = LiftRecords.isFresh(record, nowMs))
+            LiftRecordRow(record, fresh = LiftRecords.isFresh(record, nowMs)) { onOpenLift(record.name) }
         }
     }
 }
 
 @Composable
-private fun LiftRecordRow(record: LiftRecord, fresh: Boolean) {
+private fun LiftRecordRow(record: LiftRecord, fresh: Boolean, onOpen: () -> Unit) {
+    // The board is a glance; the lift's whole history is on Exercises.
     Row(
-        Modifier.fillMaxWidth().heightIn(min = LedgerSpace.Target).padding(vertical = 8.dp),
+        Modifier.fillMaxWidth().clickable(onClickLabel = "Open ${record.name}", onClick = onOpen).heightIn(min = LedgerSpace.Target).padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
@@ -494,6 +511,7 @@ private fun TrainingTab(
     onMonth: (Int) -> Unit,
     scroll: androidx.compose.foundation.ScrollState,
     onOpenWorkout: (Long) -> Unit,
+    onOpenLift: (String) -> Unit,
 ) {
     val nowMs = remember(today) { System.currentTimeMillis() }
     val records = remember(ui.sessions, ui.sessionSets, ui.exercises, today) {
@@ -517,7 +535,7 @@ private fun TrainingTab(
             onOpenTrial = onOpenWorkout,
         )
 
-        if (ui.sessions.isNotEmpty()) LiftRecordsPanel(records, nowMs)
+        if (ui.sessions.isNotEmpty()) LiftRecordsPanel(records, nowMs, onOpenLift)
 
         InkPanel(Modifier.fillMaxWidth()) {
             PanelLabel("STRENGTH SCORE PER TRIAL")

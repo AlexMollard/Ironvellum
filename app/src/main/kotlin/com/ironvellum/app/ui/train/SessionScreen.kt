@@ -455,6 +455,9 @@ private fun rememberSessionViewModel(sessionId: Long): SessionViewModel {
 fun SessionScreen(
     sessionId: Long,
     onExit: () -> Unit,
+    // Where a sealed trial lands: Today, not the rite page that began it,
+    // which would only offer the same Begin again.
+    onSealed: () -> Unit,
     /** Bumped by the trial notification's Seal action: open with the seal prompt. */
     sealRequest: Int = 0,
     /** The request above was taken, shown or not: the next visit must not repeat it. */
@@ -540,7 +543,7 @@ fun SessionScreen(
             Spacer(Modifier.height(20.dp))
             Text("Trial already sealed.", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
         }
-        LaunchedEffect(session.id) { onExit() }
+        LaunchedEffect(session.id) { onSealed() }
         return
     }
 
@@ -1192,7 +1195,7 @@ fun SessionScreen(
                     )
                 } else {
                     // Answered, or nothing to ask: the finished session is done.
-                    LaunchedEffect(result) { onExit() }
+                    LaunchedEffect(result) { onSealed() }
                 }
             }
         }

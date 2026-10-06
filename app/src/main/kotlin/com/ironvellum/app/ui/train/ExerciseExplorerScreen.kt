@@ -5,6 +5,9 @@ import androidx.compose.foundation.border
 import androidx.compose.material3.Icon
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Brush
@@ -113,10 +116,18 @@ class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
 @Composable
 fun ExerciseExplorerScreen(
     onBack: () -> Unit,
+    initialName: String? = null,
     viewModel: ExerciseExplorerViewModel =
         viewModel(factory = viewModelFactory { initializer { ExerciseExplorerViewModel(ironvellumRepository()) } }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
+    // Opened on a lift from the Ledger's peaks: select it once the list is in.
+    var picked by rememberSaveable { mutableStateOf(initialName == null) }
+    androidx.compose.runtime.LaunchedEffect(ui.exercises) {
+        if (picked || ui.exercises.isEmpty()) return@LaunchedEffect
+        ui.exercises.firstOrNull { it.name.equals(initialName, ignoreCase = true) }?.let(viewModel::pick)
+        picked = true
+    }
 
     val selectedExercise = ui.selected
     Column(

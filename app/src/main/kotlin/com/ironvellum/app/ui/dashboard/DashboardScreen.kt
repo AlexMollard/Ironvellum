@@ -132,6 +132,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.BoxWithConstraints
 import com.ironvellum.app.ui.components.Term
+import com.ironvellum.app.ui.components.TermDialog
 import com.ironvellum.app.ui.components.TermInfo
 
 
@@ -709,12 +710,14 @@ fun DashboardScreen(
                 "OATH",
                 if (ui.streak > 0) "${ui.streak}d" else "—",
                 if (ui.streak > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                term = Term.OATH,
             )
             HudDivider()
             HudStat(
                 "DEEDS",
                 "${ui.unlockedCount}/${Titles.ALL.size}",
                 IronvellumColors.EmeraldBright,
+                term = Term.DEED,
             )
         }
         Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = 9))
@@ -842,7 +845,9 @@ fun DashboardScreen(
                 isTodaySelected -> IronvellumColors.SystemGreen
                 else -> IronvellumColors.Rune
             },
-            onClick = (selectedPreset ?: nextRite)?.let { rite -> { onOpenRite(rite.id) } },
+            // Sealed, the card opens what was done; otherwise the rite it shows.
+            onClick = questSessionToday?.let { trial -> { onOpenWorkout(trial.id) } }
+                ?: (selectedPreset ?: nextRite)?.let { rite -> { onOpenRite(rite.id) } },
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -954,6 +959,28 @@ fun DashboardScreen(
                                 } else {
                                     Manifest(selectedPreset.entries, done = done, fill = true)
                                 }
+                            }
+                        }
+                    }
+                    // Today is where the day's rite is begun: Train only plans it.
+                    val underWay = live
+                    if (isTodaySelected && !done) {
+                        when {
+                            underWay == null -> {
+                                Spacer(Modifier.height(12.dp))
+                                IronvellumButton(
+                                    label = "Begin ${selectedPreset.name}",
+                                    onClick = { viewModel.beginPreset(selectedPreset.id, onStartSession) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
+                            }
+                            underWay.presetId == selectedPreset.id -> {
+                                Spacer(Modifier.height(12.dp))
+                                IronvellumButton(
+                                    label = "Continue ${selectedPreset.name}",
+                                    onClick = { onStartSession(underWay.id) },
+                                    modifier = Modifier.fillMaxWidth(),
+                                )
                             }
                         }
                     }
@@ -1168,8 +1195,15 @@ fun DashboardScreen(
 
 /** One of the day's counters: its label, then its value. */
 @Composable
-private fun HudStat(label: String, value: String, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
+private fun HudStat(label: String, value: String, color: Color, term: Term? = null) {
+    // A bare word like OATH explains itself on a tap, with no extra mark in the row.
+    var explain by remember { mutableStateOf(false) }
+    Row(
+        Modifier
+            .then(if (term != null) Modifier.clickable(role = Role.Button, onClickLabel = "Explain ${term.title}") { explain = true } else Modifier)
+            .heightIn(min = 44.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
@@ -1188,6 +1222,7 @@ private fun HudStat(label: String, value: String, color: Color) {
             modifier = Modifier.padding(start = 6.dp),
         )
     }
+    if (explain && term != null) TermDialog(term) { explain = false }
 }
 
 /** The rule between two counters. */

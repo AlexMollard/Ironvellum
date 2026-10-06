@@ -155,8 +155,8 @@ class WorkoutFlowTest {
         selectATrainingDay()
         // The quest card arrives after seeding, so poll for the CTA rather
         // than sampling the tree once on the first frame.
-        // Today's card has no Begin of its own: it opens the rite's page,
-        // which does.
+        // The picked day may not be today, where the card's own Begin shows:
+        // tapping the card opens the rite's page, which always has one.
         val plan = awaitAnyText(predicate = ::isQuestCard)
         compose.onAllNodesWithText(plan).onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
