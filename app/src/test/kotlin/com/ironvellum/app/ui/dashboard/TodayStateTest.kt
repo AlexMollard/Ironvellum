@@ -225,4 +225,72 @@ class TodayStateTest {
         assertEquals("2.5 kg", peakGainText(peak(null, false, series = listOf(109.5, 112.0))))
         assertEquals("0.1 kg", peakGainText(peak(null, false, series = listOf(111.99, 112.0))))
     }
+
+    @Test
+    fun `the narrator speaks once per state, and every line is free of retired words`() {
+        assertEquals("The page is blank. 4 days of ink behind it.", narratorLine(DayKind.BEGIN, daysKept = 4))
+        assertEquals("The page is blank. 1 day of ink behind it.", narratorLine(DayKind.BEGIN, daysKept = 1))
+        assertEquals("The page is blank.", narratorLine(DayKind.BEGIN))
+        assertEquals("The page is blank. Ink the first set.", narratorLine(DayKind.LIVE, 0, 19))
+        assertEquals("1 set inked. The page begins to fill.", narratorLine(DayKind.LIVE, 1, 19))
+        assertEquals("7 sets inked. The page is half written.", narratorLine(DayKind.LIVE, 7, 19))
+        assertEquals("Every set is inked. Seal the page.", narratorLine(DayKind.LIVE, 19, 19))
+        assertEquals("The Ledger gilds its page.", narratorLine(DayKind.SEALED))
+        assertEquals("The Ledger rests its pen. Your oath holds.", narratorLine(DayKind.RESPITE, daysKept = 4))
+        assertEquals("The Ledger rests its pen.", narratorLine(DayKind.RESPITE))
+        assertEquals("The page waits for its day.", narratorLine(DayKind.PLANNED))
+        val lines = DayKind.entries.flatMap { kind ->
+            listOf(narratorLine(kind), narratorLine(kind, 3, 10, 2), narratorLine(kind, 10, 10, 1))
+        }
+        val hits = lines.filter { line -> com.ironvellum.app.RETIRED_WORDS.any { it.containsMatchIn(line) } }
+        assertEquals(emptyList<String>(), hits)
+        // The fit tests look for "more" and "essence" as single nodes: the narrator must not say either.
+        assertTrue(lines.none { "more" in it || "essence" in it })
+    }
+
+    @Test
+    fun `the inscriptions line is always there, loud only when some wait`() {
+        assertEquals(InscriptionsLine("3 inscriptions waiting", waiting = true), inscriptionsLine(3))
+        assertEquals(InscriptionsLine("1 inscription waiting", waiting = true), inscriptionsLine(1))
+        assertEquals(InscriptionsLine("No inscriptions waiting", waiting = false), inscriptionsLine(0))
+        // Still loading: the slot is held, with nothing claimed in it.
+        assertEquals(InscriptionsLine("", waiting = false), inscriptionsLine(null))
+        assertTrue(inscriptionsLine(3).inscribe)
+        assertFalse(inscriptionsLine(0).inscribe)
+    }
+
+    @Test
+    fun `the stamp thuds only for a rite sealed within the hour`() {
+        val now = 10 * STAMP_FRESH_MS
+        assertTrue(stampIsFresh(now - 60_000, now))
+        assertTrue(stampIsFresh(now - STAMP_FRESH_MS, now))
+        assertFalse(stampIsFresh(now - STAMP_FRESH_MS - 1, now))
+        assertFalse(stampIsFresh(null, now))
+        // A clock set backwards is not fresh news.
+        assertFalse(stampIsFresh(now + 1, now))
+    }
+
+    @Test
+    fun `motes are seeded, in bounds and wrap the shared loop without a jump`() {
+        val field = veilMotes(22, seed = 7)
+        assertEquals(field, veilMotes(22, seed = 7))
+        assertEquals(22, field.size)
+        field.forEach { m ->
+            assertEquals("period must divide the loop", 0, MOTION_LOOP_S % m.periodS)
+            assertTrue(m.x in 0f..1f && m.y in 0f..1f && m.rise in 0.3f..0.85f)
+            assertTrue(m.radiusDp in 0.7f..2f)
+            // The end of the loop is the start of the next.
+            assertEquals(moteProgress(m, 0f), moteProgress(m, 1f - 1e-7f), 1e-3f)
+            assertTrue(moteProgress(m, 0.37f) in 0f..1f)
+        }
+    }
+
+    @Test
+    fun `a mote fades in and out and is never lit at either end of its rise`() {
+        assertEquals(0f, moteAlpha(0f), 0f)
+        assertEquals(0f, moteAlpha(1f), 0f)
+        assertEquals(0.75f, moteAlpha(0.15f), 1e-6f)
+        assertTrue(moteAlpha(0.5f) in 0.45f..0.75f)
+        assertTrue((0..100).all { moteAlpha(it / 100f) in 0f..0.75f })
+    }
 }
