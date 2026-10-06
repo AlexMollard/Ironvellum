@@ -67,24 +67,6 @@ private val GLYPH_HEIGHT = 66.dp
 /** The SEALED stamp's box, in the same corner the glyph holds. */
 private val STAMP_SIZE = 68.dp
 
-/** The lifter's sigil: an octagon with a barred centre, drawn in muted ink beside the name. */
-@Composable
-internal fun LifterMark(modifier: Modifier = Modifier) {
-    Canvas(modifier.size(26.dp).clearAndSetSemantics {}) {
-        val u = size.width / 26f
-        val ink = IronvellumColors.InkMuted
-        val path = Path().apply {
-            moveTo(8f * u, 2f * u); lineTo(18f * u, 2f * u); lineTo(24f * u, 8f * u); lineTo(24f * u, 18f * u)
-            lineTo(18f * u, 24f * u); lineTo(8f * u, 24f * u); lineTo(2f * u, 18f * u); lineTo(2f * u, 8f * u); close()
-            moveTo(8.5f * u, 8f * u); lineTo(17.5f * u, 8f * u)
-            moveTo(13f * u, 8f * u); lineTo(13f * u, 18f * u)
-            moveTo(8.5f * u, 18f * u); lineTo(17.5f * u, 18f * u)
-        }
-        drawPath(path, ink, style = Stroke(1.5f * u, cap = StrokeCap.Round, join = StrokeJoin.Round))
-        inkDot(Offset(13f * u, 13f * u), 1f * u, ink)
-    }
-}
-
 /** The single gold lozenge before the Strength Rank: earned, so it is gold. */
 @Composable
 internal fun RankLozenge() {
@@ -103,10 +85,9 @@ internal fun SealMark(side: Dp, modifier: Modifier = Modifier) {
         val u = size.width / 24f
         val gold = IronvellumColors.SovereignGold
         val c = Offset(12f * u, 12f * u)
-        inkArc(c, 8f * u, 0f, 360f, gold, 1.5f * u)
-        inkArc(c, 5f * u, 0f, 360f, gold.copy(alpha = 0.6f), 1.2f * u)
-        val tick = Path().apply { moveTo(9.6f * u, 12.2f * u); lineTo(11.3f * u, 13.9f * u); lineTo(14.5f * u, 10.5f * u) }
-        drawPath(tick, gold, style = Stroke(1.5f * u, cap = StrokeCap.Round, join = StrokeJoin.Round))
+        inkArc(c, 10.5f * u, 0f, 360f, gold, 1.6f * u)
+        val tick = Path().apply { moveTo(7.5f * u, 12.5f * u); lineTo(10.8f * u, 15.8f * u); lineTo(16.8f * u, 9.2f * u) }
+        drawPath(tick, gold, style = Stroke(2f * u, cap = StrokeCap.Round, join = StrokeJoin.Round))
     }
 }
 
@@ -127,7 +108,7 @@ internal fun RiteGlyph(sets: Map<Muscle, Double>, modifier: Modifier = Modifier)
             FigureView.FRONT,
             fill = { muscle ->
                 val alpha = riteAlpha(sets[muscle] ?: 0.0, top)
-                if (alpha <= 0f) IronvellumColors.Rune else IronvellumColors.SystemGreen.copy(alpha = alpha)
+                if (alpha <= 0f) IronvellumColors.Rune else IronvellumColors.Emerald.copy(alpha = alpha)
             },
             seed = 11,
         )
@@ -220,37 +201,29 @@ internal fun LedgerMotif(modifier: Modifier = Modifier) {
 }
 
 /**
- * The header's name line: [sigil], [name], [rank]. The rank and the name are measured first and are never
- * shortened for the sigil; the sigil is placed only when there is room left for it, so on a long name it is
- * the first thing to go.
+ * The header's name line: [name], then [rank]. The rank is measured first and never shortened; the name
+ * takes what is left and ellipsizes only when it must.
  */
 @Composable
 internal fun NameRow(
-    sigil: @Composable () -> Unit,
     name: @Composable () -> Unit,
     rank: @Composable () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Layout(
         content = {
-            Box { sigil() }
             Box { name() }
             Box { rank() }
         },
         modifier = modifier,
     ) { measurables, constraints ->
         val loose = constraints.copy(minWidth = 0, minHeight = 0)
-        val gap = 9.dp.roundToPx()
-        val rankP = measurables[2].measure(loose)
-        val nameP = measurables[1].measure(loose.copy(maxWidth = (constraints.maxWidth - rankP.width).coerceAtLeast(0)))
-        val sigilP = measurables[0].measure(loose)
-        val showSigil = nameP.width + rankP.width + sigilP.width + gap <= constraints.maxWidth
-        val lead = if (showSigil) sigilP.width + gap else 0
-        val height = maxOf(nameP.height, rankP.height, if (showSigil) sigilP.height else 0)
-        layout(lead + nameP.width + rankP.width, height) {
-            if (showSigil) sigilP.place(0, (height - sigilP.height) / 2)
-            nameP.place(lead, (height - nameP.height) / 2)
-            rankP.place(lead + nameP.width, (height - rankP.height) / 2)
+        val rankP = measurables[1].measure(loose)
+        val nameP = measurables[0].measure(loose.copy(maxWidth = (constraints.maxWidth - rankP.width).coerceAtLeast(0)))
+        val height = maxOf(nameP.height, rankP.height)
+        layout(nameP.width + rankP.width, height) {
+            nameP.place(0, (height - nameP.height) / 2)
+            rankP.place(nameP.width, (height - rankP.height) / 2)
         }
     }
 }

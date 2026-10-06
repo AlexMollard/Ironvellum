@@ -63,13 +63,13 @@ fun coverageLevel(volume: Double, target: ClosedFloatingPointRange<Double>): Cov
     else -> CoverageLevel.IN_RANGE
 }
 
-// A neutral ramp: Rune for nothing, InkMuted at rising strength while short of the range,
-// SystemGreen in range, Ink above it. Never emerald or gold: the figure is a reading, not a reward.
+// Rune for nothing, emerald at rising strength toward the range and full in it, Ink above it.
+// Emerald, not grey: grey heat on a grey figure could not be read. Never gold: a reading, not a reward.
 private fun levelColor(level: CoverageLevel): Color = when (level) {
     CoverageLevel.NONE -> IronvellumColors.Rune
-    CoverageLevel.UNDER -> IronvellumColors.InkMuted
+    CoverageLevel.UNDER -> IronvellumColors.Emerald
     CoverageLevel.LIGHT -> IronvellumColors.InkMuted
-    CoverageLevel.IN_RANGE -> IronvellumColors.SystemGreen
+    CoverageLevel.IN_RANGE -> IronvellumColors.Emerald
     CoverageLevel.OVER -> IronvellumColors.Ink
 }
 
@@ -206,8 +206,8 @@ fun shareLevel(share: Double): ShareLevel = if (share >= 0.7) ShareLevel.MAIN el
 
 private fun shareFill(share: Double?): Color = when {
     share == null || share <= 0.0 -> IronvellumColors.Rune
-    shareLevel(share) == ShareLevel.MAIN -> IronvellumColors.InkMuted.copy(alpha = 0.9f)
-    else -> IronvellumColors.InkMuted.copy(alpha = 0.4f)
+    shareLevel(share) == ShareLevel.MAIN -> IronvellumColors.Emerald.copy(alpha = 0.9f)
+    else -> IronvellumColors.Emerald.copy(alpha = 0.4f)
 }
 
 /**
@@ -260,12 +260,12 @@ fun RiteMuscleMap(
     val figure = BodyFigures.of(LocalBodySex.current)
     val fill = { muscle: Muscle ->
         val alpha = riteAlpha(sets[muscle] ?: 0.0, top)
-        if (alpha <= 0f) IronvellumColors.Rune else IronvellumColors.InkMuted.copy(alpha = alpha)
+        if (alpha <= 0f) IronvellumColors.Rune else IronvellumColors.Emerald.copy(alpha = alpha)
     }
     val lineFor = { muscle: Muscle -> riteMuscleLine(muscle, sets[muscle] ?: 0.0, riteName) }
     FigureBlock(figure, figureHeight, fill, selection, lineFor, modifier, quietKey = true) {
-        LegendKey(IronvellumColors.InkMuted.copy(alpha = riteAlpha(0.01, 1.0)), "FEWER")
-        LegendKey(IronvellumColors.InkMuted.copy(alpha = riteAlpha(1.0, 1.0)), "MORE")
+        LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(0.01, 1.0)), "FEWER")
+        LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(1.0, 1.0)), "MORE")
         LegendKey(IronvellumColors.Rune, "NONE")
     }
 }
