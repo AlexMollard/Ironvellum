@@ -66,6 +66,7 @@ import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.ui.theme.InkPressIndication
 import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkHairline
@@ -318,7 +319,7 @@ private fun GoldButton(
                 shape,
                 1.dp,
             )
-            .clickable(interactionSource = interaction, indication = null, enabled = enabled, onClick = onClick),
+            .clickable(interactionSource = interaction, indication = InkPressIndication, enabled = enabled, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
         Text(
