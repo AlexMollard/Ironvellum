@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.settings
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -99,14 +100,8 @@ fun ImportReviewOverlay(
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
         ) {
-            Spacer(Modifier.height(24.dp))
-            Text(
-                "IMPORT FROM ANOTHER APP",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
+            Spacer(Modifier.height(8.dp))
+            PushedHeader("IMPORT FROM ANOTHER APP", onBack = onDismiss)
             Spacer(Modifier.height(6.dp))
 
             val range = ui.parsed.dateRange

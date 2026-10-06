@@ -1,11 +1,9 @@
 package com.ironvellum.app.ui.social
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.ironvellum.app.data.cloud.FriendRow
-import com.ironvellum.app.ui.components.NavChip
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.Icons
 import com.ironvellum.app.domain.fmt
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -19,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
@@ -262,27 +259,18 @@ internal fun LifterScreen(
     ) {
         Spacer(Modifier.height(18.dp))
 
-        // Header row: small ghost back control beside the hero identity — the
-        // full-width gradient BACK slab is gone; back is an affordance, not a
-        // billboard.
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = onBack)
-            IdentityRow(
-                displayName = displayName,
-                userId = userId,
-                wornTitle = ui.wornTitle,
-                level = null, // level is not in LifterUi; omitted rather than fetched
-                titleId = ui.wornTitleId,
-                size = IdentitySize.Hero,
-                isMe = isMe,
-                frameId = if (isMe) equippedFrame else null,
-                modifier = Modifier.weight(1f),
-            )
-        }
+        PushedHeader("FOLIO", onBack)
+        IdentityRow(
+            displayName = displayName,
+            userId = userId,
+            wornTitle = ui.wornTitle,
+            level = null, // level is not in LifterUi; omitted rather than fetched
+            titleId = ui.wornTitleId,
+            size = IdentitySize.Hero,
+            isMe = isMe,
+            frameId = if (isMe) equippedFrame else null,
+            modifier = Modifier.fillMaxWidth(),
+        )
         Spacer(Modifier.height(8.dp))
 
         // ADD ALLY stays tappable (a real action); settled states render as a

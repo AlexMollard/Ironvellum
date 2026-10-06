@@ -1,10 +1,14 @@
 package com.ironvellum.app.ui.program
 
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.Icons
+import androidx.compose.material3.Icon
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.size
 import com.ironvellum.app.ui.components.TermInfo
 import com.ironvellum.app.ui.components.Term
 import androidx.compose.foundation.background
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,9 +23,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -656,45 +658,51 @@ internal fun volumeCaption(volume: VolumeLevel, focus: TrainingFocus): String {
     }
 }
 
-/** One of the small drawn pick cells, in the preset editor's own style. */
+/**
+ * One cell of a pick grid. The chosen cell is VaultHigh with an Emerald check and Ink text;
+ * the rest sit on a Rune outline in InkMuted. [role] is Button for a single choice, Checkbox
+ * for a toggle.
+ */
 @Composable
 internal fun PickCell(
     label: String,
     selected: Boolean,
     modifier: Modifier = Modifier,
     description: String? = null,
+    role: Role = Role.Button,
     onClick: () -> Unit,
 ) {
     val shape = MaterialTheme.shapes.small
-    OutlinedButton(
-        shape = shape,
-        onClick = onClick,
-        // Selection must read as a pressed state, not a recoloured label:
-        // gold edge plus a faint wash of the same ink, so a picked cell has a
-        // boundary you can point at.
-        border = BorderStroke(
-            1.dp,
-            if (selected) IronvellumColors.SovereignGold else MaterialTheme.colorScheme.outlineVariant,
-        ),
-        // The unscheduled option is drawn as "—", which a screen reader
-        // announces as a dash. Say what it means (same rule as the editor).
-        modifier = modifier
-            .then(
-                if (description != null) Modifier.semantics { contentDescription = description } else Modifier,
-            )
-            // Selected reads as pressed: gold edge above plus a faint wash of
-            // the same ink, so a picked cell has a boundary you can point at.
-            .background(
-                if (selected) IronvellumColors.SovereignGold.copy(alpha = 0.10f) else Color.Transparent,
-                shape,
-            ),
-        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 6.dp),
+    Row(
+        modifier
+            .heightIn(min = 48.dp)
+            .clip(shape)
+            .background(if (selected) IronvellumColors.VaultHigh else Color.Transparent)
+            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
+            .clickable(role = role, onClick = onClick)
+            // The unscheduled option is drawn as "—", which a screen reader
+            // announces as a dash. Say what it means (same rule as the editor).
+            .semantics {
+                this.selected = selected
+                if (description != null) contentDescription = description
+            }
+            .padding(horizontal = 4.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center,
     ) {
+        if (selected) {
+            Icon(
+                Icons.Filled.Check,
+                contentDescription = null,
+                tint = IronvellumColors.Emerald,
+                modifier = Modifier.padding(end = 4.dp).size(14.dp),
+            )
+        }
         Text(
             label,
             style = MaterialTheme.typography.labelSmall,
             textAlign = TextAlign.Center,
-            color = if (selected) IronvellumColors.SovereignGold else MaterialTheme.colorScheme.onSurfaceVariant,
+            color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
         )
     }
 }

@@ -12,14 +12,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.indication
-import androidx.compose.material3.ripple
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -30,7 +28,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.progressSemantics
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -40,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -128,6 +126,7 @@ fun InkPanel(
 /**
  * A pill for choosing one value from a short list (the report-reason choice). It does not
  * switch pages: tabs that do are [InkTabs]. One shared implementation, so every pill reads alike.
+ * The chosen pill is Ink with a 2dp Emerald underline; the rest are InkMuted on a Rune outline.
  */
 @Composable
 fun IronvellumTabPill(
@@ -139,24 +138,15 @@ fun IronvellumTabPill(
     val shape = MaterialTheme.shapes.small
     Row(
         modifier
-            .background(
-                if (selected) {
-                    Brush.verticalGradient(
-                        listOf(IronvellumColors.SystemGreen, IronvellumColors.Emerald),
-                    )
-                } else {
-                    Brush.verticalGradient(listOf(Color(0xFF141A18), Color(0xFF0E1312)))
-                },
-                shape,
-            )
-            .inkBorder(if (selected) IronvellumColors.EmeraldBright else IronvellumColors.Rune, shape, 1.dp)
+            .clip(shape)
+            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
+            .selectedUnderline(selected)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
             ) { onClick() }
-            // Selection is a gradient and a brighter ink edge — invisible to a
-            // screen reader, which would otherwise read every tab identically
-            // and give no clue which one is open.
+            // The underline is invisible to a screen reader, which would otherwise
+            // read every pill identically and give no clue which one is chosen.
             .semantics {
                 role = Role.Tab
                 this.selected = selected
@@ -165,14 +155,12 @@ fun IronvellumTabPill(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
-        // No art slot: the only caller that passed one was the skill tree, and
-        // its marks were cut. A pill is its label.
         Text(
             label,
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
-            color = if (selected) IronvellumColors.Abyss else IronvellumColors.InkMuted,
+            color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
             letterSpacing = IronvellumTracking.InlineLabel,
             maxLines = 1,
             softWrap = false,
@@ -483,61 +471,16 @@ fun metricTotals(sets: List<SessionSet>, metricOf: (SessionSet) -> ExerciseMetri
 }
 
 /**
- * Bounded text+icon navigation chip: a slim 32dp outline inside a 48dp+ tap target.
- *
- * Shared because the Train screen and the Stats TRAINING tab both route to the
- * workout log, and the owner kept looking for it on the wrong screen.
- *
- * These started as bare InkMuted captions with `indication = null`, which
- * stripped all three affordance signals at once - contrast, boundary and press
- * feedback - and the owner reported he could not find them. InkMuted is this
- * app's NON-interactive colour (chart captions, metric hints); every tappable
- * text elsewhere - DETAIL, BACK, the calendar arrows - is SystemGreen. The chip
- * stays quieter than a IronvellumButton by being outlined rather than filled.
+ * The header chip (BACK, CLEAR): [InkChip] under its older name. [icon] is optional and
+ * BACK passes none.
  */
 @Composable
 fun NavChip(
     label: String,
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    icon: androidx.compose.ui.graphics.vector.ImageVector?,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
-) {
-    // The tap target stays 48dp; only the drawn outline is slim, so a header chip no longer reads as a slab.
-    // The press ripple is drawn on the outline, not the invisible margin around it.
-    val press = remember { MutableInteractionSource() }
-    Box(
-        modifier
-            .heightIn(min = 48.dp)
-            .clickable(interactionSource = press, indication = null, role = Role.Button) { onClick() },
-        contentAlignment = Alignment.Center,
-    ) {
-        Row(
-            Modifier
-                .height(32.dp)
-                .clip(MaterialTheme.shapes.extraSmall)
-                .inkBorder(IronvellumColors.SystemGreen.copy(alpha = 0.55f), MaterialTheme.shapes.extraSmall)
-                .indication(press, ripple())
-                .padding(horizontal = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-        ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = IronvellumColors.SystemGreen,
-                modifier = Modifier.size(14.dp),
-            )
-            Spacer(Modifier.width(6.dp))
-            Text(
-                label,
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
-        }
-    }
-}
+) = InkChip(label = label, icon = icon, modifier = modifier, onClick = onClick)
 
 /**
  * Busy indicator drawn as a brushed arc instead of Material's perfect ring.
@@ -575,15 +518,11 @@ fun InkSpinner(
 }
 
 /**
- * The app's segmented picker, drawn as ink, for CHOOSING AN OPTION (ON/OFF, units, a
- * who-sees-this answer). A control that shows a different page or view is [InkTabs] instead.
+ * The app's segmented picker, for CHOOSING AN OPTION (ON/OFF, units, a who-sees-this answer).
+ * A control that shows a different page or view is [InkTabs] instead.
  *
- * There were five hand-rolled copies of this (auth mode, sex, training mode,
- * appearance, stats tabs), each a Row clipped to a shape with a fill per
- * segment. They all read as machined for the same reason the picker's section
- * header did: a FILL has no drawn edge to see - the wobble is there, but a
- * two-to-eleven luminance step against the page hides it. The brushed border is
- * what makes the hand visible, so it lives here once.
+ * The open option is Ink with a 2dp Emerald underline, the rest InkMuted, all along one 1dp
+ * Rune baseline: no boxes and no fills, so a choice never outweighs the screen's action.
  */
 @Composable
 fun <T> InkSegmented(
@@ -592,16 +531,16 @@ fun <T> InkSegmented(
     onPick: (T) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = MaterialTheme.shapes.extraSmall
     // Min intrinsic height so one segment whose label wraps (large font scale)
     // makes its neighbours the same height rather than ragged.
     Row(
         modifier
             .fillMaxWidth()
             .height(IntrinsicSize.Min)
-            .clip(shape)
-            .background(IronvellumColors.Abyss)
-            .inkBorder(IronvellumColors.Rune, shape, 1.dp),
+            .drawBehind {
+                val thick = 1.dp.toPx()
+                drawRect(IronvellumColors.Rune, Offset(0f, size.height - thick), Size(size.width, thick))
+            },
     ) {
         options.forEach { (value, label) ->
             val isOn = value == selected
@@ -610,14 +549,9 @@ fun <T> InkSegmented(
                     .weight(1f)
                     .fillMaxHeight()
                     .heightIn(min = 48.dp)
-                    .clip(shape)
-                    .background(if (isOn) IronvellumColors.Vault else Color.Transparent)
-                    .then(
-                        if (isOn) Modifier.inkBorder(IronvellumColors.SystemGreen, shape, 1.dp) else Modifier,
-                    )
+                    .selectedUnderline(isOn)
                     .clickable { onPick(value) }
-                    // Same reason as the tab pills: the inset fill and ink edge
-                    // that mark the active segment carry no semantics.
+                    // The underline carries no semantics of its own.
                     .semantics {
                         role = Role.Tab
                         // `this.` is load-bearing: the enclosing function's own
@@ -631,7 +565,7 @@ fun <T> InkSegmented(
                     label,
                     style = MaterialTheme.typography.labelLarge,
                     fontFamily = ChakraPetch,
-                    color = if (isOn) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                    color = if (isOn) IronvellumColors.Ink else IronvellumColors.InkMuted,
                     letterSpacing = IronvellumTracking.InlineLabel,
                     // Wraps or ellipsises at a large font scale instead of clipping.
                     maxLines = 2,

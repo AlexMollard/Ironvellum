@@ -447,15 +447,7 @@ private val LIFTING_GROUPS = listOf(
 internal fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
     Box(
         Modifier
-            .background(
-                if (selected) {
-                    Brush.verticalGradient(listOf(Color(0xFF2C7A5A), Color(0xFF1B4D3A)))
-                } else {
-                    Brush.verticalGradient(listOf(Color(0xFF161C1A), Color(0xFF111614)))
-                },
-                MaterialTheme.shapes.extraSmall,
-            )
-            .inkBorder(if (selected) IronvellumColors.SystemGreen else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
+            .selectedUnderline(selected)
             .clickable { onClick() }
             // Same as the deeds filters: a chip that narrows the list still has
             // to tell a screen reader whether it is on.

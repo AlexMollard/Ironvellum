@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.selectable
+import com.ironvellum.app.ui.theme.DotShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,12 +29,12 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.lerp
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.inkHairline
 import com.ironvellum.app.ui.theme.IronvellumTracking
 
 private val TabPad = 10.dp
@@ -79,7 +81,7 @@ fun InkTabs(
                 .padding(bottom = LedgerSpace.Target - RuleY)
                 .fillMaxWidth()
                 .height(1.dp)
-                .inkHairline(IronvellumColors.Rune, thickness = 1.dp),
+                .background(IronvellumColors.Rune),
         )
         Row(
             Modifier
@@ -96,7 +98,7 @@ fun InkTabs(
                     val left = lerp(startFrom, startTo, t) + pad
                     val right = lerp(startFrom + widths[from], startTo + widths[from + 1], t) - pad
                     val thick = 2.dp.toPx()
-                    drawRect(IronvellumColors.SystemGreen, Offset(left, RuleY.toPx() - thick), Size(right - left, thick))
+                    drawRect(IronvellumColors.Emerald, Offset(left, RuleY.toPx() - thick), Size(right - left, thick))
                 },
         ) {
             labels.forEachIndexed { index, label ->
@@ -127,7 +129,7 @@ fun InkTabs(
                         fontFamily = ChakraPetch,
                         // One weight for both states, so selecting never changes a tab's width.
                         fontWeight = FontWeight.SemiBold,
-                        color = if (selected) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                        color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
                         letterSpacing = IronvellumTracking.InlineLabel,
                         maxLines = 1,
                         softWrap = false,
@@ -143,11 +145,13 @@ fun InkTabs(
                             color = IronvellumColors.Ink,
                             maxLines = 1,
                             softWrap = false,
+                            textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
-                                .padding(top = 6.dp)
-                                .background(IronvellumColors.DangerRed, MaterialTheme.shapes.extraSmall)
-                                .padding(horizontal = 4.dp, vertical = 1.dp)
+                                .padding(top = 4.dp)
+                                .background(IronvellumColors.DangerRed, DotShape)
+                                .defaultMinSize(minWidth = 14.dp, minHeight = 14.dp)
+                                .padding(horizontal = 3.dp, vertical = 1.dp)
                                 // Announced through the tab's stateDescription instead.
                                 .clearAndSetSemantics { },
                         )

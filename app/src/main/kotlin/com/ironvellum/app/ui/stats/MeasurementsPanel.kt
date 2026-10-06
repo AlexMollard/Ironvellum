@@ -28,6 +28,7 @@ import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkListRow
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.LedgerSpace
+import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.theme.IronvellumColors
 
@@ -45,7 +46,7 @@ internal fun TapePage(
 ) {
     val latest = Measurements.latest(entries)
     Column(Modifier.fillMaxSize()) {
-        LedgerTopBar("TAPE READINGS", onBack)
+        PushedHeader("TAPE READINGS", onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back to Ledger")
         Column(
             Modifier
                 .fillMaxSize()

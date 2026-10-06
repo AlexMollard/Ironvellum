@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -64,7 +65,6 @@ import com.ironvellum.app.ui.components.wholeKeyboard
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.ironvellumFieldColors
-import com.ironvellum.app.ui.theme.IronvellumTracking
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -287,11 +287,9 @@ fun PresetEditorScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        Text(
+        PushedHeader(
             if (ui.presetId == null) "NEW RITE" else "REFORGE THIS RITE",
-            style = MaterialTheme.typography.labelLarge,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = IronvellumTracking.SectionHeader,
+            onBack = { if (editorChanged(baseline, ui)) confirmDiscard = true else onDone() },
         )
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(

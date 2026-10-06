@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,7 +25,6 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
@@ -64,7 +64,6 @@ import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.LedgerSpace
-import com.ironvellum.app.ui.components.NavChip
 import com.ironvellum.app.ui.components.RangeChips
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.StatSize
@@ -579,7 +578,7 @@ private fun CategoryScreen(
             Column(
                 Modifier.fillMaxWidth(),
             ) {
-                NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = onBack)
+                PushedHeader(category, onBack)
                 Column(
                     Modifier.semantics(mergeDescendants = true) {
                         contentDescription = "$category deeds: $earned of $total earned. $blurb."
@@ -587,15 +586,13 @@ private fun CategoryScreen(
                 ) {
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
                         Text(
-                            category,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.Ink,
-                            modifier = Modifier.weight(1f).semantics { heading() },
+                            blurb,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                            modifier = Modifier.weight(1f),
                         )
                         StatValue("$earned / $total", size = StatSize.Inline)
                     }
-                    Text(blurb, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
                     Spacer(Modifier.height(8.dp))
                     InkRail(
                         fraction = if (total == 0) 0f else earned.toFloat() / total,

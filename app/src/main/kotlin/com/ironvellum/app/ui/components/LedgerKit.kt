@@ -4,16 +4,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import android.content.BroadcastReceiver
@@ -28,7 +24,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -46,7 +41,6 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
-import com.ironvellum.app.ui.theme.inkBorder
 import java.time.ZoneId
 import java.util.TimeZone
 
@@ -169,9 +163,9 @@ fun InkDivider(modifier: Modifier = Modifier) {
 }
 
 /**
- * One row inside a panel: muted label, ink value, and a green chevron when it
- * opens something. Rows are divided by [InkDivider] inside a single InkPanel
- * rather than each being a bordered box.
+ * One row inside a panel: label, an optional supporting line, a trailing value and a chevron
+ * when it opens something. It is [ListRow]; rows are divided by [InkDivider] inside a single
+ * InkPanel rather than each being a bordered box.
  */
 @Composable
 fun InkListRow(
@@ -180,46 +174,9 @@ fun InkListRow(
     modifier: Modifier = Modifier,
     supporting: String? = null,
     onClick: (() -> Unit)? = null,
-) {
-    Row(
-        modifier
-            .fillMaxWidth()
-            .heightIn(min = LedgerSpace.Target)
-            .then(if (onClick != null) Modifier.clickable(role = Role.Button, onClick = onClick) else Modifier)
-            .padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyMedium,
-                color = IronvellumColors.InkMuted,
-            )
-            if (supporting != null) {
-                Text(supporting, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
-            }
-        }
-        if (value != null) {
-            Text(
-                value,
-                style = MaterialTheme.typography.titleSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.Ink,
-                maxLines = 1,
-            )
-        }
-        if (onClick != null) {
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = IronvellumColors.SystemGreen,
-            )
-        }
-    }
-}
+) = ListRow(label, modifier, value = value, subline = supporting, onClick = onClick)
 
-/** Small range switch (30D / 90D / ALL): every option a full 48dp target, state announced. */
+/** Small range switch (30D / 90D / ALL): every option a full 48dp target, state announced; the open one is Ink over a 2dp Emerald underline. */
 @Composable
 fun <T> RangeChips(
     options: List<Pair<T, String>>,
@@ -227,7 +184,6 @@ fun <T> RangeChips(
     onPick: (T) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val shape = MaterialTheme.shapes.extraSmall
     Row(modifier, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
         options.forEach { (value, label) ->
             val on = value == selected
@@ -235,8 +191,6 @@ fun <T> RangeChips(
                 Modifier
                     .heightIn(min = LedgerSpace.Target)
                     .widthIn(min = LedgerSpace.Target)
-                    .clip(shape)
-                    .then(if (on) Modifier.inkBorder(IronvellumColors.SystemGreen, shape, 1.dp) else Modifier)
                     .clickable(role = Role.RadioButton) { onPick(value) }
                     .semantics { this.selected = on }
                     .padding(horizontal = 8.dp),
@@ -246,8 +200,9 @@ fun <T> RangeChips(
                     label,
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
-                    color = if (on) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                    color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
                     letterSpacing = IronvellumTracking.InlineLabel,
+                    modifier = Modifier.selectedUnderline(on).padding(vertical = 6.dp),
                 )
             }
         }

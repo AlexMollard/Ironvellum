@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.border
 import androidx.compose.material3.Icon
@@ -16,12 +17,9 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.NavChip
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.theme.ChakraPetch
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -139,19 +137,7 @@ fun ExerciseExplorerScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "EXERCISES",
-                style = MaterialTheme.typography.labelLarge,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = 6.sp,
-            )
-            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() })
-        }
+        PushedHeader("EXERCISES", onBack)
         Spacer(Modifier.height(12.dp))
 
         if (selectedExercise == null) {
