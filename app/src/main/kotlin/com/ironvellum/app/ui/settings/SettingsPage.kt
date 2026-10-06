@@ -18,7 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.social.PushedHeader
+import com.ironvellum.app.ui.components.PushedHeader
 
 /** The Settings sub-screens, each its own `settings/{section}` route under the hub. */
 enum class SettingsSection(val key: String, val title: String) {

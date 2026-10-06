@@ -1,12 +1,11 @@
 package com.ironvellum.app.ui.idle
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.ui.graphics.drawscope.Stroke
 import com.ironvellum.app.ui.social.crestFrameTreatment
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.StrokeCap
 import kotlinx.coroutines.delay
-import com.ironvellum.app.ui.components.NavChip
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.foundation.Canvas
@@ -224,10 +223,7 @@ fun IdleScreen(
             .padding(horizontal = 20.dp),
     ) {
         // Opened from Today's footer, not a tab, so it carries its own way out.
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            SectionHeader("THE VEIL", Modifier.weight(1f))
-            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() }, Modifier.padding(top = 18.dp))
-        }
+        PushedHeader("THE VEIL", onBack = { onBack() }, modifier = Modifier.padding(top = 8.dp))
 
         // The circle's pooled week, one line under the header; a tap opens the
         // circle on the ALLIES tab. Refreshes on screen open only.

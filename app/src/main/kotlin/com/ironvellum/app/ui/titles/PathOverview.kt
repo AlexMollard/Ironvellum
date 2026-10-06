@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,8 +15,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -34,7 +33,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.Skills
-import com.ironvellum.app.ui.components.NavChip
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkBorder
@@ -229,26 +227,12 @@ private fun ProgressBar(done: Int, total: Int, modifier: Modifier = Modifier) {
     }
 }
 
-/** The header over an opened path: back to the grid, the path's name and its progress. */
+/** The header over an opened path: back to the grid, the path's name, and its progress once as a subline. */
 @Composable
 internal fun PathHeader(line: String, mastered: Set<String>, onBack: () -> Unit) {
     val (done, total) = remember(line, mastered) { SkillGuidance.lineProgress(line, mastered) }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-    ) {
-        NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = onBack)
-        Spacer(Modifier.weight(1f))
-        Text(
-            line,
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.Ink,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Spacer(Modifier.width(10.dp))
+    Column {
+        PushedHeader(line, onBack)
         Text(
             "$done/$total",
             style = MaterialTheme.typography.labelMedium,

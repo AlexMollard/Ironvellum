@@ -1,15 +1,11 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.layout.width
 import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import com.ironvellum.app.ui.components.NavChip
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.Icons
 import android.content.Context
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -30,12 +26,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -75,7 +69,6 @@ import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
-import com.ironvellum.app.ui.theme.inkBorder
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -577,27 +570,15 @@ fun ProgramBuilderScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                when (mode) {
-                    "template" -> "FROM A PATTERN"
-                    "week" -> "FORGE A CYCLE"
-                    "session" -> "FORGE A RITE"
-                    else -> "TEMPER A RITE"
-                },
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
-            // The same BACK chip the Weekly Coverage / Exercise Records
-            // screens use; system back alone was undiscoverable.
-            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { if (dirty) confirmDiscard = true else onDone() })
-        }
+        PushedHeader(
+            when (mode) {
+                "template" -> "FROM A PATTERN"
+                "week" -> "FORGE A CYCLE"
+                "session" -> "FORGE A RITE"
+                else -> "TEMPER A RITE"
+            },
+            onBack = { if (dirty) confirmDiscard = true else onDone() },
+        )
         Spacer(Modifier.height(12.dp))
 
         QuestionPanel("WHAT YOU ARE CHASING") {
@@ -1090,7 +1071,7 @@ private fun Caption(text: String) {
     )
 }
 
-/** Multi-select muscle-area chips; selection is both a fill and a brighter edge. */
+/** Multi-select muscle-area cells: the chosen ones carry an Emerald check. */
 @Composable
 private fun MuscleAreaChips(
     selectedAreas: Set<MuscleArea>,
@@ -1101,28 +1082,13 @@ private fun MuscleAreaChips(
         MuscleArea.entries.chunked(2).forEach { chunk ->
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                 chunk.forEach { area ->
-                    val on = area in selectedAreas
-                    val shape = MaterialTheme.shapes.extraSmall
-                    Text(
-                        area.label,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        color = if (on) IronvellumColors.Abyss else IronvellumColors.InkMuted,
-                        maxLines = 1,
-                        modifier = Modifier
-                            .weight(1f)
-                            .clip(shape)
-                            .background(if (on) IronvellumColors.SystemGreen else IronvellumColors.VaultHigh)
-                            .inkBorder(if (on) IronvellumColors.EmeraldBright else IronvellumColors.Rune, shape, 1.dp)
-                            .clickable { onToggle(area) }
-                            .padding(horizontal = 8.dp, vertical = 10.dp)
-                            // Fill alone is invisible to a screen reader; the
-                            // checkbox role and state say what the colour shows.
-                            .semantics {
-                                role = Role.Checkbox
-                                selected = on
-                            },
-                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    // Checkbox role: the check alone is invisible to a screen reader.
+                    PickCell(
+                        label = area.label,
+                        selected = area in selectedAreas,
+                        modifier = Modifier.weight(1f),
+                        role = Role.Checkbox,
+                        onClick = { onToggle(area) },
                     )
                 }
                 if (chunk.size < 2) Spacer(Modifier.weight(1f))

@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.stats
 
+import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.InkChip
 import androidx.compose.foundation.background
@@ -25,7 +26,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
@@ -49,8 +49,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.heading
-import com.ironvellum.app.ui.components.NavChip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.BodyStats
@@ -326,32 +324,6 @@ private fun WeekStrip(weeks: List<Int>) {
 
 // ---------------------------------------------------------------- panes
 
-/** The standard pane bar: a 48dp back target and the title. */
-@Composable
-internal fun LedgerTopBar(title: String, onBack: () -> Unit, backDescription: String = "Back to Ledger") {
-    // Title left, BACK right: the header every pushed screen uses (PushedHeader).
-    Row(
-        Modifier.fillMaxWidth().padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            title,
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = IronvellumTracking.ScreenTitle,
-            modifier = Modifier.semantics { heading() },
-        )
-        NavChip(
-            "BACK",
-            Icons.AutoMirrored.Filled.ArrowBack,
-            onClick = onBack,
-            modifier = Modifier.semantics { contentDescription = backDescription },
-        )
-    }
-}
-
 /** Every weigh-in, one line each, newest first. Delete is armed per row, and Undo outlives it. */
 @Composable
 internal fun WeightHistoryPage(
@@ -364,7 +336,7 @@ internal fun WeightHistoryPage(
     onBack: () -> Unit,
 ) {
     Column(Modifier.fillMaxSize()) {
-        LedgerTopBar("WEIGHT HISTORY", onBack)
+        PushedHeader("WEIGHT HISTORY", onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back to Ledger")
         Box(Modifier.weight(1f).padding(horizontal = LedgerSpace.Gutter)) {
             if (stats.isEmpty()) {
                 Text(

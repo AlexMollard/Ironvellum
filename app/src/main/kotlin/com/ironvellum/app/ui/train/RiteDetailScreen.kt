@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.layout.onSizeChanged
@@ -24,8 +25,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -49,7 +48,6 @@ import com.ironvellum.app.domain.Evidence
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.NavChip
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.program.RiteMusclesSheet
 import com.ironvellum.app.ui.program.toPlanned
@@ -108,19 +106,7 @@ fun RiteDetailScreen(
                     .padding(horizontal = 16.dp),
             ) {
                 Spacer(Modifier.height(20.dp))
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "RITE",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = IronvellumColors.SystemGreen,
-                        letterSpacing = IronvellumTracking.ScreenTitle,
-                    )
-                    NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = onBack)
-                }
+                PushedHeader("RITE", onBack)
                 if (preset == null) return@Column
                 Spacer(Modifier.height(SECTION_GAP))
                 Row(verticalAlignment = Alignment.CenterVertically) {

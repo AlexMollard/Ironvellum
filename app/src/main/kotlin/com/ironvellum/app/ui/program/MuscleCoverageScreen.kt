@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.program
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -20,7 +21,6 @@ import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.ironvellum.app.ui.components.NavChip
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -207,15 +207,7 @@ fun MuscleCoverageScreen(
     Column(Modifier.fillMaxSize()) {
         Column(Modifier.padding(horizontal = 16.dp)) {
             Spacer(Modifier.height(20.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "WEEKLY COVERAGE",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = IronvellumColors.SystemGreen,
-                    letterSpacing = IronvellumTracking.ScreenTitle,
-                )
-                NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() })
-            }
+            PushedHeader("WEEKLY COVERAGE", onBack)
             Spacer(Modifier.height(12.dp))
         }
         // The switch comes first: drawn after the empty check, an empty LAST

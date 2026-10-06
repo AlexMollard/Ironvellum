@@ -25,7 +25,7 @@ import com.ironvellum.app.data.Reminders
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.SettingsValueRow
-import com.ironvellum.app.ui.social.PushedHeader
+import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**

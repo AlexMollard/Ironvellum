@@ -2,11 +2,12 @@ package com.ironvellum.app.ui.train
 
 import androidx.compose.material.icons.outlined.FitnessCenter
 import com.ironvellum.app.ui.components.InkChip
+import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.formatDate
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.AccessibilityNew
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.outlined.Share
@@ -17,7 +18,6 @@ import com.ironvellum.app.ui.dashboard.trialLength
 import kotlin.math.ceil
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -39,7 +39,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.Button
-import androidx.compose.material3.Icon
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -77,7 +76,6 @@ import com.ironvellum.app.ui.program.coverageGaps
 import com.ironvellum.app.ui.program.toPlanned
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.inkHairline
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import kotlinx.coroutines.flow.SharingStarted
@@ -358,7 +356,7 @@ fun PresetsScreen(
                             maxLines = 1,
                         )
                     }
-                    if (preset != ui.presets.last()) RowRule(seed = preset.id.toInt())
+                    if (preset != ui.presets.last()) InkDivider()
                 }
             }
             }
@@ -386,12 +384,12 @@ fun PresetsScreen(
                     detailColor = if (gaps > 0) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                     onClick = onOpenCoverage,
                 )
-                RowRule(seed = 41)
+                InkDivider()
                 WayOutRow(icon = Icons.Outlined.FitnessCenter, label = "Exercises", onClick = onOpenExercises)
                 // The recent trials card links the same chronicle from its header,
                 // so the row only stands when that card does not.
                 if (trials.isEmpty()) {
-                    RowRule(seed = 42)
+                    InkDivider()
                     WayOutRow(icon = Icons.Outlined.History, label = "Full chronicle", onClick = onOpenLog)
                 }
             }
@@ -412,7 +410,7 @@ fun PresetsScreen(
                 }
                 InkPanel(Modifier.fillMaxWidth()) {
                     trials.forEach { (trial, sets) ->
-                        if (trial != trials.first().first) RowRule(seed = trial.id.toInt())
+                        if (trial != trials.first().first) InkDivider()
                         TrialRow(trial, sets) { onOpenWorkout(trial.id) }
                     }
                 }
@@ -682,11 +680,6 @@ private fun LeadButton(label: String, quiet: Boolean = false, onClick: () -> Uni
 /** Movements named on the lead card before "+N". */
 private const val LEAD_MOVEMENTS = 3
 
-@Composable
-private fun RowRule(seed: Int) {
-    Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune))
-}
-
 /** One way out of Train: icon, label, an optional fact, and a chevron. */
 @Composable
 private fun WayOutRow(
@@ -696,22 +689,7 @@ private fun WayOutRow(
     detail: String? = null,
     detailColor: androidx.compose.ui.graphics.Color = IronvellumColors.InkMuted,
 ) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraSmall)
-            .clickable(onClickLabel = label, onClick = onClick)
-            .heightIn(min = ROW_HEIGHT),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-    ) {
-        Icon(icon, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(22.dp))
-        Column(Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
-            detail?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = detailColor) }
-        }
-        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
-    }
+    ListRow(label, icon = icon, subline = detail, sublineColor = detailColor, onClickLabel = label, onClick = onClick)
 }
 
 /** Train's rhythm, shared with the rite page: panels sit a section apart; controls inside a group, a group gap. */
@@ -721,8 +699,8 @@ internal val GROUP_GAP = 12.dp
 /** The page's end clears the raised Train plate, which overhangs the bar by 10dp, with room to spare. */
 private val END_GAP = 24.dp
 
-/** A list row: the 48dp touch target, the same in both panels. */
-internal val ROW_HEIGHT = 48.dp
+/** A list row: the shared 52dp row height, the same in both panels. */
+internal val ROW_HEIGHT = ListRowHeight
 
 /** The cycle list's weekday column. */
 private val DAY_COLUMN = 36.dp

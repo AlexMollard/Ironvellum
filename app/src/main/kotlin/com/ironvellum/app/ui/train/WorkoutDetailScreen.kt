@@ -1,12 +1,11 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.formatBodyValue
-import com.ironvellum.app.ui.components.NavChip
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -257,44 +256,32 @@ fun WorkoutDetailScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "TRIAL",
-                style = MaterialTheme.typography.labelLarge,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.ScreenTitle,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                // Weighted so the two actions beside it keep their width on a
-                // narrow phone instead of being pushed off the row.
-                modifier = Modifier.weight(1f),
-            )
-            ui.session?.takeIf { draft == null }?.let { session ->
-                if (session.completedAtMs != null && ui.sets.isNotEmpty()) {
-                    IconButton(onClick = viewModel::startAmend) {
+        PushedHeader(
+            "TRIAL",
+            onBack = { onBack() },
+            actions = {
+                ui.session?.takeIf { draft == null }?.let { session ->
+                    if (session.completedAtMs != null && ui.sets.isNotEmpty()) {
+                        IconButton(onClick = viewModel::startAmend) {
+                            Icon(
+                                Icons.Outlined.Edit,
+                                contentDescription = "Amend this trial",
+                                tint = IronvellumColors.Emerald,
+                            )
+                        }
+                    }
+                    IconButton(onClick = {
+                        shareText = WorkoutShare.format(session, ui.sets, ui.exercises)
+                    }) {
                         Icon(
-                            Icons.Outlined.Edit,
-                            contentDescription = "Amend this trial",
+                            Icons.Outlined.IosShare,
+                            contentDescription = "Share this trial",
                             tint = IronvellumColors.Emerald,
                         )
                     }
                 }
-                IconButton(onClick = {
-                    shareText = WorkoutShare.format(session, ui.sets, ui.exercises)
-                }) {
-                    Icon(
-                        Icons.Outlined.IosShare,
-                        contentDescription = "Share this trial",
-                        tint = IronvellumColors.Emerald,
-                    )
-                }
-            }
-            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() })
-        }
+            },
+        )
         Spacer(Modifier.height(12.dp))
 
         val session = ui.session

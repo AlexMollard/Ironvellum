@@ -1,10 +1,8 @@
 package com.ironvellum.app.ui.social
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import com.ironvellum.app.ui.components.NavChip
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.Icons
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,7 +37,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -854,26 +851,6 @@ internal fun RowAction(
                 else Modifier.semantics { this.contentDescription = contentDescription },
             ),
     )
-}
-
-/** Title left, BACK right: the header every pushed screen uses (see WorkoutLogScreen). */
-@Composable
-internal fun PushedHeader(title: String, onBack: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            title,
-            style = MaterialTheme.typography.labelLarge,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = IronvellumTracking.ScreenTitle,
-            modifier = Modifier.semantics { heading() },
-        )
-        NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() })
-    }
-    Spacer(Modifier.height(8.dp))
 }
 
 /**

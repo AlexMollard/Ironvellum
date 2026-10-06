@@ -50,6 +50,7 @@ import com.ironvellum.app.ui.components.InkListRow
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.LedgerSpace
+import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.rememberZoneId
 import com.ironvellum.app.ui.components.PanelLabel
 import com.ironvellum.app.ui.components.StatSize
@@ -131,7 +132,7 @@ fun MeasurementDetailScreen(
     val delta = remember(ui.entries) { Measurements.deltaCm(ui.entries, site, days = 30) }
 
     Column(Modifier.fillMaxSize().imePadding()) {
-        LedgerTopBar(site.label.uppercase(), onBack, backDescription = "Back")
+        PushedHeader(site.label.uppercase(), onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back")
         Column(
             Modifier
                 .fillMaxSize()

@@ -9,9 +9,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,11 +16,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
@@ -63,29 +57,7 @@ fun TapRow(onClickLabel: String, onClick: () -> Unit, content: @Composable RowSc
 /** A hub row: what it is, its current value, and a chevron to the screen that changes it. */
 @Composable
 fun SettingsValueRow(label: String, value: String?, onClick: () -> Unit) {
-    TapRow(onClickLabel = "Open $label", onClick = onClick) {
-        Text(
-            label,
-            style = MaterialTheme.typography.titleSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.Ink,
-            maxLines = 1,
-        )
-        Text(
-            value.orEmpty(),
-            style = MaterialTheme.typography.labelMedium,
-            color = IronvellumColors.InkMuted,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            textAlign = TextAlign.End,
-            modifier = Modifier.weight(1f),
-        )
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = IronvellumColors.InkMuted,
-        )
-    }
+    ListRow(label, value = value, onClickLabel = "Open $label", onClick = onClick)
 }
 
 /** The one-line explanation under a setting: what it changes, nothing more. */

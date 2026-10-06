@@ -1,12 +1,11 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.sp
-import com.ironvellum.app.ui.components.NavChip
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -115,19 +114,7 @@ fun WorkoutLogScreen(
     ) {
         item {
         Spacer(Modifier.height(20.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "CHRONICLE",
-                style = MaterialTheme.typography.labelLarge,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.ScreenTitle,
-            )
-            NavChip("BACK", Icons.AutoMirrored.Filled.ArrowBack, onClick = { onBack() })
-        }
+        PushedHeader("CHRONICLE", onBack)
         Spacer(Modifier.height(12.dp))
 
         }
