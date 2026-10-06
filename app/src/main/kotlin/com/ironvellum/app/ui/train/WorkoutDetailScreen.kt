@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -243,9 +244,11 @@ fun WorkoutDetailScreen(
     val amendError by viewModel.amendError.collectAsStateWithLifecycle()
     val earnedDeeds by viewModel.earnedDeeds.collectAsStateWithLifecycle()
     var shareText by remember { mutableStateOf<String?>(null) }
-    // Back while amending discards the draft, as Cancel does, rather than
-    // leaving the screen with the edit silently lost.
-    BackHandler(enabled = draft != null) { viewModel.cancelAmend() }
+    var confirmDiscard by remember { mutableStateOf(false) }
+    // Back while amending asks before dropping edits; an untouched draft just closes.
+    BackHandler(enabled = draft != null) {
+        if (draft != TrialDraft.of(ui.sets)) confirmDiscard = true else viewModel.cancelAmend()
+    }
 
     Column(
         Modifier
@@ -383,6 +386,28 @@ fun WorkoutDetailScreen(
     }
     pendingSave?.let { settlement ->
         AmendConfirmDialog(settlement, onConfirm = viewModel::confirmSave, onDismiss = viewModel::dismissSave)
+    }
+    if (confirmDiscard) {
+        AlertDialog(
+            shape = MaterialTheme.shapes.medium,
+            containerColor = Color(0xFF0D1110),
+            onDismissRequest = { confirmDiscard = false },
+            title = { Text("Discard your changes?") },
+            text = { Text("Unsaved edits to this trial will be lost.") },
+            confirmButton = {
+                IronvellumButton(
+                    label = "Discard",
+                    onClick = {
+                        confirmDiscard = false
+                        viewModel.cancelAmend()
+                    },
+                    danger = true,
+                )
+            },
+            dismissButton = {
+                IronvellumButton(label = "Keep editing", onClick = { confirmDiscard = false }, quiet = true)
+            },
+        )
     }
     amendError?.let { message ->
         InfoNotice("Not amended", message, onDismiss = viewModel::dismissAmendError)
