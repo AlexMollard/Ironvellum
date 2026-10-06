@@ -188,4 +188,21 @@ class IdleTest {
         assertEquals(now, stamped.lastCollectedAtMs)
         assertTrue(Idle.accrued(stamped, rate, nowMs = now + 3_600_000L) > 0L)
     }
+
+    @Test
+    fun `efficiency holds at full for a day, falls in a line over two more, then holds at a tenth`() {
+        assertEquals(1.0, Idle.efficiencyAtHours(0.0), 1e-9)
+        assertEquals(1.0, Idle.efficiencyAtHours(24.0), 1e-9)
+        assertEquals(0.55, Idle.efficiencyAtHours(48.0), 1e-9)
+        assertEquals(Idle.MIN_EFFICIENCY, Idle.efficiencyAtHours(72.0), 1e-9)
+        assertEquals(Idle.MIN_EFFICIENCY, Idle.efficiencyAtHours(500.0), 1e-9)
+    }
+
+    @Test
+    fun `the full-strength fraction fills over the first day and then stays full`() {
+        assertEquals(0.0, Idle.fullStrengthFraction(0L), 1e-9)
+        assertEquals(0.5, Idle.fullStrengthFraction(12 * 3_600_000L), 1e-9)
+        assertEquals(1.0, Idle.fullStrengthFraction(30 * 3_600_000L), 1e-9)
+        assertEquals(0.0, Idle.fullStrengthFraction(-5L), 1e-9)
+    }
 }

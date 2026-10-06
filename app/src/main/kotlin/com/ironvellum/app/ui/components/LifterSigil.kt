@@ -44,20 +44,17 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
  * The level's ascension names it in place of "LV": ascension is a band of
  * levels, so it labels the number rather than standing as a stat of its own.
  *
- * [compact] is the line that rides Today's XP bar: plain text, the ascension and
- * level side by side, with no plate, frame or crest.
+ * [compact] is the line that rides Today's XP rail: plain text in sentence case ("Acolyte 4"),
+ * with no plate, frame or crest.
  */
 @Composable
 fun LifterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier, compact: Boolean = false) {
     if (compact) {
         Text(
-            "${ArmyClass.forLevel(level).title.uppercase()} $level",
+            "${ArmyClass.forLevel(level).title} $level",
             modifier = modifier,
-            style = MaterialTheme.typography.labelSmall.copy(
-                fontFamily = ChakraPetch,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            ),
-            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = FontWeight.Medium,
             color = IronvellumColors.Ink,
             maxLines = 1,
             softWrap = false,

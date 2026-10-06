@@ -151,7 +151,7 @@ object Idle {
                 // Average of the start and end efficiency over the elapsed slice
                 // of the ramp — the area of a trapezium.
                 val into = hours - FULL_RATE_HOURS
-                val endEfficiency = 1.0 - (1.0 - MIN_EFFICIENCY) * (into / TAPER_WINDOW_HOURS)
+                val endEfficiency = efficiencyAtHours(hours)
                 FULL_RATE_HOURS + into * (1.0 + endEfficiency) / 2.0
             }
             else -> {
@@ -163,6 +163,20 @@ object Idle {
         val amount = perHour * effectiveHours
         return if (amount.isFinite()) amount else 0.0
     }
+
+    /**
+     * Share of full output after [hours] away: 1.0 through the full-strength day, then a straight
+     * fall to [MIN_EFFICIENCY] across the taper window, then held there.
+     */
+    fun efficiencyAtHours(hours: Double): Double = when {
+        hours <= FULL_RATE_HOURS -> 1.0
+        hours >= FULL_RATE_HOURS + TAPER_WINDOW_HOURS -> MIN_EFFICIENCY
+        else -> 1.0 - (1.0 - MIN_EFFICIENCY) * ((hours - FULL_RATE_HOURS) / TAPER_WINDOW_HOURS)
+    }
+
+    /** How much of the full-strength day [elapsedMs] away has used, 0..1; 1 once the taper begins. */
+    fun fullStrengthFraction(elapsedMs: Long): Double =
+        (elapsedMs / 3_600_000.0 / FULL_RATE_HOURS).coerceIn(0.0, 1.0)
 
     fun collect(state: IdleState, rate: IdleRate, nowMs: Long): IdleState {
         val gained = accrued(state, rate, nowMs)

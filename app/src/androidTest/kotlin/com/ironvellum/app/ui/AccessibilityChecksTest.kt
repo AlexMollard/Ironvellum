@@ -374,7 +374,7 @@ class AccessibilityChecksTest {
     fun longScreensExposeTheirSectionsAsHeadings() {
         val without = mutableListOf<String>()
         // Muster is no longer a tab: it opens from Today's footer.
-        for (path in listOf(listOf("Ledger"), listOf("Today", "THE VEIL"), listOf("Train"))) {
+        for (path in listOf(listOf("Ledger"), listOf("Today", "The Veil"), listOf("Train"))) {
             returnToNavigation()
             compose.onNodeWithContentDescription(path.first()).performClick()
             if (path.drop(1).any { !openSurface(it) }) {
@@ -435,7 +435,7 @@ class AccessibilityChecksTest {
             listOf("Today", "Settings", "Profile"),
             listOf("Today", "Settings", "Armoury"),
             listOf("Today", "Settings", "Advanced"),
-            listOf("Today", "THE VEIL"),
+            listOf("Today", "The Veil"),
             // Truly last: starting a session leaves a live trial whose abandon
             // prompt sits between the sweep and the nav bar.
             listOf("Train", "Open trial"),
