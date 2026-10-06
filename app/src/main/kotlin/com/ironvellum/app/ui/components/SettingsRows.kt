@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -29,6 +30,7 @@ fun SettingsGroup(
     label: String?,
     modifier: Modifier = Modifier,
     topSpace: Dp = 20.dp,
+    contentPadding: PaddingValues = PaddingValues(16.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     if (label != null) {
@@ -36,7 +38,7 @@ fun SettingsGroup(
     } else {
         Spacer(Modifier.height(topSpace))
     }
-    InkPanel(modifier.fillMaxWidth(), content = content)
+    InkPanel(modifier.fillMaxWidth(), contentPadding = contentPadding, content = content)
 }
 
 /** One tappable settings row, at least 48dp tall. */

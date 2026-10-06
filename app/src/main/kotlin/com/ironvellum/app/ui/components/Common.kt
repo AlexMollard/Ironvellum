@@ -16,6 +16,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -88,6 +89,7 @@ import java.util.Locale
 fun InkPanel(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
+    contentPadding: PaddingValues = PaddingValues(16.dp),
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = MaterialTheme.shapes.medium
@@ -95,7 +97,7 @@ fun InkPanel(
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(contentPadding),
             content = content,
         )
     }
@@ -266,7 +268,7 @@ fun IronvellumButton(
                 !enabled -> IronvellumColors.InkMuted
                 danger -> IronvellumColors.DangerRed
                 quiet || boxless -> IronvellumColors.SystemGreen
-                else -> IronvellumColors.Abyss
+                else -> MaterialTheme.colorScheme.onPrimary
             },
             // labelLarge carries the theme's 0.5sp tracking: no override.
             style = MaterialTheme.typography.labelLarge,
@@ -293,7 +295,7 @@ private fun GoldButton(
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.97f else 1f, tween(90), label = "press")
-    val colors = listOf(Color(0xFFF2C14E), Color(0xFFC98A2B))
+    val colors = listOf(IronvellumColors.SovereignGold, androidx.compose.ui.graphics.lerp(IronvellumColors.SovereignGold, IronvellumColors.Abyss, 0.18f))
     val shape = MaterialTheme.shapes.medium
     Box(
         modifier
@@ -311,7 +313,7 @@ private fun GoldButton(
                     !enabled -> IronvellumColors.Rune
                     danger -> IronvellumColors.DangerRed.copy(alpha = 0.7f)
                     quiet -> IronvellumColors.Rune
-                    else -> Color(0x5934D399)
+                    else -> IronvellumColors.Emerald.copy(alpha = 0.35f)
                 },
                 shape,
                 1.dp,
@@ -329,7 +331,7 @@ private fun GoldButton(
                 !enabled -> IronvellumColors.InkMuted
                 danger -> IronvellumColors.DangerRed
                 quiet -> IronvellumColors.SystemGreen
-                else -> IronvellumColors.Abyss
+                else -> MaterialTheme.colorScheme.onTertiary
             },
             style = MaterialTheme.typography.labelLarge,
             letterSpacing = IronvellumTracking.InlineLabel,

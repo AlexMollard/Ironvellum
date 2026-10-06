@@ -317,7 +317,7 @@ private fun CelebrationDock(
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp,
-                color = IronvellumColors.Abyss,
+                color = MaterialTheme.colorScheme.onPrimary,
             )
         }
         Spacer(Modifier.height(16.dp))

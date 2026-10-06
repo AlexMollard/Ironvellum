@@ -8,6 +8,8 @@ import androidx.compose.material3.Shapes
 import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.platform.LocalDensity
@@ -22,6 +24,9 @@ import androidx.compose.ui.unit.sp
 import com.ironvellum.app.R
 
 object IronvellumColors {
+    // Snapshot state keeps existing drawing callbacks and non-composable
+    // helpers reactive without a second palette at hundreds of call sites.
+    internal var accents by androidx.compose.runtime.mutableStateOf(AccentPalette.Default)
     // Paper tones: warm charcoal, not blue-grey. Ink needs something to sit on.
     val Abyss = Color(0xFF0C0C0B) // deepest paper
     val Vault = Color(0xFF171715) // panel paper
@@ -29,10 +34,10 @@ object IronvellumColors {
 
     // Colour survives ONLY where it carries information a monochrome UI would
     // destroy: progression, rarity, earned moments, danger.
-    val Emerald = Color(0xFF34D399) // XP and success
-    val EmeraldBright = Color(0xFF6EE7B7)
-    val SystemGreen = Color(0xFF6FAE8C) // muted green accent
-    val SovereignGold = Color(0xFFF2C14E) // earned moments only
+    val Emerald get() = Color(accents.primary) // XP and success
+    val EmeraldBright get() = Color(accents.bright)
+    val SystemGreen get() = Color(accents.muted) // muted green accent
+    val SovereignGold get() = Color(accents.secondary) // earned moments only
     val DangerRed = Color(0xFFEF5350)
 
     // Ink itself: the structural palette is monochrome by design.
@@ -56,17 +61,17 @@ val ChakraPetch = FontFamily(
     Font(R.font.chakra_petch_bold, FontWeight.Bold),
 )
 
-private val IronvellumColorScheme = darkColorScheme(
-    primary = IronvellumColors.Emerald,
-    onPrimary = Color.White,
+private fun ironvellumColorScheme(palette: AccentPalette) = darkColorScheme(
+    primary = Color(palette.primary),
+    onPrimary = Color(accentForeground(palette.primary)),
     primaryContainer = IronvellumColors.VaultHigh,
     onPrimaryContainer = IronvellumColors.Ink,
-    secondary = IronvellumColors.SystemGreen,
-    onSecondary = Color.Black,
+    secondary = Color(palette.muted),
+    onSecondary = Color(accentForeground(palette.muted)),
     secondaryContainer = IronvellumColors.VaultHigh,
     onSecondaryContainer = IronvellumColors.Ink,
-    tertiary = IronvellumColors.SovereignGold,
-    onTertiary = Color.Black,
+    tertiary = Color(palette.secondary),
+    onTertiary = Color(accentForeground(palette.secondary)),
     background = IronvellumColors.Abyss,
     onBackground = IronvellumColors.Ink,
     surface = IronvellumColors.Vault,
@@ -163,12 +168,12 @@ fun ironvellumFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
 
 /** Ironvellum is always dark — the Ledger never sleeps. Dynamic color is deliberately unused. */
 @Composable
-fun IronvellumTheme(content: @Composable () -> Unit) {
+fun IronvellumTheme(palette: AccentPalette = IronvellumColors.accents, content: @Composable () -> Unit) {
     // The text scale is pinned in MainActivity.attachBaseContext, which every
     // window of the app inherits — including dialogs, which compose in their
     // own window and so ignored a CompositionLocal installed here.
     MaterialTheme(
-        colorScheme = IronvellumColorScheme,
+        colorScheme = ironvellumColorScheme(palette),
         typography = IronvellumTypography,
         shapes = IronvellumShapes,
         content = content,

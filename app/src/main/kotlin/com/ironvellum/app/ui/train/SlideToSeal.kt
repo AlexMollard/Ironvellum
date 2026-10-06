@@ -146,9 +146,9 @@ internal fun SlideToSeal(
 
     val progress = if (travel > 0f) (offset / travel).coerceIn(0f, 1f) else 0f
     val fillBrush = if (sealed) {
-        Brush.horizontalGradient(listOf(Color(0xFF8A6A1F), IronvellumColors.SovereignGold))
+        Brush.horizontalGradient(listOf(androidx.compose.ui.graphics.lerp(IronvellumColors.SovereignGold, IronvellumColors.Vault, 0.45f), IronvellumColors.SovereignGold))
     } else {
-        Brush.horizontalGradient(listOf(Color(0xFF1D4A39), IronvellumColors.Emerald))
+        Brush.horizontalGradient(listOf(androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.65f), IronvellumColors.Emerald))
     }
     val capColor = when {
         !enabled -> IronvellumColors.Rune
@@ -185,7 +185,7 @@ internal fun SlideToSeal(
                 fontWeight = FontWeight.SemiBold,
                 // The theme's label tracking is for caps; this is a sentence.
                 letterSpacing = 0.5.sp,
-                color = if (sealed) IronvellumColors.Abyss else IronvellumColors.InkMuted,
+                color = if (sealed) MaterialTheme.colorScheme.onTertiary else IronvellumColors.InkMuted,
                 textAlign = TextAlign.Center,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -225,7 +225,7 @@ internal fun SlideToSeal(
                     Icon(
                         if (sealed) Icons.Filled.Check else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
-                        tint = if (enabled) IronvellumColors.Abyss else IronvellumColors.InkMuted,
+                        tint = if (!enabled) IronvellumColors.InkMuted else if (sealed) MaterialTheme.colorScheme.onTertiary else MaterialTheme.colorScheme.onPrimary,
                         modifier = Modifier.width(24.dp).height(24.dp),
                     )
                 }

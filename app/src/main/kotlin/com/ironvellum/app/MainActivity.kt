@@ -73,10 +73,12 @@ class MainActivity : ComponentActivity() {
                 )
             }
         }
-        val sexes = (application as IronvellumApp).repository.observeSex()
+        val app = application as IronvellumApp
+        val sexes = app.repository.observeSex()
         setContent {
             val bodySex by sexes.collectAsState(initial = Sex.MALE)
-            IronvellumTheme {
+            val palette by app.appearanceStore.palette.collectAsState()
+            IronvellumTheme(palette = palette) {
                 CompositionLocalProvider(LocalBodySex provides bodySex) {
                     IronvellumRoot(inboxRequest = inboxRequest, todayRequest = todayRequest, trialRequest = trialRequest)
                 }

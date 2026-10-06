@@ -58,7 +58,15 @@ border, not that the shape changes.
 | `SovereignGold` | #F2C14E | Earned moments: a peak, XP gained, the seal | Anything not earned |
 | `DangerRed` | #EF5350 | Destructive actions and errors | Warnings that are not destructive |
 
-Rule of thumb: on any one screen, emerald appears on at most three things (the
+Emerald and gold are the default accent pair. Settings → Appearance lets the
+lifter choose a preset or customise the primary and reward accents on this
+device. Existing token names retain their roles: `Emerald` follows the primary,
+`SystemGreen` and `EmeraldBright` derive from it, and `SovereignGold` follows
+the reward accent. Paper, ink and destructive red remain fixed. Filled controls
+choose a contrasting foreground; the picker previews the pair and flags colours
+that may be difficult to see on dark paper.
+
+Rule of thumb: on any one screen, the primary accent appears on at most three things (the
 action, the active marker and progress), and gold only where something was
 earned.
 

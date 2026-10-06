@@ -28,6 +28,8 @@ import com.ironvellum.app.data.PrefsHighestBandStore
 
 class IronvellumApp : Application() {
 
+    val appearanceStore by lazy { com.ironvellum.app.data.AppearanceStore(this) }
+
     val database: IronvellumDatabase by lazy { IronvellumDatabase.create(this) }
     val healthSync: HealthSync by lazy { HealthSync(this) }
     val repository: Repository by lazy { Repository(database, healthSync, PrefsHighestBandStore(this)) }
@@ -48,6 +50,7 @@ class IronvellumApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        appearanceStore // Restore accents before any window or notification reads them.
         // Every channel must exist before anything posts on O+; the workers
         // and the trial service can all start in a cold process, so the
         // cold-start call is the reliable one.

@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.settings
 
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,6 +27,7 @@ import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.SettingsValueRow
 import com.ironvellum.app.ui.components.PushedHeader
+import com.ironvellum.app.ui.theme.AccentPresets
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /**
@@ -43,6 +45,7 @@ fun SettingsScreen(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
+    val appearance by viewModel.appearance.collectAsStateWithLifecycle()
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val bodyProfile by viewModel.bodyProfile.collectAsStateWithLifecycle()
     val renameError by viewModel.renameError.collectAsStateWithLifecycle()
@@ -71,7 +74,7 @@ fun SettingsScreen(
         Spacer(Modifier.height(8.dp))
         PushedHeader("SETTINGS", onBack)
 
-        SettingsGroup("YOU", topSpace = 4.dp) {
+        SettingsGroup("YOU", topSpace = 4.dp, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
             SettingsValueRow(
                 "Profile",
                 // A name or height refused on leaving Profile must not pass silently.
@@ -89,7 +92,7 @@ fun SettingsScreen(
             }
         }
 
-        SettingsGroup("TRAINING", topSpace = 10.dp) {
+        SettingsGroup("TRAINING", topSpace = 10.dp, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
             SettingsValueRow("Training mode", (profile?.trainingMode ?: TrainingMode.STRENGTH).label()) {
                 onOpenSection(SettingsSection.TRAINING_MODE)
             }
@@ -101,14 +104,17 @@ fun SettingsScreen(
             }
         }
 
-        SettingsGroup("APP", topSpace = 10.dp) {
+        SettingsGroup("APP", topSpace = 10.dp, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+            SettingsValueRow("Appearance", AccentPresets.entries.firstOrNull { it.palette == appearance }?.name ?: "Custom colours") {
+                onOpenSection(SettingsSection.APPEARANCE)
+            }
             SettingsValueRow("Health Connect", SettingsSummaries.health(healthLink, healthDays.size)) {
                 onOpenSection(SettingsSection.HEALTH_CONNECT)
             }
             SettingsValueRow("Data", "Export, import") { onOpenSection(SettingsSection.DATA) }
         }
 
-        SettingsGroup(null, topSpace = 10.dp) {
+        SettingsGroup(null, topSpace = 10.dp, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
             SettingsValueRow(
                 "Advanced",
                 if (crashCount > 0) {

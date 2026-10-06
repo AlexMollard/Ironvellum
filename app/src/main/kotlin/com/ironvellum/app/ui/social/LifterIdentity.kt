@@ -209,7 +209,7 @@ internal fun crestFrameTreatment(frameId: String): CrestFrameTreatment? = when (
     else -> null
 }
 
-private val CrestPlates = listOf(
+private val CrestPlates get() = listOf(
     IronvellumColors.EmeraldBright to IronvellumColors.Vault,
     IronvellumColors.SystemGreen to IronvellumColors.VaultHigh,
     IronvellumColors.SovereignGold to IronvellumColors.Vault,
