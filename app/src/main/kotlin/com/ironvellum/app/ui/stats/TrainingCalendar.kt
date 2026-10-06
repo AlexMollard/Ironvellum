@@ -33,7 +33,6 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.ironvellum.app.domain.Streak
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.LedgerContrast
@@ -128,7 +127,6 @@ internal fun TrainingCalendar(
     val locale = LocalConfiguration.current.locales[0]
     val byDay = remember(sessions, zone) { trialsByDay(sessions, zone) }
     val inMonth = remember(byDay, month, today) { trialsInMonth(byDay, month, today) }
-    val oath = remember(completedDates, today) { Streak.current(completedDates, today) }
     val scheduleStart = remember(completedDates, today) { calendarScheduleStart(completedDates, today) }
     // Monday, as on Today's rail; the locale's Sunday put the two at odds.
     val weekStart = java.time.DayOfWeek.MONDAY
@@ -140,19 +138,8 @@ internal fun TrainingCalendar(
 
     InkPanel(Modifier.fillMaxWidth()) {
         PanelLabel("TRAINING")
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.Bottom,
-            horizontalArrangement = Arrangement.SpaceBetween,
-        ) {
-            StatValue(inMonth.toString(), size = StatSize.Hero, unit = plural(inMonth, "trial", "trials"))
-            Text(
-                if (oath > 0) "Oath · $oath ${plural(oath, "day", "days")} kept" else "No oath yet",
-                style = MaterialTheme.typography.titleSmall,
-                color = IronvellumColors.InkMuted,
-                modifier = Modifier.padding(bottom = 4.dp),
-            )
-        }
+        // The oath lives on Today; the month's count is the calendar's own.
+        StatValue(inMonth.toString(), size = StatSize.Hero, unit = plural(inMonth, "trial", "trials"))
         Text(
             if (month == YearMonth.from(today)) "sealed this month" else "sealed in $monthName",
             style = MaterialTheme.typography.labelSmall,

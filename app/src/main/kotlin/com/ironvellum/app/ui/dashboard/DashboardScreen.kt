@@ -142,7 +142,6 @@ enum class BodyGap { HEIGHT, WEIGHT, BOTH }
 data class GarrisonGlance(val perHour: Double, val inscriptions: Int)
 class DashboardUi(
     val profile: PlayerProfile? = null,
-    val recent: List<WorkoutSession> = emptyList(),
     val unlockedCount: Int = 0,
     val presets: List<WorkoutPreset> = emptyList(),
     val streak: Int = 0,
@@ -215,7 +214,6 @@ class DashboardViewModel(
 
     val ui: StateFlow<DashboardUi> = combine(
         repo.observeProfile(),
-        repo.observeRecentSessions(5),
         repo.observeUnlockedTitles(),
         repo.observePresets(),
         repo.observeHistory(),
@@ -226,15 +224,13 @@ class DashboardViewModel(
         @Suppress("UNCHECKED_CAST")
         val profile = values[0] as PlayerProfile?
         @Suppress("UNCHECKED_CAST")
-        val recent = values[1] as List<WorkoutSession>
+        val titles = values[1] as List<UnlockedTitle>
         @Suppress("UNCHECKED_CAST")
-        val titles = values[2] as List<UnlockedTitle>
+        val presets = values[2] as List<WorkoutPreset>
         @Suppress("UNCHECKED_CAST")
-        val presets = values[3] as List<WorkoutPreset>
+        val history = values[3] as List<Pair<WorkoutSession, List<com.ironvellum.app.domain.SessionSet>>>
         @Suppress("UNCHECKED_CAST")
-        val history = values[4] as List<Pair<WorkoutSession, List<com.ironvellum.app.domain.SessionSet>>>
-        @Suppress("UNCHECKED_CAST")
-        val healthDays = values[5] as List<HealthDay>
+        val healthDays = values[4] as List<HealthDay>
         val today = LocalDate.now()
         val doneDates = history
             .map {
@@ -248,7 +244,6 @@ class DashboardViewModel(
         // different streaks.
         DashboardUi(
             profile = profile,
-            recent = recent,
             unlockedCount = titles.size,
             presets = presets,
             streak = Titles.trainingStreakDays(
@@ -259,7 +254,7 @@ class DashboardViewModel(
             focus = SessionClock.focusFor(savedFocus, profile?.trainingMode),
             pace = SessionClock.pace(history),
             weekDone = weekDoneDays(history.map { it.first }, presets, today, ZoneId.systemDefault()),
-            newPeaks = newPeaks(history, values[7] as List<com.ironvellum.app.domain.Exercise>, System.currentTimeMillis()),
+            newPeaks = newPeaks(history, values[6] as List<com.ironvellum.app.domain.Exercise>, System.currentTimeMillis()),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DashboardUi())
 
@@ -488,15 +483,6 @@ private fun RecentHeader(label: String, right: String, rightColor: Color) {
     }
 }
 
-/** One of the last trial's figures: a label over its value. */
-@Composable
-private fun RecentFigure(label: String, value: String, color: Color, modifier: Modifier) {
-    Column(modifier) {
-        Text(label, style = MaterialTheme.typography.labelSmall, fontFamily = ChakraPetch, color = IronvellumColors.InkMuted, letterSpacing = IronvellumTracking.InlineLabel)
-        Text(value, style = MaterialTheme.typography.titleMedium, fontFamily = ChakraPetch, color = color)
-    }
-}
-
 /** A peak's climb: each trial's best, oldest first, ending on the dot that is the peak. */
 @Composable
 private fun PeakSpark(series: List<Double>, modifier: Modifier) {
@@ -523,36 +509,6 @@ private fun PeakSpark(series: List<Double>, modifier: Modifier) {
 /** "Wed" for 3. */
 private fun dayName(day: Int): String =
     DAY_LABELS[day].orEmpty().lowercase().replaceFirstChar { it.uppercase() }
-
-/** One line of RECENT: what, and what it came to. */
-@Composable
-private fun RecentRow(left: String, right: String, rightColor: Color, onClick: (() -> Unit)? = null) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraSmall)
-            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier)
-            .heightIn(min = 44.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            left,
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.Ink,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        Text(
-            right,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = rightColor,
-            letterSpacing = IronvellumTracking.InlineLabel,
-            modifier = Modifier.padding(start = 12.dp),
-        )
-    }
-}
 
 @Composable
 private fun RestDayArt(modifier: Modifier) {
@@ -1092,74 +1048,38 @@ fun DashboardScreen(
 
         // What happened lately: the last sealed trial and any fresh peak. Gone
         // entirely before there is anything to show, rather than an empty box.
-        // Not the trial the day card is already reporting as sealed.
-        val lastSealed = ui.recent.firstOrNull { it.completedAtMs != null && it.id != questSessionToday?.id }
-        // A fresh peak takes the card - the climb that earned it drawn beside
-        // the number - with the last trial as its footer; without one, the
-        // last trial's own figures fill it.
+        // A fresh peak is news, so Today names it - the climb that earned it
+        // drawn beside the number. Past trials themselves live on Train.
         val peak = ui.newPeaks.firstOrNull()
-        if (lastSealed != null || peak != null) {
+        if (peak != null) {
             Spacer(Modifier.height(12.dp))
             InkPanel(Modifier.fillMaxWidth()) {
-                if (peak != null) {
-                    val best = peak.series.indexOfFirst { it == peak.bestE1rmKg }
-                    val gain = peak.bestE1rmKg - (peak.series.take(best).maxOrNull() ?: peak.bestE1rmKg)
-                    RecentHeader("NEW PEAK", shortWhen(peak.bestAtMs), IronvellumColors.InkMuted)
-                    Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.Bottom) {
-                        Column(Modifier.weight(1f)) {
-                            Text(peak.name, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Row(verticalAlignment = Alignment.Bottom) {
+                val best = peak.series.indexOfFirst { it == peak.bestE1rmKg }
+                val gain = peak.bestE1rmKg - (peak.series.take(best).maxOrNull() ?: peak.bestE1rmKg)
+                RecentHeader("NEW PEAK", shortWhen(peak.bestAtMs), IronvellumColors.InkMuted)
+                Row(Modifier.fillMaxWidth().padding(top = 6.dp), verticalAlignment = Alignment.Bottom) {
+                    Column(Modifier.weight(1f)) {
+                        Text(peak.name, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Row(verticalAlignment = Alignment.Bottom) {
+                            Text(
+                                "${"%.0f".format(java.util.Locale.US, peak.bestE1rmKg)} KG",
+                                style = MaterialTheme.typography.titleLarge,
+                                fontFamily = ChakraPetch,
+                                fontWeight = FontWeight.Bold,
+                                color = IronvellumColors.EmeraldBright,
+                            )
+                            if (gain >= 0.5) {
                                 Text(
-                                    "${"%.0f".format(java.util.Locale.US, peak.bestE1rmKg)} KG",
-                                    style = MaterialTheme.typography.titleLarge,
+                                    "+${"%.0f".format(java.util.Locale.US, gain)}",
+                                    style = MaterialTheme.typography.labelMedium,
                                     fontFamily = ChakraPetch,
-                                    fontWeight = FontWeight.Bold,
-                                    color = IronvellumColors.EmeraldBright,
+                                    color = IronvellumColors.SystemGreen,
+                                    modifier = Modifier.padding(start = 6.dp, bottom = 3.dp),
                                 )
-                                if (gain >= 0.5) {
-                                    Text(
-                                        "+${"%.0f".format(java.util.Locale.US, gain)}",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontFamily = ChakraPetch,
-                                        color = IronvellumColors.SystemGreen,
-                                        modifier = Modifier.padding(start = 6.dp, bottom = 3.dp),
-                                    )
-                                }
                             }
                         }
-                        PeakSpark(peak.series.takeLast(PEAK_SPARK_POINTS), Modifier.size(width = 88.dp, height = 36.dp))
                     }
-                    lastSealed?.let { trial ->
-                        Box(Modifier.padding(top = 8.dp).fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = 3))
-                        RecentRow(
-                            left = listOfNotNull(trial.label, shortWhen(trial.completedAtMs ?: trial.startedAtMs), trialLength(trial)).joinToString(" · "),
-                            right = "+${trial.xpAwarded} XP",
-                            rightColor = IronvellumColors.SovereignGold,
-                            onClick = { onOpenWorkout(trial.id) },
-                        )
-                    }
-                } else if (lastSealed != null) {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .clickable(onClickLabel = "Open ${lastSealed.label}") { onOpenWorkout(lastSealed.id) },
-                    ) {
-                        RecentHeader("LAST TRIAL", "OPEN ›", IronvellumColors.SystemGreen)
-                        Text(
-                            "${lastSealed.label} · ${shortWhen(lastSealed.completedAtMs ?: lastSealed.startedAtMs)}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = IronvellumColors.Ink,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 6.dp, bottom = 8.dp),
-                        )
-                        Row(Modifier.fillMaxWidth()) {
-                            RecentFigure("TIME", trialLength(lastSealed) ?: "—", IronvellumColors.Ink, Modifier.weight(1f))
-                            RecentFigure("STR", "${lastSealed.strengthScore}", IronvellumColors.Ink, Modifier.weight(1f))
-                            RecentFigure("XP", "+${lastSealed.xpAwarded}", IronvellumColors.SovereignGold, Modifier.weight(1f))
-                        }
-                    }
+                    PeakSpark(peak.series.takeLast(PEAK_SPARK_POINTS), Modifier.size(width = 88.dp, height = 36.dp))
                 }
             }
         }

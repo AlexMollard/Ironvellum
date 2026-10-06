@@ -1251,9 +1251,6 @@ class Repository(
         }
     }
 
-    fun observeRecentSessions(limit: Int = 5): Flow<List<WorkoutSession>> =
-        sessionDao.observeRecent(limit).map { list -> list.map { it.toDomain() } }
-
     /** The unfinished session, if any: what Today and Train offer to continue. */
     fun observeLiveSession(): Flow<WorkoutSession?> =
         sessionDao.observeLiveSession().map { it?.toDomain() }
