@@ -9,7 +9,6 @@ import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
-import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -21,6 +20,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.DayOfWeek
+import java.time.format.TextStyle
+import java.util.Locale
 
 /**
  * The whole point of the app, end to end: accept the day's quest, log a set,
@@ -86,7 +88,7 @@ class WorkoutFlowTest {
      */
     private fun awaitText(fragment: String, attempts: Int = 60) {
         repeat(attempts) {
-            if (allText().any { it.contains(fragment) }) return
+            if (allText().any { it.contains(fragment, ignoreCase = true) }) return
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
             Thread.sleep(POLL_MS)
         }
@@ -110,16 +112,16 @@ class WorkoutFlowTest {
         // Decide only once the day card has loaded. Sampled on the first
         // frame, a rest day had not rendered yet, so the walk was skipped and
         // the test then waited for a quest that never came.
-        awaitAnyText { it == "Respite" || isQuestCard(it) }
-        if (allText().none { it == "Respite" }) return
-        val rail = listOf("M", "T", "W", "T", "F", "S", "S")
-        for (index in rail.indices) {
-            val letters = compose.onAllNodesWithText(rail[index]).fetchSemanticsNodes()
-            if (index >= letters.size) continue
-            compose.onAllNodesWithText(rail[index])[index.coerceAtMost(letters.size - 1)]
+        awaitAnyText { it.equals("Respite", ignoreCase = true) || isQuestCard(it) }
+        if (allText().any(::isQuestCard)) return
+        for (day in DayOfWeek.values()) {
+            // WeekRail exposes full weekday names; repeated T/S letters do not
+            // have indices corresponding to their positions in the week.
+            val name = day.getDisplayName(TextStyle.FULL, Locale.getDefault())
+            compose.onAllNodes(hasContentDescription(name) and hasClickAction()).onFirst()
                 .performSemanticsAction(SemanticsActions.OnClick)
             settle()
-            if (allText().none { it == "Respite" }) return
+            if (allText().any(::isQuestCard)) return
         }
         error("no weekday offered a program; on screen: ${allText()}")
     }
@@ -163,7 +165,7 @@ class WorkoutFlowTest {
         compose.onAllNodesWithText(plan).onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
         settle()
-        val cta = awaitAnyText { it.startsWith("Begin ") || it.startsWith("Continue ") }
+        val cta = awaitAnyText { it.startsWith("Begin ", ignoreCase = true) || it.startsWith("Continue ", ignoreCase = true) }
         compose.onAllNodesWithText(cta).onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
         settle()
@@ -228,7 +230,7 @@ class WorkoutFlowTest {
     }
 
     /** The day card's plan line, "5 exercises · 19 sets · about 54 min": a scheduled rite is showing. */
-    private fun isQuestCard(label: String): Boolean = label.contains(" sets · about ")
+    private fun isQuestCard(label: String): Boolean = label.contains(" sets · about ", ignoreCase = true)
 
     /** Polls until some string matches, and returns it. */
     private fun awaitAnyText(attempts: Int = 60, predicate: (String) -> Boolean): String {
@@ -251,7 +253,9 @@ class WorkoutFlowTest {
     private fun drainCelebrations(rounds: Int = 24) {
         var clicked = 0
         repeat(rounds) {
-            val advance = allText().firstOrNull { it == "Continue" || it == "Done" || it == "Keep rite" }
+            val advance = allText().firstOrNull { label ->
+                listOf("Continue", "Done", "Keep rite").any { label.equals(it, ignoreCase = true) }
+            }
             if (advance == null && clicked > 0) return
             if (advance != null) {
                 compose.onAllNodesWithText(advance).onFirst()

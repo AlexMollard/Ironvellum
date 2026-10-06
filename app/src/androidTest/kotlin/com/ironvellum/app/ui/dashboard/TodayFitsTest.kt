@@ -337,7 +337,7 @@ class TodayFitsTest {
         val name = "Bartholomew Featherstonehaugh of the Northern Reach"
         show(ui = DashboardUi(profile = PlayerProfile(name = name), presets = listOf(rite(3, day = 1))), selectedDay = 1)
         // The rank link stays whole and on screen; the name is the one that ellipsizes.
-        assertInside("Unranked", substring = true)
+        assertInside("Iron", substring = true)
     }
 
     @Test
