@@ -1,0 +1,13 @@
+# Ironvellum IV Folded launcher icon — 2026-10-06
+# Owner selected 02 FOLDED from Ribbon · Sharper Refinements.
+# Concept generated with Codex's built-in image-generation tool.
+# Prompt: Refine the IV ribbon into a compact silhouette with short
+# 45-degree cut corners, broad strokes, one mint front/emerald rear fold,
+# no acute points, ornament, bevels or texture. Match the app's minimal sharp UI.
+# Reference: exec-41bf75b6-556c-4bed-b634-77f6abade3fc.png
+# Preserve the visible gap between the I and V, including at launcher size.
+# Production source: drawn/icon_iv_folded.png, extracted directly from the
+# centre icon in the approved reference. Preserve original emblem pixels;
+# remove only the charcoal ground, then add transparent adaptive padding.
+# No redraw or regeneration: keep the gap, stroke shapes and colours exactly.
+# Install: python tools/icon_install.py tools/art_batches/drawn/icon_iv_folded.png
