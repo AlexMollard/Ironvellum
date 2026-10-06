@@ -66,11 +66,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import com.ironvellum.app.R
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.HealthDay
@@ -104,7 +101,6 @@ import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.RankSheet
 import com.ironvellum.app.ui.components.XpBar
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.theme.inkHairline
 import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkBorder
@@ -364,13 +360,6 @@ private val DAY_MAP_GAP = 12.dp
 /** One line of the run-together movement names: bodySmall's 16sp line, rounded up. */
 private val QUEST_LINE_HEIGHT = 18.dp
 
-/** The rest-day art's two sizes: it steps between them, never scales. */
-private val REST_ART_LARGE = 200.dp
-private val REST_ART_SMALL = 96.dp
-
-/** RESPITE, the oath line and the 44dp "Next:" target, as measured on device. */
-private val REST_TEXT_HEIGHT = 112.dp
-
 /**
  * The day's movements, whole rows only, spread over the card's remaining
  * height when [fill]. A clipped half row reads as a rendering fault, so rows
@@ -510,15 +499,6 @@ private fun PeakSpark(series: List<Double>, modifier: Modifier) {
 /** "Wed" for 3. */
 private fun dayName(day: Int): String =
     DAY_LABELS[day].orEmpty().lowercase().replaceFirstChar { it.uppercase() }
-
-@Composable
-private fun RestDayArt(modifier: Modifier) {
-    Image(
-        painter = painterResource(R.drawable.art_empty_quests),
-        contentDescription = null,
-        modifier = modifier.alpha(0.6f),
-    )
-}
 
 @Composable
 fun DashboardScreen(
@@ -839,11 +819,6 @@ fun DashboardScreen(
         // the next one - where it can be read whole and begun on Train.
         InkPanel(
             if (shortWindow) Modifier.fillMaxWidth() else Modifier.fillMaxWidth().weight(1f),
-            accent = when {
-                questSessionToday != null -> IronvellumColors.SovereignGold
-                isTodaySelected -> IronvellumColors.SystemGreen
-                else -> IronvellumColors.Rune
-            },
             // Sealed, the card opens what was done; otherwise the rite it shows.
             onClick = questSessionToday?.let { trial -> { onOpenWorkout(trial.id) } }
                 ?: (selectedPreset ?: nextRite)?.let { rite -> { onOpenRite(rite.id) } },
@@ -1048,26 +1023,7 @@ fun DashboardScreen(
                             )
                         }
                     }
-                    if (shortWindow) {
-                        RespiteText()
-                        RestDayArt(Modifier.align(Alignment.CenterHorizontally).padding(vertical = 12.dp).size(REST_ART_SMALL))
-                    } else {
-                        BoxWithConstraints(Modifier.weight(1f).fillMaxWidth()) {
-                            if (maxHeight >= REST_TEXT_HEIGHT + REST_ART_LARGE + 8.dp) {
-                                Column(Modifier.fillMaxHeight()) {
-                                    RespiteText()
-                                    Box(Modifier.weight(1f).fillMaxWidth(), contentAlignment = Alignment.Center) {
-                                        RestDayArt(Modifier.size(REST_ART_LARGE))
-                                    }
-                                }
-                            } else {
-                                Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                                    Column(Modifier.weight(1f)) { RespiteText() }
-                                    RestDayArt(Modifier.padding(start = 12.dp).size(REST_ART_SMALL))
-                                }
-                            }
-                        }
-                    }
+                    RespiteText()
                 }
             }
         }
@@ -1228,63 +1184,6 @@ private fun HudStat(label: String, value: String, color: Color, term: Term? = nu
 @Composable
 private fun HudDivider() {
     Box(Modifier.padding(horizontal = 6.dp).size(width = 1.dp, height = 14.dp).background(IronvellumColors.Rune))
-}
-
-/** Step-goal track: the same inked rail as every other progress bar. */
-@Composable
-private fun GoalTrack(fraction: Float) {
-    InkRail(
-        fraction = fraction,
-        height = 6.dp,
-        fill = Brush.horizontalGradient(
-            listOf(IronvellumColors.SystemGreen, IronvellumColors.EmeraldBright),
-        ),
-        seed = 17,
-    )
-}
-
-
-@Composable
-private fun HeroStat(value: String, label: String, valueColor: Color = IronvellumColors.Ink) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            value,
-            style = MaterialTheme.typography.titleLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = valueColor,
-        )
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-    }
-}
-
-/** Leading 32.dp day tile on quest-board rows; mirrors the weekly rail's cell treatment. */
-@Composable
-private fun DayTile(day: Int, isToday: Boolean) {
-    Box(
-        Modifier
-            .size(32.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(
-                if (isToday) Brush.verticalGradient(listOf(Color(0xFF1E3A2C), Color(0xFF16281E)))
-                else Brush.verticalGradient(listOf(Color(0xFF121B16), Color(0xFF0F1712)))
-            )
-            .inkBorder(if (isToday) IronvellumColors.SystemGreen else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp),
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            DAY_LABELS[day] ?: "",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = if (isToday) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
-        )
-    }
 }
 
 /** One quiet line and one button: what the scores wait for, and where to add it. */

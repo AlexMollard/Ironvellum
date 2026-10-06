@@ -1,6 +1,5 @@
 package com.ironvellum.app.ui.titles
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -23,7 +22,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -32,7 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ironvellum.app.R
 import com.ironvellum.app.domain.SkillPractice
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.components.SectionHeader
@@ -294,12 +291,6 @@ fun SkillJournal(
             Modifier.fillMaxWidth().padding(vertical = 12.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            Image(
-                painter = painterResource(R.drawable.art_empty_skills),
-                contentDescription = null,
-                modifier = Modifier.size(96.dp),
-            )
-            Spacer(Modifier.height(10.dp))
             Text(
                 "The Journal is blank. Open a technique and log what you actually hit.",
                 style = MaterialTheme.typography.bodySmall,
@@ -516,7 +507,7 @@ private fun LineCard(
             }
         }
         Spacer(Modifier.height(8.dp))
-        InkRail(fraction = done.toFloat() / total.coerceAtLeast(1), seed = 43)
+        InkRail(fraction = done.toFloat() / total.coerceAtLeast(1))
         // Eight tiles all reading "0 attempts logged" said one thing eight
         // times, under a rail already sitting at zero.
         if (attempts > 0) {

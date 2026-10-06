@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.IronvellumTracking
 
 /**
  * A short section label over one InkPanel: the grouping Settings and Account
@@ -36,21 +35,14 @@ fun SettingsGroup(
     label: String?,
     modifier: Modifier = Modifier,
     topSpace: Dp = 20.dp,
-    accent: androidx.compose.ui.graphics.Color = IronvellumColors.Rune,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Spacer(Modifier.height(topSpace))
     if (label != null) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
+        SectionHeader(label, topPadding = topSpace)
+    } else {
+        Spacer(Modifier.height(topSpace))
     }
-    InkPanel(modifier.fillMaxWidth(), accent = accent, content = content)
+    InkPanel(modifier.fillMaxWidth(), content = content)
 }
 
 /** One tappable settings row, at least 48dp tall. */

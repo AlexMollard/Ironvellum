@@ -80,10 +80,10 @@ class AchievementOverlayTest {
         val item = deed(TitleRarity.Rare)
         show(listOf(item))
         compose.mainClock.advanceTimeBy(4_000)
-        compose.onNodeWithText("WEAR TITLE").performClick()
+        compose.onNodeWithText("Wear title").performClick()
         assertEquals(item.titleId, worn)
         compose.mainClock.advanceTimeBy(50)
-        compose.onNodeWithText("WORN").assertExists()
+        compose.onNodeWithText("Worn").assertExists()
     }
 
     @Test
@@ -91,7 +91,7 @@ class AchievementOverlayTest {
         val item = deed(TitleRarity.Rare)
         show(listOf(item), wornTitleId = item.titleId)
         compose.mainClock.advanceTimeBy(4_000)
-        compose.onNodeWithText("WORN").assertExists()
+        compose.onNodeWithText("Worn").assertExists()
         compose.onNodeWithText("Worn on your folio").assertExists()
     }
 }

@@ -22,7 +22,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
-import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -370,7 +369,7 @@ fun LeaderboardScreen(
 
 @Composable
 private fun LoadingPanel() {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "Reading the reckoning…",
             style = MaterialTheme.typography.bodyMedium,
@@ -382,7 +381,7 @@ private fun LoadingPanel() {
 
 @Composable
 private fun EmptyBoard(onRefresh: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "THE RECKONING IS YOURS ALONE",
             style = MaterialTheme.typography.labelLarge,
@@ -399,34 +398,14 @@ private fun EmptyBoard(onRefresh: () -> Unit) {
         )
         Spacer(Modifier.height(10.dp))
         // Kept explicitly: an empty board has nothing to pull down on.
-        RefreshLink(onClick = onRefresh, label = "Check again")
-    }
-}
-
-/** Compact failure note over stale rows — never a dialog, never displacing the list. */
-@Composable
-private fun InlineErrorBanner(message: String) {
-    val shape = MaterialTheme.shapes.small
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(IronvellumColors.VaultHigh, IronvellumColors.Vault)), shape)
-            .inkBorder(IronvellumColors.DangerRed, shape, 1.dp)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-    ) {
-        Text(
-            message,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.DangerRed,
-        )
+        SocialRefreshLink(onClick = onRefresh, label = "Check again")
     }
 }
 
 /** Load failed with nothing on the board: name the failure and offer one clean retry. */
 @Composable
 private fun ErrorPanel(onRefresh: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "THE RECKONING IS SMUDGED",
             style = MaterialTheme.typography.labelLarge,
@@ -442,7 +421,7 @@ private fun ErrorPanel(onRefresh: () -> Unit) {
             color = IronvellumColors.InkMuted,
         )
         Spacer(Modifier.height(12.dp))
-        RefreshLink(onClick = onRefresh, label = "Retry")
+        SocialRefreshLink(onClick = onRefresh, label = "Retry")
     }
 }
 
@@ -478,10 +457,10 @@ private fun Board(
         )
         // Retry link only survives in the error state; the banner below carries
         // the message so stale rows are never silently served.
-        if (ui.error != null) RefreshLink(onClick = onRefresh, label = "Retry")
+        if (ui.error != null) SocialRefreshLink(onClick = onRefresh, label = "Retry")
     }
     if (ui.error != null) {
-        InlineErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
+        SocialErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
         Spacer(Modifier.height(10.dp))
     }
     Spacer(Modifier.height(10.dp))
@@ -747,7 +726,6 @@ private fun RankRow(
 
     InkPanel(
         modifier = Modifier.fillMaxWidth(),
-        accent = accent,
         onClick = onOpenFriend,
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -801,34 +779,6 @@ private fun RankRow(
             height = 3.dp,
             track = IronvellumColors.Abyss,
             fill = Brush.horizontalGradient(listOf(accent, IronvellumColors.EmeraldBright)),
-            seed = row.userId.hashCode(),
-        )
-    }
-}
-@Composable
-private fun RefreshLink(onClick: () -> Unit, label: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier
-            .heightIn(min = 44.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
-            .clickable(role = Role.Button) { onClick() }
-            .padding(horizontal = 2.dp),
-    ) {
-        Icon(
-            Icons.Outlined.Refresh,
-            contentDescription = null,
-            tint = IronvellumColors.Emerald,
-            modifier = Modifier.size(14.dp),
-        )
-        Text(
-            label.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.SemiBold,
-            color = IronvellumColors.Emerald,
-            letterSpacing = IronvellumTracking.InlineLabel,
         )
     }
 }
@@ -980,7 +930,7 @@ private fun MusterBoard(
                     )
                     // Stale rows must still tell the truth about the last fetch.
                     if (ui.error != null) {
-                        InlineErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
+                        SocialErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
                         Spacer(Modifier.height(10.dp))
                     }
                     ui.rows.forEachIndexed { index, row ->
@@ -1007,7 +957,7 @@ private fun MusterRankRow(
     equippedFrame: String?,
 ) {
     val accent = if (isMe) IronvellumColors.SovereignGold else if (rank == 1) IronvellumColors.SovereignGold else IronvellumColors.Rune
-    InkPanel(modifier = Modifier.fillMaxWidth(), accent = accent) {
+    InkPanel(modifier = Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 "#$rank",
@@ -1055,7 +1005,7 @@ private fun MusterRankRow(
 /** The muster fetch failed with nothing to show: name the failure, offer one clean retry. */
 @Composable
 private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "THE VEIL WILL NOT PART",
             style = MaterialTheme.typography.labelLarge,
@@ -1078,7 +1028,7 @@ private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
 /** The muster board answered, but no lifter has banked essence yet. */
 @Composable
 private fun MusterEmptyPanel(onRefresh: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "THE VEIL IS STILL",
             style = MaterialTheme.typography.labelLarge,
@@ -1094,7 +1044,7 @@ private fun MusterEmptyPanel(onRefresh: () -> Unit) {
             color = IronvellumColors.InkMuted,
         )
         Spacer(Modifier.height(10.dp))
-        RefreshLink(onClick = onRefresh, label = "Check again")
+        SocialRefreshLink(onClick = onRefresh, label = "Check again")
     }
 }
 
@@ -1158,7 +1108,7 @@ private fun LiftsBoard(
         ui.rows.isEmpty() && ui.error != null -> {
             SocialErrorBanner(ui.error)
             Spacer(Modifier.height(10.dp))
-            RefreshLink(onClick = onRefresh, label = "Retry")
+            SocialRefreshLink(onClick = onRefresh, label = "Retry")
         }
         else -> {
             val pullState = remember { PullToRefreshState() }
@@ -1407,7 +1357,7 @@ private fun LiftRankRow(
         rank == 3 -> Color(0xFFB08A5A) // bronze — no palette token exists for it
         else -> IronvellumColors.Rune
     }
-    InkPanel(modifier = Modifier.fillMaxWidth(), accent = accent, onClick = onOpenFriend) {
+    InkPanel(modifier = Modifier.fillMaxWidth(), onClick = onOpenFriend) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 "#$rank",
@@ -1457,13 +1407,13 @@ private fun LiftRankRow(
 /** The board answered, but nobody is ranked on it in this window. */
 @Composable
 private fun LiftEmptyPanel(onRefresh: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "No allies stand here yet — log one of its exercises to claim a standing.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
         Spacer(Modifier.height(10.dp))
-        RefreshLink(onClick = onRefresh, label = "Check again")
+        SocialRefreshLink(onClick = onRefresh, label = "Check again")
     }
 }

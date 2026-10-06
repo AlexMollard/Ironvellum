@@ -771,7 +771,6 @@ fun ProgramBuilderScreen(
                     Modifier
                         .fillMaxWidth()
                         .padding(bottom = 10.dp),
-                    accent = if (selected) IronvellumColors.SovereignGold else IronvellumColors.Rune,
                     onClick = { viewModel.selectedTemplateId.value = template.id },
                 ) {
                     // Stacked: a long name beside the split tag collided at 360dp.
@@ -807,11 +806,14 @@ fun ProgramBuilderScreen(
                     Modifier
                         .fillMaxWidth()
                         .padding(bottom = 10.dp),
-                    accent = if (selected) IronvellumColors.SovereignGold else IronvellumColors.Rune,
                     onClick = { viewModel.selectedPresetId.value = preset.id },
                 ) {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(preset.name, style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
+                        Text(
+                            preset.name,
+                            style = MaterialTheme.typography.titleSmall,
+                            color = if (selected) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+                        )
                         Text(
                             dayLabel(preset.scheduledDay),
                             style = MaterialTheme.typography.labelSmall,

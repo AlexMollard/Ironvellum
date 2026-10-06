@@ -698,7 +698,7 @@ private fun AddStatDialog(
     ) else null
 
     Dialog(onDismissRequest = onDismiss) {
-        InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+        InkPanel(Modifier.fillMaxWidth()) {
             // Scrollable: with the estimator open and the keyboard up the
             // buttons used to sit below the fold.
             Column(

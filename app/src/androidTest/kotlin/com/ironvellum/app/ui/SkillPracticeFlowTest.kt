@@ -62,7 +62,7 @@ class SkillPracticeFlowTest {
 
         // The quick-set chips fill the field; 15s is the lowest offered.
         driver.click(driver.awaitAnyText { it == "15s" })
-        driver.click(driver.awaitAnyText { it == "LOG ATTEMPT" })
+        driver.click(driver.awaitAnyText { it == "Log attempt" })
 
         // The attempt has to survive the trip to the reader, which is a
         // different screen reading a different query.

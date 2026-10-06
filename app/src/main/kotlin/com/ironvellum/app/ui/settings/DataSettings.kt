@@ -159,7 +159,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             )
         }
 
-        SettingsGroup("RESTORE", topSpace = 28.dp, accent = IronvellumColors.DangerRed) {
+        SettingsGroup("RESTORE", topSpace = 28.dp) {
             SettingsCaption("Replaces all data on this device with an archive.", color = IronvellumColors.DangerRed)
             Spacer(Modifier.height(10.dp))
             if (importUi.importing) {

@@ -257,7 +257,6 @@ fun AchievementOverlay(
                             Modifier
                                 .fillMaxWidth()
                                 .graphicsLayer { translationX = jolt.dp.toPx() },
-                            accent = ink,
                         ) {
                             when (item.reveal) {
                                 Reveal.LevelUp -> PageTurn(item, p)

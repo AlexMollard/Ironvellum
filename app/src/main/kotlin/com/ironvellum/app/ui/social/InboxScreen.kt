@@ -175,7 +175,7 @@ internal fun InboxScreen(
     Column(Modifier.fillMaxSize()) {
         val err = ui.error
         when {
-            !ui.loaded -> InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
+            !ui.loaded -> InkPanel(Modifier.fillMaxWidth()) {
                 Text(
                     "Reading your missives…",
                     style = MaterialTheme.typography.bodyMedium,
@@ -183,7 +183,7 @@ internal fun InboxScreen(
                     color = IronvellumColors.InkMuted,
                 )
             }
-            ui.items.isEmpty() && err != null -> InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
+            ui.items.isEmpty() && err != null -> InkPanel(Modifier.fillMaxWidth()) {
                 Text(
                     err,
                     style = MaterialTheme.typography.bodySmall,
@@ -251,7 +251,7 @@ internal fun InboxScreen(
 
 @Composable
 private fun EmptyInbox() {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "NO MISSIVES",
             style = MaterialTheme.typography.labelLarge,
@@ -304,7 +304,6 @@ private fun InboxRow(
     }
     InkPanel(
         Modifier.fillMaxWidth(),
-        accent = if (unread) IronvellumColors.SovereignGold else IronvellumColors.Rune,
         onClick = open,
     ) {
         Row(verticalAlignment = Alignment.Top, horizontalArrangement = Arrangement.spacedBy(10.dp)) {

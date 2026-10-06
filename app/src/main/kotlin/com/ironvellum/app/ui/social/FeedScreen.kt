@@ -4,7 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -57,9 +56,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.draw.alpha
-import com.ironvellum.app.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -372,7 +368,7 @@ fun FeedScreen(
 
 @Composable
 private fun LoadingPanel() {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "Reading the tidings…",
             style = MaterialTheme.typography.bodyMedium,
@@ -384,7 +380,7 @@ private fun LoadingPanel() {
 
 @Composable
 private fun EmptyFeed(onRefresh: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "THE TIDINGS ARE BLANK",
             style = MaterialTheme.typography.labelLarge,
@@ -394,14 +390,6 @@ private fun EmptyFeed(onRefresh: () -> Unit) {
             letterSpacing = IronvellumTracking.InlineLabel,
         )
         Spacer(Modifier.height(8.dp))
-        Image(
-            painter = painterResource(R.drawable.art_empty_board),
-            contentDescription = null,
-            modifier = Modifier
-                .align(Alignment.CenterHorizontally)
-                .size(150.dp)
-                .alpha(0.55f),
-        )
         Spacer(Modifier.height(10.dp))
         Text(
             "No tidings yet. Set your trials public on ALLIES and be the first.",
@@ -438,7 +426,7 @@ internal fun SocialErrorBanner(message: String) {
 
 @Composable
 private fun ErrorPanel(reason: String, onRetry: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "THE TIDINGS WENT DARK",
             style = MaterialTheme.typography.labelLarge,
@@ -610,14 +598,13 @@ private fun FeedCard(
     onRetryLikers: (String) -> Unit,
     onLikersClosed: (String) -> Unit,
 ) {
-    val accent = if (isMe) IronvellumColors.SovereignGold else IronvellumColors.Emerald
     var showLikers by remember { mutableStateOf(false) }
     // The picker opens inline under the action row rather than as a popup:
     // a menu anchored to a 44dp chip covered the stat strip it reacts to.
     var picking by remember { mutableStateOf(false) }
     // The whole card opens the workout: the identity row, chips and ally chip
     // keep their own clickables, which consume the tap before the panel sees it.
-    InkPanel(Modifier.fillMaxWidth(), accent = accent, onClick = { onOpenComments(entry) }) {
+    InkPanel(Modifier.fillMaxWidth(), onClick = { onOpenComments(entry) }) {
         Column {
             // Identity header carries only the LV chip, so the worn title keeps a
             // wide column and sits directly under the name. The ally control is

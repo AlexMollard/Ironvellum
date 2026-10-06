@@ -14,7 +14,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.indication
 import androidx.compose.material3.ripple
 import androidx.compose.foundation.interaction.collectIsPressedAsState
-import com.ironvellum.app.ui.theme.HudEdgeShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,25 +40,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Outline
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PathMeasure
-import androidx.compose.ui.graphics.Shadow
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.selected
@@ -80,33 +71,27 @@ import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkHairline
 import com.ironvellum.app.ui.theme.inkRail
 import com.ironvellum.app.ui.theme.inkTick
-import com.ironvellum.app.ui.theme.rememberInkShape
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-// Warm charcoal rather than the old blue-grey: ink sits on paper, and the
-// paper is what the fill represents.
-private val WindowFill = Brush.verticalGradient(
-    listOf(Color(0xFF1A1A18), Color(0xFF111110)),
-)
-
 /**
- * The app's primary surface: a cut-corner edge with an accent-tinted border.
+ * The app's card: flat [IronvellumColors.Vault] with a 1dp [IronvellumColors.Rune]
+ * border and the theme's 8dp cut corners (`MaterialTheme.shapes.medium`).
  *
  * The most reused surface in Ironvellum (~90 call sites), which is exactly why the
  * treatment lives HERE and not in the screens - every screen inherits it
- * and none of them can drift.
+ * and none of them can drift. It has no accent: a card is a neutral group, and
+ * colour is spent on what is inside it (docs/DESIGN.md sections 2 and 3).
  */
 @Composable
 fun InkPanel(
     modifier: Modifier = Modifier,
-    accent: Color = IronvellumColors.Rune,
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = rememberInkShape()
+    val shape = MaterialTheme.shapes.medium
     val body: @Composable () -> Unit = {
         Column(
             Modifier
@@ -116,28 +101,8 @@ fun InkPanel(
         )
     }
     val surfaceModifier = modifier
-        .background(WindowFill, shape)
-        // Structure is always ink; the panel's identity comes from its accent
-        // arcs — drawn HERE, on the same element and size as the border, so the
-        // two trace the identical outline. On the inner column they measured a
-        // slightly different box and the accent floated off the line.
+        .background(IronvellumColors.Vault, shape)
         .inkBorder(IronvellumColors.Rune, shape, 1.dp)
-        .drawBehind {
-            // The panel's identity is a TINT on its own drawn edge, not a pair
-            // of marks laid at two corners: bright hooks read as applied HUD
-            // furniture, while a wash over the whole ring reads as the ink
-            // itself having a colour.
-            val outline = when (val o = shape.createOutline(size, layoutDirection, this)) {
-                is Outline.Generic -> o.path
-                is Outline.Rounded -> Path().apply { addRoundRect(o.roundRect) }
-                is Outline.Rectangle -> Path().apply { addRect(o.rect) }
-            }
-            drawPath(
-                outline,
-                accent.copy(alpha = accent.alpha * 0.30f),
-                style = Stroke(1.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round),
-            )
-        }
     if (onClick != null) {
         Surface(
             onClick = onClick,
@@ -230,120 +195,70 @@ fun InkRail(
     modifier: Modifier = Modifier,
     height: Dp = 6.dp,
     track: Color = IronvellumColors.Rune,
-    fill: Brush = Brush.horizontalGradient(
-        listOf(IronvellumColors.SystemGreen, IronvellumColors.SovereignGold),
-    ),
-    seed: Int = 0,
+    fill: Brush = SolidColor(IronvellumColors.Emerald),
 ) {
     Canvas(modifier.fillMaxWidth().height(height)) {
         inkRail(fraction = fraction, track = track, fill = fill)
     }
 }
+/**
+ * A section label: `labelSmall` caps in [IronvellumColors.InkMuted], nothing else.
+ * [topPadding] is the gap above it (24dp by default); callers that already sit
+ * under a spacer of their own pass a smaller one.
+ */
 @Composable
-fun SectionHeader(text: String, modifier: Modifier = Modifier) {
-    Column(modifier.padding(top = 28.dp, bottom = 10.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            // Ink, not gold: a section marker decorates, it does not report
-            // anything earned, and gold is reserved for what is.
-            // A drawn diamond, not a text glyph: the old U+25E0 arc rendered
-            // clipped at 12sp (its glyph box cuts the arc's top) and showed as
-            // a stray fragment before every section name. Decorative: cleared
-            // from semantics so a screen reader announces only the section.
-            Box(
-                Modifier
-                    .size(5.dp)
-                    .graphicsLayer(rotationZ = 45f)
-                    .inkBorder(IronvellumColors.Rune, rememberInkShape(), 1.dp)
-                    .clearAndSetSemantics {},
-            )
-            Text(
-                text = text.uppercase(),
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.SectionHeader,
-                // Marks the section so a screen reader can jump between them
-                // instead of swiping through every control in between.
-                modifier = Modifier.semantics { heading() },
-            )
-        }
-    }
+fun SectionHeader(text: String, modifier: Modifier = Modifier, topPadding: Dp = 24.dp) {
+    Text(
+        text = text.uppercase(),
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = ChakraPetch,
+        color = IronvellumColors.InkMuted,
+        letterSpacing = IronvellumTracking.InlineLabel,
+        // Marks the section so a screen reader can jump between them
+        // instead of swiping through every control in between.
+        modifier = modifier
+            .padding(top = topPadding, bottom = 10.dp)
+            .semantics { heading() },
+    )
 }
 
 /**
- * Level energy meter, drawn as ink.
- *
- * Was a HUD read: a cut-corner track with ten hairline notches ruled across it.
- * Notches are the most machine-made mark in the app - perfectly even, perfectly
- * vertical - so they are gone, and the fill is the brushed rail every other
- * progress bar uses. The count still reads out inside the bar.
+ * Level meter: a 6dp straight [IronvellumColors.Rune] track with a solid
+ * [IronvellumColors.Emerald] fill, no border and no shadow. The count reads
+ * out beneath it, outside the bar, so the bar stays a plain progress mark.
  */
 @Composable
 fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
     val fraction = if (needed <= 0) 0f else (into.toFloat() / needed).coerceIn(0f, 1f)
     val animated by animateFloatAsState(fraction, tween(900), label = "xpFill")
-    // Still inked, but with no corner to wander from: on a bar this short the
-    // theme's wobble read as pointed ends. It rides beside the level chip as
-    // one clean HUD line.
-    val shape = HudEdgeShape
-
-    Box(
-        modifier
-            .fillMaxWidth()
-            // heightIn, not height: the count lives INSIDE the rail, and at a
-            // 2x system font that label is taller than 20dp — it overflowed the
-            // bar and spilled past its right edge. The rail now grows with its
-            // own text and reads as a thicker stroke instead of a broken one.
-            .heightIn(min = 20.dp)
-            .clip(shape)
-            .background(Brush.verticalGradient(listOf(Color(0xFF121A16), Color(0xFF0B100E))))
-            .inkBorder(IronvellumColors.Rune, shape),
-    ) {
-        Canvas(Modifier.matchParentSize()) {
-            inkRail(
-                fraction = animated,
-                track = Color.Transparent,
-                fill = Brush.horizontalGradient(
-                    colors = listOf(Color(0xFF1E6B4F), Color(0xFF34D399), IronvellumColors.SovereignGold),
-                    startX = 0f,
-                    endX = size.width,
-                ),
-            )
+    Column(modifier.fillMaxWidth()) {
+        Canvas(Modifier.fillMaxWidth().height(6.dp)) {
+            inkRail(fraction = animated, track = IronvellumColors.Rune, fill = SolidColor(IronvellumColors.Emerald))
         }
-        // No plate behind the count — a translucent black box over a
-        // hand-drawn rail read as a hard-edged rectangle sitting ON the art,
-        // the one geometric shape on the card — and the old two-copy trick
-        // (dark ink clipped to the fill, light to the track) still failed at
-        // the tip: there the fill tapers thin, so the label sat half on dark
-        // track ABOVE and BELOW the bright sliver and neither ink read. One
-        // light label with a soft dark glow carries its own contrast across
-        // the fill edge instead of trying to track it.
         Text(
             "$into / $needed XP",
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .padding(horizontal = 10.dp, vertical = 2.dp),
-            style = MaterialTheme.typography.labelSmall.copy(
-                shadow = Shadow(color = Color(0xCC0B100E), blurRadius = 6f),
-            ),
+            modifier = Modifier.padding(top = 4.dp),
+            style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.Ink,
-            letterSpacing = IronvellumTracking.InlineLabel,
+            color = IronvellumColors.InkMuted,
         )
     }
 }
 
 
 /**
- * Primary action: emerald-teal gradient button with press feedback.
+ * Primary action: flat emerald with Abyss text, 8dp cut corners, sentence case
+ * and no press-scale (docs/DESIGN.md sections 2 and 6).
  *
- * `quiet` is the same shape without the fill, for the SECOND action in a card.
- * Four bright emerald slabs stacked down the Ledger screen all shouted equally
- * and nothing read as the main thing to do.
+ * `quiet` is the SECOND action in a card: no box at all, just a [IronvellumColors.SystemGreen]
+ * text link. Four bright emerald slabs stacked down a screen all shouted
+ * equally and nothing read as the main thing to do.
  *
- * `danger` is the quiet shape in red, for an action that replaces or deletes
- * data; it always sits behind a confirm.
+ * `danger` is the quiet shape in [IronvellumColors.DangerRed], for an action that replaces or
+ * deletes data; it always sits behind a confirm.
+ *
+ * `gold` is the seal / XP variant and is deliberately left as it was (owner
+ * decision pending), see [GoldButton].
  */
 @Composable
 fun IronvellumButton(
@@ -355,16 +270,62 @@ fun IronvellumButton(
     quiet: Boolean = false,
     danger: Boolean = false,
 ) {
+    if (gold) {
+        GoldButton(label, onClick, modifier, enabled, quiet, danger)
+        return
+    }
+    val shape = MaterialTheme.shapes.medium
+    val boxless = quiet || danger
+    Box(
+        modifier
+            .then(if (boxless) Modifier.heightIn(min = 48.dp) else Modifier)
+            .clip(shape)
+            .then(
+                if (boxless) {
+                    Modifier
+                } else {
+                    Modifier.background(if (enabled) IronvellumColors.Emerald else IronvellumColors.Rune)
+                },
+            )
+            .clickable(enabled = enabled, onClick = onClick),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Bold,
+            color = when {
+                !enabled -> IronvellumColors.InkMuted
+                danger -> IronvellumColors.DangerRed
+                quiet -> IronvellumColors.SystemGreen
+                else -> IronvellumColors.Abyss
+            },
+            // labelLarge carries the theme's 0.5sp tracking: no override.
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(vertical = 12.dp, horizontal = 18.dp),
+        )
+    }
+}
+
+/**
+ * The gold button, kept exactly as the one IronvellumButton looked before the
+ * Clean migration (gradient fill, uppercase label, press scale). Used by the
+ * seal and XP flows; the owner has yet to decide its Clean treatment.
+ */
+// shortcut: legacy look kept verbatim; restyle or delete once the owner decides the gold variant.
+@Composable
+private fun GoldButton(
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    enabled: Boolean,
+    quiet: Boolean,
+    danger: Boolean,
+) {
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     val scale by animateFloatAsState(if (pressed) 0.97f else 1f, tween(90), label = "press")
-    val colors = if (gold) {
-        listOf(Color(0xFFF2C14E), Color(0xFFC98A2B))
-    } else {
-        // Moss, not teal: 0xFF0EA5A5 read as cyan on device and broke the
-        // warm-green palette rule the rest of the app follows.
-        listOf(Color(0xFF34D399), Color(0xFF2E7D55))
-    }
+    val colors = listOf(Color(0xFFF2C14E), Color(0xFFC98A2B))
     val shape = MaterialTheme.shapes.medium
     Box(
         modifier

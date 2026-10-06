@@ -190,7 +190,6 @@ fun SkillDetailSheet(
                 fill = Brush.horizontalGradient(
                     listOf(if (cleared) IronvellumColors.SovereignGold else IronvellumColors.SystemGreen, if (cleared) IronvellumColors.SovereignGold else IronvellumColors.Emerald),
                 ),
-                seed = 41,
             )
         }
     } else {
@@ -407,7 +406,7 @@ private fun AttemptLogger(
 
     Spacer(Modifier.height(8.dp))
     // progress against the claim standard
-    InkRail(fraction = pct, seed = 41)
+    InkRail(fraction = pct)
     Text(
         SkillGuidance.attemptReadout(skill, attempt, touched),
         style = MaterialTheme.typography.labelSmall,

@@ -198,7 +198,7 @@ class AccessibilityChecksTest {
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         }
         // The BMI band dialog is a window over the tab, not a pane.
-        val close = compose.onAllNodesWithText("CLOSE")
+        val close = compose.onAllNodesWithText("Close")
         if (close.fetchSemanticsNodes().isNotEmpty()) {
             close.onFirst().performClick()
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)

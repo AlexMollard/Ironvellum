@@ -2,7 +2,6 @@ package com.ironvellum.app.ui.stats
 
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.InkChip
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -43,9 +42,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -56,7 +53,6 @@ import androidx.compose.ui.semantics.heading
 import com.ironvellum.app.ui.components.NavChip
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.ironvellum.app.R
 import com.ironvellum.app.domain.BodyStats
 import com.ironvellum.app.domain.Ledger
 import com.ironvellum.app.domain.LedgerRange
@@ -239,12 +235,6 @@ private fun WeightEmpty(onLogWeight: () -> Unit) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(LedgerSpace.Panel),
     ) {
-        // Empty-state art drawn for this screen; one per tab, not one per card.
-        Image(
-            painter = painterResource(R.drawable.art_empty_stats),
-            contentDescription = null,
-            modifier = Modifier.size(120.dp).alpha(0.6f),
-        )
         Text(
             "The Ledger knows nothing of your frame yet.",
             style = MaterialTheme.typography.bodySmall,

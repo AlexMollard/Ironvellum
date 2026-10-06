@@ -3,7 +3,6 @@ package com.ironvellum.app.ui.social
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -52,10 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.draw.alpha
 import com.ironvellum.app.IronvellumApp
-import com.ironvellum.app.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
@@ -541,7 +537,7 @@ private fun AccountTitle(pushed: Boolean, onBack: () -> Unit) {
 
 @Composable
 private fun NotConfiguredPanel() {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Outlined.VisibilityOff, contentDescription = null, tint = IronvellumColors.DangerRed)
             Text(
@@ -643,7 +639,7 @@ private fun AuthPanels(
         AuthMode.RESET -> !codeSent || (codeValid && passwordValid && confirmed)
     }
 
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
+    InkPanel(Modifier.fillMaxWidth()) {
         if (googleEnabled && mode != AuthMode.RESET) GoogleSignInButton(onToken = onGoogleSignIn)
         OutlinedTextField(
             shape = MaterialTheme.shapes.small,
@@ -883,7 +879,7 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
         .collectAsStateWithLifecycle(initialValue = null)
     val titleId = profile?.currentTitleId
 
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+    InkPanel(Modifier.fillMaxWidth()) {
         IdentityRow(
             displayName = acct.displayName,
             userId = acct.userId,
@@ -954,7 +950,7 @@ private fun ClaimNamePanel(
     val cleaned = name.filter { it.isLetterOrDigit() || it == ' ' }.trim()
     val valid = cleaned.length in 2..24
 
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Outlined.Badge, contentDescription = null, tint = IronvellumColors.SovereignGold)
             Text(
@@ -1030,7 +1026,7 @@ private fun ClaimNamePanel(
 @Composable
 private fun AddAllyPanel(loading: Boolean, onRequest: (String) -> Unit) {
     var friendName by remember { mutableStateOf("") }
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Row(
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -1064,7 +1060,7 @@ private fun RequestsPanel(
     onAccept: (String) -> Unit,
     onDecline: (String) -> Unit,
 ) {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
+    InkPanel(Modifier.fillMaxWidth()) {
         incoming.forEachIndexed { index, pending ->
             if (index > 0) Spacer(Modifier.height(10.dp))
             Row(
@@ -1103,17 +1099,8 @@ private fun AlliesPanel(
 ) {
     var confirmRemove by remember { mutableStateOf<FriendRow?>(null) }
 
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
+    InkPanel(Modifier.fillMaxWidth()) {
         if (empty) {
-            Image(
-                painter = painterResource(R.drawable.art_empty_allies),
-                contentDescription = null,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .size(110.dp)
-                    .alpha(0.55f),
-            )
-            Spacer(Modifier.height(8.dp))
             Text(
                 "No allies yet. Invite one by true name above.",
                 style = MaterialTheme.typography.bodySmall,

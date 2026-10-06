@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
@@ -374,11 +375,10 @@ fun InfoProgress(
     line: String,
     modifier: Modifier = Modifier,
     caption: String? = null,
-    fill: Brush = Brush.horizontalGradient(listOf(IronvellumColors.SystemGreen, IronvellumColors.Emerald)),
-    seed: Int = 5,
+    fill: Brush = SolidColor(IronvellumColors.Emerald),
 ) {
     Column(modifier.fillMaxWidth()) {
-        InkRail(fraction = fraction, height = 10.dp, fill = fill, seed = seed)
+        InkRail(fraction = fraction, height = 6.dp, fill = fill)
         Spacer(Modifier.height(8.dp))
         Text(line, style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
         if (caption != null) {
