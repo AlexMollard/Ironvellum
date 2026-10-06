@@ -1,0 +1,11 @@
+# Ironvellum monochrome Folded IV — 2026-10-07
+# Owner requested a monochrome version of the approved Folded IV.
+# Preserve the exact alpha silhouette of drawn/icon_iv_folded.png.
+# Replace RGB only: warm white #E8E8E4 for the I/front stroke and cooler
+# white #C6CDC9 for the V's rear arm, using the original green fold boundary.
+# Retain charcoal #0C0C0B ground
+# and the approved 2% rightward optical offset. No redraw or regeneration.
+# Preview prompt (built-in image-generation tool): Change only the green
+# emblem to uniform warm off-white on charcoal; preserve shape and placement.
+# Production source: drawn/icon_iv_folded_mono.png, using the original alpha.
+# Install: python tools/icon_install.py tools/art_batches/drawn/icon_iv_folded_mono.png --offset-x 0.02
