@@ -16,7 +16,7 @@ import android.Manifest
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.mutableIntStateOf
@@ -122,9 +122,7 @@ fun SocialScreen(
         }
     }
     if (explainNotifications) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { explainNotifications = false },
             title = { Text("Ally notifications?") },
             text = { Text("See ally requests, remarks and tributes.") },

@@ -40,7 +40,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -86,9 +85,7 @@ import com.ironvellum.app.ui.stats.MeasurementDetailScreen
 import com.ironvellum.app.ui.stats.StatsScreen
 import com.ironvellum.app.ui.titles.TitlesScreen
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import com.ironvellum.app.ui.theme.inkBorder
-import com.ironvellum.app.ui.theme.inkStroke
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.train.ExerciseExplorerScreen
@@ -207,11 +204,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
         // most a bottom bar should carry, and it is a place visited now and then.
     )
 
-    Box(
-        Modifier.background(
-            Brush.verticalGradient(listOf(Color(0xFF0B0C0F), Color(0xFF0E1013), Color(0xFF0B0C0F))),
-        ),
-    ) {
+    Box(Modifier.background(IronvellumColors.Abyss)) {
         // Gate render, not a route: onboarding has no back stack, no bottom
         // bar and nothing to navigate back to.
         if (needsSetup == true) {
@@ -350,18 +343,10 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .background(IronvellumColors.Vault)
-                            // The bar spans the screen, so its fill stays square -
-                            // a wobbling full-bleed edge reads as a rendering fault.
-                            // Its TOP edge is brushed instead, which is the only part
-                            // that meets the page.
+                            // Raised: VaultHigh with a 1dp Rune rule on its top edge, flat.
+                            .background(IronvellumColors.VaultHigh)
                             .drawBehind {
-                                inkStroke(
-                                    from = Offset(0f, 0f),
-                                    to = Offset(size.width, 0f),
-                                    color = IronvellumColors.Rune,
-                                    widthPx = 2.dp.toPx(),
-                                )
+                                drawRect(IronvellumColors.Rune, size = androidx.compose.ui.geometry.Size(size.width, 1.dp.toPx()))
                             }
                             .navigationBarsPadding()
                             // Five labels share the width. At 360dp - the most
@@ -401,20 +386,6 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                     // Not on the raised slot: the clip would cut
                                     // off the plate standing above it.
                                     .then(if (plated) Modifier else Modifier.clip(slotShape))
-                                    .then(
-                                        // A plate past halfway is its own highlight;
-                                        // settled, Train wears the usual one.
-                                        if (selected && p < 0.5f) {
-                                            Modifier.background(
-                                                Brush.verticalGradient(listOf(Color(0xFF1E3A2C), Color(0xFF16281E))),
-                                            )
-                                        } else {
-                                            Modifier
-                                        },
-                                    )
-                                    .then(
-                                        if (selected && p < 0.5f) Modifier.inkBorder(IronvellumColors.Emerald, slotShape) else Modifier,
-                                    )
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
                                         indication = null,
@@ -425,10 +396,10 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                     // came to 31dp, and this is the one control
                                     // present on every screen.
                                     .heightIn(min = 48.dp)
-                                    // Selection is drawn with a gradient and an
-                                    // ink border, which says nothing to a screen
-                                    // reader: without this it announces "Today"
-                                    // whether you are on that screen or not.
+                                    // Selection is an Emerald icon and an Ink label,
+                                    // which says nothing to a screen reader: without
+                                    // this it announces "Today" whether you are on
+                                    // that screen or not.
                                     .semantics {
                                         role = Role.Tab
                                         this.selected = selected
@@ -499,7 +470,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                                 .align(Alignment.TopEnd)
                                                 .size(8.dp)
                                                 .clip(DotShape)
-                                                .background(IronvellumColors.SovereignGold),
+                                                .background(IronvellumColors.Ink),
                                         )
                                     }
                                 }

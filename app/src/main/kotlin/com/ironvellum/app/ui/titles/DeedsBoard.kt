@@ -498,7 +498,7 @@ private fun EarnedWall(earned: List<TitleDef>, equippedId: String?, onOpenDeed: 
                     Modifier
                         .background(Color(0xFF141A18), shape)
                         .inkBorder(
-                            if (worn) IronvellumColors.SovereignGold else rarityColor(def.rarity),
+                            if (worn) IronvellumColors.SovereignGold else rarityColor(def.rarity, earned = true),
                             shape,
                             if (worn) 2.dp else 1.dp,
                         )

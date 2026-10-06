@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -65,19 +64,9 @@ fun ShareCardDialog(
         }
     }
 
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
+    IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = {
-            Text(
-                "SHARE THIS TRIAL",
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.ScreenTitle,
-            )
-        },
+        title = { Text("Share this trial") },
         text = {
             Column {
                 Text(

@@ -39,7 +39,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.History
 import androidx.compose.material3.Button
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.style.TextOverflow
@@ -420,22 +420,9 @@ fun PresetsScreen(
     }
 
     if (showNewChooser) {
-        // Material's dialog container is a 28dp rounded rect - the most
-        // obviously stock surface in the app. Give it the ink shape and the
-        // dark container the session dialogs use.
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = androidx.compose.ui.graphics.Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { showNewChooser = false },
-            title = {
-                Text(
-                    "NEW RITE",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SystemGreen,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-            },
+            title = { Text("New rite") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     // Easiest first, each with one plain line, so someone new

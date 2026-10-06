@@ -76,7 +76,7 @@ private fun MuscleLine(level: ShareLevel, muscles: List<Muscle>) {
             level.label,
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
-            color = if (level == ShareLevel.MAIN) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+            color = if (level == ShareLevel.MAIN) IronvellumColors.Ink else IronvellumColors.InkMuted,
             letterSpacing = IronvellumTracking.InlineLabel,
             modifier = Modifier.width(64.dp),
         )

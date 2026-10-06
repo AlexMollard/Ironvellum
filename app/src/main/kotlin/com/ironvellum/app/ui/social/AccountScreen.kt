@@ -33,7 +33,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -1130,9 +1130,7 @@ private fun AlliesPanel(
     }
 
     confirmRemove?.let { friend ->
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmRemove = null },
             title = { Text("Remove ${friend.displayName} as an ally?") },
             text = { Text("Their allies-only trials leave your tidings. Either of you can send a new request later.") },

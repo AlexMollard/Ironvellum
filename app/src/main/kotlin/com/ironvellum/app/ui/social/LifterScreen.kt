@@ -19,7 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -564,9 +564,7 @@ internal fun LifterScreen(
     }
 
     if (confirmRemove) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmRemove = false },
             title = { Text("Remove $name as an ally?") },
             text = { Text("Their allies-only trials leave your tidings. Either of you can send a new request later.") },
@@ -583,9 +581,7 @@ internal fun LifterScreen(
     }
 
     if (confirmBlock) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmBlock = false },
             title = { Text("Block $name?") },
             text = {

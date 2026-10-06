@@ -1,16 +1,9 @@
 package com.ironvellum.app.ui.titles
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -26,32 +19,29 @@ import com.ironvellum.app.ui.components.InfoChip
 import com.ironvellum.app.ui.components.InfoProgress
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.components.reveal
 import com.ironvellum.app.ui.theme.IronvellumColors
 import java.util.Locale
 
 /**
- * Rarity accent per tier. Masterwork is gold leaf, as it is on the Veil's
- * inscriptions: the rarest deed is the most earned thing there is. Worn is
- * marked in words (WORN), never by colour alone, so the two cannot be confused.
+ * Rarity is a word in InkMuted. Gold is spent only on an earned Masterwork, as it is on the
+ * Veil's inscriptions: the rarest deed is the most earned thing there is. Worn is marked in
+ * words (WORN), never by colour alone, so the two cannot be confused.
  */
-internal fun rarityColor(rarity: TitleRarity): Color = rarity.reveal().ink
+internal fun rarityColor(rarity: TitleRarity, earned: Boolean = false): Color =
+    if (earned && rarity == TitleRarity.Masterwork) rarity.reveal().ink else IronvellumColors.InkMuted
 
-/** A small accent dot and the tier's name; the word carries the meaning, the colour only echoes it. */
+/** The tier's name as a word; the word carries the meaning, so it takes no dot or box. */
 @Composable
-internal fun RarityMark(rarity: TitleRarity, modifier: Modifier = Modifier) {
-    val accent = rarityColor(rarity)
-    Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(Modifier.size(8.dp).clip(DotShape).background(accent))
-        Text(
-            rarity.label,
-            style = MaterialTheme.typography.bodySmall,
-            color = accent,
-            fontWeight = if (rarity == TitleRarity.Masterwork) FontWeight.Bold else null,
-            maxLines = 1,
-        )
-    }
+internal fun RarityMark(rarity: TitleRarity, modifier: Modifier = Modifier, earned: Boolean = false) {
+    Text(
+        rarity.label,
+        modifier = modifier,
+        style = MaterialTheme.typography.bodySmall,
+        color = rarityColor(rarity, earned),
+        fontWeight = if (rarity == TitleRarity.Masterwork) FontWeight.Bold else null,
+        maxLines = 1,
+    )
 }
 
 /** Green while in progress; gold only once the deed is earned. */
@@ -175,7 +165,7 @@ internal fun DeedDetailSheet(
         onDismiss = onDismiss,
         titleColor = if (earned) IronvellumColors.SovereignGold else IronvellumColors.Ink,
         chips = buildList {
-            add(InfoChip(def.rarity.label, rarityColor(def.rarity)))
+            add(InfoChip(def.rarity.label, rarityColor(def.rarity, earned)))
             add(InfoChip(Titles.category(def.rule)))
             if (earned) add(InfoChip("Earned", IronvellumColors.SovereignGold))
         },

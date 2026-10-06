@@ -106,7 +106,7 @@ fun rememberZoneId(): ZoneId {
 }
 
 /** Three value sizes, no more: one hero per screen, tiles, and inline figures. */
-enum class StatSize(val sp: Int) { Hero(34), Tile(26), Inline(20) }
+enum class StatSize { Hero, Tile, Inline }
 
 /**
  * A figure. Ink by default: value colour carries meaning (green for a gain,
@@ -123,10 +123,12 @@ fun StatValue(
     Row(modifier, verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(
             text,
-            style = MaterialTheme.typography.displaySmall.copy(
-                fontSize = size.sp.sp,
-                lineHeight = (size.sp * 1.15f).sp,
-            ),
+            // A hero is the one display figure; a tile reads as titleLarge, an inline figure as titleMedium.
+            style = when (size) {
+                StatSize.Hero -> MaterialTheme.typography.displaySmall.copy(fontSize = 34.sp, lineHeight = 39.sp)
+                StatSize.Tile -> MaterialTheme.typography.titleLarge
+                StatSize.Inline -> MaterialTheme.typography.titleMedium
+            },
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
             color = color,

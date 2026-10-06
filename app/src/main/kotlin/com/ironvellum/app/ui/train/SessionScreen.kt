@@ -65,7 +65,7 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Icon
@@ -855,11 +855,7 @@ fun SessionScreen(
     }
 
     if (confirmAbandon) {
-        AlertDialog(
-            // Material's dialog container is a 28dp rounded rect - the most
-            // obviously stock surface in the app. Give it the ink shape.
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmAbandon = false },
             title = { Text("Abandon this trial?") },
             text = { Text("Unsealed trials grant no XP and are erased from the Chronicle.") },
@@ -886,9 +882,7 @@ fun SessionScreen(
             confirmClaim = false
             slideReset++
         }
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = declined,
             title = {
                 Text(
@@ -945,9 +939,7 @@ fun SessionScreen(
             sets.forEach { applyLoad(it, kg.takeIf { v -> v > 0.0 }) }
             editLoadFor = null
         }
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             // No Cancel: back and an outside tap already dismiss, and a third
             // button wrapped the row into a ragged stack at 360dp.
             onDismissRequest = { editLoadFor = null },
@@ -1165,9 +1157,7 @@ fun SessionScreen(
     }
 
     if (confirmReopen) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmReopen = false },
             title = { Text("Reopen this trial?") },
             text = { Text("The XP it paid is taken back until you seal again.") },
@@ -1192,9 +1182,7 @@ fun SessionScreen(
     }
 
     reopenRefusal?.let { reason ->
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { reopenRefusal = null },
             title = { Text("This trial stays sealed") },
             text = { Text(reopenRefusalText(reason)) },
@@ -2793,9 +2781,7 @@ private fun FigureEntryDialog(
     val parsed = field.text.toIntOrNull()?.takeIf { it in 0..FIGURE_INPUT_MAX }
     val focus = remember { FocusRequester() }
     LaunchedEffect(set.id, kind) { focus.requestFocus() }
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
+    IronvellumDialog(
         onDismissRequest = onDismiss,
         title = {
             Column {
@@ -2854,9 +2840,7 @@ private fun TrialNameDialog(
     onDismiss: () -> Unit,
 ) {
     var draft by rememberSaveable { mutableStateOf(current) }
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
+    IronvellumDialog(
         onDismissRequest = onDismiss,
         title = { Text("Name this trial") },
         text = {
@@ -2897,9 +2881,7 @@ private fun TrialNoteDialog(
 ) {
     var pub by rememberSaveable { mutableStateOf(publicNote) }
     var priv by rememberSaveable { mutableStateOf(privateNote) }
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
+    IronvellumDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add a note") },
         text = {
@@ -3055,12 +3037,8 @@ private fun ModifierPickerDialog(
     val options = applicable + selected.filter { token ->
         !token.equals(WEIGHTED_MODIFIER, ignoreCase = true) && applicable.none { it.equals(token, ignoreCase = true) }
     }
-    AlertDialog(
-        // Material's dialog container is a 28dp rounded rect - the most
-        // obviously stock surface in the app. Give it the ink shape.
-        shape = MaterialTheme.shapes.medium,
+    IronvellumDialog(
         onDismissRequest = onDismiss,
-        containerColor = Color(0xFF0D1110),
         title = {
             Column {
                 Text(
@@ -3180,10 +3158,8 @@ private fun RoutineUpdateDialog(
     var ticked by remember(offer) {
         mutableStateOf(offer.changes.associateWith { it.defaultTicks() })
     }
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
+    IronvellumDialog(
         onDismissRequest = onKeep,
-        containerColor = Color(0xFF0D1110),
         title = {
             Column {
                 Text(

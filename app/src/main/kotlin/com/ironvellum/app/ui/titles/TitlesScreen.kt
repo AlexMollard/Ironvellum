@@ -15,7 +15,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -525,9 +525,7 @@ private fun RiteChoiceDialog(
     onPick: (presetId: Long?) -> Unit,
     onDismiss: () -> Unit,
 ) {
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
+    IronvellumDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(

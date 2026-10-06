@@ -10,7 +10,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -69,17 +69,6 @@ internal fun previewLine(workout: RoutineCode.SharedWorkout): String {
     return "${workout.name} \u00B7 $n ${if (n == 1) "exercise" else "exercises"}"
 }
 
-@Composable
-private fun DialogTitle(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelLarge,
-        fontFamily = ChakraPetch,
-        color = IronvellumColors.SystemGreen,
-        letterSpacing = IronvellumTracking.InlineLabel,
-    )
-}
-
 /**
  * Paste a code, see what it holds, then add it beside the current workouts
  * (the safe default) or replace the routine after a confirm.
@@ -112,11 +101,9 @@ internal fun ImportRoutineDialog(
     val decoded = remember(text) { if (text.isBlank()) null else RoutineCode.decode(text) }
     val workouts = decoded?.getOrNull()
 
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
+    IronvellumDialog(
         onDismissRequest = onDismiss,
-        title = { DialogTitle("IMPORT CODE") },
+        title = { Text("Import code") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -170,11 +157,9 @@ internal fun ImportRoutineDialog(
     )
 
     if (confirmReplace && workouts != null) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmReplace = false },
-            title = { DialogTitle("REPLACE MY CYCLE?") },
+            title = { Text("Replace my cycle?") },
             text = {
                 val now = if (currentWorkouts == 1) "your 1 rite" else "all $currentWorkouts of your rites"
                 Text(

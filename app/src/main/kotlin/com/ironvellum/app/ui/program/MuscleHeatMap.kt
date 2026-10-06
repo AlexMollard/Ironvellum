@@ -63,20 +63,22 @@ fun coverageLevel(volume: Double, target: ClosedFloatingPointRange<Double>): Cov
     else -> CoverageLevel.IN_RANGE
 }
 
+// A neutral ramp: Rune for nothing, InkMuted at rising strength while short of the range,
+// SystemGreen in range, Ink above it. Never emerald or gold: the figure is a reading, not a reward.
 private fun levelColor(level: CoverageLevel): Color = when (level) {
-    CoverageLevel.NONE -> IronvellumColors.Bracket
-    CoverageLevel.UNDER -> IronvellumColors.Emerald
+    CoverageLevel.NONE -> IronvellumColors.Rune
+    CoverageLevel.UNDER -> IronvellumColors.InkMuted
     CoverageLevel.LIGHT -> IronvellumColors.InkMuted
-    CoverageLevel.IN_RANGE -> IronvellumColors.Emerald
-    CoverageLevel.OVER -> IronvellumColors.SovereignGold
+    CoverageLevel.IN_RANGE -> IronvellumColors.SystemGreen
+    CoverageLevel.OVER -> IronvellumColors.Ink
 }
 
 /**
- * Opacity of the green for a muscle under its range. Shortfall is never
- * shown as a warning colour: the fill simply grows toward the full in-range
- * green as the week approaches the target, so 11.5 of 12 sets reads almost
- * done and 2 of 12 reads faint but still green. The floor keeps it apart
- * from the grey of an untrained muscle; it reaches the in-range opacity at
+ * Opacity of the grey for a muscle under its range. Shortfall is never
+ * shown as a warning colour: the fill simply strengthens toward the full
+ * opacity as the week approaches the target, so 11.5 of 12 sets reads almost
+ * done and 2 of 12 reads faint but still present. The floor keeps it apart
+ * from the Rune of an untrained muscle; it reaches the in-range opacity at
  * the target.
  */
 fun underAlpha(volume: Double, target: ClosedFloatingPointRange<Double>): Float {
@@ -88,13 +90,13 @@ private const val FULL_ALPHA = 0.9f
 private const val UNDER_FLOOR_ALPHA = 0.3f
 
 /**
- * The fill for one tracked muscle. Under target the green deepens with
+ * The fill for one tracked muscle. Under target the grey strengthens with
  * progress toward the range (see [underAlpha]), which is what makes the
  * figure a heat map rather than a few flat colours.
  */
 private fun regionFill(level: CoverageLevel, volume: Double, target: ClosedFloatingPointRange<Double>): Color {
     val alpha = when (level) {
-        CoverageLevel.NONE -> 0.55f
+        CoverageLevel.NONE -> 1f
         CoverageLevel.UNDER -> underAlpha(volume, target)
         CoverageLevel.LIGHT -> 0.35f
         else -> FULL_ALPHA
@@ -105,13 +107,13 @@ private fun regionFill(level: CoverageLevel, volume: Double, target: ClosedFloat
 /**
  * The verdict word's colour in the tile lists, matching the figure: under
  * target is a softened green (the word says UNDER, colour never scolds),
- * untrained and light stay neutral, in range green, over gold.
+ * untrained and light stay neutral, in range green, over plain Ink.
  */
 internal fun verdictTextColour(level: CoverageLevel): Color = when (level) {
     CoverageLevel.NONE, CoverageLevel.LIGHT -> IronvellumColors.InkMuted
     CoverageLevel.UNDER -> lerp(IronvellumColors.InkMuted, IronvellumColors.SystemGreen, 0.6f)
     CoverageLevel.IN_RANGE -> IronvellumColors.SystemGreen
-    CoverageLevel.OVER -> IronvellumColors.SovereignGold
+    CoverageLevel.OVER -> IronvellumColors.Ink
 }
 
 /** Every muscle the map judges: the ranged majors, then the floored helpers. */
@@ -203,9 +205,9 @@ enum class ShareLevel(val label: String) { MAIN("MAIN"), ASSIST("ASSIST") }
 fun shareLevel(share: Double): ShareLevel = if (share >= 0.7) ShareLevel.MAIN else ShareLevel.ASSIST
 
 private fun shareFill(share: Double?): Color = when {
-    share == null || share <= 0.0 -> IronvellumColors.Bracket.copy(alpha = 0.55f)
-    shareLevel(share) == ShareLevel.MAIN -> IronvellumColors.Emerald.copy(alpha = 0.9f)
-    else -> IronvellumColors.Emerald.copy(alpha = 0.4f)
+    share == null || share <= 0.0 -> IronvellumColors.Rune
+    shareLevel(share) == ShareLevel.MAIN -> IronvellumColors.InkMuted.copy(alpha = 0.9f)
+    else -> IronvellumColors.InkMuted.copy(alpha = 0.4f)
 }
 
 /**
@@ -232,7 +234,7 @@ fun ExerciseMuscleMap(
 }
 
 /**
- * Opacity of a muscle's green on a rite's figure: [sets] relative to the most
+ * Opacity of a muscle's grey on a rite's figure: [sets] relative to the most
  * worked muscle in that rite ([top]). A rite is a fraction of a week, so this
  * is a share of the rite, never a verdict against the weekly range.
  */
@@ -242,8 +244,8 @@ fun riteAlpha(sets: Double, top: Double): Float {
 }
 
 /**
- * The same front and back figure, filled by what ONE rite works: the green
- * deepens with the sets the rite gives a muscle, relative to its most worked
+ * The same front and back figure, filled by what ONE rite works: the grey
+ * strengthens with the sets the rite gives a muscle, relative to its most worked
  * muscle, and untouched muscles stay bare.
  */
 @Composable
@@ -258,13 +260,13 @@ fun RiteMuscleMap(
     val figure = BodyFigures.of(LocalBodySex.current)
     val fill = { muscle: Muscle ->
         val alpha = riteAlpha(sets[muscle] ?: 0.0, top)
-        if (alpha <= 0f) IronvellumColors.Bracket.copy(alpha = 0.55f) else IronvellumColors.Emerald.copy(alpha = alpha)
+        if (alpha <= 0f) IronvellumColors.Rune else IronvellumColors.InkMuted.copy(alpha = alpha)
     }
     val lineFor = { muscle: Muscle -> riteMuscleLine(muscle, sets[muscle] ?: 0.0, riteName) }
     FigureBlock(figure, figureHeight, fill, selection, lineFor, modifier, quietKey = true) {
-        LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(0.01, 1.0)), "FEWER")
-        LegendKey(IronvellumColors.Emerald.copy(alpha = riteAlpha(1.0, 1.0)), "MORE")
-        LegendKey(IronvellumColors.Bracket.copy(alpha = 0.55f), "NONE")
+        LegendKey(IronvellumColors.InkMuted.copy(alpha = riteAlpha(0.01, 1.0)), "FEWER")
+        LegendKey(IronvellumColors.InkMuted.copy(alpha = riteAlpha(1.0, 1.0)), "MORE")
+        LegendKey(IronvellumColors.Rune, "NONE")
     }
 }
 

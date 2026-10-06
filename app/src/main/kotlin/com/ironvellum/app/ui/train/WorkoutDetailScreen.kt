@@ -24,7 +24,7 @@ import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.outlined.IosShare
 import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.outlined.Edit
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -375,9 +375,7 @@ fun WorkoutDetailScreen(
         AmendConfirmDialog(settlement, onConfirm = viewModel::confirmSave, onDismiss = viewModel::dismissSave)
     }
     if (confirmDiscard) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmDiscard = false },
             title = { Text("Discard your changes?") },
             text = { Text("Unsaved edits to this trial will be lost.") },
