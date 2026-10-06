@@ -1,0 +1,11 @@
+# Ironvellum IV launcher icon — 2026-10-06
+# Owner selected 01 ORIGINAL REFINED from the IV monogram variations.
+# Generated with Codex's built-in image-generation tool, transparent background.
+# Prompt: Extract/recreate only the upper-left IV symbol labelled
+# '01 ORIGINAL REFINED' from the selected reference as a production foreground.
+# Preserve the angular I with sloping cap, separate pointed V and two-tone
+# emerald/mint facets. No tile, labels, shadow, glow or other graphics.
+# Source: drawn/icon_iv.png (cropped, square-padded for circular mask clearance).
+# Install: python tools/icon_install.py tools/art_batches/drawn/icon_iv.png
+# Reference: exec-3da0b338-d52e-4e81-b923-078484319dab.png
+# Generated source: exec-a5c95900-6dc5-4e43-923b-274a801cbdba.png

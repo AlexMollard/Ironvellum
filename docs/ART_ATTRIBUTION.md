@@ -11,8 +11,8 @@ see `LICENSE`).
 
 | Drawable | Origin | Licence |
 |---|---|---|
-| `mipmap-*/ic_launcher.png`, `ic_launcher_foreground.png`, `ic_launcher_monochrome.png` | generated with Google **`gemini-3.1-flash-image`** (reached via OpenRouter because the omp `google-antigravity` route was quota-exhausted at the time — same underlying model), then cropped, background-keyed to transparency, inset to the adaptive-icon safe zone and downscaled per density with Pillow | project licence |
-| `ic_launcher_background.xml` | hand-authored (radial void-green gradient) | project licence |
+| `mipmap-*/ic_launcher.png`, `ic_launcher_round.png`, `ic_launcher_foreground.png`, `ic_launcher_monochrome.png` | emerald IV monogram generated with Codex's built-in image-generation tool from the owner's selected Original Refined mockup; transparent source retained at `tools/art_batches/drawn/icon_iv.png`, inset and downscaled with `tools/icon_install.py`; legacy tiles composited on the adaptive near-black ground | project licence |
+| `ic_launcher_background.xml` | hand-authored (near-black `#0C0C0B`) | project licence |
 | `mipmap-anydpi-v26/ic_launcher.xml`, `ic_launcher_round.xml` | adaptive icon composition, no artwork of its own | project licence |
 | `drawable-nodpi/art_empty_*.png` (quests, stats, skills, board, chronicle, allies, muster) | generated with `tools/art.py` in the house ink style below | project licence |
 | `drawable-nodpi/art_crest_*.png` (ten crest frames) | generated with `tools/art.py` from `tools/art_batches/crests.txt` | project licence |

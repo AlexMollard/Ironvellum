@@ -21,6 +21,7 @@ Usage:
 """
 import argparse
 import pathlib
+import xml.etree.ElementTree as ET
 
 # Launcher bitmap edge per density bucket, in px, for a 48dp icon.
 LEGACY = {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}
@@ -78,11 +79,21 @@ def main() -> int:
         fg = fit_into(src, edge, SAFE)
         written.append((RES / f"mipmap-{bucket}" / "ic_launcher_foreground.png", fg))
         written.append((RES / f"mipmap-{bucket}" / "ic_launcher_monochrome.png", monochrome(fg)))
+    from PIL import ImageDraw
+
+    # Legacy launchers do not compose the adaptive background for us.
+    background = ET.parse(RES / "drawable" / "ic_launcher_background.xml").getroot()
+    colour = background.find("solid").attrib["{http://schemas.android.com/apk/res/android}color"]
     for bucket, edge in LEGACY.items():
         # Legacy bitmaps have no mask, so the art may use more of the square.
-        legacy = fit_into(src, edge, 0.84)
+        legacy = Image.new("RGBA", (edge, edge), colour)
+        legacy.alpha_composite(fit_into(src, edge, 0.84))
         written.append((RES / f"mipmap-{bucket}" / "ic_launcher.png", legacy))
-        written.append((RES / f"mipmap-{bucket}" / "ic_launcher_round.png", legacy))
+        rounded = legacy.copy()
+        mask = Image.new("L", (edge * 4, edge * 4))
+        ImageDraw.Draw(mask).ellipse((0, 0, edge * 4 - 1, edge * 4 - 1), fill=255)
+        rounded.putalpha(mask.resize((edge, edge), Image.Resampling.LANCZOS))
+        written.append((RES / f"mipmap-{bucket}" / "ic_launcher_round.png", rounded))
 
     for path, im in written:
         print(f"{'would write' if args.dry_run else 'wrote'} {path} {im.width}x{im.height}")
