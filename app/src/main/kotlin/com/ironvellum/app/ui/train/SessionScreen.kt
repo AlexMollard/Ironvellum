@@ -6,6 +6,30 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.text.SpanStyle
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.EditNote
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.runtime.key
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.input.KeyboardType
+import com.ironvellum.app.ui.components.formatLoadKg
+import com.ironvellum.app.ui.components.lastLoggedFigure
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.widthIn
@@ -26,7 +50,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -40,11 +63,8 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.ui.draw.alpha
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.KeyboardArrowDown
-import androidx.compose.material.icons.outlined.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Lock
 import androidx.compose.material.icons.outlined.Public
-import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -63,7 +83,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.foundation.text.TextAutoSize
@@ -112,7 +131,6 @@ import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Sex
-import com.ironvellum.app.domain.StrengthIndex
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.ui.components.Achievement
@@ -125,7 +143,6 @@ import com.ironvellum.app.ui.components.ExercisePickerSheet
 import com.ironvellum.app.ui.components.lastLoggedLine
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.NavChip
-import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.plural
@@ -154,14 +171,11 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.TrainingFocus
-import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.WEIGHTED_MODIFIER
 import com.ironvellum.app.domain.applicableModifiers
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.program.RiteMusclesSheet
-import com.ironvellum.app.ui.program.ShareLevel
-import com.ironvellum.app.ui.program.musclesAt
 
 data class SessionUi(
     val session: WorkoutSession? = null,
@@ -487,17 +501,35 @@ fun SessionScreen(
     var showRiteMuscles by remember { mutableStateOf(false) }
     var infoFor by remember { mutableStateOf<Long?>(null) }
     var editLoadFor by remember { mutableStateOf<SessionSet?>(null) }
+    var typing by remember { mutableStateOf<Pair<SessionSet, FigureKind>?>(null) }
+    var showName by rememberSaveable { mutableStateOf(false) }
+    var showNote by rememberSaveable { mutableStateOf(false) }
+    // The exercise the lifter opened by hand; null follows the next unlogged set.
+    var openOverride by rememberSaveable { mutableStateOf<Long?>(null) }
+    // A logged set opened for editing or un-logging.
+    var editingSetId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var undo by remember { mutableStateOf<UndoPrompt?>(null) }
+    var undoSerial by remember { mutableIntStateOf(0) }
+    // Bumped when a seal is declined or fails, so the slider comes back to the start.
+    var slideReset by remember { mutableIntStateOf(0) }
+
+    fun metricOf(exerciseId: Long): ExerciseMetric =
+        exercises.firstOrNull { it.id == exerciseId }?.metric ?: ExerciseMetric.REPS
 
     // One route per metric, each passing the set's current values for the
-    // columns it does not own, exactly as the row's own callbacks do.
-    fun applyLoad(set: SessionSet, kg: Double?) {
-        val metric = exercises.firstOrNull { it.id == set.exerciseId }?.metric ?: ExerciseMetric.REPS
+    // columns it does not own, so no edit erases a neighbour's figure. Every
+    // write the screen makes goes through here: the steppers, the log button,
+    // Undo, un-log and the typed entries.
+    fun commit(set: SessionSet) {
+        val metric = metricOf(set.exerciseId)
         when {
-            metric == ExerciseMetric.HOLD -> viewModel.updateHoldSet(set.id, set.durationSec ?: 0, kg, set.done)
-            metric.isStrength -> viewModel.updateSet(set.id, set.reps, kg, set.done)
-            else -> viewModel.updateActivitySet(set.id, set.reps, set.durationSec, set.distanceM, set.grade, kg, set.done)
+            metric == ExerciseMetric.HOLD -> viewModel.updateHoldSet(set.id, set.durationSec ?: 0, set.weightKg, set.done)
+            metric.isStrength -> viewModel.updateSet(set.id, set.reps, set.weightKg, set.done)
+            else -> viewModel.updateActivitySet(set.id, set.reps, set.durationSec, set.distanceM, set.grade, set.weightKg, set.done)
         }
     }
+
+    fun applyLoad(set: SessionSet, kg: Double?) = commit(set.copy(weightKg = kg))
 
     // The lock-screen companion. The service watches the database and stops
     // itself when the session completes or is abandoned - the screen only
@@ -547,9 +579,9 @@ fun SessionScreen(
         return
     }
 
-    // The notification's Seal action: the same confirmation the button gives,
+    // The notification's Seal action: the same confirmation the slider gives,
     // since sealing pays out and shows the victory here, not in the shade.
-    // Waits for the sets, and only offers what the button would allow.
+    // Waits for the sets, and only offers what the slider would allow.
     var servedSealRequest by rememberSaveable { mutableIntStateOf(0) }
     LaunchedEffect(sealRequest, ui.sets.isNotEmpty()) {
         if (sealRequest <= servedSealRequest || ui.sets.isEmpty()) return@LaunchedEffect
@@ -558,387 +590,238 @@ fun SessionScreen(
         if (ui.sets.any { it.done } && completion == null && !claiming) confirmClaim = true
     }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
-    ) {
-        Spacer(Modifier.height(20.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "TRIAL IN PROGRESS",
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = 6.sp,
-                modifier = Modifier.weight(1f),
-            )
-            // Leaving is free: the trial stays live, and Today / Train offer Resume.
-            NavChip(
-                "BACK",
-                Icons.AutoMirrored.Filled.ArrowBack,
-                onClick = { onExit() },
-                modifier = Modifier.semantics { onClick(label = "Leave, the trial keeps running", action = null) },
-            )
-        }
-        Spacer(Modifier.height(6.dp))
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Column(Modifier.weight(1f)) {
-                // The whole trial's muscles, from the rows as they stand now.
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        session.label,
-                        style = MaterialTheme.typography.headlineSmall,
-                        color = IronvellumColors.EmeraldBright,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    IconButton(onClick = { showRiteMuscles = true }, modifier = Modifier.size(44.dp)) {
-                        Icon(
-                            Icons.Outlined.Info,
-                            contentDescription = "Muscles in ${session.label}",
-                            tint = IronvellumColors.InkMuted,
-                            modifier = Modifier.size(18.dp),
-                        )
-                    }
-                }
-                Text(
-                    "Started ${formatDate(session.startedAtMs)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
-            Text(
-                "ABANDON",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.DangerRed,
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .inkBorder(IronvellumColors.DangerRed.copy(alpha = 0.6f), MaterialTheme.shapes.extraSmall, 1.dp)
-                    .clickable(
-                        interactionSource = remember { MutableInteractionSource() },
-                        indication = null,
-                    ) { confirmAbandon = true }
-                    .padding(horizontal = 12.dp, vertical = 8.dp),
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        val doneCount = ui.sets.count { it.done }
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                "$doneCount / ${ui.sets.size} ${plural(ui.sets.size, "set", "sets")} done",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                modifier = Modifier.weight(1f),
-            )
-            SessionElapsed(session.startedAtMs)
-        }
-        rest?.let { timer ->
-            RestBar(timer, onExtend = viewModel::extendRest, onSkip = viewModel::skipRest)
-            // The countdown above still runs, but the buzz at its end cannot arrive.
-            NotificationBlockedNotice(
-                channelId = Notifications.CHANNEL_REST,
-                access = restAccess,
-                blockedText = "Rest-over alerts are blocked, so the end of a rest will not buzz.",
-                modifier = Modifier.padding(top = 4.dp),
-            )
-        }
-        if (ui.sets.isNotEmpty()) {
-            val estimate = remember(ui.sets, exercises, focus, pace) {
-                val metrics = exercises.associate { it.id to it.metric }
-                SessionClock.estimateLine(
-                    SessionClock.totalSeconds(ui.sets, { metrics[it] }, focus, pace),
-                    SessionClock.remainingSeconds(ui.sets, { metrics[it] }, focus, pace),
-                )
-            }
-            Text(
-                estimate,
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
-        }
+    // Render blocks in the rite's saved exercise order: sort explicitly by
+    // exercisePosition instead of trusting the query's emission order.
+    val blocks = remember(ui.sets) {
+        ui.sets.groupBy { it.exerciseId }
+            .map { (id, sets) -> TrialBlock(id, sets.minOf { it.exercisePosition }, sets.sortedBy { it.setIndex }) }
+            .sortedBy { it.position }
+    }
+    val doneCount = ui.sets.count { it.done }
+    val unlogged = ui.sets.size - doneCount
+    // Nothing logged is nothing to seal: finishing an empty trial is an
+    // abandon, and it must never mint the completion bonus.
+    val anyDone = doneCount > 0
+    val allLogged = ui.sets.isNotEmpty() && unlogged == 0
+    // One exercise is open: the one holding the next unlogged set, unless the
+    // lifter opened another. The footer logs the open card's next set.
+    val nextBlock = blocks.firstOrNull { block -> block.sets.any { !it.done } }
+    val openBlock = blocks.firstOrNull { it.id == openOverride } ?: nextBlock ?: blocks.lastOrNull()
+    val activeSet = openBlock?.sets?.firstOrNull { !it.done } ?: nextBlock?.sets?.firstOrNull { !it.done }
+    LaunchedEffect(openBlock?.id) { editingSetId = null }
 
-        // Render blocks in the preset's saved exercise order: sort explicitly
-        // by exercisePosition instead of trusting the query's emission order.
-        val exerciseBlocks = ui.sets.groupBy { it.exerciseId }
-            .map { (id, sets) -> sets.minOf { it.exercisePosition } to (id to sets) }
-            .sortedBy { it.first }
-        exerciseBlocks.forEachIndexed { blockIdx, (_, block) ->
-            val (exerciseId, sets) = block
-            val first = sets.first()
-            val doneSets = sets.filter { it.done }
-            val blockMetric = exercises.firstOrNull { it.id == exerciseId }?.metric ?: ExerciseMetric.REPS
-            val isHoldBlock = blockMetric == ExerciseMetric.HOLD
-            // Bouldering's figure is an attempt count and a run's is a
-            // distance; summing either through repScore invented a strength
-            // number for work that is not lifting at all.
-            val groupStrength = bodyweight?.takeIf { blockMetric.isStrength }?.let { bw ->
-                doneSets.sumOf { set ->
-                    if (isHoldBlock) {
-                        StrengthIndex.holdScore(first.exerciseName, set.durationSec ?: 0, set.weightKg, bw)
-                    } else {
-                        StrengthIndex.repScore(first.exerciseName, set.reps, set.weightKg, bw)
-                    }
-                }.toInt()
-            }
-            Spacer(Modifier.height(14.dp))
-            InkPanel(Modifier.fillMaxWidth()) {
-                // Modifiers change the profile: a deficit push-up credits the
-                // chest at stretch, so the muscles read from both.
-                val shares = MuscleMap.profile(first.exerciseName, first.modifiers)?.muscles
-                // No sliders glyph where the picker would open empty (a hold,
-                // a run): it promised a choice that is not there.
-                val modifiersEditable = canEditModifiers(
-                    exercises.firstOrNull { it.id == exerciseId }?.let(::applicableModifiers).orEmpty(),
-                    first.modifiers,
-                )
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f)) {
-                        // The name and a small (i) are one 44dp target opening the
-                        // exercise's info. The glyph sits inline, not in a 48dp
-                        // IconButton, so the name keeps its width at 360dp.
-                        val infoLabel = "About ${first.exerciseName}"
-                        Row(
-                            Modifier
-                                .heightIn(min = 44.dp)
-                                .clickable(onClickLabel = infoLabel) { infoFor = exerciseId }
-                                .semantics {
-                                    contentDescription = infoLabel
-                                    role = Role.Button
+    val seekOpen = remember { BringIntoViewRequester() }
+    LaunchedEffect(openBlock?.id) {
+        withFrameNanos { }
+        seekOpen.bringIntoView()
+    }
+    LaunchedEffect(undo?.serial) {
+        if (undo != null) {
+            delay(UNDO_MS)
+            undo = null
+        }
+    }
+    LaunchedEffect(claiming) {
+        // A claim that failed lets go; the slider has to come back to the start.
+        if (!claiming && completion == null) slideReset++
+    }
+
+    fun logActive() {
+        val set = activeSet ?: return
+        commit(set.copy(done = true))
+        undoSerial++
+        undo = UndoPrompt(undoSerial, set.id, set.setIndex + 1)
+        // The card moves on once its last set is logged.
+        if (openBlock != null && openBlock.sets.none { !it.done && it.id != set.id }) openOverride = null
+    }
+
+    fun undoLog(prompt: UndoPrompt) {
+        ui.sets.firstOrNull { it.id == prompt.setId }?.let { commit(it.copy(done = false)) }
+        // The rest belonged to the set that was just taken back.
+        viewModel.skipRest()
+        undo = null
+    }
+
+    // The slider is the only way to seal. Any unlogged set asks first.
+    // Reads the live state, not this composition's snapshot: the slider holds
+    // on to the reference it was first given, from before any set was logged.
+    fun requestSeal() {
+        val done = ui.sets.count { it.done }
+        if (done == 0 || completion != null || claiming) return
+        if (done < ui.sets.size) confirmClaim = true else viewModel.complete()
+    }
+
+    val signedIn = (LocalContext.current.applicationContext as com.ironvellum.app.IronvellumApp)
+        .accountRepository.account.collectAsStateWithLifecycle().value != null
+    val minutesLeft = remember(ui.sets, exercises, focus, pace) {
+        val metrics = exercises.associate { it.id to it.metric }
+        SessionClock.remainingSeconds(ui.sets, { metrics[it] }, focus, pace)
+            .takeIf { it > 0 }?.let { SessionClock.minutes(it) }
+    }
+    val scroll = rememberScrollState()
+
+    Box(Modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
+            TrialHeader(
+                overline = if (session.presetId != null) "${session.label} · rite" else null,
+                done = doneCount,
+                total = ui.sets.size,
+                minutesLeft = minutesLeft,
+                startedAtMs = session.startedAtMs,
+                onBack = onExit,
+                onMuscles = { showRiteMuscles = true },
+                onAbandon = { confirmAbandon = true },
+            )
+            Column(
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .verticalScroll(scroll)
+                    .padding(horizontal = 16.dp),
+            ) {
+                rest?.let {
+                    // The countdown in the footer still runs, but the buzz at its end cannot arrive.
+                    NotificationBlockedNotice(
+                        channelId = Notifications.CHANNEL_REST,
+                        access = restAccess,
+                        blockedText = "Rest-over alerts are blocked, so the end of a rest will not buzz.",
+                        modifier = Modifier.padding(top = 12.dp),
+                    )
+                }
+                var previousFolded = false
+                blocks.forEachIndexed { blockIdx, block ->
+                    key(block.id) {
+                        val first = block.first
+                        val metric = metricOf(block.id)
+                        val exercise = exercises.firstOrNull { it.id == block.id }
+                        val weighted = exercise?.isWeighted ?: false
+                        if (block.id == openBlock?.id) {
+                            Spacer(Modifier.height(12.dp))
+                            val modifiersEditable = canEditModifiers(
+                                exercise?.let(::applicableModifiers).orEmpty(),
+                                first.modifiers,
+                            )
+                            val peak = remember(records, first.exerciseName) {
+                                val name = first.exerciseName.lowercase().trim()
+                                records.filterKeys { it.first == name }.values.maxByOrNull { it.score }
+                            }
+                            OpenExerciseCard(
+                                block = block,
+                                metric = metric,
+                                weighted = weighted,
+                                reference = referenceLine(exercise, metric, lastLogged[block.id], peak),
+                                reason = reasons[block.id],
+                                modifiersEditable = modifiersEditable,
+                                activeSetId = if (activeSet?.exerciseId == block.id) activeSet.id else null,
+                                editingSetId = editingSetId,
+                                newPeaks = newPeakSetIds(block.sets, metric, records, bodyweight),
+                                canMoveUp = blockIdx > 0,
+                                canMoveDown = blockIdx < blocks.lastIndex,
+                                onInfo = { infoFor = block.id },
+                                onEditModifiers = { editModifiersFor = block.id },
+                                onMove = { up -> viewModel.moveExercise(first.exercisePosition, up) },
+                                onEditLoad = if (metric.isStrength || (metric == ExerciseMetric.DURATION && weighted)) {
+                                    { editLoadFor = block.sets.firstOrNull { !it.done } ?: block.sets.last() }
+                                } else {
+                                    null
                                 },
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                first.exerciseName,
-                                style = MaterialTheme.typography.titleMedium,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f, fill = false),
+                                onAddSet = {
+                                    // A duplicate carries the block's own figure: a hold's
+                                    // seconds, an activity's duration — a copy of a Yoga set
+                                    // starting at "10 reps" repeats the seconds-as-reps bug.
+                                    val copySeconds = when {
+                                        metric == ExerciseMetric.HOLD -> first.durationSec ?: DEFAULT_HOLD_SECONDS
+                                        metric == ExerciseMetric.DURATION || metric == ExerciseMetric.DISTANCE_TIME -> first.durationSec
+                                        else -> null
+                                    }
+                                    viewModel.addSet(block.id, first.reps, first.weightKg, first.modifiers, copySeconds)
+                                },
+                                // Removing a block's only set removes the exercise, so a
+                                // one-off added by mistake can be taken back out.
+                                onRemoveSet = { set ->
+                                    if (block.sets.size > 1) viewModel.removeSet(set.id) else viewModel.removeExercise(block.id)
+                                },
+                                onRemoveExercise = { viewModel.removeExercise(block.id) },
+                                onEdit = ::commit,
+                                onTypeLoad = { editLoadFor = it },
+                                onTypeFigure = { set, kind -> typing = set to kind },
+                                onToggleEdit = { set -> editingSetId = if (editingSetId == set.id) null else set.id },
+                                onUnlog = { set ->
+                                    commit(set.copy(done = false))
+                                    editingSetId = null
+                                },
+                                modifier = Modifier.bringIntoViewRequester(seekOpen),
                             )
-                            Icon(
-                                Icons.Outlined.Info,
-                                contentDescription = null,
-                                tint = IronvellumColors.InkMuted,
-                                modifier = Modifier.padding(start = 4.dp).size(18.dp),
-                            )
-                        }
-                        // Only real modifiers get a line. "tap to set modifiers"
-                        // printed under every movement that had none, beside the
-                        // slider glyph in this same header that does exactly that.
-                        if (first.modifiers.isNotBlank()) {
-                            Text(
-                                first.modifiers.split(",").joinToString(" · ") { it.trim() },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = IronvellumColors.SystemGreen,
-                                modifier = Modifier
-                                    .clickable(enabled = modifiersEditable) { editModifiersFor = exerciseId }
-                                    .padding(vertical = 2.dp),
-                            )
-                        }
-                    }
-                    // Reorder controls only where a move is possible: disabled
-                    // arrows at the ends cost the name ~48dp each at 360dp and
-                    // wrapped "Dumbbell Shoulder Press" onto three lines.
-                    if (blockIdx > 0) {
-                        IconButton(onClick = { viewModel.moveExercise(first.exercisePosition, up = true) }) {
-                            Icon(Icons.Outlined.KeyboardArrowUp, contentDescription = "Move exercise up", tint = IronvellumColors.InkMuted)
-                        }
-                    }
-                    if (blockIdx < exerciseBlocks.lastIndex) {
-                        IconButton(onClick = { viewModel.moveExercise(first.exercisePosition, up = false) }) {
-                            Icon(Icons.Outlined.KeyboardArrowDown, contentDescription = "Move exercise down", tint = IronvellumColors.InkMuted)
-                        }
-                    }
-                    if (modifiersEditable) {
-                        IconButton(onClick = { editModifiersFor = exerciseId }) {
-                            Icon(Icons.Outlined.Tune, contentDescription = "Edit modifiers", tint = IronvellumColors.InkMuted)
-                        }
-                    }
-                    IconButton(onClick = {
-                        // A duplicate carries the block's own figure: a hold's
-                        // seconds, an activity's duration — a copy of a Yoga set
-                        // starting at "10 reps" repeats the seconds-as-reps bug.
-                        val copySeconds =
-                            when {
-                                isHoldBlock -> first.durationSec ?: DEFAULT_HOLD_SECONDS
-                                blockMetric == ExerciseMetric.DURATION || blockMetric == ExerciseMetric.DISTANCE_TIME -> first.durationSec
-                                else -> null
-                            }
-                        viewModel.addSet(exerciseId, first.reps, first.weightKg, first.modifiers, copySeconds)
-                    }) {
-                        Icon(Icons.Filled.Add, contentDescription = "Add set", tint = IronvellumColors.SystemGreen)
-                    }
-                }
-                // The muscles and the STR figure get their own full-width line
-                // under the header: beside the name they cut "Single-leg…" to
-                // "Sin/gl…", and inside the name's column the four header
-                // icons still squeezed "RHOMBOIDS" to "RHOM…".
-                val mainMuscles = shares?.let { musclesAt(it, ShareLevel.MAIN) }?.takeIf { it.isNotEmpty() }
-                val showStrength = groupStrength != null && groupStrength > 0
-                if (mainMuscles != null || showStrength) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            .clickable(onClickLabel = "About ${first.exerciseName}") { infoFor = exerciseId }
-                            .padding(bottom = 2.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        Text(
-                            mainMuscles?.joinToString(" · ") { it.label.uppercase() }.orEmpty(),
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.InkMuted,
-                            letterSpacing = IronvellumTracking.InlineLabel,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.weight(1f),
-                        )
-                        if (showStrength) {
-                            // Labelled, not a gold bolt beside a bare number: the
-                            // bolt read as XP, which this is not — it is the
-                            // body-scaled strength score for the movement.
-                            Text(
-                                "$groupStrength STR",
-                                style = MaterialTheme.typography.labelMedium,
-                                fontFamily = ChakraPetch,
-                                color = IronvellumColors.SovereignGold,
-                                maxLines = 1,
-                                softWrap = false,
-                            )
-                        }
-                    }
-                }
-                // Why the load moved, so a deload or a step up is never a
-                // surprise: only where the engine changed the prescription.
-                reasons[exerciseId]?.let { reason ->
-                    Text(
-                        reason,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.InkMuted,
-                        modifier = Modifier.padding(bottom = 4.dp),
-                    )
-                }
-                sets.sortedBy { it.setIndex }.forEachIndexed { position, set ->
-                    SetRow(
-                        label = "${set.setIndex + 1}",
-                        exerciseName = set.exerciseName,
-                        setIndex = set.setIndex,
-                        records = records,
-                        bodyweight = bodyweight,
-                        // A hold's figure is its seconds, not its (zero) reps.
-                        reps = if (isHoldBlock) (set.durationSec ?: 0) else set.reps,
-                        weightKg = set.weightKg,
-                        done = set.done,
-                        isHold = isHoldBlock,
-                        metric = blockMetric,
-                        // Weighted Skipping keeps its LOAD column on DURATION;
-                        // Running and Bouldering never show one.
-                        isWeighted = exercises.firstOrNull { it.id == exerciseId }?.isWeighted ?: false,
-                        durationSec = set.durationSec,
-                        distanceM = set.distanceM,
-                        grade = set.grade.orEmpty(),
-                        scoresStrength = blockMetric.isStrength,
-                        // LOAD and REPS head the columns once. Repeating them on
-                        // every row printed the same two words 36 times in an
-                        // 18-set session, on top of identical steppers.
-                        showColumnLabels = position == 0,
-                        reserveDeltaLine = position < sets.lastIndex,
-                        // A PR must also beat this exercise's earlier done sets
-                        // today, or a repeat of set 2 as set 3 reads NEW PR twice.
-                        bestEarlierThisWorkout = bodyweight?.takeIf { blockMetric.isStrength }?.let { bw ->
-                            sets.filter { it.done && it.setIndex < set.setIndex }.maxOfOrNull { earlier ->
-                                SetRecords.score(
-                                    earlier.exerciseName,
-                                    if (isHoldBlock) (earlier.durationSec ?: 0) else earlier.reps,
-                                    earlier.weightKg,
-                                    bw,
-                                    isHoldBlock,
-                                )
-                            }
-                        },
-                        onLoadTap = { editLoadFor = set },
-                        // Removing a block's only set removes the exercise; the
-                        // ✕ is the same everywhere, so a one-off added by
-                        // mistake can be taken back out.
-                        onRemove = if (sets.size > 1) {
-                            { viewModel.removeSet(set.id) }
+                            Spacer(Modifier.height(12.dp))
+                            previousFolded = false
                         } else {
-                            { viewModel.removeExercise(exerciseId) }
+                            if (previousFolded) FolderRule()
+                            FoldedExerciseRow(
+                                name = first.exerciseName,
+                                subline = foldedSubline(block, metric, weighted),
+                                done = block.sets.count { it.done },
+                                total = block.sets.size,
+                                onOpen = { openOverride = block.id },
+                            )
+                            previousFolded = true
+                        }
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                TrialEndRows(
+                    nameValue = session.title.ifBlank { null }
+                        ?: "Defaults to ${session.label} · ${formatDate(session.startedAtMs, "d MMM")}",
+                    nameSet = session.title.isNotBlank(),
+                    noteValue = session.note.lineSequence().firstOrNull { it.isNotBlank() }
+                        ?: session.privateNote.lineSequence().firstOrNull { it.isNotBlank() },
+                    onAddExercise = { showExercisePicker = true },
+                    onName = { showName = true },
+                    onNote = { showNote = true },
+                )
+                if (!allLogged) {
+                    // Sealing early: the same slider the footer shows once every set is logged.
+                    Spacer(Modifier.height(32.dp))
+                    SlideToSeal(
+                        label = if (anyDone) {
+                            "$unlogged ${plural(unlogged, "set", "sets")} left · slide to seal"
+                        } else {
+                            "Log a set to seal the trial"
                         },
-                        onChange = { value, w, d ->
-                            if (isHoldBlock) {
-                                viewModel.updateHoldSet(set.id, value, w, d)
-                            } else {
-                                viewModel.updateSet(set.id, value, w, d)
-                            }
-                        },
-                        // The activity route writes every column; each caller
-                        // passes the set's CURRENT values for fields its metric
-                        // does not own, so no edit erases a neighbour's figure.
-                        onActivityChange = { reps, durationSec, distanceM, grade, w, d ->
-                            viewModel.updateActivitySet(set.id, reps, durationSec, distanceM, grade, w, d)
-                        },
+                        enabled = anyDone && !claiming,
+                        onSealed = ::requestSeal,
+                        resetKey = slideReset,
+                        trackColor = IronvellumColors.Vault,
                     )
                 }
-
+                Spacer(Modifier.height(24.dp))
             }
-        }
-
-        Spacer(Modifier.height(10.dp))
-        // The screen's only add action: a real button, not faint link text.
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-            IronvellumButton("Add exercise", onClick = { showExercisePicker = true })
-        }
-        Spacer(Modifier.height(16.dp))
-        SessionNotesEditor(session = session, viewModel = viewModel)
-
-        Spacer(Modifier.height(16.dp))
-        // Nothing ticked is nothing to claim: finishing an empty trial is an
-        // abandon, and it must never mint the completion bonus.
-        val anyDone = doneCount > 0
-        // Fewer than half the sets ticked (and more than two sets) is usually
-        // a claim tapped by accident mid-workout, so it asks first. Pure UI:
-        // the completion call is exactly the one the button made before.
-        val claimHasty = doneCount * 2 < ui.sets.size && ui.sets.size > 2
-        IronvellumButton(
-            label = "Seal the Trial",
-            gold = true,
-            enabled = anyDone,
-            onClick = { if (claimHasty) confirmClaim = true else viewModel.complete() },
-            modifier = Modifier.fillMaxWidth(),
-        )
-        if (!anyDone) {
-            Text(
-                "Tick a set to seal the trial",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-                modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                textAlign = TextAlign.Center,
+            TrialFooter(
+                allLogged = allLogged,
+                rest = rest,
+                nextSetNumber = activeSet?.let { it.setIndex + 1 },
+                nextLine = activeSet?.let { set ->
+                    val figure = setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
+                    // Named only when it is not the card on screen.
+                    val where = if (set.exerciseId != openBlock?.id) " · ${set.exerciseName}" else ""
+                    "Set ${set.setIndex + 1}$where · $figure"
+                },
+                onLog = ::logActive,
+                onExtend = viewModel::extendRest,
+                onSkip = viewModel::skipRest,
+                onSealed = ::requestSeal,
+                slideReset = slideReset,
             )
         }
-        Spacer(Modifier.height(24.dp))
+        undo?.let { prompt ->
+            UndoBar(
+                prompt = prompt,
+                onUndo = { undoLog(prompt) },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 16.dp)
+                    .padding(bottom = FOOTER_HEIGHT + 8.dp),
+            )
+        }
     }
 
     if (confirmAbandon) {
@@ -969,26 +852,37 @@ fun SessionScreen(
     }
 
     if (confirmClaim) {
+        val declined: () -> Unit = {
+            confirmClaim = false
+            slideReset++
+        }
         AlertDialog(
             shape = MaterialTheme.shapes.medium,
             containerColor = Color(0xFF0D1110),
-            onDismissRequest = { confirmClaim = false },
-            title = { Text("Seal the Trial?") },
-            text = {
-                val unticked = ui.sets.count { !it.done }
+            onDismissRequest = declined,
+            title = {
                 Text(
-                    if (unticked == 0) {
-                        "Every set is ticked. Seal it now?"
+                    if (unlogged == 0) {
+                        "Seal the trial?"
                     } else {
-                        "$unticked ${plural(unticked, "set is", "sets are")} unticked and won't count. Seal anyway?"
+                        "Seal with $unlogged ${plural(unlogged, "set", "sets")} unlogged?"
                     },
                 )
             },
-            // Claiming is the deliberate action here, so it takes the confirm
+            text = {
+                Text(
+                    if (unlogged == 0) {
+                        "Every set is logged. Seal it now?"
+                    } else {
+                        "${plural(unlogged, "It", "They")} won't count."
+                    },
+                )
+            },
+            // Sealing is the deliberate action here, so it takes the confirm
             // slot; KEEP GOING is the safe default.
             confirmButton = {
                 IronvellumButton(
-                    "Seal",
+                    if (unlogged == 0) "Seal" else "Seal anyway",
                     onClick = {
                         confirmClaim = false
                         viewModel.complete()
@@ -996,7 +890,7 @@ fun SessionScreen(
                 )
             },
             dismissButton = {
-                IronvellumButton("Keep going", quiet = true, onClick = { confirmClaim = false })
+                IronvellumButton("Keep going", quiet = true, onClick = declined)
             },
         )
     }
@@ -1082,6 +976,47 @@ fun SessionScreen(
                     }
                 }
             },
+        )
+    }
+
+    typing?.let { (target, kind) ->
+        FigureEntryDialog(
+            set = target,
+            kind = kind,
+            onApply = { n ->
+                // The set as it stands now, not as it stood when the dialog opened.
+                val current = ui.sets.firstOrNull { it.id == target.id } ?: target
+                commit(current.withTypedFigure(kind, n))
+                typing = null
+            },
+            onDismiss = { typing = null },
+        )
+    }
+
+    if (showName) {
+        TrialNameDialog(
+            current = session.title,
+            signedIn = signedIn,
+            hint = "Defaults to ${session.label} · ${formatDate(session.startedAtMs, "d MMM")}",
+            onSave = { name ->
+                viewModel.setSessionTitle(name)
+                showName = false
+            },
+            onDismiss = { showName = false },
+        )
+    }
+
+    if (showNote) {
+        TrialNoteDialog(
+            publicNote = session.note,
+            privateNote = session.privateNote,
+            signedIn = signedIn,
+            onSave = { publicNote, privateNote ->
+                viewModel.setSessionNote(publicNote)
+                viewModel.setSessionPrivateNote(privateNote)
+                showNote = false
+            },
+            onDismiss = { showNote = false },
         )
     }
 
@@ -1733,105 +1668,1209 @@ private const val KEY_ASKED_NOTIFICATIONS = "asked_post_notifications"
 private const val PUBLIC_NOTE_CAP = 500
 
 
-/**
- * Title + notes editor for the session. Lives at the foot of the active trial,
- * just above "Seal the Trial", so annotations are written while the session is
- * still open and are already persisted (and synced) by the time it completes.
- * Public and private notes are deliberately styled to clash: gold/emerald for
- * what the feed sees, muted + lock glyph for what never leaves the device.
- */
-@Composable
-private fun SessionNotesEditor(
-    session: WorkoutSession,
-    viewModel: SessionViewModel,
-) {
-    // Seeded once per session; repo writes happen on blur, so we don't echo
-    // the flow back into the fields (that would fight the cursor). Saveable so
-    // a process kill (or rotation) mid-typing doesn't silently drop the note —
-    // on restore the saved text wins over the freshly-loaded session values.
-    var title by rememberSaveable(session.id) { mutableStateOf(session.title) }
-    var publicNote by rememberSaveable(session.id) { mutableStateOf(session.note) }
-    var privateNote by rememberSaveable(session.id) { mutableStateOf(session.privateNote) }
-    // Signed out there is no feed: saying "shown on the feed" would be false.
-    val signedIn = (LocalContext.current.applicationContext as com.ironvellum.app.IronvellumApp)
-        .accountRepository.account.collectAsStateWithLifecycle().value != null
+/** One exercise of the live trial: its sets in order, and where the rite put it. */
+private class TrialBlock(val id: Long, val position: Int, val sets: List<SessionSet>) {
+    val first: SessionSet get() = sets.first()
+}
 
-    InkPanel(accent = IronvellumColors.SovereignGold) {
-        Text(
-            "NAME & NOTES",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SovereignGold,
-            letterSpacing = IronvellumTracking.SectionHeader,
+/** The "Set n logged · Undo" bar; [serial] tells two logs of one set apart. */
+private data class UndoPrompt(val serial: Int, val setId: Long, val setNumber: Int)
+
+/** What a stepper moves. LOAD has its own entry dialog; the others share one. */
+private enum class FigureKind { LOAD, REPS, SECONDS, MINUTES, KM, ATTEMPTS }
+
+/** A stepper's figure, with the set as it would stand after a − or a +. */
+private class Figure(
+    val kind: FigureKind,
+    val value: String,
+    val unit: String,
+    /** For the ± announcements: "Decrease load". */
+    val what: String,
+    val minus: SessionSet,
+    val plus: SessionSet,
+)
+
+private enum class RowState { DONE, EDITING, ACTIVE, UPCOMING }
+
+/** How long Undo stays up after a set is logged. */
+private const val UNDO_MS = 5_000L
+
+/** Four digits is more than any reps, seconds, minutes or attempts figure needs. */
+private const val FIGURE_INPUT_MAX = 9_999
+
+/** Every footer state is this tall, so the bar never shifts as its slot changes. */
+private val FOOTER_HEIGHT = 76.dp
+
+private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): List<Figure> {
+    fun load(): Figure {
+        val kg = set.weightKg?.takeIf { it > 0.0 }
+        return Figure(
+            kind = FigureKind.LOAD,
+            // A bodyweight movement reads BW; a weighted one with no load yet reads 0.
+            value = kg?.let { formatLoadKg(it) } ?: if (weighted) "0" else "BW",
+            unit = if (kg != null || weighted) "kg" else "",
+            what = "load",
+            minus = set.copy(weightKg = stepDownKg(set.weightKg)),
+            plus = set.copy(weightKg = stepUpKg(set.weightKg)),
         )
-        Spacer(Modifier.height(10.dp))
-
-        OutlinedTextField(
-            shape = MaterialTheme.shapes.small,
-            value = title,
-            onValueChange = { title = it.take(TITLE_CAP) },
-            singleLine = true,
-            label = {
-                FieldLabel(
-                    icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.SovereignGold) },
-                    text = if (signedIn) "NAME · optional, shown in Tidings" else "NAME · optional",
-                    color = IronvellumColors.SovereignGold,
-                )
-            },
-            placeholder = { Text("Name this trial…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
-            trailingIcon = { CharCounter(title.length, TITLE_CAP, IronvellumColors.SovereignGold) },
-            colors = fieldColors(accent = IronvellumColors.SovereignGold, focusedBorder = NOTE_FOCUS, unfocusedBorder = NOTE_REST),
-            modifier = Modifier
-                .fillMaxWidth()
-                .onFocusChanged { if (!it.isFocused) viewModel.setSessionTitle(title.trim()) },
+    }
+    fun minutes(): Figure {
+        val minutes = (set.durationSec ?: 0) / 60
+        return Figure(
+            FigureKind.MINUTES, minutes.toString(), "min", "minutes",
+            set.copy(durationSec = (minutes - DURATION_STEP_MINUTES).coerceAtLeast(0) * 60),
+            set.copy(durationSec = (minutes + DURATION_STEP_MINUTES) * 60),
         )
-        Spacer(Modifier.height(10.dp))
-
-        OutlinedTextField(
-            shape = MaterialTheme.shapes.small,
-            value = publicNote,
-            onValueChange = { publicNote = it.take(PUBLIC_NOTE_CAP) },
-            minLines = 2,
-            label = {
-                FieldLabel(
-                    icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.SystemGreen) },
-                    text = if (signedIn) "PUBLIC NOTE · every Ironbound in Tidings can read this" else "NOTE · shared with allies once you sign in",
-                    color = IronvellumColors.SystemGreen,
-                )
-            },
-            placeholder = { Text("How did the trial go? Share it…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
-            trailingIcon = { CharCounter(publicNote.length, PUBLIC_NOTE_CAP, IronvellumColors.SystemGreen) },
-            colors = fieldColors(accent = IronvellumColors.SystemGreen, focusedBorder = NOTE_FOCUS, unfocusedBorder = NOTE_REST),
-            modifier = Modifier
-                .fillMaxWidth()
-                .onFocusChanged { if (!it.isFocused) viewModel.setSessionNote(publicNote.trim()) },
+    }
+    return when (metric) {
+        ExerciseMetric.REPS -> listOf(
+            load(),
+            Figure(
+                FigureKind.REPS, set.reps.toString(), "reps", "reps",
+                set.copy(reps = (set.reps - 1).coerceAtLeast(0)),
+                set.copy(reps = set.reps + 1),
+            ),
         )
-        Spacer(Modifier.height(10.dp))
-
-        OutlinedTextField(
-            shape = MaterialTheme.shapes.small,
-            value = privateNote,
-            onValueChange = { privateNote = it.take(WireLimits.PRIVATE_NOTE_MAX) },
-            minLines = 2,
-            label = {
-                FieldLabel(
-                    icon = { Icon(Icons.Outlined.Lock, null, Modifier.size(14.dp), tint = IronvellumColors.InkMuted) },
-                    text = "PRIVATE NOTE · never leaves this device",
-                    color = IronvellumColors.InkMuted,
-                )
-            },
-            placeholder = { Text("For your eyes only…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
-            colors = fieldColors(accent = IronvellumColors.InkMuted, focusedBorder = NOTE_FOCUS, unfocusedBorder = NOTE_REST),
-            modifier = Modifier
-                .fillMaxWidth()
-                .onFocusChanged { if (!it.isFocused) viewModel.setSessionPrivateNote(privateNote) },
+        // A hold steps in 5s: tapping + fifty-nine times to reach a minute is
+        // not an input method. Its figure is seconds, kept in durationSec.
+        ExerciseMetric.HOLD -> {
+            val seconds = set.durationSec ?: 0
+            listOf(
+                load(),
+                Figure(
+                    FigureKind.SECONDS, seconds.toString(), "sec", "seconds",
+                    set.copy(durationSec = (seconds - HOLD_STEP_SECONDS).coerceAtLeast(0)),
+                    set.copy(durationSec = seconds + HOLD_STEP_SECONDS),
+                ),
+            )
+        }
+        // ActivityScore pays a load bonus here, so Weighted Skipping keeps its
+        // load; plain Yoga does not.
+        ExerciseMetric.DURATION -> listOfNotNull(if (weighted) load() else null, minutes())
+        // ActivityScore ignores weight for this metric, so no load sits there dead.
+        ExerciseMetric.DISTANCE_TIME -> {
+            val km = (set.distanceM ?: 0.0) / 1000.0
+            listOf(
+                Figure(
+                    FigureKind.KM, formatBodyValue(km), "km", "distance",
+                    set.copy(distanceM = (km - DISTANCE_STEP_KM).coerceAtLeast(0.0) * 1000.0),
+                    set.copy(distanceM = (km + DISTANCE_STEP_KM) * 1000.0),
+                ),
+                minutes(),
+            )
+        }
+        // The attempt count rides the reps column, as ActivityScore reads it;
+        // the grade is typed in its own field beside it.
+        ExerciseMetric.ATTEMPTS_GRADE -> listOf(
+            Figure(
+                FigureKind.ATTEMPTS, set.reps.toString(), "attempts", "attempts",
+                set.copy(reps = (set.reps - 1).coerceAtLeast(0)),
+                set.copy(reps = set.reps + 1),
+            ),
         )
     }
 }
 
-/** One border pair for the three NAME & NOTES fields; only the label and icon say which is which. */
-private val NOTE_FOCUS = IronvellumColors.SystemGreen
-private val NOTE_REST = IronvellumColors.Rune
+private fun SessionSet.typedFigure(kind: FigureKind): Int = when (kind) {
+    FigureKind.REPS, FigureKind.ATTEMPTS -> reps
+    FigureKind.SECONDS -> durationSec ?: 0
+    FigureKind.MINUTES -> (durationSec ?: 0) / 60
+    FigureKind.LOAD, FigureKind.KM -> 0
+}
+
+private fun SessionSet.withTypedFigure(kind: FigureKind, n: Int): SessionSet = when (kind) {
+    FigureKind.REPS, FigureKind.ATTEMPTS -> copy(reps = n)
+    FigureKind.SECONDS -> copy(durationSec = n)
+    FigureKind.MINUTES -> copy(durationSec = n * 60)
+    FigureKind.LOAD, FigureKind.KM -> this
+}
+
+private fun FigureKind.typable(): Boolean = this != FigureKind.KM
+
+/** "10 kg", or "BW" for a bodyweight set. */
+private fun kgLabel(kg: Double?): String = kg?.takeIf { it > 0.0 }?.let { "${formatLoadKg(it)} kg" } ?: "BW"
+
+/** A set as its row reads: "10 kg × 6". */
+private fun setFigureText(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): String = when (metric) {
+    ExerciseMetric.REPS -> "${kgLabel(set.weightKg)} × ${set.reps}"
+    ExerciseMetric.HOLD -> "${kgLabel(set.weightKg)} × ${set.durationSec ?: 0}s"
+    ExerciseMetric.DURATION ->
+        "${(set.durationSec ?: 0) / 60} min" +
+            if (weighted && (set.weightKg ?: 0.0) > 0.0) " · ${kgLabel(set.weightKg)}" else ""
+    ExerciseMetric.DISTANCE_TIME ->
+        "${formatBodyValue((set.distanceM ?: 0.0) / 1000.0)} km · ${(set.durationSec ?: 0) / 60} min"
+    ExerciseMetric.ATTEMPTS_GRADE ->
+        "${set.reps} ${plural(set.reps, "attempt", "attempts")}" +
+            (set.grade?.takeIf { it.isNotBlank() }?.let { " · $it" } ?: "")
+}
+
+/** The reference line's figure: "6 × 7.5 kg". */
+private fun repsAtLoad(figure: Int, kg: Double?, hold: Boolean): String =
+    "$figure${if (hold) "s" else ""} × ${kgLabel(kg)}"
+
+/**
+ * "Last 6 × 7.5 kg · Peak 6 × 10 kg", the peak in gold. Last is the top set of
+ * the last sealed trial, Peak the best set at any position; both are known
+ * before the set is logged, which is when they are useful.
+ */
+private fun referenceLine(
+    exercise: Exercise?,
+    metric: ExerciseMetric,
+    last: LastLogged?,
+    peak: SetRecords.Record?,
+): AnnotatedString? {
+    val hold = metric == ExerciseMetric.HOLD
+    val lastText = last?.let {
+        if (metric.isStrength) repsAtLoad(if (hold) it.durationSec ?: it.reps else it.reps, it.weightKg, hold)
+        else exercise?.let { e -> lastLoggedFigure(it, e) }
+    }
+    val peakText = peak?.takeIf { metric.isStrength }?.let { repsAtLoad(it.reps, it.weightKg, hold) }
+    if (lastText == null && peakText == null) return null
+    return buildAnnotatedString {
+        if (lastText != null) append("Last $lastText")
+        if (lastText != null && peakText != null) append(" · ")
+        if (peakText != null) {
+            append("Peak ")
+            withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append(peakText) }
+        }
+    }
+}
+
+/**
+ * The logged sets that beat their position's record and today's earlier sets:
+ * a PEAK must also beat this exercise's earlier done sets today, or a repeat
+ * of set 2 as set 3 reads NEW PEAK twice. Activity work never scores strength.
+ */
+private fun newPeakSetIds(
+    sets: List<SessionSet>,
+    metric: ExerciseMetric,
+    records: Map<Pair<String, Int>, SetRecords.Record>,
+    bodyweight: Double?,
+): Set<Long> {
+    val bw = bodyweight?.takeIf { metric.isStrength } ?: return emptySet()
+    val hold = metric == ExerciseMetric.HOLD
+    fun figure(set: SessionSet) = if (hold) set.durationSec ?: 0 else set.reps
+    return sets.filter { it.done }.filter { set ->
+        val bestEarlier = sets.filter { it.done && it.setIndex < set.setIndex }.maxOfOrNull { earlier ->
+            SetRecords.score(earlier.exerciseName, figure(earlier), earlier.weightKg, bw, hold)
+        }
+        SetRecords.delta(
+            records, set.exerciseName, set.setIndex, figure(set), set.weightKg, bw,
+            isHold = hold,
+            bestEarlierThisWorkout = bestEarlier,
+        ).isRecord
+    }.map { it.id }.toSet()
+}
+
+/** A folded exercise's second line, by how far along it is. */
+private fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: Boolean): String {
+    val done = block.sets.filter { it.done }
+    val total = block.sets.size
+    val first = block.first
+    return when {
+        done.size == total -> {
+            // Best by load then reps; an activity's best is its longest figure.
+            val best = if (metric.isStrength) {
+                done.maxWith(compareBy<SessionSet>({ it.weightKg ?: 0.0 }, { if (metric == ExerciseMetric.HOLD) it.durationSec ?: 0 else it.reps }))
+            } else {
+                done.maxBy { (it.durationSec ?: 0) + it.reps }
+            }
+            "$total/$total · best ${setFigureText(best, metric, weighted)}"
+        }
+        done.isNotEmpty() -> "${done.size}/$total ${plural(total, "set", "sets")}"
+        else -> when (metric) {
+            ExerciseMetric.REPS -> "$total × ${first.reps}" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${formatLoadKg(it)} kg" } ?: "")
+            ExerciseMetric.HOLD -> "$total × ${first.durationSec ?: 0}s" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${formatLoadKg(it)} kg" } ?: "")
+            ExerciseMetric.DURATION -> "$total × ${(first.durationSec ?: 0) / 60} min"
+            ExerciseMetric.DISTANCE_TIME, ExerciseMetric.ATTEMPTS_GRADE -> "$total ${plural(total, "set", "sets")}"
+        }
+    }
+}
+
+/**
+ * Title, the segmented progress and the clock. Leaving is free: the trial
+ * stays live, and Today / Train offer Resume. Abandon, and the trial's muscles,
+ * wait behind the overflow menu.
+ */
+@Composable
+private fun TrialHeader(
+    overline: String?,
+    done: Int,
+    total: Int,
+    minutesLeft: Int?,
+    startedAtMs: Long,
+    onBack: () -> Unit,
+    onMuscles: () -> Unit,
+    onAbandon: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 12.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f)) {
+                if (overline != null) {
+                    Text(
+                        overline,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IronvellumColors.InkMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                Text(
+                    "Trial in progress",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = IronvellumColors.Ink,
+                )
+            }
+            NavChip(
+                "BACK",
+                Icons.AutoMirrored.Filled.ArrowBack,
+                onClick = onBack,
+                modifier = Modifier.semantics { onClick(label = "Leave, the trial keeps running", action = null) },
+            )
+            var menuOpen by remember { mutableStateOf(false) }
+            Box {
+                IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "More options", tint = IronvellumColors.InkMuted)
+                }
+                DropdownMenu(
+                    expanded = menuOpen,
+                    onDismissRequest = { menuOpen = false },
+                    shape = MaterialTheme.shapes.small,
+                    containerColor = IronvellumColors.VaultHigh,
+                ) {
+                    DropdownMenuItem(
+                        text = { Text("Muscles worked", color = IronvellumColors.Ink) },
+                        onClick = {
+                            menuOpen = false
+                            onMuscles()
+                        },
+                    )
+                    DropdownMenuItem(
+                        text = { Text("Abandon trial", color = IronvellumColors.DangerRed) },
+                        onClick = {
+                            menuOpen = false
+                            onAbandon()
+                        },
+                    )
+                }
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        // One straight segment per set, a 3dp gap between; logged ones are emerald.
+        Row(
+            Modifier.fillMaxWidth().height(3.dp).clearAndSetSemantics {},
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            if (total == 0) Box(Modifier.weight(1f).fillMaxHeight().background(IronvellumColors.Rune))
+            repeat(total) { index ->
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .background(if (index < done) IronvellumColors.Emerald else IronvellumColors.Rune),
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "$done / $total ${plural(total, "set", "sets")}",
+                style = MaterialTheme.typography.labelMedium,
+                color = IronvellumColors.InkMuted,
+            )
+            if (minutesLeft != null) {
+                Text(
+                    " · ~$minutesLeft min left",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
+            Spacer(Modifier.weight(1f))
+            SessionElapsed(startedAtMs)
+        }
+    }
+}
+
+/** The one exercise being worked: its figures, then its sets. The only boxed thing on the screen. */
+@Composable
+private fun OpenExerciseCard(
+    block: TrialBlock,
+    metric: ExerciseMetric,
+    weighted: Boolean,
+    reference: AnnotatedString?,
+    reason: String?,
+    modifiersEditable: Boolean,
+    activeSetId: Long?,
+    editingSetId: Long?,
+    newPeaks: Set<Long>,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean,
+    onInfo: () -> Unit,
+    onEditModifiers: () -> Unit,
+    onMove: (up: Boolean) -> Unit,
+    onEditLoad: (() -> Unit)?,
+    onAddSet: () -> Unit,
+    onRemoveSet: (SessionSet) -> Unit,
+    onRemoveExercise: () -> Unit,
+    onEdit: (SessionSet) -> Unit,
+    onTypeLoad: (SessionSet) -> Unit,
+    onTypeFigure: (SessionSet, FigureKind) -> Unit,
+    onToggleEdit: (SessionSet) -> Unit,
+    onUnlog: (SessionSet) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val first = block.first
+    val shape = MaterialTheme.shapes.small
+    Column(
+        modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(IronvellumColors.Vault)
+            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
+            .padding(vertical = 8.dp),
+    ) {
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+            // The name and a small (i) are one 44dp target opening the
+            // exercise's info. The glyph sits inline, not in a 48dp
+            // IconButton, so the name keeps its width at 360dp.
+            val infoLabel = "About ${first.exerciseName}"
+            Row(
+                Modifier
+                    .weight(1f)
+                    .heightIn(min = 44.dp)
+                    .clickable(onClickLabel = infoLabel, onClick = onInfo)
+                    .semantics {
+                        contentDescription = infoLabel
+                        role = Role.Button
+                    },
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    first.exerciseName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = IronvellumColors.Ink,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                Icon(
+                    Icons.Outlined.Info,
+                    contentDescription = null,
+                    tint = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(start = 4.dp).size(18.dp),
+                )
+            }
+            ExerciseMenu(
+                name = first.exerciseName,
+                onMoveUp = if (canMoveUp) ({ onMove(true) }) else null,
+                onMoveDown = if (canMoveDown) ({ onMove(false) }) else null,
+                onModifiers = if (modifiersEditable) onEditModifiers else null,
+                onEditLoad = onEditLoad,
+                onAddSet = onAddSet,
+                // Only a set not yet logged: removing a logged one loses its log.
+                onRemoveLastSet = block.sets.last().takeIf { block.sets.size > 1 && !it.done }?.let { last -> { onRemoveSet(last) } },
+                onRemoveExercise = onRemoveExercise,
+            )
+        }
+        Column(Modifier.padding(horizontal = 16.dp)) {
+            if (reference != null) {
+                Text(
+                    reference,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
+            // Only real modifiers get a line.
+            if (first.modifiers.isNotBlank()) {
+                Text(
+                    first.modifiers.split(",").joinToString(" · ") { it.trim() },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.SystemGreen,
+                    modifier = Modifier
+                        .clickable(enabled = modifiersEditable, onClick = onEditModifiers)
+                        .padding(vertical = 2.dp),
+                )
+            }
+            // Why the load moved, so a deload or a step up is never a
+            // surprise: only where the engine changed the prescription.
+            if (reason != null) {
+                Text(
+                    reason,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+        Spacer(Modifier.height(8.dp))
+        block.sets.forEach { set ->
+            key(set.id) {
+                val state = when {
+                    set.done && set.id == editingSetId -> RowState.EDITING
+                    set.done -> RowState.DONE
+                    set.id == activeSetId -> RowState.ACTIVE
+                    else -> RowState.UPCOMING
+                }
+                TrialSetRow(
+                    set = set,
+                    metric = metric,
+                    weighted = weighted,
+                    state = state,
+                    newPeak = set.id in newPeaks,
+                    onEdit = onEdit,
+                    onTypeLoad = { onTypeLoad(set) },
+                    onTypeFigure = { kind -> onTypeFigure(set, kind) },
+                    onToggleEdit = { onToggleEdit(set) },
+                    onUnlog = { onUnlog(set) },
+                    onRemove = { onRemoveSet(set) },
+                )
+            }
+        }
+    }
+}
+
+/** Reorder, tune, add and remove: the exercise's own actions, behind one small menu. */
+@Composable
+private fun ExerciseMenu(
+    name: String,
+    onMoveUp: (() -> Unit)?,
+    onMoveDown: (() -> Unit)?,
+    onModifiers: (() -> Unit)?,
+    onEditLoad: (() -> Unit)?,
+    onAddSet: () -> Unit,
+    onRemoveLastSet: (() -> Unit)?,
+    onRemoveExercise: () -> Unit,
+) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { open = true }, modifier = Modifier.size(48.dp)) {
+            Icon(Icons.Filled.MoreVert, contentDescription = "More for $name", tint = IronvellumColors.InkMuted)
+        }
+        DropdownMenu(
+            expanded = open,
+            onDismissRequest = { open = false },
+            shape = MaterialTheme.shapes.small,
+            containerColor = IronvellumColors.VaultHigh,
+        ) {
+            @Composable
+            fun item(label: String, color: Color = IronvellumColors.Ink, action: () -> Unit) {
+                DropdownMenuItem(
+                    text = { Text(label, color = color) },
+                    onClick = {
+                        open = false
+                        action()
+                    },
+                )
+            }
+            item("Add set", action = onAddSet)
+            onEditLoad?.let { item("Edit load", action = it) }
+            onModifiers?.let { item("Edit modifiers", action = it) }
+            onMoveUp?.let { item("Move up", action = it) }
+            onMoveDown?.let { item("Move down", action = it) }
+            onRemoveLastSet?.let { item("Remove last set", action = it) }
+            item("Remove exercise", IronvellumColors.DangerRed, onRemoveExercise)
+        }
+    }
+}
+
+/**
+ * One set of the open card. A logged set is a muted line (tap it to edit or
+ * un-log); the next set is the active row, with its steppers on one line and a
+ * thin emerald bar; the rest wait, dimmer. Nothing here is boxed.
+ */
+@Composable
+private fun TrialSetRow(
+    set: SessionSet,
+    metric: ExerciseMetric,
+    weighted: Boolean,
+    state: RowState,
+    newPeak: Boolean,
+    onEdit: (SessionSet) -> Unit,
+    onTypeLoad: () -> Unit,
+    onTypeFigure: (FigureKind) -> Unit,
+    onToggleEdit: () -> Unit,
+    onUnlog: () -> Unit,
+    onRemove: () -> Unit,
+) {
+    val number = set.setIndex + 1
+    if (state == RowState.ACTIVE || state == RowState.EDITING) {
+        val figures = figuresFor(set, metric, weighted)
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .background(IronvellumColors.Ink.copy(alpha = 0.04f))
+                .drawBehind { drawRect(IronvellumColors.Emerald, size = Size(2.dp.toPx(), size.height)) }
+                .padding(vertical = 4.dp),
+        ) {
+            Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    "$number",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.Ink,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.width(22.dp),
+                )
+                figures.forEach { figure ->
+                    FigureStepper(
+                        figure = figure,
+                        onEdit = onEdit,
+                        onType = when {
+                            figure.kind == FigureKind.LOAD -> onTypeLoad
+                            figure.kind.typable() -> ({ onTypeFigure(figure.kind) })
+                            else -> null
+                        },
+                        modifier = Modifier.weight(if (figure.kind == FigureKind.LOAD) 1.2f else 1f),
+                    )
+                }
+                if (metric == ExerciseMetric.ATTEMPTS_GRADE) {
+                    GradeField(
+                        value = set.grade.orEmpty(),
+                        // Capped at the server's ceiling here so a long entry
+                        // cannot be typed at all, not truncated after the fact.
+                        onChange = { onEdit(set.copy(grade = it.take(WireLimits.GRADE_MAX))) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+            }
+            if (state == RowState.EDITING) {
+                Row(Modifier.fillMaxWidth().padding(start = 22.dp), verticalAlignment = Alignment.CenterVertically) {
+                    RowAction("Un-log", IronvellumColors.Ink, onUnlog)
+                    RowAction("Remove", IronvellumColors.DangerRed, onRemove)
+                    Spacer(Modifier.weight(1f))
+                    RowAction("Close", IronvellumColors.InkMuted, onToggleEdit)
+                }
+            }
+        }
+        return
+    }
+    val done = state == RowState.DONE
+    val tone = if (done) IronvellumColors.InkMuted else IronvellumColors.InkMuted.copy(alpha = 0.7f)
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .then(if (done) Modifier.clickable(onClickLabel = "Edit set $number", onClick = onToggleEdit) else Modifier)
+            .heightIn(min = if (done) 48.dp else 44.dp)
+            .padding(horizontal = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            if (done) "✓" else "",
+            style = MaterialTheme.typography.bodyMedium,
+            fontFamily = ChakraPetch,
+            color = tone,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(18.dp),
+        )
+        Text(
+            "$number",
+            style = MaterialTheme.typography.bodySmall,
+            fontFamily = ChakraPetch,
+            color = tone,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(start = 6.dp).width(22.dp),
+        )
+        Text(
+            setFigureText(set, metric, weighted),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.SemiBold,
+            color = tone,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f).padding(start = 8.dp),
+        )
+        if (newPeak) {
+            // A tag, not a control: small gold text, never boxed, never tappable.
+            Icon(
+                Icons.Filled.Bolt,
+                contentDescription = null,
+                tint = IronvellumColors.SovereignGold,
+                modifier = Modifier.size(11.dp),
+            )
+            Spacer(Modifier.width(3.dp))
+            Text(
+                "NEW PEAK",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.SemiBold,
+                color = IronvellumColors.SovereignGold,
+            )
+        }
+    }
+}
+
+/** − number +, plain glyphs on 44dp targets; tapping the number types it. */
+@Composable
+private fun FigureStepper(
+    figure: Figure,
+    onEdit: (SessionSet) -> Unit,
+    onType: (() -> Unit)?,
+    modifier: Modifier = Modifier,
+) {
+    Row(modifier, verticalAlignment = Alignment.CenterVertically) {
+        StepButton("−", "Decrease ${figure.what}") { onEdit(figure.minus) }
+        Column(
+            Modifier
+                .weight(1f)
+                .heightIn(min = 48.dp)
+                .then(
+                    if (onType != null) {
+                        Modifier.clickable(onClickLabel = "Type ${figure.what}", role = Role.Button, onClick = onType)
+                    } else {
+                        Modifier
+                    },
+                ),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                figure.value,
+                style = MaterialTheme.typography.titleLarge,
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                // A five-character figure ("102.5") steps down so it fits between the glyphs.
+                fontSize = if (figure.value.length >= 5) 18.sp else 22.sp,
+                color = IronvellumColors.Ink,
+                maxLines = 1,
+                softWrap = false,
+            )
+            if (figure.unit.isNotEmpty()) {
+                Text(figure.unit, style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = IronvellumColors.InkMuted)
+            }
+        }
+        StepButton("+", "Increase ${figure.what}") { onEdit(figure.plus) }
+    }
+}
+
+@Composable
+private fun StepButton(symbol: String, description: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(width = 44.dp, height = 48.dp)
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                role = Role.Button,
+                onClick = onClick,
+            )
+            .semantics { contentDescription = description },
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            symbol,
+            style = MaterialTheme.typography.titleLarge,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.clearAndSetSemantics {},
+        )
+    }
+}
+
+/** A bouldering grade is typed text, not a count; it sits on a single rule, not in a box. */
+@Composable
+private fun GradeField(value: String, onChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    Column(modifier.padding(horizontal = 8.dp)) {
+        BasicTextField(
+            value = value,
+            onValueChange = onChange,
+            singleLine = true,
+            textStyle = MaterialTheme.typography.titleMedium.copy(
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                color = IronvellumColors.Ink,
+            ),
+            cursorBrush = SolidColor(IronvellumColors.Ink),
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Grade" },
+            decorationBox = { field ->
+                Box(Modifier.heightIn(min = 46.dp), contentAlignment = Alignment.CenterStart) {
+                    if (value.isEmpty()) {
+                        Text("V5", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                    }
+                    field()
+                }
+            },
+        )
+        Box(Modifier.fillMaxWidth().height(1.dp).background(IronvellumColors.Rune))
+    }
+}
+
+@Composable
+private fun RowAction(label: String, color: Color, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .heightIn(min = 48.dp)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = color)
+    }
+}
+
+/**
+ * An exercise that is not open, on one line: how far along it is says it all.
+ * Not started shows its prescription, partly done "1/3 sets" and a tiny bar,
+ * complete a small emerald tick and its best set. Tapping opens it.
+ */
+@Composable
+private fun FoldedExerciseRow(
+    name: String,
+    subline: String,
+    done: Int,
+    total: Int,
+    onOpen: () -> Unit,
+) {
+    val complete = total > 0 && done == total
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 60.dp)
+            .clickable(onClickLabel = "Open $name", onClick = onOpen)
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(Modifier.width(28.dp)) {
+            if (complete) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = IronvellumColors.Emerald,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+        }
+        Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+            Text(
+                name,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = if (complete) IronvellumColors.InkMuted else IronvellumColors.Ink,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                subline,
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (done in 1 until total) {
+            Row(Modifier.padding(end = 12.dp), horizontalArrangement = Arrangement.spacedBy(2.dp)) {
+                repeat(total.coerceAtMost(MINI_BAR_SEGMENTS)) { index ->
+                    Box(
+                        Modifier
+                            .size(width = 10.dp, height = 3.dp)
+                            .background(if (index < done) IronvellumColors.Emerald else IronvellumColors.Rune),
+                    )
+                }
+            }
+        }
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = IronvellumColors.InkMuted,
+            modifier = Modifier.size(20.dp),
+        )
+    }
+}
+
+/** A folded exercise's bar stops growing here; a long block just reads as a long bar. */
+private const val MINI_BAR_SEGMENTS = 8
+
+/** A straight 1dp rule between folded rows, inset to the text. */
+@Composable
+private fun FolderRule() {
+    Box(Modifier.fillMaxWidth().padding(start = 32.dp).height(1.dp).background(IronvellumColors.Rune))
+}
+
+/**
+ * The ways to add to the trial: another exercise, a name, a note. Rows, not
+ * fields: each opens its own entry, and shows what is set.
+ */
+@Composable
+private fun TrialEndRows(
+    nameValue: String,
+    nameSet: Boolean,
+    noteValue: String?,
+    onAddExercise: () -> Unit,
+    onName: () -> Unit,
+    onNote: () -> Unit,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        FolderRuleFull()
+        EndRow(Icons.Filled.Add, "Add exercise", null, false, onAddExercise)
+        FolderRuleFull()
+        EndRow(Icons.Outlined.Edit, "Name this trial", nameValue, nameSet, onName)
+        FolderRuleFull()
+        EndRow(Icons.Outlined.EditNote, "Add a note", noteValue ?: "Public or private", noteValue != null, onNote)
+        FolderRuleFull()
+    }
+}
+
+@Composable
+private fun FolderRuleFull() {
+    Box(Modifier.fillMaxWidth().height(1.dp).background(IronvellumColors.Rune))
+}
+
+@Composable
+private fun EndRow(icon: ImageVector, label: String, value: String?, valueSet: Boolean, onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 52.dp)
+            .clickable(onClick = onClick)
+            .padding(horizontal = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(icon, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(18.dp))
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+        if (value != null) {
+            Text(
+                value,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (valueSet) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.End,
+                modifier = Modifier.weight(1f),
+            )
+        }
+    }
+}
+
+/**
+ * The docked bar, on raised paper with a top rule. One slot, three states, all
+ * the same height so nothing moves when it changes: the rest while one runs,
+ * the next set when ready, slide to seal once every set is logged.
+ */
+@Composable
+private fun TrialFooter(
+    allLogged: Boolean,
+    rest: RestTimer?,
+    nextSetNumber: Int?,
+    nextLine: String?,
+    onLog: () -> Unit,
+    onExtend: () -> Unit,
+    onSkip: () -> Unit,
+    onSealed: () -> Unit,
+    slideReset: Int,
+) {
+    val now = restNow(rest)
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .height(FOOTER_HEIGHT)
+            .background(IronvellumColors.VaultHigh)
+            .drawBehind { drawRect(IronvellumColors.Rune, size = Size(size.width, 1.dp.toPx())) }
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        when {
+            allLogged -> SlideToSeal(label = "Slide to seal", onSealed = onSealed, resetKey = slideReset)
+            rest != null && !rest.isOver(now) -> RestStrip(rest, now, nextSetNumber, onExtend, onSkip)
+            nextLine != null && nextSetNumber != null -> NextSetStrip(nextSetNumber, nextLine, onLog)
+            // No sets at all: an open trial that has not begun. Nothing to log or seal yet.
+            else -> SlideToSeal(label = "Log a set to seal the trial", onSealed = onSealed, enabled = false)
+        }
+    }
+}
+
+/** The rest between sets, counting down, with its two moves: a little more, or none at all. */
+@Composable
+private fun RestStrip(timer: RestTimer, now: Long, nextSetNumber: Int?, onExtend: () -> Unit, onSkip: () -> Unit) {
+    Column(Modifier.fillMaxSize()) {
+        Row(Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                timer.label(now),
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                fontSize = 28.sp,
+                color = IronvellumColors.Ink,
+                maxLines = 1,
+            )
+            Text(
+                if (nextSetNumber != null) "REST · SET $nextSetNumber NEXT" else "REST",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                letterSpacing = IronvellumTracking.InlineLabel,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).padding(start = 12.dp),
+            )
+            FooterAction("+${RestTimer.EXTEND_SECONDS}", IronvellumColors.Ink, onExtend)
+            FooterAction("Skip", IronvellumColors.InkMuted, onSkip)
+        }
+        // The sweep: what is left of the rest.
+        val left = (timer.remainingMs(now).toFloat() / timer.totalMs.coerceAtLeast(1L)).coerceIn(0f, 1f)
+        Box(Modifier.fillMaxWidth().height(3.dp).background(IronvellumColors.Rune)) {
+            Box(Modifier.fillMaxWidth(left).fillMaxHeight().background(IronvellumColors.InkMuted))
+        }
+    }
+}
+
+@Composable
+private fun FooterAction(label: String, color: Color, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .defaultMinSize(minWidth = 48.dp)
+            .fillMaxHeight()
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 8.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = color)
+    }
+}
+
+/** What is next, and the one emerald control: tick the set. Reads as a row you tick, not a slab. */
+@Composable
+private fun NextSetStrip(setNumber: Int, line: String, onLog: () -> Unit) {
+    Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                "NEXT",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            )
+            Text(
+                line,
+                style = MaterialTheme.typography.bodyLarge,
+                color = IronvellumColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Box(
+            Modifier
+                .size(52.dp)
+                .clip(MaterialTheme.shapes.small)
+                .background(IronvellumColors.Emerald)
+                .clickable(role = Role.Button, onClick = onLog)
+                .semantics { contentDescription = "Log set $setNumber" },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.Check, contentDescription = null, tint = IronvellumColors.Abyss, modifier = Modifier.size(26.dp))
+        }
+    }
+}
+
+/** The clock of the rest in the footer: ticks while one runs, and only then. */
+@Composable
+private fun restNow(timer: RestTimer?): Long {
+    var now by remember(timer) { mutableLongStateOf(SystemClock.elapsedRealtime()) }
+    LaunchedEffect(timer) {
+        while (timer != null && !timer.isOver(now)) {
+            delay(250)
+            now = SystemClock.elapsedRealtime()
+        }
+    }
+    return now
+}
+
+/** "Set 2 logged" and the way back, over the footer for a few seconds. */
+@Composable
+private fun UndoBar(prompt: UndoPrompt, onUndo: () -> Unit, modifier: Modifier = Modifier) {
+    val shape = MaterialTheme.shapes.small
+    Row(
+        modifier
+            .fillMaxWidth()
+            .clip(shape)
+            .background(IronvellumColors.VaultHigh)
+            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
+            .semantics { liveRegion = LiveRegionMode.Polite }
+            .padding(start = 16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            "Set ${prompt.setNumber} logged",
+            style = MaterialTheme.typography.bodyMedium,
+            color = IronvellumColors.Ink,
+            modifier = Modifier.weight(1f),
+        )
+        Box(
+            Modifier
+                .defaultMinSize(minWidth = 72.dp)
+                .heightIn(min = 48.dp)
+                .clickable(role = Role.Button, onClick = onUndo)
+                .padding(horizontal = 16.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text("Undo", style = MaterialTheme.typography.labelLarge, color = IronvellumColors.SystemGreen)
+        }
+    }
+}
+
+/** Typed reps, seconds, minutes or attempts: the stepper's number, exactly. */
+@Composable
+private fun FigureEntryDialog(
+    set: SessionSet,
+    kind: FigureKind,
+    onApply: (Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    val initial = set.typedFigure(kind).toString()
+    var field by remember(set.id, kind) { mutableStateOf(TextFieldValue(initial, TextRange(0, initial.length))) }
+    val parsed = field.text.toIntOrNull()?.takeIf { it in 0..FIGURE_INPUT_MAX }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(set.id, kind) { focus.requestFocus() }
+    AlertDialog(
+        shape = MaterialTheme.shapes.medium,
+        containerColor = Color(0xFF0D1110),
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text(
+                    set.exerciseName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = IronvellumColors.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    "Set ${set.setIndex + 1}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
+        },
+        text = {
+            OutlinedTextField(
+                shape = MaterialTheme.shapes.small,
+                value = field,
+                onValueChange = { field = it.copy(text = it.text.filter(Char::isDigit).take(4)) },
+                singleLine = true,
+                label = {
+                    Text(
+                        when (kind) {
+                            FigureKind.SECONDS -> "Seconds"
+                            FigureKind.MINUTES -> "Minutes"
+                            FigureKind.ATTEMPTS -> "Attempts"
+                            else -> "Reps"
+                        },
+                    )
+                },
+                isError = parsed == null,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                colors = fieldColors(accent = IronvellumColors.SystemGreen),
+                modifier = Modifier.fillMaxWidth().focusRequester(focus),
+            )
+        },
+        confirmButton = {
+            IronvellumButton("Save", enabled = parsed != null, onClick = { parsed?.let(onApply) })
+        },
+    )
+}
+
+/**
+ * Names this trial, never the rite it came from. Shown in Tidings once sealed,
+ * so a blank name falls back to the rite's own. Saved on Save, trimmed.
+ */
+@Composable
+private fun TrialNameDialog(
+    current: String,
+    signedIn: Boolean,
+    hint: String,
+    onSave: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var draft by rememberSaveable { mutableStateOf(current) }
+    AlertDialog(
+        shape = MaterialTheme.shapes.medium,
+        containerColor = Color(0xFF0D1110),
+        onDismissRequest = onDismiss,
+        title = { Text("Name this trial") },
+        text = {
+            OutlinedTextField(
+                shape = MaterialTheme.shapes.small,
+                value = draft,
+                onValueChange = { draft = it.take(TITLE_CAP) },
+                singleLine = true,
+                label = {
+                    FieldLabel(
+                        icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.InkMuted) },
+                        text = if (signedIn) "Name · optional, shown in Tidings" else "Name · optional",
+                        color = IronvellumColors.InkMuted,
+                    )
+                },
+                placeholder = { Text(hint, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
+                trailingIcon = { CharCounter(draft.length, TITLE_CAP, IronvellumColors.SystemGreen) },
+                colors = fieldColors(accent = IronvellumColors.SystemGreen, unfocusedBorder = IronvellumColors.Rune),
+                modifier = Modifier.fillMaxWidth(),
+            )
+        },
+        confirmButton = { IronvellumButton("Save", onClick = { onSave(draft.trim()) }) },
+        dismissButton = { IronvellumButton("Cancel", quiet = true, onClick = onDismiss) },
+    )
+}
+
+/**
+ * The public note, which every Ironbound in Tidings can read, and the private
+ * one, which never leaves the device. The private note is saved as typed.
+ */
+@Composable
+private fun TrialNoteDialog(
+    publicNote: String,
+    privateNote: String,
+    signedIn: Boolean,
+    onSave: (publicNote: String, privateNote: String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var pub by rememberSaveable { mutableStateOf(publicNote) }
+    var priv by rememberSaveable { mutableStateOf(privateNote) }
+    AlertDialog(
+        shape = MaterialTheme.shapes.medium,
+        containerColor = Color(0xFF0D1110),
+        onDismissRequest = onDismiss,
+        title = { Text("Add a note") },
+        text = {
+            Column(Modifier.verticalScroll(rememberScrollState())) {
+                OutlinedTextField(
+                    shape = MaterialTheme.shapes.small,
+                    value = pub,
+                    onValueChange = { pub = it.take(PUBLIC_NOTE_CAP) },
+                    minLines = 2,
+                    label = {
+                        FieldLabel(
+                            icon = { Icon(Icons.Outlined.Public, null, Modifier.size(14.dp), tint = IronvellumColors.SystemGreen) },
+                            text = if (signedIn) "Public note · every Ironbound in Tidings can read this" else "Note · shared with allies once you sign in",
+                            color = IronvellumColors.SystemGreen,
+                        )
+                    },
+                    placeholder = { Text("How did the trial go? Share it…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
+                    trailingIcon = { CharCounter(pub.length, PUBLIC_NOTE_CAP, IronvellumColors.SystemGreen) },
+                    colors = fieldColors(accent = IronvellumColors.SystemGreen, unfocusedBorder = IronvellumColors.Rune),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(10.dp))
+                OutlinedTextField(
+                    shape = MaterialTheme.shapes.small,
+                    value = priv,
+                    onValueChange = { priv = it.take(WireLimits.PRIVATE_NOTE_MAX) },
+                    minLines = 2,
+                    label = {
+                        FieldLabel(
+                            icon = { Icon(Icons.Outlined.Lock, null, Modifier.size(14.dp), tint = IronvellumColors.InkMuted) },
+                            text = "Private note · never leaves this device",
+                            color = IronvellumColors.InkMuted,
+                        )
+                    },
+                    placeholder = { Text("For your eyes only…", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted) },
+                    colors = fieldColors(accent = IronvellumColors.InkMuted, focusedBorder = IronvellumColors.SystemGreen, unfocusedBorder = IronvellumColors.Rune),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = { IronvellumButton("Save", onClick = { onSave(pub.trim(), priv) }) },
+        dismissButton = { IronvellumButton("Cancel", quiet = true, onClick = onDismiss) },
+    )
+}
+
 
 @Composable
 private fun FieldLabel(
@@ -1878,39 +2917,6 @@ internal fun fieldColors(
  * the screen is started, and is its own composable so the tick recomposes
  * this text alone, not the whole session.
  */
-/**
- * The rest between sets, counting down under the trial's progress line, with
- * the two things a lifter does to it: a little more, or none at all. Hidden
- * the moment it runs out; the trial service buzzes for that.
- */
-@Composable
-private fun RestBar(timer: RestTimer, onExtend: () -> Unit, onSkip: () -> Unit) {
-    var now by remember { mutableLongStateOf(SystemClock.elapsedRealtime()) }
-    LaunchedEffect(timer) {
-        while (!timer.isOver(now)) {
-            delay(250)
-            now = SystemClock.elapsedRealtime()
-        }
-    }
-    if (timer.isOver(now)) return
-    Row(
-        Modifier.fillMaxWidth().padding(top = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(
-            "REST ${timer.label(now)}",
-            style = MaterialTheme.typography.titleSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.EmeraldBright,
-            letterSpacing = IronvellumTracking.InlineLabel,
-            modifier = Modifier.weight(1f),
-        )
-        IronvellumButton("+${RestTimer.EXTEND_SECONDS}s", onClick = onExtend, quiet = true)
-        IronvellumButton("Skip", onClick = onSkip, quiet = true)
-    }
-}
-
 @Composable
 private fun SessionElapsed(startedAtMs: Long) {
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -1925,10 +2931,10 @@ private fun SessionElapsed(startedAtMs: Long) {
     }
     Text(
         SessionClock.elapsedLabel(now - startedAtMs),
-        style = MaterialTheme.typography.titleMedium,
+        style = MaterialTheme.typography.titleSmall,
         fontFamily = ChakraPetch,
         fontWeight = FontWeight.Bold,
-        color = IronvellumColors.SovereignGold,
+        color = IronvellumColors.Ink,
         maxLines = 1,
     )
 }

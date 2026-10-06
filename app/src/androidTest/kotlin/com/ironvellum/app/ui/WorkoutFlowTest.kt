@@ -1,11 +1,12 @@
 package com.ironvellum.app.ui
 
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.hasClickAction
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -134,9 +135,12 @@ class WorkoutFlowTest {
             }.orEmpty()
         }
 
-    /** The set rows: each carries the checkbox role so TalkBack announces it. */
+    /**
+     * The footer's tick for the next set ("Log set 2"): it logs the open
+     * exercise's next set, and is the only control that logs one.
+     */
     private fun setRows() = compose.onAllNodes(
-        SemanticsMatcher.expectValue(SemanticsProperties.Role, Role.Checkbox),
+        hasContentDescription("Log set", substring = true),
         useUnmergedTree = true,
     )
 
@@ -165,7 +169,7 @@ class WorkoutFlowTest {
         compose.onAllNodesWithText(cta).onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
         settle()
-        awaitText("TRIAL IN PROGRESS")
+        awaitText("Trial in progress")
 
         val rows = setRows().fetchSemanticsNodes().size
         assertTrue("the seeded quest must offer sets to log", rows > 0)
@@ -183,20 +187,20 @@ class WorkoutFlowTest {
             conqueredCount(),
         )
 
-        // Invoke the button's own click action rather than a coordinate tap: it
-        // sits at the end of a long scrolling session, so a synthetic tap after
-        // scrolling lands on whatever moved under it. The wiring is the point.
-        compose.onAllNodesWithText("SEAL THE TRIAL").onFirst()
+        // Invoke the slider's own "Seal the trial" action rather than dragging
+        // it: it sits at the end of a long scrolling list, and the action is
+        // the same route a screen-reader user takes. The wiring is the point.
+        compose.onAllNodesWithContentDescription("Seal the trial").onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
-        // One logged set among many raises the unticked-sets confirm; seal
-        // through it. Exact "SEAL" exists only in that dialog - the trial
-        // screen's button reads SEAL THE TRIAL. The dialog composes a beat
-        // after the tap, so poll instead of assuming it is already there.
+        // One logged set among many raises the unlogged-sets confirm; seal
+        // through it. Exact "SEAL ANYWAY" exists only in that dialog. It
+        // composes a beat after the slide ends, so poll instead of assuming it
+        // is already there.
         var claimed = false
         repeat(30) {
-            val node = compose.onAllNodesWithText("SEAL").fetchSemanticsNodes().firstOrNull()
+            val node = compose.onAllNodesWithText("SEAL ANYWAY").fetchSemanticsNodes().firstOrNull()
             if (node != null) {
-                compose.onAllNodesWithText("SEAL").onFirst()
+                compose.onAllNodesWithText("SEAL ANYWAY").onFirst()
                     .performSemanticsAction(SemanticsActions.OnClick)
                 claimed = true
             }
@@ -204,7 +208,7 @@ class WorkoutFlowTest {
             compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
             Thread.sleep(POLL_MS)
         }
-        check(claimed) { "the unticked-sets confirm never composed; on screen: ${allText()}" }
+        check(claimed) { "the unlogged-sets confirm never composed; on screen: ${allText()}" }
         // Completion stacks celebrations: the victory screen, then one page per
         // award earned. Drain them by their own buttons.
         drainCelebrations()
@@ -218,10 +222,10 @@ class WorkoutFlowTest {
         )
     }
 
-    /** "0 / 17 sets conquered" -> 0 */
+    /** "0 / 17 sets" -> 0 */
     private fun conqueredCount(): Int {
-        val line = allText().firstOrNull { it.contains(" done") }
-            ?: error("the session screen must show the conquered count")
+        val line = allText().firstOrNull { it.matches(Regex("""\d+ / \d+ sets?""")) }
+            ?: error("the session screen must show the logged count")
         return line.substringBefore('/').trim().toInt()
     }
 

@@ -58,7 +58,7 @@ class PresetAutoFillTest {
         driver.awaitAnyText { it == "BEGIN HEAVY PULL" }
         val exercisesOnCard = driver.allText()
         driver.click("BEGIN HEAVY PULL")
-        driver.awaitText("TRIAL IN PROGRESS")
+        driver.awaitText("Trial in progress")
 
         // The session must carry the preset's own movements. Pull-up is the
         // first entry of Heavy Pull, so its absence means the copy did not
@@ -75,7 +75,7 @@ class PresetAutoFillTest {
 
         // Auto-filled sets are what the lifter then edits, so the session has
         // to arrive with set rows rather than an empty shell.
-        val conquered = driver.awaitAnyText { it.contains(" done") }
+        val conquered = driver.awaitAnyText { it.matches(Regex("""\d+ / \d+ sets?""")) }
         val total = conquered.substringAfter('/').trim().takeWhile { it.isDigit() }.toIntOrNull() ?: 0
         assertTrue("an auto-filled session must contain sets, saw \"$conquered\"", total > 0)
     }
