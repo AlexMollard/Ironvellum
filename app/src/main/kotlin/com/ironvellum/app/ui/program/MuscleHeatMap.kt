@@ -33,14 +33,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import kotlin.random.Random
 import com.ironvellum.app.domain.Muscle
 import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.InkStyle
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkBorder
 
@@ -357,66 +355,20 @@ internal fun DrawScope.drawFigure(
                     region.points.map { (x, y) -> g.toCanvas(view, x, y, side) },
                     IronvellumColors.SystemGreen,
                     2.5.dp.toPx(),
-                    seed,
                 )
             }
         }
     }
 
-    // The hand-drawn outline goes on last, in the app's one brush. The skin
-    // line is already smooth, so the ink follows its points as they are and
-    // the wander lives in the path rather than in straight chords.
-    inkOutline(outline, IronvellumColors.InkMuted, 1.4.dp.toPx(), seed)
+    // The outline goes on last. The skin line is already smooth, so it is
+    // stroked through its points as they are.
+    inkOutline(outline, IronvellumColors.InkMuted, 1.4.dp.toPx())
 }
 
-/**
- * [samples] (a closed curve) as ink: runs of about 26px, each stroked as one
- * path with its own weight and alpha, the joints between runs nudged
- * perpendicular to the line. The same wobble [inkStroke] gives a straight run,
- * but following the curve instead of cutting its corners.
- */
-private fun DrawScope.inkOutline(samples: List<Offset>, color: Color, widthPx: Float, seed: Int) {
+/** [samples] (a closed curve) stroked as one round-joined path. */
+private fun DrawScope.inkOutline(samples: List<Offset>, color: Color, widthPx: Float) {
     val closed = samples + samples.first()
-    if (!InkStyle.enabled) {
-        drawPath(Path().apply { moveTo(closed[0].x, closed[0].y); closed.drop(1).forEach { lineTo(it.x, it.y) } }, color, style = Stroke(widthPx, cap = StrokeCap.Round, join = StrokeJoin.Round))
-        return
-    }
-    val runs = ArrayList<IntRange>()
-    var start = 0
-    var length = 0f
-    for (i in 1 until closed.size) {
-        length += (closed[i] - closed[i - 1]).getDistance()
-        if (length >= 26f || i == closed.lastIndex) {
-            runs.add(start..i)
-            start = i
-            length = 0f
-        }
-    }
-    val rng = Random(seed)
-    val drift = (widthPx * 0.55f).coerceAtMost(1.6f)
-    val joints = FloatArray(runs.size + 1) { (rng.nextFloat() - 0.5f) * 2f * drift }
-    joints[runs.size] = joints[0]
-    runs.forEachIndexed { r, run ->
-        val weight = 0.5f + rng.nextFloat() * 0.5f
-        val path = Path()
-        for (i in run) {
-            val before = closed[maxOf(i - 1, 0)]
-            val after = closed[minOf(i + 1, closed.lastIndex)]
-            val dx = after.x - before.x
-            val dy = after.y - before.y
-            val len = kotlin.math.sqrt(dx * dx + dy * dy).coerceAtLeast(0.001f)
-            val t = (i - run.first) / (run.last - run.first).coerceAtLeast(1).toFloat()
-            val off = joints[r] * (1f - t) + joints[r + 1] * t
-            val x = closed[i].x - dy / len * off
-            val y = closed[i].y + dx / len * off
-            if (i == run.first) path.moveTo(x, y) else path.lineTo(x, y)
-        }
-        drawPath(
-            path,
-            color.copy(alpha = color.alpha * (0.55f + 0.45f * weight)),
-            style = Stroke(widthPx * (0.55f + 0.45f * weight), cap = StrokeCap.Round, join = StrokeJoin.Round),
-        )
-    }
+    drawPath(Path().apply { moveTo(closed[0].x, closed[0].y); closed.drop(1).forEach { lineTo(it.x, it.y) } }, color, style = Stroke(widthPx, cap = StrokeCap.Round, join = StrokeJoin.Round))
 }
 
 /** Screen-reader summary over every judged muscle, each against its own range. */

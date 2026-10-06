@@ -74,17 +74,13 @@ unusable art (the rejected PNG is still written, for inspection only):
 The backdrop rule needs both halves: one piece came back as a white paper
 square inside a ragged border, which passed a corners-only check.
 
-### Toggle
+### Retired appearance toggle
 
-The treatment is a user choice, not a hardcoded look: **Settings -> APPEARANCE**
-switches between `INK` and `CLEAN`. It persists on the profile row
-(`inkStyle`, added by `MIGRATION_21_22`) and is mirrored into
-`InkStyle.enabled`, which every ink primitive reads at draw time - so a flip
-repaints immediately with no restart.
-
-`CLEAN` is not "wobble set to zero". Each primitive falls back to the geometry
-the app shipped with: cut-corner silhouettes, even rules, flat rails, true arcs,
-single-pass borders, and no paper grain.
+The ink chrome treatment and its Settings toggle are gone: the app has one look,
+the former `CLEAN` one (cut-corner silhouettes, even rules, flat rails, true
+arcs, single-pass borders, no paper grain). The `inkStyle` column on the profile
+row (added by `MIGRATION_21_22`) is kept, unused, so Room's schema and old
+archives stay valid. The ink style above still describes the generated artwork.
 
 ### Regenerating a piece
 

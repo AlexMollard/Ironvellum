@@ -13,7 +13,6 @@ import com.ironvellum.app.data.IronvellumDatabase
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.Notifications
 import com.ironvellum.app.data.Reminders
-import com.ironvellum.app.ui.theme.InkStyle
 import com.ironvellum.app.data.HealthSyncWorker
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.data.cloud.InboxWorker
@@ -86,12 +85,6 @@ class IronvellumApp : Application() {
         // restores a session or touches the cloud, so the first client is
         // built against the backend the lifter actually chose.
         Cloud.init(this)
-        // Mirror the stored display preference into the holder the ink
-        // primitives read. Collected for the process lifetime so a flip in
-        // Settings redraws every surface immediately.
-        appScope.launch {
-            repository.observeInkStyle().collect { InkStyle.enabled = it }
-        }
         appScope.launch {
             repository.ensureSeeded()
             // Signed in, the cloud name is the profile name. Started once the

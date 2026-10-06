@@ -59,7 +59,7 @@ class ExportWriterTest {
     @Test
     fun `trainingMode follows profile section`() {
         val json = ExportWriter.write(
-            profile = PlayerProfile(name = "x", totalXp = 0, inkStyle = true),
+            profile = PlayerProfile(name = "x", totalXp = 0),
             trainingMode = TrainingMode.STRENGTH,
             presets = emptyList(),
             sessions = emptyList(),
@@ -72,7 +72,7 @@ class ExportWriterTest {
         assertTrue(
             json.contains(
                 "\"profile\":{\"name\":\"x\",\"totalXp\":0,\"currentTitleId\":null," +
-                    "\"heightCm\":null,\"sex\":null,\"inkStyle\":true},\"trainingMode\":\"STRENGTH\"",
+                    "\"heightCm\":null,\"sex\":null,\"inkStyle\":false},\"trainingMode\":\"STRENGTH\"",
             ),
         )
     }
@@ -102,7 +102,7 @@ class ExportWriterTest {
     @Test
     fun `v5 sections render completely when supplied`() {
         val json = ExportWriter.write(
-            profile = PlayerProfile(name = "x", totalXp = 5, inkStyle = true),
+            profile = PlayerProfile(name = "x", totalXp = 5),
             trainingMode = TrainingMode.STRENGTH,
             presets = emptyList(),
             sessions = emptyList(),
@@ -124,7 +124,7 @@ class ExportWriterTest {
 
         assertTrue(json.contains("\"heightCm\":181.0"))
         assertTrue(json.contains("\"sex\":\"MALE\""))
-        assertTrue(json.contains("\"inkStyle\":true"))
+        assertTrue(json.contains("\"inkStyle\":false"))
         assertTrue(json.contains("\"exercises\":[{\"name\":\"Planche Press\",\"muscleGroup\":\"PUSH\",\"isWeighted\":false,\"metric\":\"ATTEMPTS_GRADE\",\"category\":\"\"}]"))
         assertTrue(json.contains("\"idle\":{\"essence\":42,\"shadows\":2,\"relicMultiplier\":1.1,\"lastCollectedAtMs\":7}"))
         assertTrue(json.contains("\"gacha\":{\"rolls\":1,\"equippedFrame\":null}"))
@@ -168,7 +168,7 @@ class ExportWriterTest {
     @Test
     fun `empty collections render as empty arrays`() {
         val json = ExportWriter.write(
-            profile = PlayerProfile("x", 0, inkStyle = true),
+            profile = PlayerProfile("x", 0),
             trainingMode = TrainingMode.STRENGTH,
             presets = emptyList(),
             sessions = emptyList(),
@@ -181,7 +181,7 @@ class ExportWriterTest {
         assertEquals(
             "{\"formatVersion\":${ExportWriter.FORMAT_VERSION},\"exportedAtMs\":0," +
                 "\"profile\":{\"name\":\"x\",\"totalXp\":0,\"currentTitleId\":null," +
-                "\"heightCm\":null,\"sex\":null,\"inkStyle\":true}," +
+                "\"heightCm\":null,\"sex\":null,\"inkStyle\":false}," +
                 "\"trainingMode\":\"STRENGTH\"," +
                 "\"presets\":[],\"sessions\":[],\"stats\":[],\"titles\":[],\"skills\":[],\"healthDays\":[]," +
                 "\"measurements\":[],\"exercises\":[]}",

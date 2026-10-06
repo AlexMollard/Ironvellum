@@ -534,10 +534,6 @@ SettingsSummaries.csvImported(r.sessions, r.sets, r.xpAwarded, r.skipped)
         viewModelScope.launch { repo.setTrainingMode(mode) }
     }
 
-    fun setInkStyle(on: Boolean) {
-        viewModelScope.launch { repo.setInkStyle(on) }
-    }
-
     /** Ask a candidate backend whether it is ready. Never disturbs the live session. */
     fun testBackend(url: String, key: String) {
         val trimmedUrl = url.trim()

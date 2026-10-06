@@ -80,7 +80,6 @@ import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkHairline
 import com.ironvellum.app.ui.theme.inkRail
 import com.ironvellum.app.ui.theme.inkTick
-import com.ironvellum.app.ui.theme.paperGrain
 import com.ironvellum.app.ui.theme.rememberInkShape
 import java.time.Instant
 import java.time.ZoneId
@@ -94,11 +93,10 @@ private val WindowFill = Brush.verticalGradient(
 )
 
 /**
- * The app's primary surface, drawn as ink on paper: a hand-drawn edge, paper
- * grain, and tapered brush ticks where the old HUD had hairline brackets.
+ * The app's primary surface: a cut-corner edge with an accent-tinted border.
  *
  * The most reused surface in Ironvellum (~90 call sites), which is exactly why the
- * ink treatment lives HERE and not in the screens - every screen inherits it
+ * treatment lives HERE and not in the screens - every screen inherits it
  * and none of them can drift.
  */
 @Composable
@@ -108,8 +106,6 @@ fun InkPanel(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    // Salt the wobble per accent so neighbouring panels are not traced from the
-    // same hand-drawn outline.
     val shape = rememberInkShape(accent.hashCode())
     val body: @Composable () -> Unit = {
         Column(
@@ -121,7 +117,6 @@ fun InkPanel(
     }
     val surfaceModifier = modifier
         .background(WindowFill, shape)
-        .paperGrain(accent.hashCode())
         // Structure is always ink; the panel's identity comes from its accent
         // arcs — drawn HERE, on the same element and size as the border, so the
         // two trace the identical outline. On the inner column they measured a

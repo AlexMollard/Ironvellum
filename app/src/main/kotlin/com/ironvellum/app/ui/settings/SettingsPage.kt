@@ -26,7 +26,6 @@ enum class SettingsSection(val key: String, val title: String) {
     TRAINING_MODE("training_mode", "TRAINING MODE"),
     ARMOURY("armoury", "ARMOURY"),
     SUMMONS("summons", "THE SUMMONS"),
-    APPEARANCE("appearance", "APPEARANCE"),
     HEALTH_CONNECT("health_connect", "HEALTH CONNECT"),
     DATA("data", "DATA"),
     ADVANCED("advanced", "ADVANCED"),
@@ -48,7 +47,6 @@ fun SettingsSectionScreen(section: SettingsSection, onBack: () -> Unit, viewMode
         SettingsSection.TRAINING_MODE -> TrainingModeSettings(viewModel, onBack)
         SettingsSection.ARMOURY -> ArmourySettings(onBack)
         SettingsSection.SUMMONS -> SummonsSettings(onBack)
-        SettingsSection.APPEARANCE -> AppearanceSettings(viewModel, onBack)
         SettingsSection.HEALTH_CONNECT -> HealthConnectSettings(viewModel, onBack)
         SettingsSection.DATA -> DataSettings(viewModel, onBack)
         SettingsSection.ADVANCED -> AdvancedSettings(viewModel, onBack)

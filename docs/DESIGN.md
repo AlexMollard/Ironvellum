@@ -43,7 +43,7 @@ shows cut corners on more than about three things at once, some of those boxes
 should go.
 
 Clean today draws every shape with cut corners (`InkEdgeShape`,
-`ui/theme/Ink.kt:123`). Moving there means inner elements drop their shape and
+`cutCornerPath` in `ui/theme/Ink.kt`). Moving there means inner elements drop their shape and
 border, not that the shape changes.
 
 ## 3. Colour

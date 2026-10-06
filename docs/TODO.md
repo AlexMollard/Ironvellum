@@ -60,7 +60,7 @@ account. It exists for a throwaway project and for the gate's round trip.
   Google account.
 - The signed-in sync path offline has never been exercised; it needs credentials.
 - Emulator screenshots are not pixel-comparable with the phone (software
-  rasterizer, ink seeds resolve per pixel size). Diff within one target, never
+  rasterizer, anti-aliasing differs). Diff within one target, never
   across.
 - Text-scale regressions have no automated guard: the scale is pinned
   (`FIXED_FONT_SCALE`), and the instrumented suite does not sweep display size.

@@ -320,9 +320,6 @@ interface ProfileDao {
     @Query("UPDATE profile SET trainingMode = :mode WHERE id = 1")
     suspend fun setTrainingMode(mode: String)
 
-    @Query("UPDATE profile SET inkStyle = :on WHERE id = 1")
-    suspend fun setInkStyle(on: Boolean)
-
     @Query("UPDATE profile SET currentTitleId = :titleId WHERE id = 1")
     suspend fun setCurrentTitle(titleId: String?)
 

@@ -42,7 +42,7 @@ class SettingsHubTest {
     fun hubShowsEveryRowWithoutScrolling() {
         val rows = listOf(
             "Profile", "Account", "Training mode", "Armoury", "The Summons",
-            "Appearance", "Health Connect", "Data", "Advanced",
+            "Health Connect", "Data", "Advanced",
             if (BuildConfig.SUPPORT_LINKS) "Support Ironvellum" else "About Ironvellum",
         )
         rows.forEach { row(it).assertIsDisplayed() }
