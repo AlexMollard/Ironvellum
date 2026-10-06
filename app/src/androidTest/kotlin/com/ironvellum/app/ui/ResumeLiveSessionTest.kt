@@ -61,7 +61,7 @@ class ResumeLiveSessionTest {
     fun aRecentLiveSessionReopensOnLaunch() {
         plantLiveSession("Left Mid-Set", ageMs = 20 * 60_000L)
         ActivityScenario.launch(MainActivity::class.java).use {
-            waitForText("TRIAL IN PROGRESS")
+            waitForText("Trial in progress")
             assertTrue(shows("Left Mid-Set"))
         }
     }
@@ -74,7 +74,7 @@ class ResumeLiveSessionTest {
             // The launch check reads the database off the main thread, so give
             // it the time a forced resume would take before judging.
             val forced = runCatching {
-                compose.waitUntil(3_000) { shows("TRIAL IN PROGRESS") }
+                compose.waitUntil(3_000) { shows("Trial in progress") }
             }.isSuccess
             assertTrue("a stale trial must not be forced open", !forced)
         }
