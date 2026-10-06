@@ -150,8 +150,6 @@ class WorkoutFlowTest {
 
         // The quest CTA depends on state: "Accept Quest" on a fresh day,
         // "Start Workout" on a non-scheduled day.
-        // IronvellumButton uppercases every label.
-        //
         // The seeded programs cover four weekdays, so on the others Today shows
         // REST DAY with no quest at all — this test failed the morning the date
         // rolled into one of them. Pick a day that HAS a program rather than
@@ -165,7 +163,7 @@ class WorkoutFlowTest {
         compose.onAllNodesWithText(plan).onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
         settle()
-        val cta = awaitAnyText { it.startsWith("BEGIN ") || it.startsWith("CONTINUE ") }
+        val cta = awaitAnyText { it.startsWith("Begin ") || it.startsWith("Continue ") }
         compose.onAllNodesWithText(cta).onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
         settle()
@@ -193,14 +191,14 @@ class WorkoutFlowTest {
         compose.onAllNodesWithContentDescription("Seal the trial").onFirst()
             .performSemanticsAction(SemanticsActions.OnClick)
         // One logged set among many raises the unlogged-sets confirm; seal
-        // through it. Exact "SEAL ANYWAY" exists only in that dialog. It
+        // through it. Exact "Seal anyway" exists only in that dialog. It
         // composes a beat after the slide ends, so poll instead of assuming it
         // is already there.
         var claimed = false
         repeat(30) {
-            val node = compose.onAllNodesWithText("SEAL ANYWAY").fetchSemanticsNodes().firstOrNull()
+            val node = compose.onAllNodesWithText("Seal anyway").fetchSemanticsNodes().firstOrNull()
             if (node != null) {
-                compose.onAllNodesWithText("SEAL ANYWAY").onFirst()
+                compose.onAllNodesWithText("Seal anyway").onFirst()
                     .performSemanticsAction(SemanticsActions.OnClick)
                 claimed = true
             }
@@ -253,7 +251,7 @@ class WorkoutFlowTest {
     private fun drainCelebrations(rounds: Int = 24) {
         var clicked = 0
         repeat(rounds) {
-            val advance = allText().firstOrNull { it == "Continue" || it == "Done" || it == "KEEP RITE" }
+            val advance = allText().firstOrNull { it == "Continue" || it == "Done" || it == "Keep rite" }
             if (advance == null && clicked > 0) return
             if (advance != null) {
                 compose.onAllNodesWithText(advance).onFirst()

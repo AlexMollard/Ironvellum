@@ -19,11 +19,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 import androidx.compose.ui.geometry.Size
 import androidx.compose.animation.core.Animatable
-import com.ironvellum.app.ui.social.CrestFrameTreatment
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -55,8 +53,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.res.painterResource
-import com.ironvellum.app.R
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
@@ -322,7 +318,7 @@ private fun achievementFor(result: RollResult): Achievement {
 @Composable
 private fun DrawWindow(rolls: Int, onInscribe: () -> Unit) {
     var oddsOpen by remember { mutableStateOf(false) }
-    InkPanel(accent = IronvellumColors.SovereignGold) {
+    InkPanel {
         Column(
             Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -391,7 +387,7 @@ private fun DrawWindow(rolls: Int, onInscribe: () -> Unit) {
  */
 @Composable
 private fun RollWindow(state: IdleState, rate: IdleRate, pendingExact: Double) {
-    InkPanel(accent = IronvellumColors.Emerald) {
+    InkPanel {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
@@ -709,7 +705,7 @@ private fun RateWindow(rate: IdleRate, inputs: IdleInputs) {
     // lifter has never trained, so the decay line would read as nonsense. A
     // lapsed lifter has sealed trials, just none this week: they get the decay copy.
     val firstRun = atFloor && inputs.skillsUnlocked == 0 && inputs.sealedTrials == 0
-    InkPanel(accent = if (atFloor) IronvellumColors.SovereignGold else IronvellumColors.Emerald) {
+    InkPanel {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             if (firstRun) {
                 Text(
@@ -816,7 +812,7 @@ private fun RateRow(label: String, value: String) {
 @Composable
 private fun AwayWindow(report: AwayReport) {
     SectionHeader("WHILE YOU WERE AWAY")
-    InkPanel(accent = IronvellumColors.SovereignGold) {
+    InkPanel {
         Column(
             Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -861,7 +857,7 @@ private fun formatAway(ms: Long): String {
 /** The offline cap, stated plainly. No player should expect three days to pay out. */
 @Composable
 private fun CapWindow() {
-    InkPanel(accent = IronvellumColors.Bracket) {
+    InkPanel {
         // Unbounded and short: at maxLines = 3 the last clause — the cap
         // itself — was the part the ellipsis cut on a 360dp phone.
         Text(
@@ -908,7 +904,6 @@ private fun FactorRow(label: String, value: String, share: Float) {
             fill = Brush.horizontalGradient(
                 listOf(IronvellumColors.Emerald, IronvellumColors.EmeraldBright),
             ),
-            seed = label.hashCode(),
         )
     }
 }
@@ -935,45 +930,6 @@ private fun CrestCollection(
     CrestRail(owned = owned, equipped = equipped, onEquip = onEquip)
 }
 
-/**
- * A small swatch using the avatar's frame treatment. Locked frames pass
- * `treatment = null`: a dim plate still shows the SHAPE of what could drop,
- * without revealing its colours.
- */
-@Composable
-private fun CrestSwatch(treatment: CrestFrameTreatment?, locked: Boolean = false) {
-    val t = treatment
-    Box(
-        Modifier
-            .size(40.dp)
-            .background(
-                if (t == null) {
-                    Brush.verticalGradient(listOf(IronvellumColors.Vault, IronvellumColors.Abyss))
-                } else {
-                    Brush.verticalGradient(listOf(t.plateTop, t.plateBottom))
-                },
-                MaterialTheme.shapes.small,
-            )
-            .inkBorder(if (t == null) IronvellumColors.Rune else t.frameColor, MaterialTheme.shapes.small, if (t == null) 1.dp else t.frameWidth),
-        contentAlignment = Alignment.Center,
-    ) {
-        // Optional outer ring, inset like the avatar's, for double-ring frames.
-        t?.outerRing?.let { ring ->
-            Box(
-                Modifier
-                    .size(46.dp)
-                    .inkBorder(ring, MaterialTheme.shapes.small, 1.5.dp),
-            )
-        }
-        Text(
-            if (t == null) "\u25C7" else "\u25C6",
-            style = MaterialTheme.typography.titleSmall,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = if (t == null) IronvellumColors.InkMuted else t.initialColor,
-        )
-    }
-}
 
 /**
  * RELIC VAULT: every relic an inscription produced. The rate only uses the
@@ -984,7 +940,7 @@ private fun CrestSwatch(treatment: CrestFrameTreatment?, locked: Boolean = false
 @Composable
 private fun RelicVault(relics: List<RelicHolding>) {
     SectionHeader("RELIC VAULT")
-    InkPanel(accent = IronvellumColors.Emerald) {
+    InkPanel {
         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Text(
                 "A relic is a permanent boost to your idle rate, won from an " +
@@ -1006,20 +962,6 @@ private fun RelicVault(relics: List<RelicHolding>) {
                 )
             }
             if (relics.isEmpty()) {
-                // Sized to the window, not blown up and clipped: the source
-                // canvas carries only a handful of faint semi-transparent
-                // strokes at its outer 6dp (verified by pixel scan), and the
-                // 4dp inset each side keeps them off the panel edge without
-                // cropping the seal itself.
-                Image(
-                    painter = painterResource(R.drawable.art_empty_muster),
-                    contentDescription = null,
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .size(124.dp)
-                        .alpha(0.55f),
-                )
-                Spacer(Modifier.height(10.dp))
                 Text(
                     "Nothing inscribed yet.",
                     style = MaterialTheme.typography.bodySmall,
@@ -1246,7 +1188,6 @@ private fun CircleBannerLine(onOpen: () -> Unit) {
                 fraction = if (goal > 0) (total.toFloat() / goal).coerceIn(0f, 1f) else 0f,
                 modifier = Modifier.padding(top = 3.dp),
                 height = 3.dp,
-                seed = b.id.hashCode(),
             )
         }
     }

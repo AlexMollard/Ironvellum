@@ -42,7 +42,7 @@ class OnboardingBackTest {
         compose.onNodeWithText("Your name").performTextInput("Sam")
         compose.onNodeWithText("Height (cm)").performTextInput("165")
         compose.onNodeWithText("Weight (kg)").performTextInput("61")
-        compose.onNodeWithText("CONTINUE").performClick()
+        compose.onNodeWithText("Continue").performClick()
         compose.waitForIdle()
 
         compose.onNodeWithText("HOW YOU TRAIN").assertIsDisplayed()

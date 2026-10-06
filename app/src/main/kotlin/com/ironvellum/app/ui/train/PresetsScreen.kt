@@ -566,11 +566,6 @@ private fun TrainLeadCard(
     }
     InkPanel(
         Modifier.fillMaxWidth(),
-        accent = when (focus) {
-            is TrainFocus.Sealed -> IronvellumColors.SovereignGold
-            is TrainFocus.Live, is TrainFocus.Begin -> IronvellumColors.SystemGreen
-            else -> IronvellumColors.Rune
-        },
         onClick = rite?.let { { onOpenRite(it.id) } },
     ) {
         Row(verticalAlignment = Alignment.CenterVertically) {

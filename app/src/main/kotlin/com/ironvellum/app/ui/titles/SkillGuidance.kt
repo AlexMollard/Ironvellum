@@ -4,6 +4,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import com.ironvellum.app.domain.SkillPractice
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.ui.components.plural
 
 /** The first prerequisite still to master; null when the technique is open. */
 internal fun Skills.SkillDef.firstUnmetPrerequisite(mastered: Set<String>): String? =
@@ -72,7 +73,7 @@ object SkillGuidance {
 
     /** A figure with its unit, spaced for reps ("8 reps") and tight for "40s" and "20m". */
     fun withUnit(value: Int, skill: Skills.SkillDef): String =
-        if (skill.metric == Skills.Metric.REPS) "$value reps" else "$value${skill.unit}"
+        if (skill.metric == Skills.Metric.REPS) "$value ${plural(value, "rep", "reps")}" else "$value${skill.unit}"
 
     /**
      * The line under the stepper. Nothing touched and nothing logged reads

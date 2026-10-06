@@ -483,7 +483,7 @@ private fun CirclePitch(
     onCreate: () -> Unit,
     onJoin: () -> Unit,
 ) {
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "YOUR CIRCLE",
             style = MaterialTheme.typography.labelLarge,
@@ -535,7 +535,7 @@ private fun CircleRoster(
     val met = hasGoal && total >= goal
     val resets = remember { circleResetLabel(Instant.now(), ZoneId.systemDefault(), Locale.getDefault()) }
 
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             circle.name,
             style = MaterialTheme.typography.titleMedium,
@@ -563,7 +563,6 @@ private fun CircleRoster(
                 fraction = if (hasGoal) (total.toFloat() / goal).coerceIn(0f, 1f) else 0f,
                 modifier = Modifier.weight(1f),
                 height = 8.dp,
-                seed = circle.id.hashCode(),
             )
             Text(
                 if (met) "GOAL MET" else if (hasGoal) "$total / $goal this week" else "WARM-UP WEEK",
@@ -701,7 +700,6 @@ private fun CircleMemberRow(
                 fraction = (member.daysThisWeek.toFloat() / perMember).coerceIn(0f, 1f),
                 modifier = Modifier.width(96.dp),
                 height = 3.dp,
-                seed = member.userId.hashCode(),
             )
             member.lastWorkoutAtMs?.let { ms ->
                 Text(

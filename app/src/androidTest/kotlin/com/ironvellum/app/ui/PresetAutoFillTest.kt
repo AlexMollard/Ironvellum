@@ -55,9 +55,9 @@ class PresetAutoFillTest {
         // Each rite is one row in the cycle list; its page lists every
         // movement and carries the BEGIN.
         driver.click(driver.awaitAnyText { it == "Heavy Pull" })
-        driver.awaitAnyText { it == "BEGIN HEAVY PULL" }
+        driver.awaitAnyText { it == "Begin Heavy Pull" }
         val exercisesOnCard = driver.allText()
-        driver.click("BEGIN HEAVY PULL")
+        driver.click("Begin Heavy Pull")
         driver.awaitText("Trial in progress")
 
         // The session must carry the preset's own movements. Pull-up is the

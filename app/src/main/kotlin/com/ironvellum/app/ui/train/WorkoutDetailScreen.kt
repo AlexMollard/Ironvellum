@@ -303,7 +303,7 @@ fun WorkoutDetailScreen(
                 // Brief startup window before the history stream emits; render
                 // structure, not a lie about missing data.
             }
-            session == null -> InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
+            session == null -> InkPanel(Modifier.fillMaxWidth()) {
                 Column(
                     Modifier.fillMaxWidth().padding(vertical = 40.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
@@ -340,7 +340,7 @@ fun WorkoutDetailScreen(
                 AudiencePicker(session.audience, viewModel::setAudience)
                 if (session.note.isNotBlank()) {
                     SectionHeader("NOTE · SHARED WITH ALLIES")
-                    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+                    InkPanel(Modifier.fillMaxWidth()) {
                         Text(
                             session.note,
                             style = MaterialTheme.typography.bodyMedium,
@@ -350,7 +350,7 @@ fun WorkoutDetailScreen(
                 }
                 if (session.privateNote.isNotBlank()) {
                     SectionHeader("PRIVATE NOTE")
-                    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
+                    InkPanel(Modifier.fillMaxWidth()) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 Icons.Filled.Lock,

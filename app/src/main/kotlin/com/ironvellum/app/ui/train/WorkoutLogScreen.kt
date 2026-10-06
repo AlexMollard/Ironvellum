@@ -10,11 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.Image
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.layout.size
-import com.ironvellum.app.R
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -143,12 +139,6 @@ fun WorkoutLogScreen(
                     Modifier.fillMaxWidth().padding(vertical = 40.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.art_empty_chronicle),
-                        contentDescription = null,
-                        modifier = Modifier.size(150.dp).alpha(0.55f),
-                    )
-                    Spacer(Modifier.height(12.dp))
                     Text(
                         "THE CHRONICLE IS BLANK",
                         style = MaterialTheme.typography.titleMedium,
@@ -218,7 +208,7 @@ private fun LifetimeLedger(
     val totals = metricTotals(doneSets) { set -> figureMetric(set, exercises) }
     val totalXp = sessions.sumOf { it.xpAwarded }
 
-    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.SovereignGold) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Text(
             "CHRONICLE TOTALS",
             style = MaterialTheme.typography.labelMedium,

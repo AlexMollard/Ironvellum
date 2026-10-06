@@ -316,7 +316,7 @@ internal fun LifterScreen(
             // so instead of silently guessing or snapping the button back.
             if (ui.allyError != null && (ui.allyState == null || ui.allyState == AllyState.None)) {
                 Spacer(Modifier.height(6.dp))
-                InlineErrorBanner("Ally request failed: ${ui.allyError}")
+                SocialErrorBanner("Ally request failed: ${ui.allyError}")
             }
         }
         Spacer(Modifier.height(14.dp))
@@ -330,7 +330,7 @@ internal fun LifterScreen(
                 )
             }
 
-            ui.error != null -> InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
+            ui.error != null -> InkPanel(Modifier.fillMaxWidth()) {
                 Text(
                     "THE FOLIO WON'T OPEN",
                     style = MaterialTheme.typography.labelMedium,
@@ -444,7 +444,7 @@ internal fun LifterScreen(
                 }
 
                 // The signature hunt, framed gold so the record has a summit.
-                InkPanel(Modifier.fillMaxWidth().padding(bottom = 10.dp), accent = IronvellumColors.SovereignGold) {
+                InkPanel(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
                     Text(
                         "STRONGEST TRIAL",
                         style = MaterialTheme.typography.labelSmall,
@@ -567,7 +567,7 @@ internal fun LifterScreen(
                 }
                 ui.actionError?.let {
                     Spacer(Modifier.height(6.dp))
-                    InlineErrorBanner(it)
+                    SocialErrorBanner(it)
                 }
             }
         }
@@ -630,25 +630,6 @@ internal fun LifterScreen(
     }
 }
 
-/** Compact failure note — never a dialog, never displacing the record. */
-@Composable
-private fun InlineErrorBanner(message: String) {
-    val shape = MaterialTheme.shapes.small
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(IronvellumColors.VaultHigh, IronvellumColors.Vault)), shape)
-            .inkBorder(IronvellumColors.DangerRed, shape, 1.dp)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-    ) {
-        Text(
-            message,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.DangerRed,
-        )
-    }
-}
 
 
 /**

@@ -367,7 +367,7 @@ internal fun CommentsScreen(
             item(key = "comments-header") { SectionHeader("REMARKS") }
             when {
                 ui.loading && ui.comments.isEmpty() -> item(key = "comments-loading") {
-                    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Rune) {
+                    InkPanel(Modifier.fillMaxWidth()) {
                         Text(
                             "Reading the thread…",
                             style = MaterialTheme.typography.bodyMedium,
@@ -377,7 +377,7 @@ internal fun CommentsScreen(
                     }
                 }
                 ui.comments.isEmpty() && err != null -> item(key = "comments-error") {
-                    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.DangerRed) {
+                    InkPanel(Modifier.fillMaxWidth()) {
                         Text(
                             err,
                             style = MaterialTheme.typography.bodySmall,
@@ -388,7 +388,7 @@ internal fun CommentsScreen(
                     }
                 }
                 ui.comments.isEmpty() -> item(key = "comments-empty") {
-                    InkPanel(Modifier.fillMaxWidth(), accent = IronvellumColors.Emerald) {
+                    InkPanel(Modifier.fillMaxWidth()) {
                         Text(
                             "No remarks yet — say something first.",
                             style = MaterialTheme.typography.bodySmall,
@@ -496,7 +496,7 @@ private fun WorkoutHeaderPanel(
 ) {
     val workout = ui.workout
     val owner = ui.owner
-    InkPanel(Modifier.fillMaxWidth(), accent = if (isMe) IronvellumColors.SovereignGold else IronvellumColors.Emerald) {
+    InkPanel(Modifier.fillMaxWidth()) {
         if (owner != null) {
             IdentityRow(
                 displayName = owner.name,
@@ -780,7 +780,7 @@ private fun CommentRow(
     onDelete: () -> Unit,
     onReport: () -> Unit,
 ) {
-    InkPanel(Modifier.fillMaxWidth(), accent = if (mine) IronvellumColors.SovereignGold else IronvellumColors.Rune) {
+    InkPanel(Modifier.fillMaxWidth()) {
         Row(
             Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,

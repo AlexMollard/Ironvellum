@@ -632,7 +632,7 @@ private fun StepHeader(step: Int, onSkip: () -> Unit) {
         Spacer(Modifier.height(12.dp))
         // The filled portion grows with her progress; the rail is the same
         // brushed stroke the dashboard and the Codex use.
-        InkRail(fraction = (step + 1f) / 3f, seed = step + 1, height = 4.dp)
+        InkRail(fraction = (step + 1f) / 3f, height = 4.dp)
         Spacer(Modifier.height(22.dp))
         Text(
             stepTitle(step),

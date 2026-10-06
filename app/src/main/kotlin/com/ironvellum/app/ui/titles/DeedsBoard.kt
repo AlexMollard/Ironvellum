@@ -62,6 +62,7 @@ import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkRail
+import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.LedgerSpace
 import com.ironvellum.app.ui.components.NavChip
 import com.ironvellum.app.ui.components.RangeChips
@@ -325,23 +326,13 @@ private fun DeedsHeader(earned: Int, total: Int) {
             fraction = if (total == 0) 0f else earned.toFloat() / total,
             height = 4.dp,
             fill = railFill(earned = earned == total),
-            seed = 3,
         )
     }
 }
 
 @Composable
 private fun SectionLabel(text: String) {
-    Spacer(Modifier.height(LedgerSpace.Section))
-    Text(
-        text,
-        style = MaterialTheme.typography.labelMedium,
-        fontFamily = ChakraPetch,
-        color = IronvellumColors.SystemGreen,
-        letterSpacing = IronvellumTracking.InlineLabel,
-        modifier = Modifier.semantics { heading() },
-    )
-    Spacer(Modifier.height(8.dp))
+    SectionHeader(text, topPadding = LedgerSpace.Section)
 }
 
 @Composable
@@ -402,7 +393,7 @@ private fun NearRow(def: TitleDef, progress: Titles.Progress, ledger: Titles.Led
 @Composable
 private fun BarWithToGo(fraction: Float, toGo: String) {
     Column(Modifier.fillMaxWidth()) {
-        InkRail(fraction = fraction, height = 4.dp, fill = railFill(earned = false), seed = 9)
+        InkRail(fraction = fraction, height = 4.dp, fill = railFill(earned = false))
         Spacer(Modifier.height(4.dp))
         Text(
             toGo,
@@ -463,7 +454,6 @@ private fun CategoryTile(
             fraction = if (total == 0) 0f else earned.toFloat() / total,
             height = 4.dp,
             fill = railFill(earned = total > 0 && earned == total),
-            seed = 7,
         )
     }
 }
@@ -611,7 +601,6 @@ private fun CategoryScreen(
                         fraction = if (total == 0) 0f else earned.toFloat() / total,
                         height = 4.dp,
                         fill = railFill(earned = total > 0 && earned == total),
-                        seed = 3,
                     )
                 }
                 Spacer(Modifier.height(8.dp))
