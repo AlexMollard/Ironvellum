@@ -11,7 +11,7 @@ see `LICENSE`).
 
 | Drawable | Origin | Licence |
 |---|---|---|
-| `mipmap-*/ic_launcher.png`, `ic_launcher_round.png`, `ic_launcher_foreground.png`, `ic_launcher_monochrome.png` | owner's selected 02 Folded ribbon IV, extracted directly from the approved mockup generated with Codex's built-in image-generation tool, without redrawing or regenerating the mark; transparent source at `tools/art_batches/drawn/icon_iv_folded.png`, inset and downscaled with `tools/icon_install.py`; legacy tiles composited on the adaptive near-black ground. Prompt and provenance: `tools/art_batches/icon_iv_folded.txt`. | project licence |
+| `mipmap-*/ic_launcher.png`, `ic_launcher_round.png`, `ic_launcher_foreground.png`, `ic_launcher_monochrome.png` | owner's selected 02 Folded ribbon IV, extracted directly from the approved mockup generated with Codex's built-in image-generation tool, without redrawing or regenerating the mark; warm-white monochrome source at `tools/art_batches/drawn/icon_iv_folded_mono.png` preserves the original alpha mask, inset and downscaled with `tools/icon_install.py`; legacy tiles composited on the adaptive near-black ground. Prompt and provenance: `tools/art_batches/icon_iv_folded_mono.txt`. | project licence |
 | `ic_launcher_background.xml` | hand-authored (near-black `#0C0C0B`) | project licence |
 | `mipmap-anydpi-v26/ic_launcher.xml`, `ic_launcher_round.xml` | adaptive icon composition, no artwork of its own | project licence |
 | `drawable-nodpi/art_empty_*.png` (quests, stats, skills, board, chronicle, allies, muster) | generated with `tools/art.py` in the house ink style below | project licence |
