@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -452,9 +452,7 @@ internal fun CommentsScreen(
     }
 
     confirmDelete?.let { comment ->
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmDelete = null },
             title = { Text("Delete this remark?") },
             text = { Text("It disappears for everyone. This can't be undone.") },
@@ -865,9 +863,7 @@ internal fun ReportDialog(
 ) {
     var reason by remember { mutableStateOf<ReportReason?>(null) }
     var note by remember { mutableStateOf("") }
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
+    IronvellumDialog(
         onDismissRequest = onDismiss,
         title = { Text("Report ${lifterName.ifBlank { "this Ironbound" }}") },
         text = {

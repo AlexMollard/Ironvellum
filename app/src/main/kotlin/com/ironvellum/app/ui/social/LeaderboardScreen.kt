@@ -627,7 +627,6 @@ private fun PodiumSlot(
                 userId = row.userId,
                 displayName = row.displayName,
                 size = avatarSize,
-                isMe = isMe,
                 level = row.level,
                 titleId = row.currentTitleId,
                 frameId = if (isMe) equippedFrame else null,

@@ -16,7 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.ui.graphics.Color
@@ -964,9 +964,7 @@ fun ProgramBuilderScreen(
     }
 
     if (confirmDiscard) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmDiscard = false },
             title = { Text("Discard your changes?") },
             text = { Text("Your answers and any edits to the proposal will be lost.") },
@@ -987,11 +985,7 @@ fun ProgramBuilderScreen(
     }
 
     if (confirmReplace) {
-        AlertDialog(
-            // Material's dialog container is a 28dp rounded rect - the most
-            // obviously stock surface in the app. Give it the ink shape.
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmReplace = false },
             title = { Text("Replace your cycle?") },
             text = {

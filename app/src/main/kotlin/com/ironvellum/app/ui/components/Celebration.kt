@@ -73,14 +73,15 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 /**
- * How the Ledger writes a moment down. The four rarities escalate the ink -
- * bone, moss with an iron seal, emerald that bleeds, gold leaf - and a level
- * has a page of its own that turns, amending the name when it crosses a tier.
+ * How the Ledger writes a moment down. The four rarities escalate the writing
+ * (a seal, a bleed, gold leaf) but not the colour: rarity is a word in InkMuted,
+ * and gold is spent only on a Masterwork. A level has a page of its own that
+ * turns, amending the name when it crosses a tier.
  */
 enum class Reveal(val ink: Color, internal val millis: Int) {
     Common(IronvellumColors.InkMuted, 1_100),
-    Rare(IronvellumColors.SystemGreen, 1_700),
-    Fabled(IronvellumColors.Emerald, 1_900),
+    Rare(IronvellumColors.InkMuted, 1_700),
+    Fabled(IronvellumColors.InkMuted, 1_900),
     Masterwork(IronvellumColors.SovereignGold, 2_300),
     LevelUp(IronvellumColors.Emerald, 1_300),
     ;

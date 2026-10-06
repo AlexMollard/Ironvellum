@@ -32,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -248,6 +249,9 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
  * `gold` is the seal / XP variant and is deliberately left as it was (owner
  * decision pending), see [GoldButton].
  */
+/** Set by [IronvellumDialog]: its action slots show every plain button as a text button. */
+internal val LocalTextButtons = compositionLocalOf { false }
+
 @Composable
 fun IronvellumButton(
     label: String,
@@ -263,7 +267,7 @@ fun IronvellumButton(
         return
     }
     val shape = MaterialTheme.shapes.medium
-    val boxless = quiet || danger
+    val boxless = quiet || danger || LocalTextButtons.current
     Box(
         modifier
             .then(if (boxless) Modifier.heightIn(min = 48.dp) else Modifier)
@@ -285,7 +289,7 @@ fun IronvellumButton(
             color = when {
                 !enabled -> IronvellumColors.InkMuted
                 danger -> IronvellumColors.DangerRed
-                quiet -> IronvellumColors.SystemGreen
+                quiet || boxless -> IronvellumColors.SystemGreen
                 else -> IronvellumColors.Abyss
             },
             // labelLarge carries the theme's 0.5sp tracking: no override.

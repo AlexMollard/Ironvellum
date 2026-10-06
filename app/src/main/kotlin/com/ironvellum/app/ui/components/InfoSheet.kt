@@ -2,7 +2,6 @@ package com.ironvellum.app.ui.components
 
 import android.content.Context
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -61,9 +60,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkHairline
 import androidx.core.content.edit
 import kotlinx.coroutines.delay
@@ -124,7 +123,7 @@ fun InfoSheet(
         // Wide enough to be full width on a tablet or a landscape phone too.
         sheetMaxWidth = Dp.Unspecified,
         shape = MaterialTheme.shapes.extraSmall,
-        containerColor = SheetPaper,
+        containerColor = IronvellumColors.VaultHigh,
         contentColor = IronvellumColors.Ink,
         // The stock handle is a machined pill; the scrim, a swipe and back all dismiss.
         dragHandle = null,
@@ -137,7 +136,7 @@ fun InfoSheet(
                 // TalkBack announces the pane by name when it opens.
                 .semantics { paneTitle = title },
         ) {
-            Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, thickness = 2.dp))
+            Box(Modifier.fillMaxWidth().height(1.dp).inkHairline(IronvellumColors.Rune, thickness = 1.dp))
             if (paged) {
                 val pagerState = rememberPagerState { built.size }
                 val context = LocalContext.current
@@ -251,15 +250,7 @@ private fun PageBody(page: BuiltPage, compact: Boolean) {
 private fun SummaryStrip(summary: (@Composable ColumnScope.() -> Unit)?, leadingGap: Boolean = true) {
     if (summary == null) return
     if (leadingGap) Spacer(Modifier.height(16.dp))
-    val strip = MaterialTheme.shapes.small
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .background(Color(0xFF101614), strip)
-            .inkBorder(IronvellumColors.Rune, strip, 1.dp)
-            .padding(12.dp),
-        content = summary,
-    )
+    Column(Modifier.fillMaxWidth(), content = summary)
 }
 
 /** The sections in order, each under its PanelLabel. [afterTabs] drops the gap above the first: the page already has one. */
@@ -395,8 +386,6 @@ fun InfoProgress(
 
 // ------------------------------------------------------------------ parts ----
 
-private val SheetPaper = Color(0xFF0D1110)
-
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun SheetHeader(title: String, subtitle: String?, subtitleColor: Color, chips: List<InfoChip>, compact: Boolean, titleColor: Color) {
@@ -433,16 +422,12 @@ private fun SheetHeader(title: String, subtitle: String?, subtitleColor: Color, 
 
 @Composable
 private fun FactChip(chip: InfoChip) {
-    val shape = MaterialTheme.shapes.extraSmall
+    // A tag: the word carries the meaning, so it needs no box.
     Text(
         chip.text,
         style = MaterialTheme.typography.labelMedium,
         fontFamily = ChakraPetch,
         color = chip.color,
-        modifier = Modifier
-            .background(Color(0xFF151C19), shape)
-            .inkBorder(chip.color.copy(alpha = 0.6f), shape, 1.dp)
-            .padding(horizontal = 10.dp, vertical = 5.dp),
     )
 }
 
@@ -451,7 +436,7 @@ private fun Modifier.fadeWhenMore(more: Boolean): Modifier = if (!more) this els
     drawContent()
     val h = 28.dp.toPx()
     drawRect(
-        Brush.verticalGradient(listOf(Color.Transparent, SheetPaper), startY = size.height - h, endY = size.height),
+        Brush.verticalGradient(listOf(Color.Transparent, IronvellumColors.VaultHigh), startY = size.height - h, endY = size.height),
         topLeft = androidx.compose.ui.geometry.Offset(0f, size.height - h),
         size = androidx.compose.ui.geometry.Size(size.width, h),
     )
@@ -572,6 +557,7 @@ private fun ShowMore(label: String?, expanded: Boolean, hidden: String, onToggle
             style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             color = IronvellumColors.SystemGreen,
+            letterSpacing = 0.sp,
         )
         Icon(
             if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,

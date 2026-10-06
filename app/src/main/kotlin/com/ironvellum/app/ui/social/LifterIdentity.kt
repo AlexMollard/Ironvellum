@@ -93,7 +93,6 @@ internal fun IdentityRow(
                 userId = userId,
                 displayName = displayName,
                 size = badgeSize,
-                isMe = isMe,
                 avatarUrl = avatarUrl,
                 level = level,
                 titleId = titleId,
@@ -106,12 +105,22 @@ internal fun IdentityRow(
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.Bold,
                     fontSize = nameSize,
-                    color = if (isMe) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+                    color = IronvellumColors.Ink,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 if (wornTitle != null) {
                     WornTitle(wornTitle)
+                }
+                // Your own row says so in words, not in gold.
+                if (isMe) {
+                    Text(
+                        "You",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        maxLines = 1,
+                    )
                 }
             }
             if (level != null) {
@@ -140,21 +149,13 @@ private fun WornTitle(title: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun LevelChip(level: Int) {
-    val shape = MaterialTheme.shapes.small
-    Box(
-        Modifier
-            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
-            .background(Brush.verticalGradient(listOf(IronvellumColors.VaultHigh, IronvellumColors.Vault)), shape)
-            .padding(horizontal = 8.dp, vertical = 3.dp),
-    ) {
-        Text(
-            "LV $level",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SystemGreen,
-        )
-    }
+    Text(
+        "LV $level",
+        style = MaterialTheme.typography.labelSmall,
+        fontFamily = ChakraPetch,
+        fontWeight = FontWeight.Bold,
+        color = IronvellumColors.InkMuted,
+    )
 }
 
 // Moved verbatim from LeaderboardScreen.kt so every social surface shares one
@@ -227,7 +228,6 @@ internal fun LifterAvatar(
     userId: String,
     displayName: String,
     size: Dp,
-    isMe: Boolean,
     avatarUrl: String? = null,
     level: Int? = null,
     titleId: String? = null,
@@ -266,7 +266,6 @@ internal fun LifterAvatar(
     val frame = when {
         frameTreatment != null -> frameTreatment.frameColor
         rarity == null || rarity == TitleRarity.Common -> when {
-            isMe -> IronvellumColors.SovereignGold
             level == null -> IronvellumColors.Rune
             level < 10 -> IronvellumColors.Rune
             level < 25 -> IronvellumColors.SystemGreen
@@ -336,7 +335,7 @@ internal fun LifterAvatar(
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
             color = frameTreatment?.initialColor
-                ?: if (rarity == TitleRarity.Masterwork || isMe) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+                ?: if (rarity == TitleRarity.Masterwork) IronvellumColors.SovereignGold else IronvellumColors.Ink,
         )
     }
 }

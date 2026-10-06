@@ -24,7 +24,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.ui.text.style.TextOverflow
 import com.ironvellum.app.ui.components.IronvellumButton
 import androidx.compose.ui.graphics.Color
@@ -411,9 +411,7 @@ fun PresetEditorScreen(
     }
 
     if (confirmDiscard) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmDiscard = false },
             title = { Text("Discard changes?") },
             text = { Text("Unsaved edits to this rite will be lost.") },

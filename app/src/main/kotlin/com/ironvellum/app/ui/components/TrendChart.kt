@@ -13,7 +13,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
@@ -30,7 +29,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 import java.util.Locale
 
 /**
- * The house trend chart: gradient-filled line over two quiet gridlines, an
+ * The house trend chart: a flat line over two quiet gridlines, an
  * end-point dot, optional first/last date labels and dashed goal line. Every
  * series in the app renders through this one composable.
  *
@@ -123,7 +122,7 @@ fun TrendChart(
                 inkStroke(Offset(0f, y), Offset(size.width, y), grid.copy(alpha = 0.6f), 1.4f)
             }
 
-            // contiguous runs between gaps: each is filled and stroked on its own
+            // contiguous runs between gaps: each is stroked on its own
             val runs = mutableListOf<IntRange>()
             var runStart = -1
             values.forEachIndexed { i, v ->
@@ -135,25 +134,13 @@ fun TrendChart(
             }
             if (runStart >= 0) runs += runStart..values.lastIndex
 
-            val w = 3.2.dp.toPx()
+            val w = 2.5.dp.toPx()
             for (run in runs) {
                 if (run.first == run.last) {
                     // an isolated reading has no neighbour to join: a dot, not nothing
                     inkDot(Offset(xFor(run.first), yFor(values[run.first]!!)), 4f, color)
                     continue
                 }
-                val area = Path().apply {
-                    moveTo(xFor(run.first), size.height)
-                    for (i in run) lineTo(xFor(i), yFor(values[i]!!))
-                    lineTo(xFor(run.last), size.height)
-                    close()
-                }
-                drawPath(
-                    area,
-                    brush = Brush.verticalGradient(
-                        listOf(color.copy(alpha = 0.35f), color.copy(alpha = 0.02f)),
-                    ),
-                )
                 val line = Path().apply {
                     for (i in run) {
                         if (i == run.first) moveTo(xFor(i), yFor(values[i]!!)) else lineTo(xFor(i), yFor(values[i]!!))
@@ -170,7 +157,7 @@ fun TrendChart(
                     inkStroke(
                         Offset(x, y),
                         Offset((x + dash / 2).coerceAtMost(size.width), y),
-                        gold.copy(alpha = 0.8f),
+                        IronvellumColors.InkMuted,
                         1.8f,
                     )
                     x += dash
@@ -204,7 +191,9 @@ fun TrendChart(
     }
 }
 
-private fun chartNum(v: Double) = String.format(Locale.US, "%.1f", v)
+/** A whole figure reads as an integer ("70"), anything else with one decimal ("70.5"). */
+private fun chartNum(v: Double) =
+    if (v == Math.rint(v)) String.format(Locale.US, "%d", v.toLong()) else String.format(Locale.US, "%.1f", v)
 
 /** The default readout number: one decimal, "." always. */
 internal fun scrubNumber(v: Double): String = "%.1f".fmt(v)
@@ -237,7 +226,6 @@ fun BarChart(
     if (values.isEmpty()) return
     val present = values.filterNotNull()
     val top = (listOfNotNull(present.maxOrNull(), goal).maxOrNull() ?: 0.0).takeIf { it > 0.0 } ?: 1.0
-    val gold = IronvellumColors.SovereignGold
     val spoken = description ?: chartSummary(values, startLabel, endLabel, valueText)
     val scrubState = remember { ScrubState() }
     val measurer = rememberTextMeasurer()
@@ -286,7 +274,7 @@ fun BarChart(
                 while (x < size.width) {
                     inkStroke(
                         Offset(x, y), Offset((x + dash / 2).coerceAtMost(size.width), y),
-                        gold.copy(alpha = 0.8f), 1.8f,
+                        IronvellumColors.InkMuted, 1.8f,
                     )
                     x += dash
                 }
@@ -329,6 +317,11 @@ private fun DrawScope.inkBar(centerX: Float, base: Float, height: Float, width: 
 
 @Composable
 private fun ChartDates(start: String?, end: String?, mid: String? = null) {
+    // One label, not two, when both ends read the same.
+    if (start != null && start == end && mid == null) {
+        Text(start, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 4.dp))
+        return
+    }
     Row(
         Modifier.fillMaxWidth().padding(top = 4.dp),
         horizontalArrangement = Arrangement.SpaceBetween,

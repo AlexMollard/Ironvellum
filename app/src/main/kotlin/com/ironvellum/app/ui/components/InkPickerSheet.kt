@@ -48,7 +48,7 @@ import com.ironvellum.app.ui.theme.inkBorder
 /**
  * The full-screen picker sheet every "choose one of many" surface shares.
  * Not exercise-specific: the title, the search field, the result [count] and
- * a 44dp CLOSE are pinned at the top, and [content] fills the rest as a lazy
+ * a Close chip are pinned at the top, and [content] fills the rest as a lazy
  * list. The whole sheet sits above the keyboard (imePadding), so the field
  * and the rows under it stay reachable while typing.
  */
@@ -69,7 +69,7 @@ fun InkPickerSheet(
         Column(
             Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0D1110))
+                .background(IronvellumColors.VaultHigh)
                 .statusBarsPadding()
                 .navigationBarsPadding()
                 .imePadding()
@@ -81,11 +81,8 @@ fun InkPickerSheet(
             ) {
                 Text(
                     title,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = IronvellumColors.SovereignGold,
-                    letterSpacing = 3.sp,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = IronvellumColors.Ink,
                     modifier = Modifier.weight(1f),
                 )
                 Text(
@@ -93,28 +90,7 @@ fun InkPickerSheet(
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )
-                Box(
-                    Modifier
-                        .padding(start = 8.dp)
-                        .heightIn(min = 44.dp)
-                        .widthIn(min = 44.dp)
-                        .clip(MaterialTheme.shapes.extraSmall)
-                        .clickable(onClickLabel = "Close", onClick = onDismiss)
-                        .semantics {
-                            contentDescription = "Close"
-                            role = Role.Button
-                        },
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        "CLOSE",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        letterSpacing = 3.sp,
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                    )
-                }
+                NavChip("Close", null, onClick = onDismiss)
             }
             Spacer(Modifier.height(6.dp))
             PickerSearchField(query = query, onQueryChange = onQueryChange, label = searchLabel)
@@ -187,7 +163,7 @@ fun PickerSectionHeader(label: String) {
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
+            color = IronvellumColors.InkMuted,
             letterSpacing = 2.sp,
         )
         Spacer(Modifier.width(10.dp))

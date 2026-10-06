@@ -12,7 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.CheckCircle
-import androidx.compose.material3.AlertDialog
+import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -348,9 +348,7 @@ fun CircleSection(
         )
     }
     if (confirmRotate) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = {
                 vm.dismissActionError()
                 confirmRotate = false
@@ -380,9 +378,7 @@ fun CircleSection(
     }
     val removing = circle?.members?.firstOrNull { it.userId == removeId }
     if (removing != null) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = {
                 vm.dismissActionError()
                 removeId = null
@@ -422,9 +418,7 @@ fun CircleSection(
         )
     }
     if (confirmLeave) {
-        AlertDialog(
-            shape = MaterialTheme.shapes.medium,
-            containerColor = Color(0xFF0D1110),
+        IronvellumDialog(
             onDismissRequest = { confirmLeave = false },
             title = { Text("Leave ${circle?.name ?: "the circle"}?") },
             text = {
@@ -745,9 +739,7 @@ private fun CircleNameDialog(
     val cleaned = name.trim()
     val valid = cleaned.length in 1..24
 
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
+    IronvellumDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
@@ -812,9 +804,7 @@ private fun JoinCircleDialog(
 
     val valid = code.length == 8
 
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
+    IronvellumDialog(
         onDismissRequest = onDismiss,
         title = { Text("Join a circle") },
         text = {
@@ -868,9 +858,7 @@ private fun GoalEditorDialog(
 ) {
     var value by rememberSaveable { mutableStateOf(perMember) }
 
-    AlertDialog(
-        shape = MaterialTheme.shapes.medium,
-        containerColor = Color(0xFF0D1110),
+    IronvellumDialog(
         onDismissRequest = onDismiss,
         title = { Text("Weekly goal per member") },
         text = {

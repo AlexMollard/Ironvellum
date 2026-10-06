@@ -1,7 +1,6 @@
 package com.ironvellum.app.ui.components
 
 import androidx.compose.foundation.background
-import com.ironvellum.app.ui.theme.HudEdgeShape
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,11 +44,26 @@ import com.ironvellum.app.ui.theme.IronvellumTracking
  * The level's ascension names it in place of "LV": ascension is a band of
  * levels, so it labels the number rather than standing as a stat of its own.
  *
- * [compact] is the one-line chip that rides Today's XP bar: the same plate,
- * frame and crest, with the ascension and level side by side.
+ * [compact] is the line that rides Today's XP bar: plain text, the ascension and
+ * level side by side, with no plate, frame or crest.
  */
 @Composable
 fun LifterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier, compact: Boolean = false) {
+    if (compact) {
+        Text(
+            "${ArmyClass.forLevel(level).title.uppercase()} $level",
+            modifier = modifier,
+            style = MaterialTheme.typography.labelSmall.copy(
+                fontFamily = ChakraPetch,
+                letterSpacing = IronvellumTracking.InlineLabel,
+            ),
+            fontWeight = FontWeight.Bold,
+            color = IronvellumColors.Ink,
+            maxLines = 1,
+            softWrap = false,
+        )
+        return
+    }
     val treatment = frameId?.let { crestFrameTreatment(it) }
     val plateTop = treatment?.plateTop ?: IronvellumColors.VaultHigh
     val plateBottom = treatment?.plateBottom ?: IronvellumColors.Vault
@@ -57,7 +71,7 @@ fun LifterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier, com
     val accent = treatment?.initialColor ?: IronvellumColors.SystemGreen
     // The sigil sits on the home player card, next to inked panels; a
     // geometric cut corner here is the one edge that would look machined.
-    val shape = if (compact) HudEdgeShape else MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.small
     // Sized to the widest ascension, so the plate is the same width at every
     // level: "ACOLYTE 1" and "SOVEREIGN 70" are one object, and a level-up
     // never nudges the gear or the name beside it.
@@ -67,13 +81,9 @@ fun LifterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier, com
     )
     val measurer = rememberTextMeasurer()
     val density = LocalDensity.current
-    val labelWidth = remember(labelStyle, density, compact) {
+    val labelWidth = remember(labelStyle, density) {
         with(density) {
-            ArmyClass.LADDER.maxOf {
-                // The chip carries the level on the same line, so it is sized
-                // to the widest title with a two-digit level beside it.
-                measurer.measure(if (compact) "${it.title.uppercase()} 99" else it.title.uppercase(), labelStyle).size.width
-            }.toDp()
+            ArmyClass.LADDER.maxOf { measurer.measure(it.title.uppercase(), labelStyle).size.width }.toDp()
         }
     }
 
@@ -97,26 +107,14 @@ fun LifterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier, com
                 shape = shape,
                 width = minOf(treatment?.frameWidth ?: 2.dp, 2.dp),
             )
-            .padding(horizontal = if (compact) 8.dp else 10.dp, vertical = if (compact) 4.dp else 6.dp),
+            .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(if (compact) 6.dp else 9.dp),
+        horizontalArrangement = Arrangement.spacedBy(9.dp),
     ) {
         if (frameId != null) {
             Box(contentAlignment = Alignment.Center) {
-                CrestMark(frameId, Modifier.size(if (compact) 16.dp else 34.dp))
+                CrestMark(frameId, Modifier.size(34.dp))
             }
-        }
-        if (compact) {
-            Text(
-                "${ArmyClass.forLevel(level).title.uppercase()} $level",
-                style = labelStyle,
-                fontWeight = FontWeight.Bold,
-                color = IronvellumColors.Ink,
-                maxLines = 1,
-                softWrap = false,
-                modifier = Modifier.width(labelWidth),
-            )
-            return@Row
         }
         if (frameId != null) {
             Box(

@@ -517,7 +517,7 @@ private fun CreditRow(credit: ProgramRules.MuscleCredit) {
             shareLevel(credit.share).label,
             style = MaterialTheme.typography.labelSmall,
             fontFamily = ChakraPetch,
-            color = if (shareLevel(credit.share) == ShareLevel.MAIN) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+            color = if (shareLevel(credit.share) == ShareLevel.MAIN) IronvellumColors.Ink else IronvellumColors.InkMuted,
             letterSpacing = IronvellumTracking.InlineLabel,
         )
         Text(

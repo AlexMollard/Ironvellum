@@ -50,7 +50,7 @@ internal fun ExerciseInfoSheet(
         onDismiss = onDismiss,
         chips = chips,
         actions = buildList {
-            add(InfoAction("CLOSE", onDismiss, quiet = true))
+            add(InfoAction("Close", onDismiss, quiet = true))
             if (onPick != null) add(InfoAction(confirmLabel, onPick))
         },
         // Two pages: the gear rides on ABOUT, and how to, cues and mistakes share FORM. The
