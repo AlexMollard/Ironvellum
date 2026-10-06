@@ -274,6 +274,9 @@ fun TitlesScreen(
     // The pager state is saveable and carries the open tab.
     val pager = rememberPagerState { TitlesTab.entries.size }
     val scope = rememberCoroutineScope()
+    // Back walks a sub-tab home before it leaves the screen. Declared first,
+    // so any deeper page's own handler below still wins.
+    BackHandler(enabled = pager.currentPage != 0) { scope.launch { pager.animateScrollToPage(0) } }
     // The path opened from the grid, null while the grid shows. Saveable so it
     // survives a tab switch and a rotation: PATHS reopens where it was left.
     var openLine by rememberSaveable { mutableStateOf<String?>(null) }

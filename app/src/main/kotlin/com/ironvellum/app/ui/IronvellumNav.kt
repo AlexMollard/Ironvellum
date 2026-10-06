@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -99,10 +100,13 @@ import com.ironvellum.app.ui.program.MuscleCoverageScreen
 import com.ironvellum.app.ui.train.SessionScreen
 import com.ironvellum.app.ui.idle.IdleScreen
 
+/** Ledger back stack flag: open the weigh-in on arrival. */
+private const val LOG_WEIGHT = "log_weight"
+
 object Routes {
     const val DASHBOARD = "dashboard"
     const val PRESETS = "presets"
-    const val EXERCISES = "exercises"
+    const val EXERCISES = "exercises?name={name}"
     const val STATS = "stats"
     const val TITLES = "titles"
     const val IDLE = "idle"
@@ -130,6 +134,9 @@ object Routes {
         if (presetId == null) "preset_editor" else "preset_editor?presetId=$presetId"
 
     fun session(sessionId: Long): String = "session/$sessionId"
+
+    /** Exercises, opened on one lift when [name] is given. */
+    fun exercises(name: String? = null): String = if (name == null) "exercises" else "exercises?name=${Uri.encode(name)}"
 
     fun riteDetail(presetId: Long): String = "rite/$presetId"
 
@@ -572,6 +579,8 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                 launchSingleTop = true
                                 restoreState = true
                             }
+                            // Today offers it to log a weight: open the weigh-in too.
+                            navController.getBackStackEntry(Routes.STATS).savedStateHandle[LOG_WEIGHT] = true
                         },
                         onOpenGarrison = { navController.navigate(Routes.IDLE) { launchSingleTop = true } },
                     )
@@ -585,7 +594,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         },
                         onStartSession = { id -> navController.navigate(Routes.session(id)) },
                         onQuickSession = { id -> navController.navigate(Routes.session(id)) },
-                        onOpenExercises = { navController.navigate(Routes.EXERCISES) },
+                        onOpenExercises = { navController.navigate(Routes.exercises()) },
                         onOpenLog = { navController.navigate(Routes.WORKOUT_LOG) },
                         onOpenCoverage = { navController.navigate(Routes.MUSCLE_COVERAGE) },
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
@@ -623,8 +632,14 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onDone = { navController.popBackStack() },
                     )
                 }
-                composable(Routes.EXERCISES) {
-                    ExerciseExplorerScreen(onBack = { navController.popBackStack() })
+                composable(
+                    Routes.EXERCISES,
+                    arguments = listOf(navArgument("name") { type = NavType.StringType; nullable = true; defaultValue = null }),
+                ) { entry ->
+                    ExerciseExplorerScreen(
+                        onBack = { navController.popBackStack() },
+                        initialName = entry.arguments?.getString("name"),
+                    )
                 }
                 composable(
                     Routes.PRESET_EDITOR,
@@ -643,6 +658,12 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     SessionScreen(
                         sessionId = id,
                         onExit = { navController.popBackStack() },
+                        onSealed = {
+                            // Opened from a notification, Today may not be under it.
+                            if (!navController.popBackStack(Routes.DASHBOARD, inclusive = false)) {
+                                navController.navigate(Routes.DASHBOARD) { popUpTo(0) }
+                            }
+                        },
                         sealRequest = if (sealFor == id) sealSerial else 0,
                         // Served once: leaving and reopening the trial (a new
                         // back stack entry, with its own served count) must
@@ -650,10 +671,14 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         onSealRequestServed = { sealFor = 0L },
                     )
                 }
-                composable(Routes.STATS) {
+                composable(Routes.STATS) { entry ->
+                    val logWeight by entry.savedStateHandle.getStateFlow(LOG_WEIGHT, false).collectAsState()
                     StatsScreen(
+                        logWeightRequested = logWeight,
+                        onLogWeightServed = { entry.savedStateHandle[LOG_WEIGHT] = false },
                         onOpenMeasurement = { site -> navController.navigate(Routes.measurement(site)) },
                         onOpenWorkout = { id -> navController.navigate(Routes.workoutDetail(id)) },
+                        onOpenLift = { name -> navController.navigate(Routes.exercises(name)) },
                         onOpenSettings = { navController.navigate(Routes.settingsSection(it)) },
                     )
                 }

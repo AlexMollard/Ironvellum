@@ -220,7 +220,7 @@ fun TermChip(term: Term, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun TermDialog(term: Term, onDismiss: () -> Unit) {
+internal fun TermDialog(term: Term, onDismiss: () -> Unit) {
     InfoSheet(
         title = term.title,
         onDismiss = onDismiss,

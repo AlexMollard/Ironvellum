@@ -1,7 +1,6 @@
 # Ironvellum design: the Clean direction
 
-Where the app's look is heading. The Clean appearance (Settings → Appearance →
-CLEAN) is the base; this document is the target every screen moves toward. The
+Where the app's look is heading. Clean is the app's only appearance and the base; this document is the target every screen moves toward. The
 words on screen are governed separately by [GLOSSARY.md](GLOSSARY.md), which
 still applies in full.
 
@@ -43,7 +42,7 @@ Cut corners mark containers and the primary control, nothing else. If a screen
 shows cut corners on more than about three things at once, some of those boxes
 should go.
 
-Clean mode today draws every shape with cut corners (`InkEdgeShape`,
+Clean today draws every shape with cut corners (`InkEdgeShape`,
 `ui/theme/Ink.kt:123`). Moving there means inner elements drop their shape and
 border, not that the shape changes.
 
@@ -159,11 +158,10 @@ Screen by screen, each as its own commit. For each screen:
 3. Bring emerald and gold back to their jobs (section 3).
 4. Cut caps labels to one per area and use sentence case elsewhere (section 4).
 5. Check targets and gaps (section 5).
-6. Verify on the phone in both appearances until Ink is retired or kept.
+6. Verify on the phone.
 
 Order: the trial screen (the reference), then Today, Train, the Ledger, the
 Codex, Allies and Settings.
 
-Open decision for the owner: whether Clean becomes the default appearance and
-Ink is retired, or Ink stays as an option. Until that is decided, every change
-must still render correctly in both.
+Decided (2026-10-06): Ink is retired and removed completely. Clean is the only
+appearance, so screens no longer need checking in two styles.

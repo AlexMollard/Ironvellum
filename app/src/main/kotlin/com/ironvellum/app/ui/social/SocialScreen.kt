@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.social
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -71,6 +72,9 @@ fun SocialScreen(
     // The pager state is saveable, so it carries the open tab too.
     val pager = rememberPagerState { GuildTab.entries.size }
     val scope = rememberCoroutineScope()
+    // Back walks a sub-tab home before it leaves the screen. Declared first,
+    // so any deeper page's own handler below still wins.
+    BackHandler(enabled = pager.currentPage != 0) { scope.launch { pager.animateScrollToPage(0) } }
     // Signing in HERE lands on ALLIES, where a fresh Google account's
     // claim-your-name panel lives; a restored session keeps its tab.
     var sawSignedOut by remember { mutableStateOf(!signedIn) }

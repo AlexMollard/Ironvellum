@@ -304,21 +304,12 @@ fun PresetsScreen(
             shareRefusal?.let { line ->
                 Text(line, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed, modifier = Modifier.padding(bottom = 8.dp))
             }
-            // The rite to act on now opens in place, with its button: today's to
-            // begin, the one under way to continue, or on a rest day the next one,
-            // which may be taken early. Every other rite is one line, the whole of
-            // it one tap away on its page.
-            val opened: Triple<Long, String, Boolean>? = when (focus) {
-                is TrainFocus.Begin -> Triple(focus.preset.id, "Begin ${focus.preset.name}", false)
-                is TrainFocus.Live -> focus.preset?.let { Triple(it.id, "Continue ${it.name}", false) }
-                is TrainFocus.Respite -> focus.next?.takeIf { focus.canTakeEarly }?.let { Triple(it.id, "Begin ${it.name} early", false) }
-                else -> null
-            }
+            // Each rite is one line, the whole of it one tap away on its page,
+            // where it is begun; today's is begun from Today.
             InkPanel(Modifier.fillMaxWidth()) {
                 ui.presets.forEach { preset ->
                     val sealed = sealedThisWeek(preset)
                     val isToday = preset.scheduledDay == today
-                    val isOpen = opened?.first == preset.id
                     Row(
                         Modifier
                             .fillMaxWidth()
@@ -342,9 +333,8 @@ fun PresetsScreen(
                         )
                         Text(
                             preset.name,
-                            style = if (isOpen) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
-                            fontWeight = if (isOpen) androidx.compose.ui.text.font.FontWeight.Bold else null,
-                            color = if (isToday || isOpen) IronvellumColors.EmeraldBright else IronvellumColors.Ink,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = if (isToday) IronvellumColors.EmeraldBright else IronvellumColors.Ink,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.weight(1f),
@@ -367,28 +357,6 @@ fun PresetsScreen(
                             },
                             maxLines = 1,
                         )
-                    }
-                    if (opened != null && isOpen) {
-                        // "7 exercises · 21 sets": the time already sits on the row.
-                        Text(
-                            SessionClock.planLine(preset.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(preset.id))
-                                .substringBeforeLast(" · ").lowercase(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = IronvellumColors.InkMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(start = DAY_COLUMN + 10.dp),
-                        )
-                        Spacer(Modifier.height(OPEN_ROW_GAP))
-                        IronvellumButton(
-                            label = opened.second,
-                            onClick = {
-                                if (focus is TrainFocus.Live) onStartSession(focus.session.id) else viewModel.begin(preset.id, onStartSession)
-                            },
-                            quiet = opened.third,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                        Spacer(Modifier.height(OPEN_ROW_GAP))
                     }
                     if (preset != ui.presets.last()) RowRule(seed = preset.id.toInt())
                 }
@@ -761,11 +729,8 @@ private val END_GAP = 24.dp
 /** A list row: the 48dp touch target, the same in both panels. */
 internal val ROW_HEIGHT = 48.dp
 
-/** The cycle list's weekday column; the opened rite's plan line aligns past it. */
+/** The cycle list's weekday column. */
 private val DAY_COLUMN = 36.dp
-
-/** The gap around the opened rite's line and button: a group, held tight. */
-private val OPEN_ROW_GAP = 8.dp
 
 /** A recent trial's row, and the calendar tile that leads it. */
 private val TRIAL_ROW_HEIGHT = 56.dp
