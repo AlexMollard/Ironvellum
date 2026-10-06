@@ -11,6 +11,7 @@ class LiftRecordsTest {
     private val now = 200 * day
 
     private val bench = Exercise(id = 1, name = "Bench Press", muscleGroup = MuscleGroup.PUSH, isWeighted = true)
+    private val pullUp = Exercise(id = 3, name = "Pull-up", muscleGroup = MuscleGroup.PULL, isWeighted = false)
     private val run = Exercise(
         id = 2, name = "Run", muscleGroup = MuscleGroup.CARDIO, isWeighted = false,
         metric = ExerciseMetric.DISTANCE_TIME, category = "Cardio",
@@ -25,7 +26,7 @@ class LiftRecordsTest {
     private fun board(vararg trials: Pair<WorkoutSession, List<SessionSet>>) = LiftRecords.board(
         trials.map { it.first },
         trials.associate { it.first.id to it.second },
-        listOf(bench, run).associateBy { it.id },
+        listOf(bench, pullUp, run).associateBy { it.id },
         now,
     )
 
@@ -67,5 +68,20 @@ class LiftRecordsTest {
         val lift = board(session(1, 30) to listOf(set(bench, 100.0, 1))).single()
         assertNull(lift.deltaKg)
         assertFalse(LiftRecords.isFresh(lift, now))
+    }
+
+    @Test
+    fun `a record carries the actual set that set it, and whether its load is added to the body`() {
+        val rows = board(
+            session(1, 20) to listOf(set(pullUp, 5.0, 8)),
+            session(2, 3) to listOf(set(pullUp, 11.0, 8), set(pullUp, 8.0, 6), set(bench, 100.0, 5)),
+        )
+        val pull = rows.first { it.name == "Pull-up" }
+        assertEquals(11.0, pull.bestSet!!.weightKg!!, 0.0)
+        assertEquals(8, pull.bestSet!!.reps)
+        assertTrue(pull.bestSetAddsToBody)
+        val squat = rows.first { it.name == "Bench Press" }
+        assertEquals(100.0, squat.bestSet!!.weightKg!!, 0.0)
+        assertFalse(squat.bestSetAddsToBody)
     }
 }

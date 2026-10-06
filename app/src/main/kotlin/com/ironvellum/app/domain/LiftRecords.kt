@@ -11,6 +11,10 @@ data class LiftRecord(
     /** Best now minus the best as of the window start; null when the lift has no history that old. */
     val deltaKg: Double?,
     val lastAtMs: Long,
+    /** The set that set [bestE1rmKg]: the actual weight and reps, for showing the peak as it was lifted. */
+    val bestSet: SessionSet? = null,
+    /** The lift is a bodyweight movement (catalogue not weighted), so [bestSet]'s load is ADDED to the body. */
+    val bestSetAddsToBody: Boolean = false,
 )
 
 /**
@@ -32,13 +36,15 @@ object LiftRecords {
         windowDays: Int = 90,
         limit: Int = 8,
     ): List<LiftRecord> {
+        class Peak(val at: Long, val e1rm: Double, val set: SessionSet, val addsToBody: Boolean)
         class Acc(var display: String) {
-            val perSession = mutableListOf<Pair<Long, Double>>()
+            val perSession = mutableListOf<Peak>()
         }
         val byLift = LinkedHashMap<String, Acc>()
         for (session in sessions.sortedBy { it.startedAtMs }) {
             val at = session.completedAtMs ?: session.startedAtMs
             val best = HashMap<String, Double>()
+            val bestSet = HashMap<String, Pair<SessionSet, Boolean>>()
             val shown = HashMap<String, String>()
             for (set in sessionSets[session.id].orEmpty()) {
                 if (!set.done) continue
@@ -51,26 +57,31 @@ object LiftRecords {
                 if (name.isEmpty()) continue
                 val key = name.lowercase()
                 val e1rm = ProgramRules.epley(weight, set.reps)
-                if (e1rm > (best[key] ?: 0.0)) best[key] = e1rm
+                if (e1rm > (best[key] ?: 0.0)) {
+                    best[key] = e1rm
+                    bestSet[key] = set to (ex?.isWeighted == false)
+                }
                 shown.putIfAbsent(key, name)
             }
             for ((key, e1rm) in best) {
                 val acc = byLift.getOrPut(key) { Acc(shown.getValue(key)) }
-                acc.perSession += at to e1rm
+                acc.perSession += Peak(at, e1rm, bestSet.getValue(key).first, bestSet.getValue(key).second)
             }
         }
         val cutoff = nowMs - windowDays * DAY_MS
         return byLift.values.map { acc ->
-            val best = acc.perSession.maxOf { it.second }
-            val bestAt = acc.perSession.last { it.second == best }.first
-            val before = acc.perSession.filter { it.first <= cutoff }.maxOfOrNull { it.second }
+            val best = acc.perSession.maxOf { it.e1rm }
+            val peak = acc.perSession.last { it.e1rm == best }
+            val before = acc.perSession.filter { it.at <= cutoff }.maxOfOrNull { it.e1rm }
             LiftRecord(
                 name = acc.display,
                 bestE1rmKg = best,
-                bestAtMs = bestAt,
-                series = acc.perSession.map { it.second },
+                bestAtMs = peak.at,
+                series = acc.perSession.map { it.e1rm },
                 deltaKg = before?.let { best - it },
-                lastAtMs = acc.perSession.last().first,
+                lastAtMs = acc.perSession.last().at,
+                bestSet = peak.set,
+                bestSetAddsToBody = peak.addsToBody,
             )
         }.sortedByDescending { it.lastAtMs }.take(limit)
     }
