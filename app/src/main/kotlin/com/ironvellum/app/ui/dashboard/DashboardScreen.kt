@@ -14,7 +14,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -26,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -34,12 +34,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -57,7 +58,6 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.IdleSnapshot
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.Exercise
-import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.LiftRecord
 import com.ironvellum.app.domain.LiftRecords
 import com.ironvellum.app.domain.PlayerProfile
@@ -70,10 +70,11 @@ import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.TrainFocus
 import com.ironvellum.app.domain.TrainingFocus
+import com.ironvellum.app.domain.PlannedPreset
+import com.ironvellum.app.domain.ProgramRules
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.Xp
-import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
@@ -311,6 +312,9 @@ internal fun trialLength(trial: WorkoutSession): String? {
     }
 }
 
+/** Trials whose SEALED stamp has already thudded in during this process: it lands once, not on every visit. */
+private val stampedTrials = mutableSetOf<Long>()
+
 /** A movement's mini bar stops growing here; a long block just reads as a long bar. */
 private const val MINI_BAR_SEGMENTS = 8
 
@@ -455,6 +459,8 @@ internal fun TodayContent(
     veil: VeilGlance?,
     actions: TodayActions,
     nowMs: Long = System.currentTimeMillis(),
+    /** Whether the Veil may move; tests hand in false to keep Compose idle. */
+    motion: Boolean = rememberTodayMotion(),
 ) {
     var rankOpen by remember { mutableStateOf(false) }
     var oathOpen by remember { mutableStateOf(false) }
@@ -491,39 +497,48 @@ internal fun TodayContent(
                     .weight(1f)
                     .clickable(onClickLabel = "Open the Codex") { actions.onOpenCodex() },
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        profile?.name ?: "Ironbound",
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = IronvellumColors.Ink,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
+                NameRow(
+                    sigil = { LifterMark(Modifier.testTag("lifter-mark")) },
+                    name = {
+                        Text(
+                            profile?.name ?: "Ironbound",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = IronvellumColors.Ink,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    },
                     // Strength Rank only: ascension names the level on the rail
                     // below, so it is never a stat beside this one.
-                    Row(
-                        Modifier
-                            .heightIn(min = 44.dp)
-                            .clickable(role = Role.Button, onClickLabel = "Show Strength Rank") { rankOpen = true }
-                            .padding(start = 10.dp, end = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text(
-                            strengthRank.ifEmpty { Rank.UNRANKED },
-                            style = MaterialTheme.typography.labelLarge,
-                            color = IronvellumColors.SystemGreen,
-                            maxLines = 1,
-                        )
-                        Icon(
-                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = IronvellumColors.SystemGreen,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
-                }
+                    rank = {
+                        Row(
+                            Modifier
+                                .heightIn(min = 44.dp)
+                                .clickable(role = Role.Button, onClickLabel = "Show Strength Rank") { rankOpen = true }
+                                .padding(start = 10.dp, end = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            // The one gold mark on the header: a rank is earned, "Unranked" has none.
+                            if (strengthRank.isNotEmpty() && strengthRank != Rank.UNRANKED) {
+                                RankLozenge()
+                                Spacer(Modifier.width(8.dp))
+                            }
+                            Text(
+                                strengthRank.ifEmpty { Rank.UNRANKED },
+                                style = MaterialTheme.typography.labelLarge,
+                                color = IronvellumColors.SystemGreen,
+                                maxLines = 1,
+                            )
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = IronvellumColors.SystemGreen,
+                                modifier = Modifier.size(16.dp),
+                            )
+                        }
+                    },
+                )
                 profile?.currentTitleId?.let { Titles.byId(it)?.name }?.let { worn ->
                     Text(
                         worn,
@@ -605,14 +620,23 @@ internal fun TodayContent(
         DayKind.RESPITE -> nextRite?.let { rite -> { actions.onOpenRite(rite.id) } }
         DayKind.NO_CYCLE -> null
     }
+    // The rite's muscle focus, as the rite pages read it: sets per muscle, from the rite's own movements.
+    val glyphSets = remember(selectedPreset) {
+        selectedPreset?.let { ProgramRules.weeklyVolume(listOf(PlannedPreset(it.name, "", null, it.toPlanned().entries))) }.orEmpty()
+    }
+    val daysKept = ui.streak
     val card: @Composable (rows: @Composable () -> Unit) -> Unit = { rows ->
         InkPanel(Modifier.fillMaxWidth().padding(top = 8.dp), onClick = cardClick) {
             when (kind) {
                 DayKind.LIVE -> {
                     val trial = liveTrial!!
-                    CardLabel(if (selectedPreset != null && selectedPreset.id == trial.presetId) "Today's trial" else "Under way")
-                    CardTitle(trial.label, chevron = cardClick != null)
-                    PlanText("$liveDone of ${liveWork.size} sets logged")
+                    val ofToday = selectedPreset != null && selectedPreset.id == trial.presetId
+                    RiteHeader(
+                        title = trial.label,
+                        narrator = narratorLine(kind, liveDone, liveWork.size, daysKept),
+                        meta = AnnotatedString("${if (ofToday) "Today's trial" else "Under way"} · $liveDone of ${liveWork.size} sets logged"),
+                        corner = if (ofToday) ({ RiteGlyph(glyphSets) }) else null,
+                    )
                     SegmentBar(liveDone, liveWork.size)
                     rows()
                     Spacer(Modifier.height(12.dp))
@@ -625,26 +649,22 @@ internal fun TodayContent(
                 DayKind.SEALED -> {
                     val trial = sealedTrial!!
                     val rite = selectedPreset!!
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Filled.Check,
-                            contentDescription = null,
-                            tint = IronvellumColors.SovereignGold,
-                            modifier = Modifier.padding(end = 5.dp).size(13.dp),
-                        )
-                        CardLabel("Sealed", IronvellumColors.SovereignGold)
-                        Spacer(Modifier.weight(1f))
-                        Text(
-                            "+${trial.xpAwarded} XP",
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = IronvellumColors.SovereignGold,
-                            maxLines = 1,
-                        )
-                    }
-                    CardTitle(rite.name, chevron = true)
                     val done = sealedSets.count { it.done && !it.warmup }
-                    PlanText(listOfNotNull("$done ${plural(done, "set", "sets")}", trialLength(trial)).joinToString(" · "))
+                    // The stamp thuds in once, the first time this process shows a rite sealed just now.
+                    val thud = LocalTodayLive.current && LocalTodayMotion.current &&
+                        remember(trial.id) { stampIsFresh(trial.completedAtMs, nowMs) && stampedTrials.add(trial.id) }
+                    RiteHeader(
+                        title = rite.name,
+                        narrator = narratorLine(kind, daysKept = daysKept),
+                        meta = buildAnnotatedString {
+                            withStyle(SpanStyle(color = IronvellumColors.SovereignGold, fontWeight = FontWeight.SemiBold)) { append("Sealed") }
+                            append(" · ${cardRows.size} ${plural(cardRows.size, "exercise", "exercises")} · $done ${plural(done, "set", "sets")}")
+                            trialLength(trial)?.let { append(" · $it") }
+                            append(" · ")
+                            withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append("+${trial.xpAwarded} XP") }
+                        },
+                        corner = { SealedStamp(date = formatDate(trial.completedAtMs ?: trial.startedAtMs, "EEE d MMM"), thud = thud) },
+                    )
                     rows()
                     nextRite?.takeIf { it.id != rite.id }?.let { next ->
                         NextLink(next, chevron = false) { actions.onSelectDay(next.scheduledDay!!) }
@@ -652,9 +672,15 @@ internal fun TodayContent(
                 }
                 DayKind.BEGIN, DayKind.PLANNED -> {
                     val rite = selectedPreset!!
-                    CardLabel(if (isTodaySelected) "Today's trial" else dayLong(selectedDay))
-                    CardTitle(rite.name, chevron = true)
-                    PlanText(sentencePlan(SessionClock.planLine(rite.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(rite.id))))
+                    RiteHeader(
+                        title = rite.name,
+                        narrator = narratorLine(kind, daysKept = daysKept),
+                        meta = AnnotatedString(
+                            (if (isTodaySelected) "Today's trial" else dayLong(selectedDay)) + " · " +
+                                sentencePlan(SessionClock.planLine(rite.toPlanned().entries, ui.focus, ui.pace.secondsPerSet(rite.id))),
+                        ),
+                        corner = { RiteGlyph(glyphSets) },
+                    )
                     rows()
                     // Today is where the day's rite is begun: Train only plans it.
                     if (kind == DayKind.BEGIN) {
@@ -667,24 +693,16 @@ internal fun TodayContent(
                     }
                 }
                 DayKind.RESPITE -> {
-                    CardLabel(if (isTodaySelected) "Today" else dayLong(selectedDay))
-                    CardTitle("Respite", chevron = false)
-                    Text(
-                        "A day the cycle leaves free.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = IronvellumColors.InkMuted,
-                        modifier = Modifier.padding(top = 2.dp),
+                    RiteHeader(
+                        title = "Respite",
+                        narrator = narratorLine(kind, daysKept = daysKept),
+                        meta = null,
+                        lead = { LedgerMotif() },
                     )
                     nextRite?.let { next -> NextLink(next, chevron = true) { actions.onSelectDay(next.scheduledDay!!) } }
                 }
                 DayKind.NO_CYCLE -> {
-                    CardTitle("No cycle yet", chevron = false)
-                    Text(
-                        "Your cycle is unwritten. Forge one and its rites land here.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = IronvellumColors.InkMuted,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
+                    RiteHeader(title = "No cycle yet", narrator = narratorLine(kind), meta = null)
                     Spacer(Modifier.height(16.dp))
                     IronvellumButton(label = "Forge a cycle", onClick = actions.onOpenForge, modifier = Modifier.fillMaxWidth())
                 }
@@ -734,14 +752,22 @@ internal fun TodayContent(
         }
     }
 
-    TodayLayout(
-        rows = cardRows,
-        hero = kind == DayKind.RESPITE,
-        head = head,
-        card = card,
-        plain = plain,
-        veil = { full -> VeilSection(veil, full, nowMs, actions.onOpenGarrison) },
-    )
+    CompositionLocalProvider(LocalTodayMotion provides motion) {
+        TodayLayout(
+            rows = cardRows,
+            head = head,
+            card = card,
+            plain = plain,
+            veil = { full ->
+                val form = when {
+                    !full -> VeilForm.COMPACT
+                    kind == DayKind.RESPITE -> VeilForm.HERO
+                    else -> VeilForm.FULL
+                }
+                VeilSection(veil, form, nowMs, actions.onOpenGarrison)
+            },
+        )
+    }
     if (rankOpen) RankSheet(rankBreakdown) { rankOpen = false }
     if (oathOpen) TermDialog(Term.OATH) { oathOpen = false }
 }
@@ -769,13 +795,17 @@ private fun TodayPage(
     plain: @Composable () -> Unit,
     rows: @Composable () -> Unit,
     veil: (@Composable () -> Unit)?,
+    live: Boolean = false,
 ) {
-    Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) {
-        head()
-        card(rows)
-        plain()
-        veil?.invoke()
-        Spacer(Modifier.height(BOTTOM_CLEARANCE))
+    // Only the page that is shown is live: a measuring probe must neither animate nor spend a one-off.
+    CompositionLocalProvider(LocalTodayLive provides live) {
+        Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) {
+            head()
+            card(rows)
+            plain()
+            veil?.invoke()
+            Spacer(Modifier.height(BOTTOM_CLEARANCE))
+        }
     }
 }
 
@@ -785,14 +815,13 @@ private fun TodayPage(
  * heights to [fitToday] and composes the page once with what fits. The probes sit in slots of their
  * own and are never placed.
  *
- * Degradation, in order: exercise rows tighten from 52dp toward 40dp; the Veil's full form (respite
- * only, when there are no rows) gives way to the compact one; rows fold into "+N more". Plain rows
- * are never dropped.
+ * Degradation, in order: exercise rows tighten from 52dp toward 40dp; the Veil's full form (the hero on
+ * a respite day) gives way to the compact one; rows fold into "+N more". Plain rows are never dropped.
+ * Every Veil form carries its reserved inscriptions line, so the probes already include it.
  */
 @Composable
 private fun TodayLayout(
     rows: List<DayRow>,
-    hero: Boolean,
     head: @Composable () -> Unit,
     card: @Composable (rows: @Composable () -> Unit) -> Unit,
     plain: @Composable () -> Unit,
@@ -810,8 +839,7 @@ private fun TodayLayout(
 
         val chrome = heightOf("chrome") { TodayPage(head, card, plain, rows = {}, veil = null) }
         val veilCompact = heightOf("veilCompact") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(false) } }
-        val veilFull =
-            if (hero) heightOf("veilFull") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(true) } } else null
+        val veilFull = heightOf("veilFull") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(true) } }
         // A row sits inside the page gutter and the card's own padding; only its content height matters here.
         val rowContent =
             if (rows.isEmpty()) 0
@@ -838,7 +866,7 @@ private fun TodayLayout(
         val placeables = if (fit != null) {
             val rowHeight = fit.rowHeight.toDp()
             subcompose("page") {
-                TodayPage(head, card, plain, rows = { ExerciseBlock(rows, fit.rows, rowHeight, hidden = rows.size - fit.rows) }, veil = { veil(fit.fullVeil) })
+                TodayPage(head, card, plain, rows = { ExerciseBlock(rows, fit.rows, rowHeight, hidden = rows.size - fit.rows) }, veil = { veil(fit.fullVeil) }, live = true)
             }.map { it.measure(Constraints(minWidth = width, maxWidth = width, maxHeight = available)) }
         } else {
             // The least this page can be still does not fit (a very large font, a very small screen):
@@ -847,7 +875,7 @@ private fun TodayLayout(
             val rowHeight = naturalRow.toDp()
             subcompose("scroll") {
                 Column(Modifier.verticalScroll(rememberScrollState())) {
-                    TodayPage(head, card, plain, rows = { ExerciseBlock(rows, rows.size, rowHeight, hidden = 0) }, veil = { veil(hero) })
+                    TodayPage(head, card, plain, rows = { ExerciseBlock(rows, rows.size, rowHeight, hidden = 0) }, veil = { veil(true) }, live = true)
                 }
             }.map { it.measure(Constraints.fixed(width, available)) }
         }
@@ -858,8 +886,9 @@ private fun TodayLayout(
 }
 
 /**
- * The week at a glance: one letter per day, the scheduled ones in Ink, today bold, a small check
- * under a day whose rite is sealed and an emerald underline under the day being read.
+ * The week at a glance: one letter per day, the scheduled ones in Ink, today bold, a small gold seal
+ * under a day whose rite is sealed (the same test as the card's SEALED state) and an emerald underline
+ * under the day being read.
  */
 @Composable
 private fun WeekRail(
@@ -894,14 +923,7 @@ private fun WeekRail(
                 )
                 // A fixed slot, so a tick never moves the letters.
                 Box(Modifier.height(16.dp), contentAlignment = Alignment.Center) {
-                    if (isDone) {
-                        Icon(
-                            Icons.Filled.Check,
-                            contentDescription = null,
-                            tint = IronvellumColors.Emerald,
-                            modifier = Modifier.size(12.dp),
-                        )
-                    }
+                    if (isDone) SealMark(14.dp)
                 }
                 Box(
                     Modifier
@@ -912,54 +934,6 @@ private fun WeekRail(
             }
         }
     }
-}
-
-/** The card's one caps label. */
-@Composable
-private fun CardLabel(text: String, color: Color = IronvellumColors.InkMuted) {
-    Text(
-        text.uppercase(),
-        style = MaterialTheme.typography.labelSmall,
-        fontFamily = ChakraPetch,
-        color = color,
-        letterSpacing = IronvellumTracking.InlineLabel,
-        maxLines = 1,
-    )
-}
-
-/** The card's subject: a rite name, with a chevron when tapping the card opens something. */
-@Composable
-private fun CardTitle(text: String, chevron: Boolean) {
-    Row(Modifier.padding(top = 6.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text,
-            style = MaterialTheme.typography.titleMedium,
-            color = IronvellumColors.Ink,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        if (chevron) {
-            Icon(
-                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
-                tint = IronvellumColors.InkMuted,
-                modifier = Modifier.size(18.dp),
-            )
-        }
-    }
-}
-
-@Composable
-private fun PlanText(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.bodySmall,
-        color = IronvellumColors.InkMuted,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.padding(top = 2.dp),
-    )
 }
 
 /** One straight segment per set, [done] of [total] filled, with 3dp between. */
@@ -985,7 +959,7 @@ private fun SegmentBar(done: Int, total: Int) {
 @Composable
 private fun ExerciseBlock(rows: List<DayRow>, shown: Int, rowHeight: Dp, hidden: Int) {
     if (shown == 0 && hidden == 0) return
-    Column(Modifier.fillMaxWidth().padding(top = ROWS_TOP_PAD)) {
+    Column(Modifier.fillMaxWidth().padding(top = ROWS_TOP_PAD).testTag("today-rows")) {
         rows.take(shown).forEachIndexed { index, row -> ExerciseRow(row, rowHeight, divider = index > 0) }
         if (hidden > 0) MoreLine(hidden, divider = shown > 0)
     }
@@ -1154,135 +1128,5 @@ private fun BodyGapRow(gap: BodyGap, onFix: () -> Unit) {
             color = IronvellumColors.SystemGreen,
             maxLines = 1,
         )
-    }
-}
-
-/**
- * The Veil under the day card, unboxed behind a hairline. Compact: "The Veil", essence and rate on one
- * line, the full-strength bar with its caption, and inscriptions waiting with the way to inscribe them.
- * [full] (a respite day, when it is the main element and there is room) grows it: the essence as the
- * hero figure with the rate beside the name, echoes and the relic multiplier. Tapping it opens the Veil.
- */
-@Composable
-private fun VeilSection(veil: VeilGlance?, full: Boolean, nowMs: Long, onOpen: () -> Unit) {
-    Column(Modifier.fillMaxWidth().padding(top = 14.dp)) {
-        InkDivider()
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .clickable(role = Role.Button, onClickLabel = "Open the Veil", onClick = onOpen)
-                .padding(top = 14.dp),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "The Veil",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
-                    color = IronvellumColors.Ink,
-                    modifier = Modifier.weight(1f),
-                )
-                if (full) {
-                    veil?.let {
-                        Text(
-                            "${rateLabel(it.snapshot.rate.perHour)}/h",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = IronvellumColors.InkMuted,
-                        )
-                    }
-                }
-                Icon(
-                    Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = IronvellumColors.InkMuted,
-                    modifier = Modifier.padding(start = 6.dp).size(18.dp),
-                )
-            }
-            if (veil != null) {
-                val state = veil.snapshot.state
-                // Banked plus what is accruing now: the same headline the Veil shows.
-                val essence = "%,d".fmt(Idle.collect(state, veil.snapshot.rate, nowMs).essence)
-                if (full) {
-                    Row(Modifier.padding(top = 14.dp), verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            essence,
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = IronvellumColors.Ink,
-                            maxLines = 1,
-                        )
-                        Text(
-                            "essence",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = IronvellumColors.InkMuted,
-                            modifier = Modifier.padding(start = 6.dp, bottom = 4.dp),
-                        )
-                    }
-                } else {
-                    Text(
-                        buildAnnotatedString {
-                            withStyle(SpanStyle(color = IronvellumColors.Ink, fontWeight = FontWeight.SemiBold)) { append(essence) }
-                            append(" essence · ${rateLabel(veil.snapshot.rate.perHour)}/h")
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = IronvellumColors.InkMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
-                }
-                veilStrength(state.lastCollectedAtMs, nowMs)?.let { strength ->
-                    InkRail(
-                        fraction = strength.fraction,
-                        modifier = Modifier.padding(top = if (full) 12.dp else 8.dp),
-                        height = 3.dp,
-                        fill = SolidColor(IronvellumColors.InkMuted),
-                    )
-                    Text(
-                        strength.caption,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.InkMuted,
-                        modifier = Modifier.padding(top = if (full) 6.dp else 4.dp),
-                    )
-                }
-                if (full) {
-                    Row(Modifier.padding(top = 14.dp), horizontalArrangement = Arrangement.spacedBy(28.dp)) {
-                        VeilFigure("Echoes", state.figures.toString())
-                        if (state.relicMultiplier > 1.0) VeilFigure("Relic", "×${"%.2f".fmt(state.relicMultiplier)}")
-                    }
-                }
-            }
-        }
-        val waiting = veil?.inscriptions ?: 0
-        if (waiting > 0) {
-            Row(Modifier.fillMaxWidth().heightIn(min = 44.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    "$waiting ${plural(waiting, "inscription", "inscriptions")} waiting",
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = IronvellumColors.SovereignGold,
-                    modifier = Modifier.weight(1f),
-                )
-                // The Veil is where inscriptions are spent: the same destination as the section.
-                Text(
-                    "Inscribe",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = IronvellumColors.SystemGreen,
-                    modifier = Modifier
-                        .heightIn(min = 44.dp)
-                        .clickable(role = Role.Button, onClickLabel = "Inscribe in the Veil", onClick = onOpen)
-                        .padding(start = 12.dp)
-                        .wrapContentHeight(Alignment.CenterVertically),
-                )
-            }
-        }
-    }
-}
-
-/** A small label over a figure. */
-@Composable
-private fun VeilFigure(label: String, value: String) {
-    Column {
-        Text(label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
-        Text(value, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
     }
 }

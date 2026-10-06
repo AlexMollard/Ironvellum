@@ -9,6 +9,7 @@ import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.ui.components.formatLoadKg
+import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.train.setFigureText
 import kotlin.math.ceil
 import kotlin.math.roundToInt
@@ -194,3 +195,97 @@ private fun rowsThatFit(b: TodayBudget, room: Int, mayTruncate: Boolean): Pair<I
 /** "40" for a whole rate, "12.5" otherwise. */
 internal fun rateLabel(perHour: Double): String =
     if (perHour % 1.0 == 0.0) "%.0f".format(java.util.Locale.US, perHour) else "%.1f".format(java.util.Locale.US, perHour)
+
+/**
+ * The one italic line under the rite name, by state. All of Today's narration lives here so the voice
+ * is read, tested and kept free of retired words in one place. [setsDone] and [setsTotal] are the live
+ * trial's working sets; [daysKept] is the oath's count.
+ */
+internal fun narratorLine(kind: DayKind, setsDone: Int = 0, setsTotal: Int = 0, daysKept: Int = 0): String = when (kind) {
+    DayKind.BEGIN ->
+        if (daysKept > 0) "The page is blank. $daysKept ${plural(daysKept, "day", "days")} of ink behind it."
+        else "The page is blank."
+    DayKind.LIVE -> when {
+        setsDone <= 0 -> "The page is blank. Ink the first set."
+        setsDone >= setsTotal -> "Every set is inked. Seal the page."
+        setsDone * 3 < setsTotal -> "$setsDone ${plural(setsDone, "set", "sets")} inked. The page begins to fill."
+        else -> "$setsDone ${plural(setsDone, "set", "sets")} inked. The page is half written."
+    }
+    DayKind.SEALED -> "The Ledger gilds its page."
+    DayKind.PLANNED -> "The page waits for its day."
+    DayKind.RESPITE ->
+        if (daysKept > 0) "The Ledger rests its pen. Your oath holds." else "The Ledger rests its pen."
+    DayKind.NO_CYCLE -> "Your cycle is unwritten. Forge one and its rites land here."
+}
+
+/**
+ * The Veil's reserved inscriptions line. It is shown in every Veil form whether or not any wait, so the
+ * layout never shifts when one arrives: with none (or while the Veil is still loading) it is a quiet
+ * line, and [InscriptionsLine.inscribe] says whether the "Inscribe" link rides it.
+ */
+internal data class InscriptionsLine(val text: String, val waiting: Boolean) {
+    val inscribe: Boolean get() = waiting
+}
+
+internal fun inscriptionsLine(waiting: Int?): InscriptionsLine = when {
+    waiting == null -> InscriptionsLine("", waiting = false)
+    waiting > 0 -> InscriptionsLine("$waiting ${plural(waiting, "inscription", "inscriptions")} waiting", waiting = true)
+    else -> InscriptionsLine("No inscriptions waiting", waiting = false)
+}
+
+/** The SEALED stamp thuds in once, and only for a rite sealed this recently: an old seal is simply there. */
+internal const val STAMP_FRESH_MS = 60L * 60 * 1000
+
+internal fun stampIsFresh(completedAtMs: Long?, nowMs: Long): Boolean =
+    completedAtMs != null && nowMs - completedAtMs in 0..STAMP_FRESH_MS
+
+/**
+ * One drifting mote of the Veil: where it starts as a fraction of the area, its size, how long a rise
+ * takes ([periodS], always a divisor of [MOTION_LOOP_S] so the shared loop wraps without a jump), its
+ * [phase] into that rise, and how far it drifts sideways and up.
+ */
+internal data class VeilMote(
+    val x: Float,
+    val y: Float,
+    val radiusDp: Float,
+    val periodS: Int,
+    val phase: Float,
+    val driftDp: Float,
+    val rise: Float,
+    val bright: Boolean,
+)
+
+/** One full turn of Today's motion clock, in seconds: every period below divides it. */
+internal const val MOTION_LOOP_S = 360
+
+private val MOTE_PERIODS_S = intArrayOf(10, 12, 15, 18, 20)
+
+/** A seeded field, so the same Veil always drifts the same way. */
+internal fun veilMotes(count: Int, seed: Long, maxRadiusDp: Float = 2f): List<VeilMote> {
+    val rng = kotlin.random.Random(seed)
+    return List(count) {
+        VeilMote(
+            x = 0.02f + rng.nextFloat() * 0.94f,
+            y = rng.nextFloat(),
+            radiusDp = 0.7f + rng.nextFloat() * (maxRadiusDp - 0.7f),
+            periodS = MOTE_PERIODS_S[rng.nextInt(MOTE_PERIODS_S.size)],
+            phase = rng.nextFloat(),
+            driftDp = (rng.nextFloat() - 0.5f) * 52f,
+            rise = 0.35f + rng.nextFloat() * 0.45f,
+            bright = rng.nextFloat() < 0.2f,
+        )
+    }
+}
+
+/** How far along its rise a mote is at [loop] (0..1 of [MOTION_LOOP_S]), 0..1. */
+internal fun moteProgress(mote: VeilMote, loop: Float): Float {
+    val p = (loop * MOTION_LOOP_S / mote.periodS + mote.phase) % 1f
+    return if (p < 0f) p + 1f else p
+}
+
+/** A mote's opacity over its rise: fades in, holds, fades out, so none ever pops. */
+internal fun moteAlpha(progress: Float): Float = when {
+    progress < 0.15f -> progress / 0.15f * 0.75f
+    progress < 0.8f -> 0.75f - (progress - 0.15f) / 0.65f * 0.3f
+    else -> (1f - progress) / 0.2f * 0.45f
+}.coerceIn(0f, 1f)
