@@ -26,7 +26,7 @@ import com.ironvellum.app.ui.components.InfoChip
 import com.ironvellum.app.ui.components.InfoProgress
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.theme.InkCircleShape
+import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.components.reveal
 import com.ironvellum.app.ui.theme.IronvellumColors
 import java.util.Locale
@@ -43,7 +43,7 @@ internal fun rarityColor(rarity: TitleRarity): Color = rarity.reveal().ink
 internal fun RarityMark(rarity: TitleRarity, modifier: Modifier = Modifier) {
     val accent = rarityColor(rarity)
     Row(modifier, verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-        Box(Modifier.size(8.dp).clip(InkCircleShape(7)).background(accent))
+        Box(Modifier.size(8.dp).clip(DotShape).background(accent))
         Text(
             rarity.label,
             style = MaterialTheme.typography.bodySmall,

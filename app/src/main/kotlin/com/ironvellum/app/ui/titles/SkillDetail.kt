@@ -371,7 +371,7 @@ private fun AttemptLogger(
     // One shape value for fill and border: two instances could
     // silently diverge, and a drawn edge must trace the same
     // line twice or it reads as a double outline.
-    val readoutShape = MaterialTheme.shapes.small
+    val readoutShape = MaterialTheme.shapes.medium
     Row(
         Modifier
             .fillMaxWidth()

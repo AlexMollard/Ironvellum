@@ -110,7 +110,7 @@ private fun CrestPlate(
 
     val plateSize = 96.dp
     val plateCut = with(LocalDensity.current) { (plateSize / 4).toPx() }
-    val shape = InkPlateShape(plateCut, salt = 31)
+    val shape = InkPlateShape(plateCut)
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,

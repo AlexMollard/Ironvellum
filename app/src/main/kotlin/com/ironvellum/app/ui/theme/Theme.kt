@@ -1,9 +1,11 @@
 package com.ironvellum.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
-import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Shapes
+import androidx.compose.material3.TextFieldColors
 import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
@@ -72,6 +74,7 @@ private val IronvellumColorScheme = darkColorScheme(
     surfaceVariant = IronvellumColors.VaultHigh,
     onSurfaceVariant = IronvellumColors.InkMuted,
     outline = IronvellumColors.Rune,
+    outlineVariant = IronvellumColors.Rune,
     error = IronvellumColors.DangerRed,
     onError = Color.Black,
 )
@@ -109,15 +112,15 @@ private val IronvellumTypography: Typography
             displaySmall = display(34),
             headlineLarge = head(30),
             headlineMedium = head(26),
-            headlineSmall = head(22),
+            headlineSmall = title(22, FontWeight.Bold),
             titleLarge = title(20, FontWeight.Bold),
             titleMedium = title(16, FontWeight.SemiBold),
             titleSmall = title(14, FontWeight.SemiBold),
             bodyLarge = base.bodyLarge.copy(fontFamily = ChakraPetch),
             bodyMedium = base.bodyMedium.copy(fontFamily = ChakraPetch),
             bodySmall = base.bodySmall.copy(fontFamily = ChakraPetch),
-            labelLarge = label(14, 4.0),
-            labelMedium = label(12, 2.0),
+            labelLarge = label(14, 0.5),
+            labelMedium = label(12, 0.5),
             // Material's own label size and tracking: this style carries whole
             // sentences (captions, hints, deed bars), and 10sp at 2sp tracking
             // read as a row of loose letters. Caps labels that want the wide
@@ -126,28 +129,36 @@ private val IronvellumTypography: Typography
         )
     }
 
-// Ink edges everywhere. Nothing in the theme is geometric any more.
-//
-// extraSmall kept a 3dp cut corner for a while, on the theory that a wander
-// eats a small corner. Bounding the wander by the surface's short side made
-// that reason obsolete - a badge now drifts ~1px, which reads as drawn rather
-// than broken - and a single geometric shape is a straight line the eye finds
-// immediately amongst inked neighbours.
-//
-// Distinct salts stop a badge, a button, a chip and a panel from sharing one
-// traced outline.
+// Cut corners mark containers and the primary control, nothing else
+// (docs/DESIGN.md section 2): medium and large keep the 8dp cut, so cards and
+// the primary button read as the app's one shaped thing. extraSmall and small
+// are plain rectangles for everything that sits inside a card - chips, fields,
+// rows, badges - so they carry no corner at all.
+// Shapes demands a CornerBasedShape, so "square" is a zero-radius one.
+private val SquareShape = RoundedCornerShape(0.dp)
+
 private val IronvellumShapes = Shapes(
-    extraSmall = InkEdgeShape(
-        salt = 7,
-        topStart = CornerSize(3.dp),
-        topEnd = CornerSize(3.dp),
-        bottomEnd = CornerSize(3.dp),
-        bottomStart = CornerSize(3.dp),
-    ),
-    small = InkEdgeShape(salt = 11),
-    medium = InkEdgeShape(salt = 23),
-    large = InkEdgeShape(salt = 37),
-    extraLarge = InkEdgeShape(salt = 53),
+    extraSmall = SquareShape,
+    small = SquareShape,
+    medium = InkEdgeShape(),
+    large = InkEdgeShape(),
+    extraLarge = InkEdgeShape(),
+)
+
+/**
+ * Neutral text-field colours: the focused border and label are muted ink, not
+ * emerald (emerald is the screen's one action), and the cursor is the quiet
+ * green. Material has no theme-level hook for these, so fields opt in.
+ */
+@Composable
+fun ironvellumFieldColors(): TextFieldColors = OutlinedTextFieldDefaults.colors(
+    focusedBorderColor = IronvellumColors.InkMuted,
+    unfocusedBorderColor = IronvellumColors.Rune,
+    focusedLabelColor = IronvellumColors.InkMuted,
+    unfocusedLabelColor = IronvellumColors.InkMuted,
+    cursorColor = IronvellumColors.SystemGreen,
+    focusedTextColor = IronvellumColors.Ink,
+    unfocusedTextColor = IronvellumColors.Ink,
 )
 
 /** Ironvellum is always dark — the Ledger never sleeps. Dynamic color is deliberately unused. */

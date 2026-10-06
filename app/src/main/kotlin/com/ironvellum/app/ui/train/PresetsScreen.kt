@@ -689,7 +689,7 @@ private const val LEAD_MOVEMENTS = 3
 
 @Composable
 private fun RowRule(seed: Int) {
-    Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = seed))
+    Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune))
 }
 
 /** One way out of Train: icon, label, an optional fact, and a chevron. */

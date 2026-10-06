@@ -52,7 +52,7 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.InkCircleShape
+import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -322,7 +322,7 @@ private fun InboxRow(
                         Modifier
                             .align(Alignment.TopEnd)
                             .size(7.dp)
-                            .clip(InkCircleShape(7))
+                            .clip(DotShape)
                             .background(IronvellumColors.SovereignGold)
                             // The dot is the only unread cue a screen reader could miss.
                             .semantics { contentDescription = "New" },

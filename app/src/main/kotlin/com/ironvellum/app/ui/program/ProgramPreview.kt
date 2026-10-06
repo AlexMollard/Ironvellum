@@ -105,7 +105,7 @@ fun ProposedDay(
     // The ink identity is hand-drawn: a geometric RoundedCornerShape here
     // reads as a foreign rectangle, which is why InkCoverageTest fails the
     // build on one.
-    val dayShape = MaterialTheme.shapes.extraSmall
+    val dayShape = MaterialTheme.shapes.medium
     var open by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf<Int?>(null) }
     Column(
         Modifier
@@ -121,7 +121,7 @@ fun ProposedDay(
                 style = MaterialTheme.typography.titleMedium,
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
-                color = IronvellumColors.EmeraldBright,
+                color = IronvellumColors.Ink,
                 letterSpacing = IronvellumTracking.InlineLabel,
             )
             Spacer(Modifier.width(10.dp))

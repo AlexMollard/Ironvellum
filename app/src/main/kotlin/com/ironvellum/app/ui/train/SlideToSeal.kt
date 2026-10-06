@@ -95,7 +95,7 @@ internal fun SlideToSeal(
     resetKey: Int = 0,
     trackColor: Color = IronvellumColors.Abyss,
 ) {
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.medium
     val density = LocalDensity.current
     val motion = animatorsOn(LocalContext.current)
     val scope = rememberCoroutineScope()

@@ -167,7 +167,7 @@ fun RiteDetailScreen(
                 InkPanel(Modifier.fillMaxWidth()) {
                     preset.entries.forEachIndexed { index, entry ->
                         if (index > 0) {
-                            Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune, seed = index))
+                            Box(Modifier.fillMaxWidth().height(2.dp).inkHairline(IronvellumColors.Rune))
                         }
                         Row(
                             Modifier.fillMaxWidth().padding(vertical = 8.dp),

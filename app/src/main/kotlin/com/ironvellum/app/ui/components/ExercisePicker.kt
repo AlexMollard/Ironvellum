@@ -505,11 +505,11 @@ private fun PickerRow(
         Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp)
-            .clip(MaterialTheme.shapes.small)
+            .clip(MaterialTheme.shapes.medium)
             .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
             .inkBorder(
                 if (favourite) IronvellumColors.SovereignGold.copy(alpha = 0.55f) else IronvellumColors.Rune,
-                MaterialTheme.shapes.small,
+                MaterialTheme.shapes.medium,
                 1.dp,
             )
             .clickable(onClickLabel = pickLabel) { onPick(exercise) }

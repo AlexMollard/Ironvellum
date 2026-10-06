@@ -63,6 +63,8 @@ import com.ironvellum.app.ui.components.decimalKeyboard
 import com.ironvellum.app.ui.components.wholeKeyboard
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.ironvellumFieldColors
+import com.ironvellum.app.ui.theme.IronvellumTracking
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -289,10 +291,12 @@ fun PresetEditorScreen(
             if (ui.presetId == null) "NEW RITE" else "REFORGE THIS RITE",
             style = MaterialTheme.typography.labelLarge,
             color = IronvellumColors.SystemGreen,
+            letterSpacing = IronvellumTracking.SectionHeader,
         )
         Spacer(Modifier.height(10.dp))
         OutlinedTextField(
             shape = MaterialTheme.shapes.small,
+            colors = ironvellumFieldColors(),
             value = ui.name,
             onValueChange = viewModel::setName,
             label = { Text("Rite name") },
@@ -302,6 +306,7 @@ fun PresetEditorScreen(
         Spacer(Modifier.height(8.dp))
         OutlinedTextField(
             shape = MaterialTheme.shapes.small,
+            colors = ironvellumFieldColors(),
             value = ui.note,
             onValueChange = viewModel::setNote,
             label = { Text("Note") },
@@ -544,6 +549,7 @@ private fun EntryRow(
         Spacer(Modifier.height(6.dp))
         OutlinedTextField(
             shape = MaterialTheme.shapes.small,
+            colors = ironvellumFieldColors(),
             value = entry.modifiers,
             onValueChange = { onEntry(entry.copy(modifiers = it.take(60))) },
             // The examples used to ride in the label, so a six-movement preset
@@ -597,6 +603,7 @@ private fun NumberField(
 ) {
     OutlinedTextField(
         shape = MaterialTheme.shapes.small,
+        colors = ironvellumFieldColors(),
         value = value,
         isError = isError,
         onValueChange = { input ->

@@ -445,7 +445,7 @@ private fun MuscleTile(
 ) {
     val level = levelOf(muscle, sets, goal)
     val colour = verdictTextColour(level)
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.medium
     Row(
         modifier
             .heightIn(min = 56.dp)
@@ -602,7 +602,7 @@ private fun ExerciseRow(
     open: Boolean,
     onToggle: () -> Unit,
 ) {
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.medium
     Column(
         Modifier
             .fillMaxWidth()

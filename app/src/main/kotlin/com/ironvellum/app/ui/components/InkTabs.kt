@@ -33,6 +33,7 @@ import androidx.compose.ui.util.lerp
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkHairline
+import com.ironvellum.app.ui.theme.IronvellumTracking
 
 private val TabPad = 10.dp
 
@@ -78,7 +79,7 @@ fun InkTabs(
                 .padding(bottom = LedgerSpace.Target - RuleY)
                 .fillMaxWidth()
                 .height(1.dp)
-                .inkHairline(IronvellumColors.Rune, seed = 7, thickness = 1.dp),
+                .inkHairline(IronvellumColors.Rune, thickness = 1.dp),
         )
         Row(
             Modifier
@@ -127,6 +128,7 @@ fun InkTabs(
                         // One weight for both states, so selecting never changes a tab's width.
                         fontWeight = FontWeight.SemiBold,
                         color = if (selected) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                        letterSpacing = IronvellumTracking.InlineLabel,
                         maxLines = 1,
                         softWrap = false,
                     )

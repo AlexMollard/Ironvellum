@@ -98,6 +98,7 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.ui.theme.ironvellumFieldColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -638,7 +639,7 @@ private fun StepHeader(step: Int, onSkip: () -> Unit) {
             style = MaterialTheme.typography.titleLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
-            color = IronvellumColors.EmeraldBright,
+            color = IronvellumColors.Ink,
             letterSpacing = IronvellumTracking.ScreenTitle,
             modifier = Modifier.semantics { contentDescription = stepTitle(step).lowercase() },
         )
@@ -770,6 +771,7 @@ private fun ProfileStep(
         InkPanel(Modifier.fillMaxWidth()) {
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
+                colors = ironvellumFieldColors(),
                 value = name,
                 onValueChange = { onName(it.take(24)) },
                 label = { Text("Your name") },
@@ -784,6 +786,7 @@ private fun ProfileStep(
             ) {
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
+                    colors = ironvellumFieldColors(),
                     value = heightInput,
                     onValueChange = { onHeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
                     label = { Text("Height (cm)") },
@@ -793,6 +796,7 @@ private fun ProfileStep(
                 )
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
+                    colors = ironvellumFieldColors(),
                     value = weightInput,
                     onValueChange = { onWeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
                     label = { Text("Weight (kg)") },

@@ -307,7 +307,7 @@ private fun CelebrationDock(
             Modifier
                 .fillMaxWidth()
                 .height(52.dp)
-                .clip(MaterialTheme.shapes.small)
+                .clip(MaterialTheme.shapes.medium)
                 .background(IronvellumColors.Emerald)
                 .clickable(role = Role.Button, onClick = onPrimary),
             contentAlignment = Alignment.Center,

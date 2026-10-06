@@ -233,8 +233,8 @@ internal fun DrawScope.drawScrub(
     seed: Int,
 ) {
     val ink = IronvellumColors.Ink
-    inkStroke(Offset(cursorX, 0f), Offset(cursorX, size.height), ink.copy(alpha = 0.7f), 1.6f, seed = seed, taperEnds = false)
-    if (dotY != null) inkDot(Offset(cursorX, dotY), 6.5f, ink, seed = seed)
+    inkStroke(Offset(cursorX, 0f), Offset(cursorX, size.height), ink.copy(alpha = 0.7f), 1.6f)
+    if (dotY != null) inkDot(Offset(cursorX, dotY), 6.5f, ink)
 
     val label = measurer.measure(text, style)
     val padX = 6.dp.toPx()

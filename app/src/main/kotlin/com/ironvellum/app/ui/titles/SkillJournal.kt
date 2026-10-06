@@ -45,8 +45,7 @@ import com.ironvellum.app.ui.theme.inkHairline
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.InkPlateShape
 import androidx.compose.ui.platform.LocalDensity
-import com.ironvellum.app.ui.theme.InkEdgeShape
-import androidx.compose.foundation.shape.CornerSize
+import com.ironvellum.app.ui.theme.TileShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import java.time.Instant
@@ -132,18 +131,7 @@ fun SkillJournal(
         Column(Modifier.fillMaxWidth()) {
             val start = today.minusWeeks((WEEKS - 1).toLong())
                 .with(java.time.DayOfWeek.MONDAY)
-            // ONE shape for every cell, not one per cell. InkEdgeShape keeps a
-            // minimum wobble so small fills still read as drawn, which on a 12px
-            // cell is a tenth of its height - with a different salt per cell the
-            // grid came out as a different silhouette per cell and read as torn rather
-            // than inked.
-            val cellShape = InkEdgeShape(
-                salt = 7,
-                topStart = CornerSize(2.dp),
-                topEnd = CornerSize(2.dp),
-                bottomEnd = CornerSize(2.dp),
-                bottomStart = CornerSize(2.dp),
-            )
+            val cellShape = TileShape
             // Colour alone carries the cells, so the grid reads out as one summary
             // and its cells stay out of the accessibility tree.
             val summary = heatmapSummary(byDay, start, today)
@@ -257,7 +245,7 @@ fun SkillJournal(
                         female,
                     )?.let { SkillGuidance.effortText(d, it, female) }
                 } ?: "none"
-                val rowShape = MaterialTheme.shapes.small
+                val rowShape = MaterialTheme.shapes.medium
                 Row(
                     Modifier
                         .fillMaxWidth()
@@ -354,7 +342,7 @@ fun SkillJournal(
                                 .height(if (i == entries.lastIndex) 27.dp else 54.dp)
                                 .align(if (i == entries.lastIndex) Alignment.TopCenter else Alignment.Center)
                                 // Timeline spine: a brushed run, not a ruled one.
-                                .inkHairline(IronvellumColors.Rune, seed = i * 9, thickness = 1.5.dp),
+                                .inkHairline(IronvellumColors.Rune, thickness = 1.5.dp),
                         )
                         Box(
                             Modifier
@@ -377,9 +365,9 @@ fun SkillJournal(
                                         listOf(Color(0xFF141B18), Color(0xFF0E1311))
                                     },
                                 ),
-                                MaterialTheme.shapes.small,
+                                MaterialTheme.shapes.medium,
                             )
-                            .inkBorder(if (entry.claimed) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
+                            .inkBorder(if (entry.claimed) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.medium, 1.dp)
                             .padding(horizontal = 10.dp, vertical = 7.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -443,7 +431,7 @@ private fun practiceStreak(byDay: Map<LocalDate, Int>, today: LocalDate): Int {
 
 @Composable
 private fun StatTile(label: String, value: String, modifier: Modifier = Modifier, gold: Boolean = false) {
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.medium
     Column(
         modifier
             .background(
@@ -494,7 +482,7 @@ private fun LineCard(
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
 ) {
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.medium
     val complete = done == total && total > 0
     Column(
         modifier
@@ -547,7 +535,7 @@ private fun LineCard(
 @Composable
 private fun MonogramBadge(text: String, size: androidx.compose.ui.unit.Dp) {
     val plateCut = with(LocalDensity.current) { (size / 4).toPx() }
-    val shape = InkPlateShape(plateCut, salt = 35)
+    val shape = InkPlateShape(plateCut)
     Box(
         Modifier
             .size(size)

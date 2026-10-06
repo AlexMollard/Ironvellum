@@ -106,7 +106,7 @@ fun InkPanel(
     onClick: (() -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    val shape = rememberInkShape(accent.hashCode())
+    val shape = rememberInkShape()
     val body: @Composable () -> Unit = {
         Column(
             Modifier
@@ -236,7 +236,7 @@ fun InkRail(
     seed: Int = 0,
 ) {
     Canvas(modifier.fillMaxWidth().height(height)) {
-        inkRail(fraction = fraction, track = track, fill = fill, seed = seed)
+        inkRail(fraction = fraction, track = track, fill = fill)
     }
 }
 @Composable
@@ -253,7 +253,7 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier) {
                 Modifier
                     .size(5.dp)
                     .graphicsLayer(rotationZ = 45f)
-                    .inkBorder(IronvellumColors.Bracket, rememberInkShape(9), 1.dp)
+                    .inkBorder(IronvellumColors.Rune, rememberInkShape(), 1.dp)
                     .clearAndSetSemantics {},
             )
             Text(
@@ -308,7 +308,6 @@ fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
                     startX = 0f,
                     endX = size.width,
                 ),
-                seed = 3,
             )
         }
         // No plate behind the count — a translucent black box over a
@@ -366,7 +365,7 @@ fun IronvellumButton(
         // warm-green palette rule the rest of the app follows.
         listOf(Color(0xFF34D399), Color(0xFF2E7D55))
     }
-    val shape = MaterialTheme.shapes.small
+    val shape = MaterialTheme.shapes.medium
     Box(
         modifier
             .scale(scale)
@@ -610,7 +609,6 @@ fun InkSpinner(
             sweepDeg = 250f,
             color = color,
             widthPx = 2.5.dp.toPx(),
-            seed = 67,
         )
     }
 }

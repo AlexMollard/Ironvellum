@@ -30,6 +30,7 @@ import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.ironvellumFieldColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -152,6 +153,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                     Spacer(Modifier.height(10.dp))
                     OutlinedTextField(
                         shape = MaterialTheme.shapes.small,
+                        colors = ironvellumFieldColors(),
                         value = cloudUrl,
                         onValueChange = { cloudUrl = it },
                         label = { Text("Project URL (https://…supabase.co)") },
@@ -161,6 +163,7 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
                         shape = MaterialTheme.shapes.small,
+                        colors = ironvellumFieldColors(),
                         value = cloudKey,
                         onValueChange = { cloudKey = it },
                         label = { Text("Publishable (anon) key") },

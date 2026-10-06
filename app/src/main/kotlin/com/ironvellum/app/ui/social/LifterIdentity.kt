@@ -237,7 +237,7 @@ internal fun LifterAvatar(
     // Stable integer hash — never random, never recomposition-dependent.
     val seed = userId.fold(0) { acc, c -> acc * 31 + c.code }
     val plateCut = with(LocalDensity.current) { (size / 4).toPx() }
-    val shape = InkPlateShape(plateCut, salt = 33)
+    val shape = InkPlateShape(plateCut)
     // Channel split: RARITY owns the plate gradient and the frame (colour +
     // weight), so a Masterwork crest is unmistakable at any size. The LEVEL
     // ring keeps the border only when the lifter wears no rarity (null or
@@ -295,7 +295,7 @@ internal fun LifterAvatar(
                 if (outerColor != null) {
                     Modifier.inkBorder(
                         outerColor,
-                        InkPlateShape(outerCut, salt = 33),
+                        InkPlateShape(outerCut),
                         1.5.dp,
                     )
                 } else {

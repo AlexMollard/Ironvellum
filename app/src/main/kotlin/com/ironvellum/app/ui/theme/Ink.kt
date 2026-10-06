@@ -1,13 +1,14 @@
 package com.ironvellum.app.ui.theme
 
 import androidx.compose.foundation.shape.CornerBasedShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -30,7 +31,18 @@ import androidx.compose.ui.unit.dp
  * Every shape here is deterministic geometry keyed on its own size, so nothing
  * changes between recompositions. The names keep their "ink" prefix from the
  * retired hand-drawn look; renaming them is a separate decision.
+ *
+ * This file and Theme.kt are the only places allowed to name a raw geometric
+ * shape (see InkCoverageTest). UI code takes its geometry from
+ * `MaterialTheme.shapes` or the named shapes here: [DotShape] for dots and
+ * rings, [TileShape] for small cells and markers.
  */
+
+/** A true circle: dots, rung markers, node rings. */
+val DotShape: Shape = CircleShape
+
+/** A 2dp-rounded square: heat-map cells and small markers. */
+val TileShape: Shape = RoundedCornerShape(2.dp)
 
 /**
  * The app's cut-corner rectangle.
@@ -39,11 +51,8 @@ import androidx.compose.ui.unit.dp
  * `Shapes` set - Material requires that type, so a plain `Shape` cannot be a
  * theme shape, and every control would otherwise keep its stock corner.
  *
- * [salt] is unused now that the edge no longer wanders; it stays so the call
- * sites and shape equality are unchanged.
  */
 class InkEdgeShape(
-    private val salt: Int = 0,
     topStart: CornerSize = CornerSize(8.dp),
     topEnd: CornerSize = CornerSize(8.dp),
     bottomEnd: CornerSize = CornerSize(8.dp),
@@ -66,11 +75,14 @@ class InkEdgeShape(
         topEnd: CornerSize,
         bottomEnd: CornerSize,
         bottomStart: CornerSize,
-    ): CornerBasedShape = InkEdgeShape(salt, topStart, topEnd, bottomEnd, bottomStart)
+    ): CornerBasedShape = InkEdgeShape(topStart, topEnd, bottomEnd, bottomStart)
 
-    override fun equals(other: Any?): Boolean = other is InkEdgeShape && other.salt == salt
+    override fun equals(other: Any?): Boolean = other is InkEdgeShape &&
+        other.topStart == topStart && other.topEnd == topEnd &&
+        other.bottomEnd == bottomEnd && other.bottomStart == bottomStart
 
-    override fun hashCode(): Int = salt
+    override fun hashCode(): Int =
+        ((topStart.hashCode() * 31 + topEnd.hashCode()) * 31 + bottomEnd.hashCode()) * 31 + bottomStart.hashCode()
 }
 
 /**
@@ -78,7 +90,7 @@ class InkEdgeShape(
  * level chip and the XP bar - where the theme's cut on a 20dp-tall bar read as
  * pointed ends.
  */
-val HudEdgeShape = InkEdgeShape(salt = 29, CornerSize(0.dp), CornerSize(0.dp), CornerSize(0.dp), CornerSize(0.dp))
+val HudEdgeShape = InkEdgeShape(CornerSize(0.dp), CornerSize(0.dp), CornerSize(0.dp), CornerSize(0.dp))
 
 /** Draws a tick: a round-capped line, the replacement for the HUD corner bracket. */
 fun DrawScope.inkTick(
@@ -99,7 +111,7 @@ fun DrawScope.inkTick(
 fun Modifier.inkBorder(
     color: Color,
     shape: Shape,
-    width: Dp = 1.5.dp,
+    width: Dp = 1.dp,
 ): Modifier = if (width <= 0.dp) this else this.drawBehind {
     // A zero width means no border. Handed to Stroke it is a hairline instead,
     // which ringed every date on the training calendar in "today" gold.
@@ -135,7 +147,6 @@ fun DrawScope.inkRail(
     fraction: Float,
     track: Color,
     fill: Brush,
-    seed: Int,
 ) {
     drawRect(color = track, size = size)
     if (fraction > 0f) {
@@ -146,8 +157,7 @@ fun DrawScope.inkRail(
 /** A divider: a filled box of [thickness], centred on the box's short axis. */
 fun Modifier.inkHairline(
     color: Color,
-    seed: Int = 0,
-    thickness: Dp = 1.5.dp,
+    thickness: Dp = 1.dp,
 ): Modifier = this.drawBehind {
     // Orientation from the box itself: the same rule serves a row divider and
     // a vertical separator, so callers never pick an axis by hand.
@@ -159,7 +169,7 @@ fun Modifier.inkHairline(
 
 /** One remembered shape per surface. */
 @Composable
-fun rememberInkShape(salt: Int = 0): Shape = remember(salt) { InkEdgeShape(salt) }
+fun rememberInkShape(): Shape = remember { InkEdgeShape() }
 
 /**
  * A straight run, for ruled lines inside canvases - chart grids, skill-tree
@@ -171,8 +181,6 @@ fun DrawScope.inkStroke(
     to: Offset,
     color: Color,
     widthPx: Float,
-    seed: Int = 0,
-    taperEnds: Boolean = true,
 ) {
     drawLine(color, from, to, widthPx, StrokeCap.Round)
 }
@@ -185,8 +193,6 @@ fun DrawScope.inkArc(
     sweepDeg: Float,
     color: Color,
     widthPx: Float,
-    seed: Int = 0,
-    taperEnds: Boolean = true,
 ) {
     if (sweepDeg == 0f || radius <= 0f) return
     drawArc(
@@ -222,28 +228,8 @@ private fun cutCornerPath(
     close()
 }
 
-/** A circle shape: a plain oval inscribed in the box. */
-class InkCircleShape(private val salt: Int = 0) : Shape {
-    override fun createOutline(
-        size: Size,
-        layoutDirection: LayoutDirection,
-        density: Density,
-    ): Outline {
-        val r = minOf(size.width, size.height) / 2f
-        val cx = size.width / 2f
-        val cy = size.height / 2f
-        return Outline.Generic(
-            Path().apply { addOval(Rect(cx - r, cy - r, cx + r, cy + r)) },
-        )
-    }
-
-    override fun equals(other: Any?): Boolean = other is InkCircleShape && other.salt == salt
-
-    override fun hashCode(): Int = salt
-}
-
 /** A filled dot, for the small markers - tree nodes, calendar ticks. */
-fun DrawScope.inkDot(center: Offset, radius: Float, color: Color, seed: Int = 0) {
+fun DrawScope.inkDot(center: Offset, radius: Float, color: Color) {
     drawCircle(color, radius, center)
 }
 
@@ -253,7 +239,7 @@ fun DrawScope.inkDot(center: Offset, radius: Float, color: Color, seed: Int = 0)
  * InkEdgeShape cannot serve here - it takes its cuts from the theme's corner
  * radii. `cut` is the corner depth in px, matching what CutCornerShape was given.
  */
-class InkPlateShape(private val cut: Float, private val salt: Int = 0) : Shape {
+class InkPlateShape(private val cut: Float) : Shape {
     override fun createOutline(
         size: Size,
         layoutDirection: LayoutDirection,
@@ -272,7 +258,7 @@ class InkPlateShape(private val cut: Float, private val salt: Int = 0) : Shape {
     }
 
     override fun equals(other: Any?): Boolean =
-        other is InkPlateShape && other.cut == cut && other.salt == salt
+        other is InkPlateShape && other.cut == cut
 
-    override fun hashCode(): Int = cut.hashCode() * 31 + salt
+    override fun hashCode(): Int = cut.hashCode()
 }

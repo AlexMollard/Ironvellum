@@ -61,6 +61,7 @@ import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.ui.theme.ironvellumFieldColors
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
@@ -228,6 +229,7 @@ fun MeasurementDetailScreen(
                 val parsed = parseCm(readingInput)
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
+                    colors = ironvellumFieldColors(),
                     value = readingInput,
                     onValueChange = { readingInput = sanitizeCm(it) },
                     label = { Text("Circumference (cm)") },
