@@ -35,6 +35,7 @@ import androidx.compose.foundation.rememberScrollState
 import com.ironvellum.app.WorkoutSessionService
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.ui.draw.alpha
@@ -56,6 +57,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -122,6 +124,7 @@ import com.ironvellum.app.ui.components.ExerciseInfoSheet
 import com.ironvellum.app.ui.components.ExercisePickerSheet
 import com.ironvellum.app.ui.components.lastLoggedLine
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.NavChip
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
@@ -560,13 +563,27 @@ fun SessionScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        Text(
-            "TRIAL IN PROGRESS",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = 6.sp,
-        )
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "TRIAL IN PROGRESS",
+                style = MaterialTheme.typography.labelLarge,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.SystemGreen,
+                letterSpacing = 6.sp,
+                modifier = Modifier.weight(1f),
+            )
+            // Leaving is free: the trial stays live, and Today / Train offer Resume.
+            NavChip(
+                "BACK",
+                Icons.AutoMirrored.Filled.ArrowBack,
+                onClick = { onExit() },
+                modifier = Modifier.semantics { onClick(label = "Leave, the trial keeps running", action = null) },
+            )
+        }
         Spacer(Modifier.height(6.dp))
         Row(
             Modifier.fillMaxWidth(),
