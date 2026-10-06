@@ -14,7 +14,6 @@ class ExportReaderTest {
             name = "Mo\"narch \\ The Türkçe Æon",
             totalXp = 123_456_789_012,
             currentTitleId = "awakened",
-            inkStyle = true,
         ),
         trainingMode = TrainingMode.HYPERTROPHY,
         presets = listOf(
@@ -82,7 +81,7 @@ class ExportReaderTest {
         assertEquals(TrainingMode.HYPERTROPHY, archive.trainingMode)
         assertEquals(178.5, archive.heightCm!!, 0.0)
         assertEquals("MALE", archive.sex)
-        assertEquals(true, archive.inkStyle)
+        assertEquals(false, archive.inkStyle)
 
         val preset = archive.presets.single()
         assertEquals(7L, preset.id)

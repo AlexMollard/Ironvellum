@@ -221,7 +221,6 @@ class ExportRoundTripTest {
         // assertions below pin.
         repo.setHeight(181.5)
         repo.setSex(Sex.FEMALE)
-        repo.setInkStyle(true)
         db.idleDao().upsert(
             IdleStateEntity(essence = 777, shadows = 4, relicMultiplier = 1.31, lastCollectedAtMs = 123),
         )
@@ -257,7 +256,6 @@ class ExportRoundTripTest {
             val profile = freshDb.profileDao().get()!!
             assertEquals(181.5, profile.heightCm!!, 0.001)
             assertEquals("FEMALE", profile.sex)
-            assertTrue(profile.inkStyle)
 
             // Named: an unrestored bank otherwise reads as a bare NPE.
             val idle = freshDb.idleDao().get()

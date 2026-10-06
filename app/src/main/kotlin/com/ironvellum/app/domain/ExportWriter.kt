@@ -138,9 +138,8 @@ object ExportWriter {
             append(",\"sex\":")
             appendNullable(sex) { appendEscaped(it) }
         }
-        append(",\"inkStyle\":")
-        append(profile.inkStyle)
-        append("}")
+        // Retired appearance flag, written as a constant so the archive format is unchanged.
+        append(",\"inkStyle\":false}")
     }
 
     private fun StringBuilder.appendExercises(exercises: List<ExerciseMeta>) {

@@ -106,7 +106,7 @@ source of truth: the cloud is a backup, never an authority.
 | Layer | Choice |
 |---|---|
 | Language | Kotlin 2.4.20 |
-| UI | Jetpack Compose, Material 3, an optional hand-drawn "ink" theme |
+| UI | Jetpack Compose, Material 3, a cut-corner Clean theme |
 | Local data | Room 2.8.5 with versioned migrations and migration tests |
 | Background | WorkManager |
 | Health | Health Connect 1.1.0 (read only, optional) |

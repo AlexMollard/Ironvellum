@@ -3,106 +3,44 @@ package com.ironvellum.app.ui.theme
 import androidx.compose.foundation.shape.CornerBasedShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.ImageShader
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathMeasure
-import androidx.compose.ui.graphics.ShaderBrush
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
-import kotlin.math.roundToInt
-import androidx.compose.ui.graphics.StrokeJoin
-import kotlin.random.Random
 
 /**
- * Ink surface treatment: the chrome half of the monochrome-ink house style.
+ * Surface primitives: the cut-corner panels, borders, rails, rules, arcs and
+ * dots every screen draws with.
  *
- * The artwork half is generated (see tools/art.py). This file is what makes the
- * SURROUNDING UI read as ink on paper rather than a sci-fi HUD, and it is
- * deliberately procedural so it needs no assets and no image-model quota.
- *
- * Determinism matters more than it looks: every wobble and grain speck is drawn
- * from a seeded Random, keyed on the panel's own size. An unseeded Random would
- * re-roll on every recomposition and the whole UI would visibly crawl.
+ * Every shape here is deterministic geometry keyed on its own size, so nothing
+ * changes between recompositions. The names keep their "ink" prefix from the
+ * retired hand-drawn look; renaming them is a separate decision.
  */
 
 /**
- * Whether the hand-drawn treatment is on.
- *
- * Held as observable state rather than a CompositionLocal because the ink
- * primitives are DrawScope and Modifier functions called from draw lambdas,
- * where a local is not in scope. Reading state here means a flip redraws every
- * surface without restarting the activity.
- *
- * The flag is mirrored from the stored profile at startup; see IronvellumTheme.
- */
-object InkStyle {
-    var enabled by mutableStateOf(false)
-}
-
-/** Segments per edge. Too few reads as a polygon; too many smooths back into a straight line. */
-private const val SEGMENTS_PER_EDGE = 7
-
-/**
- * How much of the declared corner size becomes edge wander.
- *
- * Tying wobble to the corner size rather than a fixed dp does two things: the
- * amount of "hand" scales with the size class (a panel wanders more than a
- * chip), and it is density-correct for free, because CornerBasedShape hands the
- * corner down already resolved to pixels.
- */
-private const val WOBBLE_PER_CORNER = 0.22f
-
-/**
- * Fraction of the surface's SHORT side the wander may consume.
- *
- * A wide button is only ~168px tall at 3x, so an unbounded 6px wander takes a
- * visible bite out of it and the edge reads as torn rather than drawn.
- */
-private const val WOBBLE_PER_SHORT_SIDE = 0.025f
-
-/**
- * Floor in px, so a small element still shows a hand.
- *
- * ~0.9dp at 3x. Raised from 1.4px after a 890x46px section header still read
- * dead straight at 4x magnification: the short-side cap put it at 1.15px, and
- * the old floor barely moved it. Short, wide surfaces are the hardest case -
- * they get the least wander from the cap and show it over the longest edge.
- */
-private const val WOBBLE_MIN_PX = 2.6f
-
-/** Hard ceiling in px. Past this an edge stops reading as drawn and starts reading as broken. */
-private const val WOBBLE_MAX_PX = 6f
-
-/**
- * A rectangle whose edges were drawn by hand rather than snapped to pixels.
+ * The app's cut-corner rectangle.
  *
  * Extends CornerBasedShape so it can be installed directly into the Material
  * `Shapes` set - Material requires that type, so a plain `Shape` cannot be a
- * theme shape, and every control would otherwise keep its HUD corner.
+ * theme shape, and every control would otherwise keep its stock corner.
  *
- * The declared corner radii are deliberately NOT drawn as corners; they are
- * read as an intensity hint. An ink edge has no radius.
+ * [salt] is unused now that the edge no longer wanders; it stays so the call
+ * sites and shape equality are unchanged.
  */
 class InkEdgeShape(
     private val salt: Int = 0,
@@ -119,29 +57,9 @@ class InkEdgeShape(
         bottomEnd: Float,
         bottomStart: Float,
         layoutDirection: LayoutDirection,
-    ): Outline {
-        if (!InkStyle.enabled) {
-            // Clean mode is the original cut-corner silhouette, not a wobble set
-            // to zero: a plain rectangle would lose the app's old geometry.
-            return Outline.Generic(
-                cutCornerPath(size, topStart, topEnd, bottomEnd, bottomStart),
-            )
-        }
-        val corner = maxOf(topStart, topEnd, bottomEnd, bottomStart)
-        // Bound the wander by the surface's own short side: the 6px that looks
-        // drawn on a tall panel eats a noticeable slice off a 56dp button, which
-        // is what made the wide buttons read as torn.
-        //
-        // The floor matters as much as the ceiling. A 100x28px badge came out at
-        // 0.7px of drift - measured at 1px peak-to-peak on device, which is
-        // straight to the eye. WOBBLE_MIN_PX keeps small filled elements visibly
-        // drawn; clips with no fill show nothing either way.
-        val shortSide = minOf(size.width, size.height)
-        val wobble = minOf(corner * WOBBLE_PER_CORNER, shortSide * WOBBLE_PER_SHORT_SIDE)
-            .coerceIn(WOBBLE_MIN_PX, maxOf(WOBBLE_MIN_PX, WOBBLE_MAX_PX))
-        val pts = inkEdgePoints(size.width, size.height, wobble, salt)
-        return Outline.Generic(smoothClosedPath(pts))
-    }
+    ): Outline = Outline.Generic(
+        cutCornerPath(size, topStart, topEnd, bottomEnd, bottomStart),
+    )
 
     override fun copy(
         topStart: CornerSize,
@@ -156,169 +74,27 @@ class InkEdgeShape(
 }
 
 /**
- * The ink edge at its quietest: no corner size, so the wander falls to its
- * floor. For Today's HUD line - the level chip and the XP bar - where the
- * theme's wobble on a 20dp-tall bar read as pointed ends.
+ * The edge with no corner size: a plain rectangle. For Today's HUD line - the
+ * level chip and the XP bar - where the theme's cut on a 20dp-tall bar read as
+ * pointed ends.
  */
 val HudEdgeShape = InkEdgeShape(salt = 29, CornerSize(0.dp), CornerSize(0.dp), CornerSize(0.dp), CornerSize(0.dp))
 
-/** Target length of one hand-drawn facet, in px. Keeps the wander frequency constant. */
-private const val FACET_PX = 55f
-
-/** Facets per edge, clamped: below 3 an edge is a polygon, above 16 it smooths flat. */
-private fun facetsFor(edge: Float): Int =
-    (edge / FACET_PX).roundToInt().coerceIn(3, 16)
-
-/**
- * The hand-drawn rectangle as flat x,y pairs.
- *
- * Facet COUNT scales with each edge's own length rather than being fixed. With
- * a fixed count, a full-width button spread 7 facets over ~1000px and the long
- * diagonals read as a torn ribbon instead of a drawn line, while a small chip
- * got the same 7 crammed into 80px. Constant facet length fixes both ends.
- *
- * Kept free of Compose and Android types on purpose: the one contract that
- * really matters here - identical input produces an identical edge - is
- * otherwise only observable by staring at a running phone. As a pure function
- * it is provable on the JVM, and a regression to an unseeded Random (which
- * would make every surface crawl during recomposition) fails a test instead of
- * shipping.
- */
-fun inkEdgePoints(width: Float, height: Float, wobble: Float, salt: Int): FloatArray {
-    val rng = Random(width.roundToInt() * 31 + height.roundToInt() * 17 + salt)
-    val across = facetsFor(width)
-    val down = facetsFor(height)
-    // The ring is closed by the path, not by a repeated point. The final run up
-    // the left edge must therefore STOP below the start corner: walking it to
-    // i == down lands back on y == 0, which is where this ring began, and the
-    // two coincident points ~1px apart (against a ~55px facet) collapsed into a
-    // degenerate segment. smoothClosedPath turns each point into a quadratic
-    // control point, so that pair pinched the curve into a visible kink - the
-    // odd top-left corner every wobbly panel showed.
-    val pts = FloatArray((across + down) * 2 * 2)
-    var n = 0
-    fun put(x: Float, y: Float) {
-        pts[n++] = x
-        pts[n++] = y
-    }
-    fun jitter() = (rng.nextFloat() - 0.5f) * 2f * wobble
-
-    put(jitter(), jitter())
-    for (i in 1..across) put(width * (i.toFloat() / across), jitter())
-    for (i in 1..down) put(width + jitter(), height * (i.toFloat() / down))
-    for (i in 1..across) put(width * (1f - i.toFloat() / across), height + jitter())
-    for (i in 1 until down) put(jitter(), height * (1f - i.toFloat() / down))
-    return pts
-}
-
-/**
- * Turns a ring of jittered points into a SMOOTH closed path.
- *
- * The points used to be joined with `lineTo`, which made every one of them a
- * sharp kink: at ~55px facets on a 450dpi screen that reads as a torn zig-zag
- * rather than a drawn line, and a stroked kink with a miter join throws a spike
- * — the bright notch that showed at panel corners on the phone.
- *
- * Each original point becomes a quadratic CONTROL point and the midpoints
- * become anchors, so the curve passes between the jittered points instead of
- * through them. The wander survives; the corners stop being corners.
- */
-private fun smoothClosedPath(pts: FloatArray): Path {
-    val n = pts.size / 2
-    val path = Path()
-    if (n < 3) return path
-    fun x(i: Int) = pts[((i % n) + n) % n * 2]
-    fun y(i: Int) = pts[((i % n) + n) % n * 2 + 1]
-    var mx = (x(0) + x(1)) / 2f
-    var my = (y(0) + y(1)) / 2f
-    path.moveTo(mx, my)
-    for (i in 1..n) {
-        val nx = (x(i) + x(i + 1)) / 2f
-        val ny = (y(i) + y(i + 1)) / 2f
-        path.quadraticTo(x(i), y(i), nx, ny)
-        mx = nx; my = ny
-    }
-    path.close()
-    return path
-}
-
-/**
- * Builds one small tile of paper grain.
- *
- * Tiled through a shader rather than drawn per-pixel per-frame: a full-screen
- * speckle would be tens of thousands of draw calls every frame. One 96x96 tile
- * is built once and repeated by the GPU.
- */
-private fun grainTile(seed: Int, density: Float): ImageBitmap {
-    val side = 96
-    val bitmap = ImageBitmap(side, side)
-    val canvas = androidx.compose.ui.graphics.Canvas(bitmap)
-    val rng = Random(seed)
-    val paint = androidx.compose.ui.graphics.Paint()
-    // Sparse, low-alpha specks: felt as texture, never seen as dots.
-    val specks = (side * side * 0.06f).toInt()
-    repeat(specks) {
-        val x = rng.nextFloat() * side
-        val y = rng.nextFloat() * side
-        paint.color = Color.White.copy(alpha = 0.012f + rng.nextFloat() * 0.028f)
-        canvas.drawCircle(Offset(x, y), 0.4f + rng.nextFloat() * 0.7f * density, paint)
-    }
-    return bitmap
-}
-
-/**
- * Lays paper grain over a surface.
- *
- * `drawWithCache` keeps the tile and its shader alive across recompositions;
- * rebuilding either per frame would allocate a bitmap on every draw.
- */
-fun Modifier.paperGrain(seed: Int = 0): Modifier = this.drawWithCache {
-    if (!InkStyle.enabled) return@drawWithCache onDrawBehind { }
-    val tile = grainTile(seed, density)
-    val brush = ShaderBrush(ImageShader(tile, TileMode.Repeated, TileMode.Repeated))
-    onDrawBehind { drawRect(brush) }
-}
-
-/**
- * Draws a tapered ink tick, the ink replacement for the HUD corner bracket.
- *
- * A brush stroke is heavy where it lands and light where it lifts, so this is
- * drawn as a few overlapping segments of decreasing width and alpha rather than
- * one uniform line.
- */
+/** Draws a tick: a round-capped line, the replacement for the HUD corner bracket. */
 fun DrawScope.inkTick(
     from: Offset,
     to: Offset,
     color: Color,
     widthPx: Float,
 ) {
-    if (!InkStyle.enabled) {
-        drawLine(color, from, to, widthPx, StrokeCap.Round)
-        return
-    }
-    val steps = 4
-    repeat(steps) { i ->
-        val t0 = i.toFloat() / steps
-        val t1 = (i + 1).toFloat() / steps
-        val a = Offset(from.x + (to.x - from.x) * t0, from.y + (to.y - from.y) * t0)
-        val b = Offset(from.x + (to.x - from.x) * t1, from.y + (to.y - from.y) * t1)
-        // Lift the brush along the stroke: thinner and fainter toward the tail.
-        val fade = 1f - t0 * 0.75f
-        drawLine(
-            color = color.copy(alpha = color.alpha * fade),
-            start = a,
-            end = b,
-            strokeWidth = widthPx * fade,
-            cap = StrokeCap.Round,
-        )
-    }
+    drawLine(color, from, to, widthPx, StrokeCap.Round)
 }
 
 /**
- * Outlines a surface with a brush edge instead of a hairline border.
+ * Outlines a surface with a constant-width border.
  *
- * Two passes: a wide faint pass for the ink bleed, a narrow firm pass for the
- * stroke itself. That difference is what separates "drawn" from "stroked".
+ * Replaces Modifier.border, which traces the shape without handling every
+ * outline kind.
  */
 fun Modifier.inkBorder(
     color: Color,
@@ -341,165 +117,54 @@ fun Modifier.inkBorder(
         if (inset > 0f) path.translate(Offset(inset, inset))
         return path
     }
-    // Round join and cap, always: a jittered outline has near-180-degree turns,
-    // and the default MITER join turns those into spikes that shoot past the
-    // surface — visible as a bright notch at a panel's corner on device.
-    fun stroke(px: Float) = Stroke(px, cap = StrokeCap.Round, join = StrokeJoin.Round)
-    if (!InkStyle.enabled) {
-        // Inset by half the stroke so the whole line lies inside the surface.
-        // Centred on the edge, a surface clipped to its shape (most cards)
-        // lost the outer half: a 1dp border drew as a faint ~1px hairline with
-        // broken anti-aliasing, while unclipped surfaces showed the full width,
-        // so the same border looked different from screen to screen.
-        val px = width.toPx()
-        drawPath(outlinePath(px / 2f), color, style = stroke(px))
-        return@drawBehind
-    }
-    val path = outlinePath(0f)
-    drawPath(path, color.copy(alpha = color.alpha * 0.35f), style = stroke(width.toPx() * 2.6f))
-    drawPath(path, color, style = stroke(width.toPx()))
+    // Inset by half the stroke so the whole line lies inside the surface.
+    // Centred on the edge, a surface clipped to its shape (most cards)
+    // lost the outer half: a 1dp border drew as a faint ~1px hairline with
+    // broken anti-aliasing, while unclipped surfaces showed the full width,
+    // so the same border looked different from screen to screen.
+    val px = width.toPx()
+    drawPath(
+        outlinePath(px / 2f),
+        color,
+        style = Stroke(px, cap = StrokeCap.Round, join = StrokeJoin.Round),
+    )
 }
 
-/**
- * A progress rail drawn as a brush stroke rather than two nested rectangles.
- *
- * A thin rail cannot use the edge wobble - at 6dp tall a 2px wander would eat a
- * third of it - so the "hand" comes from the stroke instead: the width breathes
- * along the length and both ends taper, the way a loaded brush lands and lifts.
- *
- * Drawn in segments with a seeded Random so the breathing is stable per rail.
- */
+/** A progress rail: a flat track with the fill drawn over it. */
 fun DrawScope.inkRail(
     fraction: Float,
     track: Color,
     fill: Brush,
     seed: Int,
 ) {
-    val h = size.height
-    val mid = h / 2f
-    if (!InkStyle.enabled) {
-        drawRect(color = track, size = size)
-        if (fraction > 0f) {
-            drawRect(brush = fill, size = Size(size.width * fraction.coerceIn(0f, 1f), h))
-        }
-        return
+    drawRect(color = track, size = size)
+    if (fraction > 0f) {
+        drawRect(brush = fill, size = Size(size.width * fraction.coerceIn(0f, 1f), size.height))
     }
-    // Track and fill are each ONE filled shape whose top and bottom edges
-    // wander. They used to be chains of round-capped lines with a random width
-    // per link, so neighbouring links differed in weight and each cap bulged past
-    // its joint: the bar read as a row of lumps.
-    // ONE seed for both shapes: the fill's edge must wander exactly with the
-    // track it overlays, or the track peeks out along the fill as a seam.
-    if (track.alpha > 0f) drawPath(railPath(size.width, h, mid, seed, taper = false), color = track)
-    if (fraction <= 0f) return
-    val end = size.width * fraction.coerceIn(0f, 1f)
-    drawPath(railPath(end, h, mid, seed, taper = true), brush = fill)
 }
 
-/**
- * One rail as a closed, smoothed outline: a drawn bar, not a stack of strokes.
- *
- * The wander is keyed to ABSOLUTE x. The old rail divided its length into a
- * segment COUNT derived from the current fill, so every frame of the 900ms
- * level-up tween re-quantised the noise and the lumps visibly crawled along
- * the bar. Anchoring to x means a growing fill extends the same drawn edge.
- */
-private fun railPath(length: Float, h: Float, mid: Float, seed: Int, taper: Boolean): Path {
-    if (length <= 0f) return Path()
-    val step = 16f
-    val n = kotlin.math.ceil(length / step).toInt().coerceAtLeast(2)
-    // Index-keyed hash rather than a sequential RNG: the value at a given x
-    // must not depend on how many points came before it.
-    fun noise(i: Int, salt: Int): Float {
-        var v = i * 374761393 + seed * 668265263 + salt * 1274126177
-        v = (v xor (v ushr 13)) * 1274126177
-        return ((v xor (v ushr 16)) and 0xFFFF) / 65535f
-    }
-    fun xAt(i: Int) = kotlin.math.min(i * step, length)
-    // The last stretch thins SLIGHTLY, so the fill ends as a brush edge rather
-    // than a ruled vertical. It used to fall to 32% of the bar height over a
-    // full 1.2x its height, which drew a pen nib: a long wedge, lopsided
-    // because the two edges taper on independent noise, and slanted enough
-    // that the label's vertical clip line no longer followed it.
-    val taperLen = if (taper) kotlin.math.min(h * 0.35f, length * 0.08f) else 0f
-    fun halfAt(x: Float, salt: Int, i: Int): Float {
-        val breathe = 0.82f + noise(i, salt) * 0.18f
-        val lift = if (taperLen > 0f && x > length - taperLen) {
-            (1f - (x - (length - taperLen)) / taperLen).coerceIn(0.86f, 1f)
-        } else {
-            1f
-        }
-        return h / 2f * breathe * lift
-    }
-    val pts = FloatArray((n + 1) * 2 * 2)
-    var k = 0
-    for (i in 0..n) {
-        val x = xAt(i); pts[k++] = x; pts[k++] = mid - halfAt(x, 1, i)
-    }
-    for (i in n downTo 0) {
-        val x = xAt(i); pts[k++] = x; pts[k++] = mid + halfAt(x, 2, i)
-    }
-    return smoothClosedPath(pts)
-}
-
-/**
- * A divider drawn as one brush stroke: uneven weight, tapered ends.
- *
- * Replaces 1dp filled boxes, which are the most obviously machine-made mark
- * left in a hand-drawn UI precisely because they are perfectly even.
- */
+/** A divider: a filled box of [thickness], centred on the box's short axis. */
 fun Modifier.inkHairline(
     color: Color,
     seed: Int = 0,
     thickness: Dp = 1.5.dp,
 ): Modifier = this.drawBehind {
-    // Orientation from the box itself: the same stroke serves a row divider and
+    // Orientation from the box itself: the same rule serves a row divider and
     // a vertical separator, so callers never pick an axis by hand.
     val vertical = size.height > size.width
-    if (!InkStyle.enabled) {
-        val t = thickness.toPx()
-        if (vertical) drawRect(color, Offset((size.width - t) / 2f, 0f), Size(t, size.height))
-        else drawRect(color, Offset(0f, (size.height - t) / 2f), Size(size.width, t))
-        return@drawBehind
-    }
-    val length = if (vertical) size.height else size.width
-    val across = (if (vertical) size.width else size.height) / 2f
-    val rng = Random(seed + length.roundToInt())
-    val segments = (length / 30f).toInt().coerceIn(4, 32)
-    val base = thickness.toPx()
-    // Shared joint offsets, so the rule reads as one stroke rather than a row
-    // of disconnected dashes.
-    val drifts = FloatArray(segments + 1) { (rng.nextFloat() - 0.5f) * base * 0.6f }
-    for (i in 0 until segments) {
-        val t0 = i.toFloat() / segments
-        val a = length * t0
-        val b = length * (i + 1).toFloat() / segments
-        // Ends lift; the middle carries the ink.
-        val ends = minOf(t0, 1f - t0) / 0.5f
-        val weight = (0.45f + rng.nextFloat() * 0.55f) * (0.35f + 0.65f * ends)
-        val drift1 = drifts[i]
-        val drift2 = drifts[i + 1]
-        drawLine(
-            color = color.copy(alpha = color.alpha * (0.5f + 0.5f * weight)),
-            start = if (vertical) Offset(across + drift1, a) else Offset(a, across + drift1),
-            end = if (vertical) Offset(across + drift2, b) else Offset(b, across + drift2),
-            strokeWidth = base * weight,
-            cap = StrokeCap.Round,
-        )
-    }
+    val t = thickness.toPx()
+    if (vertical) drawRect(color, Offset((size.width - t) / 2f, 0f), Size(t, size.height))
+    else drawRect(color, Offset(0f, (size.height - t) / 2f), Size(size.width, t))
 }
 
-/** One remembered ink shape per surface, so the wobble does not change as state updates. */
+/** One remembered shape per surface. */
 @Composable
 fun rememberInkShape(salt: Int = 0): Shape = remember(salt) { InkEdgeShape(salt) }
 
 /**
- * A straight run drawn as a brush stroke: uneven weight, tapered ends, and a
- * touch of drift off true.
- *
- * For ruled lines inside canvases - chart grids, skill-tree connectors, band
- * markers - the last perfectly straight marks in the app. Unlike [inkHairline]
- * this takes explicit endpoints, so it works at any angle.
+ * A straight run, for ruled lines inside canvases - chart grids, skill-tree
+ * connectors, band markers. Unlike [inkHairline] this takes explicit endpoints,
+ * so it works at any angle.
  */
 fun DrawScope.inkStroke(
     from: Offset,
@@ -509,55 +174,10 @@ fun DrawScope.inkStroke(
     seed: Int = 0,
     taperEnds: Boolean = true,
 ) {
-    if (!InkStyle.enabled) {
-        drawLine(color, from, to, widthPx, StrokeCap.Round)
-        return
-    }
-    val dx = to.x - from.x
-    val dy = to.y - from.y
-    val len = kotlin.math.sqrt(dx * dx + dy * dy)
-    if (len <= 0.5f) return
-    val segments = (len / 26f).toInt().coerceIn(3, 28)
-    // Drift goes perpendicular to the run, so the stroke wanders across its own
-    // direction instead of stretching along it.
-    val nx = -dy / len
-    val ny = dx / len
-    val rng = Random(seed + len.roundToInt())
-    val drift = (widthPx * 0.55f).coerceAtMost(1.6f)
-    // One offset per joint, shared by both segments meeting there: independent
-    // endpoints leave a visible notch at every junction.
-    val offs = FloatArray(segments + 1) { (rng.nextFloat() - 0.5f) * 2f * drift }
-    for (i in 0 until segments) {
-        val t0 = i.toFloat() / segments
-        val t1 = (i + 1).toFloat() / segments
-        val ends = if (taperEnds) (minOf(t0, 1f - t0) / 0.5f).coerceIn(0f, 1f) else 1f
-        val weight = (0.5f + rng.nextFloat() * 0.5f) * (0.3f + 0.7f * ends)
-        val o1 = offs[i]
-        val o2 = offs[i + 1]
-        drawLine(
-            color = color.copy(alpha = color.alpha * (0.55f + 0.45f * weight)),
-            start = Offset(from.x + dx * t0 + nx * o1, from.y + dy * t0 + ny * o1),
-            end = Offset(from.x + dx * t1 + nx * o2, from.y + dy * t1 + ny * o2),
-            strokeWidth = widthPx * (0.55f + 0.45f * weight),
-            cap = StrokeCap.Round,
-        )
-    }
+    drawLine(color, from, to, widthPx, StrokeCap.Round)
 }
 
-/**
- * An arc drawn as a brush sweep rather than a machined ring.
- *
- * A perfect circle is as obviously machine-made as a ruled line, so the radius
- * drifts along the sweep and the ends taper. The wander lives in the PATH and
- * the whole sweep is stroked ONCE.
- *
- * It used to be stamped as a chain of round-capped [drawLine] segments, each
- * with its own width and alpha. Two things followed, and both were visible on
- * the rate dial: the wider of two neighbours pushed its round cap out past the
- * joint, and every joint was painted twice so the alpha compounded there. The
- * result read as a string of beads. One path cannot overlap itself, so neither
- * happens.
- */
+/** A round-capped arc stroke. */
 fun DrawScope.inkArc(
     center: Offset,
     radius: Float,
@@ -569,82 +189,20 @@ fun DrawScope.inkArc(
     taperEnds: Boolean = true,
 ) {
     if (sweepDeg == 0f || radius <= 0f) return
-    if (!InkStyle.enabled) {
-        drawArc(
-            color = color,
-            startAngle = startDeg,
-            sweepAngle = sweepDeg,
-            useCenter = false,
-            topLeft = Offset(center.x - radius, center.y - radius),
-            size = Size(radius * 2, radius * 2),
-            style = Stroke(width = widthPx, cap = StrokeCap.Round),
-        )
-        return
-    }
-    val arcLen = (kotlin.math.PI / 180.0 * kotlin.math.abs(sweepDeg) * radius).toFloat()
-    // Joints only shape the CURVE now, so they can be short without beading.
-    val segments = (arcLen / 14f).roundToInt().coerceIn(3, 96)
-    val rng = Random(seed + radius.roundToInt())
-    // A thick stroke shows radial drift far more than a hairline does, so the
-    // amplitude shrinks as the brush gets fatter.
-    val jitter = (10f / widthPx).coerceIn(0.4f, 1f)
-    val drift = (widthPx * 0.22f).coerceAtMost(2.2f) * jitter
-
-    fun pointAt(deg: Float, r: Float): Offset {
-        val rad = (deg * kotlin.math.PI / 180.0).toFloat()
-        return Offset(center.x + kotlin.math.cos(rad) * r, center.y + kotlin.math.sin(rad) * r)
-    }
-
-    // One radius per joint. A full sweep reuses the first at the end so the
-    // ring closes on itself exactly instead of stepping at the wrap point.
-    val closed = kotlin.math.abs(sweepDeg) >= 359.9f
-    val radii = FloatArray(segments + 1) { radius + (rng.nextFloat() - 0.5f) * 2f * drift }
-    if (closed) radii[segments] = radii[0]
-
-    // Quadratics through the midpoints: the drifted joints become control
-    // points, so the sweep curves between them instead of hinging at each one.
-    val path = Path()
-    fun joint(i: Int) = pointAt(startDeg + sweepDeg * (i.toFloat() / segments), radii[i])
-    var prev = joint(0)
-    path.moveTo(prev.x, prev.y)
-    for (i in 1..segments) {
-        val p = joint(i)
-        val mid = Offset((prev.x + p.x) / 2f, (prev.y + p.y) / 2f)
-        if (i == segments) path.quadraticTo(prev.x, prev.y, p.x, p.y)
-        else path.quadraticTo(prev.x, prev.y, mid.x, mid.y)
-        prev = p
-    }
-    if (closed) path.close()
-
-    // Taper is a second, shorter pass laid over the first rather than a
-    // per-segment width: one stroke can only have one width, and two stacked
-    // strokes still never overlap themselves.
-    val cap = if (taperEnds) StrokeCap.Round else StrokeCap.Butt
-    drawPath(
-        path,
-        color = color.copy(alpha = color.alpha * if (taperEnds) 0.72f else 1f),
-        style = Stroke(width = widthPx, cap = cap, join = StrokeJoin.Round),
+    drawArc(
+        color = color,
+        startAngle = startDeg,
+        sweepAngle = sweepDeg,
+        useCenter = false,
+        topLeft = Offset(center.x - radius, center.y - radius),
+        size = Size(radius * 2, radius * 2),
+        style = Stroke(width = widthPx, cap = StrokeCap.Round),
     )
-    if (taperEnds) {
-        // The body of the stroke reads heavier than its ends, which is what a
-        // loaded brush does; the ends keep the lighter first pass alone.
-        val body = Path()
-        PathMeasure().apply { setPath(path, false) }.also { m ->
-            val total = m.length
-            m.getSegment(total * 0.12f, total * 0.88f, body, true)
-        }
-        drawPath(
-            body,
-            color = color,
-            style = Stroke(width = widthPx, cap = StrokeCap.Round, join = StrokeJoin.Round),
-        )
-    }
 }
 
 /**
- * The pre-ink silhouette: a rectangle with the top-start and bottom-end corners
- * cut, which is what every Ironvellum surface looked like before the brush pass.
- * Used when the hand-drawn style is switched off.
+ * A rectangle with the top-start and bottom-end corners cut, which is what
+ * every Ironvellum surface looks like.
  */
 private fun cutCornerPath(
     size: Size,
@@ -664,20 +222,7 @@ private fun cutCornerPath(
     close()
 }
 
-/** Wobble as a fraction of radius for a drawn circle. Past this it stops reading as round. */
-private const val CIRCLE_WOBBLE = 0.035f
-
-/** Vertices around a drawn circle. Enough to stay round, few enough to stay hand-made. */
-private const val CIRCLE_STEPS = 28
-
-/**
- * A circle drawn by hand rather than struck with a compass.
- *
- * A perfect circle is as machine-made as a ruled line, so avatars, dots and
- * calendar cells kept looking like the old design even after every edge was
- * brushed. The radius breathes around the sweep; the result is still round
- * enough to read as a circle at 16dp.
- */
+/** A circle shape: a plain oval inscribed in the box. */
 class InkCircleShape(private val salt: Int = 0) : Shape {
     override fun createOutline(
         size: Size,
@@ -687,23 +232,9 @@ class InkCircleShape(private val salt: Int = 0) : Shape {
         val r = minOf(size.width, size.height) / 2f
         val cx = size.width / 2f
         val cy = size.height / 2f
-        if (!InkStyle.enabled || r <= 0f) {
-            return Outline.Generic(
-                Path().apply { addOval(Rect(cx - r, cy - r, cx + r, cy + r)) },
-            )
-        }
-        // Seeded on the size, like every other ink shape, so the wobble cannot
-        // crawl between recompositions.
-        val rng = Random(size.width.roundToInt() * 13 + salt)
-        val wob = r * CIRCLE_WOBBLE
-        val ring = FloatArray(CIRCLE_STEPS * 2)
-        for (i in 0 until CIRCLE_STEPS) {
-            val a = (2.0 * kotlin.math.PI * i / CIRCLE_STEPS).toFloat()
-            val rr = r + (rng.nextFloat() - 0.5f) * 2f * wob
-            ring[i * 2] = cx + kotlin.math.cos(a) * rr
-            ring[i * 2 + 1] = cy + kotlin.math.sin(a) * rr
-        }
-        return Outline.Generic(smoothClosedPath(ring))
+        return Outline.Generic(
+            Path().apply { addOval(Rect(cx - r, cy - r, cx + r, cy + r)) },
+        )
     }
 
     override fun equals(other: Any?): Boolean = other is InkCircleShape && other.salt == salt
@@ -711,38 +242,16 @@ class InkCircleShape(private val salt: Int = 0) : Shape {
     override fun hashCode(): Int = salt
 }
 
-/**
- * A dot laid down with a brush: slightly off-round, slightly uneven in weight.
- * For the small drawn markers - tree nodes, calendar ticks - that drawCircle
- * renders as perfect discs.
- */
+/** A filled dot, for the small markers - tree nodes, calendar ticks. */
 fun DrawScope.inkDot(center: Offset, radius: Float, color: Color, seed: Int = 0) {
-    if (!InkStyle.enabled) {
-        drawCircle(color, radius, center)
-        return
-    }
-    val rng = Random(seed + radius.roundToInt())
-    val steps = 14
-    val path = Path()
-    val ring = FloatArray(steps * 2)
-    for (i in 0 until steps) {
-        val a = (2.0 * kotlin.math.PI * i / steps).toFloat()
-        val rr = radius * (1f + (rng.nextFloat() - 0.5f) * 0.18f)
-        ring[i * 2] = center.x + kotlin.math.cos(a) * rr
-        ring[i * 2 + 1] = center.y + kotlin.math.sin(a) * rr
-    }
-    drawPath(smoothClosedPath(ring), color)
+    drawCircle(color, radius, center)
 }
 
 /**
- * The crest plate: a rectangle with two deeply cut corners, drawn by hand.
+ * The crest plate: a rectangle with two deeply cut corners.
  *
- * InkEdgeShape cannot serve here - it ignores corner radii by design, so it
- * would flatten the plate's silhouette into a wobbly rectangle. This keeps the
- * cut geometry and jitters the vertices along it, which is why the crest still
- * reads as a diamond-cut plate rather than a box.
- *
- * `cut` is the corner depth in px, matching what CutCornerShape was given.
+ * InkEdgeShape cannot serve here - it takes its cuts from the theme's corner
+ * radii. `cut` is the corner depth in px, matching what CutCornerShape was given.
  */
 class InkPlateShape(private val cut: Float, private val salt: Int = 0) : Shape {
     override fun createOutline(
@@ -757,35 +266,9 @@ class InkPlateShape(private val cut: Float, private val salt: Int = 0) : Shape {
             Offset(c, 0f), Offset(w, 0f), Offset(w, h - c), Offset(w - c, h), Offset(0f, h), Offset(0f, c),
         )
         val path = Path()
-        if (!InkStyle.enabled) {
-            corners.forEachIndexed { i, p -> if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y) }
-            path.close()
-            return Outline.Generic(path)
-        }
-        // Seeded on the salt ALONE, not on the size. Concentric plates - a crest
-        // and the ring around it - must share a jitter sequence, or each wobbles
-        // independently and the pair reads as a double exposure. A constant salt
-        // still means a stable outline, so nothing crawls.
-        val rng = Random(salt)
-        val wob = (minOf(w, h) * 0.02f).coerceIn(1.2f, 4f)
-        fun j() = (rng.nextFloat() - 0.5f) * 2f * wob
-        // Walk each edge in a few steps so the cut sides wander too, not just
-        // the vertices.
-        val steps = 3
-        val walk = FloatArray(corners.size * steps * 2)
-        var k = 0
-        corners.forEachIndexed { i, from ->
-            val to = corners[(i + 1) % corners.size]
-            for (s in 0 until steps) {
-                val tt = s.toFloat() / steps
-                walk[k++] = from.x + (to.x - from.x) * tt + j()
-                walk[k++] = from.y + (to.y - from.y) * tt + j()
-            }
-        }
-        // Smoothed for the same reason as the panels: the plate sits behind the
-        // level badge at 48dp, where a kinked outline is the most visible mark
-        // on the screen.
-        return Outline.Generic(smoothClosedPath(walk))
+        corners.forEachIndexed { i, p -> if (i == 0) path.moveTo(p.x, p.y) else path.lineTo(p.x, p.y) }
+        path.close()
+        return Outline.Generic(path)
     }
 
     override fun equals(other: Any?): Boolean =

@@ -24,7 +24,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.fmt
-import com.ironvellum.app.ui.theme.InkStyle
 import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.inkStroke
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -137,7 +136,6 @@ fun TrendChart(
             if (runStart >= 0) runs += runStart..values.lastIndex
 
             val w = 3.2.dp.toPx()
-            val rng = kotlin.random.Random(values.size * 31)
             for (run in runs) {
                 if (run.first == run.last) {
                     // an isolated reading has no neighbour to join: a dot, not nothing
@@ -156,29 +154,12 @@ fun TrendChart(
                         listOf(color.copy(alpha = 0.35f), color.copy(alpha = 0.02f)),
                     ),
                 )
-                // The series is brushed segment by segment BETWEEN the computed
-                // points. The coordinates are untouched - a chart that wobbles its
-                // data misreports a measurement - so only the stroke weight and
-                // alpha breathe along the line.
-                if (InkStyle.enabled) {
-                    for (i in run.first + 1..run.last) {
-                        val weight = 0.7f + rng.nextFloat() * 0.5f
-                        drawLine(
-                            color = color.copy(alpha = color.alpha * (0.75f + 0.25f * weight)),
-                            start = Offset(xFor(i - 1), yFor(values[i - 1]!!)),
-                            end = Offset(xFor(i), yFor(values[i]!!)),
-                            strokeWidth = w * weight,
-                            cap = StrokeCap.Round,
-                        )
+                val line = Path().apply {
+                    for (i in run) {
+                        if (i == run.first) moveTo(xFor(i), yFor(values[i]!!)) else lineTo(xFor(i), yFor(values[i]!!))
                     }
-                } else {
-                    val line = Path().apply {
-                        for (i in run) {
-                            if (i == run.first) moveTo(xFor(i), yFor(values[i]!!)) else lineTo(xFor(i), yFor(values[i]!!))
-                        }
-                    }
-                    drawPath(line, color = color, style = Stroke(width = w, cap = StrokeCap.Round))
                 }
+                drawPath(line, color = color, style = Stroke(width = w, cap = StrokeCap.Round))
             }
 
             goal?.let { g ->
@@ -291,12 +272,12 @@ fun BarChart(
             values.forEachIndexed { i, v ->
                 val x = slot * i + slot / 2f
                 if (v == null) {
-                    inkBar(x, base, 3.dp.toPx(), barW.coerceAtMost(3.dp.toPx()), LedgerContrast.Graphic, seed = i)
+                    inkBar(x, base, 3.dp.toPx(), barW.coerceAtMost(3.dp.toPx()), LedgerContrast.Graphic)
                 } else {
                     val alpha = if (faded?.getOrNull(i) == true) 0.45f else 1f
                     inkBar(
                         x, base, base - yFor(v).coerceAtMost(base - 2.dp.toPx()), barW,
-                        color.copy(alpha = color.alpha * alpha), seed = i,
+                        color.copy(alpha = color.alpha * alpha),
                     )
                 }
             }
@@ -333,18 +314,15 @@ fun BarChart(
 
 /**
  * One bar with flat ends: a filled quad, not a stroke, because a stroke is
- * brushed with round caps. The only hand in it is a hairline of drift on the
- * top edge, so the bar still reads as inked rather than ruled.
+ * drawn with round caps.
  */
-private fun DrawScope.inkBar(centerX: Float, base: Float, height: Float, width: Float, color: Color, seed: Int) {
+private fun DrawScope.inkBar(centerX: Float, base: Float, height: Float, width: Float, color: Color) {
     val half = width / 2f
-    val drift = if (InkStyle.enabled) 0.4.dp.toPx() else 0f
-    val rng = kotlin.random.Random(seed * 17 + 3)
     val top = base - height
     val path = Path().apply {
         moveTo(centerX - half, base)
-        lineTo(centerX - half, top + (rng.nextFloat() - 0.5f) * 2f * drift)
-        lineTo(centerX + half, top + (rng.nextFloat() - 0.5f) * 2f * drift)
+        lineTo(centerX - half, top)
+        lineTo(centerX + half, top)
         lineTo(centerX + half, base)
         close()
     }

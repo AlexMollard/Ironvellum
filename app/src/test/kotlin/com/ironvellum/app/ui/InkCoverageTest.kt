@@ -6,14 +6,14 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The hand-drawn look is a product requirement, and it has regressed five times
+ * The app's one look is a product requirement, and it has regressed five times
  * — always the same way: a new screen reaches for `CircleShape` or `.border()`,
  * or a stock Material component brings its own rounded container. None of that
  * fails a build and none of it fails a behavioural test, so it only ever
  * surfaced by eyeballing screenshots on a phone.
  *
  * These are source scans, which is unusual for a test, and they are justified
- * narrowly: the contract being defended is "no machined geometry reaches the
+ * narrowly: the contract being defended is "no stock geometry reaches the
  * screen", the violation is textual, and the alternative is a human noticing a
  * stray rectangle. Every exception is listed with the reason it stays.
  */
@@ -153,10 +153,9 @@ class InkCoverageTest {
          * already appears here — fails the scan and has to be justified.
          */
         val RULED_EXEMPTIONS: Map<String, Map<String, Int>> = sortedMapOf(
-            // Ink.kt IS the brush: these calls are how every other surface is drawn.
-            // drawLine fell 8 -> 5 when inkRail and inkArc stopped stamping chains
-            // of round-capped segments and started stroking one path each.
-            "Ink.kt" to sortedMapOf("drawArc" to 1, "drawCircle" to 2, "drawLine" to 5),
+            // Ink.kt holds the primitives: these calls are how every other surface is
+            // drawn (inkTick and inkStroke, inkArc, inkDot).
+            "Ink.kt" to sortedMapOf("drawArc" to 1, "drawCircle" to 1, "drawLine" to 2),
             // Ambient washes behind the essence counter: low-alpha gradient fills,
             // not geometry. Brushed, they read as dirt on the screen.
             "MusterBackdrop.kt" to sortedMapOf("drawCircle" to 2),
@@ -164,10 +163,6 @@ class InkCoverageTest {
             // gradient fills and bevel highlights. The crests are drawn art
             // now, that composable is deleted, and the file has no ruled call
             // left - so it is absent rather than exempt.
-            // The trend series itself. Its weight and alpha already breathe per
-            // segment; the coordinates must stay exact or the chart misreports
-            // the user's own measurements.
-            "TrendChart.kt" to sortedMapOf("drawLine" to 1),
             // Drifting motes in the idle scene: breathing alpha fills.
             "IdleScreen.kt" to sortedMapOf("drawCircle" to 1),
         )

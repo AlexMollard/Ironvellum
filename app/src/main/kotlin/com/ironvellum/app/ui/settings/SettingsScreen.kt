@@ -102,9 +102,6 @@ fun SettingsScreen(
         }
 
         SettingsGroup("APP", topSpace = 10.dp) {
-            SettingsValueRow("Appearance", if (profile?.inkStyle == true) "Ink" else "Clean") {
-                onOpenSection(SettingsSection.APPEARANCE)
-            }
             SettingsValueRow("Health Connect", SettingsSummaries.health(healthLink, healthDays.size)) {
                 onOpenSection(SettingsSection.HEALTH_CONNECT)
             }

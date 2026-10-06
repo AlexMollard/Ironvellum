@@ -1584,17 +1584,11 @@ class Repository(
                     // observes the profile; line 321 already reads it this way.
                     trainingMode = runCatching { TrainingMode.valueOf(p.trainingMode) }
                         .getOrDefault(TrainingMode.STRENGTH),
-                    inkStyle = p.inkStyle,
                 )
             }
         }
 
     suspend fun setTrainingMode(mode: TrainingMode) = profileDao.setTrainingMode(mode.name)
-
-    /** Hand-drawn chrome on or off; mirrored into InkStyle so draw code can read it. */
-    fun observeInkStyle(): Flow<Boolean> = profileDao.observe().map { it?.inkStyle ?: false }
-
-    suspend fun setInkStyle(on: Boolean) = profileDao.setInkStyle(on)
 
     /**
      * Body profile (height + sex) for Settings and the stat-log estimator.
@@ -2138,7 +2132,6 @@ class Repository(
                 // it is how a lifter rescues their data.
                 runCatching { TrainingMode.valueOf(it.trainingMode) }
                     .getOrDefault(TrainingMode.STRENGTH),
-                it.inkStyle,
             )
         } ?: PlayerProfile()
         val exerciseRows = exerciseDao.observeAll().first()
@@ -2276,7 +2269,7 @@ class Repository(
                     measurementDao.clearAll()
                 }
 
-                // v5 archives carry height/sex/inkStyle; a v4 archive carries
+                // v5 archives carry height/sex; a v4 archive carries
                 // none, so absence falls back to the LOCAL value instead of
                 // resetting it — height and sex feed every BMI/FFMI/calorie
                 // estimate.
@@ -2289,7 +2282,6 @@ class Repository(
                         trainingMode = archive.trainingMode.name,
                         heightCm = archive.heightCm ?: local?.heightCm,
                         sex = archive.sex ?: local?.sex ?: "MALE",
-                        inkStyle = archive.inkStyle ?: local?.inkStyle ?: false,
                     ),
                 )
 

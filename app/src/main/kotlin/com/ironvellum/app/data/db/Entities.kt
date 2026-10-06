@@ -145,12 +145,7 @@ data class ProfileEntity(
     val heightCm: Double? = null,
     /** Sex enum name; feeds the Navy body-fat estimator. */
     val sex: String = "MALE",
-    /**
-     * CLEAN is what a new lifter gets: it is easier on the eyes for a screen
-     * read mid-workout, and the hand-drawn INK treatment is one tap away in
-     * Settings → APPEARANCE for anyone who wants it (owner decision,
-     * 2026-09-23). A stored choice is never overwritten.
-     */
+    /** Retired: the appearance toggle is gone and nothing reads this. Kept so Room's schema and old archives stay valid. */
     val inkStyle: Boolean = false,
     /**
      * Which strength-scoring formula last touched the stored sessions, as
