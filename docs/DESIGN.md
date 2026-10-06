@@ -53,7 +53,7 @@ border, not that the shape changes.
 | `Ink` | #E8E8E4 | Primary text and figures | |
 | `InkMuted` | #A3A099 | Secondary text, labels, done or past rows | |
 | `Rune` | #32302B | Borders, rules, empty progress | Text |
-| `Emerald` | #34D399 | The screen's one primary action, the active-item marker, filled progress | Borders, dividers, decoration, headings |
+| `Emerald` | #34D399 | The screen's one primary action, the active-item marker, filled progress, muscle heat-map fills | Borders, dividers, decoration, headings |
 | `SystemGreen` | #6FAE8C | Quiet links and chips (`InkChip`) | Fills |
 | `SovereignGold` | #F2C14E | Earned moments: a peak, XP gained, the seal | Anything not earned |
 | `DangerRed` | #EF5350 | Destructive actions and errors | Warnings that are not destructive |

@@ -498,7 +498,6 @@ internal fun TodayContent(
                     .clickable(onClickLabel = "Open the Codex") { actions.onOpenCodex() },
             ) {
                 NameRow(
-                    sigil = { LifterMark(Modifier.testTag("lifter-mark")) },
                     name = {
                         Text(
                             profile?.name ?: "Ironbound",
@@ -922,8 +921,8 @@ private fun WeekRail(
                     color = if (day in scheduled) IronvellumColors.Ink else IronvellumColors.InkMuted,
                 )
                 // A fixed slot, so a tick never moves the letters.
-                Box(Modifier.height(16.dp), contentAlignment = Alignment.Center) {
-                    if (isDone) SealMark(14.dp)
+                Box(Modifier.height(24.dp), contentAlignment = Alignment.Center) {
+                    if (isDone) SealMark(22.dp)
                 }
                 Box(
                     Modifier

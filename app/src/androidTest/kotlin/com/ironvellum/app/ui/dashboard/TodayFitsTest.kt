@@ -333,19 +333,11 @@ class TodayFitsTest {
     }
 
     @Test
-    fun theSigilStandsBesideAShortName() {
-        show(ui = DashboardUi(profile = PlayerProfile(name = "Alex"), presets = listOf(rite(3, day = 1))), selectedDay = 1)
-        assertPlaced("lifter-mark")
-        compose.onNodeWithText("Alex").assertIsDisplayed()
-    }
-
-    @Test
-    fun aLongNameKeepsItsWholeNameAndLosesTheSigil() {
-        val name = "Bartholomew Featherstonehaugh"
+    fun aLongNameGivesWayToTheRank() {
+        val name = "Bartholomew Featherstonehaugh of the Northern Reach"
         show(ui = DashboardUi(profile = PlayerProfile(name = name), presets = listOf(rite(3, day = 1))), selectedDay = 1)
-        compose.onNodeWithText(name).assertIsDisplayed()
-        // Not placed at all: the name got the room, never a shortened "Bartholomew Feathers...".
-        assertNotPlaced("lifter-mark")
+        // The rank link stays whole and on screen; the name is the one that ellipsizes.
+        assertInside("Unranked", substring = true)
     }
 
     @Test
