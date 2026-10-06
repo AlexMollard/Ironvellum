@@ -10,4 +10,5 @@
 # centre icon in the approved reference. Preserve original emblem pixels;
 # remove only the charcoal ground, then add transparent adaptive padding.
 # No redraw or regeneration: keep the gap, stroke shapes and colours exactly.
-# Install: python tools/icon_install.py tools/art_batches/drawn/icon_iv_folded.png
+# Optical alignment: shift the artwork 2% of visible icon width to the right.
+# Install: python tools/icon_install.py tools/art_batches/drawn/icon_iv_folded.png --offset-x 0.02

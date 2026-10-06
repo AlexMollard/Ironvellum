@@ -58,6 +58,8 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("source", help="square PNG with a transparent ground")
     ap.add_argument("--dry-run", action="store_true", help="report what would be written")
+    ap.add_argument("--offset-x", type=float, default=0.0,
+                    help="horizontal optical offset as a fraction of the visible icon width")
     args = ap.parse_args()
 
     from PIL import Image
@@ -77,6 +79,9 @@ def main() -> int:
     written = []
     for bucket, edge in ADAPTIVE.items():
         fg = fit_into(src, edge, SAFE)
+        shifted = Image.new("RGBA", fg.size)
+        shifted.alpha_composite(fg, (round(edge * SAFE * args.offset_x), 0))
+        fg = shifted
         written.append((RES / f"mipmap-{bucket}" / "ic_launcher_foreground.png", fg))
         written.append((RES / f"mipmap-{bucket}" / "ic_launcher_monochrome.png", monochrome(fg)))
     from PIL import ImageDraw
@@ -87,7 +92,7 @@ def main() -> int:
     for bucket, edge in LEGACY.items():
         # Legacy bitmaps have no mask, so the art may use more of the square.
         legacy = Image.new("RGBA", (edge, edge), colour)
-        legacy.alpha_composite(fit_into(src, edge, 0.84))
+        legacy.alpha_composite(fit_into(src, edge, 0.84), (round(edge * args.offset_x), 0))
         written.append((RES / f"mipmap-{bucket}" / "ic_launcher.png", legacy))
         rounded = legacy.copy()
         mask = Image.new("L", (edge * 4, edge * 4))
