@@ -1848,10 +1848,10 @@ private fun SessionSet.withTypedFigure(kind: FigureKind, n: Int): SessionSet = w
 private fun FigureKind.typable(): Boolean = this != FigureKind.KM
 
 /** "10 kg", or "BW" for a bodyweight set. */
-private fun kgLabel(kg: Double?): String = kg?.takeIf { it > 0.0 }?.let { "${formatLoadKg(it)} kg" } ?: "BW"
+internal fun kgLabel(kg: Double?): String = kg?.takeIf { it > 0.0 }?.let { "${formatLoadKg(it)} kg" } ?: "BW"
 
 /** A set as its row reads: "10 kg × 6". */
-private fun setFigureText(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): String = when (metric) {
+internal fun setFigureText(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): String = when (metric) {
     ExerciseMetric.REPS -> "${kgLabel(set.weightKg)} × ${set.reps}"
     ExerciseMetric.HOLD -> "${kgLabel(set.weightKg)} × ${set.durationSec ?: 0}s"
     ExerciseMetric.DURATION ->

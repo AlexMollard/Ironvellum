@@ -75,7 +75,7 @@ enum class Term(
             "deadlift, overhead press, pull-up or dip scored by estimated 1-rep max against your " +
             "bodyweight, or a pull, push or leg technique you cleared, at its tier. Your rank " +
             "is the average of the patterns you trained, rounded down. One you skipped is left out, " +
-            "and core work never lowers it. Tap your rank to see each pattern and what lifts it next. " +
+            "and core work never lowers it. " +
             "Ascension follows your level, which rises with the XP each trial " +
             "earns: " + ArmyClass.LADDER.joinToString(", ") { "${it.title} at ${it.level}" } + ".",
     ),
@@ -143,11 +143,6 @@ enum class Term(
         "The days you have kept training without a break. Every sealed trial keeps it, and so does a day of respite: " +
             "it only breaks when more than ${Streak.MAX_GAP_DAYS} days pass without one. " +
             "The count is the days since the chain began, so it grows every morning it lives.",
-    ),
-    DEED(
-        "Deed",
-        "A mark of something reached: a lift, an oath held, a total. Some deeds " +
-            "grant a title you can wear on your folio.",
     ),
     SEAL(
         "Seal",

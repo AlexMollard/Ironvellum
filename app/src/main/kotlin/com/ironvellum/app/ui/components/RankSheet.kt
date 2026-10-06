@@ -18,6 +18,7 @@ fun RankSheet(breakdown: RankBreakdown?, onDismiss: () -> Unit) {
     ) {
         if (breakdown == null) {
             text(null, "Seal a trial with a pull, push or leg technique you cleared, or with a squat, bench press, deadlift, overhead press, pull-up or dip after logging your bodyweight, to earn a rank.")
+            explainer()
             return@InfoSheet
         }
         breakdown.patterns.forEach { p ->
@@ -45,8 +46,12 @@ fun RankSheet(breakdown: RankBreakdown?, onDismiss: () -> Unit) {
                 "Core work never lowers your rank.",
             color = IronvellumColors.InkMuted,
         )
+        explainer()
     }
 }
+
+/** What Strength Rank and Ascension mean: the explainer that used to sit behind an (i) on Today. */
+private fun InfoSheetScope.explainer() = text(Term.RANKS.title, Term.RANKS.definition, color = IronvellumColors.InkMuted)
 
 @Composable
 private fun RankProgress(b: RankBreakdown) {

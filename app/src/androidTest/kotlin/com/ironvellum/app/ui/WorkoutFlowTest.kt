@@ -110,8 +110,8 @@ class WorkoutFlowTest {
         // Decide only once the day card has loaded. Sampled on the first
         // frame, a rest day had not rendered yet, so the walk was skipped and
         // the test then waited for a quest that never came.
-        awaitAnyText { it == "RESPITE" || isQuestCard(it) }
-        if (allText().none { it == "RESPITE" }) return
+        awaitAnyText { it == "Respite" || isQuestCard(it) }
+        if (allText().none { it == "Respite" }) return
         val rail = listOf("M", "T", "W", "T", "F", "S", "S")
         for (index in rail.indices) {
             val letters = compose.onAllNodesWithText(rail[index]).fetchSemanticsNodes()
@@ -119,7 +119,7 @@ class WorkoutFlowTest {
             compose.onAllNodesWithText(rail[index])[index.coerceAtMost(letters.size - 1)]
                 .performSemanticsAction(SemanticsActions.OnClick)
             settle()
-            if (allText().none { it == "RESPITE" }) return
+            if (allText().none { it == "Respite" }) return
         }
         error("no weekday offered a program; on screen: ${allText()}")
     }
@@ -227,8 +227,8 @@ class WorkoutFlowTest {
         return line.substringBefore('/').trim().toInt()
     }
 
-    /** The day card's plan line, "5 EXERCISES · 19 SETS · ~54 MIN": a scheduled rite is showing. */
-    private fun isQuestCard(label: String): Boolean = label.contains(" SETS · ~")
+    /** The day card's plan line, "5 exercises · 19 sets · about 54 min": a scheduled rite is showing. */
+    private fun isQuestCard(label: String): Boolean = label.contains(" sets · about ")
 
     /** Polls until some string matches, and returns it. */
     private fun awaitAnyText(attempts: Int = 60, predicate: (String) -> Boolean): String {

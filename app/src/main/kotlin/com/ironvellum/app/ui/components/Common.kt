@@ -212,30 +212,6 @@ fun SectionHeader(text: String, modifier: Modifier = Modifier, topPadding: Dp = 
 }
 
 /**
- * Level meter: a 6dp straight [IronvellumColors.Rune] track with a solid
- * [IronvellumColors.Emerald] fill, no border and no shadow. The count reads
- * out beneath it, outside the bar, so the bar stays a plain progress mark.
- */
-@Composable
-fun XpBar(into: Long, needed: Long, modifier: Modifier = Modifier) {
-    val fraction = if (needed <= 0) 0f else (into.toFloat() / needed).coerceIn(0f, 1f)
-    val animated by animateFloatAsState(fraction, tween(900), label = "xpFill")
-    Column(modifier.fillMaxWidth()) {
-        Canvas(Modifier.fillMaxWidth().height(6.dp)) {
-            inkRail(fraction = animated, track = IronvellumColors.Rune, fill = SolidColor(IronvellumColors.Emerald))
-        }
-        Text(
-            "$into / $needed XP",
-            modifier = Modifier.padding(top = 4.dp),
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-        )
-    }
-}
-
-
-/**
  * Primary action: flat emerald with Abyss text, 8dp cut corners, sentence case
  * and no press-scale (docs/DESIGN.md sections 2 and 6).
  *
