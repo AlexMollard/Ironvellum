@@ -313,6 +313,7 @@ internal fun DrawScope.drawFigure(
     fill: (Muscle) -> Color,
     seed: Int,
     selected: Muscle? = null,
+    outlineWidth: Dp = 1.4.dp,
 ) {
     val figure = g.figure
 
@@ -364,7 +365,7 @@ internal fun DrawScope.drawFigure(
 
     // The outline goes on last. The skin line is already smooth, so it is
     // stroked through its points as they are.
-    inkOutline(outline, IronvellumColors.InkMuted, 1.4.dp.toPx())
+    inkOutline(outline, IronvellumColors.InkMuted, outlineWidth.toPx())
 }
 
 /** [samples] (a closed curve) stroked as one round-joined path. */
