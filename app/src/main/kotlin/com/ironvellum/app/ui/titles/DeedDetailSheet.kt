@@ -19,7 +19,6 @@ import com.ironvellum.app.ui.components.InfoAction
 import com.ironvellum.app.ui.components.InfoProgress
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.components.reveal
 import com.ironvellum.app.ui.theme.IronvellumColors
 import java.util.Locale
 
@@ -29,7 +28,7 @@ import java.util.Locale
  * words (WORN), never by colour alone, so the two cannot be confused.
  */
 internal fun rarityColor(rarity: TitleRarity, earned: Boolean = false): Color =
-    if (earned && rarity == TitleRarity.Masterwork) rarity.reveal().ink else IronvellumColors.InkMuted
+    if (earned && rarity == TitleRarity.Masterwork) IronvellumColors.SovereignGold else IronvellumColors.InkMuted
 
 /** The tier's name as a word; the word carries the meaning, so it takes no dot or box. */
 @Composable

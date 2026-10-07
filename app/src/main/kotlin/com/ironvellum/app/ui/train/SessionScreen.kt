@@ -136,7 +136,6 @@ import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
-import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.ShareCardDialog
 import com.ironvellum.app.ui.components.ExerciseInfoSheet
 import com.ironvellum.app.ui.components.ExercisePickerSheet

@@ -55,11 +55,8 @@ import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.UnlockedTitle
 import com.ironvellum.app.domain.WorkoutSession
-import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
-import com.ironvellum.app.ui.components.Reveal
-import com.ironvellum.app.ui.components.deedAchievement
-import com.ironvellum.app.ui.components.levelUpAchievement
+import com.ironvellum.app.ui.components.techniquePages
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.ui.ironvellumRepository
@@ -463,35 +460,7 @@ fun TitlesScreen(
     }
     claimResult?.let { result ->
         AchievementOverlay(
-            items = buildList {
-                add(
-                    Achievement(
-                        banner = "TECHNIQUE MASTERED",
-                        tagline = "TIER ${Skills.tierLabel(result.skill.tier)}",
-                        name = result.skill.name,
-                        subtitle = "${result.skill.line.uppercase()} PATH",
-                        xp = result.xpAwarded,
-                        notes = result.unlockedNext.map { "TECHNIQUE OPENED · ${it.name}" },
-                        reveal = Reveal.Fabled,
-                        narrator = "THE LEDGER RECORDS A TECHNIQUE",
-                    ),
-                )
-                if (result.levelAfter > result.levelBefore) {
-                    add(levelUpAchievement(result.levelBefore, result.levelAfter, result.totalXp))
-                }
-                if (result.levelAfter > result.levelBefore) {
-                    add(
-                        Achievement(
-                            banner = "THE VEIL STIRS",
-                            tagline = "DRAW EARNED",
-                            name = "Inscription Waiting",
-                            subtitle = "SPEND IT BEYOND THE VEIL",
-                            accent = IronvellumColors.SovereignGold,
-                        ),
-                    )
-                }
-                result.newTitles.forEach { add(deedAchievement(it, ui.sex)) }
-            },
+            pages = techniquePages(result, ui.sex),
             wornTitleId = ui.currentTitleId,
             onWear = viewModel::equip,
             onDone = {
@@ -500,12 +469,8 @@ fun TitlesScreen(
                 pendingOpen?.let { openSkill = it }
                 pendingOpen = null
             },
-            // Only the mastery page has notes: each names a technique it opened.
-            onNote = { item, index ->
-                if (item.banner == "TECHNIQUE MASTERED") {
-                    result.unlockedNext.getOrNull(index)?.let { pendingOpen = it.name }
-                }
-            },
+            // The one technique a claim opened is a link in the dock; it opens once every page is seen.
+            onOpenTechnique = { name -> pendingOpen = name },
         )
     }
 

@@ -330,6 +330,8 @@ internal fun LevelUpPage(
     canSkip: Boolean,
     onContinue: () -> Unit,
     onSkip: () -> Unit,
+    /** A quiet line under the XP to the next level, or null. */
+    note: String? = null,
 ) {
     val motion = animatorsOn(LocalContext.current)
     val t = rememberClock(LEVEL_END, motion)
@@ -445,6 +447,10 @@ internal fun LevelUpPage(
             color = Dim,
             modifier = Modifier.reveal(t >= CROSS_AT, motion),
         )
+        if (note != null) {
+            Spacer(Modifier.height(6.dp))
+            Text(note, style = MaterialTheme.typography.labelMedium, color = Dim, modifier = Modifier.reveal(t >= CROSS_AT, motion))
+        }
     }
 }
 
@@ -497,12 +503,14 @@ internal fun DeedsPage(
     wornTitleId: String?,
     onContinue: () -> Unit,
     onWear: (String) -> Unit,
+    /** False hides Wear title: the caller has nowhere to put a title on. */
+    canWear: Boolean = true,
 ) {
     val motion = animatorsOn(LocalContext.current)
     val t = rememberClock(DEEDS_END, motion)
     val masterwork = deeds.any { it.rarity == TitleRarity.Masterwork }
     Haptics(motion, 550L to if (masterwork) HapticFeedbackType.LongPress else HapticFeedbackType.Confirm)
-    val target = remember(deeds) { wearTarget(deeds) }
+    val target = remember(deeds, canWear) { if (canWear) wearTarget(deeds) else null }
     var wornHere by remember(deeds) { mutableStateOf<String?>(null) }
     val worn = target != null && (wornHere == target.id || wornTitleId == target.id)
 

@@ -57,10 +57,10 @@ import com.ironvellum.app.domain.EnergyEstimate
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.SealedEdit
 import com.ironvellum.app.domain.TrialDraft
-import com.ironvellum.app.ui.components.InfoAction
 import com.ironvellum.app.ui.components.InfoNotice
-import com.ironvellum.app.ui.components.InfoSheet
-import com.ironvellum.app.ui.components.InfoSheetSize
+import com.ironvellum.app.ui.components.AchievementOverlay
+import com.ironvellum.app.ui.components.CelebrationPage
+import com.ironvellum.app.ui.components.deedPages
 import androidx.lifecycle.ViewModelProvider
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.domain.SessionAudience
@@ -86,6 +86,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -156,9 +157,9 @@ class WorkoutDetailViewModel(
     private val _amendError = MutableStateFlow<String?>(null)
     val amendError: StateFlow<String?> = _amendError.asStateFlow()
 
-    /** Deeds an in-window amendment newly earned, to announce once. */
-    private val _earnedDeeds = MutableStateFlow<List<String>>(emptyList())
-    val earnedDeeds: StateFlow<List<String>> = _earnedDeeds.asStateFlow()
+    /** Deeds an in-window amendment newly earned, as the page that announces them once. */
+    private val _earnedDeeds = MutableStateFlow<List<CelebrationPage>>(emptyList())
+    internal val earnedDeeds: StateFlow<List<CelebrationPage>> = _earnedDeeds.asStateFlow()
 
     fun dismissEarnedDeeds() {
         _earnedDeeds.value = emptyList()
@@ -205,7 +206,7 @@ class WorkoutDetailViewModel(
             runCatching { repo.editSealedTrial(sessionId, draft) }
                 .onSuccess { result ->
                     _draft.value = null
-                    _earnedDeeds.value = result.newTitles.map { it.name }
+                    _earnedDeeds.value = deedPages(result.newTitles, repo.observeSex().first())
                     CloudSyncWorker.pushNow(appContext)
                 }
                 .onFailure { _amendError.value = it.message ?: "The trial could not be amended" }
@@ -397,17 +398,7 @@ fun WorkoutDetailScreen(
     amendError?.let { message ->
         InfoNotice("Not amended", message, onDismiss = viewModel::dismissAmendError)
     }
-    if (earnedDeeds.isNotEmpty()) {
-        InfoSheet(
-            title = if (earnedDeeds.size == 1) "Deed earned" else "Deeds earned",
-            onDismiss = viewModel::dismissEarnedDeeds,
-            size = InfoSheetSize.Compact,
-            titleColor = IronvellumColors.SovereignGold,
-            actions = listOf(InfoAction("OK", viewModel::dismissEarnedDeeds, quiet = true)),
-        ) {
-            bullets(null, earnedDeeds)
-        }
-    }
+    AchievementOverlay(pages = earnedDeeds, onDone = viewModel::dismissEarnedDeeds)
 }
 
 /**
