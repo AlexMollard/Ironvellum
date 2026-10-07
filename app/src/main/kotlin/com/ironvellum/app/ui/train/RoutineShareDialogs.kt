@@ -21,15 +21,12 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.RoutineCode
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.ironvellumFieldColors
 
 /**
@@ -120,7 +117,7 @@ internal fun ImportRoutineDialog(
                     Text(
                         error.message.orEmpty(),
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error,
+                        color = IronvellumColors.DangerRed,
                     )
                 }
                 workouts?.forEach { workout ->
@@ -140,11 +137,14 @@ internal fun ImportRoutineDialog(
                     // Nothing to replace on an empty board; "Add" already
                     // covers it, and a confirm about deleting 0 workouts is noise.
                     if (currentWorkouts > 0) {
+                        // 16dp clear of the emerald Add (8dp column gap + this), so a
+                        // slip of the thumb does not land on the destructive one.
+                        Spacer(Modifier.height(8.dp))
                         IronvellumButton(
                             label = "Replace my cycle",
                             onClick = { confirmReplace = true },
                             modifier = Modifier.fillMaxWidth(),
-                            quiet = true,
+                            danger = true,
                         )
                     }
                 }
