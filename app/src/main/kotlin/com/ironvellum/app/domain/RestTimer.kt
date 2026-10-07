@@ -30,8 +30,20 @@ data class RestTimer(
         return copy(endsAtMs = ends, totalMs = totalMs + (ends - endsAtMs))
     }
 
+    /**
+     * -[seconds] off the time left, or null when that leaves nothing: the rest
+     * is over as if skipped, so the caller drops it and no end is announced.
+     * The whole shrinks by what was cut, so the sweep keeps its proportion.
+     */
+    fun shortened(seconds: Int, nowMs: Long): RestTimer? {
+        val ends = endsAtMs - seconds * 1000L
+        if (ends <= nowMs) return null
+        return copy(endsAtMs = ends, totalMs = (totalMs - seconds * 1000L).coerceAtLeast(ends - nowMs))
+    }
+
     companion object {
         const val EXTEND_SECONDS = 15
+        const val SHORTEN_SECONDS = 15
 
         fun start(sessionId: Long, seconds: Int, nowMs: Long): RestTimer =
             RestTimer(sessionId, nowMs + seconds * 1000L, seconds * 1000L)

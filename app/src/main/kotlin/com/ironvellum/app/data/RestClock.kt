@@ -31,6 +31,11 @@ object RestClock {
         _timer.update { t -> if (t?.sessionId == sessionId) t.extended(RestTimer.EXTEND_SECONDS, now()) else t }
     }
 
+    /** -15: a rest cut to nothing is cleared exactly as Skip clears it. */
+    fun shorten(sessionId: Long) {
+        _timer.update { t -> if (t?.sessionId == sessionId) t.shortened(RestTimer.SHORTEN_SECONDS, now()) else t }
+    }
+
     /** Skip, or the trial ended: the rest goes, whatever is left of it. */
     fun cancel(sessionId: Long) {
         _timer.update { t -> if (t?.sessionId == sessionId) null else t }

@@ -2,6 +2,7 @@ package com.ironvellum.app.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -30,6 +31,30 @@ class RestTimerTest {
         assertEquals(75_000, running.totalMs)
         val late = t.extended(RestTimer.EXTEND_SECONDS, nowMs = 100_000)
         assertEquals(15_000, late.remainingMs(100_000))
+    }
+
+    @Test
+    fun `minus fifteen takes from the time left and shrinks the whole with it`() {
+        val t = RestTimer.start(sessionId = 7, seconds = 60, nowMs = 0)
+        val less = t.shortened(RestTimer.SHORTEN_SECONDS, nowMs = 10_000)!!
+        assertEquals(35_000, less.remainingMs(10_000))
+        assertEquals(45_000, less.totalMs)
+        // The sweep never reads more than full: cutting a rest that was already extended.
+        val extended = t.extended(RestTimer.EXTEND_SECONDS, nowMs = 0)
+        assertEquals(60_000, extended.shortened(RestTimer.SHORTEN_SECONDS, nowMs = 0)!!.totalMs)
+    }
+
+    @Test
+    fun `minus fifteen never goes below zero, a rest cut to nothing is over as if skipped`() {
+        val t = RestTimer.start(sessionId = 7, seconds = 20, nowMs = 0)
+        // 20 s left, minus 15: 5 s remain.
+        assertEquals(5_000, t.shortened(15, nowMs = 0)!!.remainingMs(0))
+        // 10 s left, minus 15: nothing left, so no timer at all.
+        assertNull(t.shortened(15, nowMs = 10_000))
+        // Exactly 15 s left reaches zero too.
+        assertNull(t.shortened(15, nowMs = 5_000))
+        // A rest that already ran out has nothing to cut.
+        assertNull(t.shortened(15, nowMs = 50_000))
     }
 
     @Test
