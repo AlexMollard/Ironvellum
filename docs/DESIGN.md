@@ -48,14 +48,14 @@ border, not that the shape changes.
 
 ## 3. Colour
 
-| Token | Hex | Used for | Never for |
+| Role (token) | Default | Used for | Never for |
 |---|---|---|---|
 | `Ink` | #E8E8E4 | Primary text and figures | |
 | `InkMuted` | #A3A099 | Secondary text, labels, done or past rows | |
 | `Rune` | #32302B | Borders, rules, empty progress | Text |
-| `Emerald` | #34D399 | The screen's one primary action, the active-item marker, filled progress, muscle heat-map fills | Borders, dividers, decoration, headings |
-| `SystemGreen` | #6FAE8C | Quiet links and chips (`InkChip`) | Fills |
-| `SovereignGold` | #F2C14E | Earned moments: a peak, XP gained, the seal | Anything not earned |
+| Primary accent (`Emerald`) | #34D399 | The screen's one primary action, the active-item marker, filled progress, muscle heat-map fills | Borders, dividers, decoration, headings |
+| Link accent (`SystemGreen`, derived from primary) | #6FAE8C | Quiet links and chips (`InkChip`) | Fills |
+| Reward accent (`SovereignGold`) | #F2C14E | Earned moments: a peak, XP gained, the seal | Anything not earned |
 | `DangerRed` | #EF5350 | Destructive actions and errors | Warnings that are not destructive |
 
 Emerald and gold are the default accent pair. Settings → Appearance lets the
@@ -66,8 +66,11 @@ the reward accent. Paper, ink and destructive red remain fixed. Filled controls
 choose a contrasting foreground; the picker previews the pair and flags colours
 that may be difficult to see on dark paper.
 
+Speak in roles, not hues: the lifter may have chosen sapphire and amber. "Primary" is the action
+colour, "reward" is the earned colour, "link" is the quiet accent.
+
 Rule of thumb: on any one screen, the primary accent appears on at most three things (the
-action, the active marker and progress), and gold only where something was
+action, the active marker and progress), and the reward accent only where something was
 earned.
 
 ## 4. Type
