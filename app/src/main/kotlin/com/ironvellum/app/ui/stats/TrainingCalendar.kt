@@ -137,7 +137,6 @@ internal fun TrainingCalendar(
     val monthName = month.month.getDisplayName(TextStyle.FULL, locale)
 
     InkPanel(Modifier.fillMaxWidth()) {
-        PanelLabel("TRAINING")
         // The oath lives on Today; the month's count is the calendar's own.
         StatValue(inMonth.toString(), size = StatSize.Hero, unit = plural(inMonth, "trial", "trials"))
         Text(

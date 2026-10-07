@@ -63,6 +63,7 @@ import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.LedgerSpace
+import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.PanelLabel
 import com.ironvellum.app.ui.components.RangeChips
 import com.ironvellum.app.ui.components.StatSize
@@ -124,7 +125,8 @@ internal fun BodyTab(
         InkPanel(Modifier.fillMaxWidth()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 PanelLabel("WEIGHT", Modifier.weight(1f))
-                if (latest != null) {
+                // One reading has no range to compare over: the chips wait for a second.
+                if (ui.stats.size >= 2) {
                     RangeChips(
                         options = LedgerRange.entries.map { it to it.label },
                         selected = range,
@@ -203,11 +205,9 @@ internal fun BodyTab(
             }
         }
 
-        InkPanel(Modifier.fillMaxWidth(), onClick = onOpenTraining) {
-            ConsistencyRow(weeks)
-        }
-
         InkRowPanel(Modifier.fillMaxWidth()) {
+            ConsistencyRow(weeks, onOpenTraining)
+            InkDivider()
             val logged = Measurements.latest(ui.measurements).size
             InkListRow(
                 label = "Tape readings",
@@ -244,32 +244,32 @@ private fun WeightEmpty(onLogWeight: () -> Unit) {
     }
 }
 
-/** A tappable BMI / FFMI figure: label, value, one muted line. Opens the band dialog. */
+/** A tappable BMI / FFMI figure: label, value, one muted line and a chevron, with no box. Opens the band sheet. */
 @Composable
 private fun StatChip(label: String, value: String, hint: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
-    val shape = MaterialTheme.shapes.extraSmall
-    Column(
+    Row(
         modifier
-            .clip(shape)
-            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
             .clickable(role = Role.Button, onClick = onClick)
-            .heightIn(min = LedgerSpace.Target)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .heightIn(min = LedgerSpace.Target),
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        PanelLabel(label)
-        StatValue(value, size = StatSize.Inline)
-        Text(
-            hint,
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
+        Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+            Text(label, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+            StatValue(value, size = StatSize.Inline)
+            Text(
+                hint,
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
     }
 }
 
 @Composable
-private fun ConsistencyRow(weeks: List<Int>) {
+private fun ConsistencyRow(weeks: List<Int>, onOpen: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -282,16 +282,17 @@ private fun ConsistencyRow(weeks: List<Int>) {
             label = "Consistency",
             value = if (perWeek == 0.0) "\u2014" else "${"%.1f".format(java.util.Locale.US, perWeek)} a week",
             supporting = "sealed days per week, last 12 weeks",
-            onClick = null,
+            onClick = onOpen,
         )
         // Twelve flat dashes said nothing; until a week has a trial, say what fills it.
         if (weeks.any { it > 0 }) {
-            WeekStrip(weeks)
+            WeekStrip(weeks, Modifier.padding(horizontal = 16.dp))
         } else {
             Text(
                 "Each week fills in here as you seal trials.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
+                modifier = Modifier.padding(horizontal = 16.dp),
             )
         }
     }
@@ -299,10 +300,10 @@ private fun ConsistencyRow(weeks: List<Int>) {
 
 /** Twelve weeks, oldest to newest: bar height is that week's sealed days out of seven. */
 @Composable
-private fun WeekStrip(weeks: List<Int>) {
+private fun WeekStrip(weeks: List<Int>, modifier: Modifier = Modifier) {
     val height = 28.dp
     Row(
-        Modifier
+        modifier
             .fillMaxWidth()
             .height(height)
             .clearAndSetSemantics {
@@ -317,7 +318,7 @@ private fun WeekStrip(weeks: List<Int>) {
                 Modifier
                     .weight(1f)
                     .height(if (count == 0) 3.dp else height * (count.coerceAtMost(7) / 7f))
-                    .background(if (count == 0) IronvellumColors.Rune else IronvellumColors.Emerald),
+                    .background(if (count == 0) IronvellumColors.Rune else IronvellumColors.Ink),
             )
         }
     }
@@ -374,23 +375,18 @@ internal fun WeightHistoryPage(
 @Composable
 private fun HistoryRow(stat: StatEntry, profileHeight: Double?, onDelete: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = LedgerSpace.Target),
+        Modifier.fillMaxWidth().heightIn(min = ListRowHeight),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
+            Text("${formatBodyValue(stat.weightKg)} kg", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
             Text(
                 buildString {
-                    append("${formatBodyValue(stat.weightKg)} kg")
+                    append(formatDate(stat.takenAtMs, "d MMM yyyy \u00B7 HH:mm"))
                     stat.bodyFatPct?.let { append(" \u00B7 ${formatBodyValue(it)}% bf") }
                     Ledger.bmiOf(stat, profileHeight)?.let { append(" \u00B7 BMI ${formatBodyValue(it)}") }
                 },
-                style = MaterialTheme.typography.titleSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.Ink,
-            )
-            Text(
-                formatDate(stat.takenAtMs, "d MMM yyyy \u00B7 HH:mm"),
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
         }

@@ -214,6 +214,10 @@ fun BarChart(
     color: Color = IronvellumColors.Emerald,
     goal: Double? = null,
     faded: List<Boolean>? = null,
+    /** The final slot (today, on the Ledger's windows) in its own colour; null keeps [color]. */
+    lastColor: Color? = null,
+    /** The hairline stub drawn for a slot with no data. */
+    emptyColor: Color = LedgerContrast.Graphic,
     modifier: Modifier = Modifier.fillMaxWidth().height(96.dp),
     startLabel: String? = null,
     endLabel: String? = null,
@@ -258,12 +262,13 @@ fun BarChart(
             values.forEachIndexed { i, v ->
                 val x = slot * i + slot / 2f
                 if (v == null) {
-                    inkBar(x, base, 3.dp.toPx(), barW.coerceAtMost(3.dp.toPx()), LedgerContrast.Graphic)
+                    inkBar(x, base, 3.dp.toPx(), barW.coerceAtMost(3.dp.toPx()), emptyColor)
                 } else {
                     val alpha = if (faded?.getOrNull(i) == true) 0.45f else 1f
+                    val fill = if (i == values.lastIndex && lastColor != null) lastColor else color
                     inkBar(
                         x, base, base - yFor(v).coerceAtMost(base - 2.dp.toPx()), barW,
-                        color.copy(alpha = color.alpha * alpha),
+                        fill.copy(alpha = fill.alpha * alpha),
                     )
                 }
             }

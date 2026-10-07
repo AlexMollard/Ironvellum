@@ -55,6 +55,14 @@ internal fun TapePage(
             verticalArrangement = Arrangement.spacedBy(LedgerSpace.Panel),
         ) {
             Spacer(Modifier.height(LedgerSpace.Panel))
+            // One hint for the whole list, not one on every empty site.
+            if (MeasurementSite.entries.any { latest[it] == null }) {
+                Text(
+                    "Tap a site to take its first reading.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
             InkRowPanel(Modifier.fillMaxWidth()) {
                 MeasurementSite.entries.forEachIndexed { i, site ->
                     if (i > 0) InkDivider()
@@ -66,7 +74,7 @@ internal fun TapePage(
                             val delta = Measurements.deltaCm(entries, site, days = 30)
                             formatDate(r.takenAtMs, "d MMM") +
                                 (delta?.let { " \u00B7 ${Ledger.signed(it, "cm")} / 30d" } ?: "")
-                        } ?: "tap to take a first reading",
+                        },
                         onClick = { onOpenSite(site) },
                     )
                 }

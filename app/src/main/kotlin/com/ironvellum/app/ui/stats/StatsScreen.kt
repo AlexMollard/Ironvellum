@@ -32,7 +32,11 @@ import com.ironvellum.app.ui.components.rememberZoneId
 import com.ironvellum.app.domain.MeasurementEntry
 import com.ironvellum.app.domain.Measurements
 import kotlinx.coroutines.flow.Flow
+import com.ironvellum.app.ui.components.InkRowPanel
+import com.ironvellum.app.ui.components.InkTextLink
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.IronvellumDialog
+import com.ironvellum.app.ui.components.ListRow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -137,15 +141,12 @@ import java.util.Locale
 import com.ironvellum.app.ui.components.Term
 import com.ironvellum.app.ui.components.TermInfo
 
-/** Band tones to theme tokens: gold stays for earned things, so no band is gold. */
-private fun toneColor(tone: BandTone): Color = when (tone) {
-    BandTone.LOW -> LedgerContrast.Graphic
-    BandTone.OK -> IronvellumColors.SystemGreen
-    BandTone.GOOD -> IronvellumColors.Emerald
-    BandTone.STRONG -> IronvellumColors.EmeraldBright
-    BandTone.WARN -> IronvellumColors.InkMuted
-    BandTone.DANGER -> IronvellumColors.DangerRed
-}
+/**
+ * Bands read as a neutral InkMuted step ramp, low to high: the ink marker says where the reading
+ * falls and the band names say what it means, so no band borrows a colour (or a red) for a verdict.
+ */
+private fun bandColor(index: Int, count: Int): Color =
+    IronvellumColors.InkMuted.copy(alpha = if (count <= 1) 0.5f else 0.25f + 0.6f * index / (count - 1))
 
 data class StatsUi(
     /** False until the first real emission: the screen draws nothing rather than flash its empty state. */
@@ -423,85 +424,49 @@ fun StatsScreen(
 }
 
 /**
- * Each lift's best estimated one-rep max with its trend. The number is the
- * Epley estimate of the marked load (a pull-up's ADDED kilos), so it is
- * comparable with itself over time, not with a bodyweight-inclusive table.
- * Gold appears only as the PEAK tag on a peak set in the last fortnight.
+ * Each lift's best estimated one-rep max, one row each. The number is the Epley estimate of the
+ * marked load (a pull-up's ADDED kilos), so it is comparable with itself over time, not with a
+ * bodyweight-inclusive table; the (i) explains it once instead of every visit repeating it.
+ * Gold appears only on a row whose peak was set in the last fortnight.
  */
 @Composable
 private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift: (String) -> Unit) {
-    InkPanel(Modifier.fillMaxWidth()) {
-        PanelLabel("LIFT PEAKS")
-        Text(
-            "Best estimated 1RM of the marked load, in kg. Epley, up to 12 reps.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
+    InkRowPanel(Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(start = 16.dp, end = 4.dp, top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            PanelLabel("LIFT PEAKS", Modifier.weight(1f))
+            TermInfo(Term.ONE_REP_MAX)
+        }
         if (records.isEmpty()) {
-            Spacer(Modifier.height(8.dp))
             Text(
                 "Log weighted sets of 1 to 12 reps to build the board.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp),
             )
         }
         records.forEachIndexed { i, record ->
             if (i > 0) InkDivider()
-            LiftRecordRow(record, fresh = LiftRecords.isFresh(record, nowMs)) { onOpenLift(record.name) }
+            // The board is a glance; the lift's whole history is on Exercises.
+            val change = record.deltaKg?.let { "${Ledger.signed(it, "kg")} / 90d" }
+            val fresh = LiftRecords.isFresh(record, nowMs)
+            ListRow(
+                label = record.name,
+                value = "%.1f kg".format(Locale.US, record.bestE1rmKg),
+                subline = if (fresh) listOfNotNull("New peak", change).joinToString(" \u00B7 ") else change,
+                sublineColor = if (fresh) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                onClickLabel = "Open ${record.name}",
+                onClick = { onOpenLift(record.name) },
+            )
         }
-    }
-}
-
-@Composable
-private fun LiftRecordRow(record: LiftRecord, fresh: Boolean, onOpen: () -> Unit) {
-    // The board is a glance; the lift's whole history is on Exercises.
-    Row(
-        Modifier.fillMaxWidth().clickable(onClickLabel = "Open ${record.name}", onClick = onOpen).heightIn(min = LedgerSpace.Target).padding(vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        Column(Modifier.weight(1f)) {
+        // Said once for the board, not on every row that lacks a change.
+        if (records.any { it.deltaKg == null }) {
             Text(
-                record.name,
-                style = MaterialTheme.typography.bodyMedium,
+                "A lift shows its 90-day change once it has older sets.",
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-            )
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    record.deltaKg?.let { "${Ledger.signed(it, "kg")} / 90d" } ?: "no 90d history yet",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                )
-                if (fresh) {
-                    Text(
-                        "PEAK",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.SovereignGold,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                    )
-                }
-            }
-        }
-        Box(Modifier.width(88.dp)) {
-            TrendChart(
-                record.series,
-                IronvellumColors.Emerald,
-                fromZero = false,
-                modifier = Modifier.fillMaxWidth().height(32.dp),
-                description = "${record.name} best estimated one-rep max by trial, " +
-                    "${record.series.size} ${plural(record.series.size, "trial", "trials")}",
-                recordMarker = false,
-                scrub = false,
+                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp, top = 4.dp),
             )
         }
-        StatValue(
-            "%.1f".format(Locale.US, record.bestE1rmKg),
-            size = StatSize.Inline,
-            unit = "kg",
-        )
     }
 }
 
@@ -593,12 +558,11 @@ private fun StatDrillSheet(
 
     InfoSheet(
         title = metric,
-        subtitle = "The Ledger rates your frame",
         onDismiss = onDismiss,
-        chips = listOfNotNull(category?.let { InfoChip(it, IronvellumColors.SystemGreen) }),
+        chips = listOfNotNull(category?.let { InfoChip(it, IronvellumColors.Ink) }),
         summary = current?.let { value ->
             {
-                InfoFigures(listOf(InfoFigure("YOUR READING", formatBodyValue(value))))
+                StatValue(formatBodyValue(value), size = StatSize.Tile)
                 Spacer(Modifier.height(10.dp))
                 BandBar(
                     value = value,
@@ -615,7 +579,8 @@ private fun StatDrillSheet(
             text(null, "This page is still blank. Log readings to fill it.", IronvellumColors.InkMuted)
             return@InfoSheet
         }
-        section("TREND") {
+        // One caps label for the sheet (BANDS); the chart and the note need none.
+        section(null) {
             if (series.size >= 2) {
                 TrendChart(
                     series,
@@ -635,7 +600,7 @@ private fun StatDrillSheet(
             asOf?.let { "From your reading of $it, the newest with body fat." },
             table.note,
         ).joinToString(" ")
-        if (about.isNotEmpty()) text("ABOUT THIS RATING", about, IronvellumColors.InkMuted)
+        if (about.isNotEmpty()) text(null, about, IronvellumColors.InkMuted)
     }
 }
 
@@ -643,10 +608,10 @@ private fun StatDrillSheet(
 private fun BandBar(value: Double, bands: List<Band>, scaleMax: Double, description: String) {
     Canvas(Modifier.fillMaxWidth().height(18.dp).semantics { contentDescription = description }) {
         var low = 0.0
-        bands.forEach { band ->
+        bands.forEachIndexed { index, band ->
             val start = (low / scaleMax * size.width).toFloat()
             val end = (band.upTo.coerceAtMost(scaleMax) / scaleMax * size.width).toFloat()
-            drawRect(color = toneColor(band.tone), topLeft = Offset(start, 0f), size = androidx.compose.ui.geometry.Size(end - start, size.height))
+            drawRect(color = bandColor(index, bands.size), topLeft = Offset(start, 0f), size = androidx.compose.ui.geometry.Size(end - start, size.height))
             low = band.upTo.coerceAtMost(scaleMax)
         }
         val markerX = (value / scaleMax * size.width).toFloat().coerceIn(0f, size.width)
@@ -703,22 +668,17 @@ private fun AddStatDialog(
         Ledger.parseDecimal(hips.value),
     ) else null
 
-    Dialog(onDismissRequest = onDismiss) {
-        InkPanel(Modifier.fillMaxWidth()) {
+    IronvellumDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Log weight") },
+        text = {
             // Scrollable: with the estimator open and the keyboard up the
             // buttons used to sit below the fold.
             Column(
                 Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                Text(
-                    "LOG A READING",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontFamily = ChakraPetch,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    color = IronvellumColors.Emerald,
-                )
-                // A rejected figure used to do nothing at all: LOG IT greyed
+                // A rejected figure used to do nothing at all: the primary greyed
                 // out with no reason given, so a mistyped weight read as a
                 // broken button. Say which bound was missed, and only once
                 // something has actually been typed.
@@ -743,7 +703,7 @@ private fun AddStatDialog(
                     colors = ironvellumFieldColors(),
                     value = bodyFat.value,
                     onValueChange = { bodyFat.value = decimalInput(it) },
-                    label = { Text("Body fat % — optional") },
+                    label = { Text("Body fat % (optional)") },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Done),
                     // The buttons can sit under the keyboard: its own Done key logs the reading.
@@ -760,24 +720,19 @@ private fun AddStatDialog(
                 )
                 if (heightCm == null || heightCm <= 0.0) {
                     // BMI/FFMI need it, but logging must not demand it every
-                    // time. The hint is the button: SETTINGS was otherwise two
-                    // tabs and a gear away from this dialog.
-                    Text(
-                        "Set your height once in SETTINGS to unlock BMI and FFMI.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.SystemGreen,
-                        modifier = Modifier
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .clickable(onClick = onOpenSettings)
-                            .heightIn(min = LedgerSpace.Target)
-                            .wrapContentHeight(),
-                    )
+                    // time. The link opens Profile directly, which is otherwise
+                    // two tabs and a gear away from this dialog.
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            "Height unlocks BMI and FFMI.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                            modifier = Modifier.weight(1f),
+                        )
+                        InkTextLink("Set height", onOpenSettings)
+                    }
                 }
-                IronvellumButton(
-                    label = if (showEstimator) "Hide estimator" else "Estimate for me",
-                    onClick = { showEstimator = !showEstimator },
-                    quiet = true,
-                )
+                InkTextLink(if (showEstimator) "Hide estimator" else "Estimate for me", { showEstimator = !showEstimator })
                 if (showEstimator) {
                     // US Navy circumference method, pre-filled from the latest
                     // measurements the lifter already logged.
@@ -791,7 +746,7 @@ private fun AddStatDialog(
                         )
                         TermInfo(Term.NAVY_TAPE)
                     }
-                    listOf("NECK (cm)" to neck, "WAIST (cm)" to waist).forEach { (label, field) ->
+                    listOf("Neck (cm)" to neck, "Waist (cm)" to waist).forEach { (label, field) ->
                         OutlinedTextField(
                             shape = MaterialTheme.shapes.small,
                             colors = ironvellumFieldColors(),
@@ -809,64 +764,52 @@ private fun AddStatDialog(
                             colors = ironvellumFieldColors(),
                             value = hips.value,
                             onValueChange = { hips.value = decimalInput(it) },
-                            label = { Text("HIPS (cm)") },
+                            label = { Text("Hips (cm)") },
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal, imeAction = ImeAction.Next),
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
+                    // An estimate outside the allowed range (Navy can go negative) cannot be used.
+                    val usable = estimate != null && Ledger.bodyFatTextValid(estimate.toInt().toString())
                     Row(
                         Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
                             estimate?.let {
-                                if (Ledger.bodyFatTextValid(it.toInt().toString())) {
-                                    "~${it.toInt()}% BODY FAT (estimate)"
-                                } else {
-                                    "Estimate out of range, check the tapes"
-                                }
+                                if (usable) "About ${it.toInt()}% body fat (estimate)" else "Estimate out of range, check the tapes"
                             } ?: "Tapes not complete",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = ChakraPetch,
-                            color = if (estimate != null) IronvellumColors.EmeraldBright else IronvellumColors.InkMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
                             modifier = Modifier.weight(1f),
                         )
-                        IronvellumButton(
-                            label = "Use",
-                            // An estimate outside the allowed range (Navy can go negative) cannot be used.
-                            enabled = estimate != null && Ledger.bodyFatTextValid(estimate.toInt().toString()),
+                        InkTextLink(
+                            "Use",
+                            enabled = usable,
                             onClick = {
                                 estimate?.let {
                                     bodyFat.value = it.toInt().toString()
                                     showEstimator = false
                                 }
                             },
-                            quiet = true,
                         )
                     }
                 }
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                ) {
-                    IronvellumButton(label = "Cancel", onClick = onDismiss, modifier = Modifier.weight(1f), quiet = true)
-                    IronvellumButton(
-                        label = "LOG IT",
-                        onClick = { onConfirm(Ledger.parseDecimal(weight.value) ?: 0.0, bfValue) },
-                        enabled = validWeight && validBodyFat,
-                        gold = true,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
             }
-        }
-    }
+        },
+        dismissButton = { IronvellumButton(label = "Cancel", onClick = onDismiss, quiet = true) },
+        // The dialog frame shows this as the green text button; it is still the one primary here.
+        confirmButton = {
+            IronvellumButton(
+                label = "Log",
+                onClick = { onConfirm(Ledger.parseDecimal(weight.value) ?: 0.0, bfValue) },
+                enabled = validWeight && validBodyFat,
+            )
+        },
+    )
 }
-
 
 /** Today's date, refreshed on resume and at midnight so the windows below never go stale. */
 @Composable

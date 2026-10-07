@@ -178,6 +178,23 @@ fun InkListRow(
     onClick: (() -> Unit)? = null,
 ) = ListRow(label, modifier, value = value, subline = supporting, onClick = onClick)
 
+/** A quiet text link: SystemGreen, sentence case, no box, a 48dp-high tap target. */
+@Composable
+fun InkTextLink(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
+    Box(
+        modifier
+            .heightIn(min = LedgerSpace.Target)
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.CenterStart,
+    ) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge,
+            color = if (enabled) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+        )
+    }
+}
+
 /** Small range switch (30D / 90D / ALL): every option a full 48dp target, state announced; the open one is Ink over a 2dp Emerald underline. */
 @Composable
 fun <T> RangeChips(
