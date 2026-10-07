@@ -65,7 +65,7 @@ class NavigationReachabilityTest {
     @Test
     fun everyDestinationOpensItsOwnScreen() {
         // Today is the launch destination; assert it rendered before navigating.
-        assertShows("OATH")
+        assertShows("Oath")
 
         open("Train", "TRAIN")
         open("Ledger", "THE LEDGER")
@@ -74,7 +74,7 @@ class NavigationReachabilityTest {
         open("Allies", "Cloud link for the Ironbound")
 
         // The Garrison left the nav bar for Today's footer.
-        open("Today", "OATH")
+        open("Today", "Oath")
         compose.onAllNodesWithText("The Veil").onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         assertShows("BACK")
@@ -83,7 +83,7 @@ class NavigationReachabilityTest {
 
         // Returning to the launch destination must also work: a nav graph that
         // only travels outward is a real failure mode.
-        open("Today", "OATH")
+        open("Today", "Oath")
     }
 
     private companion object {

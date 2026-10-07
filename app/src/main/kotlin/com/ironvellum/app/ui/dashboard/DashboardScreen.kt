@@ -91,9 +91,7 @@ import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
-import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.LifterSigil
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.RankSheet
@@ -479,6 +477,7 @@ internal fun TodayContent(
 ) {
     var rankOpen by remember { mutableStateOf(false) }
     var oathOpen by remember { mutableStateOf(false) }
+    var levelOpen by remember { mutableStateOf(false) }
     val swipe = rememberTodaySwipe(selectedDay, actions.onSelectDay, motion)
     val profile = ui.profile
     val progress = Xp.progress(profile?.totalXp ?: 0L)
@@ -552,25 +551,7 @@ internal fun TodayContent(
             }
         }
 
-        // The level rides a thin rail it is climbing.
-        Row(Modifier.fillMaxWidth().height(24.dp), verticalAlignment = Alignment.CenterVertically) {
-            LifterSigil(level = progress.level, frameId = null, compact = true)
-            InkRail(
-                fraction = if (progress.needed <= 0) 0f else (progress.intoLevel.toFloat() / progress.needed).coerceIn(0f, 1f),
-                modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
-                height = 4.dp,
-            )
-            // One text node: "58 / 400 XP".
-            Text(
-                "${progress.intoLevel} / ${progress.needed} XP",
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-                maxLines = 1,
-            )
-        }
-
-        // The Oath is the week section's heading, directly above its day tiles.
-        OathRow(ui.streak) { oathOpen = true }
+        HeaderProgress(progress, ui.streak, onLevel = { levelOpen = true }, onOath = { oathOpen = true })
         WeekRail(
             selectedDay = selectedDay,
             today = today.dayOfWeek.value,
@@ -604,6 +585,7 @@ internal fun TodayContent(
     }
     if (rankOpen) RankSheet(rankBreakdown) { rankOpen = false }
     if (oathOpen) TermDialog(Term.OATH) { oathOpen = false }
+    if (levelOpen) TermDialog(Term.LEVEL) { levelOpen = false }
 }
 
 /** Each adjacent day budgets its own card and rows against the same fixed viewport. */

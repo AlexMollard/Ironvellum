@@ -11,13 +11,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,7 +25,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Fill
@@ -39,6 +39,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -46,8 +49,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ironvellum.app.domain.ArmyClass
+import com.ironvellum.app.domain.TitleRule
+import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.program.BodyFigures
 import com.ironvellum.app.ui.program.FigureGeometry
@@ -117,39 +125,77 @@ internal fun WornTitle(title: String) {
     }
 }
 
-/** A quiet, full-width Oath control above the week; the day card keeps the emphasis. */
+/** Two independent progress controls; both explain in place without navigation arrows. */
 @Composable
-internal fun OathRow(days: Int, onClick: () -> Unit) {
-    Row(
-        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("today-oath")
-            .clip(MaterialTheme.shapes.medium)
-            .clickable(role = Role.Button, onClickLabel = "Explain Oath", onClick = onClick)
-            .semantics { stateDescription = "$days ${plural(days, "day", "days")} kept" }
-            .padding(bottom = 4.dp),
-        verticalAlignment = Alignment.Bottom,
+internal fun HeaderProgress(progress: Xp.Progress, days: Int, onLevel: () -> Unit, onOath: () -> Unit) {
+    // Read the existing deed catalogue so the target and its name cannot drift apart.
+    val next = remember(days) {
+        Titles.ALL.mapNotNull { title ->
+            (title.rule as? TitleRule.TrainingStreak)?.days?.let { it to title }
+        }.filter { it.first > days }.minByOrNull { it.first }
+    }
+    Row(Modifier.fillMaxWidth().padding(top = 4.dp, bottom = 6.dp), verticalAlignment = Alignment.Top) {
+        ProgressColumn(
+            title = "${ArmyClass.forLevel(progress.level).title} ${progress.level}",
+            fraction = if (progress.needed <= 0) 0f else progress.intoLevel.toFloat() / progress.needed,
+            value = AnnotatedString("${progress.intoLevel} / ${progress.needed} XP"),
+            caption = "Level progress",
+            color = IronvellumColors.Emerald,
+            tag = "today-level", barTag = "today-xp-bar", onClickLabel = "Explain level and XP",
+            state = "${progress.intoLevel} of ${progress.needed} XP towards the next level",
+            modifier = Modifier.weight(1f), onClick = onLevel,
+        )
+        Spacer(Modifier.width(20.dp))
+        ProgressColumn(
+            title = "Oath",
+            fraction = next?.let { days.toFloat() / it.first } ?: 1f,
+            value = buildAnnotatedString {
+                withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append(days.toString()) }
+                append(next?.let { " / ${it.first} days" } ?: " ${plural(days, "day", "days")} kept")
+            },
+            caption = when {
+                days == 0 -> "Seal a trial to begin"
+                next != null -> "Next: ${next.second.name}"
+                else -> "Milestones complete"
+            },
+            color = IronvellumColors.SovereignGold,
+            tag = "today-oath", barTag = "today-oath-bar", onClickLabel = "Explain Oath",
+            state = "$days ${plural(days, "day", "days")} kept" + (next?.let { "; next milestone at ${it.first} days" } ?: ""),
+            modifier = Modifier.weight(1f), onClick = onOath,
+        )
+    }
+}
+
+@Composable
+private fun ProgressColumn(
+    title: String,
+    fraction: Float,
+    value: AnnotatedString,
+    caption: String,
+    color: Color,
+    tag: String,
+    barTag: String,
+    onClickLabel: String,
+    state: String,
+    modifier: Modifier,
+    onClick: () -> Unit,
+) {
+    Column(
+        modifier.heightIn(min = 48.dp).testTag(tag).clip(MaterialTheme.shapes.medium)
+            .clickable(role = Role.Button, onClickLabel = onClickLabel, onClick = onClick)
+            .semantics { stateDescription = state }
+            .padding(vertical = 4.dp),
     ) {
-        SealMark(18.dp, earned = days > 0)
-        Spacer(Modifier.width(10.dp))
         Text(
-            "OATH", fontSize = 10.sp, letterSpacing = 0.8.sp,
-            fontWeight = FontWeight.Medium, color = IronvellumColors.InkMuted,
+            title, fontSize = 16.sp, lineHeight = 20.sp, fontWeight = FontWeight.Medium,
+            color = IronvellumColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
-        Spacer(Modifier.width(10.dp))
-        Text(
-            days.toString(), fontSize = 18.sp, lineHeight = 22.sp,
-            fontWeight = FontWeight.Bold, color = IronvellumColors.Ink,
-        )
-        Spacer(Modifier.width(6.dp))
-        Text(
-            if (days > 0) "${plural(days, "day", "days")} kept" else "Seal a trial to begin",
-            modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.width(8.dp))
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null,
-            tint = IronvellumColors.InkMuted, modifier = Modifier.size(16.dp),
-        )
+        Spacer(Modifier.height(6.dp))
+        InkRail(fraction.coerceIn(0f, 1f), Modifier.testTag(barTag), height = 4.dp, fill = SolidColor(color))
+        Spacer(Modifier.height(6.dp))
+        Text(value, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        Spacer(Modifier.height(2.dp))
+        Text(caption, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
     }
 }
 
