@@ -113,12 +113,20 @@ object Ledger {
     fun latestWithBodyFat(stats: List<StatEntry>): StatEntry? =
         stats.filter { it.bodyFatPct != null }.maxByOrNull { it.takenAtMs }
 
+    /**
+     * One item per calendar day, the latest of that day, oldest day first. Two
+     * readings on one day would share an x on a date-positioned chart and draw
+     * a vertical spike, so charts plot the day's last reading only.
+     */
+    fun <T> latestPerDay(items: List<T>, zone: ZoneId, takenAtMs: (T) -> Long): List<T> =
+        items.sortedBy(takenAtMs).groupBy { dateOf(takenAtMs(it), zone) }.map { it.value.last() }
+
     fun weightPlot(stats: List<StatEntry>, range: LedgerRange, today: LocalDate, zone: ZoneId): WeightPlot? {
         val sorted = stats.sortedBy { it.takenAtMs }
         if (sorted.isEmpty()) return null
         val first = dateOf(sorted.first().takenAtMs, zone)
         val start = range.days?.let { today.minusDays(it - 1L) } ?: first.coerceAtMost(today)
-        val inWindow = sorted.filter { dateOf(it.takenAtMs, zone) >= start }
+        val inWindow = latestPerDay(sorted.filter { dateOf(it.takenAtMs, zone) >= start }, zone) { it.takenAtMs }
         if (inWindow.isEmpty()) return null
         val span = java.time.temporal.ChronoUnit.DAYS.between(start, today).coerceAtLeast(1L).toDouble()
         val positions = inWindow.map { s ->

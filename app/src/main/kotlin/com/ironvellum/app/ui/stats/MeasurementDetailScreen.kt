@@ -58,6 +58,7 @@ import com.ironvellum.app.ui.components.PanelLabel
 import com.ironvellum.app.ui.components.StatSize
 import com.ironvellum.app.ui.components.StatValue
 import com.ironvellum.app.ui.components.TrendChart
+import com.ironvellum.app.ui.components.UndoBar
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
@@ -92,6 +93,10 @@ class MeasurementDetailViewModel(
 
     fun delete(id: Long) {
         viewModelScope.launch { repo.deleteMeasurement(id) }
+    }
+
+    fun restore(entry: MeasurementEntry) {
+        viewModelScope.launch { repo.restoreMeasurement(entry) }
     }
 
 }
@@ -130,14 +135,18 @@ fun MeasurementDetailScreen(
     val zone = rememberZoneId()
     val newestFirst = remember(ui.entries) { ui.entries.sortedByDescending { it.takenAtMs } }
     val oldestFirst = remember(newestFirst) { newestFirst.reversed() }
+    // Two readings on one day would share an x on the chart: plot each day's latest.
+    val chartEntries = remember(oldestFirst, zone) { Ledger.latestPerDay(oldestFirst, zone) { it.takenAtMs } }
     val latest = newestFirst.firstOrNull()
     val delta = remember(ui.entries) { Measurements.deltaCm(ui.entries, site, days = 30) }
+    // The reading just deleted, for the Undo bar; it belongs to this page and goes with it.
+    var lastDeleted by remember { mutableStateOf<MeasurementEntry?>(null) }
 
     Column(Modifier.fillMaxSize().imePadding()) {
         PushedHeader(site.label.uppercase(), onBack, Modifier.padding(top = 12.dp, start = LedgerSpace.Gutter, end = LedgerSpace.Gutter), backDescription = "Back")
         Column(
             Modifier
-                .fillMaxSize()
+                .weight(1f)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = LedgerSpace.Gutter),
             verticalArrangement = Arrangement.spacedBy(LedgerSpace.Panel),
@@ -175,20 +184,20 @@ fun MeasurementDetailScreen(
                         style = MaterialTheme.typography.labelSmall,
                         color = IronvellumColors.InkMuted,
                     )
-                    if (oldestFirst.size >= 2) {
+                    if (chartEntries.size >= 2) {
                         Spacer(Modifier.height(8.dp))
-                        val dates = oldestFirst.map { Ledger.dateOf(it.takenAtMs, zone) }
+                        val dates = chartEntries.map { Ledger.dateOf(it.takenAtMs, zone) }
                         // Narrow band: a zero-based axis would flatten the line into nothing.
                         TrendChart(
-                            oldestFirst.map { it.valueCm },
+                            chartEntries.map { it.valueCm },
                             IronvellumColors.Emerald,
                             fromZero = false,
                             positions = Ledger.datePositions(dates),
-                            startLabel = formatDate(oldestFirst.first().takenAtMs, "d MMM"),
-                            endLabel = formatDate(oldestFirst.last().takenAtMs, "d MMM"),
+                            startLabel = formatDate(chartEntries.first().takenAtMs, "d MMM"),
+                            endLabel = formatDate(chartEntries.last().takenAtMs, "d MMM"),
                             recordMarker = false,
                             valueText = { "%.1f cm".fmt(it) },
-                            dateText = { formatDate(oldestFirst[it].takenAtMs, "d MMM") },
+                            dateText = { formatDate(chartEntries[it].takenAtMs, "d MMM") },
                         )
                     } else {
                         Text(
@@ -206,7 +215,10 @@ fun MeasurementDetailScreen(
                     val shown = if (showAll) newestFirst else newestFirst.take(RECENT_ROWS)
                     shown.forEachIndexed { i, entry ->
                         if (i > 0) InkDivider()
-                        ReadingRow(entry, onDelete = { viewModel.delete(entry.id) })
+                        ReadingRow(entry, onDelete = {
+                            lastDeleted = entry
+                            viewModel.delete(entry.id)
+                        })
                     }
                     if (newestFirst.size > RECENT_ROWS) {
                         InkDivider()
@@ -274,13 +286,23 @@ fun MeasurementDetailScreen(
             }
             Spacer(Modifier.height(96.dp))
         }
+        lastDeleted?.let { gone ->
+            UndoBar(
+                "Reading deleted",
+                onUndo = {
+                    viewModel.restore(gone)
+                    lastDeleted = null
+                },
+                modifier = Modifier.padding(horizontal = LedgerSpace.Gutter, vertical = LedgerSpace.Panel),
+                onExpired = { lastDeleted = null },
+                key = gone.id,
+            )
+        }
     }
 }
 
 @Composable
 private fun ReadingRow(entry: MeasurementEntry, onDelete: () -> Unit) {
-    // Keyed by the reading, so arming one row never arms its neighbour.
-    var armed by remember(entry.id) { mutableStateOf(false) }
     Row(
         Modifier.fillMaxWidth().heightIn(min = LedgerSpace.Target).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -298,17 +320,9 @@ private fun ReadingRow(entry: MeasurementEntry, onDelete: () -> Unit) {
                 color = IronvellumColors.InkMuted,
             )
         }
-        if (armed) {
-            // One tap on a trash icon used to erase the reading outright: arm first.
-            ArmedChoice("KEEP", IronvellumColors.InkMuted) { armed = false }
-            ArmedChoice("DELETE", IronvellumColors.DangerRed) {
-                armed = false
-                onDelete()
-            }
-        } else {
-            InkIconButton(onClick = { armed = true }) {
-                Icon(Icons.Outlined.Delete, contentDescription = "Delete reading", tint = IronvellumColors.InkMuted)
-            }
+        // Immediate: the bar under the page offers Undo.
+        InkIconButton(onClick = onDelete) {
+            Icon(Icons.Outlined.Delete, contentDescription = "Delete reading", tint = IronvellumColors.InkMuted)
         }
     }
 }

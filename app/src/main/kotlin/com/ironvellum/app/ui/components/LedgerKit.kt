@@ -203,7 +203,8 @@ fun <T> RangeChips(
                     style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.InlineLabel,
+                    // Sentence-case labels: 2sp caps tracking wrapped words mid-letter.
+                    letterSpacing = 0.5.sp,
                     modifier = Modifier.selectedUnderline(on).padding(vertical = 6.dp),
                 )
             }
