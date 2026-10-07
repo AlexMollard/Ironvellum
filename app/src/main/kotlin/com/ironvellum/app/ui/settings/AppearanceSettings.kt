@@ -4,17 +4,11 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.focusable
-import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.drag
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.systemBarsPadding
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,13 +19,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -70,14 +62,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.ui.components.InkDivider
-import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.ListRowHeight
@@ -215,84 +205,59 @@ private fun AccentPickerDialog(palette: AccentPalette, primary: Boolean, onApply
         }
         hex = accentHex(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, brightness)))
     }
-    Dialog(
+    IronvellumDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
-    ) {
-        Box(
-            Modifier.fillMaxSize().imePadding().systemBarsPadding().padding(16.dp)
-                .pointerInput(onDismiss) { detectTapGestures(onTap = { onDismiss() }) },
-            contentAlignment = Alignment.Center,
-        ) {
-            InkPanel(
-                modifier = Modifier.widthIn(max = 400.dp).fillMaxWidth()
-                    .semantics { paneTitle = if (primary) "Primary accent" else "Reward accent" }
-                    .pointerInput(Unit) { detectTapGestures(onTap = {}) },
-                contentPadding = PaddingValues(0.dp),
-            ) {
-                Column(
-                    Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState()).padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-                ) {
-                    Text(if (primary) "Primary accent" else "Reward accent", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink, modifier = Modifier.semantics { heading() })
-                    ColourPad(hue, saturation, brightness) { nextSaturation, nextBrightness ->
-                        saturation = nextSaturation
-                        brightness = nextBrightness
-                        hex = accentHex(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, brightness)))
-                    }
-                    HueStrip(hue) { updateChannel(0, it) }
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            AccentSwatch(initial)
-                            Text("Current", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
-                        }
-                        Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            AccentSwatch(preview)
-                            Text("New", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
-                        }
-                        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Text("Hex colour", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
-                            BasicTextField(
-                                value = hex,
-                                onValueChange = { value ->
-                                    hex = value
-                                    parseAccentHex(value)?.let { colour ->
-                                        val next = FloatArray(3).also { android.graphics.Color.colorToHSV(colour, it) }
-                                        hue = next[0]; saturation = next[1]; brightness = next[2]
-                                    }
-                                },
-                                singleLine = true,
-                                textStyle = MaterialTheme.typography.bodyLarge.copy(color = IronvellumColors.Ink),
-                                cursorBrush = SolidColor(IronvellumColors.Ink),
-                                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Done),
-                                keyboardActions = KeyboardActions(onDone = { parsed?.let(onApply) }),
-                                modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("accent-hex")
-                                    .semantics {
-                                        contentDescription = "Hex colour"
-                                        if (parsed == null) error("Enter a six-digit hex colour")
-                                    },
-                            )
-                            Box(Modifier.fillMaxWidth().height(1.dp).background(if (parsed == null) IronvellumColors.DangerRed else IronvellumColors.Rune))
-                        }
-                    }
-                    if (parsed == null) {
-                        Text("Enter a six-digit hex colour", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed)
-                    } else if ((Color(preview).luminance() + 0.05f) / (IronvellumColors.Vault.luminance() + 0.05f) < 3f) {
-                        SettingsCaption("This colour may be hard to see on dark backgrounds.")
-                    }
+        title = { Text(if (primary) "Primary accent" else "Reward accent", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink, modifier = Modifier.semantics { heading() }) },
+        text = {
+            ColourPad(hue, saturation, brightness) { nextSaturation, nextBrightness ->
+                saturation = nextSaturation
+                brightness = nextBrightness
+                hex = accentHex(android.graphics.Color.HSVToColor(floatArrayOf(hue, saturation, brightness)))
+            }
+            HueStrip(hue) { updateChannel(0, it) }
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    AccentSwatch(initial)
+                    Text("Current", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
                 }
-                Box(Modifier.fillMaxWidth().height(1.dp).background(IronvellumColors.Rune))
-                Row(
-                    Modifier.fillMaxWidth().background(IronvellumColors.VaultHigh).padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    IronvellumButton("Cancel", onDismiss, quiet = true)
-                    IronvellumButton("Apply", { parsed?.let(onApply) }, enabled = parsed != null)
+                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    AccentSwatch(preview)
+                    Text("New", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                }
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text("Hex colour", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+                    BasicTextField(
+                        value = hex,
+                        onValueChange = { value ->
+                            hex = value
+                            parseAccentHex(value)?.let { colour ->
+                                val next = FloatArray(3).also { android.graphics.Color.colorToHSV(colour, it) }
+                                hue = next[0]; saturation = next[1]; brightness = next[2]
+                            }
+                        },
+                        singleLine = true,
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(color = IronvellumColors.Ink),
+                        cursorBrush = SolidColor(IronvellumColors.Ink),
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters, keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Done),
+                        keyboardActions = KeyboardActions(onDone = { parsed?.let(onApply) }),
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("accent-hex")
+                            .semantics {
+                                contentDescription = "Hex colour"
+                                if (parsed == null) error("Enter a six-digit hex colour")
+                            },
+                    )
+                    Box(Modifier.fillMaxWidth().height(1.dp).background(if (parsed == null) IronvellumColors.DangerRed else IronvellumColors.Rune))
                 }
             }
-        }
-    }
+            if (parsed == null) {
+                Text("Enter a six-digit hex colour", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed)
+            } else if ((Color(preview).luminance() + 0.05f) / (IronvellumColors.Vault.luminance() + 0.05f) < 3f) {
+                SettingsCaption("This colour may be hard to see on dark backgrounds.")
+            }
+        },
+        dismissButton = { IronvellumButton("Cancel", onDismiss, quiet = true) },
+        confirmButton = { IronvellumButton("Apply", { parsed?.let(onApply) }, enabled = parsed != null) },
+    )
 }
 /** Two colour dimensions share one surface; its actions also work without dragging. */
 @Composable
