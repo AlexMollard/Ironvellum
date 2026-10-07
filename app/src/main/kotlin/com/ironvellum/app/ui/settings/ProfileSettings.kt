@@ -70,7 +70,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     }
 
     SettingsPage(SettingsSection.PROFILE.title, leave) {
-        SettingsGroup("NAME", topSpace = 12.dp) {
+        SettingsGroup(null, topSpace = 12.dp) {
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
                 colors = ironvellumFieldColors(),
@@ -95,9 +95,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             SettingsCaption(
                 if (signedIn) "Shown on Today and in the Reckoning." else "Shown on Today. Sign in to join the Reckoning.",
             )
-        }
-
-        SettingsGroup("BODY") {
+            Spacer(Modifier.height(20.dp))
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
                 colors = ironvellumFieldColors(),
@@ -121,7 +119,7 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             SettingsCaption("Used for BMI, FFMI and step length.")
             Spacer(Modifier.height(14.dp))
             InkSegmented(
-                options = Sex.entries.map { it to it.name },
+                options = Sex.entries.map { it to sexLabel(it) },
                 selected = bodyProfile.second,
                 onPick = { viewModel.setSex(it) },
             )
@@ -129,6 +127,11 @@ internal fun ProfileSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             SettingsCaption("Sets the body-fat formula and strength scaling.")
         }
     }
+}
+
+private fun sexLabel(sex: Sex): String = when (sex) {
+    Sex.MALE -> "Male"
+    Sex.FEMALE -> "Female"
 }
 
 /** The inline outcome of a commit: a Saved tick or the refusal, in the field's own place. */
@@ -140,7 +143,7 @@ private fun FieldResult(saved: Boolean, error: String?) {
             Spacer(Modifier.height(4.dp))
         }
         saved -> {
-            SettingsCaption("✓ Saved", color = IronvellumColors.Emerald)
+            SettingsCaption("✓ Saved", color = IronvellumColors.InkMuted)
             Spacer(Modifier.height(4.dp))
         }
     }

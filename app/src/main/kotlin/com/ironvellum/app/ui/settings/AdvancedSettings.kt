@@ -1,10 +1,12 @@
 package com.ironvellum.app.ui.settings
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -24,10 +26,11 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.data.CrashJournal
 import com.ironvellum.app.data.cloud.CloudConfig
 import com.ironvellum.app.data.cloud.ProbeResult
+import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.SettingsCaption
-import com.ironvellum.app.ui.components.SettingsGroup
+import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.ironvellumFieldColors
@@ -121,112 +124,103 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
     }
 
     SettingsPage(SettingsSection.ADVANCED.title, onBack) {
-        SettingsGroup("CLOUD BACKEND", topSpace = 12.dp) {
+        Spacer(Modifier.height(12.dp))
+        InkRowPanel(Modifier.fillMaxWidth()) {
             Text(
                 backendLabel(cloudConfig),
                 style = MaterialTheme.typography.bodySmall,
                 fontFamily = ChakraPetch,
                 color = IronvellumColors.Ink,
+                modifier = Modifier.padding(16.dp),
             )
-            Spacer(Modifier.height(10.dp))
+            InkDivider()
             if (cloudUi.switching) {
-                InkSpinner()
+                InkSpinner(Modifier.padding(16.dp))
             } else {
                 if (cloudConfig?.isDefault == false) {
-                    IronvellumButton(
-                        label = "Use Shared Cloud",
-                        onClick = { confirmSharedSwitch = true },
-                        quiet = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(Modifier.height(10.dp))
+                    ListRow("Use shared cloud", onClick = { confirmSharedSwitch = true })
+                    InkDivider()
                 }
-                IronvellumButton(
-                    label = "Use My Own Backend",
-                    onClick = { cloudFieldsShown = !cloudFieldsShown },
-                    // Not the path most people take: quiet, so it never
-                    // out-shouts the shared-cloud default.
-                    quiet = true,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                ListRow("Use my own backend", onClick = { cloudFieldsShown = !cloudFieldsShown })
                 if (cloudFieldsShown) {
-                    Spacer(Modifier.height(10.dp))
-                    OutlinedTextField(
-                        shape = MaterialTheme.shapes.small,
-                        colors = ironvellumFieldColors(),
-                        value = cloudUrl,
-                        onValueChange = { cloudUrl = it },
-                        label = { Text("Project URL (https://…supabase.co)") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        shape = MaterialTheme.shapes.small,
-                        colors = ironvellumFieldColors(),
-                        value = cloudKey,
-                        onValueChange = { cloudKey = it },
-                        label = { Text("Publishable (anon) key") },
-                        singleLine = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                    cloudUi.probeFor(cloudUrl, cloudKey)?.let { result ->
-                        Spacer(Modifier.height(6.dp))
-                        Text(
-                            when (result) {
-                                is ProbeResult.Ready ->
-                                    "Backend ready — schema v${result.version}. Save to move your cloud here."
-                                is ProbeResult.Outdated ->
-                                    "The backend is live but its schema is v${result.have}; apply the migrations up to v${result.need}."
-                                ProbeResult.NoSchema ->
-                                    "Reached the project, but its database migrations have not been applied."
-                                ProbeResult.BadKey ->
-                                    "The key was refused — copy the publishable (anon) key, not the secret one."
-                                ProbeResult.Unreachable ->
-                                    "Could not reach the backend — check the URL, your connection, or resume the paused project."
-                            },
-                            style = MaterialTheme.typography.labelSmall,
-                            color = if (result is ProbeResult.Ready) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                    InkDivider()
+                    Column(Modifier.fillMaxWidth().padding(16.dp)) {
+                        OutlinedTextField(
+                            shape = MaterialTheme.shapes.small,
+                            colors = ironvellumFieldColors(),
+                            value = cloudUrl,
+                            onValueChange = { cloudUrl = it },
+                            label = { Text("Project URL (https://…supabase.co)") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
                         )
-                    }
-                    Spacer(Modifier.height(10.dp))
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                        if (cloudUi.testing) {
-                            InkSpinner(Modifier.weight(1f))
-                        } else {
+                        Spacer(Modifier.height(8.dp))
+                        OutlinedTextField(
+                            shape = MaterialTheme.shapes.small,
+                            colors = ironvellumFieldColors(),
+                            value = cloudKey,
+                            onValueChange = { cloudKey = it },
+                            label = { Text("Publishable (anon) key") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        cloudUi.probeFor(cloudUrl, cloudKey)?.let { result ->
+                            Spacer(Modifier.height(6.dp))
+                            Text(
+                                when (result) {
+                                    is ProbeResult.Ready ->
+                                        "Backend ready — schema v${result.version}. Save to move your cloud here."
+                                    is ProbeResult.Outdated ->
+                                        "The backend is live but its schema is v${result.have}; apply the migrations up to v${result.need}."
+                                    ProbeResult.NoSchema ->
+                                        "Reached the project, but its database migrations have not been applied."
+                                    ProbeResult.BadKey ->
+                                        "The key was refused — copy the publishable (anon) key, not the secret one."
+                                    ProbeResult.Unreachable ->
+                                        "Could not reach the backend — check the URL, your connection, or resume the paused project."
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (result is ProbeResult.Ready) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                            )
+                        }
+                        Spacer(Modifier.height(10.dp))
+                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            if (cloudUi.testing) {
+                                InkSpinner(Modifier.weight(1f))
+                            } else {
+                                IronvellumButton(
+                                    label = "Test",
+                                    onClick = { viewModel.testBackend(cloudUrl, cloudKey) },
+                                    enabled = cloudInputValid,
+                                    quiet = true,
+                                    modifier = Modifier.weight(1f),
+                                )
+                            }
                             IronvellumButton(
-                                label = "Test",
-                                onClick = { viewModel.testBackend(cloudUrl, cloudKey) },
-                                enabled = cloudInputValid,
-                                quiet = true,
+                                label = "Save",
+                                onClick = { confirmCloudSwitch = true },
+                                // Saving an unprobed backend would strand the lifter on
+                                // a project that cannot hold their data — TEST first.
+                                enabled = cloudInputValid && cloudUi.canSave(cloudUrl, cloudKey),
                                 modifier = Modifier.weight(1f),
                             )
                         }
-                        IronvellumButton(
-                            label = "Save",
-                            onClick = { confirmCloudSwitch = true },
-                            // Saving an unprobed backend would strand the lifter on
-                            // a project that cannot hold their data — TEST first.
-                            enabled = cloudInputValid && cloudUi.canSave(cloudUrl, cloudKey),
-                            modifier = Modifier.weight(1f),
-                        )
                     }
                 }
             }
-        }
-
-        SettingsGroup("CRASH LOG") {
-            if (crashCount == 0) {
-                SettingsCaption("The crash log is blank.")
-            } else {
-                Text(
-                    "$crashCount crash record${if (crashCount == 1) "" else "s"} · latest $latestCrash",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SystemGreen,
-                )
-                Spacer(Modifier.height(10.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+            InkDivider()
+            ListRow(
+                "Crash log",
+                subline = if (crashCount == 0) {
+                    "The crash log is blank."
+                } else {
+                    "$crashCount crash record${if (crashCount == 1) "" else "s"} · latest $latestCrash"
+                },
+            )
+            if (crashCount > 0) {
+                InkDivider()
+                // Share is a quiet link; Clear is red and sits at the far edge, well apart from it.
+                Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                     IronvellumButton(
                         label = "Share",
                         onClick = {
@@ -240,20 +234,20 @@ internal fun AdvancedSettings(viewModel: SettingsViewModel, onBack: () -> Unit) 
                                 shareExport(context, "Share Ironvellum crash log", "ironvellum_crash_log.txt", text, "text/plain")
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        quiet = true,
                     )
                     IronvellumButton(
                         label = "Clear",
                         onClick = { confirmClearCrashes = true },
                         danger = true,
-                        modifier = Modifier.weight(1f),
                     )
                 }
             }
-        }
-
-        SettingsGroup("HEALTH CONNECT COVERAGE") {
-            SettingsCaption(sync.coverage ?: "Days filled per metric; appears after Connect & Sync.")
+            InkDivider()
+            ListRow(
+                "Health Connect coverage",
+                subline = sync.coverage ?: "Days filled per metric; appears after Connect & Sync.",
+            )
         }
     }
 }

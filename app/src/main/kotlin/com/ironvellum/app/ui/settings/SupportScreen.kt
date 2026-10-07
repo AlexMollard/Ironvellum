@@ -15,14 +15,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ironvellum.app.BuildConfig
-import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.theme.ChakraPetch
+import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.SettingsCaption
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /** Every external URL the Support screen can open, in one place. */
@@ -53,142 +52,71 @@ fun SupportScreen(onBack: () -> Unit) {
     val openUrl: (String) -> Unit = { url ->
         runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
     }
+    var showMit by remember { mutableStateOf(false) }
 
     SettingsPage(panelTitle(), onBack) {
-        Spacer(Modifier.height(4.dp))
-
-        InkPanel(Modifier.fillMaxWidth()) {
-            Text(
-                "Ironvellum is free and open source. It has no ads, no " +
-                    "trackers and no paid tier.",
-                style = MaterialTheme.typography.bodyMedium,
-                color = IronvellumColors.Ink,
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "The shared cloud the Tidings and the backups live on " +
-                    "costs real money every month — about \$25 for hosting. " +
-                    "Every cost is public: every invoice in, every " +
-                    "coin out.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-            if (support) {
-                Spacer(Modifier.height(10.dp))
-                IronvellumButton(
-                    label = "View the costs",
-                    onClick = { openUrl(SupportLinks.COSTS_LEDGER) },
-                    modifier = Modifier.fillMaxWidth(),
-                    quiet = true,
-                )
-            }
-        }
-
-        Spacer(Modifier.height(14.dp))
-
+        Spacer(Modifier.height(12.dp))
+        Text(
+            "Ironvellum is free and open source. It has no ads, no " +
+                "trackers and no paid tier.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = IronvellumColors.Ink,
+        )
+        Spacer(Modifier.height(10.dp))
+        SettingsCaption(
+            "The shared cloud the Tidings and the backups live on " +
+                "costs real money every month — about \$25 for hosting. " +
+                "Every cost is public: every invoice in, every " +
+                "coin out.",
+        )
         if (support) {
-            InkPanel(Modifier.fillMaxWidth()) {
-                Text(
-                    "If Ironvellum has earned it, you can help carry the " +
-                        "cloud. There is no premium and there never will be " +
-                        "— a donation buys nothing but the next month of " +
-                        "backups for everyone.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
-                Spacer(Modifier.height(10.dp))
-                IronvellumButton(
-                    label = "Sponsor on GitHub",
-                    onClick = { openUrl(SupportLinks.GITHUB_SPONSORS) },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-                Spacer(Modifier.height(10.dp))
-                IronvellumButton(
-                    label = "Donate on Liberapay",
-                    onClick = { openUrl(SupportLinks.LIBERAPAY) },
-                    modifier = Modifier.fillMaxWidth(),
-                    quiet = true,
-                )
-            }
-            Spacer(Modifier.height(14.dp))
-        }
-
-        // The whole card is the tap target, so the link needs no padded box of its own.
-        InkPanel(
-            Modifier.fillMaxWidth(),
-            onClick = if (support) ({ openUrl(SupportLinks.REPOSITORY) }) else null,
-        ) {
-            Text(
-                "SOURCE",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = 2.sp,
+            Spacer(Modifier.height(10.dp))
+            SettingsCaption(
+                "If Ironvellum has earned it, you can help carry the " +
+                    "cloud. There is no premium and there never will be " +
+                    "— a donation buys nothing but the next month of " +
+                    "backups for everyone.",
             )
-            Spacer(Modifier.height(6.dp))
+        }
+        Spacer(Modifier.height(16.dp))
+
+        InkRowPanel(Modifier.fillMaxWidth()) {
             if (support) {
-                Text(
-                    SupportLinks.REPOSITORY,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.SystemGreen,
-                    textDecoration = TextDecoration.Underline,
-                )
-            } else {
-                Text(
-                    SupportLinks.REPOSITORY,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
+                ListRow("View the costs", onClick = { openUrl(SupportLinks.COSTS_LEDGER) })
+                InkDivider()
+                ListRow("Sponsor on GitHub", onClick = { openUrl(SupportLinks.GITHUB_SPONSORS) })
+                InkDivider()
+                ListRow("Donate on Liberapay", onClick = { openUrl(SupportLinks.LIBERAPAY) })
+                InkDivider()
             }
+            // The whole row is the link in the foss build; the play build shows the address as plain text.
+            ListRow(
+                "Source code",
+                subline = SupportLinks.REPOSITORY,
+                sublineColor = if (support) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+                onClick = if (support) ({ openUrl(SupportLinks.REPOSITORY) }) else null,
+            )
+            InkDivider()
+            ListRow("Licence", subline = "GPL-3.0-or-later")
         }
 
-        Spacer(Modifier.height(14.dp))
-
-        InkPanel(Modifier.fillMaxWidth()) {
-            Text(
-                "LICENCE",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = 2.sp,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                "GPL-3.0-or-later",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.Ink,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "Chakra Petch font, SIL Open Font License 1.1. Artwork is " +
-                    "original or generated for Ironvellum, released under " +
-                    "the same licence.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-            Spacer(Modifier.height(10.dp))
-            Text(
-                OpenSourceNotices.BODY_MAP_CREDIT,
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-            var showMit by remember { mutableStateOf(false) }
-            Spacer(Modifier.height(10.dp))
-            IronvellumButton(
-                label = if (showMit) "Hide the licence text" else "Show the licence text",
-                onClick = { showMit = !showMit },
-                modifier = Modifier.fillMaxWidth(),
-                quiet = true,
-            )
-            if (showMit) {
-                Spacer(Modifier.height(10.dp))
-                Text(
-                    OpenSourceNotices.BODY_MAP_SOURCE + "\n\n" + OpenSourceNotices.BODY_MAP_MIT,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
+        Spacer(Modifier.height(12.dp))
+        SettingsCaption(
+            "Chakra Petch font, SIL Open Font License 1.1. Artwork is " +
+                "original or generated for Ironvellum, released under " +
+                "the same licence.",
+        )
+        Spacer(Modifier.height(8.dp))
+        SettingsCaption(OpenSourceNotices.BODY_MAP_CREDIT)
+        IronvellumButton(
+            label = if (showMit) "Hide the licence text" else "Show the licence text",
+            onClick = { showMit = !showMit },
+            modifier = Modifier.fillMaxWidth(),
+            quiet = true,
+        )
+        if (showMit) {
+            Spacer(Modifier.height(8.dp))
+            SettingsCaption(OpenSourceNotices.BODY_MAP_SOURCE + "\n\n" + OpenSourceNotices.BODY_MAP_MIT)
         }
 
         Spacer(Modifier.height(14.dp))

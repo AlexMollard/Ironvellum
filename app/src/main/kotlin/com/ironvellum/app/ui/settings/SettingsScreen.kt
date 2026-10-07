@@ -113,7 +113,7 @@ fun SettingsScreen(
             SettingsValueRow("Data", "Export, import") { onOpenSection(SettingsSection.DATA) }
         }
 
-        SettingsGroup(null, topSpace = 10.dp, rows = true) {
+        SettingsGroup("About", topSpace = 10.dp, rows = true) {
             SettingsValueRow(
                 "Advanced",
                 if (crashCount > 0) {
@@ -131,7 +131,7 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(10.dp))
         Text(
-            "Ironvellum ${BuildConfig.VERSION_NAME}  ·  readings stay on this device",
+            "Your readings stay on this device.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(horizontal = 4.dp),

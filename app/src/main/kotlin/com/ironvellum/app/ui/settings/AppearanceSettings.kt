@@ -76,17 +76,19 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.ListRowHeight
+import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.SettingsCaption
-import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.AccentPalette
 import com.ironvellum.app.ui.theme.AccentPresets
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.accentForeground
 import com.ironvellum.app.ui.theme.accentHex
 import com.ironvellum.app.ui.theme.parseAccentHex
 import kotlin.math.roundToInt
@@ -98,7 +100,8 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
     SettingsPage(SettingsSection.APPEARANCE.title, onBack) {
         Spacer(Modifier.height(12.dp))
         SettingsCaption("Choose a pair, or make it yours. Changes apply across the app.")
-        SettingsGroup("COLOUR PAIRS", topSpace = 16.dp, contentPadding = PaddingValues(0.dp)) {
+        SectionHeader("COLOUR PAIRS", topPadding = 16.dp)
+        InkRowPanel(Modifier.fillMaxWidth()) {
             Column(Modifier.selectableGroup()) {
                 AccentPresets.entries.forEach { preset ->
                     val selection by animateFloatAsState(
@@ -107,7 +110,7 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
                         label = "colour pair selection",
                     )
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = 60.dp)
+                        Modifier.fillMaxWidth().heightIn(min = ListRowHeight)
                             .selectable(
                                 selected = palette == preset.palette,
                                 role = Role.RadioButton,
@@ -126,12 +129,12 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
                     }
                 }
             }
-        }
-        SettingsGroup("CUSTOM COLOURS", topSpace = 16.dp, contentPadding = PaddingValues(0.dp)) {
+            InkDivider()
             AccentRow("Primary accent", "Actions and progress", palette.primary) { editingPrimary = true }
             AccentRow("Reward accent", "Peaks and earned moments", palette.secondary) { editingPrimary = false }
         }
-        SettingsGroup("PREVIEW", topSpace = 16.dp) { AccentPreview(palette) }
+        Spacer(Modifier.height(16.dp))
+        AccentPreview(palette)
         Spacer(Modifier.height(12.dp))
         IronvellumButton("Reset to emerald & gold", { viewModel.setAppearance(AccentPalette.Default) }, quiet = true)
     }
@@ -156,7 +159,7 @@ private fun AccentSwatch(colour: Int) {
 @Composable
 private fun AccentRow(label: String, subline: String, colour: Int, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 80.dp)
+        Modifier.fillMaxWidth().heightIn(min = ListRowHeight)
             .clickable(role = Role.Button, onClickLabel = "Edit $label", onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -179,12 +182,8 @@ private fun AccentPreview(palette: AccentPalette) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Box(
-            Modifier.weight(1f).background(Color(palette.primary), MaterialTheme.shapes.medium)
-                .padding(horizontal = 12.dp, vertical = 14.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("Log set", style = MaterialTheme.typography.labelLarge, color = Color(accentForeground(palette.primary)))
+        Column(Modifier.weight(1f)) {
+            Text("Log set", style = MaterialTheme.typography.labelLarge, color = Color(palette.primary))
         }
         Column(Modifier.weight(1f)) {
             Text("New peak", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.Ink)
