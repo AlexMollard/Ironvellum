@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.dashboard
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -29,9 +30,11 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
@@ -107,6 +110,7 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import java.time.DayOfWeek
 import java.time.Instant
+import kotlin.math.abs
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.TextStyle
@@ -751,8 +755,29 @@ internal fun TodayContent(
         }
     }
 
+    val currentDay by rememberUpdatedState(selectedDay)
+    val selectDay by rememberUpdatedState(actions.onSelectDay)
     CompositionLocalProvider(LocalTodayMotion provides motion) {
         TodayLayout(
+            modifier = Modifier.pointerInput(Unit) {
+                val threshold = 56.dp.toPx()
+                var horizontal = 0f
+                var vertical = 0f
+                detectHorizontalDragGestures(
+                    onDragStart = { horizontal = 0f; vertical = 0f },
+                    onDragCancel = { horizontal = 0f; vertical = 0f },
+                    onDragEnd = {
+                        if (abs(horizontal) >= threshold && abs(horizontal) > abs(vertical)) {
+                            selectDay(if (horizontal < 0f) currentDay % 7 + 1 else (currentDay + 5) % 7 + 1)
+                        }
+                    },
+                    onHorizontalDrag = { change, amount ->
+                        change.consume()
+                        horizontal += amount
+                        vertical += change.position.y - change.previousPosition.y
+                    },
+                )
+            },
             rows = cardRows,
             head = head,
             card = card,
@@ -820,13 +845,14 @@ private fun TodayPage(
  */
 @Composable
 private fun TodayLayout(
+    modifier: Modifier = Modifier,
     rows: List<DayRow>,
     head: @Composable () -> Unit,
     card: @Composable (rows: @Composable () -> Unit) -> Unit,
     plain: @Composable () -> Unit,
     veil: @Composable (full: Boolean) -> Unit,
 ) {
-    SubcomposeLayout(Modifier.fillMaxSize()) { constraints ->
+    SubcomposeLayout(modifier.fillMaxSize()) { constraints ->
         val width = constraints.maxWidth
         val bounded = constraints.hasBoundedHeight
         val available = if (bounded) constraints.maxHeight else Int.MAX_VALUE / 4
