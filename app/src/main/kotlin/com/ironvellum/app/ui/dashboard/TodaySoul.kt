@@ -124,7 +124,7 @@ internal fun SealedRiteGlyph(
     val gold = IronvellumColors.SovereignGold
     Column(modifier.width(58.dp).clearAndSetSemantics {}, horizontalAlignment = Alignment.CenterHorizontally) {
         RiteGlyph(sets)
-        Row(verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
             SealMark(
                 12.dp,
                 Modifier.graphicsLayer {
