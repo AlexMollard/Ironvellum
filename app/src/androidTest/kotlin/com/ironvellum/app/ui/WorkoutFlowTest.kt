@@ -129,7 +129,7 @@ class WorkoutFlowTest {
     private fun allText(): List<String> =
         compose.onAllNodes(
             SemanticsMatcher("has text") { it.config.contains(SemanticsProperties.Text) },
-            useUnmergedTree = true,
+            useUnmergedTree = false,
         ).fetchSemanticsNodes().flatMap { node ->
             node.config.firstOrNull { it.key == SemanticsProperties.Text }?.value?.let { value ->
                 @Suppress("UNCHECKED_CAST")

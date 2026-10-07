@@ -13,6 +13,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
@@ -28,28 +29,40 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
 
-/** The stationary gesture viewport, its moving content, and the week rail's visual preview. */
+/** Adjacent day pages share one continuous offset inside a stationary viewport. */
 internal class TodaySwipe(
     val gestures: Modifier,
-    val content: Modifier,
+    val content: (Int) -> Modifier,
+    val renderDay: () -> Int,
+    val activePage: () -> Int,
     val dayOffset: () -> Float,
     val selectDay: (Int) -> Unit,
 )
 
-private class SwipeMotion {
+private fun wrappedDay(day: Int): Int = (day - 1 + 7) % 7 + 1
+
+private class SwipeMotion(day: Int) {
     var horizontal = 0f
     var vertical = 0f
-    var width = 1f
+    var width by mutableFloatStateOf(1f)
     var startOffset = 0f
-    var startDayOffset = 0f
     var offset by mutableFloatStateOf(0f)
-    var dayOffset by mutableFloatStateOf(0f)
+    var renderDay by mutableIntStateOf(day)
+    var targetStep by mutableIntStateOf(0)
     var settling: Job? = null
 
-    fun reset() {
+    fun reset(day: Int) {
         settling?.cancel()
+        renderDay = day
         offset = 0f
-        dayOffset = 0f
+        targetStep = 0
+    }
+
+    fun rebase() {
+        // Keep both visible pages in exactly the same places when a new drag interrupts settling.
+        renderDay = wrappedDay(renderDay + targetStep)
+        offset += width * targetStep
+        targetStep = 0
     }
 }
 
@@ -59,13 +72,15 @@ internal fun rememberTodaySwipe(day: Int, selectDay: (Int) -> Unit, motion: Bool
     val currentDay by rememberUpdatedState(day)
     val onSelect by rememberUpdatedState(selectDay)
     val moves by rememberUpdatedState(motion)
-    val density = LocalDensity.current
-    val threshold = with(density) { 56.dp.toPx() }
-    val travel = with(density) { 64.dp.toPx() }
+    val threshold = with(LocalDensity.current) { 56.dp.toPx() }
     val interactions = remember { MutableInteractionSource() }
-    val state = remember { SwipeMotion() }
+    val state = remember { SwipeMotion(day) }
 
-    LaunchedEffect(interactions, threshold, travel) {
+    LaunchedEffect(day, motion) {
+        // A link elsewhere on Today can select a day without using the rail.
+        if (!motion || day != wrappedDay(state.renderDay + state.targetStep)) state.reset(day)
+    }
+    LaunchedEffect(interactions, threshold) {
         interactions.interactions.collect { event ->
             when (event) {
                 is DragInteraction.Start -> state.settling?.cancel()
@@ -73,23 +88,22 @@ internal fun rememberTodaySwipe(day: Int, selectDay: (Int) -> Unit, motion: Bool
                     val accepted = event is DragInteraction.Stop &&
                         abs(state.horizontal) >= threshold && abs(state.horizontal) > abs(state.vertical)
                     state.settling?.cancel()
-                    if (accepted) {
-                        val direction = -state.horizontal.sign
-                        onSelect(if (direction > 0f) currentDay % 7 + 1 else (currentDay + 5) % 7 + 1)
-                        // Keep the underline at its dragged position as the selected day's origin changes.
-                        state.dayOffset -= direction
-                        state.offset = if (moves) direction * travel else 0f
-                    }
+                    val direction = if (accepted) -state.horizontal.sign.toInt() else 0
+                    state.targetStep = direction
+                    if (accepted) onSelect(wrappedDay(state.renderDay + direction))
                     if (moves) {
-                        val fromContent = state.offset
-                        val fromDay = state.dayOffset
+                        val from = state.offset
+                        val destination = -direction * state.width
                         state.settling = launch {
                             animate(0f, 1f, animationSpec = spring(dampingRatio = 0.9f, stiffness = 400f)) { value, _ ->
-                                state.offset = fromContent * (1f - value)
-                                state.dayOffset = fromDay * (1f - value)
+                                val fraction = value.coerceIn(0f, 1f)
+                                state.offset = from + (destination - from) * fraction
                             }
+                            // The outgoing page is now offscreen. Rebase without moving the incoming page.
+                            state.rebase()
+                            state.offset = 0f
                         }
-                    } else state.reset()
+                    } else state.reset(wrappedDay(state.renderDay + direction))
                 }
             }
         }
@@ -112,22 +126,23 @@ internal fun rememberTodaySwipe(day: Int, selectDay: (Int) -> Unit, motion: Bool
         .draggable(
             state = rememberDraggableState { delta ->
                 state.horizontal += delta
-                state.offset = if (moves) (state.startOffset + state.horizontal * 0.35f).coerceIn(-travel, travel) else 0f
-                state.dayOffset = if (moves) (state.startDayOffset - state.horizontal / state.width).coerceIn(-1f, 1f) else 0f
+                state.offset = if (moves) (state.startOffset + state.horizontal).coerceIn(-state.width, state.width) else 0f
             },
             orientation = Orientation.Horizontal,
             interactionSource = interactions,
             startDragImmediately = false,
             onDragStarted = {
                 state.settling?.cancel()
+                state.rebase()
                 state.startOffset = state.offset
-                state.startDayOffset = state.dayOffset
             },
         )
     return TodaySwipe(
         gestures = gestures,
-        content = Modifier.graphicsLayer { translationX = if (moves) state.offset else 0f },
-        dayOffset = { if (moves) state.dayOffset else 0f },
-        selectDay = { state.reset(); onSelect(it) },
+        content = { page -> Modifier.graphicsLayer { translationX = if (moves) state.offset + page * state.width else 0f } },
+        renderDay = { state.renderDay },
+        activePage = { state.targetStep },
+        dayOffset = { if (moves) state.renderDay - currentDay - state.offset / state.width else 0f },
+        selectDay = { state.reset(it); onSelect(it) },
     )
 }
