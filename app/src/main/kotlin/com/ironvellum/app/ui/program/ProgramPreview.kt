@@ -104,9 +104,8 @@ fun ProposedDay(
     onRemove: (entryIndex: Int) -> Unit,
     showNote: Boolean = true,
 ) {
-    // The ink identity is hand-drawn: a geometric RoundedCornerShape here
-    // reads as a foreign rectangle, which is why InkCoverageTest fails the
-    // build on one.
+    // Geometry comes from the theme: InkCoverageTest fails the build on an
+    // inline RoundedCornerShape or CircleShape in UI code.
     val dayShape = MaterialTheme.shapes.medium
     var open by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf<Int?>(null) }
     Column(

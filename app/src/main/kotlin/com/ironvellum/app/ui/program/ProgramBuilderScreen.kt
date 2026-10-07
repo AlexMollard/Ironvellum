@@ -644,7 +644,7 @@ fun ProgramBuilderScreen(
         }
 
         QuestionPanel("EXERCISES") {
-            // The same drawn toggle cell as the gear items: gold when on.
+            // The same drawn toggle cell as the gear items: VaultHigh with an Emerald check when on.
             PickCell(
                 label = "Compound & technique only",
                 selected = compoundOnly,
