@@ -74,7 +74,7 @@ fun SettingsScreen(
         Spacer(Modifier.height(8.dp))
         PushedHeader("SETTINGS", onBack)
 
-        SettingsGroup("YOU", topSpace = 4.dp, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+        SettingsGroup("YOU", topSpace = 4.dp, contentPadding = PaddingValues(0.dp)) {
             SettingsValueRow(
                 "Profile",
                 // A name or height refused on leaving Profile must not pass silently.
@@ -92,7 +92,7 @@ fun SettingsScreen(
             }
         }
 
-        SettingsGroup("TRAINING", topSpace = 10.dp, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+        SettingsGroup("TRAINING", topSpace = 10.dp, contentPadding = PaddingValues(0.dp)) {
             SettingsValueRow("Training mode", (profile?.trainingMode ?: TrainingMode.STRENGTH).label()) {
                 onOpenSection(SettingsSection.TRAINING_MODE)
             }
@@ -104,7 +104,7 @@ fun SettingsScreen(
             }
         }
 
-        SettingsGroup("APP", topSpace = 10.dp, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+        SettingsGroup("APP", topSpace = 10.dp, contentPadding = PaddingValues(0.dp)) {
             SettingsValueRow("Appearance", AccentPresets.entries.firstOrNull { it.palette == appearance }?.name ?: "Custom colours") {
                 onOpenSection(SettingsSection.APPEARANCE)
             }
@@ -114,7 +114,7 @@ fun SettingsScreen(
             SettingsValueRow("Data", "Export, import") { onOpenSection(SettingsSection.DATA) }
         }
 
-        SettingsGroup(null, topSpace = 10.dp, contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp)) {
+        SettingsGroup(null, topSpace = 10.dp, contentPadding = PaddingValues(0.dp)) {
             SettingsValueRow(
                 "Advanced",
                 if (crashCount > 0) {
