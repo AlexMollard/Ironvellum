@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -481,27 +482,6 @@ internal fun TodayContent(
     val swipe = rememberTodaySwipe(selectedDay, actions.onSelectDay, motion)
     val profile = ui.profile
     val progress = Xp.progress(profile?.totalXp ?: 0L)
-    val selectedPreset = ui.presets.firstOrNull { it.scheduledDay == selectedDay }
-    val isTodaySelected = selectedDay == today.dayOfWeek.value
-    // The tick, the card and the sealed state all answer one question: was THIS
-    // day's scheduled rite sealed this week. A rite taken early is not offered
-    // again on its day, and a sealed past day reads as sealed.
-    val sealedTrial = ui.weekDone[selectedDay]
-    // The next scheduled rite after the selected day, wrapping the week.
-    val nextRite = (1..7).map { (selectedDay - 1 + it) % 7 + 1 }
-        .firstNotNullOfOrNull { day -> ui.presets.firstOrNull { it.scheduledDay == day } }
-    val liveTrial = live
-    val kind = dayKind(ui.presets.isNotEmpty(), selectedPreset, isTodaySelected, liveTrial, sealedTrial)
-    val liveWork = liveSets.filter { !it.warmup }
-    val liveDone = liveWork.count { it.done }
-    val sealedSets = sealedTrial?.let { ui.sealedSets[it.id].orEmpty() }.orEmpty()
-    val cardRows: List<DayRow> = when (kind) {
-        DayKind.LIVE -> trialRows(liveSets, ui.exercises, sealed = false)
-        DayKind.SEALED -> trialRows(sealedSets, ui.exercises, sealed = true)
-        DayKind.BEGIN, DayKind.PLANNED -> plannedRows(selectedPreset!!.entries)
-        DayKind.RESPITE, DayKind.NO_CYCLE -> emptyList()
-    }
-
     // Header: the name and what is worn are also the way to the Codex (there
     // was no other route from here to its board), then the rank link and the gear.
     val head: @Composable () -> Unit = {
@@ -627,8 +607,69 @@ internal fun TodayContent(
         )
     }
 
+    CompositionLocalProvider(LocalTodayMotion provides motion) {
+        Column(Modifier.fillMaxSize()) {
+            Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { head() }
+            Box(Modifier.weight(1f).fillMaxWidth().clipToBounds().then(swipe.gestures).testTag("today-day-viewport")) {
+                // Key by weekday so the incoming body survives rebasing when the slide finishes.
+                val pages = if (motion) -1..1 else 0..0
+                for (page in pages) {
+                    val day = ((if (motion) swipe.renderDay() else selectedDay) - 1 + page + 7) % 7 + 1
+                    key(day) {
+                        val active = !motion || page == swipe.activePage()
+                        Box(
+                            Modifier.fillMaxSize().then(swipe.content(page)).testTag("today-day-page-$day")
+                                .then(if (active) Modifier else Modifier.clearAndSetSemantics {}),
+                        ) {
+                            TodayDayBody(ui, day, today, live, liveSets, bodyGap, veil, actions, nowMs, active)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    if (rankOpen) RankSheet(rankBreakdown) { rankOpen = false }
+    if (oathOpen) TermDialog(Term.OATH) { oathOpen = false }
+}
+
+/** Each adjacent day budgets its own card and rows against the same fixed viewport. */
+@Composable
+private fun TodayDayBody(
+    ui: DashboardUi,
+    selectedDay: Int,
+    today: LocalDate,
+    live: WorkoutSession?,
+    liveSets: List<SessionSet>,
+    bodyGap: BodyGap?,
+    veil: VeilGlance?,
+    pageActions: TodayActions,
+    nowMs: Long,
+    displayed: Boolean,
+) {
+    val actions = if (displayed) pageActions else TodayActions()
+    val selectedPreset = ui.presets.firstOrNull { it.scheduledDay == selectedDay }
+    val isTodaySelected = selectedDay == today.dayOfWeek.value
+    // The tick, the card and the sealed state all answer one question: was THIS
+    // day's scheduled rite sealed this week. A rite taken early is not offered
+    // again on its day, and a sealed past day reads as sealed.
+    val sealedTrial = ui.weekDone[selectedDay]
+    // The next scheduled rite after the selected day, wrapping the week.
+    val nextRite = (1..7).map { (selectedDay - 1 + it) % 7 + 1 }
+        .firstNotNullOfOrNull { day -> ui.presets.firstOrNull { it.scheduledDay == day } }
+    val liveTrial = live
+    val kind = dayKind(ui.presets.isNotEmpty(), selectedPreset, isTodaySelected, liveTrial, sealedTrial)
+    val liveWork = liveSets.filter { !it.warmup }
+    val liveDone = liveWork.count { it.done }
+    val sealedSets = sealedTrial?.let { ui.sealedSets[it.id].orEmpty() }.orEmpty()
+    val cardRows: List<DayRow> = when (kind) {
+        DayKind.LIVE -> trialRows(liveSets, ui.exercises, sealed = false)
+        DayKind.SEALED -> trialRows(sealedSets, ui.exercises, sealed = true)
+        DayKind.BEGIN, DayKind.PLANNED -> plannedRows(selectedPreset!!.entries)
+        DayKind.RESPITE, DayKind.NO_CYCLE -> emptyList()
+    }
+
     // The day card: the only boxed area, sized to what it holds. `rows` is where its exercise block goes.
-    val cardClick: (() -> Unit)? = when (kind) {
+    val cardClick: (() -> Unit)? = if (!displayed) null else when (kind) {
         DayKind.SEALED -> sealedTrial?.let { trial -> { actions.onOpenWorkout(trial.id) } }
         DayKind.LIVE -> selectedPreset?.takeIf { it.id == liveTrial?.presetId }?.let { rite -> { actions.onOpenRite(rite.id) } }
         DayKind.BEGIN, DayKind.PLANNED -> selectedPreset?.let { rite -> { actions.onOpenRite(rite.id) } }
@@ -678,7 +719,7 @@ internal fun TodayContent(
                             append(" · ")
                             withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append("+${trial.xpAwarded} XP") }
                         },
-                        corner = { SealedStamp(date = formatDate(trial.completedAtMs ?: trial.startedAtMs, "EEE d MMM"), thud = thud) },
+                        corner = { SealedRiteGlyph(sets = glyphSets, date = formatDate(trial.completedAtMs ?: trial.startedAtMs, "EEE d MMM"), thud = thud) },
                     )
                     rows()
                     nextRite?.takeIf { it.id != rite.id }?.let { next ->
@@ -767,25 +808,20 @@ internal fun TodayContent(
         }
     }
 
-    CompositionLocalProvider(LocalTodayMotion provides motion) {
-        TodayLayout(
-            swipe = swipe,
-            rows = cardRows,
-            head = head,
-            card = card,
-            plain = plain,
-            veil = { full ->
-                val form = when {
-                    !full -> VeilForm.COMPACT
-                    kind == DayKind.RESPITE -> VeilForm.HERO
-                    else -> VeilForm.FULL
-                }
-                VeilSection(veil, form, nowMs, actions.onOpenGarrison)
-            },
-        )
-    }
-    if (rankOpen) RankSheet(rankBreakdown) { rankOpen = false }
-    if (oathOpen) TermDialog(Term.OATH) { oathOpen = false }
+    TodayLayout(
+        rows = cardRows,
+        card = card,
+        plain = plain,
+        displayed = displayed,
+        veil = { full ->
+            val form = when {
+                !full -> VeilForm.COMPACT
+                kind == DayKind.RESPITE -> VeilForm.HERO
+                else -> VeilForm.FULL
+            }
+            VeilSection(veil, form, nowMs, actions.onOpenGarrison)
+        },
+    )
 }
 
 /** Beneath this the exercise rows stop tightening and start folding into "+N more". Rows are not tap targets, the card is. */
@@ -803,10 +839,9 @@ private val BOTTOM_CLEARANCE = 28.dp
 /** The page's side margin; the card pads its content another 16dp inside it. */
 private val GUTTER = 16.dp
 
-/** One pass of the page: head, card, plain rows, Veil (absent when probing the rest), bottom clearance. */
+/** One day body: card, plain rows, Veil (absent when probing the rest), bottom clearance. */
 @Composable
 private fun TodayPage(
-    head: @Composable () -> Unit,
     card: @Composable (rows: @Composable () -> Unit) -> Unit,
     plain: @Composable () -> Unit,
     rows: @Composable () -> Unit,
@@ -817,7 +852,6 @@ private fun TodayPage(
     // Only the page that is shown is live: a measuring probe must neither animate nor spend a one-off.
     CompositionLocalProvider(LocalTodayLive provides live) {
         Column(modifier.fillMaxWidth().padding(horizontal = GUTTER)) {
-            head()
             card(rows)
             plain()
             veil?.invoke()
@@ -838,12 +872,11 @@ private fun TodayPage(
  */
 @Composable
 private fun TodayLayout(
-    swipe: TodaySwipe,
     rows: List<DayRow>,
-    head: @Composable () -> Unit,
     card: @Composable (rows: @Composable () -> Unit) -> Unit,
     plain: @Composable () -> Unit,
     veil: @Composable (full: Boolean) -> Unit,
+    displayed: Boolean,
 ) {
     SubcomposeLayout(Modifier.fillMaxSize()) { constraints ->
         val width = constraints.maxWidth
@@ -855,7 +888,7 @@ private fun TodayLayout(
         fun heightOf(slot: Any, content: @Composable () -> Unit): Int =
             subcompose(slot) { Box(Modifier.clearAndSetSemantics {}) { content() } }.sumOf { it.measure(loose).height }
 
-        val chrome = heightOf("chrome") { TodayPage(head, card, plain, rows = {}, veil = null) }
+        val chrome = heightOf("chrome") { TodayPage(card, plain, rows = {}, veil = null) }
         val veilCompact = heightOf("veilCompact") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(false) } }
         val veilFull = heightOf("veilFull") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(true) } }
         // A row sits inside the page gutter and the card's own padding; only its content height matters here.
@@ -881,32 +914,19 @@ private fun TodayLayout(
                 veilCompact = veilCompact,
             ),
         )
-        // Chrome stays outside the day viewport, including the fallback for small windows.
-        val fixedHead = subcompose("fixedHead") {
-            CompositionLocalProvider(LocalTodayLive provides true) {
-                Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { head() }
-            }
-        }.map { it.measure(loose) }
-        val headHeight = fixedHead.sumOf { it.height }
-        val bodyHeight = if (bounded) (available - headHeight).coerceAtLeast(0) else Int.MAX_VALUE / 4
-        val bodyConstraints = if (bounded) Constraints.fixed(width, bodyHeight) else Constraints(minWidth = width, maxWidth = width)
-        val body = subcompose("dayViewport") {
-            Box(Modifier.fillMaxSize().clipToBounds().then(swipe.gestures).testTag("today-day-viewport")) {
-                val rowHeight = (fit?.rowHeight ?: naturalRow).toDp()
-                val shown = fit?.rows ?: rows.size
-                val contentModifier = if (fit == null) swipe.content.verticalScroll(rememberScrollState()) else swipe.content
-                TodayPage(
-                    head = {}, card = card, plain = plain,
-                    rows = { ExerciseBlock(rows, shown, rowHeight, hidden = rows.size - shown) },
-                    veil = { veil(fit?.fullVeil ?: true) }, live = true, modifier = contentModifier,
-                )
-            }
-        }.map { it.measure(bodyConstraints) }
-        val height = if (bounded) available else headHeight + body.maxOf { it.height }
+        val body = subcompose("page") {
+            val rowHeight = (fit?.rowHeight ?: naturalRow).toDp()
+            val shown = fit?.rows ?: rows.size
+            val contentModifier = if (fit == null) Modifier.verticalScroll(rememberScrollState()) else Modifier
+            TodayPage(
+                card = card, plain = plain,
+                rows = { ExerciseBlock(rows, shown, rowHeight, hidden = rows.size - shown) },
+                veil = { veil(fit?.fullVeil ?: true) }, live = displayed, modifier = contentModifier,
+            )
+        }.map { it.measure(if (bounded) Constraints.fixed(width, available) else loose) }
+        val height = if (bounded) available else body.maxOf { it.height }
         layout(width, height) {
-            var y = 0
-            fixedHead.forEach { it.place(0, y); y += it.height }
-            body.forEach { it.place(0, headHeight) }
+            body.forEach { it.place(0, 0) }
         }
     }
 }

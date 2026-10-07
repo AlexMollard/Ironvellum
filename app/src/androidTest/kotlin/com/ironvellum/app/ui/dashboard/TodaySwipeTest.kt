@@ -35,6 +35,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ironvellum.app.ui.theme.IronvellumTheme
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutPreset
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -48,10 +49,13 @@ class TodaySwipeTest {
     private var day by mutableStateOf(1)
     private var selections = 0
     private var forgeOpens = 0
+    private var openedRite: Long? = null
+    private var motionEnabled by mutableStateOf(false)
     private lateinit var layer: GraphicsLayer
 
     private fun show(startDay: Int = 1, height: Int = 760, ui: DashboardUi = DashboardUi(), motion: Boolean = false) {
         day = startDay
+        motionEnabled = motion
         compose.mainClock.autoAdvance = false
         compose.setContent {
             IronvellumTheme {
@@ -63,10 +67,11 @@ class TodaySwipeTest {
                     TodayContent(
                         ui = ui, selectedDay = day, today = LocalDate.of(2026, 10, 5),
                         live = null, liveSets = emptyList(), bodyGap = BodyGap.BOTH,
-                        strengthRank = "Unranked", rankBreakdown = null, veil = null, motion = motion,
+                        strengthRank = "Unranked", rankBreakdown = null, veil = null, motion = motionEnabled,
                         actions = TodayActions(
                             onSelectDay = { day = it; selections++ },
                             onOpenForge = { forgeOpens++ },
+                            onOpenRite = { openedRite = it },
                         ),
                     )
                 }
@@ -182,6 +187,108 @@ class TodaySwipeTest {
         advance()
         compose.onNodeWithContentDescription("Friday").assertIsSelected()
     }
+    @Test fun theOutgoingButtonKeepsItsColourWhenTheSlideIsReleased() {
+        show(motion = true, ui = DashboardUi(presets = (1..7).map {
+            WorkoutPreset(id = it.toLong(), name = "Rite $it", scheduledDay = it)
+        }))
+        val button = compose.onNodeWithText("Begin Rite 1").fetchSemanticsNode().boundsInRoot
+        val y = button.center.y.toInt()
+        val sampleX = button.right - 12f
+        val before = runBlocking { layer.toImageBitmap() }.toPixelMap()[sampleX.toInt(), y]
+        compose.onNodeWithTag("home").performTouchInput {
+            down(Offset(width * .8f, height * .8f))
+            moveTo(Offset(width * .4f, height * .8f))
+            up()
+        }
+        compose.mainClock.advanceTimeBy(32)
+        compose.waitForIdle()
+        val viewport = compose.onNodeWithTag("today-day-viewport").fetchSemanticsNode().boundsInRoot
+        val outgoing = compose.onNodeWithTag("today-day-page-1", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        val translatedX = sampleX + outgoing.right - viewport.right
+        assertEquals("The outgoing button must keep its appearance until it leaves the viewport", before,
+            runBlocking { layer.toImageBitmap() }.toPixelMap()[translatedX.toInt(), y])
+        compose.mainClock.advanceTimeBy(1_000)
+    }
+
+    @Test fun anOutgoingCardCannotOpenAfterTheIncomingDayIsSelected() {
+        show(motion = true, ui = DashboardUi(presets = (1..7).map {
+            WorkoutPreset(id = it.toLong(), name = "Rite $it", scheduledDay = it)
+        }))
+        val home = compose.onNodeWithTag("home")
+        home.performTouchInput {
+            down(Offset(width * .8f, height * .8f))
+            moveTo(Offset(width * .4f, height * .8f))
+            up()
+        }
+        compose.mainClock.advanceTimeBy(32)
+        compose.waitForIdle()
+        compose.runOnIdle { assertEquals(2, day) }
+        compose.onNodeWithTag("today-day-page-1", useUnmergedTree = true).performTouchInput {
+            click(Offset(width * .25f, height * .08f))
+        }
+        compose.waitForIdle()
+        compose.runOnIdle { assertNull("The outgoing rite must not open during settlement", openedRite) }
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.waitForIdle()
+        compose.onNodeWithText("RITE 2").performTouchInput { click() }
+        advance()
+        compose.runOnIdle { assertEquals(2L, openedRite) }
+    }
+
+    @Test fun disablingMotionDuringASlideImmediatelyShowsTheSelectedDay() {
+        show(motion = true, ui = DashboardUi(presets = (1..7).map {
+            WorkoutPreset(id = it.toLong(), name = "Rite $it", scheduledDay = it)
+        }))
+        compose.onNodeWithTag("home").performTouchInput { swipeLeft() }
+        compose.mainClock.advanceTimeBy(32)
+        compose.waitForIdle()
+        compose.runOnIdle { assertEquals(2, day); motionEnabled = false }
+        compose.mainClock.advanceTimeByFrame()
+        compose.waitForIdle()
+        compose.onNodeWithText("RITE 2").assertIsDisplayed()
+        val viewport = compose.onNodeWithTag("today-day-viewport").fetchSemanticsNode().boundsInRoot
+        val page = compose.onNodeWithTag("today-day-page-2", useUnmergedTree = true).fetchSemanticsNode().boundsInRoot
+        assertEquals(viewport.left, page.left, 1f)
+        assertEquals(viewport.right, page.right, 1f)
+    }
+
+    @Test fun adjacentDaysShareAnEdgeThroughoutTheDragAndRelease() {
+        show(motion = true, ui = DashboardUi(presets = (1..7).map {
+            WorkoutPreset(id = it.toLong(), name = "Rite $it", scheduledDay = it)
+        }))
+        val home = compose.onNodeWithTag("home")
+        home.performTouchInput {
+            down(Offset(width * .8f, height * .8f))
+            moveTo(Offset(width * .4f, height * .8f))
+        }
+        compose.mainClock.advanceTimeBy(32)
+        compose.waitForIdle()
+        val outgoing = compose.onNodeWithTag("today-day-page-1", useUnmergedTree = true)
+        val incoming = compose.onNodeWithTag("today-day-page-2", useUnmergedTree = true)
+        val viewport = compose.onNodeWithTag("today-day-viewport").fetchSemanticsNode().boundsInRoot
+        fun seam(): Float {
+            val old = outgoing.fetchSemanticsNode().boundsInRoot
+            val next = incoming.fetchSemanticsNode().boundsInRoot
+            assertEquals("Outgoing and incoming pages must touch", old.right, next.left, 1f)
+            assertEquals("Outgoing page must cover the left edge", viewport.left, old.left, 1f)
+            assertEquals("Incoming page must cover the right edge", viewport.right, next.right, 1f)
+            return next.left
+        }
+        var previous = seam()
+        home.performTouchInput { up() }
+        repeat(5) {
+            compose.mainClock.advanceTimeBy(16)
+            compose.waitForIdle()
+            val current = seam()
+            assertTrue("Releasing must keep travelling forward without jumping back", current <= previous + 1f)
+            previous = current
+        }
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Tuesday").assertIsSelected()
+        compose.onNodeWithText("RITE 2").assertIsDisplayed()
+    }
+
     @Test fun contentFollowsTheFingerAndSettlesAfterChangingTheDay() {
         show(motion = true)
         val button = compose.onNodeWithText("Forge a cycle")

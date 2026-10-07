@@ -217,10 +217,10 @@ class TodayFitsTest {
 
     /**
      * The tagged nodes that are really on the page. The layout composes its measuring probes with the same
-     * tags and never places them, and the unmerged tree still lists them.
+     * tags and never places them; adjacent days are placed offscreen. Neither is visible.
      */
     private fun placed(tag: String) =
-        compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().filter { it.layoutInfo.isPlaced }
+        compose.onAllNodesWithTag(tag, useUnmergedTree = true).fetchSemanticsNodes().filter { it.layoutInfo.isPlaced && it.boundsInRoot.width > 0f && it.boundsInRoot.height > 0f }
 
     private fun assertPlaced(tag: String) = assertEquals("\"$tag\" should be on the page once", 1, placed(tag).size)
 

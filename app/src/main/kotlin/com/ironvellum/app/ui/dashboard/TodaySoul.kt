@@ -33,7 +33,6 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -49,23 +48,17 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkArc
-import com.ironvellum.app.ui.theme.inkDot
-import kotlin.math.cos
-import kotlin.math.sin
 
 /*
  * The soul layer of Today: the small pieces of voice and emblem that sit in the header, the week rail
- * and the day card. Nothing here moves except the SEALED stamp's one-off thud; the Veil owns every
- * continuous motion (TodayVeil.kt). Line art goes through the ink primitives (inkArc, inkDot) or
+ * and the day card. Nothing here moves except the compact seal's one-off thud; the Veil owns every
+ * continuous motion (TodayVeil.kt). Line art goes through the ink primitives (inkArc) or
  * drawPath, so the ruled-draw counts InkCoverageTest pins do not move.
  */
 
 /** The muscle-focus glyph's box beside a rite's header. */
 private val GLYPH_WIDTH = 52.dp
 private val GLYPH_HEIGHT = 78.dp
-
-/** The SEALED stamp's box, in the same corner the glyph holds. */
-private val STAMP_SIZE = 68.dp
 
 /** The single gold lozenge before the Strength Rank: earned, so it is gold. */
 @Composable
@@ -116,64 +109,56 @@ internal fun RiteGlyph(sets: Map<Muscle, Double>, modifier: Modifier = Modifier)
     }
 }
 
-/**
- * The SEALED stamp: gold rings, the word and the date, set at a tilt. When [thud] it lands once from a
- * larger size, the only motion on the card; otherwise it is simply there.
- */
+/** The sealed rite's muscle focus and a compact gold seal; only the seal thuds in. */
 @Composable
-internal fun SealedStamp(date: String, thud: Boolean, modifier: Modifier = Modifier) {
+internal fun SealedRiteGlyph(
+    sets: Map<Muscle, Double>,
+    date: String,
+    thud: Boolean,
+    modifier: Modifier = Modifier,
+) {
     val settle = remember { Animatable(if (thud) 0f else 1f) }
     LaunchedEffect(thud) {
         if (thud) settle.animateTo(1f, tween(500, easing = CubicBezierEasing(0.2f, 1.4f, 0.4f, 1f)))
     }
     val gold = IronvellumColors.SovereignGold
-    Box(
-        modifier
-            .size(STAMP_SIZE)
-            .clearAndSetSemantics {}
-            .graphicsLayer {
-                val v = settle.value
-                val s = 1.6f - 0.6f * v
-                scaleX = s
-                scaleY = s
-                rotationZ = -11f
-                alpha = 0.95f * (v * 2f).coerceIn(0f, 1f)
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(Modifier.size(STAMP_SIZE)) {
-            val c = Offset(size.width / 2f, size.height / 2f)
-            val r = size.width / 2f
-            inkArc(c, r * 0.92f, 0f, 360f, gold, 1.6.dp.toPx())
-            // The dotted ring: 36 small dots.
-            for (i in 0 until 36) {
-                val a = Math.toRadians(i * 10.0)
-                inkDot(Offset(c.x + cos(a).toFloat() * r * 0.83f, c.y + sin(a).toFloat() * r * 0.83f), 0.6.dp.toPx(), gold.copy(alpha = 0.8f))
-            }
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+    Column(modifier.width(58.dp).clearAndSetSemantics {}, horizontalAlignment = Alignment.CenterHorizontally) {
+        RiteGlyph(sets)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            SealMark(
+                12.dp,
+                Modifier.graphicsLayer {
+                    val v = settle.value
+                    val s = 1.6f - 0.6f * v
+                    scaleX = s
+                    scaleY = s
+                    alpha = (v * 2f).coerceIn(0f, 1f)
+                },
+            )
+            Spacer(Modifier.width(3.dp))
             Text(
                 "SEALED",
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.Bold,
-                fontSize = 10.sp,
-                letterSpacing = 1.sp,
+                fontSize = 9.sp,
+                lineHeight = 10.sp,
+                letterSpacing = 0.5.sp,
                 color = gold,
                 maxLines = 1,
                 softWrap = false,
             )
-            Text(
-                date.uppercase(),
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Medium,
-                fontSize = 7.sp,
-                letterSpacing = 0.5.sp,
-                color = gold.copy(alpha = 0.85f),
-                maxLines = 1,
-                softWrap = false,
-                textAlign = TextAlign.Center,
-            )
         }
+        Text(
+            date.uppercase(),
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.Medium,
+            fontSize = 7.sp,
+            lineHeight = 8.sp,
+            letterSpacing = 0.5.sp,
+            color = gold.copy(alpha = 0.85f),
+            maxLines = 1,
+            softWrap = false,
+        )
     }
 }
 
@@ -231,7 +216,7 @@ internal fun NameRow(
 
 /**
  * A rite's header on the day card: its name in tracked display caps, the narrator's one line, a small
- * [meta] line, and [corner] (the muscle glyph or the SEALED stamp) in the top-right. [lead] sits before the
+ * [meta] line, and [corner] (the muscle glyph or sealed glyph) in the top-right. [lead] sits before the
  * text (the respite ledger).
  */
 @Composable
