@@ -494,14 +494,18 @@ internal fun TodayContent(
             ) {
                 NameRow(
                     name = {
-                        Text(
-                            profile?.name ?: "Ironbound",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = IronvellumColors.Ink,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            HeaderCrest()
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                profile?.name ?: "Ironbound",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = IronvellumColors.Ink,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                        }
                     },
                     // Strength Rank only: ascension names the level on the rail
                     // below, so it is never a stat beside this one.
@@ -513,11 +517,6 @@ internal fun TodayContent(
                                 .padding(start = 10.dp, end = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            // The one gold mark on the header: a rank is earned, "Unranked" has none.
-                            if (strengthRank.isNotEmpty() && strengthRank != Rank.UNRANKED) {
-                                RankLozenge()
-                                Spacer(Modifier.width(8.dp))
-                            }
                             Text(
                                 strengthRank.ifEmpty { Rank.UNRANKED },
                                 style = MaterialTheme.typography.labelLarge,
@@ -534,13 +533,7 @@ internal fun TodayContent(
                     },
                 )
                 profile?.currentTitleId?.let { Titles.byId(it)?.name }?.let { worn ->
-                    Text(
-                        worn,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.InkMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
+                    WornTitle(worn)
                 }
             }
             // The settings gear: the glyph stays 22dp; the TARGET is 48dp.
@@ -576,27 +569,8 @@ internal fun TodayContent(
             )
         }
 
-        // The oath, the one counter Today keeps: steps live in the Ledger, deeds in the Codex.
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = 44.dp)
-                .clickable(role = Role.Button, onClickLabel = "Explain ${Term.OATH.title}") { oathOpen = true },
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                buildAnnotatedString {
-                    withStyle(SpanStyle(color = IronvellumColors.Ink, fontWeight = FontWeight.Medium)) { append("Oath") }
-                    append(
-                        if (ui.streak > 0) " · ${ui.streak} ${plural(ui.streak, "day", "days")} kept"
-                        else " · none yet, seal a trial to begin",
-                    )
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-
+        // The Oath is the week section's heading, directly above its day tiles.
+        OathRow(ui.streak) { oathOpen = true }
         WeekRail(
             selectedDay = selectedDay,
             today = today.dayOfWeek.value,
