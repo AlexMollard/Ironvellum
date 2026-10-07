@@ -130,6 +130,8 @@ import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.domain.isStrength
 import com.ironvellum.app.domain.RiteSwap
 import com.ironvellum.app.domain.RoutineUpdate
+import com.ironvellum.app.domain.WarmupStep
+import com.ironvellum.app.data.WarmupStore
 import com.ironvellum.app.domain.SealedReopen
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SessionPeaks
@@ -293,6 +295,17 @@ class SessionViewModel(
         viewModelScope.launchGuarded("update rite") {
             withContext(NonCancellable) { repo.applyRoutineUpdate(offer.presetId, accepted, swaps) }
         }
+    }
+
+    private val warmupStore = WarmupStore(appContext)
+
+    /** How this trial answered the warm-up reminder; null when the setting is off. */
+    private val _warmup = MutableStateFlow(if (warmupStore.enabled) warmupStore.stateFor(sessionId) else null)
+    val warmup: StateFlow<WarmupStep.State?> = _warmup
+
+    fun answerWarmup(state: WarmupStep.State) {
+        warmupStore.setState(sessionId, state)
+        _warmup.value = state
     }
 
     fun keepPlan() {
@@ -530,6 +543,7 @@ fun SessionScreen(
     val focus by viewModel.focus.collectAsStateWithLifecycle()
     val pace by viewModel.pace.collectAsStateWithLifecycle()
     val routineUpdate by viewModel.routineUpdate.collectAsStateWithLifecycle()
+    val warmup by viewModel.warmup.collectAsStateWithLifecycle()
     val completion by viewModel.completion.collectAsStateWithLifecycle()
     val finish by viewModel.finish.collectAsStateWithLifecycle()
     val peaks by viewModel.peaks.collectAsStateWithLifecycle()
@@ -740,6 +754,15 @@ fun SessionScreen(
                         blockedText = "Rest-over alerts are blocked, so the end of a rest will not buzz.",
                         modifier = Modifier.padding(top = 12.dp),
                     )
+                }
+                // Before the first set is logged; a logged set takes it away for good.
+                val warmupState = warmup
+                if (warmupState != null && ui.sets.isNotEmpty() && doneCount == 0) {
+                    val warmupText = remember(ui.sets, exercises) {
+                        val groupOf = exercises.associate { it.id to it.muscleGroup }
+                        WarmupStep.text(ui.sets.map { it.exerciseId }.distinct().mapNotNull { groupOf[it] })
+                    }
+                    WarmupRow(warmupText, warmupState, viewModel::answerWarmup)
                 }
                 var previousFolded = false
                 blocks.forEachIndexed { blockIdx, block ->
@@ -3256,6 +3279,48 @@ private fun ToggleLine(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
+    }
+}
+
+/**
+ * The general warm-up before the first set: tick it done, skip it, or tap the
+ * collapsed line to open it again. It is a reminder, never a set.
+ */
+@Composable
+private fun WarmupRow(text: String, state: WarmupStep.State, onAnswer: (WarmupStep.State) -> Unit) {
+    if (state != WarmupStep.State.OPEN) {
+        Text(
+            if (state == WarmupStep.State.DONE) "Warmed up" else "Warm-up skipped",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier
+                .padding(top = 12.dp)
+                .clickable(role = Role.Button, onClickLabel = "Open the warm-up again") { onAnswer(WarmupStep.State.OPEN) }
+                .padding(vertical = 8.dp),
+        )
+        return
+    }
+    Column(
+        Modifier
+            .padding(top = 12.dp)
+            .fillMaxWidth()
+            .background(IronvellumColors.Ink.copy(alpha = 0.04f))
+            .drawBehind { drawRect(IronvellumColors.Emerald, size = Size(2.dp.toPx(), size.height)) }
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+    ) {
+        Text(
+            "WARM UP",
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            letterSpacing = 1.sp,
+            color = IronvellumColors.InkMuted,
+        )
+        Text(text, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+        Spacer(Modifier.height(8.dp))
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            IronvellumButton("Done", onClick = { onAnswer(WarmupStep.State.DONE) }, modifier = Modifier.weight(1f))
+            IronvellumButton("Skip", quiet = true, onClick = { onAnswer(WarmupStep.State.SKIPPED) }, modifier = Modifier.weight(1f))
+        }
     }
 }
 
