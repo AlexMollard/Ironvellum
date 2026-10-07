@@ -128,6 +128,7 @@ import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LastLogged
 import com.ironvellum.app.domain.isStrength
+import com.ironvellum.app.domain.RiteSwap
 import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.SealedReopen
 import com.ironvellum.app.domain.SessionSet
@@ -283,14 +284,14 @@ class SessionViewModel(
     private val _routineUpdate = MutableStateFlow<Repository.RoutineUpdateOffer?>(null)
     val routineUpdate: StateFlow<Repository.RoutineUpdateOffer?> = _routineUpdate
 
-    /** Writes [accepted], each already narrowed to the fields the lifter ticked. */
-    fun applyRoutineUpdate(accepted: List<RoutineUpdate.Change>) {
+    /** Writes [accepted], each already narrowed to the fields the lifter ticked, and the [swaps] they chose to keep. */
+    fun applyRoutineUpdate(accepted: List<RoutineUpdate.Change>, swaps: List<RiteSwap.Swap>) {
         val offer = _routineUpdate.value ?: return
         _routineUpdate.value = null
-        if (accepted.isEmpty()) return
+        if (accepted.isEmpty() && swaps.isEmpty()) return
         // The screen may leave straight after; the write must not die with it.
         viewModelScope.launchGuarded("update rite") {
-            withContext(NonCancellable) { repo.applyRoutineUpdate(offer.presetId, accepted) }
+            withContext(NonCancellable) { repo.applyRoutineUpdate(offer.presetId, accepted, swaps) }
         }
     }
 
@@ -3182,6 +3183,83 @@ private fun fieldLine(change: RoutineUpdate.Change, field: RoutineUpdate.Field):
 }
 
 /**
+ * One tickable line of the rite offer: the set rows' own tick box, a label
+ * and the figures it would write.
+ */
+@Composable
+private fun ToggleLine(
+    on: Boolean,
+    label: String,
+    figures: String,
+    labelWidth: androidx.compose.ui.unit.Dp = 76.dp,
+    onToggle: () -> Unit,
+) {
+    val shape = MaterialTheme.shapes.extraSmall
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(bottom = 4.dp)
+            .background(
+                if (on) {
+                    Brush.verticalGradient(listOf(androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.6f), androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.8f)))
+                } else {
+                    Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
+                },
+                shape,
+            )
+            .inkBorder(if (on) IronvellumColors.SystemGreen else IronvellumColors.Rune, shape, 1.dp)
+            .toggleable(value = on, role = Role.Checkbox) { onToggle() }
+            .heightIn(min = 44.dp)
+            .padding(horizontal = 10.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        // The set rows' own tick box: an empty slot read as
+        // a label, not something to tick.
+        Box(
+            Modifier
+                .size(22.dp)
+                .background(
+                    if (on) IronvellumColors.SystemGreen.copy(alpha = 0.18f) else Color.Transparent,
+                    MaterialTheme.shapes.extraSmall,
+                )
+                .inkBorder(
+                    if (on) IronvellumColors.SystemGreen else IronvellumColors.Bracket,
+                    MaterialTheme.shapes.extraSmall,
+                    1.5.dp,
+                ),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (on) {
+                Text(
+                    "\u2713",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.SystemGreen,
+                )
+            }
+        }
+        Spacer(Modifier.width(12.dp))
+        Text(
+            label.uppercase(),
+            style = MaterialTheme.typography.labelSmall,
+            fontFamily = ChakraPetch,
+            letterSpacing = 1.sp,
+            color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
+            modifier = Modifier.width(labelWidth),
+        )
+        Text(
+            figures,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
+    }
+}
+
+/**
  * Offers to bring the preset in line with the session just finished, one
  * toggle per changed field so the lifter can take the reps and leave the
  * load. Fields start ticked per [RoutineUpdate.Change.defaultTicks]: a set
@@ -3193,12 +3271,14 @@ private fun fieldLine(change: RoutineUpdate.Change, field: RoutineUpdate.Field):
 private fun RoutineUpdateDialog(
     offer: Repository.RoutineUpdateOffer,
     shortDay: Boolean,
-    onUpdate: (List<RoutineUpdate.Change>) -> Unit,
+    onUpdate: (List<RoutineUpdate.Change>, List<RiteSwap.Swap>) -> Unit,
     onKeep: () -> Unit,
 ) {
     var ticked by remember(offer) {
         mutableStateOf(offer.changes.associateWith { it.defaultTicks() })
     }
+    // Entry ids of the swaps to keep; none to start with, so a swap is "just this once" until chosen.
+    var kept by remember(offer) { mutableStateOf(emptySet<Long>()) }
     IronvellumDialog(
         onDismissRequest = onKeep,
         title = {
@@ -3211,7 +3291,9 @@ private fun RoutineUpdateDialog(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    if (shortDay) {
+                    if (offer.changes.isEmpty()) {
+                        "Keep today's swaps in your rite?"
+                    } else if (shortDay) {
                         "Unticked sets don't lower the set count. Tick the changes to keep."
                     } else {
                         "Bring your rite in line with today's trial?"
@@ -3236,72 +3318,20 @@ private fun RoutineUpdateDialog(
                         val accepted = ticked[change].orEmpty()
                         val on = field in accepted
                         val (label, figures) = fieldLine(change, field)
-                        val shape = MaterialTheme.shapes.extraSmall
-                        Row(
-                            Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 4.dp)
-                                .background(
-                                    if (on) {
-                                        Brush.verticalGradient(listOf(androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.6f), androidx.compose.ui.graphics.lerp(IronvellumColors.Emerald, IronvellumColors.Vault, 0.8f)))
-                                    } else {
-                                        Brush.verticalGradient(listOf(Color(0xFF151C19), Color(0xFF0F1412)))
-                                    },
-                                    shape,
-                                )
-                                .inkBorder(if (on) IronvellumColors.SystemGreen else IronvellumColors.Rune, shape, 1.dp)
-                                .toggleable(value = on, role = Role.Checkbox) {
-                                    ticked = ticked + (change to if (on) accepted - field else accepted + field)
-                                }
-                                .heightIn(min = 44.dp)
-                                .padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            // The set rows' own tick box: an empty slot read as
-                            // a label, not something to tick.
-                            Box(
-                                Modifier
-                                    .size(22.dp)
-                                    .background(
-                                        if (on) IronvellumColors.SystemGreen.copy(alpha = 0.18f) else Color.Transparent,
-                                        MaterialTheme.shapes.extraSmall,
-                                    )
-                                    .inkBorder(
-                                        if (on) IronvellumColors.SystemGreen else IronvellumColors.Bracket,
-                                        MaterialTheme.shapes.extraSmall,
-                                        1.5.dp,
-                                    ),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                if (on) {
-                                    Text(
-                                        "\u2713",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        fontFamily = ChakraPetch,
-                                        color = IronvellumColors.SystemGreen,
-                                    )
-                                }
-                            }
-                            Spacer(Modifier.width(12.dp))
-                            Text(
-                                label.uppercase(),
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = ChakraPetch,
-                                letterSpacing = 1.sp,
-                                color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
-                                modifier = Modifier.width(76.dp),
-                            )
-                            Text(
-                                figures,
-                                style = MaterialTheme.typography.labelMedium,
-                                fontFamily = ChakraPetch,
-                                color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f),
-                            )
+                        ToggleLine(on, label, figures) {
+                            ticked = ticked + (change to if (on) accepted - field else accepted + field)
                         }
                     }
+                }
+                offer.swaps.forEach { swap ->
+                    val on = swap.entry.id in kept
+                    Spacer(Modifier.height(6.dp))
+                    ToggleLine(
+                        on = on,
+                        label = if (on) "Keep in rite" else "Just this once",
+                        figures = swap.line,
+                        labelWidth = 104.dp,
+                    ) { kept = if (on) kept - swap.entry.id else kept + swap.entry.id }
                 }
             }
         },
@@ -3311,10 +3341,11 @@ private fun RoutineUpdateDialog(
             Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // Preset order, whatever order the toggles were flipped in.
                 val narrowed = offer.changes.mapNotNull { it.only(ticked[it].orEmpty()) }
+                val keptSwaps = offer.swaps.filter { it.entry.id in kept }
                 IronvellumButton(
                     "Update rite",
-                    enabled = narrowed.isNotEmpty(),
-                    onClick = { onUpdate(narrowed) },
+                    enabled = narrowed.isNotEmpty() || keptSwaps.isNotEmpty(),
+                    onClick = { onUpdate(narrowed, keptSwaps) },
                     modifier = Modifier.fillMaxWidth(),
                 )
                 IronvellumButton("Keep rite", quiet = true, onClick = onKeep, modifier = Modifier.fillMaxWidth())
