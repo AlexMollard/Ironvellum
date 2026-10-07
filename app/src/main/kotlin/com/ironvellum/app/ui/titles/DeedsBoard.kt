@@ -4,11 +4,8 @@ import com.ironvellum.app.ui.components.PushedHeader
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,7 +37,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
@@ -50,7 +46,6 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.DeedLadder
@@ -60,20 +55,19 @@ import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.LedgerSpace
 import com.ironvellum.app.ui.components.RangeChips
 import com.ironvellum.app.ui.components.SettingsGroup
-import com.ironvellum.app.ui.components.StatSize
-import com.ironvellum.app.ui.components.StatValue
 import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkBorder
 import kotlinx.coroutines.launch
 
@@ -263,24 +257,23 @@ private fun DeedsHome(
 
         item(key = "categories") {
             Column {
-            SectionLabel("CATEGORIES")
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                DeedLadders.CATEGORIES.chunked(2).forEach { pair ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        pair.forEach { c ->
-                            val defs = DeedLadders.ALL.filter { it.category == c.name }.flatMap { it.rungs }
-                            CategoryTile(
-                                name = c.name,
-                                blurb = c.blurb,
-                                earned = defs.count { it.id in earnedIds },
-                                total = defs.size,
-                                onClick = { onOpenCategory(c.name) },
-                                modifier = Modifier.weight(1f),
-                            )
-                        }
+                SectionLabel("CATEGORIES")
+                InkRowPanel(Modifier.fillMaxWidth()) {
+                    DeedLadders.CATEGORIES.forEachIndexed { i, c ->
+                        val defs = DeedLadders.ALL.filter { it.category == c.name }.flatMap { it.rungs }
+                        val held = defs.count { it.id in earnedIds }
+                        if (i > 0) InkDivider()
+                        ListRow(
+                            label = c.name,
+                            value = "$held of ${defs.size}",
+                            onClickLabel = "Open ${c.name}",
+                            onClick = { onOpenCategory(c.name) },
+                            modifier = Modifier.semantics(mergeDescendants = true) {
+                                contentDescription = "${c.name}. ${c.blurb}. $held of ${defs.size} deeds earned."
+                            },
+                        )
                     }
                 }
-            }
             }
         }
 
@@ -288,6 +281,7 @@ private fun DeedsHome(
             Column {
                 SectionLabel("EARNED  ${earned.size}")
                 EarnedWall(
+                    unlocked = unlocked,
                     earned = earned.sortedWith(
                         compareByDescending<TitleDef> { it.rarity.ordinal }
                             .thenByDescending { unlocked[it.id] ?: 0L },
@@ -302,24 +296,13 @@ private fun DeedsHome(
 
 @Composable
 private fun DeedsHeader(earned: Int, total: Int) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .semantics(mergeDescendants = true) {
-                contentDescription = "Deeds: $earned of $total earned"
-            },
-    ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-            Text(
-                "DEEDS",
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.InlineLabel,
-                modifier = Modifier.weight(1f).semantics { heading() },
-            )
-            StatValue("$earned / $total", size = StatSize.Inline)
-        }
+    Column(Modifier.fillMaxWidth()) {
+        Text(
+            "$earned of $total earned",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.semantics { heading() },
+        )
         Spacer(Modifier.height(8.dp))
         InkRail(
             fraction = if (total == 0) 0f else earned.toFloat() / total,
@@ -405,59 +388,6 @@ private fun BarWithToGo(fraction: Float, toGo: String) {
 }
 
 @Composable
-private fun CategoryTile(
-    name: String,
-    blurb: String,
-    earned: Int,
-    total: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    InkPanel(
-        modifier
-            .heightIn(min = LedgerSpace.Target)
-            .semantics(mergeDescendants = true) {
-                contentDescription = "$name. $blurb. $earned of $total deeds earned."
-            },
-        onClick = onClick,
-    ) {
-        Text(
-            name,
-            style = MaterialTheme.typography.titleSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.Ink,
-            maxLines = 1,
-        )
-        // Two lines reserved so a row of tiles stays level whatever the blurb length.
-        Text(
-            blurb,
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-            minLines = 2,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-        )
-        Spacer(Modifier.height(8.dp))
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                "$earned / $total",
-                style = MaterialTheme.typography.titleSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.Ink,
-                modifier = Modifier.weight(1f),
-            )
-            if (total > 0 && earned == total) GoldCheck()
-        }
-        Spacer(Modifier.height(6.dp))
-        InkRail(
-            fraction = if (total == 0) 0f else earned.toFloat() / total,
-            height = 4.dp,
-            fill = railFill(earned = total > 0 && earned == total),
-        )
-    }
-}
-
-@Composable
 private fun GoldCheck() {
     Icon(
         Icons.Filled.Check,
@@ -467,10 +397,14 @@ private fun GoldCheck() {
     )
 }
 
-/** Compact badges of every deed held; each opens its detail sheet. */
-@OptIn(ExperimentalLayoutApi::class)
+/** Every deed held as a plain row: name, rarity word, the day it was earned. Each opens its detail sheet. */
 @Composable
-private fun EarnedWall(earned: List<TitleDef>, equippedId: String?, onOpenDeed: (String) -> Unit) {
+private fun EarnedWall(
+    earned: List<TitleDef>,
+    unlocked: Map<String, Long>,
+    equippedId: String?,
+    onOpenDeed: (String) -> Unit,
+) {
     if (earned.isEmpty()) {
         Text(
             "Nothing is written here yet. Seal a trial to earn the first deed.",
@@ -479,58 +413,27 @@ private fun EarnedWall(earned: List<TitleDef>, equippedId: String?, onOpenDeed: 
         )
         return
     }
-    FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        earned.forEach { def ->
+    InkRowPanel(Modifier.fillMaxWidth()) {
+        earned.forEachIndexed { i, def ->
             val worn = def.id == equippedId
-            val shape = MaterialTheme.shapes.extraSmall
-            // The 48dp target is the outer box; the badge drawn inside is smaller.
-            Box(
-                Modifier
-                    .heightIn(min = LedgerSpace.Target)
-                    .semantics(mergeDescendants = true) {
-                        contentDescription = "${def.name}, ${def.rarity.label}, earned" +
-                            if (worn) ", worn" else ""
-                    }
-                    .clickable(onClickLabel = "Open ${def.name}", role = Role.Button) { onOpenDeed(def.id) },
-                contentAlignment = Alignment.Center,
-            ) {
-                Row(
-                    Modifier
-                        .background(Color(0xFF141A18), shape)
-                        .inkBorder(
-                            if (worn) IronvellumColors.SovereignGold else rarityColor(def.rarity, earned = true),
-                            shape,
-                            if (worn) 2.dp else 1.dp,
-                        )
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                ) {
-                    Icon(
-                        Icons.Filled.Check,
-                        contentDescription = null,
-                        tint = IronvellumColors.SovereignGold,
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Text(
-                        def.name,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.Ink,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    // Masterwork is gold too, so worn needs a word, not a colour.
-                    if (worn) {
-                        Text(
-                            "WORN",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = IronvellumColors.SovereignGold,
-                        )
-                    }
-                }
-            }
+            val date = unlocked[def.id]?.let { formatDate(it, "d MMM yyyy") }
+            if (i > 0) InkDivider()
+            ListRow(
+                label = def.name,
+                subline = def.rarity.label,
+                // A Masterwork's word is gold, so worn is a word of its own, never a colour.
+                sublineColor = rarityColor(def.rarity, earned = true),
+                value = when {
+                    worn && date != null -> "Worn \u00B7 $date"
+                    worn -> "Worn"
+                    else -> date
+                },
+                onClickLabel = "Open ${def.name}",
+                onClick = { onOpenDeed(def.id) },
+                modifier = Modifier.semantics(mergeDescendants = true) {
+                    contentDescription = "${def.name}, ${def.rarity.label}, earned" + if (worn) ", worn" else ""
+                },
+            )
         }
     }
 }
@@ -584,15 +487,16 @@ private fun CategoryScreen(
                         contentDescription = "$category deeds: $earned of $total earned. $blurb."
                     },
                 ) {
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-                        Text(
-                            blurb,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = IronvellumColors.InkMuted,
-                            modifier = Modifier.weight(1f),
-                        )
-                        StatValue("$earned / $total", size = StatSize.Inline)
-                    }
+                    Text(
+                        blurb,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                    )
+                    Text(
+                        "$earned of $total earned",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.Ink,
+                    )
                     Spacer(Modifier.height(8.dp))
                     InkRail(
                         fraction = if (total == 0) 0f else earned.toFloat() / total,
@@ -684,15 +588,7 @@ private fun LadderCard(
                     color = IronvellumColors.Ink,
                     modifier = Modifier.weight(1f),
                 )
-                if (next == null) {
-                    GoldCheck()
-                } else if (series) {
-                    Text(
-                        "$held / ${ladder.rungs.size}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.InkMuted,
-                    )
-                }
+                if (next == null) GoldCheck()
             }
             if (next != null) {
                 if (series) {
@@ -784,12 +680,6 @@ private fun RungStrip(ladder: DeedLadder, earnedIds: Set<String>, onOpenDeed: (S
     }
 }
 
-/** The ring of a deed still locked: 3:1 or better against the panel, dimmer than the green and gold of the others. */
-internal val LockedRung = Color(0xFF7A776F)
-
-/** The panel's lightest tone, where the ring has the least contrast. */
-internal val RungPanelTop = Color(0xFF1A1A18)
-
 private fun RungState.word(): String = when (this) {
     RungState.Earned -> "earned"
     RungState.Next -> "next to earn"
@@ -811,13 +701,13 @@ private fun RungMarker(state: RungState) {
             )
         }
         RungState.Next -> Box(
-            Modifier.size(18.dp).inkBorder(IronvellumColors.SystemGreen, DotShape, 2.dp),
+            Modifier.size(18.dp).inkBorder(IronvellumColors.Emerald, DotShape, 2.dp),
             contentAlignment = Alignment.Center,
         ) {
-            Box(Modifier.size(8.dp).clip(DotShape).background(IronvellumColors.SystemGreen))
+            Box(Modifier.size(8.dp).clip(DotShape).background(IronvellumColors.Emerald))
         }
         RungState.Locked -> Box(
-            Modifier.size(18.dp).inkBorder(LockedRung, DotShape, 1.5.dp),
+            Modifier.size(18.dp).inkBorder(IronvellumColors.Rune, DotShape, 1.5.dp),
         )
     }
 }

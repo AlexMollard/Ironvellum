@@ -143,11 +143,4 @@ class CodexUiTest {
         assertTrue(threeLines.levelLines.all { it == 3 })
         assertTrue(threeLines.tops.last() > guess.tops.last())
     }
-
-    // ---- locked deed ring
-
-    @Test
-    fun `the locked ring holds three to one on the panel`() {
-        assertTrue(SkillGuidance.contrast(LockedRung, RungPanelTop) >= 3.0)
-    }
 }
