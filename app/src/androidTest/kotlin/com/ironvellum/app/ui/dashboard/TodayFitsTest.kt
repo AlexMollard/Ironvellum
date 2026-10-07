@@ -21,6 +21,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -330,6 +331,38 @@ class TodayFitsTest {
         assertInside("Bench Press")
         assertInside("The Veil")
         saveShot("today-sealed")
+    }
+
+    @Test
+    fun anEarnedOathSpansTheHeaderAndOpensItsExplanation() {
+        show(ui = DashboardUi(profile = PlayerProfile(name = "Alex", currentTitleId = "marching_orders"), streak = 10, presets = listOf(rite(3, day = 1))), selectedDay = 1)
+        val panel = compose.onNodeWithTag("today-oath")
+        panel.assertIsDisplayed()
+        val header = compose.onNodeWithTag("today").getUnclippedBoundsInRoot()
+        val bounds = panel.getUnclippedBoundsInRoot()
+        assertEquals(header.left + 16.dp, bounds.left)
+        assertEquals(header.right - 16.dp, bounds.right)
+        assertInside("10")
+        assertInside("days kept")
+        saveShot("today-oath")
+        compose.mainClock.autoAdvance = false
+        panel.performClick()
+        compose.mainClock.advanceTimeByFrame()
+        compose.waitForIdle()
+        compose.onNodeWithText("The days you have kept training without a break.", substring = true).assertExists()
+        // The sheet's anchors are measured by the Android window before its entrance can animate.
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNodeWithText("The days you have kept training without a break.", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Close").assertIsDisplayed()
+    }
+
+    @Test
+    fun anOathThatHasNotBegunShowsHowToStart() {
+        show(ui = DashboardUi(presets = listOf(rite(3, day = 1))), selectedDay = 1)
+        assertInside("0")
+        assertInside("Seal a trial to begin")
+        compose.onNodeWithTag("today-oath").assertIsDisplayed()
+        saveShot("today-oath-empty")
     }
 
     @Test
