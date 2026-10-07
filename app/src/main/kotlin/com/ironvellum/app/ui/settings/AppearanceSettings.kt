@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui.settings
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.awaitEachGesture
@@ -96,22 +98,27 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
     SettingsPage(SettingsSection.APPEARANCE.title, onBack) {
         Spacer(Modifier.height(12.dp))
         SettingsCaption("Choose a pair, or make it yours. Changes apply across the app.")
-        SettingsGroup("COLOUR PAIRS", topSpace = 16.dp) {
+        SettingsGroup("COLOUR PAIRS", topSpace = 16.dp, contentPadding = PaddingValues(0.dp)) {
             Column(Modifier.selectableGroup()) {
                 AccentPresets.entries.forEach { preset ->
+                    val selection by animateFloatAsState(
+                        targetValue = if (palette == preset.palette) 1f else 0f,
+                        animationSpec = tween(180),
+                        label = "colour pair selection",
+                    )
                     Row(
-                        Modifier.fillMaxWidth().heightIn(min = 52.dp)
+                        Modifier.fillMaxWidth().heightIn(min = 60.dp)
                             .selectable(
                                 selected = palette == preset.palette,
                                 role = Role.RadioButton,
                                 onClick = { viewModel.setAppearance(preset.palette) },
-                            ),
+                            ).padding(horizontal = 16.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                     ) {
                         Canvas(Modifier.size(16.dp)) {
                             inkDot(center, 6.dp.toPx(), IronvellumColors.Rune)
-                            if (palette == preset.palette) inkDot(center, 3.dp.toPx(), IronvellumColors.Emerald)
+                            if (selection > 0f) inkDot(center, 3.dp.toPx() * selection, Color(preset.palette.primary).copy(alpha = selection))
                         }
                         Text(preset.name, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
                         AccentSwatch(preset.palette.primary)
@@ -120,7 +127,7 @@ internal fun AppearanceSettings(viewModel: SettingsViewModel, onBack: () -> Unit
                 }
             }
         }
-        SettingsGroup("CUSTOM COLOURS", topSpace = 16.dp) {
+        SettingsGroup("CUSTOM COLOURS", topSpace = 16.dp, contentPadding = PaddingValues(0.dp)) {
             AccentRow("Primary accent", "Actions and progress", palette.primary) { editingPrimary = true }
             AccentRow("Reward accent", "Peaks and earned moments", palette.secondary) { editingPrimary = false }
         }
@@ -149,8 +156,9 @@ private fun AccentSwatch(colour: Int) {
 @Composable
 private fun AccentRow(label: String, subline: String, colour: Int, onClick: () -> Unit) {
     Row(
-        Modifier.fillMaxWidth().heightIn(min = 64.dp)
-            .clickable(role = Role.Button, onClickLabel = "Edit $label", onClick = onClick),
+        Modifier.fillMaxWidth().heightIn(min = 80.dp)
+            .clickable(role = Role.Button, onClickLabel = "Edit $label", onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
