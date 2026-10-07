@@ -68,8 +68,11 @@ import com.ironvellum.app.domain.RoutineCode
 import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.modifiersAfterLoadChange
+import com.ironvellum.app.domain.CarryEdits
+import com.ironvellum.app.domain.CarryFigure
 import com.ironvellum.app.domain.CarrySet
-import com.ironvellum.app.domain.loadsToCarry
+import com.ironvellum.app.domain.carriesFrom
+import com.ironvellum.app.domain.carryFiguresFor
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SealedEdit
@@ -159,6 +162,9 @@ class Repository(
     private val idleDao: IdleDao = db.idleDao()
     private val gachaDao = db.gachaDao()
     private val favouriteExerciseDao = db.favouriteExerciseDao()
+
+    /** The figures the lifter moved by hand in live trials, so a tick never overwrites them. */
+    private val carryEdits = CarryEdits()
     // ---------------------------------------------------------------- seeding
 
     suspend fun ensureSeeded() {
@@ -772,20 +778,32 @@ class Repository(
         }.toMap()
     }
 
+    private fun SetLogEntity.carrySet() = CarrySet(id, setIndex, weightKg, done, reps, durationSec, warmup)
+
     /**
-     * When [ticked] has just been marked done with a load, hands that load to
-     * the later undone sets of the same movement that have none ([loadsToCarry]).
-     * Runs inside the caller's transaction. It writes the rows directly and
-     * skips [followLoad]: ticking never touches a "weighted" tag, and a set
-     * that inherits a load only follows a set that already carries it.
+     * Called with a set's row [before] a write and the row [after] it. Any
+     * figure the write moved is noted as the lifter's own; and when the write
+     * ticks the set, its figures flow to the later sets of the movement
+     * ([carriesFrom]). Runs inside the caller's transaction. It writes the
+     * rows directly and skips [followLoad]: ticking never touches a "weighted"
+     * tag, and a set that inherits a load only follows a set that already
+     * carries it. A tick alone moves no figure, so it carries only what was
+     * moved by hand before it.
      */
-    private suspend fun carryLoad(ticked: SetLogEntity, nowDone: Boolean, weightKg: Double?) {
-        if (ticked.done || !nowDone) return
-        val siblings = sessionDao.setsFor(ticked.sessionId)
-            .filter { it.exerciseId == ticked.exerciseId }
-            .map { CarrySet(it.id, it.setIndex, it.weightKg, it.done) }
-        val ids = loadsToCarry(CarrySet(ticked.id, ticked.setIndex, weightKg, true), siblings)
-        if (ids.isNotEmpty() && weightKg != null) sessionDao.setLoads(ids, weightKg)
+    private suspend fun carryFigures(before: SetLogEntity, after: SetLogEntity, figures: Set<CarryFigure>) {
+        carryEdits.note(before.carrySet(), after.carrySet())
+        if (before.done || !after.done) return
+        val rows = sessionDao.setsFor(after.sessionId).filter { it.exerciseId == after.exerciseId }
+        carriesFrom(after.carrySet(), rows.map { it.carrySet() }, figures, carryEdits).forEach { carry ->
+            val row = rows.first { it.id == carry.id }
+            sessionDao.updateSet(
+                row.copy(
+                    weightKg = carry.weightKg ?: row.weightKg,
+                    reps = carry.reps ?: row.reps,
+                    durationSec = carry.durationSec ?: row.durationSec,
+                ),
+            )
+        }
     }
 
     suspend fun startSessionFromPreset(presetId: Long): Long = db.withTransaction {
@@ -886,9 +904,10 @@ class Repository(
     suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
-        sessionDao.updateSet(current.copy(reps = reps, weightKg = weightKg, done = done))
+        val next = current.copy(reps = reps, weightKg = weightKg, done = done)
+        sessionDao.updateSet(next)
         followLoad(current, weightKg)
-        carryLoad(current, done, weightKg)
+        carryFigures(current, next, carryFiguresFor(ExerciseMetric.REPS))
     }
 
     /**
@@ -903,16 +922,15 @@ class Repository(
     suspend fun updateHoldSet(setId: Long, seconds: Int, weightKg: Double?, done: Boolean) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
-        sessionDao.updateSet(
-            current.copy(
-                reps = 0,
-                durationSec = seconds.coerceAtLeast(0),
-                weightKg = weightKg,
-                done = done,
-            ),
+        val next = current.copy(
+            reps = 0,
+            durationSec = seconds.coerceAtLeast(0),
+            weightKg = weightKg,
+            done = done,
         )
+        sessionDao.updateSet(next)
         followLoad(current, weightKg)
-        carryLoad(current, done, weightKg)
+        carryFigures(current, next, carryFiguresFor(ExerciseMetric.HOLD))
     }
 
     /**
@@ -959,18 +977,17 @@ class Repository(
     ) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
-        sessionDao.updateSet(
-            current.copy(
-                reps = reps.coerceAtLeast(0),
-                durationSec = durationSec?.coerceAtLeast(0),
-                distanceM = distanceM?.coerceAtLeast(0.0),
-                grade = grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
-                weightKg = weightKg,
-                done = done,
-            ),
+        val next = current.copy(
+            reps = reps.coerceAtLeast(0),
+            durationSec = durationSec?.coerceAtLeast(0),
+            distanceM = distanceM?.coerceAtLeast(0.0),
+            grade = grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
+            weightKg = weightKg,
+            done = done,
         )
+        sessionDao.updateSet(next)
         followLoad(current, weightKg)
-        carryLoad(current, done, weightKg)
+        carryFigures(current, next, carryFiguresFor(ExerciseMetric.DURATION))
     }
 
     /**
