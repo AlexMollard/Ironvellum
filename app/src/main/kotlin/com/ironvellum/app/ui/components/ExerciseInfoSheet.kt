@@ -21,7 +21,7 @@ import com.ironvellum.app.ui.theme.IronvellumColors
 /**
  * Facts about one exercise, all read from data the app already holds: the
  * muscle profile, how-to guide, gear table, skill tree and ally boards.
- * They sit on two swipeable pages, ABOUT (the facts) and FORM (how to, cues, mistakes), so
+ * They sit on two swipeable pages, About (the facts) and Form (how to, cues, mistakes), so
  * none of it is a long scroll; a page without data is left out. [onPick] null hides the confirm button; otherwise it labels itself
  * [confirmLabel] and picks the exercise the way tapping the card does.
  * [modifiers] reshape the muscles as they do in the trial (a deficit
@@ -33,7 +33,7 @@ internal fun ExerciseInfoSheet(
     lastLine: String?,
     onDismiss: () -> Unit,
     onPick: (() -> Unit)?,
-    confirmLabel: String = "ADD",
+    confirmLabel: String = "Add",
     modifiers: String = "",
 ) {
     val skill = Skills.forName(exercise.name)
@@ -53,11 +53,11 @@ internal fun ExerciseInfoSheet(
             add(InfoAction("Close", onDismiss, quiet = true))
             if (onPick != null) add(InfoAction(confirmLabel, onPick))
         },
-        // Two pages: the gear rides on ABOUT, and how to, cues and mistakes share FORM. The
+        // Two pages: the gear rides on About, and how to, cues and mistakes share Form. The
         // sheet drops a page with nothing on it.
         pages = listOf(
-            InfoPage("ABOUT") {
-                if (lastLine != null) text("LAST TRIAL", lastLine, IronvellumColors.SovereignGold)
+            InfoPage("About") {
+                if (lastLine != null) text("LAST TRIAL", lastLine)
                 muscleFacts(exercise.name, modifiers, showMissingMuscles = true)
                 gearFacts(exercise.name)
                 if (skill != null) {
@@ -82,7 +82,7 @@ internal fun ExerciseInfoSheet(
                     )
                 }
             },
-            InfoPage("FORM") { formFacts(exercise.name) },
+            InfoPage("Form") { formFacts(exercise.name) },
         ),
     )
 }
