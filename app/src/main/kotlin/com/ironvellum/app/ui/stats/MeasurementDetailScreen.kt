@@ -115,8 +115,8 @@ private fun parseCm(raw: String): Double? =
     Ledger.parseDecimal(raw)?.takeIf { it in CM_MIN..CM_MAX }
 
 /**
- * One tape site: its latest value and trend first, then the readings, then
- * logging. Everything here is device-local - the cloud schema has no table
+ * One tape site: the logging form first, then one card holding the latest value, its
+ * trend and the readings. Everything here is device-local - the cloud schema has no table
  * for this data on purpose; the tape pane carries the one lock caption.
  */
 @Composable
@@ -153,93 +153,15 @@ fun MeasurementDetailScreen(
         ) {
             Spacer(Modifier.height(LedgerSpace.Panel))
 
+            // Form first: the page is for taking a reading, the history follows it.
             InkPanel(Modifier.fillMaxWidth()) {
-                PanelLabel("LATEST")
-                if (latest == null) {
-                    StatValue("\u2014", size = StatSize.Hero)
-                    Text(
-                        "This page is blank. Take the first reading below.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.InkMuted,
-                    )
-                } else {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                    ) {
-                        StatValue("%.1f".fmt(latest.valueCm), size = StatSize.Hero, unit = "cm")
-                        delta?.let {
-                            Text(
-                                "${Ledger.signed(it, "cm")} \u00B7 30D",
-                                style = MaterialTheme.typography.titleSmall,
-                                fontFamily = ChakraPetch,
-                                color = IronvellumColors.InkMuted,
-                                modifier = Modifier.padding(bottom = 4.dp),
-                            )
-                        }
-                    }
-                    Text(
-                        "Taken ${formatDate(latest.takenAtMs, "d MMM")}",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = IronvellumColors.InkMuted,
-                    )
-                    if (chartEntries.size >= 2) {
-                        Spacer(Modifier.height(8.dp))
-                        val dates = chartEntries.map { Ledger.dateOf(it.takenAtMs, zone) }
-                        // Narrow band: a zero-based axis would flatten the line into nothing.
-                        TrendChart(
-                            chartEntries.map { it.valueCm },
-                            IronvellumColors.Emerald,
-                            fromZero = false,
-                            positions = Ledger.datePositions(dates),
-                            startLabel = formatDate(chartEntries.first().takenAtMs, "d MMM"),
-                            endLabel = formatDate(chartEntries.last().takenAtMs, "d MMM"),
-                            recordMarker = false,
-                            valueText = { "%.1f cm".fmt(it) },
-                            dateText = { formatDate(chartEntries[it].takenAtMs, "d MMM") },
-                        )
-                    } else {
-                        Text(
-                            "Two readings draw the line.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = IronvellumColors.InkMuted,
-                        )
-                    }
-                }
-            }
-
-            if (newestFirst.isNotEmpty()) {
-                InkRowPanel(Modifier.fillMaxWidth()) {
-                    Box(Modifier.padding(16.dp)) { PanelLabel("READINGS") }
-                    val shown = if (showAll) newestFirst else newestFirst.take(RECENT_ROWS)
-                    shown.forEachIndexed { i, entry ->
-                        if (i > 0) InkDivider()
-                        ReadingRow(entry, onDelete = {
-                            lastDeleted = entry
-                            viewModel.delete(entry.id)
-                        })
-                    }
-                    if (newestFirst.size > RECENT_ROWS) {
-                        InkDivider()
-                        InkListRow(
-                            label = if (showAll) "Show fewer" else "Show all ${newestFirst.size} ${plural(newestFirst.size, "reading", "readings")}",
-                            value = null,
-                            onClick = { showAll = !showAll },
-                        )
-                    }
-                }
-            }
-
-            InkPanel(Modifier.fillMaxWidth()) {
-                PanelLabel("LOG A READING")
                 // Technique first: the number is only worth comparing if the tape
                 // lands in the same place every time.
                 Text(
                     site.howTo,
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
-                    modifier = Modifier.padding(top = 4.dp, bottom = 12.dp),
+                    modifier = Modifier.padding(bottom = 12.dp),
                 )
                 val parsed = parseCm(readingInput)
                 OutlinedTextField(
@@ -283,6 +205,80 @@ fun MeasurementDetailScreen(
                     enabled = parsed != null,
                     modifier = Modifier.fillMaxWidth(),
                 )
+            }
+
+            if (latest == null) {
+                Text(
+                    "This page is blank. Take the first reading above.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            } else {
+                // The latest value, its trend and every reading are one card: one home for the figure.
+                InkRowPanel(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(16.dp)) {
+                        PanelLabel("READINGS")
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.Bottom,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                        ) {
+                            StatValue("%.1f".fmt(latest.valueCm), size = StatSize.Hero, unit = "cm")
+                            delta?.let {
+                                Text(
+                                    "${Ledger.signed(it, "cm")} \u00B7 30D",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontFamily = ChakraPetch,
+                                    color = IronvellumColors.InkMuted,
+                                    modifier = Modifier.padding(bottom = 4.dp),
+                                )
+                            }
+                        }
+                        Text(
+                            "Taken ${formatDate(latest.takenAtMs, "d MMM")}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = IronvellumColors.InkMuted,
+                        )
+                        if (chartEntries.size >= 2) {
+                            Spacer(Modifier.height(8.dp))
+                            val dates = chartEntries.map { Ledger.dateOf(it.takenAtMs, zone) }
+                            // Narrow band: a zero-based axis would flatten the line into nothing.
+                            TrendChart(
+                                chartEntries.map { it.valueCm },
+                                IronvellumColors.Emerald,
+                                fromZero = false,
+                                positions = Ledger.datePositions(dates),
+                                startLabel = formatDate(chartEntries.first().takenAtMs, "d MMM"),
+                                endLabel = formatDate(chartEntries.last().takenAtMs, "d MMM"),
+                                recordMarker = false,
+                                valueText = { "%.1f cm".fmt(it) },
+                                dateText = { formatDate(chartEntries[it].takenAtMs, "d MMM") },
+                            )
+                        } else {
+                            Text(
+                                "Two days of readings draw the line.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = IronvellumColors.InkMuted,
+                            )
+                        }
+                    }
+                    val shown = if (showAll) newestFirst else newestFirst.take(RECENT_ROWS)
+                    shown.forEach { entry ->
+                        InkDivider()
+                        ReadingRow(entry, onDelete = {
+                            lastDeleted = entry
+                            viewModel.delete(entry.id)
+                        })
+                    }
+                    if (newestFirst.size > RECENT_ROWS) {
+                        InkDivider()
+                        InkListRow(
+                            label = if (showAll) "Show fewer" else "Show all ${newestFirst.size} ${plural(newestFirst.size, "reading", "readings")}",
+                            value = null,
+                            onClick = { showAll = !showAll },
+                        )
+                    }
+                }
             }
             Spacer(Modifier.height(96.dp))
         }

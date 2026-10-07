@@ -95,8 +95,6 @@ internal fun ActivityTab(
         // have a burn estimate without it.
         if (!hasHealthData) {
             InkPanel(Modifier.fillMaxWidth()) {
-                PanelLabel("DAILY")
-                Spacer(Modifier.height(6.dp))
                 Text(
                     "Link Health Connect and your days fill in here.",
                     style = MaterialTheme.typography.titleSmall,
@@ -144,51 +142,30 @@ internal fun ActivityTab(
         // Slot i is the day i places from the oldest of the n shown.
         val slotDate: (Int) -> String = { shortDate(today.minusDays(n - 1L - it)) }
 
-        // Three numbers for today. Steps trail the watch, so they carry their age.
+        // Today's figures sit in each chart's header. Steps trail the watch, so theirs carries its age.
         val todaySteps = todayRow?.steps?.takeIf { it > 0 }
         val lastNight = todayRow?.sleepMinutes?.takeIf { it > 0 }
         val anyBurn = burns.any { it != null }
-        if (hasHealthData) InkPanel(Modifier.fillMaxWidth()) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(LedgerSpace.Panel)) {
-                TodayNumber(
-                    "STEPS",
-                    todaySteps?.let { fmtInt(it) } ?: "\u2014",
-                    if (todaySteps != null) stepsAsOfCaption(syncedAtMs, today) ?: "Health Connect" else "not synced today",
-                    Modifier.weight(1f),
-                )
-                TodayNumber(
-                    "SLEEP",
-                    lastNight?.let { Ledger.sleepText(it) } ?: "\u2014",
-                    if (lastNight != null) "last night" else "not synced today",
-                    Modifier.weight(1f),
-                )
-                TodayNumber(
-                    "ACTIVE KCAL",
-                    todayBurn?.let { fmtInt(it.kcal) } ?: "\u2014",
-                    todayBurn?.let { confidenceWord(it.confidence) } ?: "not synced today",
-                    Modifier.weight(1f),
-                )
-            }
-            Spacer(Modifier.height(4.dp))
-            InkDivider()
-            InkListRow(
-                label = "Resting heart rate",
-                value = avgHr?.let { "${it.value.toInt()} bpm" } ?: "\u2014",
-                supporting = avgHr?.let { "7-day average \u00B7 ${it.tracked} of ${it.of} days" } ?: "Health Connect has none yet",
-            )
+        // One range switch for every chart, in the header of the first card shown.
+        val firstCard = when {
+            hasHealthData -> DailyCard.STEPS
+            anyBurn -> DailyCard.KCAL
+            else -> null
         }
-
-        if (hasHealthData || anyBurn) {
+        val rangeSwitch: @Composable () -> Unit = {
             RangeChips(
                 options = DailyRange.entries.map { it to it.label },
                 selected = range,
                 onPick = { onRange(it.ordinal) },
-                modifier = Modifier.align(Alignment.End),
             )
         }
 
         if (hasHealthData) InkPanel(Modifier.fillMaxWidth()) {
-            PanelLabel("STEPS")
+            ChartHeader("STEPS", rangeSwitch.takeIf { firstCard == DailyCard.STEPS })
+            TodayFigure(
+                todaySteps?.let { fmtInt(it) } ?: "\u2014",
+                if (todaySteps != null) stepsAsOfCaption(syncedAtMs, today) ?: "Health Connect" else "not synced today",
+            )
             Text(
                 avgSteps?.let { "avg ${fmtInt(it.value.toInt())}/day \u00B7 ${it.tracked} of $n days, today excluded" }
                     ?: "no days tracked",
@@ -198,7 +175,10 @@ internal fun ActivityTab(
             Spacer(Modifier.height(8.dp))
             BarChart(
                 steps,
+                IronvellumColors.Ink,
                 goal = STEP_GOAL.toDouble(),
+                lastColor = IronvellumColors.Emerald,
+                emptyColor = IronvellumColors.Rune,
                 startLabel = startLabel,
                 endLabel = "today",
                 valueText = { "%,d steps".fmt(Math.round(it)) },
@@ -213,7 +193,8 @@ internal fun ActivityTab(
         }
 
         if (hasHealthData) InkPanel(Modifier.fillMaxWidth()) {
-            PanelLabel("SLEEP")
+            ChartHeader("SLEEP", null)
+            TodayFigure(lastNight?.let { Ledger.sleepText(it) } ?: "\u2014", if (lastNight != null) "last night" else "not synced today")
             Text(
                 avgSleep?.let { "avg ${Ledger.sleepText(it.value.toInt())} \u00B7 ${it.tracked} of $n nights" } ?: "no nights tracked",
                 style = MaterialTheme.typography.bodySmall,
@@ -222,7 +203,9 @@ internal fun ActivityTab(
             Spacer(Modifier.height(8.dp))
             BarChart(
                 sleep,
-                IronvellumColors.SystemGreen,
+                IronvellumColors.Ink,
+                lastColor = IronvellumColors.Emerald,
+                emptyColor = IronvellumColors.Rune,
                 startLabel = startLabel,
                 endLabel = "today",
                 valueText = { Ledger.sleepText(it.toInt()) },
@@ -231,7 +214,11 @@ internal fun ActivityTab(
         }
 
         if (anyBurn) InkPanel(Modifier.fillMaxWidth()) {
-            PanelLabel("ACTIVE KCAL")
+            ChartHeader("ACTIVE KCAL", rangeSwitch.takeIf { firstCard == DailyCard.KCAL })
+            TodayFigure(
+                todayBurn?.let { fmtInt(it.kcal) } ?: "\u2014",
+                todayBurn?.let { confidenceWord(it.confidence) } ?: "not synced today",
+            )
             val measured = burns.count { it?.confidence == EnergyConfidence.MEASURED }
             Text(
                 "${burns.count { it != null }} of $n days \u00B7 $measured measured, faded bars are estimates",
@@ -241,7 +228,10 @@ internal fun ActivityTab(
             Spacer(Modifier.height(8.dp))
             BarChart(
                 burns.map { it?.kcal?.toDouble() },
+                IronvellumColors.Ink,
                 faded = burns.map { it != null && it.confidence != EnergyConfidence.MEASURED },
+                lastColor = IronvellumColors.Emerald,
+                emptyColor = IronvellumColors.Rune,
                 startLabel = startLabel,
                 endLabel = "today",
                 valueText = { "%,d kcal".fmt(Math.round(it)) },
@@ -250,6 +240,14 @@ internal fun ActivityTab(
         }
 
         if (hasHealthData || anyBurn) InkRowPanel(Modifier.fillMaxWidth()) {
+            if (hasHealthData) {
+                InkListRow(
+                    label = "Resting heart rate",
+                    value = avgHr?.let { "${it.value.toInt()} bpm" } ?: "\u2014",
+                    supporting = avgHr?.let { "7-day average \u00B7 ${it.tracked} of ${it.of} days" } ?: "Health Connect has none yet",
+                )
+                InkDivider()
+            }
             InkListRow(
                 label = "How these are estimated",
                 value = null,
@@ -265,12 +263,28 @@ internal fun ActivityTab(
     }
 }
 
+private enum class DailyCard { STEPS, KCAL }
+
+/** A chart card's one caps label, with the range switch on its right when this is the first card. */
 @Composable
-private fun TodayNumber(label: String, value: String, caption: String, modifier: Modifier = Modifier) {
-    Column(modifier) {
-        PanelLabel(label)
+private fun ChartHeader(label: String, trailing: (@Composable () -> Unit)?) {
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+        PanelLabel(label, Modifier.weight(1f))
+        trailing?.invoke()
+    }
+}
+
+/** Today's figure with its caption, folded into the chart's header. */
+@Composable
+private fun TodayFigure(value: String, caption: String) {
+    Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         StatValue(value, size = StatSize.Inline)
-        Text(caption, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
+        Text(
+            caption,
+            style = MaterialTheme.typography.labelSmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.padding(bottom = 2.dp),
+        )
     }
 }
 
