@@ -13,7 +13,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.ui.components.InkSegmented
-import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.components.Term
 import com.ironvellum.app.ui.components.TermChip
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -29,26 +28,25 @@ internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Un
     val profile by viewModel.profile.collectAsStateWithLifecycle()
     val mode = profile?.trainingMode ?: TrainingMode.STRENGTH
     SettingsPage(SettingsSection.TRAINING_MODE.title, onBack) {
-        SettingsGroup(null, topSpace = 12.dp) {
-            InkSegmented(
-                options = TrainingMode.entries.map { it to it.label() },
-                selected = mode,
-                onPick = { viewModel.setMode(it) },
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                when (mode) {
-                    TrainingMode.STRENGTH -> "Clear all sets and load rises. Three stalls: deload."
-                    TrainingMode.HYPERTROPHY -> "Reps climb, then load. Three stalls: deload."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-            // One labelled chip per term, so each explainer says what it explains.
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                if (mode != TrainingMode.STRENGTH) TermChip(Term.DOUBLE_PROGRESSION)
-                TermChip(Term.DELOAD)
-            }
+        Spacer(Modifier.height(12.dp))
+        InkSegmented(
+            options = TrainingMode.entries.map { it to it.label() },
+            selected = mode,
+            onPick = { viewModel.setMode(it) },
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            when (mode) {
+                TrainingMode.STRENGTH -> "Clear all sets and load rises. Three stalls: deload."
+                TrainingMode.HYPERTROPHY -> "Reps climb, then load. Three stalls: deload."
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
+        // One labelled chip per term, so each explainer says what it explains.
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            if (mode != TrainingMode.STRENGTH) TermChip(Term.DOUBLE_PROGRESSION)
+            TermChip(Term.DELOAD)
         }
     }
 }

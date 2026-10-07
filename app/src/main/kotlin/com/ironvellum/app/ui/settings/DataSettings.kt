@@ -4,11 +4,10 @@ import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -21,10 +20,11 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.ironvellum.app.domain.WorkoutCsvWriter
+import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkSpinner
-import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.SettingsCaption
-import com.ironvellum.app.ui.components.SettingsGroup
 import com.ironvellum.app.ui.theme.IronvellumColors
 import java.io.File
 import kotlinx.coroutines.Dispatchers
@@ -32,8 +32,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 /**
- * Export and the two imports. Restoring an archive replaces everything, so it
- * sits in its own red panel below the safe actions and keeps its confirm.
+ * Export and the two imports, as rows in one panel. Restoring an archive replaces
+ * everything, so it is the last row, in red, and keeps its confirm.
  */
 @Composable
 internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
@@ -46,6 +46,11 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val scope = rememberCoroutineScope()
     // The archive picked and read, held until the lifter confirms the restore.
     var pendingArchive by remember { mutableStateOf<String?>(null) }
+    val exportTrials: (WorkoutCsvWriter.Period) -> Unit = { period ->
+        viewModel.exportCsv(period) { fileName, csv ->
+            scope.launch { shareExport(context, "Export trials", fileName, csv, "text/csv") }
+        }
+    }
 
     // Import replaces everything: the file is read first, so an empty or
     // unreadable one is reported before the destructive confirm, not after it.
@@ -94,54 +99,31 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     }
 
     SettingsPage(SettingsSection.DATA.title, onBack) {
-        SettingsGroup("EXPORT", topSpace = 12.dp) {
-            SettingsCaption("A full JSON archive of everything on this device.")
-            Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(12.dp))
+        InkRowPanel(Modifier.fillMaxWidth()) {
             if (exporting) {
-                InkSpinner()
+                InkSpinner(Modifier.padding(16.dp))
             } else {
-                IronvellumButton(
-                    label = "Export Archive",
+                ListRow(
+                    "Export archive",
+                    subline = "A full JSON archive of everything on this device.",
                     onClick = {
                         viewModel.exportJson { json ->
                             scope.launch { shareExport(context, "Export Ironvellum data", "ironvellum_export.json", json) }
                         }
                     },
-                    modifier = Modifier.fillMaxWidth(),
                 )
-                Spacer(Modifier.height(14.dp))
-                SettingsCaption("Trials as a CSV that spreadsheets and Strong can open.")
-                Spacer(Modifier.height(10.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    listOf(
-                        WorkoutCsvWriter.Period.WEEK to "Week",
-                        WorkoutCsvWriter.Period.MONTH to "Month",
-                        WorkoutCsvWriter.Period.YEAR to "Year",
-                    ).forEach { (period, label) ->
-                        IronvellumButton(
-                            label = label,
-                            onClick = {
-                                viewModel.exportCsv(period) { fileName, csv ->
-                                    scope.launch { shareExport(context, "Export trials", fileName, csv, "text/csv") }
-                                }
-                            },
-                            quiet = true,
-                            modifier = Modifier.weight(1f),
-                        )
-                    }
-                }
+                InkDivider()
+                ListRow("Export trials this week", onClick = { exportTrials(WorkoutCsvWriter.Period.WEEK) })
+                InkDivider()
+                ListRow("Export trials this month", onClick = { exportTrials(WorkoutCsvWriter.Period.MONTH) })
+                InkDivider()
+                ListRow("Export trials this year", onClick = { exportTrials(WorkoutCsvWriter.Period.YEAR) })
             }
-            exportError?.let {
-                Spacer(Modifier.height(6.dp))
-                SettingsCaption(it, color = IronvellumColors.DangerRed)
-            }
-        }
-
-        SettingsGroup("IMPORT") {
-            SettingsCaption("Adds trials from a Strong or Hevy CSV export.")
-            Spacer(Modifier.height(10.dp))
-            IronvellumButton(
-                label = "Import From Another App",
+            InkDivider()
+            ListRow(
+                "Import from another app",
+                subline = "Adds trials from a Strong or Hevy CSV export.",
                 onClick = {
                     csvLauncher.launch(
                         arrayOf(
@@ -154,33 +136,31 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                         ),
                     )
                 },
-                quiet = true,
-                modifier = Modifier.fillMaxWidth(),
             )
-        }
-
-        SettingsGroup("RESTORE", topSpace = 28.dp) {
-            SettingsCaption("Replaces all data on this device with an archive.", color = IronvellumColors.DangerRed)
-            Spacer(Modifier.height(10.dp))
+            InkDivider()
             if (importUi.importing) {
-                InkSpinner()
+                InkSpinner(Modifier.padding(16.dp))
             } else {
-                IronvellumButton(
-                    label = "Import Archive",
-                    onClick = { importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) },
-                    danger = true,
-                    enabled = !exporting,
-                    modifier = Modifier.fillMaxWidth(),
+                // Restore is the one destructive row: last, red, and behind its confirm.
+                ListRow(
+                    "Restore from a file",
+                    subline = "Replaces all data on this device with an archive.",
+                    sublineColor = IronvellumColors.DangerRed,
+                    onClick = if (exporting) null else ({ importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) }),
                 )
             }
-            importUi.summary?.let {
-                Spacer(Modifier.height(6.dp))
-                SettingsCaption(it)
-            }
-            importUi.problems?.let {
-                Spacer(Modifier.height(4.dp))
-                SettingsCaption(it)
-            }
+        }
+        exportError?.let {
+            Spacer(Modifier.height(8.dp))
+            SettingsCaption(it, color = IronvellumColors.DangerRed)
+        }
+        importUi.summary?.let {
+            Spacer(Modifier.height(8.dp))
+            SettingsCaption(it)
+        }
+        importUi.problems?.let {
+            Spacer(Modifier.height(4.dp))
+            SettingsCaption(it)
         }
     }
 

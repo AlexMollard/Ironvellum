@@ -60,7 +60,7 @@ internal fun HealthConnectSettings(viewModel: SettingsViewModel, onBack: () -> U
                 Spacer(Modifier.height(8.dp))
                 Reading(
                     buildString {
-                        append("⏱ ${snapshot.stepsToday} steps today")
+                        append("${snapshot.stepsToday} steps today")
                         // Samsung Health batches its pushes: without the "as of"
                         // the count just looks wrong against the phone's tally.
                         snapshot.stepsAsOfMs?.let { append(" (as of ${formatDate(it, "HH:mm")})") }
@@ -95,7 +95,7 @@ private fun Reading(text: String) {
         text,
         style = MaterialTheme.typography.labelMedium,
         fontFamily = ChakraPetch,
-        color = IronvellumColors.SystemGreen,
+        color = IronvellumColors.InkMuted,
     )
 }
 

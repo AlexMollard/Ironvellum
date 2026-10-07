@@ -43,13 +43,13 @@ fun SettingsGroup(
     else InkPanel(modifier.fillMaxWidth(), contentPadding = contentPadding, content = content)
 }
 
-/** One tappable settings row, at least 48dp tall. */
+/** One tappable settings row, at least [ListRowHeight] tall. */
 @Composable
 fun TapRow(onClickLabel: String, onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .heightIn(min = 48.dp)
+            .heightIn(min = ListRowHeight)
             .clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick)
             .padding(LocalRowPadding.current),
         verticalAlignment = Alignment.CenterVertically,
@@ -63,7 +63,6 @@ fun TapRow(onClickLabel: String, onClick: () -> Unit, content: @Composable RowSc
 fun SettingsValueRow(label: String, value: String?, onClick: () -> Unit) {
     ListRow(
         label,
-        modifier = Modifier.heightIn(min = 56.dp),
         value = value,
         onClickLabel = "Open $label",
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
