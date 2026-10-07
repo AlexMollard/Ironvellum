@@ -26,7 +26,7 @@ import androidx.compose.material.icons.outlined.Public
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material.icons.outlined.Visibility
-import androidx.compose.material3.IconButton
+import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -786,7 +786,7 @@ private fun PasswordField(
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         visualTransformation = if (shown) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
-            IconButton(onClick = onToggleShown) {
+            InkIconButton(onClick = onToggleShown) {
                 Icon(
                     if (shown) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
                     contentDescription = if (shown) "Hide password" else "Show password",
@@ -890,7 +890,7 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
             isMe = true,
             titleId = titleId,
             trailing = {
-                IconButton(onClick = onOpenAccount, modifier = Modifier.size(48.dp)) {
+                InkIconButton(onClick = onOpenAccount, modifier = Modifier.size(48.dp)) {
                     Icon(
                         Icons.Outlined.Settings,
                         contentDescription = "Account settings",

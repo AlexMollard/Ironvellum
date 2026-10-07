@@ -26,7 +26,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.material.icons.outlined.Edit
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -262,7 +262,7 @@ fun WorkoutDetailScreen(
             actions = {
                 ui.session?.takeIf { draft == null }?.let { session ->
                     if (session.completedAtMs != null && ui.sets.isNotEmpty()) {
-                        IconButton(onClick = viewModel::startAmend) {
+                        InkIconButton(onClick = viewModel::startAmend) {
                             Icon(
                                 Icons.Outlined.Edit,
                                 contentDescription = "Amend this trial",
@@ -270,7 +270,7 @@ fun WorkoutDetailScreen(
                             )
                         }
                     }
-                    IconButton(onClick = {
+                    InkIconButton(onClick = {
                         shareText = WorkoutShare.format(session, ui.sets, ui.exercises)
                     }) {
                         Icon(

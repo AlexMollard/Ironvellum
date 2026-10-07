@@ -33,7 +33,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import com.ironvellum.app.ui.components.InkOutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -319,7 +319,7 @@ fun PresetEditorScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
                     chunk.forEach { (day, label) ->
                         val selected = ui.scheduledDay == day
-                        OutlinedButton(
+                        InkOutlinedButton(
                             // Material's button shape is a stadium; the theme's is drawn.
                             shape = MaterialTheme.shapes.small,
                             onClick = { viewModel.setScheduledDay(day) },
@@ -454,7 +454,7 @@ private fun EntryRow(
             // Shoulder Press") pushed the remove button off the card and
             // squashed the arrows.
             Box(Modifier.weight(1f)) {
-                OutlinedButton(
+                InkOutlinedButton(
                     onClick = { expanded = true },
                     shape = MaterialTheme.shapes.small,
                     contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),

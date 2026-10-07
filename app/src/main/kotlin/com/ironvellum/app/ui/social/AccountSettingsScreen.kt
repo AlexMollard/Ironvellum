@@ -109,7 +109,7 @@ fun AccountSettingsScreen(
         Spacer(Modifier.height(20.dp))
         PushedHeader("ACCOUNT", onBack)
 
-        SettingsGroup("PROFILE") {
+        SettingsGroup("PROFILE", rows = true) {
             TapRow(onClickLabel = "Edit true name", onClick = { editingName = true }) {
                 Column(Modifier.weight(1f)) {
                     Text(
@@ -138,23 +138,25 @@ fun AccountSettingsScreen(
                     letterSpacing = IronvellumTracking.InlineLabel,
                 )
             }
-            Spacer(Modifier.height(12.dp))
-            // Wire values stay public/friends/private; only the labels say ALLIES.
-            InkSegmented(
-                options = listOf("public" to "PUBLIC", "friends" to "ALLIES", "private" to "PRIVATE"),
-                selected = acct.visibility,
-                onPick = viewModel::setVisibility,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                when (acct.visibility) {
-                    "public" -> "Every Ironbound can read your trials."
-                    "friends" -> "Only your allies can read your trials."
-                    else -> "No one but you can read your trials."
-                },
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Spacer(Modifier.height(12.dp))
+                // Wire values stay public/friends/private; only the labels say ALLIES.
+                InkSegmented(
+                    options = listOf("public" to "PUBLIC", "friends" to "ALLIES", "private" to "PRIVATE"),
+                    selected = acct.visibility,
+                    onPick = viewModel::setVisibility,
+                )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    when (acct.visibility) {
+                        "public" -> "Every Ironbound can read your trials."
+                        "friends" -> "Only your allies can read your trials."
+                        else -> "No one but you can read your trials."
+                    },
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
         }
 
         SettingsGroup("CLOUD") {
@@ -198,68 +200,72 @@ fun AccountSettingsScreen(
             }
         }
 
-        SettingsGroup("BACKUP") {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(Modifier.weight(1f)) {
+        SettingsGroup("BACKUP", rows = true) {
+            Column(Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text(
+                            "Cloud backup",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontFamily = ChakraPetch,
+                            color = IronvellumColors.Ink,
+                        )
+                        // Freshness must be visible without tapping anything: a
+                        // lifter has to tell at a glance whether they are protected.
+                        Text(
+                            ui.lastBackup?.let {
+                                DateFormat.getDateTimeInstance().format(Date(it.atMs)) + " · " + formatBytes(it.bytes)
+                            } ?: "No backup yet",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = if (ui.lastBackup != null) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
+                        )
+                    }
+                    IronvellumButton(label = "Back up", onClick = viewModel::backUpNow, enabled = !ui.busy)
+                }
+                // Next to the button that failed: a refused backup elsewhere on the
+                // screen read as a button that simply did nothing.
+                ui.backupError?.let {
+                    Spacer(Modifier.height(6.dp))
                     Text(
-                        "Cloud backup",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.Ink,
-                    )
-                    // Freshness must be visible without tapping anything: a
-                    // lifter has to tell at a glance whether they are protected.
-                    Text(
-                        ui.lastBackup?.let {
-                            DateFormat.getDateTimeInstance().format(Date(it.atMs)) + " · " + formatBytes(it.bytes)
-                        } ?: "No backup yet",
+                        it,
                         style = MaterialTheme.typography.labelMedium,
-                        color = if (ui.lastBackup != null) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.DangerRed,
                     )
                 }
-                IronvellumButton(label = "Back up", onClick = viewModel::backUpNow, enabled = !ui.busy)
+                Spacer(Modifier.height(8.dp))
             }
-            // Next to the button that failed: a refused backup elsewhere on the
-            // screen read as a button that simply did nothing.
-            ui.backupError?.let {
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    it,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.DangerRed,
-                )
-            }
-            Spacer(Modifier.height(8.dp))
             // Same inline-confirm treatment as the account delete below: the
             // destructive step names exactly what it replaces before it runs.
             var confirmRestore by remember { mutableStateOf(false) }
             if (confirmRestore) {
-                Text(
-                    "This replaces EVERYTHING logged on this phone — trials, " +
-                        "titles, techniques and readings — with the cloud " +
-                        "archive. Anything not in that archive is lost for good.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.DangerRed,
-                )
-                Spacer(Modifier.height(8.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    IronvellumButton(
-                        label = "Replace my data",
-                        onClick = {
-                            confirmRestore = false
-                            viewModel.restoreFromCloud()
-                        },
-                        enabled = !ui.busy,
-                        modifier = Modifier.weight(1f),
-                        danger = true,
+                Column(Modifier.padding(16.dp)) {
+                    Text(
+                        "This replaces EVERYTHING logged on this phone — trials, " +
+                            "titles, techniques and readings — with the cloud " +
+                            "archive. Anything not in that archive is lost for good.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.DangerRed,
                     )
-                    IronvellumButton(
-                        label = "Keep mine",
-                        onClick = { confirmRestore = false },
-                        enabled = !ui.busy,
-                        quiet = true,
-                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        IronvellumButton(
+                            label = "Replace my data",
+                            onClick = {
+                                confirmRestore = false
+                                viewModel.restoreFromCloud()
+                            },
+                            enabled = !ui.busy,
+                            modifier = Modifier.weight(1f),
+                            danger = true,
+                        )
+                        IronvellumButton(
+                            label = "Keep mine",
+                            onClick = { confirmRestore = false },
+                            enabled = !ui.busy,
+                            quiet = true,
+                        )
+                    }
                 }
             } else {
                 TapRow(onClickLabel = "Restore from cloud", onClick = { confirmRestore = true }) {
@@ -278,18 +284,20 @@ fun AccountSettingsScreen(
                 }
             }
             ui.lastRestore?.let { outcome ->
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    buildString {
-                        append("Restored ${outcome.sessions} ${plural(outcome.sessions, "trial", "trials")} · ")
-                        append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
-                        append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
-                        if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
-                    },
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    color = if (outcome.problems.isEmpty()) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
-                )
+                Column(Modifier.padding(16.dp)) {
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        buildString {
+                            append("Restored ${outcome.sessions} ${plural(outcome.sessions, "trial", "trials")} · ")
+                            append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
+                            append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
+                            if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
+                        },
+                        style = MaterialTheme.typography.labelMedium,
+                        fontFamily = ChakraPetch,
+                        color = if (outcome.problems.isEmpty()) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
+                    )
+                }
             }
         }
 
@@ -338,7 +346,7 @@ fun AccountSettingsScreen(
             }
         }
 
-        SettingsGroup("PRIVACY") {
+        SettingsGroup("PRIVACY", rows = true) {
             var showBlocked by remember { mutableStateOf(false) }
             TapRow(
                 onClickLabel = if (showBlocked) "Hide blocked Ironbound" else "Show blocked Ironbound",
@@ -363,15 +371,17 @@ fun AccountSettingsScreen(
                     tint = IronvellumColors.InkMuted,
                 )
             }
-            if (showBlocked) {
-                BlockedList(ui.blocked, viewModel::unblock)
+            Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                if (showBlocked) {
+                    BlockedList(ui.blocked, viewModel::unblock)
+                }
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    "Readings and private notes never leave this device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
             }
-            Spacer(Modifier.height(10.dp))
-            Text(
-                "Readings and private notes never leave this device.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
         }
 
         Spacer(Modifier.height(24.dp))

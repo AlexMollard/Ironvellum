@@ -17,7 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -148,7 +148,7 @@ internal fun TrainingCalendar(
 
         // Month navigation on its own row: the month name never competes with a heading for width.
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { onMonth(-1) }) {
+            InkIconButton(onClick = { onMonth(-1) }) {
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowLeft,
                     contentDescription = "Previous month",
@@ -165,7 +165,7 @@ internal fun TrainingCalendar(
             )
             // Unbounded, the arrow paged into empty future months forever.
             val canAdvance = month < YearMonth.from(today)
-            IconButton(onClick = { onMonth(1) }, enabled = canAdvance) {
+            InkIconButton(onClick = { onMonth(1) }, enabled = canAdvance) {
                 Icon(
                     Icons.AutoMirrored.Filled.KeyboardArrowRight,
                     contentDescription = if (canAdvance) "Next month" else "Next month, already at the current month",

@@ -26,7 +26,7 @@ import com.ironvellum.app.domain.Measurements
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkListRow
-import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.LedgerSpace
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.formatDate
@@ -55,7 +55,7 @@ internal fun TapePage(
             verticalArrangement = Arrangement.spacedBy(LedgerSpace.Panel),
         ) {
             Spacer(Modifier.height(LedgerSpace.Panel))
-            InkPanel(Modifier.fillMaxWidth()) {
+            InkRowPanel(Modifier.fillMaxWidth()) {
                 MeasurementSite.entries.forEachIndexed { i, site ->
                     if (i > 0) InkDivider()
                     val reading = latest[site]

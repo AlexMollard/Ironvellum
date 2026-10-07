@@ -70,6 +70,7 @@ import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.RoutineCode
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.program.CoverageGoal
 import com.ironvellum.app.ui.program.coverageGaps
@@ -304,16 +305,16 @@ fun PresetsScreen(
             }
             // Each rite is one line, the whole of it one tap away on its page,
             // where it is begun; today's is begun from Today.
-            InkPanel(Modifier.fillMaxWidth()) {
+            InkRowPanel(Modifier.fillMaxWidth()) {
                 ui.presets.forEach { preset ->
                     val sealed = sealedThisWeek(preset)
                     val isToday = preset.scheduledDay == today
                     Row(
                         Modifier
                             .fillMaxWidth()
-                            .clip(MaterialTheme.shapes.extraSmall)
                             .clickable(onClickLabel = "Open ${preset.name}") { onOpenRite(preset.id) }
-                            .heightIn(min = ROW_HEIGHT),
+                            .heightIn(min = ROW_HEIGHT)
+                            .padding(horizontal = 16.dp, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
@@ -372,7 +373,7 @@ fun PresetsScreen(
             val gaps = coverageGaps(volume, CoverageGoal(ui.tier, ui.focus, ui.priorities)).size
             // The ways out: what the cycle covers, the catalogue, the record. Rows
             // rather than buttons, so nothing here competes with Begin.
-            InkPanel(Modifier.fillMaxWidth()) {
+            InkRowPanel(Modifier.fillMaxWidth()) {
                 WayOutRow(
                     icon = Icons.Outlined.AccessibilityNew,
                     label = "Weekly coverage",
@@ -408,7 +409,7 @@ fun PresetsScreen(
                     // Named for where it goes: "All" alone says nothing to a screen reader.
                     InkChip("All", "Open", description = "Full chronicle", onClick = onOpenLog)
                 }
-                InkPanel(Modifier.fillMaxWidth()) {
+                InkRowPanel(Modifier.fillMaxWidth()) {
                     trials.forEach { (trial, sets) ->
                         if (trial != trials.first().first) InkDivider()
                         TrialRow(trial, sets) { onOpenWorkout(trial.id) }
@@ -492,9 +493,9 @@ private fun TrialRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .clip(MaterialTheme.shapes.extraSmall)
             .clickable(onClickLabel = "Open ${trial.label}", onClick = onOpen)
-            .heightIn(min = TRIAL_ROW_HEIGHT),
+            .heightIn(min = TRIAL_ROW_HEIGHT)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {

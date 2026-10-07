@@ -201,7 +201,7 @@ private fun DeedsHome(
         }
 
         item(key = "worn") {
-            SettingsGroup(label = null, topSpace = LedgerSpace.Panel) {
+            SettingsGroup(label = null, topSpace = LedgerSpace.Panel, rows = true) {
                 when {
                     worn != null -> TapRow(
                         onClickLabel = "Open ${worn.name}",
@@ -236,7 +236,7 @@ private fun DeedsHome(
                         )
                         Chevron()
                     }
-                    else -> Row(Modifier.heightIn(min = LedgerSpace.Target), verticalAlignment = Alignment.CenterVertically) {
+                    else -> Row(Modifier.heightIn(min = LedgerSpace.Target).padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                         Text(
                             "No title worn yet. Earn a deed and its title is yours to wear.",
                             style = MaterialTheme.typography.bodySmall,
