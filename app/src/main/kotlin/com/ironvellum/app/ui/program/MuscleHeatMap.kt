@@ -74,7 +74,7 @@ private fun levelColor(level: CoverageLevel): Color = when (level) {
 }
 
 /**
- * Opacity of the grey for a muscle under its range. Shortfall is never
+ * Opacity of the emerald for a muscle under its range. Shortfall is never
  * shown as a warning colour: the fill simply strengthens toward the full
  * opacity as the week approaches the target, so 11.5 of 12 sets reads almost
  * done and 2 of 12 reads faint but still present. The floor keeps it apart
@@ -90,7 +90,7 @@ private const val FULL_ALPHA = 0.9f
 private const val UNDER_FLOOR_ALPHA = 0.3f
 
 /**
- * The fill for one tracked muscle. Under target the grey strengthens with
+ * The fill for one tracked muscle. Under target the emerald strengthens with
  * progress toward the range (see [underAlpha]), which is what makes the
  * figure a heat map rather than a few flat colours.
  */
@@ -234,7 +234,7 @@ fun ExerciseMuscleMap(
 }
 
 /**
- * Opacity of a muscle's grey on a rite's figure: [sets] relative to the most
+ * Opacity of a muscle's emerald on a rite's figure: [sets] relative to the most
  * worked muscle in that rite ([top]). A rite is a fraction of a week, so this
  * is a share of the rite, never a verdict against the weekly range.
  */
@@ -244,7 +244,7 @@ fun riteAlpha(sets: Double, top: Double): Float {
 }
 
 /**
- * The same front and back figure, filled by what ONE rite works: the grey
+ * The same front and back figure, filled by what ONE rite works: the emerald
  * strengthens with the sets the rite gives a muscle, relative to its most worked
  * muscle, and untouched muscles stay bare.
  */
