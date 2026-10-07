@@ -21,7 +21,7 @@ class BackupRulesTest {
     private val sources = File("src/main/kotlin")
 
     /** Meaningless, or actively wrong, without the database beside it. */
-    private val dbDependent = setOf("onboarding", "program_answers", "reminders", "inbox_notifier", "warband_payout", "circle_payout", "rank_state")
+    private val dbDependent = setOf("onboarding", "program_answers", "reminders", "warmup", "inbox_notifier", "warband_payout", "circle_payout", "rank_state")
 
     /** Safe to restore alone: appearance, a custom backend URL/key or a seen-this-hint flag, not training state. */
     private val restorable = setOf("cloud_config", "info_sheet_hints", "appearance")

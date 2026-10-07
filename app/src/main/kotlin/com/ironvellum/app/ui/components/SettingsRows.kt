@@ -11,6 +11,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -68,6 +72,40 @@ fun SettingsValueRow(label: String, value: String?, onClick: () -> Unit) {
         contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
         onClick = onClick,
     )
+}
+
+/**
+ * A setting with one switch. The whole row is the switch, so TalkBack reads the
+ * label and the state together; [caption] says what turning it on changes.
+ */
+@Composable
+fun SettingsSwitchRow(label: String, caption: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = ListRowHeight)
+            .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+            SettingsCaption(caption)
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = null,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = IronvellumColors.Abyss,
+                checkedTrackColor = IronvellumColors.Emerald,
+                checkedBorderColor = IronvellumColors.Emerald,
+                uncheckedThumbColor = IronvellumColors.InkMuted,
+                uncheckedTrackColor = IronvellumColors.Rune,
+                uncheckedBorderColor = IronvellumColors.Rune,
+            ),
+        )
+    }
 }
 
 /** The one-line explanation under a setting: what it changes, nothing more. */

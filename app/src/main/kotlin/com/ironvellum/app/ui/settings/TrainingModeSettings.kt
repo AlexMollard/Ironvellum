@@ -7,11 +7,17 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.data.WarmupStore
 import com.ironvellum.app.domain.TrainingMode
+import com.ironvellum.app.ui.components.SettingsSwitchRow
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.Term
 import com.ironvellum.app.ui.components.TermChip
@@ -48,5 +54,17 @@ internal fun TrainingModeSettings(viewModel: SettingsViewModel, onBack: () -> Un
             if (mode != TrainingMode.STRENGTH) TermChip(Term.DOUBLE_PROGRESSION)
             TermChip(Term.DELOAD)
         }
+        Spacer(Modifier.height(16.dp))
+        val context = LocalContext.current
+        var warmupOn by remember { mutableStateOf(WarmupStore(context).enabled) }
+        SettingsSwitchRow(
+            label = "Warm-up reminder",
+            caption = "Before your first set, a reminder for 5 minutes of easy cardio and mobility for the trial's muscles.",
+            checked = warmupOn,
+            onCheckedChange = {
+                warmupOn = it
+                WarmupStore(context).enabled = it
+            },
+        )
     }
 }

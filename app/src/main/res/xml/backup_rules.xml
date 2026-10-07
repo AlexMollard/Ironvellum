@@ -20,6 +20,8 @@
     <exclude domain="sharedpref" path="onboarding.xml" />
     <exclude domain="sharedpref" path="program_answers.xml" />
     <exclude domain="sharedpref" path="reminders.xml" />
+    <!-- The warm-up answer names a trial id, which means nothing in a fresh database. -->
+    <exclude domain="sharedpref" path="warmup.xml" />
     <!-- The notify mark and first-ask flag belong to this install's account and permission state. -->
     <exclude domain="sharedpref" path="inbox_notifier.xml" />
     <!-- Paid-circle-week flags are meaningless, and double-paying-adjacent, without the database. -->
