@@ -584,7 +584,7 @@ private fun CircleRoster(
                 letterSpacing = IronvellumTracking.InlineLabel,
                 modifier = Modifier.weight(1f),
             )
-            RowAction("COPY", IronvellumColors.SystemGreen, contentDescription = "Copy the circle code") {
+            RowAction("Copy", IronvellumColors.SystemGreen, contentDescription = "Copy the circle code") {
                 scope.launch {
                     clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Ironvellum circle code", circle.code)))
                 }
@@ -593,7 +593,7 @@ private fun CircleRoster(
                     Toast.makeText(context, "Circle code copied", Toast.LENGTH_SHORT).show()
                 }
             }
-            RowAction("SHARE", IronvellumColors.SystemGreen, contentDescription = "Share the circle code") {
+            RowAction("Share", IronvellumColors.SystemGreen, contentDescription = "Share the circle code") {
                 val intent = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(
@@ -606,8 +606,8 @@ private fun CircleRoster(
         }
         if (isOwner) {
             Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                RowAction("RENAME", IronvellumColors.SystemGreen, contentDescription = "Rename the circle", onClick = onRename)
-                RowAction("NEW CODE", IronvellumColors.SystemGreen, contentDescription = "Make a new circle code", onClick = onRotate)
+                RowAction("Rename", IronvellumColors.SystemGreen, contentDescription = "Rename the circle", onClick = onRename)
+                RowAction("New code", IronvellumColors.SystemGreen, contentDescription = "Make a new circle code", onClick = onRotate)
             }
         }
         Spacer(Modifier.height(8.dp))
@@ -713,7 +713,7 @@ private fun CircleMemberRow(
             }
             onRemove?.let {
                 RowAction(
-                    "REMOVE",
+                    "Remove",
                     IronvellumColors.DangerRed,
                     contentDescription = "Remove ${member.displayName} from the circle",
                     onClick = it,

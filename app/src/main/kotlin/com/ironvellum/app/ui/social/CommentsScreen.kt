@@ -42,6 +42,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -804,8 +805,8 @@ private fun CommentRow(
                 maxLines = 1,
                 modifier = Modifier.weight(1f),
             )
-            if (canReport) RowAction("REPORT", IronvellumColors.InkMuted, onClick = onReport)
-            if (canDelete) RowAction("DELETE", IronvellumColors.DangerRed, onClick = onDelete)
+            if (canReport) RowAction("Report", IronvellumColors.SystemGreen, onClick = onReport)
+            if (canDelete) RowAction("Delete", IronvellumColors.DangerRed, onClick = onDelete)
         }
         Text(
             comment.body,
@@ -816,9 +817,10 @@ private fun CommentRow(
 }
 
 /**
- * A small text action on a row: a 48dp target, visually a label, never a slab.
+ * A text link on a row: sentence case, `labelLarge` at 0.5sp, a 48dp target, never a slab.
+ * [tint] is SystemGreen, or DangerRed for a destructive action.
  * [contentDescription] is what a screen reader says in place of the bare label,
- * for a row that repeats it ("REMOVE" on every member): name what it acts on.
+ * for a row that repeats it ("Remove" on every member): name what it acts on.
  */
 @Composable
 internal fun RowAction(
@@ -829,11 +831,11 @@ internal fun RowAction(
 ) {
     Text(
         label,
-        style = MaterialTheme.typography.labelSmall,
+        style = MaterialTheme.typography.labelLarge,
         fontFamily = ChakraPetch,
         fontWeight = FontWeight.SemiBold,
         color = tint,
-        letterSpacing = IronvellumTracking.InlineLabel,
+        letterSpacing = 0.5.sp,
         textAlign = TextAlign.Center,
         maxLines = 1,
         softWrap = false,
