@@ -1,753 +1,373 @@
 package com.ironvellum.app.ui.components
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.clipRect
-import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ironvellum.app.domain.ArmyClass
+import com.ironvellum.app.domain.Reward
+import com.ironvellum.app.domain.RewardRarity
+import com.ironvellum.app.domain.RollResult
 import com.ironvellum.app.domain.Sex
+import com.ironvellum.app.domain.SkillClaimResult
+import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.domain.TitleDef
-import com.ironvellum.app.domain.TitleRarity
+import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.IronvellumTracking
-import com.ironvellum.app.ui.theme.inkArc
-import com.ironvellum.app.ui.theme.inkBorder
-import com.ironvellum.app.ui.theme.inkDot
-import com.ironvellum.app.ui.theme.inkStroke
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import java.util.Locale
-import kotlin.math.sin
-import kotlin.random.Random
 
 /**
- * How the Ledger writes a moment down. The four rarities escalate the writing
- * (a seal, a bleed, gold leaf) but not the colour: rarity is a word in InkMuted,
- * and gold is spent only on a Masterwork. A level has a page of its own that
- * turns, amending the name when it crosses a tier.
+ * One full-screen moment the celebration host can show. Each is one step page; the
+ * host numbers them ("1 of 3") and ends every one in the same dock.
  */
-enum class Reveal(val ink: Color, internal val millis: Int) {
-    Common(IronvellumColors.InkMuted, 1_100),
-    Rare(IronvellumColors.InkMuted, 1_700),
-    Fabled(IronvellumColors.InkMuted, 1_900),
-    Masterwork(IronvellumColors.SovereignGold, 2_300),
-    LevelUp(IronvellumColors.Emerald, 1_300),
-    ;
+internal sealed interface CelebrationPage {
 
-    internal val sealed: Boolean get() = this == Rare || this == Fabled || this == Masterwork
+    /** A level gained. [inscriptionWaiting] adds the one line saying a draw was earned with it. */
+    data class Level(val levelUp: LevelUp, val inscriptionWaiting: Boolean = false) : CelebrationPage
+
+    /** Every deed earned together, as one page. Several share it as a list. */
+    data class Deeds(val deeds: List<TitleDef>, val sex: Sex) : CelebrationPage
+
+    /** A technique claimed, with the names of the techniques it opened. */
+    data class TechniqueMastered(
+        val name: String,
+        val tier: String,
+        val path: String,
+        val xp: Int,
+        val opened: List<String> = emptyList(),
+    ) : CelebrationPage
+
+    /** A reward drawn beyond the Veil. [sigilSeed] is set for a relic only. */
+    data class Inscribed(
+        val rarity: RewardRarity,
+        val name: String,
+        val sigilSeed: String? = null,
+        val notes: List<String> = emptyList(),
+    ) : CelebrationPage
+
+    /** A circle's weekly goal met, and the XP its member's share paid. */
+    data class GoalMet(val name: String, val xp: Int) : CelebrationPage
 }
 
-fun TitleRarity.reveal(): Reveal = when (this) {
-    TitleRarity.Common -> Reveal.Common
-    TitleRarity.Rare -> Reveal.Rare
-    TitleRarity.Epic -> Reveal.Fabled
-    TitleRarity.Masterwork -> Reveal.Masterwork
-}
+/** The deeds page for [deeds] that have a name to show; nothing when none do. */
+internal fun deedPages(deeds: List<TitleDef>, sex: Sex): List<CelebrationPage> =
+    deeds.filter { it.name.isNotBlank() }
+        .takeIf { it.isNotEmpty() }
+        ?.let { listOf(CelebrationPage.Deeds(it, sex)) }
+        .orEmpty()
 
-/** Anything worth a full-screen moment: deeds, techniques, levels, inscriptions. */
-data class Achievement(
-    val banner: String,
-    val name: String,
-    /** The small line above the name: a rarity, a tier, "LEVEL". */
-    val tagline: String = "",
-    val subtitle: String = "",
-    val xp: Int? = null,
-    val notes: List<String> = emptyList(),
-    /** Overrides the reveal's own ink; null keeps it. */
-    val accent: Color? = null,
-    /**
-     * Seed for procedurally generated art shown above the name. Relics have
-     * continuous values, so their art cannot ship as an asset — it is composed
-     * from this seed instead. Null = a text-only moment.
-     */
-    val sigilSeed: String? = null,
-    val reveal: Reveal = Reveal.Rare,
-    /** The Ledger's line under the banner, in its own voice. */
-    val narrator: String = "",
-    /** A deed's title, which the reveal offers to wear. */
-    val titleId: String? = null,
-    /** What this replaces: the old level. */
-    val from: String? = null,
-    /** A level that crosses a tier: the old ascension and the new, on the same page. */
-    val ascension: Pair<String, String>? = null,
-)
-
-/** The one way a deed is announced, wherever it was earned. */
-fun deedAchievement(def: TitleDef, sex: Sex): Achievement = Achievement(
-    banner = "DEED EARNED",
-    name = def.name,
-    tagline = def.rarity.label.uppercase(),
-    subtitle = def.describeFor(sex).uppercase(),
-    reveal = def.rarity.reveal(),
-    narrator = if (def.rarity == TitleRarity.Masterwork) "THE LEDGER GILDS ITS PAGE" else "THE LEDGER RECORDS A DEED",
-    titleId = def.id,
-)
+/** The level a claim reached, or null when it stayed on the same one. */
+internal fun levelUpOf(result: SkillClaimResult): LevelUp? =
+    if (result.levelAfter <= result.levelBefore) {
+        null
+    } else {
+        LevelUp(
+            levelBefore = result.levelBefore,
+            levelAfter = result.levelAfter,
+            classBefore = ArmyClass.forLevel(result.levelBefore).title,
+            classAfter = ArmyClass.forLevel(result.levelAfter).title,
+            totalXp = result.totalXp,
+            xpAwarded = result.xpAwarded,
+        )
+    }
 
 /**
- * Ascension is a band of levels, so a level that crosses a tier announces it
- * on its own page rather than as a second moment.
+ * What claiming a technique tells, in order: the technique, then the level it
+ * reached (every level earns an inscription), then any deeds it earned.
  */
-fun levelUpAchievement(levelBefore: Int, levelAfter: Int, totalXp: Long): Achievement {
-    val tierBefore = ArmyClass.forLevel(levelBefore).title
-    val tierAfter = ArmyClass.forLevel(levelAfter).title
-    val ascends = tierAfter != tierBefore
-    return Achievement(
-        banner = "LEVEL UP",
-        name = "$levelAfter",
-        tagline = "LEVEL",
-        subtitle = String.format(Locale.ENGLISH, "%,d XP TOTAL", totalXp),
-        reveal = Reveal.LevelUp,
-        narrator = if (ascends) "THE LEDGER AMENDS YOUR NAME" else "THE LEDGER TURNS A PAGE",
-        from = "$levelBefore",
-        ascension = (tierBefore to tierAfter).takeIf { ascends },
+internal fun techniquePages(result: SkillClaimResult, sex: Sex): List<CelebrationPage> = buildList {
+    add(
+        CelebrationPage.TechniqueMastered(
+            name = result.skill.name,
+            tier = Skills.tierLabel(result.skill.tier),
+            path = "${result.skill.line} path",
+            xp = result.xpAwarded,
+            opened = result.unlockedNext.map { it.name },
+        ),
+    )
+    levelUpOf(result)?.let { add(CelebrationPage.Level(it, inscriptionWaiting = true)) }
+    addAll(deedPages(result.newTitles, sex))
+}
+
+/** The rarity as the glossary names it: Epic reads as Fabled. */
+internal fun rarityWord(rarity: RewardRarity): String = if (rarity == RewardRarity.Epic) "Fabled" else rarity.name
+
+/** An inscription's draw as a page: its name, rarity, relic art and what it did. */
+internal fun inscribedPage(result: RollResult): CelebrationPage.Inscribed {
+    val notes = when (val reward = result.reward) {
+        is Reward.Figures -> listOf("Added to the Veil")
+        is Reward.Relic -> listOf("Rate multiplier ×%.2f".fmt(reward.multiplier))
+        is Reward.CrestFrame -> listOf("Crest inscribed", "Wear it on your folio")
+    }
+    return CelebrationPage.Inscribed(
+        rarity = result.rarity,
+        name = when (val reward = result.reward) {
+            is Reward.Figures -> "${reward.count} ${if (reward.count == 1) "echo" else "echoes"}"
+            is Reward.Relic -> reward.name
+            is Reward.CrestFrame -> reward.name
+        },
+        // Only relics. A figures payout is a number, not an object, and a crest
+        // already has its own plate in the collection: a generic sigil there
+        // would misrepresent the frame that was won.
+        sigilSeed = (result.reward as? Reward.Relic)?.name,
+        notes = notes,
     )
 }
 
-/** 0 before [a], 1 after [b], linear between: one beat of a reveal's timeline. */
-private fun beat(p: Float, a: Float, b: Float): Float = ((p - a) / (b - a)).coerceIn(0f, 1f)
+/** The one narrator line of an inscription, in the voice of Today's: a short sentence with a full stop. */
+internal fun inscribedNarrator(rarity: RewardRarity): String = when (rarity) {
+    RewardRarity.Common -> "A whisper in the dark."
+    RewardRarity.Rare -> "The dark stirs."
+    RewardRarity.Epic -> "The dark bends."
+    RewardRarity.Masterwork -> "The Ledger answers."
+}
 
-private const val SEAL_AT = 0.72f
-private const val SEAL_LANDS = 0.84f
+private const val SEAL_AT = 550L
+private const val MOMENT_END = 2_000L
+
+/** Haptics keep the beats the old reveals had: a tick for Common, a confirm for Rare, two for Fabled, a long press for Masterwork. */
+internal fun inscribedBeats(rarity: RewardRarity): List<Pair<Long, HapticFeedbackType>> = when (rarity) {
+    RewardRarity.Common -> listOf(SEAL_AT to HapticFeedbackType.SegmentTick)
+    RewardRarity.Rare -> listOf(SEAL_AT to HapticFeedbackType.Confirm)
+    RewardRarity.Epic -> listOf(SEAL_AT to HapticFeedbackType.Confirm, SEAL_AT + 133 to HapticFeedbackType.Confirm)
+    RewardRarity.Masterwork -> listOf(SEAL_AT to HapticFeedbackType.LongPress)
+}
+
+private val MasteredBeats = listOf(SEAL_AT to HapticFeedbackType.Confirm, SEAL_AT + 133 to HapticFeedbackType.Confirm)
+private val GoalBeats = listOf(SEAL_AT to HapticFeedbackType.Confirm)
 
 /**
- * One celebration engine for every achievement in the app, laid out like the
- * victory screen it follows: header, an ink panel, two buttons. The Ledger
- * writes each moment into the panel - ink bleeds, the name is brushed in, a
- * seal is pressed - and each physical act is felt as a haptic.
- *
- * A tap on the page finishes the writing; the next tap moves on. Several
- * moments page through with "Next (1/3)".
+ * The celebration for moments outside a trial's seal, one step page at a time
+ * inside one full-screen dialog. Every page ends in the same dock - an emerald
+ * Continue and at most one quiet link - and nothing else is a tap target. With
+ * animations off every page lands in its final state at once.
  */
 @Composable
-fun AchievementOverlay(
-    items: List<Achievement>,
+internal fun AchievementOverlay(
+    pages: List<CelebrationPage>,
     onDone: () -> Unit,
-    /**
-     * Makes each note a button; null keeps notes as plain text. Given the item
-     * and the note's index, then the overlay moves on as a tap would.
-     */
-    onNote: ((item: Achievement, noteIndex: Int) -> Unit)? = null,
-    /** The title worn now, so a deed already worn says WORN instead of offering it. */
+    /** The title worn now, so a deed already worn says so instead of offering it. */
     wornTitleId: String? = null,
-    /** Wears a deed's title; null hides the button. */
+    /** Wears a deed's title; null hides Wear title. */
     onWear: ((titleId: String) -> Unit)? = null,
+    /** Opens the one technique a claim unlocked, then moves on; null hides the link. */
+    onOpenTechnique: ((name: String) -> Unit)? = null,
 ) {
-    if (items.isEmpty()) return
-    var page by remember(items) { mutableIntStateOf(0) }
-    val item = items[page.coerceIn(0, items.lastIndex)]
-    val last = page >= items.lastIndex
-    val progress = remember(items, page) { Animatable(0f) }
-    val haptic = LocalHapticFeedback.current
-    val scope = rememberCoroutineScope()
-    var wornHere by remember(items) { mutableStateOf<String?>(null) }
-
-    LaunchedEffect(items, page) {
-        launch { progress.animateTo(1f, tween(item.reveal.millis, easing = LinearEasing)) }
-        var at = 0f
-        for ((beatAt, type) in hapticsFor(item.reveal)) {
-            delay(((beatAt - at) * item.reveal.millis).toLong())
-            at = beatAt
-            // A tap that finished the writing early also silences what is left.
-            if (!progress.isRunning) break
-            haptic.performHapticFeedback(type)
-        }
-    }
-
-    fun advance() {
-        when {
-            progress.value < 1f -> scope.launch { progress.snapTo(1f) }
-            !last -> page++
-            else -> onDone()
-        }
-    }
-
+    if (pages.isEmpty()) return
+    var index by remember(pages) { mutableIntStateOf(0) }
+    val at = index.coerceIn(0, pages.lastIndex)
+    val advance = { if (at < pages.lastIndex) index = at + 1 else onDone() }
     Dialog(
         onDismissRequest = onDone,
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        val p = progress.value
-        val ink = item.accent ?: item.reveal.ink
         Box(
             Modifier
                 .fillMaxSize()
-                .background(IronvellumColors.Abyss)
-                .ledgerDawn(if (item.reveal == Reveal.Masterwork) 0.24f else 0.16f)
-                .clickable(interactionSource = remember { MutableInteractionSource() }, indication = null) { advance() },
+                .background(IronvellumColors.Abyss),
         ) {
-            LedgerEmbers()
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 20.dp, vertical = 16.dp),
-            ) {
-                Box(
-                    Modifier
-                        .weight(1f)
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Column(
-                        Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Spacer(Modifier.height(24.dp))
-                        LedgerHeader(
-                            banner = item.banner,
-                            narrator = item.narrator,
-                            color = if (item.reveal == Reveal.LevelUp) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
+            // Keyed so each page starts its own clock and haptics.
+            key(at) {
+                when (val page = pages[at]) {
+                    is CelebrationPage.Level -> LevelUpPage(
+                        levelUp = page.levelUp,
+                        step = at,
+                        steps = pages.size,
+                        canSkip = false,
+                        onContinue = advance,
+                        onSkip = {},
+                        note = "An inscription is waiting".takeIf { page.inscriptionWaiting },
+                    )
+                    is CelebrationPage.Deeds -> DeedsPage(
+                        deeds = page.deeds,
+                        sex = page.sex,
+                        step = at,
+                        steps = pages.size,
+                        wornTitleId = wornTitleId,
+                        onContinue = advance,
+                        onWear = { onWear?.invoke(it) },
+                        canWear = onWear != null,
+                    )
+                    is CelebrationPage.TechniqueMastered -> {
+                        val open = page.opened.singleOrNull()?.takeIf { onOpenTechnique != null }
+                        MomentPage(
+                            step = at,
+                            steps = pages.size,
+                            tag = "Technique mastered",
+                            name = page.name,
+                            beats = MasteredBeats,
+                            dock = {
+                                CelebrationDock(
+                                    primary = "Continue",
+                                    onPrimary = advance,
+                                    link = open?.let { "Open $it" },
+                                    onLink = {
+                                        if (open != null) onOpenTechnique?.invoke(open)
+                                        advance()
+                                    },
+                                )
+                            },
+                            subline = {
+                                Text("Tier ${page.tier} · ${page.path}", style = MaterialTheme.typography.bodySmall, color = Dim, modifier = it)
+                            },
+                            xp = page.xp,
+                            notes = page.opened.map { "Technique opened · $it" },
                         )
-                        Spacer(Modifier.height(20.dp))
-                        // The seal's landing jolts the page it is pressed into.
-                        val jolt = beat(p, SEAL_LANDS, SEAL_LANDS + 0.1f).takeIf { item.reveal.sealed && it in 0.001f..0.999f }
-                            ?.let { sin(it * 18f) * (1f - it) * 3f } ?: 0f
-                        InkPanel(
-                            Modifier
-                                .fillMaxWidth()
-                                .graphicsLayer { translationX = jolt.dp.toPx() },
-                        ) {
-                            when (item.reveal) {
-                                Reveal.LevelUp -> PageTurn(item, p)
-                                else -> Inscription(item, p, ink)
-                            }
-                        }
-                        Footnotes(item, p, wornHere == item.titleId || item.titleId == wornTitleId, onWear != null)
-                        item.notes.forEachIndexed { index, note ->
-                            Spacer(Modifier.height(6.dp))
-                            Text(
-                                note,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = IronvellumColors.SystemGreen,
-                                textAlign = TextAlign.Center,
-                                textDecoration = if (onNote != null) TextDecoration.Underline else null,
-                                modifier = if (onNote != null) {
-                                    Modifier
-                                        .heightIn(min = 48.dp)
-                                        .clickable(role = Role.Button, onClickLabel = "Open") {
-                                            // Moves on like any tap, so the pages
-                                            // still to come are not skipped.
-                                            onNote(item, index)
-                                            if (!last) page++ else onDone()
-                                        }
-                                        .wrapContentHeight()
-                                } else {
-                                    Modifier
-                                },
-                            )
-                        }
-                        Spacer(Modifier.height(16.dp))
                     }
-                }
-                val titleId = item.titleId
-                if (titleId != null && onWear != null) {
-                    val worn = wornHere == titleId || titleId == wornTitleId
-                    IronvellumButton(
-                        label = if (worn) "Worn" else "Wear title",
-                        quiet = true,
-                        enabled = !worn,
-                        onClick = {
-                            onWear(titleId)
-                            wornHere = titleId
+                    is CelebrationPage.Inscribed -> MomentPage(
+                        step = at,
+                        steps = pages.size,
+                        tag = "Inscribed",
+                        name = page.name,
+                        beats = inscribedBeats(page.rarity),
+                        dock = { CelebrationDock(primary = "Continue", onPrimary = advance) },
+                        mark = { t ->
+                            val seed = page.sigilSeed
+                            if (seed != null) RelicMark(seed, t) else DeedSeal(t, 156.dp)
                         },
-                        modifier = Modifier.fillMaxWidth(),
+                        subline = {
+                            Column(it, horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(rarityWord(page.rarity), style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SovereignGold)
+                                Text(inscribedNarrator(page.rarity), style = MaterialTheme.typography.bodySmall, color = Dim)
+                            }
+                        },
+                        notes = page.notes,
                     )
-                    Spacer(Modifier.height(10.dp))
-                }
-                IronvellumButton(
-                    if (!last) "Next (${page + 1}/${items.size})" else "Continue",
-                    gold = true,
-                    onClick = { if (!last) page++ else onDone() },
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        }
-    }
-}
-
-/** Brush ticks while the name is written, then the seal's weight on landing. */
-private fun hapticsFor(reveal: Reveal): List<Pair<Float, HapticFeedbackType>> {
-    val writing = listOf(0.2f, 0.32f, 0.44f).map { it to HapticFeedbackType.SegmentFrequentTick }
-    return when (reveal) {
-        Reveal.Common -> writing + (0.6f to HapticFeedbackType.SegmentTick)
-        Reveal.Rare -> writing + (SEAL_LANDS to HapticFeedbackType.Confirm)
-        Reveal.Fabled -> writing + (SEAL_LANDS to HapticFeedbackType.Confirm) + (SEAL_LANDS + 0.07f to HapticFeedbackType.Confirm)
-        Reveal.Masterwork -> writing + (SEAL_LANDS to HapticFeedbackType.LongPress)
-        Reveal.LevelUp -> listOf(0.3f to HapticFeedbackType.SegmentTick, 0.75f to HapticFeedbackType.Confirm)
-    }
-}
-
-/** The big word, its rule and the Ledger's line: the victory screen's header, shared. */
-@Composable
-internal fun LedgerHeader(banner: String, narrator: String, color: Color) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            banner,
-            style = MaterialTheme.typography.headlineMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = IronvellumTracking.ScreenTitle,
-            color = color,
-            textAlign = TextAlign.Center,
-        )
-        Spacer(Modifier.height(10.dp))
-        Box(
-            Modifier
-                .width(56.dp)
-                .height(2.dp)
-                .background(color.copy(alpha = 0.6f)),
-        )
-        if (narrator.isNotBlank()) {
-            Spacer(Modifier.height(12.dp))
-            Text(
-                narrator,
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                letterSpacing = IronvellumTracking.InlineLabel,
-                color = IronvellumColors.InkMuted,
-                textAlign = TextAlign.Center,
-            )
-        }
-    }
-}
-
-/** A deed, technique or inscription written into the page: bleed, name, underline, seal. */
-@Composable
-private fun Inscription(item: Achievement, p: Float, ink: Color) {
-    val reveal = item.reveal
-    Box(Modifier.fillMaxWidth()) {
-        InkBleed(Modifier.matchParentSize(), reveal, ink, beat(p, 0f, 0.35f), item.name.hashCode())
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(vertical = 6.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            if (item.tagline.isNotBlank()) {
-                Text(
-                    item.tagline,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = IronvellumTracking.SectionHeader,
-                    color = ink,
-                    textAlign = TextAlign.Center,
-                )
-            }
-            item.sigilSeed?.let { seed ->
-                // The reveal's centrepiece: art generated from the reward
-                // itself, so a relic draw looks like a find.
-                Spacer(Modifier.height(10.dp))
-                RelicSigil(
-                    name = seed,
-                    accent = ink,
-                    modifier = Modifier
-                        .size(88.dp)
-                        .graphicsLayer { alpha = beat(p, 0.05f, 0.4f) },
-                )
-            }
-            Spacer(Modifier.height(6.dp))
-            WrittenName(item.name.uppercase(), beat(p, 0.1f, 0.55f), reveal, ink, sheen = beat(p, 0.55f, 1f))
-            Canvas(
-                Modifier
-                    .width(132.dp)
-                    .height(12.dp),
-            ) {
-                val run = beat(p, 0.5f, 0.68f)
-                if (run > 0f) {
-                    inkStroke(
-                        from = Offset(0f, size.height / 2f),
-                        to = Offset(size.width * run, size.height / 2f),
-                        color = ink.copy(alpha = 0.8f),
-                        widthPx = (if (reveal == Reveal.Common) 2.2f else 3f).dp.toPx(),
+                    is CelebrationPage.GoalMet -> MomentPage(
+                        step = at,
+                        steps = pages.size,
+                        tag = "Circle's goal met",
+                        name = page.name,
+                        beats = GoalBeats,
+                        dock = { CelebrationDock(primary = "Continue", onPrimary = advance) },
+                        subline = {
+                            Text(
+                                "The circle met its weekly goal and you carried your share.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Dim,
+                                textAlign = TextAlign.Center,
+                                modifier = it,
+                            )
+                        },
+                        xp = page.xp,
                     )
                 }
             }
-            if (item.subtitle.isNotBlank()) {
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    item.subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    textAlign = TextAlign.Center,
-                )
-            }
         }
-        if (reveal.sealed) Seal(Modifier.align(Alignment.TopEnd), reveal, ink, beat(p, SEAL_AT, SEAL_LANDS))
     }
-}
-
-/** The name brushed in left to right; Masterwork's is gold leaf with a sheen passing over it. */
-@Composable
-private fun WrittenName(text: String, written: Float, reveal: Reveal, ink: Color, sheen: Float) {
-    val base = MaterialTheme.typography.headlineSmall
-    val style = if (reveal == Reveal.Masterwork) {
-        val x = -400f + 1_400f * sheen
-        base.copy(
-            brush = Brush.linearGradient(
-                listOf(GoldLeafDark, GoldLeafLight, GoldLeafDark),
-                start = Offset(x, 0f),
-                end = Offset(x + 260f, 0f),
-            ),
-        )
-    } else {
-        base.copy(color = nameInk(reveal, ink))
-    }
-    Text(
-        text,
-        style = style,
-        fontFamily = ChakraPetch,
-        fontWeight = FontWeight.Bold,
-        letterSpacing = IronvellumTracking.InlineLabel,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.drawWithContent {
-            clipRect(right = size.width * written) { this@drawWithContent.drawContent() }
-        },
-    )
-}
-
-private val GoldLeafDark = Color(0xFFC98A2B)
-private val GoldLeafLight = Color(0xFFFFF1C2)
-
-private fun nameInk(reveal: Reveal, ink: Color): Color = when (reveal) {
-    Reveal.Common -> IronvellumColors.Ink
-    Reveal.Fabled -> IronvellumColors.EmeraldBright
-    else -> ink
 }
 
 /**
- * Ink soaking into the page behind the name: one soft wash, wider and stronger
- * the rarer the deed. Fabled and Masterwork also throw a little spatter.
+ * A moment page: the gold tag, a seal (or [mark]), the name, a subline, the XP
+ * in gold and quiet notes, each revealed in turn. One clock, one haptic list.
  */
 @Composable
-private fun InkBleed(modifier: Modifier, reveal: Reveal, ink: Color, spread: Float, seed: Int) {
-    val (alpha, reach, spatter) = when (reveal) {
-        Reveal.Common -> Triple(0.07f, 0.45f, 0)
-        Reveal.Rare -> Triple(0.12f, 0.6f, 0)
-        Reveal.Fabled -> Triple(0.2f, 0.85f, 6)
-        else -> Triple(0.16f, 0.85f, 5)
-    }
-    val flecks = remember(seed, spatter) {
-        val rng = Random(seed)
-        // Out at the sides only: a fleck on the subtitle reads as a stray mark.
-        List(spatter) { i ->
-            val side = if (i % 2 == 0) -1f else 1f
-            Triple(side * (0.62f + rng.nextFloat() * 0.3f), rng.nextFloat() * 1.6f - 0.8f, 1.5f + rng.nextFloat() * 2f)
-        }
-    }
-    Canvas(modifier) {
-        if (spread <= 0f) return@Canvas
-        val c = Offset(size.width / 2f, size.height / 2f)
-        // An ellipse that fades out inside the panel: a round wash clipped by
-        // the panel's edges read as a hard-edged band.
-        scale(scaleX = 1f, scaleY = size.height / size.width, pivot = c) {
-            // The gradient reaches transparent inside its radius, so the
-            // rectangle it fills never shows an edge.
-            drawRect(
-                Brush.radialGradient(
-                    listOf(ink.copy(alpha = alpha), ink.copy(alpha = alpha * 0.4f), Color.Transparent),
-                    center = c,
-                    radius = (size.width * 0.5f * reach * spread).coerceAtLeast(1f),
-                ),
-                topLeft = Offset(0f, c.y - size.width / 2f),
-                size = androidx.compose.ui.geometry.Size(size.width, size.width),
-            )
-        }
-        // Spatter lands with the seal, flung out from its corner.
-        val fling = beatOf(spread)
-        flecks.forEachIndexed { i, (dx, dy, r) ->
-            inkDot(
-                center = Offset(c.x + dx * size.width * 0.42f, c.y + dy * size.height * 0.45f),
-                radius = r.dp.toPx(),
-                color = ink.copy(alpha = 0.55f * fling),
-            )
-        }
-    }
-}
-
-/** Spatter shows only once the wash has nearly spread. */
-private fun beatOf(spread: Float): Float = ((spread - 0.7f) / 0.3f).coerceIn(0f, 1f)
-
-/** The seal pressed into the panel's corner: two brushed rings and a mark for its tier. */
-@Composable
-private fun Seal(modifier: Modifier, reveal: Reveal, ink: Color, pressed: Float) {
-    Canvas(
-        modifier
-            .size(44.dp)
-            .graphicsLayer {
-                val s = 2.4f - 1.4f * pressed
-                scaleX = s
-                scaleY = s
-                rotationZ = -28f + 18f * pressed
-                alpha = if (pressed > 0f) (pressed * 3f).coerceAtMost(1f) else 0f
-            },
-    ) {
-        val c = Offset(size.width / 2f, size.height / 2f)
-        val r = size.minDimension / 2f - 2.dp.toPx()
-        if (reveal == Reveal.Masterwork) inkDot(c, r, Color(0xFF2A1D06))
-        inkArc(c, r, 0f, 360f, ink, 2.dp.toPx())
-        inkArc(c, r * 0.64f, 20f, 330f, ink.copy(alpha = 0.8f), 1.dp.toPx())
-        sealMark(reveal, c, r * 0.5f, ink)
-    }
-}
-
-private fun DrawScope.sealMark(reveal: Reveal, c: Offset, r: Float, ink: Color) {
-    val w = 1.6.dp.toPx()
-    when (reveal) {
-        Reveal.Rare -> {
-            inkStroke(Offset(c.x, c.y - r), Offset(c.x, c.y + r), ink, w)
-            inkStroke(Offset(c.x - r * 0.85f, c.y - r * 0.5f), Offset(c.x + r * 0.85f, c.y + r * 0.5f), ink, w)
-            inkStroke(Offset(c.x + r * 0.85f, c.y - r * 0.5f), Offset(c.x - r * 0.85f, c.y + r * 0.5f), ink, w)
-        }
-        Reveal.Fabled -> drawPath(
-            Path().apply {
-                moveTo(c.x, c.y - r)
-                lineTo(c.x + r * 0.45f, c.y)
-                lineTo(c.x, c.y + r)
-                lineTo(c.x - r * 0.45f, c.y)
-                close()
-            },
-            ink,
-        )
-        Reveal.Masterwork -> drawPath(
-            Path().apply {
-                moveTo(c.x - r, c.y + r * 0.55f)
-                lineTo(c.x - r * 0.75f, c.y - r * 0.45f)
-                lineTo(c.x - r * 0.3f, c.y + r * 0.1f)
-                lineTo(c.x, c.y - r * 0.75f)
-                lineTo(c.x + r * 0.3f, c.y + r * 0.1f)
-                lineTo(c.x + r * 0.75f, c.y - r * 0.45f)
-                lineTo(c.x + r, c.y + r * 0.55f)
-                close()
-            },
-            ink,
-        )
-        else -> {
-            inkStroke(Offset(c.x, c.y - r), Offset(c.x, c.y + r), ink, w)
-            inkStroke(Offset(c.x - r, c.y), Offset(c.x + r, c.y), ink, w)
-        }
-    }
-}
-
-/** A level: the old page turns away and the new number is underneath. */
-@Composable
-private fun PageTurn(item: Achievement, p: Float) {
-    val turn = beat(p, 0.2f, 0.75f)
-    val shape = MaterialTheme.shapes.small
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .height(124.dp),
-    ) {
-        LevelLeaf(item.tagline, item.name, IronvellumColors.Emerald, Modifier.graphicsLayer { alpha = beat(p, 0.5f, 0.75f) })
-        LevelLeaf(
-            item.tagline,
-            item.from.orEmpty(),
-            IronvellumColors.InkMuted,
-            Modifier
-                .padding(6.dp)
-                .graphicsLayer {
-                    transformOrigin = TransformOrigin(0f, 0.5f)
-                    rotationY = -180f * turn
-                    cameraDistance = 12f * density
-                    alpha = if (turn < 0.5f) 1f else 0f
-                }
-                .background(IronvellumColors.VaultHigh, shape)
-                .inkBorder(IronvellumColors.Bracket, shape, 1.dp),
-        )
-    }
-    if (item.subtitle.isNotBlank()) {
-        Spacer(Modifier.height(6.dp))
+private fun MomentPage(
+    step: Int,
+    steps: Int,
+    tag: String,
+    name: String,
+    beats: List<Pair<Long, HapticFeedbackType>>,
+    dock: @Composable () -> Unit,
+    subline: @Composable (Modifier) -> Unit,
+    mark: @Composable (Long) -> Unit = { t -> DeedSeal(t, 156.dp) },
+    xp: Int? = null,
+    notes: List<String> = emptyList(),
+) {
+    val motion = animatorsOn(LocalContext.current)
+    val t = rememberClock(MOMENT_END, motion)
+    Haptics(motion, *beats.toTypedArray())
+    StepPage(step = step, steps = steps, dock = dock) {
         Text(
-            item.subtitle,
-            style = MaterialTheme.typography.labelSmall,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.InlineLabel,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-    item.ascension?.let { (old, new) -> Amendment(old, new, p) }
-}
-
-@Composable
-private fun LevelLeaf(label: String, number: String, color: Color, modifier: Modifier) {
-    Column(
-        modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center,
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = IronvellumTracking.SectionHeader,
-            color = IronvellumColors.InkMuted,
-        )
-        Text(
-            number,
-            style = MaterialTheme.typography.displayMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = color,
-        )
-    }
-}
-
-/** The level's tier changing: the old ascension struck through, the new one written beneath. */
-@Composable
-private fun Amendment(old: String, new: String, p: Float) {
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .padding(top = 14.dp, bottom = 6.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        Text(
-            "YOU ASCEND",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = IronvellumTracking.SectionHeader,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(8.dp))
-        val strike = beat(p, 0.45f, 0.65f)
-        Text(
-            old.uppercase(),
-            style = MaterialTheme.typography.titleMedium,
+            tag,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
-            letterSpacing = IronvellumTracking.InlineLabel,
-            color = IronvellumColors.InkMuted,
-            modifier = Modifier.drawWithContent {
-                drawContent()
-                if (strike > 0f) {
-                    val y = size.height * 0.55f
-                    inkStroke(
-                        Offset(-4.dp.toPx(), y),
-                        Offset(-4.dp.toPx() + (size.width + 8.dp.toPx()) * strike, y - 2.dp.toPx()),
-                        IronvellumColors.Ink,
-                        2.4.dp.toPx(),
-                    )
-                }
-            },
+            fontSize = 13.sp,
+            letterSpacing = 0.5.sp,
+            color = IronvellumColors.SovereignGold,
+            modifier = Modifier.reveal(t >= 100, motion),
+        )
+        Spacer(Modifier.height(20.dp))
+        mark(t)
+        Spacer(Modifier.height(26.dp))
+        Text(
+            name,
+            fontFamily = ChakraPetch,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = 28.sp,
+            textAlign = TextAlign.Center,
+            color = IronvellumColors.Ink,
+            modifier = Modifier.reveal(t >= 650, motion),
         )
         Spacer(Modifier.height(6.dp))
-        WrittenName(new.uppercase(), beat(p, 0.6f, 0.9f), Reveal.LevelUp, IronvellumColors.SovereignGold, sheen = 0f)
-    }
-}
-
-/** Under the panel: what the moment paid, and whether its title is worn. */
-@Composable
-private fun Footnotes(item: Achievement, p: Float, worn: Boolean, canWear: Boolean) {
-    val xp = item.xp
-    if (xp != null && xp > 0) {
-        Spacer(Modifier.height(14.dp))
-        Text(
-            "+${(xp * beat(p, 0.3f, 0.9f)).toInt()} XP",
-            style = MaterialTheme.typography.headlineSmall,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.Emerald,
-        )
-    }
-    if (item.titleId != null && canWear) {
-        Spacer(Modifier.height(12.dp))
-        Text(
-            if (worn) "Worn on your folio" else "You may wear ${item.name}",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-/** The low gold light behind a Ledger page's header; the only warm light on screen. */
-internal fun Modifier.ledgerDawn(strength: Float): Modifier = drawBehind {
-    drawRect(
-        Brush.radialGradient(
-            listOf(IronvellumColors.SovereignGold.copy(alpha = strength), Color.Transparent),
-            center = Offset(size.width / 2f, 0f),
-            radius = size.width,
-        ),
-    )
-}
-
-/** A few gold embers drifting up behind a Ledger page; quiet, never over the text. */
-@Composable
-internal fun LedgerEmbers() {
-    val drift = rememberInfiniteTransition(label = "embers")
-    val rise by drift.animateFloat(
-        initialValue = 1f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(tween(4200)),
-        label = "rise",
-    )
-    Canvas(Modifier.fillMaxSize()) {
-        repeat(12) { i ->
-            val seed = i * 0.618f
-            val x = ((seed * 7.13f) % 1f) * size.width
-            val cycle = (rise + seed) % 1f
-            inkDot(
-                center = Offset(x, cycle * size.height),
-                radius = (2f + (i % 3)) * 1.6f,
-                color = IronvellumColors.SovereignGold.copy(alpha = (1f - cycle) * 0.35f),
+        subline(Modifier.reveal(t >= 800, motion))
+        if (xp != null && xp > 0) {
+            Spacer(Modifier.height(20.dp))
+            Text(
+                "+${count(xp)} XP",
+                fontFamily = ChakraPetch,
+                fontWeight = FontWeight.Bold,
+                fontSize = 26.sp,
+                style = TextStyle(fontFeatureSettings = "tnum"),
+                color = IronvellumColors.SovereignGold,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth().reveal(t >= 950, motion),
             )
         }
+        Column(Modifier.fillMaxWidth().padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            notes.forEachIndexed { i, note ->
+                Text(
+                    note,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Dim,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.reveal(t >= 1_100 + 150L * i, motion),
+                )
+            }
+        }
     }
+}
+
+/** A relic's generated art where the seal would be, settling with the same stamp. */
+@Composable
+private fun RelicMark(seed: String, t: Long, size: Dp = 132.dp) {
+    RelicSigil(
+        name = seed,
+        accent = IronvellumColors.Emerald,
+        modifier = Modifier
+            .size(size)
+            .graphicsLayer {
+                alpha = phase(t, 0, 400)
+                val s = stamp(t, SEAL_AT)
+                scaleX = s
+                scaleY = s
+            },
+    )
 }

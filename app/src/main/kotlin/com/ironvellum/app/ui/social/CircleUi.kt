@@ -61,7 +61,7 @@ import com.ironvellum.app.data.CircleBonusPaid
 import com.ironvellum.app.data.CircleGateway
 import com.ironvellum.app.data.CircleRead
 import com.ironvellum.app.data.CloudCircleGateway
-import com.ironvellum.app.ui.components.Achievement
+import com.ironvellum.app.ui.components.CelebrationPage
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkRail
@@ -457,14 +457,7 @@ fun CircleSection(
     }
     ui.paid?.let { paid ->
         AchievementOverlay(
-            items = listOf(
-                Achievement(
-                    banner = "CIRCLE'S GOAL MET",
-                    name = paid.circleName ?: circle?.name ?: "The circle",
-                    subtitle = "The circle met its weekly goal and you carried your share.",
-                    xp = paid.xp,
-                ),
-            ),
+            pages = listOf(CelebrationPage.GoalMet(name = paid.circleName ?: circle?.name ?: "The circle", xp = paid.xp)),
             onDone = vm::dismissPayout,
         )
     }

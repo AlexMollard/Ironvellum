@@ -97,7 +97,7 @@ import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.RankSheet
 import com.ironvellum.app.ui.components.Term
 import com.ironvellum.app.ui.components.TermDialog
-import com.ironvellum.app.ui.components.deedAchievement
+import com.ironvellum.app.ui.components.deedPages
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
@@ -431,7 +431,7 @@ fun DashboardScreen(
     val owed by viewModel.pendingCelebrations.collectAsStateWithLifecycle()
     val sex by viewModel.sex.collectAsStateWithLifecycle()
     AchievementOverlay(
-        items = owed.map { deedAchievement(it, sex) },
+        pages = deedPages(owed, sex),
         onDone = { viewModel.celebrationsSeen() },
         wornTitleId = ui.profile?.currentTitleId,
         onWear = viewModel::wearTitle,

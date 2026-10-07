@@ -75,9 +75,7 @@ import com.ironvellum.app.domain.IdleState
 import com.ironvellum.app.domain.Reward
 import com.ironvellum.app.domain.RewardRarity
 import com.ironvellum.app.domain.RollResult
-import com.ironvellum.app.ui.components.Achievement
 import com.ironvellum.app.ui.components.AchievementOverlay
-import com.ironvellum.app.ui.components.Reveal
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.InkPanel
@@ -91,6 +89,7 @@ import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.components.RelicSigil
+import com.ironvellum.app.ui.components.inscribedPage
 import com.ironvellum.app.ui.components.CrestRail
 import com.ironvellum.app.ui.components.MusterBackdrop
 import kotlinx.coroutines.flow.SharingStarted
@@ -271,40 +270,10 @@ fun IdleScreen(
     }
     inscriptionResult?.let { result ->
         AchievementOverlay(
-            items = listOf(achievementFor(result)),
+            pages = listOf(inscribedPage(result)),
             onDone = { inscriptionResult = null },
         )
     }
-}
-
-/**
- * House-voice copy per rarity tier — the same inscription, four different
- * weights of silence. Accent uses only sanctioned palette tokens.
- */
-private fun achievementFor(result: RollResult): Achievement {
-    val (narrator, reveal) = when (result.rarity) {
-        RewardRarity.Common -> "A WHISPER IN THE DARK" to Reveal.Common
-        RewardRarity.Rare -> "THE DARK STIRS" to Reveal.Rare
-        RewardRarity.Epic -> "THE DARK BENDS" to Reveal.Fabled
-        RewardRarity.Masterwork -> "THE LEDGER ANSWERS" to Reveal.Masterwork
-    }
-    val notes = when (val reward = result.reward) {
-        is Reward.Figures -> listOf("THE VEIL +${reward.count} ECHOES")
-        is Reward.Relic -> listOf("RATE MULTIPLIER ×%.2f".fmt(reward.multiplier))
-        is Reward.CrestFrame -> listOf("CREST INSCRIBED", "WEAR IT ON YOUR FOLIO")
-    }
-    return Achievement(
-        banner = "INSCRIBED",
-        tagline = rarityLabel(result.rarity),
-        name = rewardName(result.reward),
-        notes = notes,
-        reveal = reveal,
-        narrator = narrator,
-        // Only relics. A figures payout is a number, not an object, and a
-        // crest already has its own plate treatment in the collection — a
-        // generic sigil there would misrepresent the frame that was won.
-        sigilSeed = (result.reward as? Reward.Relic)?.name,
-    )
 }
 
 /**
@@ -872,12 +841,6 @@ private fun CapWindow() {
 private fun formatEssence(value: Long): String = "%,d".fmt(value)
 
 /** Display name per reward type — `Reward` has no shared name property. */
-private fun rewardName(reward: Reward): String = when (reward) {
-    is Reward.Figures -> "${reward.count} ${if (reward.count == 1) "Echo" else "Echoes"}"
-    is Reward.Relic -> reward.name
-    is Reward.CrestFrame -> reward.name
-}
-
 /**
  * A factor row with a share bar beneath it. The bar fills from 0 to the
  * factor's share over 600ms on first composition — a gentle establish move,
