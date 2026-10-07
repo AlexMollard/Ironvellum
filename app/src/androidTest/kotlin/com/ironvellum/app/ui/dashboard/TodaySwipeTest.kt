@@ -15,6 +15,8 @@ import androidx.compose.ui.graphics.toPixelMap
 import kotlinx.coroutines.runBlocking
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
@@ -31,6 +33,7 @@ import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ironvellum.app.ui.theme.IronvellumTheme
+import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutPreset
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -75,6 +78,37 @@ class TodaySwipeTest {
     private fun advance() { compose.mainClock.advanceTimeBy(100); compose.waitForIdle() }
     private fun left() { compose.onNodeWithTag("home").performTouchInput { swipeLeft() }; advance() }
     private fun right() { compose.onNodeWithTag("home").performTouchInput { swipeRight() }; advance() }
+
+    @Test fun todaySelectedAndSealedRemainDistinctFromScheduledAndRestDays() {
+        show(ui = DashboardUi(
+            presets = listOf(
+                WorkoutPreset(id = 1, name = "Monday rite", scheduledDay = 1),
+                WorkoutPreset(id = 2, name = "Tuesday rite", scheduledDay = 2),
+            ),
+            weekDone = mapOf(1 to WorkoutSession(id = 1, presetId = 1, label = "Monday rite", startedAtMs = 0, completedAtMs = 1)),
+        ))
+        compose.onNodeWithContentDescription("Monday, done").assertIsSelected()
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Today, Sealed trial"))
+        compose.onNodeWithContentDescription("Tuesday")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Rite in cycle"))
+        compose.onNodeWithContentDescription("Wednesday")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "No rite"))
+        compose.onNodeWithContentDescription("Tuesday").performTouchInput { click() }
+        advance()
+        compose.onNodeWithContentDescription("Tuesday").assertIsSelected()
+        compose.onNodeWithContentDescription("Monday, done")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Today, Sealed trial"))
+    }
+
+    @Test fun todayCanBeScheduledWithoutBeingSelected() {
+        show(startDay = 5, ui = DashboardUi(presets = listOf(
+            WorkoutPreset(id = 1, name = "Monday rite", scheduledDay = 1),
+        )))
+        compose.onNodeWithContentDescription("Monday")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Today, Rite in cycle"))
+        compose.onNodeWithContentDescription("Friday").assertIsSelected()
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "No rite"))
+    }
 
     @Test fun horizontalSwipesChangeOneDayAndUseTheLatestSelection() {
         show(ui = DashboardUi(presets = (1..7).map { WorkoutPreset(id = it.toLong(), name = "Rite $it", scheduledDay = it) }))
