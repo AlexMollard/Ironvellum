@@ -341,7 +341,13 @@ fun StatsScreen(
                         onDrill = { drill = it },
                         onLogWeight = { showAdd = true },
                         onSetHeight = { onOpenSettings(SettingsSection.PROFILE) },
-                        onOpenTraining = { scope.launch { pager.animateScrollToPage(StatsTab.TRAINING.ordinal) } },
+                        onOpenTraining = {
+                            scope.launch {
+                                // The hoisted scroll is saveable: without this Training reopened mid-page.
+                                trainingScroll.scrollTo(0)
+                                pager.animateScrollToPage(StatsTab.TRAINING.ordinal)
+                            }
+                        },
                         onOpenTape = { pageIndex = LedgerPage.TAPE.ordinal },
                         onOpenHistory = { pageIndex = LedgerPage.HISTORY.ordinal },
                     )

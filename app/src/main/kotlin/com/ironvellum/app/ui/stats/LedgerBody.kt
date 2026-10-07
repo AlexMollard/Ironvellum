@@ -67,6 +67,7 @@ import com.ironvellum.app.ui.components.PanelLabel
 import com.ironvellum.app.ui.components.RangeChips
 import com.ironvellum.app.ui.components.StatSize
 import com.ironvellum.app.ui.components.StatValue
+import com.ironvellum.app.ui.components.UndoBar
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
@@ -324,7 +325,7 @@ private fun WeekStrip(weeks: List<Int>) {
 
 // ---------------------------------------------------------------- panes
 
-/** Every weigh-in, one line each, newest first. Delete is armed per row, and Undo outlives it. */
+/** Every weigh-in, one line each, newest first. Delete is immediate and the bar offers Undo. */
 @Composable
 internal fun WeightHistoryPage(
     stats: List<StatEntry>,
@@ -356,7 +357,13 @@ internal fun WeightHistoryPage(
             }
         }
         if (lastDeleted != null) {
-            UndoBar("Reading deleted", onUndo, onUndoExpired, key = lastDeleted.id)
+            UndoBar(
+                "Reading deleted",
+                onUndo = onUndo,
+                modifier = Modifier.padding(horizontal = LedgerSpace.Gutter, vertical = LedgerSpace.Panel),
+                onExpired = onUndoExpired,
+                key = lastDeleted.id,
+            )
         }
     }
     // The offer belongs to this page: leaving it lets the deletion stand, so
@@ -366,8 +373,6 @@ internal fun WeightHistoryPage(
 
 @Composable
 private fun HistoryRow(stat: StatEntry, profileHeight: Double?, onDelete: () -> Unit) {
-    // Keyed by the reading, so arming one row can never arm its neighbour.
-    var armed by remember(stat.id) { mutableStateOf(false) }
     Row(
         Modifier.fillMaxWidth().heightIn(min = LedgerSpace.Target),
         verticalAlignment = Alignment.CenterVertically,
@@ -389,85 +394,9 @@ private fun HistoryRow(stat: StatEntry, profileHeight: Double?, onDelete: () -> 
                 color = IronvellumColors.InkMuted,
             )
         }
-        if (armed) {
-            // One tap on a trash icon used to erase a weigh-in that feeds the
-            // strength score; arm first, name the cost.
-            ArmedChoice("KEEP", IronvellumColors.InkMuted) { armed = false }
-            ArmedChoice("DELETE", IronvellumColors.DangerRed) {
-                armed = false
-                onDelete()
-            }
-        } else {
-            InkIconButton(onClick = { armed = true }) {
-                Icon(Icons.Outlined.Delete, contentDescription = "Delete reading", tint = IronvellumColors.InkMuted)
-            }
+        // Immediate: the bar under the list offers Undo, which puts the reading back as it was.
+        InkIconButton(onClick = onDelete) {
+            Icon(Icons.Outlined.Delete, contentDescription = "Delete reading", tint = IronvellumColors.InkMuted)
         }
     }
-}
-
-@Composable
-internal fun ArmedChoice(label: String, color: androidx.compose.ui.graphics.Color, onClick: () -> Unit) {
-    Text(
-        label,
-        style = MaterialTheme.typography.labelMedium,
-        fontFamily = ChakraPetch,
-        color = color,
-        letterSpacing = IronvellumTracking.InlineLabel,
-        modifier = Modifier
-            .clip(MaterialTheme.shapes.extraSmall)
-            .clickable(role = Role.Button, onClick = onClick)
-            .heightIn(min = LedgerSpace.Target)
-            .padding(horizontal = 10.dp)
-            .wrapContentHeight(),
-    )
-}
-
-/** A bottom strip that offers Undo for a few seconds, then lets the deletion stand. */
-@Composable
-internal fun UndoBar(message: String, onUndo: () -> Unit, onExpired: () -> Unit, key: Any) {
-    // Longer when the user's accessibility settings ask for more time to act.
-    val window = undoWindowMs(androidx.compose.ui.platform.LocalContext.current)
-    LaunchedEffect(key) {
-        kotlinx.coroutines.delay(window)
-        onExpired()
-    }
-    InkPanel(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = LedgerSpace.Gutter, vertical = LedgerSpace.Panel)
-            .semantics { liveRegion = LiveRegionMode.Polite },
-    ) {
-        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                message,
-                style = MaterialTheme.typography.bodyMedium,
-                color = IronvellumColors.Ink,
-                modifier = Modifier.weight(1f),
-            )
-            Text(
-                "UNDO",
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.InlineLabel,
-                modifier = Modifier
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable(role = Role.Button, onClick = onUndo)
-                    .heightIn(min = LedgerSpace.Target)
-                    .padding(horizontal = 12.dp)
-                    .wrapContentHeight(),
-            )
-        }
-    }
-}
-
-private const val UNDO_WINDOW_MS = 6_000L
-
-/** [UNDO_WINDOW_MS], stretched to the system's recommended timeout when accessibility services are on. */
-private fun undoWindowMs(context: android.content.Context): Long {
-    val manager = context.getSystemService(android.view.accessibility.AccessibilityManager::class.java)
-        ?: return UNDO_WINDOW_MS
-    val flags = android.view.accessibility.AccessibilityManager.FLAG_CONTENT_CONTROLS or
-        android.view.accessibility.AccessibilityManager.FLAG_CONTENT_TEXT
-    return manager.getRecommendedTimeoutMillis(UNDO_WINDOW_MS.toInt(), flags).toLong().coerceAtLeast(UNDO_WINDOW_MS)
 }

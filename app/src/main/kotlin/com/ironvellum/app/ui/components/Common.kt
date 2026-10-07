@@ -548,7 +548,8 @@ fun <T> InkSegmented(
                     style = MaterialTheme.typography.labelLarge,
                     fontFamily = ChakraPetch,
                     color = if (isOn) IronvellumColors.Ink else IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.InlineLabel,
+                    // Sentence-case labels: 2sp caps tracking wrapped "Techniques" mid-word at 360dp.
+                    letterSpacing = 0.5.sp,
                     // Wraps or ellipsises at a large font scale instead of clipping.
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,

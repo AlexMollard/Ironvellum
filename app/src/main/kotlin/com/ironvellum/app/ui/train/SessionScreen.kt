@@ -70,6 +70,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Icon
 import com.ironvellum.app.ui.components.InkIconButton
+import com.ironvellum.app.ui.components.UndoBar
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -845,7 +846,7 @@ fun SessionScreen(
         }
         undo?.let { prompt ->
             UndoBar(
-                prompt = prompt,
+                message = "Set ${prompt.setNumber} logged",
                 onUndo = { undoLog(prompt) },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
@@ -2734,39 +2735,6 @@ private fun restNow(timer: RestTimer?): Long {
         }
     }
     return now
-}
-
-/** "Set 2 logged" and the way back, over the footer for a few seconds. */
-@Composable
-private fun UndoBar(prompt: UndoPrompt, onUndo: () -> Unit, modifier: Modifier = Modifier) {
-    val shape = MaterialTheme.shapes.small
-    Row(
-        modifier
-            .fillMaxWidth()
-            .clip(shape)
-            .background(IronvellumColors.VaultHigh)
-            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
-            .semantics { liveRegion = LiveRegionMode.Polite }
-            .padding(start = 16.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Text(
-            "Set ${prompt.setNumber} logged",
-            style = MaterialTheme.typography.bodyMedium,
-            color = IronvellumColors.Ink,
-            modifier = Modifier.weight(1f),
-        )
-        Box(
-            Modifier
-                .defaultMinSize(minWidth = 72.dp)
-                .heightIn(min = 48.dp)
-                .clickable(role = Role.Button, onClick = onUndo)
-                .padding(horizontal = 16.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-            Text("Undo", style = MaterialTheme.typography.labelLarge, color = IronvellumColors.SystemGreen)
-        }
-    }
 }
 
 /** Typed reps, seconds, minutes or attempts: the stepper's number, exactly. */

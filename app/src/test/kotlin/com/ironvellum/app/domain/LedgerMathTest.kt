@@ -120,6 +120,19 @@ class LedgerMathTest {
     }
 
     @Test
+    fun `two readings on one day plot as the day's latest`() {
+        fun at(date: LocalDate, hour: Int, kg: Double) =
+            StatEntry(takenAtMs = date.atTime(hour, 0).atZone(zone).toInstant().toEpochMilli(), weightKg = kg, heightCm = 0.0, bodyFatPct = null)
+        val stats = listOf(at(today.minusDays(1), 9, 80.0), at(today, 20, 80.4), at(today, 8, 81.0))
+        val plot = Ledger.weightPlot(stats, LedgerRange.D30, today, zone)!!
+        assertEquals(listOf(80.0, 80.4), plot.values)
+        assertEquals(listOf(today.minusDays(1), today), plot.dates)
+        assertEquals(2, plot.positions.size)
+        assertTrue("one x per day", plot.positions[0] < plot.positions[1])
+        assertEquals(0.4, plot.deltaKg!!, 1e-9)
+    }
+
+    @Test
     fun `weight delta needs two readings in the window`() {
         val plot = Ledger.weightPlot(listOf(stat(today.minusDays(60), 85.0), stat(today, 80.0)), LedgerRange.D30, today, zone)!!
         assertEquals(1, plot.values.size)
@@ -215,5 +228,15 @@ class LedgerMathTest {
         assertEquals(listOf(0.5), Ledger.datePositions(listOf(d)))
         assertEquals(listOf(0.5, 0.5), Ledger.datePositions(listOf(d, d)))
         assertEquals(emptyList<Double>(), Ledger.datePositions(emptyList()))
+    }
+
+    @Test
+    fun `tape readings on one day collapse to the latest before they are placed`() {
+        val d = LocalDate.of(2026, 9, 1)
+        fun at(date: LocalDate, hour: Int) = date.atTime(hour, 0).atZone(zone).toInstant().toEpochMilli()
+        val taken = listOf(at(d, 20), at(d, 8), at(d.plusDays(4), 9))
+        val kept = Ledger.latestPerDay(taken, zone) { it }
+        assertEquals(listOf(at(d, 20), at(d.plusDays(4), 9)), kept)
+        assertEquals(listOf(0.0, 1.0), Ledger.datePositions(kept.map { Ledger.dateOf(it, zone) }))
     }
 }

@@ -1536,6 +1536,11 @@ class Repository(
 
     suspend fun deleteMeasurement(id: Long) = measurementDao.delete(id)
 
+    /** Puts a deleted tape reading back with its original id, site, value and time, for Undo. */
+    suspend fun restoreMeasurement(entry: MeasurementEntry) = measurementDao.insert(
+        MeasurementEntity(id = entry.id, site = entry.site.name, valueCm = entry.valueCm, takenAtMs = entry.takenAtMs),
+    )
+
     // ------------------------------------------------------------- sync state
 
     /** Fingerprints of the sessions the last successful push uploaded. */
