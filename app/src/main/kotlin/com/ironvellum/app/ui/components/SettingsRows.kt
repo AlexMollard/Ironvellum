@@ -59,7 +59,14 @@ fun TapRow(onClickLabel: String, onClick: () -> Unit, content: @Composable RowSc
 /** A hub row: what it is, its current value, and a chevron to the screen that changes it. */
 @Composable
 fun SettingsValueRow(label: String, value: String?, onClick: () -> Unit) {
-    ListRow(label, value = value, onClickLabel = "Open $label", onClick = onClick)
+    ListRow(
+        label,
+        modifier = Modifier.heightIn(min = 56.dp),
+        value = value,
+        onClickLabel = "Open $label",
+        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        onClick = onClick,
+    )
 }
 
 /** The one-line explanation under a setting: what it changes, nothing more. */

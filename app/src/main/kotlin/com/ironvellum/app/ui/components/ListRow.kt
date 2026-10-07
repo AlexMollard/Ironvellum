@@ -3,6 +3,7 @@ package com.ironvellum.app.ui.components
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
@@ -43,6 +44,7 @@ fun ListRow(
     icon: ImageVector? = null,
     sublineColor: Color = IronvellumColors.InkMuted,
     onClickLabel: String? = null,
+    contentPadding: PaddingValues = PaddingValues(vertical = 8.dp),
     onClick: (() -> Unit)? = null,
 ) {
     Row(
@@ -50,7 +52,7 @@ fun ListRow(
             .fillMaxWidth()
             .then(if (onClick != null) Modifier.clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick) else Modifier)
             .heightIn(min = ListRowHeight)
-            .padding(vertical = 8.dp),
+            .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
