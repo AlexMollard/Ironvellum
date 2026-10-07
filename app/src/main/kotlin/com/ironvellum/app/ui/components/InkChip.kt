@@ -13,7 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.ripple
+import com.ironvellum.app.ui.theme.InkPressIndication
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -34,7 +34,7 @@ import com.ironvellum.app.ui.theme.inkBorder
  * secondary action ("Open trial", "History", BACK) and never outweighs the screen's one filled
  * button.
  *
- * The press ripple is drawn on the outline, not on the invisible margin around it.
+ * The press wash is drawn on the outline, not on the invisible margin around it.
  * [clickLabel] is what a screen reader says pressing does; [description] replaces the spoken
  * label for a chip whose text alone says too little ("All").
  */
@@ -62,7 +62,7 @@ fun InkChip(
                 .height(32.dp)
                 .clip(shape)
                 .inkBorder(IronvellumColors.SystemGreen.copy(alpha = 0.55f), shape, 1.dp)
-                .indication(press, ripple())
+                .indication(press, InkPressIndication)
                 .padding(horizontal = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(4.dp),

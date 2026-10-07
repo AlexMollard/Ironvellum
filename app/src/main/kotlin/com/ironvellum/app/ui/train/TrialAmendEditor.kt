@@ -13,7 +13,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -101,7 +101,7 @@ internal fun TrialAmendEditor(
                         .heightIn(min = 44.dp)
                         .padding(horizontal = 10.dp, vertical = 12.dp),
                 )
-                IconButton(onClick = { onChange { it.addSet(blockIdx) } }) {
+                InkIconButton(onClick = { onChange { it.addSet(blockIdx) } }) {
                     Icon(Icons.Filled.Add, contentDescription = "Add set", tint = IronvellumColors.SystemGreen)
                 }
             }

@@ -44,7 +44,7 @@ fun ListRow(
     icon: ImageVector? = null,
     sublineColor: Color = IronvellumColors.InkMuted,
     onClickLabel: String? = null,
-    contentPadding: PaddingValues = PaddingValues(vertical = 8.dp),
+    contentPadding: PaddingValues = LocalRowPadding.current,
     onClick: (() -> Unit)? = null,
 ) {
     Row(

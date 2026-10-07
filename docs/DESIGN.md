@@ -150,6 +150,9 @@ leading icon. For secondary actions in a header ("Open trial", "Share",
 Press feedback covers the whole control immediately with a faint ink wash,
 clipped to its existing shape. Buttons and rows share this treatment instead
 of an expanding Android ripple. Disabled controls stay unchanged.
+Grouped navigation rows use `InkRowPanel`: padding belongs inside each row,
+so its tap target and feedback reach the panel edges. Chips, tabs, icon actions,
+steppers and clickable panels use the same shared indication.
 
 - Logging, ticking and other reversible actions show "Set 2 logged · Undo" for
   about 5 seconds. Any done row can be tapped to edit or un-log it.

@@ -69,7 +69,7 @@ import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -82,6 +82,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.runtime.Composable
+import com.ironvellum.app.ui.theme.InkPressIndication
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
@@ -1691,7 +1692,7 @@ private fun StepZone(symbol: String, description: String, onClick: () -> Unit, g
             .fillMaxHeight()
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = InkPressIndication,
                 role = Role.Button,
                 onClick = onClick,
             )
@@ -1989,7 +1990,7 @@ private fun TrialHeader(
             )
             var menuOpen by remember { mutableStateOf(false) }
             Box {
-                IconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
+                InkIconButton(onClick = { menuOpen = true }, modifier = Modifier.size(48.dp)) {
                     Icon(Icons.Filled.MoreVert, contentDescription = "More options", tint = IronvellumColors.InkMuted)
                 }
                 DropdownMenu(
@@ -2203,7 +2204,7 @@ private fun ExerciseMenu(
 ) {
     var open by remember { mutableStateOf(false) }
     Box {
-        IconButton(onClick = { open = true }, modifier = Modifier.size(48.dp)) {
+        InkIconButton(onClick = { open = true }, modifier = Modifier.size(48.dp)) {
             Icon(Icons.Filled.MoreVert, contentDescription = "More for $name", tint = IronvellumColors.InkMuted)
         }
         DropdownMenu(
@@ -2411,7 +2412,7 @@ private fun StepButton(symbol: String, description: String, onClick: () -> Unit)
             .size(width = 44.dp, height = 48.dp)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = InkPressIndication,
                 role = Role.Button,
                 onClick = onClick,
             )

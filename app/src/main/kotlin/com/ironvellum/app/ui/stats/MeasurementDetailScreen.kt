@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.stats
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,7 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -47,6 +48,7 @@ import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkListRow
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.LedgerSpace
@@ -199,8 +201,8 @@ fun MeasurementDetailScreen(
             }
 
             if (newestFirst.isNotEmpty()) {
-                InkPanel(Modifier.fillMaxWidth()) {
-                    PanelLabel("READINGS")
+                InkRowPanel(Modifier.fillMaxWidth()) {
+                    Box(Modifier.padding(16.dp)) { PanelLabel("READINGS") }
                     val shown = if (showAll) newestFirst else newestFirst.take(RECENT_ROWS)
                     shown.forEachIndexed { i, entry ->
                         if (i > 0) InkDivider()
@@ -280,7 +282,7 @@ private fun ReadingRow(entry: MeasurementEntry, onDelete: () -> Unit) {
     // Keyed by the reading, so arming one row never arms its neighbour.
     var armed by remember(entry.id) { mutableStateOf(false) }
     Row(
-        Modifier.fillMaxWidth().heightIn(min = LedgerSpace.Target),
+        Modifier.fillMaxWidth().heightIn(min = LedgerSpace.Target).padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(vertical = 8.dp)) {
@@ -304,7 +306,7 @@ private fun ReadingRow(entry: MeasurementEntry, onDelete: () -> Unit) {
                 onDelete()
             }
         } else {
-            IconButton(onClick = { armed = true }) {
+            InkIconButton(onClick = { armed = true }) {
                 Icon(Icons.Outlined.Delete, contentDescription = "Delete reading", tint = IronvellumColors.InkMuted)
             }
         }

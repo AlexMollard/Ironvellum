@@ -16,6 +16,7 @@ import com.ironvellum.app.ui.theme.DotShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import com.ironvellum.app.ui.theme.InkPressIndication
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -111,7 +112,7 @@ fun InkTabs(
                         .selectable(
                             selected = selected,
                             interactionSource = remember { MutableInteractionSource() },
-                            indication = null,
+                            indication = InkPressIndication,
                             role = Role.Tab,
                             onClick = { onSelect(index) },
                         )

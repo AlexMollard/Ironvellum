@@ -9,13 +9,13 @@ import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -31,6 +31,7 @@ fun SettingsGroup(
     modifier: Modifier = Modifier,
     topSpace: Dp = 20.dp,
     contentPadding: PaddingValues = PaddingValues(16.dp),
+    rows: Boolean = false,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     if (label != null) {
@@ -38,7 +39,8 @@ fun SettingsGroup(
     } else {
         Spacer(Modifier.height(topSpace))
     }
-    InkPanel(modifier.fillMaxWidth(), contentPadding = contentPadding, content = content)
+    if (rows) InkRowPanel(modifier.fillMaxWidth(), content = content)
+    else InkPanel(modifier.fillMaxWidth(), contentPadding = contentPadding, content = content)
 }
 
 /** One tappable settings row, at least 48dp tall. */
@@ -48,8 +50,8 @@ fun TapRow(onClickLabel: String, onClick: () -> Unit, content: @Composable RowSc
         Modifier
             .fillMaxWidth()
             .heightIn(min = 48.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
-            .clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick),
+            .clickable(onClickLabel = onClickLabel, role = Role.Button, onClick = onClick)
+            .padding(LocalRowPadding.current),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         content = content,

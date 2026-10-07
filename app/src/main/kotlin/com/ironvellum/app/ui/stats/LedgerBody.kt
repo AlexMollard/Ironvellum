@@ -30,7 +30,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,6 +59,7 @@ import com.ironvellum.app.domain.Measurements
 import com.ironvellum.app.domain.StatEntry
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkListRow
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.LedgerSpace
@@ -201,11 +202,11 @@ internal fun BodyTab(
             }
         }
 
-        InkPanel(Modifier.fillMaxWidth()) {
-            ConsistencyRow(weeks, onClick = onOpenTraining)
+        InkPanel(Modifier.fillMaxWidth(), onClick = onOpenTraining) {
+            ConsistencyRow(weeks)
         }
 
-        InkPanel(Modifier.fillMaxWidth()) {
+        InkRowPanel(Modifier.fillMaxWidth()) {
             val logged = Measurements.latest(ui.measurements).size
             InkListRow(
                 label = "Tape readings",
@@ -267,11 +268,10 @@ private fun StatChip(label: String, value: String, hint: String, onClick: () -> 
 }
 
 @Composable
-private fun ConsistencyRow(weeks: List<Int>, onClick: () -> Unit) {
+private fun ConsistencyRow(weeks: List<Int>) {
     Column(
         Modifier
             .fillMaxWidth()
-            .clickable(role = Role.Button, onClick = onClick)
             .padding(bottom = 12.dp),
     ) {
         // The weekly average, not this month's count: Training's calendar
@@ -398,7 +398,7 @@ private fun HistoryRow(stat: StatEntry, profileHeight: Double?, onDelete: () -> 
                 onDelete()
             }
         } else {
-            IconButton(onClick = { armed = true }) {
+            InkIconButton(onClick = { armed = true }) {
                 Icon(Icons.Outlined.Delete, contentDescription = "Delete reading", tint = IronvellumColors.InkMuted)
             }
         }

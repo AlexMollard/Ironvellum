@@ -40,6 +40,7 @@ import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.InfoSheetSize
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkListRow
+import com.ironvellum.app.ui.components.InkRowPanel
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.LedgerSpace
@@ -248,7 +249,7 @@ internal fun ActivityTab(
             )
         }
 
-        if (hasHealthData || anyBurn) InkPanel(Modifier.fillMaxWidth()) {
+        if (hasHealthData || anyBurn) InkRowPanel(Modifier.fillMaxWidth()) {
             InkListRow(
                 label = "How these are estimated",
                 value = null,

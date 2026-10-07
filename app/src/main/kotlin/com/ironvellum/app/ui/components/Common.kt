@@ -107,11 +107,10 @@ fun InkPanel(
         .inkBorder(IronvellumColors.Rune, shape, 1.dp)
     if (onClick != null) {
         Surface(
-            onClick = onClick,
             shape = shape,
             color = Color.Transparent,
             contentColor = MaterialTheme.colorScheme.onSurface,
-            modifier = surfaceModifier,
+            modifier = surfaceModifier.clip(shape).clickable(onClick = onClick),
         ) {
             body()
         }
@@ -147,7 +146,7 @@ fun IronvellumTabPill(
             .selectedUnderline(selected)
             .clickable(
                 interactionSource = remember { MutableInteractionSource() },
-                indication = null,
+                indication = InkPressIndication,
             ) { onClick() }
             // The underline is invisible to a screen reader, which would otherwise
             // read every pill identically and give no clue which one is chosen.

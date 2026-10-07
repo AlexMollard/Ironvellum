@@ -22,6 +22,7 @@ import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import com.ironvellum.app.ui.theme.InkPressIndication
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -388,7 +389,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                                     .then(if (plated) Modifier else Modifier.clip(slotShape))
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
-                                        indication = null,
+                                        indication = InkPressIndication,
                                         onClick = open,
                                     )
                                     // 48dp is the documented minimum touch
