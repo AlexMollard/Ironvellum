@@ -138,11 +138,18 @@ enum class Term(
         "Your week of rites, each set on a day. Sealing the rite that falls on today " +
             "earns a bonus on top of the trial's XP.",
     ),
+    LEVEL(
+        "Level and XP",
+        "Each sealed trial earns XP. Fill the XP bar to reach your next level. " +
+            "The numbers show XP earned within this level and the XP it needs. " +
+            "Your ascension title follows your level; your Strength Rank follows your strength.",
+    ),
     OATH(
         "Oath",
         "The days you have kept training without a break. Every sealed trial keeps it, and so does a day of respite: " +
             "it only breaks when more than ${Streak.MAX_GAP_DAYS} days pass without one. " +
-            "The count is the days since the chain began, so it grows every morning it lives.",
+            "The count is the days since the chain began, so it grows every morning it lives. " +
+            "The Oath bar shows progress towards the next oath deed milestone.",
     ),
     SEAL(
         "Seal",

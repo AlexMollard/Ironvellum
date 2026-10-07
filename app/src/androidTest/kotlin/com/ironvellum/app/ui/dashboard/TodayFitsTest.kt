@@ -334,16 +334,24 @@ class TodayFitsTest {
     }
 
     @Test
-    fun anEarnedOathSpansTheHeaderAndOpensItsExplanation() {
+    fun pairedProgressKeepsTheBarsAlignedAndOpensTheOathExplanation() {
         show(ui = DashboardUi(profile = PlayerProfile(name = "Alex", currentTitleId = "marching_orders"), streak = 10, presets = listOf(rite(3, day = 1))), selectedDay = 1)
         val panel = compose.onNodeWithTag("today-oath")
         panel.assertIsDisplayed()
         val header = compose.onNodeWithTag("today").getUnclippedBoundsInRoot()
         val bounds = panel.getUnclippedBoundsInRoot()
-        assertEquals(header.left + 16.dp, bounds.left)
+        val level = compose.onNodeWithTag("today-level").getUnclippedBoundsInRoot()
+        assertEquals(header.left + 16.dp, level.left)
         assertEquals(header.right - 16.dp, bounds.right)
-        assertInside("10")
-        assertInside("days kept")
+        assertEquals((level.right - level.left).value, (bounds.right - bounds.left).value, 0.5f)
+        assertEquals(level.top, bounds.top)
+        assertTrue("progress controls must not overlap", level.right < bounds.left)
+        val xpBar = compose.onNodeWithTag("today-xp-bar", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        val oathBar = compose.onNodeWithTag("today-oath-bar", useUnmergedTree = true).getUnclippedBoundsInRoot()
+        assertEquals(xpBar.top, oathBar.top)
+        assertEquals((xpBar.right - xpBar.left).value, (oathBar.right - oathBar.left).value, 0.5f)
+        assertInside("10 / 14 days")
+        assertInside("Next: Fortnight Vigil")
         saveShot("today-oath")
         compose.mainClock.autoAdvance = false
         panel.performClick()
@@ -359,10 +367,35 @@ class TodayFitsTest {
     @Test
     fun anOathThatHasNotBegunShowsHowToStart() {
         show(ui = DashboardUi(presets = listOf(rite(3, day = 1))), selectedDay = 1)
-        assertInside("0")
+        assertInside("0 / 3 days")
         assertInside("Seal a trial to begin")
         compose.onNodeWithTag("today-oath").assertIsDisplayed()
         saveShot("today-oath-empty")
+    }
+
+    @Test
+    fun theLevelProgressOpensAnExplanationWithoutLeavingToday() {
+        show(ui = DashboardUi(presets = listOf(rite(3, day = 1))), selectedDay = 1)
+        compose.onNodeWithTag("today-level").performClick()
+        compose.mainClock.advanceTimeByFrame()
+        compose.waitForIdle()
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.onNodeWithText("Each sealed trial earns XP.", substring = true).assertIsDisplayed()
+        compose.onNodeWithText("Close").assertIsDisplayed()
+    }
+
+    @Test
+    fun reachingAnOathMilestoneTargetsTheNextExistingDeed() {
+        show(ui = DashboardUi(streak = 14, presets = listOf(rite(3, day = 1))), selectedDay = 1)
+        assertInside("14 / 30 days")
+        assertInside("Next: Unrelenting Watch")
+    }
+
+    @Test
+    fun theFinalOathMilestoneKeepsShowingTheStreak() {
+        show(ui = DashboardUi(streak = 105, presets = listOf(rite(3, day = 1))), selectedDay = 1)
+        assertInside("105 days kept")
+        assertInside("Milestones complete")
     }
 
     @Test
