@@ -136,6 +136,7 @@ import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
+import com.ironvellum.app.domain.workingNumber
 import com.ironvellum.app.ui.components.ShareCardDialog
 import com.ironvellum.app.ui.components.ExerciseInfoSheet
 import com.ironvellum.app.ui.components.ExercisePickerSheet
@@ -374,6 +375,11 @@ class SessionViewModel(
     /** Undo for either removal above. */
     fun restoreSets(removed: Repository.RemovedSets) {
         viewModelScope.launchGuarded("restore sets") { repo.restoreSets(removed) }
+    }
+
+    /** "Mark as warm-up" and "Count as a working set" on a set's edit row. */
+    fun setWarmup(setId: Long, warmup: Boolean) {
+        viewModelScope.launchGuarded("mark warm-up") { repo.setWarmup(setId, warmup) }
     }
 
     fun setModifiers(exerciseId: Long, modifiers: String) {
@@ -637,16 +643,18 @@ fun SessionScreen(
             .sortedBy { it.position }
     }
     val doneCount = ui.sets.count { it.done }
-    val unlogged = ui.sets.size - doneCount
+    // A warm-up is stored unticked and never counts: it is neither to log nor logged.
+    val workCount = ui.sets.count { !it.warmup }
+    val unlogged = ui.sets.count { it.isPending }
     // Nothing logged is nothing to seal: finishing an empty trial is an
     // abandon, and it must never mint the completion bonus.
     val anyDone = doneCount > 0
-    val allLogged = ui.sets.isNotEmpty() && unlogged == 0
+    val allLogged = workCount > 0 && unlogged == 0
     // One exercise is open: the one holding the next unlogged set, unless the
     // lifter opened another. The footer logs the open card's next set.
-    val nextBlock = blocks.firstOrNull { block -> block.sets.any { !it.done } }
+    val nextBlock = blocks.firstOrNull { block -> block.sets.any { it.isPending } }
     val openBlock = blocks.firstOrNull { it.id == openOverride } ?: nextBlock ?: blocks.lastOrNull()
-    val activeSet = openBlock?.sets?.firstOrNull { !it.done } ?: nextBlock?.sets?.firstOrNull { !it.done }
+    val activeSet = openBlock?.sets?.firstOrNull { it.isPending } ?: nextBlock?.sets?.firstOrNull { it.isPending }
     LaunchedEffect(openBlock?.id) { editingSetId = null }
 
     val seekOpen = remember { BringIntoViewRequester() }
@@ -669,9 +677,9 @@ fun SessionScreen(
         val set = activeSet ?: return
         commit(set.copy(done = true))
         undoSerial++
-        undo = UndoPrompt.Logged(undoSerial, set.id, set.setIndex + 1)
+        undo = UndoPrompt.Logged(undoSerial, set.id, set.workingNumber(ui.sets))
         // The card moves on once its last set is logged.
-        if (openBlock != null && openBlock.sets.none { !it.done && it.id != set.id }) openOverride = null
+        if (openBlock != null && openBlock.sets.none { it.isPending && it.id != set.id }) openOverride = null
     }
 
     fun offerRemovedUndo(message: String, removed: Repository.RemovedSets) {
@@ -692,7 +700,7 @@ fun SessionScreen(
     fun requestSeal() {
         val done = ui.sets.count { it.done }
         if (done == 0 || completion != null || claiming) return
-        if (done < ui.sets.size) confirmClaim = true else viewModel.complete()
+        if (ui.sets.any { it.isPending }) confirmClaim = true else viewModel.complete()
     }
 
     val signedIn = (LocalContext.current.applicationContext as com.ironvellum.app.IronvellumApp)
@@ -709,7 +717,7 @@ fun SessionScreen(
             TrialHeader(
                 overline = if (session.presetId != null) "${session.label} · rite" else null,
                 done = doneCount,
-                total = ui.sets.size,
+                total = workCount,
                 minutesLeft = minutesLeft,
                 startedAtMs = session.startedAtMs,
                 onBack = onExit,
@@ -765,7 +773,7 @@ fun SessionScreen(
                                 onEditModifiers = { editModifiersFor = block.id },
                                 onMove = { up -> viewModel.moveExercise(first.exercisePosition, up) },
                                 onEditLoad = if (metric.isStrength || (metric == ExerciseMetric.DURATION && weighted)) {
-                                    { editLoadFor = block.sets.firstOrNull { !it.done } ?: block.sets.last() }
+                                    { editLoadFor = block.sets.firstOrNull { it.isPending } ?: block.sets.last() }
                                 } else {
                                     null
                                 },
@@ -773,12 +781,14 @@ fun SessionScreen(
                                     // A duplicate carries the block's own figure: a hold's
                                     // seconds, an activity's duration — a copy of a Yoga set
                                     // starting at "10 reps" repeats the seconds-as-reps bug.
+                                    // Never a warm-up's figure: the new set is a working one.
+                                    val base = block.sets.firstOrNull { !it.warmup } ?: first
                                     val copySeconds = when {
-                                        metric == ExerciseMetric.HOLD -> first.durationSec ?: DEFAULT_HOLD_SECONDS
-                                        metric == ExerciseMetric.DURATION || metric == ExerciseMetric.DISTANCE_TIME -> first.durationSec
+                                        metric == ExerciseMetric.HOLD -> base.durationSec ?: DEFAULT_HOLD_SECONDS
+                                        metric == ExerciseMetric.DURATION || metric == ExerciseMetric.DISTANCE_TIME -> base.durationSec
                                         else -> null
                                     }
-                                    viewModel.addSet(block.id, first.reps, first.weightKg, first.modifiers, copySeconds)
+                                    viewModel.addSet(block.id, base.reps, base.weightKg, base.modifiers, copySeconds)
                                 },
                                 // Removing a block's only set removes the exercise, so a
                                 // one-off added by mistake can be taken back out.
@@ -796,6 +806,7 @@ fun SessionScreen(
                                 onTypeLoad = { editLoadFor = it },
                                 onTypeFigure = { set, kind -> typing = set to kind },
                                 onToggleEdit = { set -> editingSetId = if (editingSetId == set.id) null else set.id },
+                                onToggleWarmup = { set -> viewModel.setWarmup(set.id, !set.warmup) },
                                 onUnlog = { set ->
                                     commit(set.copy(done = false))
                                     editingSetId = null
@@ -810,7 +821,7 @@ fun SessionScreen(
                                 name = first.exerciseName,
                                 subline = foldedSubline(block, metric, weighted),
                                 done = block.sets.count { it.done },
-                                total = block.sets.size,
+                                total = block.sets.count { !it.warmup },
                                 onOpen = { openOverride = block.id },
                             )
                             previousFolded = true
@@ -848,12 +859,12 @@ fun SessionScreen(
             TrialFooter(
                 allLogged = allLogged,
                 rest = rest,
-                nextSetNumber = activeSet?.let { it.setIndex + 1 },
+                nextSetNumber = activeSet?.workingNumber(ui.sets),
                 nextLine = activeSet?.let { set ->
                     val figure = setFigureText(set, metricOf(set.exerciseId), exercises.firstOrNull { it.id == set.exerciseId }?.isWeighted ?: false)
                     // Named only when it is not the card on screen.
                     val where = if (set.exerciseId != openBlock?.id) " · ${set.exerciseName}" else ""
-                    "Set ${set.setIndex + 1}$where · $figure"
+                    "Set ${set.workingNumber(ui.sets)}$where · $figure"
                 },
                 onLog = ::logActive,
                 onExtend = viewModel::extendRest,
@@ -959,7 +970,7 @@ fun SessionScreen(
         // a different load was a deliberate change and is left alone.
         val following = ui.sets.filter {
             it.exerciseId == target.exerciseId && it.setIndex >= target.setIndex &&
-                (it.id == target.id || !it.done || it.weightKg == target.weightKg)
+                (it.id == target.id || (!it.warmup && (!it.done || it.weightKg == target.weightKg)))
         }
         val focus = remember { FocusRequester() }
         LaunchedEffect(target.id) { focus.requestFocus() }
@@ -982,7 +993,7 @@ fun SessionScreen(
                         overflow = TextOverflow.Ellipsis,
                     )
                     Text(
-                        "SET ${target.setIndex + 1}",
+                        "SET ${target.workingNumber(ui.sets)}",
                         style = MaterialTheme.typography.labelSmall,
                         fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
@@ -1033,6 +1044,7 @@ fun SessionScreen(
     typing?.let { (target, kind) ->
         FigureEntryDialog(
             set = target,
+            number = target.workingNumber(ui.sets),
             kind = kind,
             onApply = { n ->
                 // The set as it stands now, not as it stood when the dialog opened.
@@ -1142,7 +1154,7 @@ fun SessionScreen(
                     // lowers the set count (RoutineUpdate.propose); the title
                     // says so whenever an offered movement has one.
                     val offered = offer.changes.map { it.before.exerciseId }.toSet()
-                    val shortDay = ui.sets.any { !it.done && it.exerciseId in offered }
+                    val shortDay = ui.sets.any { it.isPending && it.exerciseId in offered }
                     RoutineUpdateDialog(
                         offer = offer,
                         shortDay = shortDay,
@@ -1788,7 +1800,7 @@ private class Figure(
     val plus: SessionSet,
 )
 
-private enum class RowState { DONE, EDITING, ACTIVE, UPCOMING }
+private enum class RowState { DONE, WARMUP, EDITING, ACTIVE, UPCOMING }
 
 /** How long Undo stays up after a set is logged or removed. */
 private const val UNDO_MS = 5_000L
@@ -1966,8 +1978,8 @@ private fun newPeakSetIds(
 /** A folded exercise's second line, by how far along it is. */
 private fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: Boolean): String {
     val done = block.sets.filter { it.done }
-    val total = block.sets.size
-    val first = block.first
+    val total = block.sets.count { !it.warmup }
+    val first = block.sets.firstOrNull { !it.warmup } ?: block.first
     return when {
         done.size == total -> {
             // Best by load then reps; an activity's best is its longest figure.
@@ -2117,6 +2129,7 @@ private fun OpenExerciseCard(
     onTypeLoad: (SessionSet) -> Unit,
     onTypeFigure: (SessionSet, FigureKind) -> Unit,
     onToggleEdit: (SessionSet) -> Unit,
+    onToggleWarmup: (SessionSet) -> Unit,
     onUnlog: (SessionSet) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -2207,7 +2220,8 @@ private fun OpenExerciseCard(
         block.sets.forEach { set ->
             key(set.id) {
                 val state = when {
-                    set.done && set.id == editingSetId -> RowState.EDITING
+                    (set.done || set.warmup) && set.id == editingSetId -> RowState.EDITING
+                    set.warmup -> RowState.WARMUP
                     set.done -> RowState.DONE
                     set.id == activeSetId -> RowState.ACTIVE
                     else -> RowState.UPCOMING
@@ -2217,11 +2231,14 @@ private fun OpenExerciseCard(
                     metric = metric,
                     weighted = weighted,
                     state = state,
+                    // Warm-ups read W and the working sets count from 1 after them, as in the amend editor.
+                    label = if (set.warmup) "W" else "${set.workingNumber(block.sets)}",
                     newPeak = set.id in newPeaks,
                     onEdit = onEdit,
                     onTypeLoad = { onTypeLoad(set) },
                     onTypeFigure = { kind -> onTypeFigure(set, kind) },
                     onToggleEdit = { onToggleEdit(set) },
+                    onToggleWarmup = { onToggleWarmup(set) },
                     onUnlog = { onUnlog(set) },
                     onRemove = { onRemoveSet(set) },
                 )
@@ -2285,15 +2302,16 @@ private fun TrialSetRow(
     metric: ExerciseMetric,
     weighted: Boolean,
     state: RowState,
+    label: String,
     newPeak: Boolean,
     onEdit: (SessionSet) -> Unit,
     onTypeLoad: () -> Unit,
     onTypeFigure: (FigureKind) -> Unit,
     onToggleEdit: () -> Unit,
+    onToggleWarmup: () -> Unit,
     onUnlog: () -> Unit,
     onRemove: () -> Unit,
 ) {
-    val number = set.setIndex + 1
     if (state == RowState.ACTIVE || state == RowState.EDITING) {
         val figures = figuresFor(set, metric, weighted)
         Column(
@@ -2305,7 +2323,7 @@ private fun TrialSetRow(
         ) {
             Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "$number",
+                    label,
                     style = MaterialTheme.typography.titleSmall,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.Ink,
@@ -2336,22 +2354,34 @@ private fun TrialSetRow(
             }
             if (state == RowState.EDITING) {
                 Row(Modifier.fillMaxWidth().padding(start = 22.dp), verticalAlignment = Alignment.CenterVertically) {
-                    RowAction("Un-log", IronvellumColors.Ink, onUnlog)
+                    // A warm-up was never logged, so there is nothing to un-log.
+                    if (!set.warmup) RowAction("Un-log", IronvellumColors.Ink, onUnlog)
                     RowAction("Remove", IronvellumColors.DangerRed, onRemove)
                     Spacer(Modifier.weight(1f))
                     RowAction("Close", IronvellumColors.InkMuted, onToggleEdit)
+                }
+                Row(Modifier.fillMaxWidth().padding(start = 22.dp), verticalAlignment = Alignment.CenterVertically) {
+                    RowAction(if (set.warmup) "Count as a working set" else "Mark as warm-up", IronvellumColors.Ink, onToggleWarmup)
                 }
             }
         }
         return
     }
     val done = state == RowState.DONE
-    val tone = if (done) IronvellumColors.InkMuted else IronvellumColors.InkMuted.copy(alpha = 0.7f)
+    // A warm-up reads as a muted line like a logged set, and opens the same edit row.
+    val editable = done || state == RowState.WARMUP
+    val tone = if (editable) IronvellumColors.InkMuted else IronvellumColors.InkMuted.copy(alpha = 0.7f)
     Row(
         Modifier
             .fillMaxWidth()
-            .then(if (done) Modifier.clickable(onClickLabel = "Edit set $number", onClick = onToggleEdit) else Modifier)
-            .heightIn(min = if (done) 48.dp else 44.dp)
+            .then(
+                if (editable) {
+                    Modifier.clickable(onClickLabel = if (set.warmup) "Edit warm-up" else "Edit set $label", onClick = onToggleEdit)
+                } else {
+                    Modifier
+                },
+            )
+            .heightIn(min = if (editable) 48.dp else 44.dp)
             .padding(horizontal = 16.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -2364,7 +2394,7 @@ private fun TrialSetRow(
             modifier = Modifier.width(18.dp),
         )
         Text(
-            "$number",
+            label,
             style = MaterialTheme.typography.bodySmall,
             fontFamily = ChakraPetch,
             color = tone,
@@ -2782,6 +2812,7 @@ private fun restNow(timer: RestTimer?): Long {
 @Composable
 private fun FigureEntryDialog(
     set: SessionSet,
+    number: Int,
     kind: FigureKind,
     onApply: (Int) -> Unit,
     onDismiss: () -> Unit,
@@ -2803,7 +2834,7 @@ private fun FigureEntryDialog(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    "Set ${set.setIndex + 1}",
+                    "Set $number",
                     style = MaterialTheme.typography.labelSmall,
                     color = IronvellumColors.InkMuted,
                 )

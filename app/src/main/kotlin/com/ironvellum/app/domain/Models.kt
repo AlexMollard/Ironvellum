@@ -75,7 +75,14 @@ data class SessionSet(
     val warmup: Boolean = false,
     /** Shared by the sets of adjacent blocks done as one superset; null when not in one. */
     val supersetGroup: Int? = null,
-)
+) {
+    /** Still to be logged: a warm-up is stored unticked and never counts, so it is never waiting. */
+    val isPending: Boolean get() = !done && !warmup
+}
+
+/** This set's number among its movement's working sets in [all]: warm-ups are not counted, as in the amend editor. */
+fun SessionSet.workingNumber(all: List<SessionSet>): Int =
+    all.count { it.exerciseId == exerciseId && !it.warmup && it.setIndex <= setIndex }
 
 data class WorkoutSession(
     val id: Long = 0,

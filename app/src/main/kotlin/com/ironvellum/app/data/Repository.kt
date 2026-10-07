@@ -905,10 +905,23 @@ class Repository(
     suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
-        val next = current.copy(reps = reps, weightKg = weightKg, done = done)
+        val next = current.copy(reps = reps, weightKg = weightKg, done = done && !current.warmup)
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.REPS))
+    }
+
+    /**
+     * Marks a live-trial set as a warm-up, or counts it as a working set. A
+     * warm-up is stored unticked, so it drops out of everything that counts
+     * ticked sets (XP, strength, records); the writers above keep it unticked
+     * whatever a stale screen sends. Counting it again ticks it: a set called
+     * a warm-up was one the lifter had done.
+     */
+    suspend fun setWarmup(setId: Long, warmup: Boolean) = db.withTransaction {
+        val current = sessionDao.setById(setId) ?: return@withTransaction
+        if (isSealed(current.sessionId)) return@withTransaction
+        sessionDao.updateSet(current.copy(warmup = warmup, done = !warmup))
     }
 
     /**
@@ -927,7 +940,7 @@ class Repository(
             reps = 0,
             durationSec = seconds.coerceAtLeast(0),
             weightKg = weightKg,
-            done = done,
+            done = done && !current.warmup,
         )
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
@@ -984,7 +997,7 @@ class Repository(
             distanceM = distanceM?.coerceAtLeast(0.0),
             grade = grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
             weightKg = weightKg,
-            done = done,
+            done = done && !current.warmup,
         )
         sessionDao.updateSet(next)
         followLoad(current, weightKg)

@@ -130,6 +130,17 @@ class SessionScoringTest {
         assertEquals(expected, scoring.strength(fixture, 80.0, Sex.MALE))
     }
 
+    @Test
+    fun `a warm-up is stored unticked and adds nothing to xp or strength`() {
+        val scoring = SessionScoring(catalogue)
+        // The exclusion is the stored shape, not a filter: a warm-up never carries done = true
+        // (the live screen's writers and the amend editor both keep it unticked), so the
+        // ticked-sets rule above leaves it out. A heavy one must change nothing.
+        val warmup = set(1, 3, 12, 140.0, done = false).copy(warmup = true)
+        assertEquals(scoring.xp(fixture, 80.0), scoring.xp(fixture + warmup, 80.0))
+        assertEquals(scoring.strength(fixture, 80.0, Sex.MALE), scoring.strength(fixture + warmup, 80.0, Sex.MALE))
+    }
+
     private companion object {
         /** Recorded from the pre-extraction inline code for [fixture] at 80 kg. */
         const val GOLDEN_XP_AT_80 = 406

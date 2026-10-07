@@ -18,6 +18,7 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.RestClock
 import com.ironvellum.app.domain.RestTimer
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.workingNumber
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -137,7 +138,7 @@ class WorkoutSessionService : Service() {
                         return@collect
                     }
                     val done = sets.count { it.done }
-                    val allDone = sets.isNotEmpty() && done == sets.size
+                    val allDone = sets.any { !it.warmup } && sets.none { it.isPending }
                     // "Rest is over" is stale news once the sets move on: a set
                     // ticked or unticked, or every set done (no rest follows).
                     if (allDone || (lastDone >= 0 && done != lastDone)) {
@@ -215,9 +216,9 @@ class WorkoutSessionService : Service() {
     }
 
     /** "Set 3 · 8 reps · 60kg" for the next set to do, or null when every set is done. */
-    private fun nextLine(next: SessionSet?): String? = next?.let {
+    private fun nextLine(next: SessionSet?, sets: List<SessionSet>): String? = next?.let {
         buildString {
-            append("Set ${it.setIndex + 1}")
+            append("Set ${it.workingNumber(sets)}")
             // A HOLD set carries its figure in seconds; REPS sets count.
             val figure = if (it.durationSec != null && it.reps == 0)
                 "${it.durationSec}s" else "${it.reps} ${if (it.reps == 1) "rep" else "reps"}"
@@ -234,16 +235,16 @@ class WorkoutSessionService : Service() {
      */
     private fun buildNotification(sessionId: Long, sets: List<SessionSet>, startedAtMs: Long?, rest: RestTimer?): Notification {
         val done = sets.count { it.done }
-        val total = sets.size
-        val next = sets.firstOrNull { !it.done }
+        val total = sets.count { !it.warmup }
+        val next = sets.firstOrNull { it.isPending }
         // The exercise the lifter is on now, not the first one of the day.
         val title = (next ?: sets.firstOrNull())?.exerciseName ?: "Trial"
         val resting = rest != null && !rest.isOver(SystemClock.elapsedRealtime())
         val body = when {
             total == 0 -> "Opening the trial…"
             next == null -> "Every set is done. Seal the Trial."
-            resting -> "Rest · then ${nextLine(next)}"
-            else -> nextLine(next).orEmpty()
+            resting -> "Rest · then ${nextLine(next, sets)}"
+            else -> nextLine(next, sets).orEmpty()
         }
         val setWord = if (total == 1) "set" else "sets"
         val builder = NotificationCompat.Builder(this, Notifications.CHANNEL_TRIAL)
@@ -278,12 +279,12 @@ class WorkoutSessionService : Service() {
     }
 
     private fun restOverNotification(sessionId: Long, sets: List<SessionSet>): Notification {
-        val next = sets.firstOrNull { !it.done }
+        val next = sets.firstOrNull { it.isPending }
         return NotificationCompat.Builder(this, Notifications.CHANNEL_REST)
             .setSmallIcon(R.drawable.ic_reminder)
             .setColor(Notifications.ACCENT)
             .setContentTitle("Rest is over")
-            .setContentText(next?.let { "${it.exerciseName} · ${nextLine(it)}" } ?: "On to the next set.")
+            .setContentText(next?.let { "${it.exerciseName} · ${nextLine(it, sets)}" } ?: "On to the next set.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(trialIntent(sessionId, seal = false, requestCode = Notifications.REQUEST_REST_OVER))
             .setAutoCancel(true)
