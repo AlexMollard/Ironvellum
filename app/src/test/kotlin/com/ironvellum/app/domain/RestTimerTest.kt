@@ -90,8 +90,18 @@ class RestTimerTest {
     }
 
     @Test
-    fun `rest follows the prescription for the movement and the focus`() {
-        assertEquals(ProgramRules.restSeconds(TrainingFocus.STRENGTH, compound = true), RestTimer.restSeconds("Unprofiled Lift", TrainingFocus.STRENGTH))
-        assertEquals(ProgramRules.restSeconds(TrainingFocus.MUSCLE, compound = true), RestTimer.restSeconds("Unprofiled Lift", TrainingFocus.MUSCLE))
+    fun `rest follows the window for the movement and the focus`() {
+        // An unprofiled lift is no longer a heavy compound: it takes the loaded-compound window.
+        assertEquals(RestRules.LOADED_COMPOUND.strength, RestTimer.window("Unprofiled Lift", TrainingFocus.STRENGTH))
+        assertEquals(RestRules.LOADED_COMPOUND.muscle, RestTimer.window("Unprofiled Lift", TrainingFocus.MUSCLE))
+        assertEquals(RestRules.Window(180, 300), RestTimer.window("Back Squat", TrainingFocus.STRENGTH))
+        assertTrue(RestTimer.window("Running", TrainingFocus.MUSCLE).isNone)
+    }
+
+    @Test
+    fun `a timer carries the suggested max for the strip`() {
+        assertEquals(180, RestTimer.start(1, 90, nowMs = 0, maxSeconds = 180).maxSeconds)
+        assertEquals("3:00", RestTimer.clock(180))
+        assertEquals("0:45", RestTimer.clock(45))
     }
 }

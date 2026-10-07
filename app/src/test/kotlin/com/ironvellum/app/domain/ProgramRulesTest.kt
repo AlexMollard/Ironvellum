@@ -173,11 +173,21 @@ class ProgramRulesTest {
 
     @Test
     fun `rest respects the evidence thresholds`() {
-        // Strength mains 3-5 min (Schoenfeld 2016), accessories never under
-        // 90 s (Singer 2024).
-        assertEquals(300, ProgramRules.restSeconds(TrainingFocus.STRENGTH, true))
-        assertTrue(ProgramRules.restSeconds(TrainingFocus.MUSCLE, true) >= 90)
-        assertTrue(ProgramRules.restSeconds(TrainingFocus.MUSCLE, false) >= 90)
+        // Heavy strength mains reach 3-5 min (Schoenfeld 2016); no measured
+        // movement waits under 45 s unless it is mobility or an activity,
+        // and ready never passes max (Singer 2024: little past ~90 s).
+        val heavy = RestRules.window("Back Squat", TrainingFocus.STRENGTH)
+        assertEquals(180, heavy.ready)
+        assertEquals(300, heavy.max)
+        for (name in MuscleMap.keys) {
+            val category = RestRules.windowsFor(name)
+            if (category === RestRules.NONE || category === RestRules.MOBILITY) continue
+            for (focus in TrainingFocus.entries) {
+                val w = RestRules.window(name, focus)
+                assertTrue("$name $focus ready", w.ready >= 45)
+                assertTrue("$name $focus ready<=max", w.ready <= w.max)
+            }
+        }
     }
 
     // ----------------------------------------------------------------- sex

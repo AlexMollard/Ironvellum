@@ -110,12 +110,8 @@ class SetCeilingTest {
     fun `a unilateral set pays its work once per side on the clock`() {
         for (focus in TrainingFocus.entries) {
             assertEquals(
-                ProgramRules.setSeconds(focus, compound = false) + ProgramRules.SET_WORK_SECONDS,
+                ProgramRules.setSeconds(focus, "Standing Calf Raise") + ProgramRules.SET_WORK_SECONDS,
                 ProgramRules.setSeconds(focus, "Single-Leg Calf Raise"),
-            )
-            assertEquals(
-                ProgramRules.setSeconds(focus, compound = false),
-                ProgramRules.setSeconds(focus, "Standing Calf Raise"),
             )
         }
         // Every name the unilateral list carries is a real profile.

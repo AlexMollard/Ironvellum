@@ -29,23 +29,23 @@ class SessionClockTest {
     @Test
     fun `remaining time counts only the sets not yet done`() {
         val sets = listOf(deadlift(done = true), deadlift(), curl(done = true), curl())
-        // Strength: compound 300 s rest + 40 s work, isolation 90 + 40.
-        assertEquals(340 + 130, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.STRENGTH))
-        assertEquals(2 * 340 + 2 * 130, SessionClock.totalSeconds(sets, metricOf, TrainingFocus.STRENGTH))
-        // Muscle focus shortens compound rest to 150 s.
-        assertEquals(190 + 130, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.MUSCLE))
+        // Strength: a deadlift is priced at its 180 s ready rest + 40 s work, a curl at 60 + 40.
+        assertEquals(220 + 100, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.STRENGTH))
+        assertEquals(2 * 220 + 2 * 100, SessionClock.totalSeconds(sets, metricOf, TrainingFocus.STRENGTH))
+        // Muscle focus shortens them to 120 and 45.
+        assertEquals(160 + 85, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.MUSCLE))
     }
 
     @Test
     fun `a finished session has nothing left`() {
         val sets = listOf(deadlift(done = true), curl(done = true))
         assertEquals(0, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.STRENGTH))
-        assertEquals("EST 8 MIN", SessionClock.estimateLine(340 + 130, 0))
+        assertEquals("EST 6 MIN", SessionClock.estimateLine(220 + 100, 0))
     }
 
     @Test
     fun `a hold costs its own seconds plus rest, not the counted-set work time`() {
-        val plankRest = ProgramRules.restSeconds(TrainingFocus.MUSCLE, MuscleMap.profile("Plank")?.compound ?: true)
+        val plankRest = RestRules.readySeconds("Plank", TrainingFocus.MUSCLE)
         assertEquals(plankRest + 90, SessionClock.setSeconds(hold(90), ExerciseMetric.HOLD, TrainingFocus.MUSCLE))
         assertEquals(plankRest + 20, SessionClock.setSeconds(hold(20), ExerciseMetric.HOLD, TrainingFocus.MUSCLE))
         // A legacy hold keeps its seconds in reps.
@@ -73,8 +73,8 @@ class SessionClockTest {
             PlannedEntry(exerciseName = "Deadlift", sets = 3, reps = 5, targetWeightKg = null),
             PlannedEntry(exerciseName = "Bicep Curl", sets = 2, reps = 12, targetWeightKg = null),
         )
-        // 3 × 340 + 2 × 130 = 1280 s → 22 min.
-        assertEquals("2 EXERCISES · 5 SETS · ~22 MIN", SessionClock.planLine(entries, TrainingFocus.STRENGTH))
+        // 3 × 220 + 2 × 100 = 860 s → 15 min.
+        assertEquals("2 EXERCISES · 5 SETS · ~15 MIN", SessionClock.planLine(entries, TrainingFocus.STRENGTH))
     }
 
     @Test
@@ -89,10 +89,13 @@ class SessionClockTest {
     }
 
     @Test
-    fun `saved focus outranks the profile mode`() {
-        assertEquals(TrainingFocus.SKILL, SessionClock.focusFor(TrainingFocus.SKILL, TrainingMode.STRENGTH))
+    fun `the training mode outranks the saved focus, which only decides without one`() {
+        // A hypertrophy lifter whose last program was a strength one still rests like one.
+        assertEquals(TrainingFocus.MUSCLE, SessionClock.focusFor(TrainingFocus.STRENGTH, TrainingMode.HYPERTROPHY))
+        assertEquals(TrainingFocus.STRENGTH, SessionClock.focusFor(TrainingFocus.MUSCLE, TrainingMode.STRENGTH))
         assertEquals(TrainingFocus.STRENGTH, SessionClock.focusFor(null, TrainingMode.STRENGTH))
         assertEquals(TrainingFocus.MUSCLE, SessionClock.focusFor(null, TrainingMode.HYPERTROPHY))
+        assertEquals(TrainingFocus.SKILL, SessionClock.focusFor(TrainingFocus.SKILL, null))
         assertEquals(TrainingFocus.MUSCLE, SessionClock.focusFor(null, null))
     }
 
@@ -167,7 +170,7 @@ class SessionClockTest {
         // No history: null, and the estimate falls back to the rule figure.
         assertEquals(null, SessionClock.pace(emptyList()).secondsPerSet(1))
         val sets = listOf(deadlift(done = true), deadlift(), curl())
-        assertEquals(340 + 130, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.STRENGTH, null))
+        assertEquals(220 + 100, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.STRENGTH, null))
         assertEquals(2 * 225, SessionClock.remainingSeconds(sets, metricOf, TrainingFocus.STRENGTH, 225))
         assertEquals(3 * 225, SessionClock.totalSeconds(sets, metricOf, TrainingFocus.STRENGTH, 225))
     }
@@ -181,7 +184,9 @@ class SessionClockTest {
     @Test
     fun `a timed activity costs its duration plus rest, not a pace set`() {
         val run = SessionSet(exerciseId = 4, exerciseName = "Running", setIndex = 0, reps = 0, durationSec = 2700)
-        val rest = ProgramRules.restSeconds(TrainingFocus.MUSCLE, MuscleMap.profile("Running")?.compound ?: true)
+        // An activity has no rest between sets: it costs its logged duration.
+        val rest = RestRules.readySeconds("Running", TrainingFocus.MUSCLE)
+        assertEquals(0, rest)
         assertEquals(rest + 2700, SessionClock.setSeconds(run, ExerciseMetric.DURATION, TrainingFocus.MUSCLE))
         val row = run.copy(distanceM = 5000.0, durationSec = 1500)
         assertEquals(185 + 1500, SessionClock.setSeconds(row, ExerciseMetric.DISTANCE_TIME, TrainingFocus.MUSCLE, 225))

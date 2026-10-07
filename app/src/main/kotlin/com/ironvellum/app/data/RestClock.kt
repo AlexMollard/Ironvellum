@@ -23,8 +23,8 @@ object RestClock {
 
     private fun now() = clock()
 
-    fun start(sessionId: Long, seconds: Int) {
-        _timer.value = RestTimer.start(sessionId, seconds, now())
+    fun start(sessionId: Long, seconds: Int, maxSeconds: Int = 0) {
+        _timer.value = RestTimer.start(sessionId, seconds, now(), maxSeconds)
     }
 
     fun extend(sessionId: Long) {

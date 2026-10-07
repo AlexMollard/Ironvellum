@@ -343,17 +343,8 @@ object ProgramRules {
 
     // ------------------------------------------------------------------ rest
 
-    /**
-     * Rest in seconds for a working set: strength compounds 3-5 min (300 s
-     * cap on the main lifts, Schoenfeld 2016, Grgic 2018), hypertrophy work
-     * >=90 s with 2-3 min typical (Singer 2024: benefit above 60 s, plateau
-     * near 90 s).
-     */
-    fun restSeconds(focus: TrainingFocus, compound: Boolean): Int = when {
-        focus == TrainingFocus.STRENGTH && compound -> 300
-        compound -> 150
-        else -> 90
-    }
+    // Rest per movement lives in RestRules (Schoenfeld 2016: long rest for heavy
+    // loaded work; Singer 2024: growth benefit above ~60 s, flat near 90 s).
 
     /**
      * Reps in reserve per focus. Hypertrophy lives at 1-3 RIR (Robinson 2024,
@@ -459,27 +450,30 @@ object ProgramRules {
      */
     const val SET_WORK_SECONDS = 40
 
-    /** Clock time one working set costs: work plus its prescribed rest. */
-    fun setSeconds(focus: TrainingFocus, compound: Boolean): Int =
-        restSeconds(focus, compound) + SET_WORK_SECONDS
-
     /**
-     * [setSeconds] for a named movement: a unilateral set works each side in
-     * turn, so it pays the work twice and the rest once. Unprofiled
-     * movements count as bilateral compounds.
+     * Clock time one working set of a named movement costs: its work plus
+     * the READY end of its rest window ([RestRules]), the time the lifter
+     * actually rests. A unilateral set works each side in turn, so it pays
+     * the work twice and the rest once. Unprofiled movements rest as loaded
+     * compounds, bodyweight ones when [weighted] says they carry no load;
+     * [metric] is the catalogue metric when known.
      */
-    fun setSeconds(focus: TrainingFocus, exerciseName: String): Int {
-        val profile = MuscleMap.profile(exerciseName)
-        val sides = if (profile?.unilateral == true) 2 else 1
-        return restSeconds(focus, profile?.compound ?: true) + sides * SET_WORK_SECONDS
+    fun setSeconds(
+        focus: TrainingFocus,
+        exerciseName: String,
+        metric: ExerciseMetric? = null,
+        weighted: Boolean? = null,
+    ): Int {
+        val sides = if (MuscleMap.profile(exerciseName)?.unilateral == true) 2 else 1
+        return RestRules.readySeconds(exerciseName, focus, metric, weighted) + sides * SET_WORK_SECONDS
     }
 
     /**
      * Session time ceiling, warm-up excluded. PRACTICAL HEURISTIC: the brief
      * lists no verified per-session ceiling; only the weekly dose (rule 6) is
      * evidence-backed. The limit is TIME, not a set count, because a set
-     * costs its rest: a 90 s lateral-raise set (Singer 2024) is two-thirds of
-     * a 150 s squat set, and a flat 24-set cap charged both the same - which
+     * costs its rest: a 45 s lateral-raise rest is a quarter of a 180 s squat
+     * rest ([RestRules]), and a flat 24-set cap charged both the same - which
      * left a 4-day intermediate week unable to reach 12 sets on its upper
      * muscles while the sessions still finished early. When the week's dose
      * still does not fit the chosen days, the generator lands muscles at the
@@ -489,5 +483,5 @@ object ProgramRules {
 
     /** Estimated clock time of a session; unprofiled movements count as compounds. */
     fun sessionSeconds(entries: List<PlannedEntry>, focus: TrainingFocus): Int =
-        entries.sumOf { it.sets * setSeconds(focus, it.exerciseName) }
+        entries.sumOf { it.sets * setSeconds(focus, it.exerciseName, weighted = it.targetWeightKg != null) }
 }
