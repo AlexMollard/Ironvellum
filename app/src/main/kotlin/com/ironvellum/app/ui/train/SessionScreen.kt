@@ -337,7 +337,11 @@ class SessionViewModel(
         val sets = ui.value.sets
         if (!RestTimer.startsRest(sets, setId, done)) return
         val set = sets.first { it.id == setId }
-        RestClock.start(sessionId, RestTimer.restSeconds(set.exerciseName, focus.value))
+        val exercise = exercises.value.firstOrNull { it.id == set.exerciseId }
+        val window = RestTimer.window(set.exerciseName, focus.value, exercise?.metric, exercise?.isWeighted)
+        // An activity (a run) has no rest between sets: no timer.
+        if (window.isNone) return
+        RestClock.start(sessionId, window.ready, window.max)
     }
 
     fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) {
@@ -2741,24 +2745,39 @@ private fun TrialFooter(
 private fun RestStrip(timer: RestTimer, now: Long, nextSetNumber: Int?, onExtend: () -> Unit, onShorten: () -> Unit, onSkip: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                timer.label(now),
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                fontSize = 28.sp,
-                color = IronvellumColors.Ink,
-                maxLines = 1,
-            )
-            Text(
-                if (nextSetNumber != null) "REST · SET $nextSetNumber NEXT" else "REST",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.InlineLabel,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(start = 12.dp),
-            )
+            Column(Modifier.weight(1f), verticalArrangement = Arrangement.Center) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        timer.label(now),
+                        fontFamily = ChakraPetch,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 28.sp,
+                        lineHeight = 30.sp,
+                        color = IronvellumColors.Ink,
+                        maxLines = 1,
+                    )
+                    Text(
+                        if (nextSetNumber != null) "REST · SET $nextSetNumber NEXT" else "REST",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontFamily = ChakraPetch,
+                        color = IronvellumColors.InkMuted,
+                        letterSpacing = IronvellumTracking.InlineLabel,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f).padding(start = 12.dp),
+                    )
+                }
+                // The soft ceiling: past it more rest adds nothing; +15 still extends.
+                if (timer.maxSeconds > 0) {
+                    Text(
+                        "Max suggested ${RestTimer.clock(timer.maxSeconds)}",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IronvellumColors.InkMuted,
+                        lineHeight = 12.sp,
+                        maxLines = 1,
+                    )
+                }
+            }
             FooterAction("\u2212${RestTimer.SHORTEN_SECONDS}", IronvellumColors.Ink, onShorten)
             FooterAction("+${RestTimer.EXTEND_SECONDS}", IronvellumColors.Ink, onExtend)
             FooterAction("Skip", IronvellumColors.InkMuted, onSkip)

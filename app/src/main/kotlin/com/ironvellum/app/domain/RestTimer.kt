@@ -13,6 +13,8 @@ data class RestTimer(
     val endsAtMs: Long,
     /** The whole rest as it now stands, extensions included. */
     val totalMs: Long,
+    /** The most rest worth taking after this set ([RestRules.Window.max]); 0 shows no ceiling. */
+    val maxSeconds: Int = 0,
 ) {
     fun remainingMs(nowMs: Long): Long = (endsAtMs - nowMs).coerceAtLeast(0L)
 
@@ -45,17 +47,24 @@ data class RestTimer(
         const val EXTEND_SECONDS = 15
         const val SHORTEN_SECONDS = 15
 
-        fun start(sessionId: Long, seconds: Int, nowMs: Long): RestTimer =
-            RestTimer(sessionId, nowMs + seconds * 1000L, seconds * 1000L)
+        fun start(sessionId: Long, seconds: Int, nowMs: Long, maxSeconds: Int = 0): RestTimer =
+            RestTimer(sessionId, nowMs + seconds * 1000L, seconds * 1000L, maxSeconds)
 
         /**
-         * The prescribed rest after a set of [exerciseName]: the generator's
-         * own rule (ProgramRules.restSeconds), which the trial's time
-         * estimate already budgets with. Unprofiled movements count as
-         * compounds there too.
+         * The rest after a set of [exerciseName]: the movement's [RestRules]
+         * window. The timer counts down to its ready time, which the trial's
+         * time estimate prices too; its max is shown as the ceiling.
+         * [metric] and [weighted] are the catalogue's, when known.
          */
-        fun restSeconds(exerciseName: String, focus: TrainingFocus): Int =
-            ProgramRules.restSeconds(focus, MuscleMap.profile(exerciseName)?.compound ?: true)
+        fun window(
+            exerciseName: String,
+            focus: TrainingFocus,
+            metric: ExerciseMetric? = null,
+            weighted: Boolean? = null,
+        ): RestRules.Window = RestRules.window(exerciseName, focus, metric, weighted)
+
+        /** "1:30" for [seconds], the same shape as [label]. */
+        fun clock(seconds: Int): String = "${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
 
         /**
          * True when ticking [setId] to [nowDone] begins a rest: the set goes

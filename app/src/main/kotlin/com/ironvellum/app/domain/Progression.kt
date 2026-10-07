@@ -6,8 +6,8 @@ enum class TrainingMode {
 }
 
 /**
- * Progressive overload, two schools — each with its own rep band, load step and
- * rest, plus a shared stall rule so a plateau is met with a deload instead of
+ * Progressive overload, two schools — each with its own rep band and load step,
+ * plus a shared stall rule so a plateau is met with a deload instead of
  * repeating a session you already failed three times.
  *
  *  - STRENGTH: a low band (default 4-6). Clear every set at the band ceiling ->
@@ -36,8 +36,6 @@ object Progression {
         val weightKg: Double?,
         val reps: Int,
         val reason: String,
-        /** Rest between sets for this school of training. */
-        val restSeconds: Int = 120,
         /** True when the engine backed the load off after repeated stalls. */
         val deload: Boolean = false,
         /**
@@ -55,12 +53,6 @@ object Progression {
     fun repBand(mode: TrainingMode, targetReps: Int): IntRange = when (mode) {
         TrainingMode.STRENGTH -> (targetReps - 2).coerceAtLeast(3)..targetReps.coerceAtLeast(4)
         TrainingMode.HYPERTROPHY -> targetReps..(targetReps + 4)
-    }
-
-    /** Rest is part of the prescription: heavy singles need it, pump work does not. */
-    fun restSeconds(mode: TrainingMode): Int = when (mode) {
-        TrainingMode.STRENGTH -> 180
-        TrainingMode.HYPERTROPHY -> 90
     }
 
     /**
@@ -102,12 +94,11 @@ object Progression {
         stalls: Int = 0,
     ): Recommendation {
         val band = repBand(mode, targetReps)
-        val rest = restSeconds(mode)
         val weight = lastWeightKg
         val step = weightStepKg.coerceAtLeast(0.5)
 
         if (setsDone <= 0 || lastReps == null) {
-            return Recommendation(weight, targetReps, "First attempt — hit $targetReps reps every set", rest)
+            return Recommendation(weight, targetReps, "First attempt — hit $targetReps reps every set")
         }
         if (!allSetsAtTarget || setsDone < minSets) {
             // Grinding a load you have already failed three times is how people
@@ -118,7 +109,6 @@ object Progression {
                     backedOff,
                     band.first,
                     "Stalled ${stalls + 1} trials — deload to $backedOff kg, rebuild from ${band.first} reps",
-                    rest,
                     deload = true,
                     changed = true,
                 )
@@ -127,7 +117,6 @@ object Progression {
                 weight,
                 targetReps,
                 "Repeat until every one of the $minSets sets reaches $targetReps reps",
-                rest,
             )
         }
         // Bodyweight work progresses in reps. Adding a step to a null load
@@ -135,7 +124,7 @@ object Progression {
         // lifter may not own, prescribed on a lift they never loaded.
         if (weight == null || weight <= 0.0) {
             val nextReps = lastReps + REP_STEP
-            return Recommendation(weight, nextReps, "Target cleared — climb to $nextReps reps", rest, changed = true)
+            return Recommendation(weight, nextReps, "Target cleared — climb to $nextReps reps", changed = true)
         }
         val loaded = nextLoad(weight, step)
         val addedLabel = kgLabel(loaded - weight)
@@ -146,7 +135,6 @@ object Progression {
                     loaded,
                     nextReps,
                     "Target cleared — add $addedLabel kg, drop to $nextReps reps",
-                    rest,
                     changed = true,
                 )
             }
@@ -156,12 +144,11 @@ object Progression {
                         loaded,
                         targetReps,
                         "Rep ceiling reached — add $addedLabel kg, back to $targetReps reps",
-                        rest,
                         changed = true,
                     )
                 } else {
                     val nextReps = (lastReps + REP_STEP).coerceAtMost(band.last)
-                    Recommendation(weight, nextReps, "Same load — climb to $nextReps reps", rest, changed = true)
+                    Recommendation(weight, nextReps, "Same load — climb to $nextReps reps", changed = true)
                 }
         }
     }

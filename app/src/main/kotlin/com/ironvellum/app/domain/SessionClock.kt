@@ -13,11 +13,19 @@ import java.util.Locale
 object SessionClock {
 
     /**
-     * The focus timing is judged at: what the lifter last told the generator,
-     * else the profile's training mode.
+     * The focus rest and timing are judged at. The lifter's own training mode
+     * decides when there is one: STRENGTH rests on the strength column,
+     * HYPERTROPHY on the muscle column, whatever the generator was last
+     * asked for (a hypertrophy lifter whose last program was a strength one
+     * still rests like a hypertrophy lifter). Only without a mode does the
+     * focus the lifter last told the generator decide, else MUSCLE
+     * ([RestRules.window] reads GENERAL and SKILL).
      */
-    fun focusFor(saved: TrainingFocus?, mode: TrainingMode?): TrainingFocus =
-        saved ?: if (mode == TrainingMode.STRENGTH) TrainingFocus.STRENGTH else TrainingFocus.MUSCLE
+    fun focusFor(saved: TrainingFocus?, mode: TrainingMode?): TrainingFocus = when (mode) {
+        TrainingMode.STRENGTH -> TrainingFocus.STRENGTH
+        TrainingMode.HYPERTROPHY -> TrainingFocus.MUSCLE
+        null -> saved ?: TrainingFocus.MUSCLE
+    }
 
     /** Most recent usable sessions a pace is read from: it tracks the lifter as he changes. */
     const val PACE_WINDOW = 10
@@ -86,17 +94,17 @@ object SessionClock {
      * rest after it - the lifter's rest (his pace less [ProgramRules.SET_WORK_SECONDS])
      * when measured, the prescribed rest otherwise. A timed activity (a run, a
      * row) costs its logged duration plus that same rest: a 45-minute run is
-     * not one pace set. Unprofiled movements count as compounds, as
-     * [ProgramRules.sessionSeconds] does.
+     * not one pace set. A prescribed rest is the READY end of the movement's
+     * [RestRules] window, as [ProgramRules.sessionSeconds] prices it.
      */
     fun setSeconds(set: SessionSet, metric: ExerciseMetric?, focus: TrainingFocus, paceSeconds: Int? = null): Int {
-        val compound = MuscleMap.profile(set.exerciseName)?.compound ?: true
         val timedActivity = (metric == ExerciseMetric.DURATION || metric == ExerciseMetric.DISTANCE_TIME) &&
             (set.durationSec ?: 0) > 0
         val hold = MovementDifficulty.isHoldSet(metric, set.exerciseName, set.modifiers)
-        if (!hold && !timedActivity) return paceSeconds ?: ProgramRules.setSeconds(focus, compound)
+        val weighted = set.weightKg != null
+        if (!hold && !timedActivity) return paceSeconds ?: ProgramRules.setSeconds(focus, set.exerciseName, metric, weighted)
         val rest = paceSeconds?.let { (it - ProgramRules.SET_WORK_SECONDS).coerceAtLeast(0) }
-            ?: ProgramRules.restSeconds(focus, compound)
+            ?: RestRules.readySeconds(set.exerciseName, focus, metric, weighted)
         // An archive from before HOLD existed keeps a hold's seconds in reps.
         return rest + (set.durationSec ?: set.reps).coerceAtLeast(0)
     }
