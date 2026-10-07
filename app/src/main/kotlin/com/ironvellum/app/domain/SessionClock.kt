@@ -109,13 +109,13 @@ object SessionClock {
         paceSeconds: Int? = null,
     ): Int = sets.sumOf { setSeconds(it, metricOf(it.exerciseId), focus, paceSeconds) }
 
-    /** Estimated clock time still ahead: only the sets not yet done. */
+    /** Estimated clock time still ahead: only the sets not yet done (a warm-up is never waiting). */
     fun remainingSeconds(
         sets: List<SessionSet>,
         metricOf: (Long) -> ExerciseMetric?,
         focus: TrainingFocus,
         paceSeconds: Int? = null,
-    ): Int = sets.filterNot { it.done }.sumOf { setSeconds(it, metricOf(it.exerciseId), focus, paceSeconds) }
+    ): Int = sets.filter { it.isPending }.sumOf { setSeconds(it, metricOf(it.exerciseId), focus, paceSeconds) }
 
     /** Whole minutes, rounded up: a set still ahead never reads as zero. */
     fun minutes(seconds: Int): Int = (seconds.coerceAtLeast(0) + 59) / 60

@@ -59,13 +59,13 @@ data class RestTimer(
 
         /**
          * True when ticking [setId] to [nowDone] begins a rest: the set goes
-         * from not done to done and another set is still waiting. Unticking,
+         * from not done to done and another set is still waiting (a warm-up never waits). Unticking,
          * re-saving a done set, or ticking the last set starts nothing.
          */
         fun startsRest(before: List<SessionSet>, setId: Long, nowDone: Boolean): Boolean {
             val set = before.firstOrNull { it.id == setId } ?: return false
             if (set.done || !nowDone) return false
-            return before.any { !it.done && it.id != setId }
+            return before.any { it.isPending && it.id != setId }
         }
     }
 }

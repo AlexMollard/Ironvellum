@@ -70,6 +70,14 @@ class RestTimerTest {
     }
 
     @Test
+    fun `a warm-up never counts as a set still waiting`() {
+        val warmup = set(2, done = false).copy(warmup = true)
+        // Set 1 is the last working set: only the warm-up is left, so nothing to rest for.
+        assertFalse(RestTimer.startsRest(listOf(set(1, done = false), warmup), setId = 1, nowDone = true))
+        assertTrue(RestTimer.startsRest(listOf(set(1, done = false), warmup, set(3, done = false)), setId = 1, nowDone = true))
+    }
+
+    @Test
     fun `ticking the last set of an exercise still rests while another exercise has sets waiting`() {
         fun set(id: Long, exerciseId: Long, done: Boolean) =
             SessionSet(id = id, exerciseId = exerciseId, exerciseName = "Lift $exerciseId", setIndex = 0, reps = 8, done = done)
