@@ -3,7 +3,17 @@ package com.ironvellum.app.ui.social
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.unit.sp
+import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.ListRowHeight
+import com.ironvellum.app.ui.components.LocalRowPadding
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -115,8 +125,6 @@ fun AccountSettingsScreen(
                     Text(
                         acct.displayName,
                         style = MaterialTheme.typography.titleMedium,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
                         color = IronvellumColors.Ink,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
@@ -130,19 +138,20 @@ fun AccountSettingsScreen(
                     )
                 }
                 Text(
-                    "EDIT",
-                    style = MaterialTheme.typography.labelSmall,
+                    "Edit",
+                    style = MaterialTheme.typography.labelLarge,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.SemiBold,
                     color = IronvellumColors.SystemGreen,
-                    letterSpacing = IronvellumTracking.InlineLabel,
+                    letterSpacing = 0.5.sp,
                 )
             }
+            InkDivider()
             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Spacer(Modifier.height(12.dp))
-                // Wire values stay public/friends/private; only the labels say ALLIES.
+                // Wire values stay public/friends/private; only the labels differ.
                 InkSegmented(
-                    options = listOf("public" to "PUBLIC", "friends" to "ALLIES", "private" to "PRIVATE"),
+                    options = listOf("public" to "Public", "friends" to "Allies only", "private" to "Private"),
                     selected = acct.visibility,
                     onPick = viewModel::setVisibility,
                 )
@@ -157,84 +166,114 @@ fun AccountSettingsScreen(
                     color = IronvellumColors.InkMuted,
                 )
             }
-        }
-
-        SettingsGroup("CLOUD") {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "Sync",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.Ink,
-                    )
-                    val outcome = ui.lastSync
-                    Text(
-                        if (outcome == null) {
-                            "Uploads after each trial"
-                        } else {
-                            buildString {
-                                append("Pushed ${outcome.sessions} ${plural(outcome.sessions, "trial", "trials")} · ")
-                                append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
-                                append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
-                                if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
+            InkDivider()
+            // One row, one switch: the whole row toggles.
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = ListRowHeight)
+                    .toggleable(
+                        value = allyAlerts,
+                        role = Role.Switch,
+                        onValueChange = { on ->
+                            allyAlerts = on
+                            InboxNotifier.setEnabled(context, on)
+                            if (on && !InboxNotifier.hasPermission(context) &&
+                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+                            ) {
+                                askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
                             }
                         },
-                        style = MaterialTheme.typography.labelMedium,
-                        color = when {
-                            outcome == null -> IronvellumColors.InkMuted
-                            outcome.problems.isEmpty() -> IronvellumColors.Emerald
-                            else -> IronvellumColors.SovereignGold
-                        },
+                    )
+                    .padding(LocalRowPadding.current),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Column(Modifier.weight(1f)) {
+                    Text("Ally activity", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+                    Text(
+                        "Requests, remarks and tributes",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
                     )
                 }
-                IronvellumButton(label = "Sync", onClick = viewModel::syncNow, enabled = !ui.busy)
+                Switch(
+                    checked = allyAlerts,
+                    onCheckedChange = null,
+                    colors = SwitchDefaults.colors(
+                        checkedThumbColor = IronvellumColors.Ink,
+                        checkedTrackColor = IronvellumColors.SystemGreen,
+                        checkedBorderColor = IronvellumColors.SystemGreen,
+                        uncheckedThumbColor = IronvellumColors.InkMuted,
+                        uncheckedTrackColor = IronvellumColors.Abyss,
+                        uncheckedBorderColor = IronvellumColors.Rune,
+                    ),
+                )
             }
-            ui.lastSync?.problems?.forEach { problem ->
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "· $problem",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
+            // On while Android drops every post is the one state where the
+            // switch lies: the grant, the app-wide toggle or the Allies channel
+            // is off. Say which way out, not just that something is wrong.
+            if (allyAlerts) {
+                NotificationBlockedNotice(
+                    channelId = Notifications.CHANNEL_ALLIES,
+                    access = allyAccess,
+                    blockedText = "Ally activity won't arrive until you allow notifications.",
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
         }
 
-        SettingsGroup("BACKUP", rows = true) {
-            Column(Modifier.padding(16.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Column(Modifier.weight(1f)) {
+        SettingsGroup("CLOUD", rows = true) {
+            val outcome = ui.lastSync
+            ActionRow(
+                label = "Sync",
+                subline = if (outcome == null) {
+                    "Uploads after each trial"
+                } else {
+                    buildString {
+                        append("Pushed ${outcome.sessions} ${plural(outcome.sessions, "trial", "trials")} · ")
+                        append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
+                        append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
+                        if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
+                    }
+                },
+                enabled = !ui.busy,
+                onClick = viewModel::syncNow,
+            )
+            if (outcome != null && outcome.problems.isNotEmpty()) {
+                Column(Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                    outcome.problems.forEach { problem ->
                         Text(
-                            "Cloud backup",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.Ink,
-                        )
-                        // Freshness must be visible without tapping anything: a
-                        // lifter has to tell at a glance whether they are protected.
-                        Text(
-                            ui.lastBackup?.let {
-                                DateFormat.getDateTimeInstance().format(Date(it.atMs)) + " · " + formatBytes(it.bytes)
-                            } ?: "No backup yet",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = if (ui.lastBackup != null) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
+                            "· $problem",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = IronvellumColors.InkMuted,
                         )
                     }
-                    IronvellumButton(label = "Back up", onClick = viewModel::backUpNow, enabled = !ui.busy)
                 }
-                // Next to the button that failed: a refused backup elsewhere on the
-                // screen read as a button that simply did nothing.
-                ui.backupError?.let {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.DangerRed,
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
             }
+            InkDivider()
+            // Freshness must be visible without tapping anything: a lifter has
+            // to tell at a glance whether they are protected.
+            ActionRow(
+                label = "Back up",
+                subline = ui.lastBackup?.let {
+                    DateFormat.getDateTimeInstance().format(Date(it.atMs)) + " · " + formatBytes(it.bytes)
+                } ?: "No backup yet",
+                enabled = !ui.busy,
+                onClick = viewModel::backUpNow,
+            )
+            // Next to the row that failed: a refused backup elsewhere on the
+            // screen read as a button that simply did nothing.
+            ui.backupError?.let {
+                Text(
+                    it,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.DangerRed,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+            }
+            InkDivider()
             // Same inline-confirm treatment as the account delete below: the
             // destructive step names exactly what it replaces before it runs.
             var confirmRestore by remember { mutableStateOf(false) }
@@ -268,80 +307,20 @@ fun AccountSettingsScreen(
                     }
                 }
             } else {
-                TapRow(onClickLabel = "Restore from cloud", onClick = { confirmRestore = true }) {
-                    Text(
-                        "Restore from cloud",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.Ink,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Icon(
-                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = IronvellumColors.InkMuted,
-                    )
-                }
+                ActionRow(label = "Restore from the cloud", onClick = { confirmRestore = true })
             }
             ui.lastRestore?.let { outcome ->
-                Column(Modifier.padding(16.dp)) {
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        buildString {
-                            append("Restored ${outcome.sessions} ${plural(outcome.sessions, "trial", "trials")} · ")
-                            append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
-                            append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
-                            if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
-                        },
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        color = if (outcome.problems.isEmpty()) IronvellumColors.Emerald else IronvellumColors.SovereignGold,
-                    )
-                }
-            }
-        }
-
-        SettingsGroup("NOTIFICATIONS") {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        "Ally activity",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.Ink,
-                    )
-                    Text(
-                        "Requests, remarks and tributes",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = IronvellumColors.InkMuted,
-                    )
-                }
-                Box(Modifier.width(120.dp)) {
-                    InkSegmented(
-                        options = listOf("on" to "ON", "off" to "OFF"),
-                        selected = if (allyAlerts) "on" else "off",
-                        onPick = { pick ->
-                            val on = pick == "on"
-                            allyAlerts = on
-                            InboxNotifier.setEnabled(context, on)
-                            if (on && !InboxNotifier.hasPermission(context) &&
-                                Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-                            ) {
-                                askPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            }
-                        },
-                    )
-                }
-            }
-            // ON while Android drops every post is the one state where the
-            // switch lies: the grant, the app-wide toggle or the Allies channel
-            // is off. Say which way out, not just that something is wrong.
-            if (allyAlerts) {
-                NotificationBlockedNotice(
-                    channelId = Notifications.CHANNEL_ALLIES,
-                    access = allyAccess,
-                    blockedText = "Ally activity won't arrive until you allow notifications.",
-                    modifier = Modifier.padding(top = 8.dp),
+                Text(
+                    buildString {
+                        append("Restored ${outcome.sessions} ${plural(outcome.sessions, "trial", "trials")} · ")
+                        append("${outcome.sets} ${plural(outcome.sets, "set", "sets")} · ")
+                        append("${outcome.titles} ${plural(outcome.titles, "title", "titles")}")
+                        if (outcome.problems.isNotEmpty()) append(" · ${outcome.problems.size} skipped")
+                    },
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
             }
         }
@@ -354,15 +333,13 @@ fun AccountSettingsScreen(
             ) {
                 Text(
                     "Blocked Ironbound",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontFamily = ChakraPetch,
+                    style = MaterialTheme.typography.bodyMedium,
                     color = IronvellumColors.Ink,
                     modifier = Modifier.weight(1f),
                 )
                 Text(
                     ui.blocked.size.toString(),
                     style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
                 )
                 Icon(
@@ -384,64 +361,61 @@ fun AccountSettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
-        IronvellumButton(
-            label = "Sign out",
-            onClick = {
-                // The next lifter must not inherit this one's notification or mark.
-                InboxNotifier.reset(context)
-                viewModel.signOut()
-            },
-            enabled = !ui.busy,
-            quiet = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-
         // Withdrawing the data has to be reachable from inside the app: a
         // store listing that reads health data must offer deletion, and the
         // only other way out was to ask someone with database access.
-        Spacer(Modifier.height(20.dp))
-        Text(
+        SettingsGroup(null, rows = true) {
+            ActionRow(
+                label = "Sign out",
+                enabled = !ui.busy,
+                onClick = {
+                    // The next lifter must not inherit this one's notification or mark.
+                    InboxNotifier.reset(context)
+                    viewModel.signOut()
+                },
+            )
+            InkDivider()
             if (confirmDelete) {
-                "This deletes your account, folio, synced trials, titles, allies " +
-                    "and cloud backup for good, and signs you out. Training on this " +
-                    "phone stays on this phone."
+                Column(Modifier.padding(16.dp)) {
+                    Text(
+                        "This deletes your account, folio, synced trials, titles, allies " +
+                            "and cloud backup for good, and signs you out. Training on this " +
+                            "phone stays on this phone.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.DangerRed,
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                        IronvellumButton(
+                            label = "Delete account",
+                            onClick = {
+                                confirmDelete = false
+                                InboxNotifier.reset(context)
+                                viewModel.deleteCloudData()
+                            },
+                            enabled = !ui.busy,
+                            modifier = Modifier.weight(1f),
+                            danger = true,
+                        )
+                        IronvellumButton(
+                            label = "Keep it",
+                            onClick = { confirmDelete = false },
+                            enabled = !ui.busy,
+                            quiet = true,
+                        )
+                    }
+                }
             } else {
-                "Deletes your cloud account and everything synced. Your on-device training is untouched."
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(8.dp))
-        if (confirmDelete) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                IronvellumButton(
-                    label = "Delete account",
-                    onClick = {
-                        confirmDelete = false
-                        InboxNotifier.reset(context)
-                        viewModel.deleteCloudData()
-                    },
+                ActionRow(
+                    label = "Delete my cloud account",
+                    subline = "Deletes your cloud account and everything synced. Your on-device training is untouched.",
+                    labelColor = IronvellumColors.DangerRed,
                     enabled = !ui.busy,
-                    modifier = Modifier.weight(1f),
-                    danger = true,
-                )
-                IronvellumButton(
-                    label = "Keep it",
-                    onClick = { confirmDelete = false },
-                    enabled = !ui.busy,
-                    quiet = true,
+                    onClick = { confirmDelete = true },
                 )
             }
-        } else {
-            IronvellumButton(
-                label = "Delete my cloud account",
-                onClick = { confirmDelete = true },
-                enabled = !ui.busy,
-                quiet = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
         }
+        Spacer(Modifier.height(8.dp))
         ui.error?.let {
             Spacer(Modifier.height(8.dp))
             SocialErrorBanner(it)
@@ -457,6 +431,40 @@ fun AccountSettingsScreen(
             onSave = viewModel::claimName,
             onDismiss = { editingName = false },
         )
+    }
+}
+
+/**
+ * One tappable account row: the [label] in `bodyMedium`, an optional InkMuted [subline],
+ * 52dp tall and no chevron because it acts rather than opens. [labelColor] is DangerRed for a
+ * destructive row; a disabled row reads InkMuted.
+ */
+@Composable
+private fun ActionRow(
+    label: String,
+    subline: String? = null,
+    enabled: Boolean = true,
+    labelColor: Color = IronvellumColors.Ink,
+    onClick: () -> Unit,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = ListRowHeight)
+            .clickable(enabled = enabled, onClickLabel = label, role = Role.Button, onClick = onClick)
+            .padding(LocalRowPadding.current),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyMedium,
+                color = if (enabled) labelColor else IronvellumColors.InkMuted,
+            )
+            if (subline != null) {
+                Text(subline, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            }
+        }
     }
 }
 
@@ -549,14 +557,13 @@ private fun BlockedList(blocked: List<BlockedLifter>, onUnblock: (String) -> Uni
     }
     blocked.forEach { lifter ->
         Row(
-            Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            Modifier.fillMaxWidth().heightIn(min = ListRowHeight),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
             Text(
                 lifter.displayName.ifBlank { "Hidden Ironbound" },
-                style = MaterialTheme.typography.titleSmall,
-                fontFamily = ChakraPetch,
+                style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

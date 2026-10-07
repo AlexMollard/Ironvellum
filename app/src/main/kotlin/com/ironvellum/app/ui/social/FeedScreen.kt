@@ -407,21 +407,14 @@ private fun EmptyFeed(onRefresh: () -> Unit) {
  */
 @Composable
 internal fun SocialErrorBanner(message: String) {
-    val shape = MaterialTheme.shapes.small
-    Box(
-        Modifier
-            .fillMaxWidth()
-            .background(Brush.verticalGradient(listOf(IronvellumColors.VaultHigh, IronvellumColors.Vault)), shape)
-            .inkBorder(IronvellumColors.DangerRed, shape, 1.dp)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-    ) {
-        Text(
-            message,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.DangerRed,
-        )
-    }
+    // One DangerRed line: no box, no border. Callers that can retry put a
+    // SocialRefreshLink ("Try again") right under it.
+    Text(
+        message,
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.DangerRed,
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
 @Composable
@@ -705,7 +698,14 @@ private fun FeedCard(
                 )
                 Spacer(Modifier.weight(1f))
                 if (!isMe) {
-                    AllyChip(ally) { onAddAlly(entry.userId) }
+                    AllyChip(
+                        label = when (ally) {
+                            AllyState.None -> "Add ally"
+                            AllyState.Pending, AllyState.Incoming -> "Pending"
+                            AllyState.Ally -> "Ally"
+                        },
+                        tappable = ally == AllyState.None,
+                    ) { onAddAlly(entry.userId) }
                 } else {
                     // Owner-only: who reacted is theirs to read.
                     Text(
@@ -815,50 +815,6 @@ private fun FeedCard(
                 }
             }
         }
-    }
-}
-
-/**
- * Ally state as a status chip riding the identity row's trailing slot. Only a
- * genuine ADD ALLY offer is tappable; settled states render inert so they never
- * look like a primary CTA.
- */
-@Composable
-private fun AllyChip(ally: AllyState, onAddAlly: () -> Unit) {
-    val (label, tint) = when (ally) {
-        AllyState.None -> "ADD ALLY" to IronvellumColors.EmeraldBright
-        AllyState.Pending -> "PENDING" to IronvellumColors.InkMuted
-        AllyState.Incoming -> "PENDING" to IronvellumColors.SovereignGold
-        AllyState.Ally -> "ALLY" to IronvellumColors.SovereignGold
-    }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
-        modifier = Modifier
-            // 44dp hit area around a compact chip: the visual stays small.
-            .heightIn(min = 44.dp)
-            .clickable(enabled = ally == AllyState.None, role = Role.Button) { onAddAlly() }
-            .wrapContentHeight()
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(IronvellumColors.Abyss)
-            .inkBorder(if (ally == AllyState.None) IronvellumColors.Emerald else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-            .padding(horizontal = 8.dp, vertical = 4.dp),
-    ) {
-        Icon(
-            Icons.Outlined.PersonAdd,
-            contentDescription = null,
-            tint = tint,
-            modifier = Modifier.size(12.dp),
-        )
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.SemiBold,
-            color = tint,
-            maxLines = 1,
-            softWrap = false,
-        )
     }
 }
 
@@ -1228,28 +1184,22 @@ private fun stamp(ms: Long): String {
 
 @Composable
 internal fun SocialRefreshLink(onClick: () -> Unit, label: String) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    // A sentence-case text link, 44dp tall.
+    Box(
+        contentAlignment = Alignment.CenterStart,
         modifier = Modifier
             .heightIn(min = 44.dp)
             .clip(MaterialTheme.shapes.extraSmall)
             .clickable(role = Role.Button) { onClick() }
             .padding(horizontal = 2.dp),
     ) {
-        Icon(
-            Icons.Outlined.Refresh,
-            contentDescription = null,
-            tint = IronvellumColors.Emerald,
-            modifier = Modifier.size(14.dp),
-        )
         Text(
-            label.uppercase(),
-            style = MaterialTheme.typography.labelMedium,
+            label,
+            style = MaterialTheme.typography.labelLarge,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
-            color = IronvellumColors.Emerald,
-            letterSpacing = IronvellumTracking.InlineLabel,
+            color = IronvellumColors.SystemGreen,
+            letterSpacing = 0.5.sp,
         )
     }
 }

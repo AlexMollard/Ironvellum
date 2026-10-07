@@ -282,21 +282,18 @@ internal fun LifterScreen(
                 // premature ADD ALLY offer.
                 null -> {}
                 AllyState.None -> AllyChip(
-                    label = if (ui.allyBusy) "SENDING…" else "ADD ALLY",
+                    label = if (ui.allyBusy) "Sending…" else "Add ally",
                     tappable = !ui.allyBusy,
-                    gold = false,
                     onClick = { viewModel.addAlly(userId) },
                 )
                 AllyState.Pending, AllyState.Incoming -> AllyChip(
-                    label = "REQUEST PENDING",
+                    label = "Request pending",
                     tappable = false,
-                    gold = false,
                     onClick = {},
                 )
                 AllyState.Ally -> AllyChip(
-                    label = "ALLY",
+                    label = "Ally",
                     tappable = false,
-                    gold = true,
                     onClick = {},
                 )
             }
@@ -615,37 +612,6 @@ internal fun LifterScreen(
 }
 
 
-
-/**
- * Ally status chip: compact and clearly non-CTA. Only the ADD ALLY state is
- * actually tappable; ALLY / REQUEST PENDING are pure status.
- */
-@Composable
-private fun AllyChip(
-    label: String,
-    tappable: Boolean,
-    gold: Boolean,
-    onClick: () -> Unit,
-) {
-    val shape = MaterialTheme.shapes.small
-    val accent = if (gold) IronvellumColors.SovereignGold else IronvellumColors.EmeraldBright
-    Box(
-        Modifier
-            .then(if (tappable) Modifier.clickable(onClick = onClick) else Modifier)
-            .background(Brush.verticalGradient(listOf(IronvellumColors.VaultHigh, IronvellumColors.Vault)), shape)
-            .inkBorder(accent, shape, 1.dp)
-            .padding(horizontal = 14.dp, vertical = 7.dp),
-    ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = accent,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-    }
-}
 
 @Composable
 private fun Stat(label: String, value: String, accent: androidx.compose.ui.graphics.Color) {

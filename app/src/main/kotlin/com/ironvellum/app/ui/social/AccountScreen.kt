@@ -520,57 +520,33 @@ private fun AccountTitle(pushed: Boolean, onBack: () -> Unit) {
     } else {
         Text(
             "ACCOUNT",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.ScreenTitle,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = IronvellumColors.Ink,
         )
-        Spacer(Modifier.height(6.dp))
     }
-    Text(
-        "Cloud link for the Ironbound",
-        style = MaterialTheme.typography.labelLarge,
-        fontFamily = ChakraPetch,
-        color = IronvellumColors.SystemGreen,
-    )
     Spacer(Modifier.height(12.dp))
 }
 
 @Composable
 private fun NotConfiguredPanel() {
-    InkPanel(Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(Icons.Outlined.VisibilityOff, contentDescription = null, tint = IronvellumColors.DangerRed)
-            Text(
-                "CLOUD LINK OFFLINE",
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = IronvellumColors.DangerRed,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "No Supabase endpoint is configured on this device. Sign-in is unavailable — ask the developer to build with SUPABASE_URL and SUPABASE_KEY set.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-    }
+    Text(
+        "Cloud features aren't available in this build.",
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.InkMuted,
+    )
 }
 
 @Composable
 private fun BusyPanel(label: String) {
-    InkPanel(Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            InkSpinner()
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-            )
-        }
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        InkSpinner()
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyMedium,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.InkMuted,
+        )
     }
 }
 @Composable
@@ -598,15 +574,14 @@ private fun AuthPanels(
     )
     Spacer(Modifier.height(12.dp))
 
-    // Segmented auth-mode switch: the shared inked picker. Password reset is
-    // reached from SIGN IN, so it keeps that segment lit.
-    InkSegmented(
-        options = listOf(AuthMode.SIGN_IN to "SIGN IN", AuthMode.SIGN_UP to "SIGN UP"),
-        selected = if (mode == AuthMode.RESET) AuthMode.SIGN_IN else mode,
-        onPick = { mode = it },
-    )
-
-    Spacer(Modifier.height(14.dp))
+    if (mode == AuthMode.RESET) {
+        Text(
+            "Reset your password",
+            style = MaterialTheme.typography.titleMedium,
+            color = IronvellumColors.Ink,
+        )
+        Spacer(Modifier.height(4.dp))
+    }
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -640,128 +615,163 @@ private fun AuthPanels(
         AuthMode.RESET -> !codeSent || (codeValid && passwordValid && confirmed)
     }
 
-    InkPanel(Modifier.fillMaxWidth()) {
-        if (googleEnabled && mode != AuthMode.RESET) GoogleSignInButton(onToken = onGoogleSignIn)
-        OutlinedTextField(
-            shape = MaterialTheme.shapes.small,
-            colors = ironvellumFieldColors(),
-            value = email,
-            onValueChange = { email = it.trim() },
-            label = { Text("Email") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        if (codeSent) {
-            Spacer(Modifier.height(10.dp))
-            OutlinedTextField(
-                shape = MaterialTheme.shapes.small,
-                colors = ironvellumFieldColors(),
-                value = code,
-                onValueChange = { typed -> code = DecimalInput.sanitizeCode(typed, 10) },
-                label = { Text("Code from email") },
-                singleLine = true,
-                keyboardOptions = wholeKeyboard(),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        if (mode != AuthMode.RESET || codeSent) {
-            Spacer(Modifier.height(10.dp))
-            PasswordField(
-                value = password,
-                onValueChange = { password = it },
-                label = if (mode == AuthMode.RESET) "New password" else "Password",
-                shown = showPassword,
-                onToggleShown = { showPassword = !showPassword },
-            )
-        }
-        if (choosingPassword) {
-            Spacer(Modifier.height(10.dp))
-            PasswordField(
-                value = confirm,
-                onValueChange = { confirm = it },
-                label = "Confirm password",
-                shown = showPassword,
-                onToggleShown = { showPassword = !showPassword },
-                isError = confirm.isNotEmpty() && !confirmed,
-            )
-        }
-        if (mode == AuthMode.SIGN_UP) {
-            Spacer(Modifier.height(10.dp))
-            OutlinedTextField(
-                shape = MaterialTheme.shapes.small,
-                colors = ironvellumFieldColors(),
-                value = displayName,
-                onValueChange = { displayName = it.take(24) },
-                label = { Text("True name") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        Spacer(Modifier.height(14.dp))
-        IronvellumButton(
-            label = when (mode) {
-                AuthMode.SIGN_IN -> "Sign in"
-                AuthMode.SIGN_UP -> "Create account"
-                AuthMode.RESET -> if (codeSent) "Set new password" else "Email me a code"
-            },
-            onClick = {
-                when (mode) {
-                    AuthMode.SIGN_IN -> onSignIn(email, password)
-                    AuthMode.SIGN_UP -> onSignUp(email, password, displayName.trim())
-                    AuthMode.RESET ->
-                        if (codeSent) onResetPassword(email, code, password) else onSendResetCode(email)
-                }
-            },
-            enabled = canSubmit,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        if (mode != AuthMode.SIGN_UP) {
-            Spacer(Modifier.height(8.dp))
-            IronvellumButton(
-                label = if (mode == AuthMode.SIGN_IN) "Forgot password?" else "Back to sign in",
-                onClick = { mode = if (mode == AuthMode.SIGN_IN) AuthMode.RESET else AuthMode.SIGN_IN },
-                quiet = true,
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        Spacer(Modifier.height(8.dp))
+    // Each message sits under the field it belongs to. A refusal from the
+    // server goes under the last field of the form, the one just filled in.
+    val serverError = error?.let {
+        "${when (mode) {
+            AuthMode.SIGN_IN -> "Sign-in"
+            AuthMode.SIGN_UP -> "Sign-up"
+            AuthMode.RESET -> "Reset"
+        }} failed: $it"
+    }
+    val emailError = when {
+        !emailValid && email.isNotEmpty() -> "Enter a valid email address."
+        mode == AuthMode.RESET && !codeSent -> serverError
+        else -> null
+    }
+    val passwordError = when {
+        password.isNotEmpty() && !passwordValid -> "Password needs at least 6 characters."
+        mode == AuthMode.SIGN_IN -> serverError
+        else -> null
+    }
+    val confirmError = when {
+        choosingPassword && confirm.isNotEmpty() && !confirmed -> "Passwords don't match."
+        mode == AuthMode.RESET && codeSent -> serverError
+        else -> null
+    }
+    val nameError = when {
+        mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid -> "True name needs 2–24 characters."
+        mode == AuthMode.SIGN_UP -> serverError
+        else -> null
+    }
+
+    if (googleEnabled && mode != AuthMode.RESET) GoogleSignInButton(onToken = onGoogleSignIn)
+    if (mode == AuthMode.RESET && !codeSent) {
         Text(
-            when {
-                !emailValid && email.isNotEmpty() -> "Enter a valid email address."
-                password.isNotEmpty() && !passwordValid -> "Password needs at least 6 characters."
-                choosingPassword && confirm.isNotEmpty() && !confirmed -> "Passwords don't match."
-                mode == AuthMode.SIGN_UP && displayName.isNotEmpty() && !nameValid ->
-                    "True name needs 2–24 characters."
-                mode == AuthMode.RESET && !codeSent -> "We'll email you a code to set a new password."
-                else -> "Readings stay on this device; trials, XP and deeds sync."
-            },
+            "We'll email you a code to set a new password.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
-        notice?.let {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                it,
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.EmeraldBright,
+        Spacer(Modifier.height(10.dp))
+    }
+    OutlinedTextField(
+        shape = MaterialTheme.shapes.small,
+        colors = ironvellumFieldColors(),
+        value = email,
+        onValueChange = { email = it.trim() },
+        label = { Text("Email") },
+        singleLine = true,
+        isError = emailError != null,
+        supportingText = emailError?.let { { Text(it, color = IronvellumColors.DangerRed) } },
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+        modifier = Modifier.fillMaxWidth(),
+    )
+    if (codeSent) {
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
+            colors = ironvellumFieldColors(),
+            value = code,
+            onValueChange = { typed -> code = DecimalInput.sanitizeCode(typed, 10) },
+            label = { Text("Code from email") },
+            singleLine = true,
+            keyboardOptions = wholeKeyboard(),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+    if (mode != AuthMode.RESET || codeSent) {
+        Spacer(Modifier.height(10.dp))
+        PasswordField(
+            value = password,
+            onValueChange = { password = it },
+            label = if (mode == AuthMode.RESET) "New password" else "Password",
+            shown = showPassword,
+            onToggleShown = { showPassword = !showPassword },
+            error = passwordError,
+        )
+    }
+    if (mode == AuthMode.SIGN_IN) {
+        // Under the password field it belongs to, at the trailing edge.
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+            IronvellumButton(
+                label = "Forgot password?",
+                onClick = { mode = AuthMode.RESET },
+                quiet = true,
             )
         }
-        error?.let {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "${when (mode) {
-                    AuthMode.SIGN_IN -> "Sign-in"
-                    AuthMode.SIGN_UP -> "Sign-up"
-                    AuthMode.RESET -> "Reset"
-                }} failed: $it",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.DangerRed,
-            )
-        }
+    }
+    if (choosingPassword) {
+        Spacer(Modifier.height(10.dp))
+        PasswordField(
+            value = confirm,
+            onValueChange = { confirm = it },
+            label = "Confirm password",
+            shown = showPassword,
+            onToggleShown = { showPassword = !showPassword },
+            error = confirmError,
+        )
+    }
+    if (mode == AuthMode.SIGN_UP) {
+        Spacer(Modifier.height(10.dp))
+        OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
+            colors = ironvellumFieldColors(),
+            value = displayName,
+            onValueChange = { displayName = it.take(24) },
+            label = { Text("True name") },
+            singleLine = true,
+            isError = nameError != null,
+            supportingText = nameError?.let { { Text(it, color = IronvellumColors.DangerRed) } },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            modifier = Modifier.fillMaxWidth(),
+        )
+    }
+    Spacer(Modifier.height(14.dp))
+    IronvellumButton(
+        label = when (mode) {
+            AuthMode.SIGN_IN -> "Sign in"
+            AuthMode.SIGN_UP -> "Create account"
+            AuthMode.RESET -> if (codeSent) "Set new password" else "Email me a code"
+        },
+        onClick = {
+            when (mode) {
+                AuthMode.SIGN_IN -> onSignIn(email, password)
+                AuthMode.SIGN_UP -> onSignUp(email, password, displayName.trim())
+                AuthMode.RESET ->
+                    if (codeSent) onResetPassword(email, code, password) else onSendResetCode(email)
+            }
+        },
+        enabled = canSubmit,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    Spacer(Modifier.height(8.dp))
+    // Which form this is, and the way to the other one: a link, not a switch.
+    IronvellumButton(
+        label = when (mode) {
+            AuthMode.SIGN_IN -> "New here? Create an account"
+            AuthMode.SIGN_UP -> "Have an account? Sign in"
+            AuthMode.RESET -> "Back to sign in"
+        },
+        onClick = { mode = if (mode == AuthMode.SIGN_IN) AuthMode.SIGN_UP else AuthMode.SIGN_IN },
+        quiet = true,
+        modifier = Modifier.fillMaxWidth(),
+    )
+    if (mode != AuthMode.RESET || codeSent) {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            "Readings stay on this device; trials, XP and deeds sync.",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
+    }
+    notice?.let {
+        Spacer(Modifier.height(8.dp))
+        Text(
+            it,
+            style = MaterialTheme.typography.labelMedium,
+            fontFamily = ChakraPetch,
+            color = IronvellumColors.Ink,
+        )
     }
 }
 
@@ -773,7 +783,7 @@ private fun PasswordField(
     label: String,
     shown: Boolean,
     onToggleShown: () -> Unit,
-    isError: Boolean = false,
+    error: String? = null,
 ) {
     OutlinedTextField(
         shape = MaterialTheme.shapes.small,
@@ -782,7 +792,8 @@ private fun PasswordField(
         onValueChange = onValueChange,
         label = { Text(label) },
         singleLine = true,
-        isError = isError,
+        isError = error != null,
+        supportingText = error?.let { { Text(it, color = IronvellumColors.DangerRed) } },
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
         visualTransformation = if (shown) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {
@@ -913,21 +924,15 @@ private fun VisibilityChip(visibility: String) {
         "friends" -> Icons.Outlined.Group to "Allies only"
         else -> Icons.Outlined.Lock to "Private"
     }
-    val shape = MaterialTheme.shapes.small
     Row(
-        Modifier
-            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
-            .padding(horizontal = 10.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp),
     ) {
         Icon(icon, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(14.dp))
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
+            style = MaterialTheme.typography.labelMedium,
             color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.InlineLabel,
         )
     }
 }
@@ -953,12 +958,10 @@ private fun ClaimNamePanel(
 
     InkPanel(Modifier.fillMaxWidth()) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Icon(Icons.Outlined.Badge, contentDescription = null, tint = IronvellumColors.SovereignGold)
+            Icon(Icons.Outlined.Badge, contentDescription = null, tint = IronvellumColors.InkMuted)
             Text(
-                "TAKE YOUR TRUE NAME",
+                "Take your true name",
                 style = MaterialTheme.typography.titleMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
                 color = IronvellumColors.Ink,
             )
         }
@@ -1084,7 +1087,7 @@ private fun RequestsPanel(
                         color = IronvellumColors.SovereignGold,
                     )
                 }
-                RowAction("DECLINE", IronvellumColors.InkMuted) { onDecline(pending.userId) }
+                RowAction("Decline", IronvellumColors.SystemGreen) { onDecline(pending.userId) }
                 IronvellumButton(label = "Accept", onClick = { onAccept(pending.userId) })
             }
         }
@@ -1121,7 +1124,7 @@ private fun AlliesPanel(
                 titleId = friend.currentTitleId,
                 size = IdentitySize.Compact,
                 onClick = { onOpenLifter(friend.userId, friend.displayName) },
-                trailing = { RowAction("REMOVE", IronvellumColors.InkMuted) { confirmRemove = friend } },
+                trailing = { RowAction("Remove", IronvellumColors.DangerRed) { confirmRemove = friend } },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
