@@ -3,6 +3,7 @@ package com.ironvellum.app.ui.train
 import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.ui.components.xpCounted
 import com.ironvellum.app.ui.train.SessionViewModel.Finish
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
