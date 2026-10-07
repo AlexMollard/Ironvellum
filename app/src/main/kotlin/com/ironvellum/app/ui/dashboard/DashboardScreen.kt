@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,12 +28,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.SubcomposeLayout
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -47,6 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
@@ -105,6 +110,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
+import kotlin.math.roundToInt
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -464,6 +470,7 @@ internal fun TodayContent(
 ) {
     var rankOpen by remember { mutableStateOf(false) }
     var oathOpen by remember { mutableStateOf(false) }
+    val swipe = rememberTodaySwipe(selectedDay, actions.onSelectDay, motion)
     val profile = ui.profile
     val progress = Xp.progress(profile?.totalXp ?: 0L)
     val selectedPreset = ui.presets.firstOrNull { it.scheduledDay == selectedDay }
@@ -607,7 +614,8 @@ internal fun TodayContent(
             today = today.dayOfWeek.value,
             scheduled = ui.presets.mapNotNull { it.scheduledDay }.toSet(),
             done = ui.weekDone.keys,
-            onSelect = actions.onSelectDay,
+            onSelect = swipe.selectDay,
+            dayOffset = swipe.dayOffset,
         )
     }
 
@@ -751,10 +759,9 @@ internal fun TodayContent(
         }
     }
 
-    val swipe = rememberTodaySwipe(selectedDay, actions.onSelectDay, motion)
     CompositionLocalProvider(LocalTodayMotion provides motion) {
         TodayLayout(
-            modifier = swipe,
+            swipe = swipe,
             rows = cardRows,
             head = head,
             card = card,
@@ -797,10 +804,11 @@ private fun TodayPage(
     rows: @Composable () -> Unit,
     veil: (@Composable () -> Unit)?,
     live: Boolean = false,
+    modifier: Modifier = Modifier,
 ) {
     // Only the page that is shown is live: a measuring probe must neither animate nor spend a one-off.
     CompositionLocalProvider(LocalTodayLive provides live) {
-        Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) {
+        Column(modifier.fillMaxWidth().padding(horizontal = GUTTER)) {
             head()
             card(rows)
             plain()
@@ -822,14 +830,14 @@ private fun TodayPage(
  */
 @Composable
 private fun TodayLayout(
-    modifier: Modifier = Modifier,
+    swipe: TodaySwipe,
     rows: List<DayRow>,
     head: @Composable () -> Unit,
     card: @Composable (rows: @Composable () -> Unit) -> Unit,
     plain: @Composable () -> Unit,
     veil: @Composable (full: Boolean) -> Unit,
 ) {
-    SubcomposeLayout(modifier.fillMaxSize()) { constraints ->
+    SubcomposeLayout(Modifier.fillMaxSize()) { constraints ->
         val width = constraints.maxWidth
         val bounded = constraints.hasBoundedHeight
         val available = if (bounded) constraints.maxHeight else Int.MAX_VALUE / 4
@@ -865,24 +873,32 @@ private fun TodayLayout(
                 veilCompact = veilCompact,
             ),
         )
-        val placeables = if (fit != null) {
-            val rowHeight = fit.rowHeight.toDp()
-            subcompose("page") {
-                TodayPage(head, card, plain, rows = { ExerciseBlock(rows, fit.rows, rowHeight, hidden = rows.size - fit.rows) }, veil = { veil(fit.fullVeil) }, live = true)
-            }.map { it.measure(Constraints(minWidth = width, maxWidth = width, maxHeight = available)) }
-        } else {
-            // The least this page can be still does not fit (a very large font, a very small screen):
-            // scroll the whole of it. Scrolling is a worse day than a squeezed one, but clipping a row,
-            // a button or the Veil is worse than scrolling.
-            val rowHeight = naturalRow.toDp()
-            subcompose("scroll") {
-                Column(Modifier.verticalScroll(rememberScrollState())) {
-                    TodayPage(head, card, plain, rows = { ExerciseBlock(rows, rows.size, rowHeight, hidden = 0) }, veil = { veil(true) }, live = true)
-                }
-            }.map { it.measure(Constraints.fixed(width, available)) }
-        }
-        layout(width, if (bounded) available else placeables.maxOf { it.height }) {
-            placeables.forEach { it.place(0, 0) }
+        // Chrome stays outside the day viewport, including the fallback for small windows.
+        val fixedHead = subcompose("fixedHead") {
+            CompositionLocalProvider(LocalTodayLive provides true) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { head() }
+            }
+        }.map { it.measure(loose) }
+        val headHeight = fixedHead.sumOf { it.height }
+        val bodyHeight = if (bounded) (available - headHeight).coerceAtLeast(0) else Int.MAX_VALUE / 4
+        val bodyConstraints = if (bounded) Constraints.fixed(width, bodyHeight) else Constraints(minWidth = width, maxWidth = width)
+        val body = subcompose("dayViewport") {
+            Box(Modifier.fillMaxSize().clipToBounds().then(swipe.gestures).testTag("today-day-viewport")) {
+                val rowHeight = (fit?.rowHeight ?: naturalRow).toDp()
+                val shown = fit?.rows ?: rows.size
+                val contentModifier = if (fit == null) swipe.content.verticalScroll(rememberScrollState()) else swipe.content
+                TodayPage(
+                    head = {}, card = card, plain = plain,
+                    rows = { ExerciseBlock(rows, shown, rowHeight, hidden = rows.size - shown) },
+                    veil = { veil(fit?.fullVeil ?: true) }, live = true, modifier = contentModifier,
+                )
+            }
+        }.map { it.measure(bodyConstraints) }
+        val height = if (bounded) available else headHeight + body.maxOf { it.height }
+        layout(width, height) {
+            var y = 0
+            fixedHead.forEach { it.place(0, y); y += it.height }
+            body.forEach { it.place(0, headHeight) }
         }
     }
 }
@@ -899,41 +915,54 @@ private fun WeekRail(
     scheduled: Set<Int>,
     done: Set<Int>,
     onSelect: (Int) -> Unit,
+    dayOffset: () -> Float,
 ) {
-    Row(Modifier.fillMaxWidth()) {
-        WEEK_LETTERS.forEachIndexed { index, letter ->
-            val day = index + 1
-            val isDone = day in done
-            val isSelected = day == selectedDay
-            Column(
-                Modifier
-                    .weight(1f)
-                    .heightIn(min = 60.dp)
-                    .clickable(role = Role.Tab) { onSelect(day) }
-                    .semantics(mergeDescendants = true) {
-                        selected = isSelected
-                        contentDescription = dayLong(day) + if (isDone) ", done" else ""
-                    }
-                    .padding(top = 6.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    letter,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = if (day == today) FontWeight.Bold else FontWeight.Normal,
-                    color = if (day in scheduled) IronvellumColors.Ink else IronvellumColors.InkMuted,
-                )
-                // A fixed slot, so a tick never moves the letters.
-                Box(Modifier.height(24.dp), contentAlignment = Alignment.Center) {
-                    if (isDone) SealMark(22.dp)
-                }
-                Box(
+    var width by remember { mutableIntStateOf(0) }
+    Box(Modifier.fillMaxWidth().clipToBounds().onSizeChanged { width = it.width }) {
+        Row(Modifier.fillMaxWidth()) {
+            WEEK_LETTERS.forEachIndexed { index, letter ->
+                val day = index + 1
+                val isDone = day in done
+                val isSelected = day == selectedDay
+                Column(
                     Modifier
-                        .padding(top = 2.dp)
-                        .size(width = 22.dp, height = 2.dp)
-                        .background(if (isSelected) IronvellumColors.Emerald else Color.Transparent),
-                )
+                        .weight(1f)
+                        .heightIn(min = 60.dp)
+                        .clickable(role = Role.Tab) { onSelect(day) }
+                        .semantics(mergeDescendants = true) {
+                            selected = isSelected
+                            contentDescription = dayLong(day) + if (isDone) ", done" else ""
+                        }
+                        .padding(top = 6.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text(
+                        letter,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = if (day == today) FontWeight.Bold else FontWeight.Normal,
+                        color = if (day in scheduled) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                    )
+                    // A fixed slot, so a tick never moves the letters.
+                    Box(Modifier.height(24.dp), contentAlignment = Alignment.Center) {
+                        if (isDone) SealMark(22.dp)
+                    }
+                    Spacer(Modifier.padding(top = 2.dp).size(width = 22.dp, height = 2.dp))
+                }
             }
+        }
+        // Duplicate the marker beyond both edges so Sunday/Monday wraps through the rail's ends.
+        for (wrap in -1..1) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .offset {
+                        val position = ((selectedDay - 1 + dayOffset()) % 7f + 7f) % 7f
+                        IntOffset(((position + 0.5f + wrap * 7f) * width / 7f - 11.dp.toPx()).roundToInt(), 0)
+                    }
+                    .size(width = 22.dp, height = 2.dp)
+                    .background(IronvellumColors.Emerald)
+                    .then(if (wrap == 0) Modifier.testTag("today-week-indicator") else Modifier),
+            )
         }
     }
 }

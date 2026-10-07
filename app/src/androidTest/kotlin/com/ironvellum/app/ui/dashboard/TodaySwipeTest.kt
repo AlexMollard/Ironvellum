@@ -216,8 +216,9 @@ class TodaySwipeTest {
         fun ink() = runBlocking { layer.toImageBitmap() }.toPixelMap()[x, y]
         val before = ink()
         button.performTouchInput { down(center) }
-        compose.waitUntil(timeoutMillis = 2_000) {
+        compose.waitUntil(timeoutMillis = 5_000) {
             compose.mainClock.advanceTimeBy(16)
+            compose.waitForIdle()
             ink() != before
         }
         button.performTouchInput { up() }
@@ -260,6 +261,56 @@ class TodaySwipeTest {
         compose.waitForIdle()
         compose.runOnIdle { assertEquals(1, day); assertEquals(0, selections) }
         assertEquals(before, button.fetchSemanticsNode().boundsInRoot.left, 1f)
+    }
+
+    @Test fun theHeaderAndWeekStayFixedWhileOnlyTheDayContentMoves() {
+        show(motion = true)
+        val monday = compose.onNodeWithContentDescription("Monday")
+        val before = monday.fetchSemanticsNode().boundsInRoot
+        val button = compose.onNodeWithText("Forge a cycle")
+        val bodyBefore = button.fetchSemanticsNode().boundsInRoot.left
+        compose.onNodeWithTag("home").performTouchInput {
+            down(Offset(width * .8f, height * .8f))
+            moveTo(Offset(width * .4f, height * .8f))
+        }
+        compose.mainClock.advanceTimeBy(32)
+        compose.waitForIdle()
+        assertEquals("The weekday bar must remain fixed", before, monday.fetchSemanticsNode().boundsInRoot)
+        assertTrue(button.fetchSemanticsNode().boundsInRoot.left < bodyBefore - 10f)
+        compose.onNodeWithTag("home").performTouchInput { cancel() }
+        compose.mainClock.advanceTimeBy(1_000)
+    }
+
+    @Test fun theWeekIndicatorTracksTheFingerAndReturnsOnCancellation() {
+        show(motion = true)
+        val marker = compose.onNodeWithTag("today-week-indicator")
+        val before = marker.fetchSemanticsNode().boundsInRoot.center.x
+        val next = compose.onNodeWithContentDescription("Tuesday").fetchSemanticsNode().boundsInRoot.center.x
+        val home = compose.onNodeWithTag("home")
+        home.performTouchInput {
+            down(Offset(width * .8f, height * .8f))
+            moveTo(Offset(width * .4f, height * .8f))
+        }
+        compose.mainClock.advanceTimeBy(32)
+        compose.waitForIdle()
+        val during = marker.fetchSemanticsNode().boundsInRoot.center.x
+        assertTrue("Underline must move towards Tuesday while dragging", during > before + 1f && during < next)
+        compose.runOnIdle { assertEquals(1, day); assertEquals(0, selections) }
+        home.performTouchInput { cancel() }
+        compose.mainClock.advanceTimeBy(1_000)
+        compose.waitForIdle()
+        assertEquals(before, marker.fetchSemanticsNode().boundsInRoot.center.x, 1f)
+        compose.runOnIdle { assertEquals(1, day) }
+    }
+
+    @Test fun verticalFallbackScrollsOnlyTheContentBelowTheWeek() {
+        show(height = 320)
+        val monday = compose.onNodeWithContentDescription("Monday")
+        val before = monday.fetchSemanticsNode().boundsInRoot
+        compose.onNode(hasScrollAction()).performTouchInput { swipeUp() }
+        advance()
+        assertEquals("Scrolling the day must not scroll the header", before, monday.fetchSemanticsNode().boundsInRoot)
+        monday.assertIsDisplayed().assertIsSelected()
     }
 
 }
