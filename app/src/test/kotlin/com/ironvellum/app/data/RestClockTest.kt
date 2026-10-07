@@ -49,6 +49,26 @@ class RestClockTest {
     }
 
     @Test
+    fun `shorten takes fifteen seconds off and another trial cannot shorten it`() {
+        RestClock.start(1, 90)
+        RestClock.shorten(2)
+        assertEquals(91_000L, RestClock.timer.value!!.endsAtMs)
+        RestClock.shorten(1)
+        assertEquals(76_000L, RestClock.timer.value!!.endsAtMs)
+        assertEquals(75_000L, RestClock.timer.value!!.totalMs)
+    }
+
+    @Test
+    fun `shorten past the end clears the rest like skip`() {
+        RestClock.start(1, 10)
+        RestClock.shorten(1)
+        assertNull(RestClock.timer.value)
+        // A second tap with nothing running is harmless.
+        RestClock.shorten(1)
+        assertNull(RestClock.timer.value)
+    }
+
+    @Test
     fun `finish clears only the rest that ended`() {
         RestClock.start(1, 30)
         val ended = RestClock.timer.value!!

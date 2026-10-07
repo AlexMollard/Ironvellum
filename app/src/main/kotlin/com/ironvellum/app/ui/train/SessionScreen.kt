@@ -313,6 +313,8 @@ class SessionViewModel(
 
     fun extendRest() = RestClock.extend(sessionId)
 
+    fun shortenRest() = RestClock.shorten(sessionId)
+
     fun skipRest() = RestClock.cancel(sessionId)
 
     /** A set ticked done, with sets still waiting, starts its movement's prescribed rest. */
@@ -838,6 +840,7 @@ fun SessionScreen(
                 },
                 onLog = ::logActive,
                 onExtend = viewModel::extendRest,
+                onShorten = viewModel::shortenRest,
                 onSkip = viewModel::skipRest,
                 onSealed = ::requestSeal,
                 slideReset = slideReset,
@@ -2617,6 +2620,7 @@ private fun TrialFooter(
     nextLine: String?,
     onLog: () -> Unit,
     onExtend: () -> Unit,
+    onShorten: () -> Unit,
     onSkip: () -> Unit,
     onSealed: () -> Unit,
     slideReset: Int,
@@ -2633,7 +2637,7 @@ private fun TrialFooter(
     ) {
         when {
             allLogged -> SlideToSeal(label = "Slide to seal", onSealed = onSealed, resetKey = slideReset)
-            rest != null && !rest.isOver(now) -> RestStrip(rest, now, nextSetNumber, onExtend, onSkip)
+            rest != null && !rest.isOver(now) -> RestStrip(rest, now, nextSetNumber, onExtend, onShorten, onSkip)
             nextLine != null && nextSetNumber != null -> NextSetStrip(nextSetNumber, nextLine, onLog)
             // No sets at all: an open trial that has not begun. Nothing to log or seal yet.
             else -> SlideToSeal(label = "Log a set to seal the trial", onSealed = onSealed, enabled = false)
@@ -2641,9 +2645,9 @@ private fun TrialFooter(
     }
 }
 
-/** The rest between sets, counting down, with its two moves: a little more, or none at all. */
+/** The rest between sets, counting down, with its moves: a little less, a little more, or none at all. */
 @Composable
-private fun RestStrip(timer: RestTimer, now: Long, nextSetNumber: Int?, onExtend: () -> Unit, onSkip: () -> Unit) {
+private fun RestStrip(timer: RestTimer, now: Long, nextSetNumber: Int?, onExtend: () -> Unit, onShorten: () -> Unit, onSkip: () -> Unit) {
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().weight(1f), verticalAlignment = Alignment.CenterVertically) {
             Text(
@@ -2664,6 +2668,7 @@ private fun RestStrip(timer: RestTimer, now: Long, nextSetNumber: Int?, onExtend
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).padding(start = 12.dp),
             )
+            FooterAction("\u2212${RestTimer.SHORTEN_SECONDS}", IronvellumColors.Ink, onShorten)
             FooterAction("+${RestTimer.EXTEND_SECONDS}", IronvellumColors.Ink, onExtend)
             FooterAction("Skip", IronvellumColors.InkMuted, onSkip)
         }
