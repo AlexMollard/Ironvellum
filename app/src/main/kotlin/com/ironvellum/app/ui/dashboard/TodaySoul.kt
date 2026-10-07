@@ -61,8 +61,8 @@ import kotlin.math.sin
  */
 
 /** The muscle-focus glyph's box beside a rite's header. */
-private val GLYPH_WIDTH = 44.dp
-private val GLYPH_HEIGHT = 66.dp
+private val GLYPH_WIDTH = 52.dp
+private val GLYPH_HEIGHT = 78.dp
 
 /** The SEALED stamp's box, in the same corner the glyph holds. */
 private val STAMP_SIZE = 68.dp
@@ -111,6 +111,7 @@ internal fun RiteGlyph(sets: Map<Muscle, Double>, modifier: Modifier = Modifier)
                 if (alpha <= 0f) IronvellumColors.Rune else IronvellumColors.Emerald.copy(alpha = alpha)
             },
             seed = 11,
+            outlineWidth = 1.dp,
         )
     }
 }
@@ -280,7 +281,7 @@ internal fun RiteHeader(
             }
         }
         if (corner != null) {
-            Box(Modifier.padding(start = 8.dp).heightIn(min = GLYPH_HEIGHT), contentAlignment = Alignment.TopEnd) { corner() }
+            Box(Modifier.padding(start = 8.dp).heightIn(min = 66.dp), contentAlignment = Alignment.TopEnd) { corner() }
         }
     }
 }
