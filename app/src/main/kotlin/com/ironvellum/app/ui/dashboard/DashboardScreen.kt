@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.dashboard
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,14 +35,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.AnnotatedString
@@ -54,6 +60,7 @@ import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -97,6 +104,7 @@ import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.launchGuarded
 import com.ironvellum.app.ui.program.toPlanned
+import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -903,11 +911,7 @@ private fun TodayLayout(
     }
 }
 
-/**
- * The week at a glance: one letter per day, the scheduled ones in Ink, today bold, a small gold seal
- * under a day whose rite is sealed (the same test as the card's SEALED state) and an emerald underline
- * under the day being read.
- */
+/** Today's label and workout status stay fixed while the selected-day tile follows a swipe. */
 @Composable
 private fun WeekRail(
     selectedDay: Int,
@@ -918,12 +922,38 @@ private fun WeekRail(
     dayOffset: () -> Float,
 ) {
     var width by remember { mutableIntStateOf(0) }
+    val tileWidth = with(LocalDensity.current) { (width.toDp() / 7 - 8.dp).coerceAtLeast(0.dp) }
+    val shape = MaterialTheme.shapes.medium
     Box(Modifier.fillMaxWidth().clipToBounds().onSizeChanged { width = it.width }) {
+        // Draw behind the fixed letters/statuses; duplicate past the edges for Sunday/Monday.
+        for (wrap in -1..1) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .offset {
+                        val position = ((selectedDay - 1 + dayOffset()) % 7f + 7f) % 7f
+                        IntOffset(((position + 0.5f + wrap * 7f) * width / 7f - tileWidth.toPx() / 2).roundToInt(), 0)
+                    }
+                    .size(width = tileWidth, height = 48.dp)
+                    .clip(shape)
+                    .background(IronvellumColors.Emerald.copy(alpha = 0.10f))
+                    .inkBorder(IronvellumColors.Emerald.copy(alpha = 0.35f), shape)
+                    .then(if (wrap == 0) Modifier.testTag("today-week-indicator") else Modifier),
+            ) {
+                Box(Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(2.dp).background(IronvellumColors.Emerald))
+            }
+        }
         Row(Modifier.fillMaxWidth()) {
             WEEK_LETTERS.forEachIndexed { index, letter ->
                 val day = index + 1
                 val isDone = day in done
                 val isSelected = day == selectedDay
+                val isToday = day == today
+                val status = when {
+                    isDone -> "Sealed trial"
+                    day in scheduled -> "Rite in cycle"
+                    else -> "No rite"
+                }
                 Column(
                     Modifier
                         .weight(1f)
@@ -932,37 +962,46 @@ private fun WeekRail(
                         .semantics(mergeDescendants = true) {
                             selected = isSelected
                             contentDescription = dayLong(day) + if (isDone) ", done" else ""
-                        }
-                        .padding(top = 6.dp),
+                            stateDescription = if (isToday) "Today, $status" else status
+                        },
                     horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
-                    Text(
-                        letter,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = if (day == today) FontWeight.Bold else FontWeight.Normal,
-                        color = if (day in scheduled) IronvellumColors.Ink else IronvellumColors.InkMuted,
-                    )
-                    // A fixed slot, so a tick never moves the letters.
-                    Box(Modifier.height(24.dp), contentAlignment = Alignment.Center) {
-                        if (isDone) SealMark(22.dp)
+                    // All three slots are reserved even when empty: no reflow between states.
+                    Box(Modifier.height(12.dp), contentAlignment = Alignment.Center) {
+                        if (isToday) Text(
+                            "TODAY",
+                            style = MaterialTheme.typography.labelSmall,
+                            fontSize = 9.sp,
+                            lineHeight = 12.sp,
+                            color = IronvellumColors.Ink,
+                            modifier = Modifier.clearAndSetSemantics {},
+                        )
                     }
-                    Spacer(Modifier.padding(top = 2.dp).size(width = 22.dp, height = 2.dp))
+                    Box(Modifier.height(24.dp), contentAlignment = Alignment.Center) {
+                        Text(
+                            letter,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal,
+                            color = if (isSelected || day in scheduled || isDone) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                        )
+                    }
+                    Box(Modifier.height(24.dp), contentAlignment = Alignment.Center) {
+                        if (isDone) SealMark(18.dp)
+                        else if (day in scheduled) {
+                            Canvas(Modifier.size(10.dp).clearAndSetSemantics {}) {
+                                val diamond = Path().apply {
+                                    moveTo(size.width / 2, 1.dp.toPx())
+                                    lineTo(size.width - 1.dp.toPx(), size.height / 2)
+                                    lineTo(size.width / 2, size.height - 1.dp.toPx())
+                                    lineTo(1.dp.toPx(), size.height / 2)
+                                    close()
+                                }
+                                drawPath(diamond, IronvellumColors.Ink, style = Stroke(1.dp.toPx()))
+                            }
+                        }
+                    }
                 }
             }
-        }
-        // Duplicate the marker beyond both edges so Sunday/Monday wraps through the rail's ends.
-        for (wrap in -1..1) {
-            Box(
-                Modifier
-                    .align(Alignment.BottomStart)
-                    .offset {
-                        val position = ((selectedDay - 1 + dayOffset()) % 7f + 7f) % 7f
-                        IntOffset(((position + 0.5f + wrap * 7f) * width / 7f - 11.dp.toPx()).roundToInt(), 0)
-                    }
-                    .size(width = 22.dp, height = 2.dp)
-                    .background(IronvellumColors.Emerald)
-                    .then(if (wrap == 0) Modifier.testTag("today-week-indicator") else Modifier),
-            )
         }
     }
 }
