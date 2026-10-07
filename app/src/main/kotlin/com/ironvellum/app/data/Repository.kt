@@ -66,6 +66,7 @@ import com.ironvellum.app.domain.Reward
 import com.ironvellum.app.domain.RollResult
 import com.ironvellum.app.domain.RoutineCode
 import com.ironvellum.app.domain.RoutinePlan
+import com.ironvellum.app.domain.RiteSwap
 import com.ironvellum.app.domain.RoutineUpdate
 import com.ironvellum.app.domain.modifiersAfterLoadChange
 import com.ironvellum.app.domain.CarryEdits
@@ -1247,6 +1248,8 @@ class Repository(
         val presetId: Long,
         val presetName: String,
         val changes: List<RoutineUpdate.Change>,
+        /** Lifts swapped for others during the trial, each offered as a rite change of its own. */
+        val swaps: List<RiteSwap.Swap> = emptyList(),
     )
 
     /**
@@ -1287,7 +1290,11 @@ class Repository(
         val changes = RoutineUpdate.propose(entries, sets) { id ->
             catalogue[id]?.metric?.let { runCatching { ExerciseMetric.valueOf(it) }.getOrNull() }
         }
-        return changes.takeIf { it.isNotEmpty() }?.let { RoutineUpdateOffer(pw.preset.id, pw.preset.name, it) }
+        val swaps = RiteSwap.detect(entries, sets) { id ->
+            catalogue[id]?.metric?.let { runCatching { ExerciseMetric.valueOf(it) }.getOrNull() }
+        }
+        if (changes.isEmpty() && swaps.isEmpty()) return null
+        return RoutineUpdateOffer(pw.preset.id, pw.preset.name, changes, swaps)
     }
 
     /**
@@ -1297,8 +1304,13 @@ class Repository(
      * an entry since deleted or moved to another preset is skipped. Logged
      * sessions are never touched.
      */
-    suspend fun applyRoutineUpdate(presetId: Long, accepted: List<RoutineUpdate.Change>) = db.withTransaction {
+    suspend fun applyRoutineUpdate(
+        presetId: Long,
+        accepted: List<RoutineUpdate.Change>,
+        swaps: List<RiteSwap.Swap> = emptyList(),
+    ) = db.withTransaction {
         val current = presetDao.presetWithEntries(presetId)?.entries?.associateBy { it.id } ?: return@withTransaction
+        keepSwaps(presetId, swaps)
         accepted.forEach { change ->
             val row = current[change.before.id] ?: return@forEach
             val (before, after) = change
@@ -1308,6 +1320,26 @@ class Repository(
                     targetReps = if (after.targetReps != before.targetReps) after.targetReps else row.targetReps,
                     targetWeightKg = if (after.targetWeightKg != before.targetWeightKg) after.targetWeightKg else row.targetWeightKg,
                     modifiers = if (after.modifiers != before.modifiers) after.modifiers else row.modifiers,
+                ),
+            )
+        }
+    }
+
+    /**
+     * Puts each swapped-in lift in its entry's place, keeping the entry's
+     * sets, reps and order. An entry since deleted, moved to another rite or
+     * already changed to some other lift is left alone.
+     */
+    suspend fun keepSwaps(presetId: Long, swaps: List<RiteSwap.Swap>) = db.withTransaction {
+        val current = presetDao.presetWithEntries(presetId)?.entries?.associateBy { it.id } ?: return@withTransaction
+        swaps.forEach { swap ->
+            val row = current[swap.entry.id]?.takeIf { it.exerciseId == swap.entry.exerciseId } ?: return@forEach
+            presetDao.updateEntry(
+                row.copy(
+                    exerciseId = swap.after.exerciseId,
+                    targetReps = swap.after.targetReps,
+                    targetWeightKg = swap.after.targetWeightKg,
+                    modifiers = swap.after.modifiers,
                 ),
             )
         }
