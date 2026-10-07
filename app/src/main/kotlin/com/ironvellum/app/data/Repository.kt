@@ -745,22 +745,27 @@ class Repository(
         // never fire: a lifter grinding the same failed load got told to
         // repeat it forever.
         //
-        // A static hold is not progressed here: its overload is seconds,
-        // and Progression's double-progression adds LOAD once the rep band
-        // is cleared. Feeding it seconds would prescribe a weight vest for
-        // a longer plank. Holds take the preset's own target until hold
-        // progression is designed.
+        // A hold's figure is seconds (durationSec, reps stay 0) and its
+        // preset target is seconds too: the HOLD lever grows the seconds and
+        // never adds load to a longer plank.
+        val name = exercise?.name ?: ""
+        val lever = Progression.leverFor(name, exercise?.isWeighted ?: false, metric)
         val history = sessionDao.recentDoneSets(entry.exerciseId)
             .groupBy { it.sessionId }
             .values
-            .map { rows -> rows.sortedBy { it.setIndex }.map { Progression.Attempt(it.weightKg, it.reps) } }
+            .map { rows ->
+                rows.sortedBy { it.setIndex }.map {
+                    Progression.attemptOf(it.weightKg, it.reps, it.durationSec, hold = lever == Progression.Lever.HOLD)
+                }
+            }
         return Progression.fromSessions(
             mode = mode,
             targetReps = entry.targetReps,
             minSets = entry.targetSets,
             sessions = history,
             muscleGroup = exercise?.muscleGroup ?: "",
-            exerciseName = exercise?.name ?: "",
+            exerciseName = name,
+            lever = lever,
         )
     }
 
@@ -842,7 +847,8 @@ class Repository(
                     setIndex = index,
                     // A hold's prescription is seconds; its reps stay 0.
                     reps = if (isHold) 0 else (recommendation?.reps ?: entry.targetReps),
-                    durationSec = if (isHold) entry.targetReps else null,
+                    // A cleared hold seeds the next trial a few seconds longer.
+                    durationSec = if (isHold) (recommendation?.reps ?: entry.targetReps) else null,
                     modifiers = entry.modifiers,
                     weightKg = recommendation?.weightKg ?: entry.targetWeightKg,
                     done = false,

@@ -1,6 +1,10 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.data.Seed
+import com.ironvellum.app.domain.Progression.Lever
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ProgressionTest {
@@ -135,5 +139,128 @@ class ProgressionTest {
         val deload = Progression.fromSessions(TrainingMode.STRENGTH, 5, 3, listOf(failed, failed, failed))
         assertEquals(true, deload.changed)
         assertEquals(true, deload.deload)
+    }
+
+    // ------------------------------------------------------------ levers
+
+    private fun cleared(times: Int, weight: Double? = null, reps: Int = 10, sets: Int = 3): List<List<Progression.Attempt>> =
+        List(times) { List(sets) { Progression.Attempt(weight, reps) } }
+
+    @Test
+    fun `an ab wheel cleared three times cycles range, tempo and reps and never grows reps or load`() {
+        val reasons = (1..3).map { n ->
+            val rec = Progression.fromSessions(
+                TrainingMode.HYPERTROPHY, targetReps = 10, minSets = 3, sessions = cleared(n),
+                exerciseName = "Ab Wheel Rollout", lever = Lever.CONTROL,
+            )
+            assertEquals(null, rec.weightKg)
+            assertEquals(10, rec.reps)
+            assertTrue(rec.changed)
+            rec.reason
+        }
+        assertEquals(
+            listOf(
+                "Trial cleared — reach a little further before adding reps",
+                "Trial cleared — slow the way out to 3 s",
+                "Trial cleared — add 2 reps, same range and pace",
+            ),
+            reasons,
+        )
+        // The cycle starts over.
+        val fourth = Progression.fromSessions(
+            TrainingMode.HYPERTROPHY, 10, 3, cleared(4), exerciseName = "Ab Wheel Rollout", lever = Lever.CONTROL,
+        )
+        assertEquals(reasons[0], fourth.reason)
+    }
+
+    @Test
+    fun `dorsiflexion never asks for more reps or load`() {
+        for (n in 1..3) {
+            val rec = Progression.fromSessions(
+                TrainingMode.HYPERTROPHY, 10, 3, cleared(n), exerciseName = "Knee-to-Wall Dorsiflexion", lever = Lever.MOBILITY,
+            )
+            assertEquals(null, rec.weightKg)
+            assertEquals(10, rec.reps)
+            assertFalse(rec.reason, rec.reason.contains("reps") || rec.reason.contains("kg"))
+        }
+    }
+
+    @Test
+    fun `an unloaded hold progresses on seconds, and a weighted plank deload never quotes reps`() {
+        // 3 sets of 45 s, logged as durationSec with reps 0.
+        val held = List(3) { Progression.attemptOf(null, reps = 0, durationSec = 45, hold = true) }
+        val rec = Progression.fromSessions(
+            TrainingMode.STRENGTH, targetReps = 45, minSets = 3, sessions = listOf(held),
+            exerciseName = "Plank", lever = Lever.HOLD,
+        )
+        assertEquals(50, rec.reps)
+        assertEquals(null, rec.weightKg)
+        assertEquals("Trial cleared — hold 5 s longer next trial", rec.reason)
+        // Read as reps (the old defect) the same sets never cleared.
+        val asReps = List(3) { Progression.attemptOf(null, reps = 0, durationSec = 45, hold = false) }
+        assertFalse(Progression.fromSessions(TrainingMode.STRENGTH, 45, 3, listOf(asReps), lever = Lever.HOLD).changed)
+        // A legacy archive keeps the seconds in reps.
+        assertEquals(45, Progression.attemptOf(null, reps = 45, durationSec = null, hold = true).reps)
+        // A loaded hold that keeps failing: the deload text quotes seconds as seconds.
+        val failed = List(3) { Progression.attemptOf(10.0, reps = 0, durationSec = 30, hold = true) }
+        val deload = Progression.fromSessions(
+            TrainingMode.STRENGTH, 45, 3, listOf(failed, failed, failed), exerciseName = "Weighted Plank", lever = Lever.HOLD,
+        )
+        assertTrue(deload.deload)
+        assertTrue(deload.reason, deload.reason.contains("45 s"))
+        assertFalse(deload.reason, deload.reason.contains("reps"))
+    }
+
+    @Test
+    fun `levers resolve from the movement`() {
+        fun lever(name: String, weighted: Boolean = false, metric: ExerciseMetric = ExerciseMetric.REPS) =
+            Progression.leverFor(name, weighted, metric)
+        assertEquals(Lever.CONTROL, lever("Ab Wheel Rollout"))
+        assertEquals(Lever.MOBILITY, lever("Knee-to-Wall Dorsiflexion"))
+        assertEquals(Lever.HOLD, lever("Plank", metric = ExerciseMetric.HOLD))
+        assertEquals(Lever.LOAD, lever("Bench Press", weighted = true))
+        assertEquals(Lever.REPS_THEN_LOAD, lever("Pull-up"))
+        assertEquals(Lever.SKILL, lever("Handstand Push-up"))
+        // The owner's edge cases.
+        assertEquals(Lever.REPS_THEN_LOAD, lever("Hanging Leg Raise"))
+        assertEquals(Lever.CONTROL, lever("Cossack Squat"))
+        assertEquals(Lever.CONTROL, lever("Nordic Curl"))
+        // An unmapped movement follows its weighted flag.
+        assertEquals(Lever.LOAD, lever("My Own Lift", weighted = true))
+        assertEquals(Lever.REPS_THEN_LOAD, lever("My Own Lift"))
+    }
+
+    @Test
+    fun `the default lever keeps today's bodyweight copy`() {
+        val rec = Progression.fromSets(TrainingMode.STRENGTH, 5, 5, List(5) { Progression.Attempt(null, 6) })
+        assertEquals("Target cleared — climb to 8 reps", rec.reason)
+        assertEquals(8, rec.reps)
+        // The same sets with no lever named climb past the cap; REPS_THEN_LOAD stops there.
+        val high = List(5) { Progression.Attempt(null, 14) }
+        assertEquals(16, Progression.fromSets(TrainingMode.STRENGTH, 5, 5, high).reps)
+        assertEquals(15, Progression.fromSets(TrainingMode.STRENGTH, 5, 5, high, lever = Lever.REPS_THEN_LOAD).reps)
+    }
+
+    @Test
+    fun `bodyweight reps stop at the ceiling and point to load or a harder variation`() {
+        val rec = Progression.fromSets(
+            TrainingMode.HYPERTROPHY, 10, 3, List(3) { Progression.Attempt(null, 15) }, lever = Lever.REPS_THEN_LOAD,
+        )
+        assertEquals(null, rec.weightKg)
+        assertEquals(15, rec.reps)
+        assertEquals("Reps are high enough — add 2.5 kg or take a harder variation", rec.reason)
+        assertTrue(rec.changed)
+    }
+
+    @Test
+    fun `every catalogue row resolves to a lever and the lever name sets are real movements`() {
+        for (e in Seed.exercises) {
+            val metric = ExerciseMetric.valueOf(e.metric)
+            val lever = Progression.leverFor(e.name, e.isWeighted, metric)
+            if (metric == ExerciseMetric.HOLD) assertEquals(e.name, Lever.HOLD, lever)
+        }
+        assertTrue(MuscleMap.controlNames.all { it in MuscleMap.keys })
+        assertTrue(MuscleMap.mobilityNames.all { it in MuscleMap.keys })
+        assertTrue(MuscleMap.controlNames.intersect(MuscleMap.mobilityNames).isEmpty())
     }
 }

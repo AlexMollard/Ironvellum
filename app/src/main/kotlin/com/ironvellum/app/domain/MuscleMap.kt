@@ -142,6 +142,29 @@ object MuscleMap {
     fun isTechnique(exerciseName: String): Boolean = key(exerciseName) in technique
 
     /**
+     * Trunk and eccentric-limited work whose overload is range, then tempo,
+     * then reps - never load first: a longer lever or a deeper position is
+     * the progression, more reps of a short range is not
+     * ([Progression.Lever.CONTROL]).
+     */
+    private val controlKeys = setOf(
+        "ab wheel rollout", "dead bug", "dragon flag", "nordic negative", "nordic curl",
+        "cossack squat", "sissy squat", "scapular push-up", "scapular pull",
+        "stand-to-stand bridge", "handstand-to-bridge",
+    )
+
+    /** Drills whose goal is a joint angle, so reps and load are never the cue ([Progression.Lever.MOBILITY]). */
+    private val mobilityKeys = setOf("knee-to-wall dorsiflexion", "wrist prep")
+
+    fun isControl(exerciseName: String): Boolean = key(exerciseName) in controlKeys
+
+    fun isMobility(exerciseName: String): Boolean = key(exerciseName) in mobilityKeys
+
+    /** The control and mobility names, lowercased - exposed for the coverage tests. */
+    val controlNames: Set<String> get() = controlKeys
+    val mobilityNames: Set<String> get() = mobilityKeys
+
+    /**
      * Dosed movements worked one side at a time, each side taking the full
      * rep count ("8 reps per leg", the skill standards' own wording): the
      * single-leg and single-arm work, split stances, lunges and step-ups,
