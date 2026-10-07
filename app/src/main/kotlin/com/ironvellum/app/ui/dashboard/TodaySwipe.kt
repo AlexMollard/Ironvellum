@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Job
@@ -27,9 +28,34 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.sign
 
+/** The stationary gesture viewport, its moving content, and the week rail's visual preview. */
+internal class TodaySwipe(
+    val gestures: Modifier,
+    val content: Modifier,
+    val dayOffset: () -> Float,
+    val selectDay: (Int) -> Unit,
+)
+
+private class SwipeMotion {
+    var horizontal = 0f
+    var vertical = 0f
+    var width = 1f
+    var startOffset = 0f
+    var startDayOffset = 0f
+    var offset by mutableFloatStateOf(0f)
+    var dayOffset by mutableFloatStateOf(0f)
+    var settling: Job? = null
+
+    fun reset() {
+        settling?.cancel()
+        offset = 0f
+        dayOffset = 0f
+    }
+}
+
 /** Native drag negotiation delays child press ink until the touch's intent is known. */
 @Composable
-internal fun rememberTodaySwipe(day: Int, selectDay: (Int) -> Unit, motion: Boolean): Modifier {
+internal fun rememberTodaySwipe(day: Int, selectDay: (Int) -> Unit, motion: Boolean): TodaySwipe {
     val currentDay by rememberUpdatedState(day)
     val onSelect by rememberUpdatedState(selectDay)
     val moves by rememberUpdatedState(motion)
@@ -37,58 +63,71 @@ internal fun rememberTodaySwipe(day: Int, selectDay: (Int) -> Unit, motion: Bool
     val threshold = with(density) { 56.dp.toPx() }
     val travel = with(density) { 64.dp.toPx() }
     val interactions = remember { MutableInteractionSource() }
-    var horizontal by remember { mutableFloatStateOf(0f) }
-    var vertical by remember { mutableFloatStateOf(0f) }
-    var offset by remember { mutableFloatStateOf(0f) }
+    val state = remember { SwipeMotion() }
 
     LaunchedEffect(interactions, threshold, travel) {
-        var settling: Job? = null
         interactions.interactions.collect { event ->
             when (event) {
-                is DragInteraction.Start -> settling?.cancel()
+                is DragInteraction.Start -> state.settling?.cancel()
                 is DragInteraction.Stop, is DragInteraction.Cancel -> {
                     val accepted = event is DragInteraction.Stop &&
-                        abs(horizontal) >= threshold && abs(horizontal) > abs(vertical)
-                    settling?.cancel()
+                        abs(state.horizontal) >= threshold && abs(state.horizontal) > abs(state.vertical)
+                    state.settling?.cancel()
                     if (accepted) {
-                        onSelect(if (horizontal < 0f) currentDay % 7 + 1 else (currentDay + 5) % 7 + 1)
-                        // The incoming day arrives from the opposite side; only one page is live.
-                        offset = if (moves) -horizontal.sign * travel else 0f
+                        val direction = -state.horizontal.sign
+                        onSelect(if (direction > 0f) currentDay % 7 + 1 else (currentDay + 5) % 7 + 1)
+                        // Keep the underline at its dragged position as the selected day's origin changes.
+                        state.dayOffset -= direction
+                        state.offset = if (moves) direction * travel else 0f
                     }
                     if (moves) {
-                        settling = launch {
-                            animate(offset, 0f, animationSpec = spring(dampingRatio = 0.9f, stiffness = 400f)) { value, _ -> offset = value }
+                        val fromContent = state.offset
+                        val fromDay = state.dayOffset
+                        state.settling = launch {
+                            animate(0f, 1f, animationSpec = spring(dampingRatio = 0.9f, stiffness = 400f)) { value, _ ->
+                                state.offset = fromContent * (1f - value)
+                                state.dayOffset = fromDay * (1f - value)
+                            }
                         }
-                    } else offset = 0f
+                    } else state.reset()
                 }
             }
         }
     }
 
-    return Modifier
+    val gestures = Modifier
+        .onSizeChanged { state.width = it.width.toFloat().coerceAtLeast(1f) }
         .pointerInput(Unit) {
             // Observe direction without consuming: vertical scrolling keeps its native negotiation.
             awaitEachGesture {
                 val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
-                horizontal = 0f
-                vertical = 0f
+                state.horizontal = 0f
+                state.vertical = 0f
                 do {
                     val change = awaitPointerEvent(PointerEventPass.Initial).changes.firstOrNull { it.id == down.id } ?: break
-                    vertical = change.position.y - down.position.y
+                    state.vertical = change.position.y - down.position.y
                 } while (change.pressed)
             }
         }
         .draggable(
             state = rememberDraggableState { delta ->
-                horizontal += delta
-                offset = if (moves) (horizontal * 0.35f).coerceIn(-travel, travel) else 0f
+                state.horizontal += delta
+                state.offset = if (moves) (state.startOffset + state.horizontal * 0.35f).coerceIn(-travel, travel) else 0f
+                state.dayOffset = if (moves) (state.startDayOffset - state.horizontal / state.width).coerceIn(-1f, 1f) else 0f
             },
             orientation = Orientation.Horizontal,
             interactionSource = interactions,
             startDragImmediately = false,
+            onDragStarted = {
+                state.settling?.cancel()
+                state.startOffset = state.offset
+                state.startDayOffset = state.dayOffset
+            },
         )
-        .graphicsLayer {
-            translationX = if (moves) offset else 0f
-            alpha = if (moves) 1f - (abs(offset) / travel).coerceIn(0f, 1f) * 0.18f else 1f
-        }
+    return TodaySwipe(
+        gestures = gestures,
+        content = Modifier.graphicsLayer { translationX = if (moves) state.offset else 0f },
+        dayOffset = { if (moves) state.dayOffset else 0f },
+        selectDay = { state.reset(); onSelect(it) },
+    )
 }
