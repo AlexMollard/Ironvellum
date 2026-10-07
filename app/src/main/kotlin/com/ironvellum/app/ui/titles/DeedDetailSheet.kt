@@ -6,6 +6,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Sex
@@ -15,7 +16,6 @@ import com.ironvellum.app.domain.TitleRule
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.InfoAction
-import com.ironvellum.app.ui.components.InfoChip
 import com.ironvellum.app.ui.components.InfoProgress
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.formatDate
@@ -44,13 +44,9 @@ internal fun RarityMark(rarity: TitleRarity, modifier: Modifier = Modifier, earn
     )
 }
 
-/** Green while in progress; gold only once the deed is earned. */
+/** Solid Emerald while in progress; solid gold only once the deed is earned. */
 internal fun railFill(earned: Boolean): Brush =
-    if (earned) {
-        Brush.horizontalGradient(listOf(IronvellumColors.SovereignGold, IronvellumColors.SovereignGold))
-    } else {
-        Brush.horizontalGradient(listOf(IronvellumColors.SystemGreen, IronvellumColors.Emerald))
-    }
+    SolidColor(if (earned) IronvellumColors.SovereignGold else IronvellumColors.Emerald)
 
 internal fun formatCount(n: Long): String = String.format(Locale.US, "%,d", n)
 
@@ -164,11 +160,8 @@ internal fun DeedDetailSheet(
         title = def.name,
         onDismiss = onDismiss,
         titleColor = if (earned) IronvellumColors.SovereignGold else IronvellumColors.Ink,
-        chips = buildList {
-            add(InfoChip(def.rarity.label, rarityColor(def.rarity, earned)))
-            add(InfoChip(Titles.category(def.rule)))
-            if (earned) add(InfoChip("Earned", IronvellumColors.SovereignGold))
-        },
+        subtitle = "${def.rarity.label} · ${Titles.category(def.rule)}",
+        subtitleColor = rarityColor(def.rarity, earned),
         summary = {
             InfoProgress(
                 fraction = if (earned) 1f else progress.fraction,
@@ -177,16 +170,14 @@ internal fun DeedDetailSheet(
                 fill = railFill(earned),
             )
         },
-        actions = if (earned) {
-            listOf(InfoAction(if (worn) "Worn now" else "Wear title", onWear, enabled = !worn))
-        } else {
-            emptyList()
-        },
+        actions = if (earned && !worn) listOf(InfoAction("Wear title", onWear)) else emptyList(),
     ) {
-        text("THE DEED", def.describeFor(sex))
         if (earnedAtMs != null) {
-            text("EARNED", formatDate(earnedAtMs, "d MMM yyyy"))
+            text(null, "Earned ${formatDate(earnedAtMs, "d MMM yyyy")}", IronvellumColors.SovereignGold)
+            text(null, def.describeFor(sex))
+            if (worn) text(null, "Worn now", IronvellumColors.InkMuted)
         } else {
+            text(null, def.describeFor(sex))
             text("HOW TO EARN IT", earnPointer(Titles.category(def.rule)), IronvellumColors.InkMuted)
         }
     }

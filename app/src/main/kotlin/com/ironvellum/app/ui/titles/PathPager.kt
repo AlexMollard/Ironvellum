@@ -1,6 +1,5 @@
 package com.ironvellum.app.ui.titles
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,7 +29,6 @@ import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
@@ -38,9 +36,9 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.ui.components.selectedUnderline
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.inkBorder
 import kotlinx.coroutines.flow.drop
 
 /** What a path chip reads out loud: the name, how far along it is, and whether it is the open one. */
@@ -129,7 +127,7 @@ internal fun PathPager(
     }
 }
 
-/** Every path as a chip - "Pull 5/11" - in a strip that scrolls sideways; the open one is marked. */
+/** Every path as a name in a strip that scrolls sideways; the open one is marked. */
 @Composable
 internal fun PathChips(
     selected: String,
@@ -161,29 +159,24 @@ internal fun PathChips(
 
 @Composable
 private fun PathChip(line: String, done: Int, total: Int, on: Boolean, onClick: () -> Unit) {
-    val shape = MaterialTheme.shapes.extraSmall
     Box(
         Modifier
             .heightIn(min = 48.dp)
             .widthIn(min = 48.dp)
-            .clip(shape)
-            .then(
-                if (on) Modifier.background(IronvellumColors.SystemGreen.copy(alpha = 0.12f)).inkBorder(IronvellumColors.SystemGreen, shape, 1.dp)
-                else Modifier,
-            )
             .clickable(role = Role.Tab, onClickLabel = "Open $line path") { onClick() }
             .semantics {
                 this.selected = on
                 contentDescription = chipDescription(line, done, total)
             }
+            .selectedUnderline(on)
             .padding(horizontal = 10.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            "$line $done/$total",
+            line,
             style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
-            color = if (on) IronvellumColors.SystemGreen else IronvellumColors.InkMuted,
+            color = if (on) IronvellumColors.Ink else IronvellumColors.InkMuted,
             maxLines = 1,
             overflow = TextOverflow.Clip,
         )
