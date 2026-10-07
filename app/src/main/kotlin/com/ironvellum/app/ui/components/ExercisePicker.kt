@@ -1,12 +1,12 @@
 package com.ironvellum.app.ui.components
 
 import android.content.Context
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,26 +14,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Tune
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.withStyle
 import androidx.compose.material.icons.outlined.StarBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,8 +33,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -70,7 +60,6 @@ import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.inkBorder
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -152,7 +141,7 @@ fun ExercisePickerSheet(
     exercises: List<Exercise>,
     onPick: (Exercise) -> Unit,
     onDismiss: () -> Unit,
-    title: String = "SELECT EXERCISE",
+    title: String = "Select exercise",
     defaultMyGear: Boolean = true,
     topContent: (LazyListScope.() -> Unit)? = null,
 ) {
@@ -239,9 +228,10 @@ fun ExercisePickerPanel(
 }
 
 /**
- * One line while closed: FILTERS plus the filters that are on, each tapped
+ * One line while closed: "Filters" plus the filters that are on, each tapped
  * to clear, so a narrowed list always says why. Open, the choices wrap in two
- * labelled groups with no ALL chips (tapping an active chip turns it off).
+ * labelled groups with no "All" chips (tapping an active chip turns it off); the
+ * active chips are not repeated then, because the highlighted ones show the same.
  * Three stacked scrolling rails, each with its own ALL, took a third of the
  * sheet before a single exercise showed.
  *
@@ -253,40 +243,39 @@ private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls,
     val f = controls.filters
     val categories = activityCategoryOrder(exercises).filter { it.isNotBlank() }
     val active = buildList<Pair<String, () -> Unit>> {
-        f.group?.let { add(it.name to { controls.filters = controls.filters.copy(group = null) }) }
-        f.category?.let { add(it.uppercase() to { controls.filters = controls.filters.copy(category = null) }) }
-        if (equipment != null && f.myGear) add("MY ARMOURY" to { controls.filters = controls.filters.copy(myGear = false) })
+        f.group?.let { add(sentence(it.name) to { controls.filters = controls.filters.copy(group = null) }) }
+        f.category?.let { add(sentence(it) to { controls.filters = controls.filters.copy(category = null) }) }
+        if (equipment != null && f.myGear) add("My armoury" to { controls.filters = controls.filters.copy(myGear = false) })
         f.facet?.let { add(it.label to { controls.filters = controls.filters.copy(facet = null) }) }
     }
     Column {
+        // The chips are 48dp targets around 32dp of ink, so the rows butt up with no gap of their own.
         FlowRow(
             Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp),
             itemVerticalAlignment = Alignment.CenterVertically,
         ) {
             FiltersButton(open = controls.filtersOpen, activeCount = active.size) {
                 controls.filtersOpen = !controls.filtersOpen
             }
-            active.forEach { (label, clear) -> FilterChip("$label ✕", true, clear) }
+            if (!controls.filtersOpen) active.forEach { (label, clear) -> FilterChip("$label ✕", true, clear) }
         }
         if (!controls.filtersOpen) return@Column
-        FilterGroup("TYPE") {
+        FilterGroup("Type") {
             LIFTING_GROUPS.forEach { mg ->
-                FilterChip(mg.name, f.group == mg) {
+                FilterChip(sentence(mg.name), f.group == mg) {
                     controls.filters = f.copy(group = if (f.group == mg) null else mg, category = null)
                 }
             }
             categories.forEach { c ->
-                FilterChip(c.uppercase(), f.category == c) {
+                FilterChip(sentence(c), f.category == c) {
                     controls.filters = f.copy(category = if (f.category == c) null else c, group = null)
                 }
             }
         }
-        FilterGroup("ARMOURY") {
+        FilterGroup("Armoury") {
             // Absent without saved equipment: nothing to filter by.
             if (equipment != null) {
-                FilterChip("MY ARMOURY", f.myGear) { controls.filters = f.copy(myGear = !f.myGear) }
+                FilterChip("My armoury", f.myGear) { controls.filters = f.copy(myGear = !f.myGear) }
             }
             EquipmentFacet.entries.forEach { facet ->
                 FilterChip(facet.label, f.facet == facet) {
@@ -299,59 +288,27 @@ private fun PickerFilterBar(exercises: List<Exercise>, controls: PickerControls,
 
 @Composable
 private fun FilterGroup(label: String, chips: @Composable () -> Unit) {
-    Spacer(Modifier.height(12.dp))
+    Spacer(Modifier.height(8.dp))
     Text(
         label,
-        style = MaterialTheme.typography.labelSmall,
-        fontFamily = ChakraPetch,
+        style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
-        letterSpacing = 2.sp,
     )
-    Spacer(Modifier.height(6.dp))
-    FlowRow(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-    ) { chips() }
+    FlowRow(Modifier.fillMaxWidth()) { chips() }
 }
 
-/** The one control that opens the filter groups; built as a button so it reads as one. */
+/** "PUSH" or "martial arts" as "Push" / "Martial arts"; chips and chip labels are sentence case. */
+private fun sentence(word: String): String = word.lowercase().replaceFirstChar { it.uppercase() }
+
+/** The one control that opens the filter groups: the app's outlined chip, with the count when some are on. */
 @Composable
 private fun FiltersButton(open: Boolean, activeCount: Int, onClick: () -> Unit) {
-    val label = if (open) "Hide filters" else "Show filters"
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            // The same 32dp as the chips beside it; 44dp made it tower over them.
-            .heightIn(min = 32.dp)
-            .clip(MaterialTheme.shapes.small)
-            .background(Brush.linearGradient(listOf(Color(0xFF141C18), Color(0xFF101714))))
-            .inkBorder(
-                if (open) IronvellumColors.SystemGreen else IronvellumColors.Rune,
-                MaterialTheme.shapes.small,
-                1.dp,
-            )
-            .clickable(onClickLabel = label, onClick = onClick)
-            .padding(horizontal = 12.dp),
-    ) {
-        Icon(Icons.Outlined.Tune, contentDescription = null, tint = IronvellumColors.SystemGreen, modifier = Modifier.size(18.dp))
-        Spacer(Modifier.width(8.dp))
-        Text(
-            if (activeCount > 0) "FILTERS · $activeCount" else "FILTERS",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = 1.sp,
-        )
-        Spacer(Modifier.width(6.dp))
-        Icon(
-            if (open) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
-            contentDescription = null,
-            tint = IronvellumColors.SystemGreen,
-            modifier = Modifier.size(18.dp),
-        )
-    }
+    InkChip(
+        label = if (activeCount > 0) "Filters · $activeCount" else "Filters",
+        clickLabel = if (open) "Hide filters" else "Show filters",
+        icon = Icons.Outlined.Tune,
+        onClick = onClick,
+    )
 }
 
 private fun LazyListScope.exerciseRows(
@@ -364,37 +321,44 @@ private fun LazyListScope.exerciseRows(
     onFavourite: (Long, Boolean) -> Unit,
 ) {
     val now = System.currentTimeMillis()
-    fun LazyListScope.rows(prefix: String, list: List<Exercise>) {
-        items(list, key = { "${prefix}_${it.id}" }) { exercise ->
-            PickerRow(
-                exercise = exercise,
-                lastLine = data.lastLogged[exercise.id]?.let { lastLoggedLine(it, exercise, now) },
-                favourite = exercise.id in data.favouriteIds,
-                browse = browse,
-                onPick = onPick,
-                onFavourite = { onFavourite(exercise.id, it) },
-            )
+    // One Vault card per section, its rows divided by InkDivider.
+    // shortcut: a section is one lazy item, so a very long section composes whole; chunk the rows if the catalogue outgrows it.
+    fun LazyListScope.section(id: String, header: String, prefix: String, list: List<Exercise>) {
+        item(key = "header_$id") { SectionHeader(header, topPadding = 20.dp) }
+        item(key = "rows_$id") {
+            InkPanel(contentPadding = PaddingValues(0.dp)) {
+                list.forEachIndexed { index, exercise ->
+                    key("${prefix}_${exercise.id}") {
+                        if (index > 0) InkDivider()
+                        PickerRow(
+                            exercise = exercise,
+                            lastLine = data.lastLogged[exercise.id]?.let { lastLoggedLine(it, exercise, now) },
+                            favourite = exercise.id in data.favouriteIds,
+                            browse = browse,
+                            onPick = onPick,
+                            onFavourite = { onFavourite(exercise.id, it) },
+                        )
+                    }
+                }
+            }
         }
     }
     if (view.favourites.isNotEmpty()) {
-        item(key = "header_favourites") { PickerSectionHeader("FAVOURITES") }
-        rows("fav", view.favourites)
+        section("favourites", "Favourites", "fav", view.favourites)
     }
     if (view.recents.isNotEmpty()) {
-        item(key = "header_recent") { PickerSectionHeader("RECENT") }
-        rows("recent", view.recents)
+        section("recent", "Recent", "recent", view.recents)
     }
     view.grouped.forEach { (cat, list) ->
-        item(key = "header_$cat") { PickerSectionHeader(if (cat.isBlank()) "STRENGTH" else cat.uppercase()) }
-        rows("row", list)
+        section("cat_$cat", if (cat.isBlank()) "Strength" else cat, "row", list)
     }
     if (view.count == 0) {
         item(key = "empty") {
             // Say WHY nothing matched: the gear filter emptying the list gets
-            // its own line, because the fix (FILTERS) is not the words.
+            // its own line, because the fix (Filters) is not the words.
             Text(
                 when {
-                    gearHidAll -> "Nothing your armoury covers — tap FILTERS to show everything"
+                    gearHidAll -> "Nothing your armoury covers — tap Filters to show everything"
                     query.isNotBlank() -> "The Ledger holds no exercise matching \"$query\""
                     else -> "The Ledger holds no exercise for these filters"
                 },
@@ -415,9 +379,9 @@ private fun LazyListScope.exerciseRows(
  * the facet answers a gym-floor question, so selecting one hides activities.
  */
 enum class EquipmentFacet(val label: String) {
-    BODYWEIGHT("BODYWEIGHT"),
-    FREE_WEIGHT("FREE WEIGHT"),
-    MACHINE("MACHINE"),
+    BODYWEIGHT("Bodyweight"),
+    FREE_WEIGHT("Free weight"),
+    MACHINE("Machine"),
 }
 
 fun equipmentFacet(exercise: Exercise): EquipmentFacet? = when {
@@ -445,41 +409,45 @@ private val LIFTING_GROUPS = listOf(
 
 @Composable
 internal fun FilterChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    // A 48dp target around 32dp of ink (InkChip's pattern); the underline marks the ink, not the margin.
     Box(
         Modifier
-            .selectedUnderline(selected)
+            .heightIn(min = 48.dp)
             .clickable { onClick() }
             // Same as the deeds filters: a chip that narrows the list still has
             // to tell a screen reader whether it is on.
             .semantics {
                 role = Role.Checkbox
                 this.selected = selected
-            }
-            // 23dp sat under even the WCAG AA 24dp floor. 32dp matches the
-            // Material chip height and the deeds board's filter pills, and only
-            // adds a few density pixels here.
-            .heightIn(min = 32.dp)
-            .padding(horizontal = 9.dp, vertical = 5.dp),
+            },
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
-            letterSpacing = 1.sp,
-            // A chip label must never wrap: "CLIMBING" broke into one letter
-            // per line when the row ran out of width.
-            maxLines = 1,
-            softWrap = false,
-        )
+        Box(
+            Modifier
+                .selectedUnderline(selected)
+                .heightIn(min = 32.dp)
+                .padding(horizontal = 9.dp, vertical = 5.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                label,
+                style = MaterialTheme.typography.labelMedium,
+                fontFamily = ChakraPetch,
+                color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                letterSpacing = 0.5.sp,
+                // A chip label must never wrap: "Climbing" broke into one letter
+                // per line when the row ran out of width.
+                maxLines = 1,
+                softWrap = false,
+            )
+        }
     }
 }
 
 /**
- * One exercise as a card: the whole card picks one exercise, like a menu
- * entry. Bare text rows with a lone "+" read as a printed list, not something
- * to press; [browse] only changes what a screen reader says picking does.
+ * One exercise as a list row: the whole row picks one exercise, like a menu entry, and the info
+ * and star buttons sit at its right edge as 44dp targets. Rows are divided by InkDivider inside
+ * one card per section; [browse] only changes what a screen reader says picking does.
  */
 @Composable
 private fun PickerRow(
@@ -496,23 +464,16 @@ private fun PickerRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
-            .inkBorder(
-                if (favourite) IronvellumColors.SovereignGold.copy(alpha = 0.55f) else IronvellumColors.Rune,
-                MaterialTheme.shapes.medium,
-                1.dp,
-            )
             .clickable(onClickLabel = pickLabel) { onPick(exercise) }
-            .heightIn(min = 60.dp)
-            .padding(start = 14.dp, top = 8.dp, bottom = 8.dp, end = 6.dp),
+            .heightIn(min = ListRowHeight)
+            // The ListRow inset, minus the right edge: the two 44dp buttons sit there.
+            .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
             Text(
                 exercise.name,
-                style = MaterialTheme.typography.bodyLarge,
+                style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -520,19 +481,14 @@ private fun PickerRow(
             // What the lifter will be asked to log sits with the muscle group,
             // so the right edge holds only the two things that can be pressed.
             Text(
-                buildAnnotatedString {
+                buildString {
                     append(exercise.muscleGroup.name.lowercase())
                     append(" · ")
                     append(metricWord(exercise.metric))
                     if (exercise.isWeighted) append(" · weighted")
-                    if (skill != null) {
-                        append(" · ")
-                        withStyle(SpanStyle(color = IronvellumColors.SystemGreen)) {
-                            append("technique ${Skills.tierLabel(skill.tier)} ${skill.line}")
-                        }
-                    }
+                    if (skill != null) append(" · technique ${Skills.tierLabel(skill.tier)} ${skill.line}")
                 },
-                style = MaterialTheme.typography.labelSmall,
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
@@ -540,8 +496,8 @@ private fun PickerRow(
             if (lastLine != null) {
                 Text(
                     "last $lastLine",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.SovereignGold.copy(alpha = 0.85f),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -578,20 +534,13 @@ private fun PickerRow(
                 },
             contentAlignment = Alignment.Center,
         ) {
+            // A favourite is a choice, not an achievement: Ink when on, never gold.
             Icon(
                 if (favourite) Icons.Filled.Star else Icons.Outlined.StarBorder,
                 contentDescription = null,
-                tint = if (favourite) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                tint = if (favourite) IronvellumColors.Ink else IronvellumColors.InkMuted,
             )
         }
-        // A chevron, not a "+" button: one tap picks one exercise, and a row of
-        // add buttons read as "tick several, then confirm".
-        Icon(
-            Icons.AutoMirrored.Filled.KeyboardArrowRight,
-            contentDescription = null,
-            tint = IronvellumColors.SovereignGold,
-            modifier = Modifier.padding(start = 2.dp, end = 4.dp),
-        )
     }
     if (showInfo) {
         ExerciseInfoSheet(
@@ -602,7 +551,7 @@ private fun PickerRow(
                 showInfo = false
                 onPick(exercise)
             },
-            confirmLabel = if (browse) "CHOOSE" else "ADD",
+            confirmLabel = if (browse) "Choose" else "Add",
         )
     }
 }

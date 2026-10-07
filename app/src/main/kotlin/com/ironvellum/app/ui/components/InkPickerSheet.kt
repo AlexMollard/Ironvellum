@@ -30,7 +30,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -113,7 +112,8 @@ fun PickerSearchField(query: String, onQueryChange: (String) -> Unit, label: Str
     Row(
         Modifier
             .fillMaxWidth()
-            .background(Color(0xFF141A18), MaterialTheme.shapes.extraSmall)
+            .heightIn(min = 48.dp)
+            .background(IronvellumColors.Vault, MaterialTheme.shapes.extraSmall)
             .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
             .padding(horizontal = 10.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
