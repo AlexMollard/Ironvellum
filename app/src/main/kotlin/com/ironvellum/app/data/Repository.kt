@@ -73,6 +73,7 @@ import com.ironvellum.app.domain.CarryFigure
 import com.ironvellum.app.domain.CarrySet
 import com.ironvellum.app.domain.carriesFrom
 import com.ironvellum.app.domain.carryFiguresFor
+import com.ironvellum.app.domain.restoredIndexes
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SealedEdit
@@ -1061,12 +1062,12 @@ class Repository(
      * movement never silently vanishes mid-session; remove the exercise instead.
      * Completed sessions are immutable: their XP and strength are already banked.
      */
-    suspend fun removeSet(setId: Long): Boolean = db.withTransaction {
-        val set = sessionDao.setById(setId) ?: return@withTransaction false
-        val session = sessionDao.byId(set.sessionId) ?: return@withTransaction false
-        if (session.completedAtMs != null) return@withTransaction false
+    suspend fun removeSet(setId: Long): RemovedSets? = db.withTransaction {
+        val set = sessionDao.setById(setId) ?: return@withTransaction null
+        val session = sessionDao.byId(set.sessionId) ?: return@withTransaction null
+        if (session.completedAtMs != null) return@withTransaction null
         val siblings = sessionDao.setsFor(set.sessionId).filter { it.exerciseId == set.exerciseId }
-        if (siblings.size <= 1) return@withTransaction false
+        if (siblings.size <= 1) return@withTransaction null
         sessionDao.deleteSet(setId)
         siblings.asSequence()
             .filter { it.id != setId }
@@ -1074,6 +1075,36 @@ class Repository(
             .forEachIndexed { index, row ->
                 if (row.setIndex != index) sessionDao.updateSet(row.copy(setIndex = index))
             }
+        RemovedSets(listOf(set), siblings.associate { it.id to it.setIndex })
+    }
+
+    /**
+     * What a removal took out of a live trial, for Undo: the rows themselves
+     * (ids, positions, logged state and figures as they stood) and where every
+     * set of the movement sat just before, the removed ones included.
+     */
+    data class RemovedSets(val rows: List<SetLogEntity>, val order: Map<Long, Int>)
+
+    /**
+     * Puts [removed] back exactly: the same ids, positions, logged state and
+     * figures, and the movement's sets in their old order, in one transaction.
+     * Refused (false) when the trial is sealed or gone; rows already present
+     * are left alone, so a second Undo changes nothing. A set added to the
+     * movement in the meantime follows the restored ones.
+     */
+    suspend fun restoreSets(removed: RemovedSets): Boolean = db.withTransaction {
+        val first = removed.rows.firstOrNull() ?: return@withTransaction false
+        val session = sessionDao.byId(first.sessionId) ?: return@withTransaction false
+        if (session.completedAtMs != null) return@withTransaction false
+        val missing = removed.rows.filter { sessionDao.setById(it.id) == null }
+        if (missing.isEmpty()) return@withTransaction false
+        sessionDao.insertSets(missing)
+        val mine = sessionDao.setsFor(first.sessionId).filter { it.exerciseId == first.exerciseId }
+        val order = restoredIndexes(removed.order, mine.map { it.id to it.setIndex })
+        mine.forEach { row ->
+            val index = order.getValue(row.id)
+            if (row.setIndex != index) sessionDao.updateSet(row.copy(setIndex = index))
+        }
         true
     }
 
@@ -1082,12 +1113,12 @@ class Repository(
      * to take a movement (a one-off added by mistake) back out. Completed
      * sessions are immutable, as in [removeSet].
      */
-    suspend fun removeSessionExercise(sessionId: Long, exerciseId: Long): Boolean = db.withTransaction {
-        val session = sessionDao.byId(sessionId) ?: return@withTransaction false
-        if (session.completedAtMs != null) return@withTransaction false
+    suspend fun removeSessionExercise(sessionId: Long, exerciseId: Long): RemovedSets? = db.withTransaction {
+        val session = sessionDao.byId(sessionId) ?: return@withTransaction null
+        if (session.completedAtMs != null) return@withTransaction null
         val sets = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId }
         sets.forEach { sessionDao.deleteSet(it.id) }
-        sets.isNotEmpty()
+        if (sets.isEmpty()) null else RemovedSets(sets, sets.associate { it.id to it.setIndex })
     }
 
     /**

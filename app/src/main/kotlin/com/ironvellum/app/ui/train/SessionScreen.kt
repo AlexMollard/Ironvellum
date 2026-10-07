@@ -361,13 +361,19 @@ class SessionViewModel(
         }
     }
 
-    fun removeSet(setId: Long) {
-        viewModelScope.launch { repo.removeSet(setId) }
+    /** [onRemoved] gets what went, for the Undo bar; it is not called when nothing was removed. */
+    fun removeSet(setId: Long, onRemoved: (Repository.RemovedSets) -> Unit) {
+        viewModelScope.launch { repo.removeSet(setId)?.let(onRemoved) }
     }
 
     /** Drops a whole exercise from the live trial: the ✕ on a block's only set. */
-    fun removeExercise(exerciseId: Long) {
-        viewModelScope.launchGuarded("remove exercise") { repo.removeSessionExercise(sessionId, exerciseId) }
+    fun removeExercise(exerciseId: Long, onRemoved: (Repository.RemovedSets) -> Unit) {
+        viewModelScope.launchGuarded("remove exercise") { repo.removeSessionExercise(sessionId, exerciseId)?.let(onRemoved) }
+    }
+
+    /** Undo for either removal above. */
+    fun restoreSets(removed: Repository.RemovedSets) {
+        viewModelScope.launchGuarded("restore sets") { repo.restoreSets(removed) }
     }
 
     fun setModifiers(exerciseId: Long, modifiers: String) {
@@ -663,12 +669,17 @@ fun SessionScreen(
         val set = activeSet ?: return
         commit(set.copy(done = true))
         undoSerial++
-        undo = UndoPrompt(undoSerial, set.id, set.setIndex + 1)
+        undo = UndoPrompt.Logged(undoSerial, set.id, set.setIndex + 1)
         // The card moves on once its last set is logged.
         if (openBlock != null && openBlock.sets.none { !it.done && it.id != set.id }) openOverride = null
     }
 
-    fun undoLog(prompt: UndoPrompt) {
+    fun offerRemovedUndo(message: String, removed: Repository.RemovedSets) {
+        undoSerial++
+        undo = UndoPrompt.Removed(undoSerial, message, removed)
+    }
+
+    fun undoLog(prompt: UndoPrompt.Logged) {
         ui.sets.firstOrNull { it.id == prompt.setId }?.let { commit(it.copy(done = false)) }
         // The rest belonged to the set that was just taken back.
         viewModel.skipRest()
@@ -772,9 +783,15 @@ fun SessionScreen(
                                 // Removing a block's only set removes the exercise, so a
                                 // one-off added by mistake can be taken back out.
                                 onRemoveSet = { set ->
-                                    if (block.sets.size > 1) viewModel.removeSet(set.id) else viewModel.removeExercise(block.id)
+                                    if (block.sets.size > 1) {
+                                        viewModel.removeSet(set.id) { offerRemovedUndo("Set removed", it) }
+                                    } else {
+                                        viewModel.removeExercise(block.id) { offerRemovedUndo("${first.exerciseName} removed", it) }
+                                    }
                                 },
-                                onRemoveExercise = { viewModel.removeExercise(block.id) },
+                                onRemoveExercise = {
+                                    viewModel.removeExercise(block.id) { offerRemovedUndo("${first.exerciseName} removed", it) }
+                                },
                                 onEdit = ::commit,
                                 onTypeLoad = { editLoadFor = it },
                                 onTypeFigure = { set, kind -> typing = set to kind },
@@ -848,8 +865,16 @@ fun SessionScreen(
         }
         undo?.let { prompt ->
             UndoBar(
-                message = "Set ${prompt.setNumber} logged",
-                onUndo = { undoLog(prompt) },
+                message = prompt.message,
+                onUndo = {
+                    when (prompt) {
+                        is UndoPrompt.Logged -> undoLog(prompt)
+                        is UndoPrompt.Removed -> {
+                            viewModel.restoreSets(prompt.removed)
+                            undo = null
+                        }
+                    }
+                },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 16.dp)
@@ -1734,8 +1759,20 @@ private class TrialBlock(val id: Long, val position: Int, val sets: List<Session
     val first: SessionSet get() = sets.first()
 }
 
-/** The "Set n logged · Undo" bar; [serial] tells two logs of one set apart. */
-private data class UndoPrompt(val serial: Int, val setId: Long, val setNumber: Int)
+/**
+ * What the one Undo bar offers: "Set n logged", "Set removed" or "Back squat
+ * removed". [serial] tells two offers apart, so each gets its own timeout.
+ */
+private sealed interface UndoPrompt {
+    val serial: Int
+    val message: String
+
+    data class Logged(override val serial: Int, val setId: Long, val setNumber: Int) : UndoPrompt {
+        override val message: String get() = "Set $setNumber logged"
+    }
+
+    data class Removed(override val serial: Int, override val message: String, val removed: Repository.RemovedSets) : UndoPrompt
+}
 
 /** What a stepper moves. LOAD has its own entry dialog; the others share one. */
 private enum class FigureKind { LOAD, REPS, SECONDS, MINUTES, KM, ATTEMPTS }
@@ -1753,7 +1790,7 @@ private class Figure(
 
 private enum class RowState { DONE, EDITING, ACTIVE, UPCOMING }
 
-/** How long Undo stays up after a set is logged. */
+/** How long Undo stays up after a set is logged or removed. */
 private const val UNDO_MS = 5_000L
 
 /** Four digits is more than any reps, seconds, minutes or attempts figure needs. */
