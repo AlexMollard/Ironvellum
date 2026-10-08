@@ -3,6 +3,7 @@ package com.ironvellum.app.ui
 import android.net.Uri
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -650,6 +651,7 @@ private fun IronvellumBottomBar(
                     // unread it stays plain "Allies", which is how tests find
                     // the tab.
                     val unreadHere = destination.route == Routes.SOCIAL && inboxUnread > 0
+                    val interaction = remember { MutableInteractionSource() }
                     Column(
                         modifier = Modifier
                             .width(64.dp)
@@ -657,8 +659,10 @@ private fun IronvellumBottomBar(
                             .then(if (destination.raised) Modifier.offset(y = -TrainRise) else Modifier)
                             .clip(MaterialTheme.shapes.small)
                             .clickable(
-                                interactionSource = remember { MutableInteractionSource() },
-                                indication = InkPressIndication,
+                                interactionSource = interaction,
+                                // The raised Train slot presses its round button,
+                                // not the square slot around it.
+                                indication = if (destination.raised) null else InkPressIndication,
                                 onClick = {
                                     // Home is the graph start: saving and
                                     // restoring its state would restore the
@@ -714,6 +718,7 @@ private fun IronvellumBottomBar(
                                     .size(48.dp)
                                     .clip(DotShape)
                                     .background(IronvellumColors.Vault)
+                                    .indication(interaction, InkPressIndication)
                                     .inkBorder(IronvellumColors.Rune, DotShape),
                                 contentAlignment = Alignment.Center,
                             ) { glyph() }
