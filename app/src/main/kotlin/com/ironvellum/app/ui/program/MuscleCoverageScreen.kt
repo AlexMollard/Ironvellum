@@ -55,6 +55,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.Muscle
+import com.ironvellum.app.domain.MuscleArea
 import com.ironvellum.app.domain.MuscleMap
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
@@ -109,6 +110,39 @@ data class CoverageUi(
     val priorities: Set<Muscle> = emptySet(),
     val hasAnyPreset: Boolean = false,
     val hasLoggedWeek: Boolean = false,
+)
+
+/** Sets whose exercise has no MuscleMap profile, so the heat map cannot count them. */
+internal fun unattributedSets(presets: List<PlannedPreset>): Int =
+    presets.sumOf { p -> p.entries.sumOf { e -> if (MuscleMap.profile(e.exerciseName) == null) e.sets else 0 } }
+
+/**
+ * THE count of muscles [presets] leave short against [goal]. The saved Cycle page's dock and the Forge
+ * row's count both read it, so a proposal and the page that opens from it can never disagree.
+ */
+internal fun shortCount(presets: List<PlannedPreset>, goal: CoverageGoal): Int =
+    coverageGaps(ProgramRules.weeklyVolume(presets), goal).size
+
+/** "3 muscles short" or "Every muscle covered": the Forge row's words, and the preview page's. */
+internal fun shortHeadline(short: Int): String =
+    if (short == 0) "Every muscle covered" else "$short ${if (short == 1) "muscle" else "muscles"} short"
+
+internal fun coverageGoal(tier: VolumeLevel, focus: TrainingFocus, priorities: Set<MuscleArea>): CoverageGoal =
+    CoverageGoal(tier, focus, priorities.flatMap { it.muscles }.toSet())
+
+/** What the Cycle page reads for a cycle that is not saved yet: the builder's proposal, as the caller's data. */
+internal fun previewCoverage(
+    presets: List<PlannedPreset>,
+    tier: VolumeLevel,
+    focus: TrainingFocus,
+    priorities: Set<MuscleArea>,
+): CoverageUi = CoverageUi(
+    plannedPresets = presets,
+    unattributedPlannedSets = unattributedSets(presets),
+    tier = tier,
+    focus = focus,
+    priorities = priorities.flatMap { it.muscles }.toSet(),
+    hasAnyPreset = presets.isNotEmpty(),
 )
 
 class MuscleCoverageViewModel(
@@ -170,14 +204,11 @@ class MuscleCoverageViewModel(
             )
         }
 
-        fun unattributed(presets: List<PlannedPreset>): Int =
-            presets.sumOf { p -> p.entries.sumOf { e -> if (MuscleMap.profile(e.exerciseName) == null) e.sets else 0 } }
-
         CoverageUi(
             plannedPresets = plannedPresets,
             loggedPresets = loggedPresets,
-            unattributedLoggedSets = unattributed(loggedPresets),
-            unattributedPlannedSets = unattributed(plannedPresets),
+            unattributedLoggedSets = unattributedSets(loggedPresets),
+            unattributedPlannedSets = unattributedSets(plannedPresets),
             tier = tier,
             focus = savedAnswers?.focus ?: when (profile?.trainingMode) {
                 TrainingMode.STRENGTH -> TrainingFocus.STRENGTH
@@ -214,7 +245,7 @@ fun MuscleCoverageScreen(
     val view = CoverageView.entries[pager.currentPage]
     val goal = CoverageGoal(ui.tier, ui.focus, ui.priorities)
     val presets = if (view == CoverageView.CYCLE) ui.plannedPresets else ui.loggedPresets
-    val short = remember(presets, goal) { coverageGaps(ProgramRules.weeklyVolume(presets), goal).size }
+    val short = remember(presets, goal) { shortCount(presets, goal) }
     val empty = if (view == CoverageView.CYCLE) !ui.hasAnyPreset else !ui.hasLoggedWeek
 
     Column(Modifier.fillMaxSize()) {
@@ -250,6 +281,47 @@ fun MuscleCoverageScreen(
     }
 }
 
+/**
+ * Coverage of the cycle the builder is proposing, before it is saved: the Cycle page's own content
+ * ([CoveragePage]) fed the proposal instead of the saved rites. No Forge dock and no Last 7 days tab:
+ * the lifter is already forging.
+ */
+@Composable
+internal fun CoveragePreviewScreen(
+    presets: List<PlannedPreset>,
+    tier: VolumeLevel,
+    focus: TrainingFocus,
+    priorities: Set<MuscleArea>,
+    onBack: () -> Unit,
+) {
+    val ui = remember(presets, tier, focus, priorities) { previewCoverage(presets, tier, focus, priorities) }
+    val short = remember(ui) { shortCount(ui.plannedPresets, CoverageGoal(ui.tier, ui.focus, ui.priorities)) }
+    val lit = rememberSaveable(key = "lit-preview") { mutableStateOf<Muscle?>(null) }
+    var openExercise by rememberSaveable { mutableStateOf<String?>(null) }
+    Column(Modifier.fillMaxSize()) {
+        Column(Modifier.padding(horizontal = 16.dp)) {
+            Spacer(Modifier.height(20.dp))
+            PushedHeader("Coverage of this cycle", onBack)
+            Spacer(Modifier.height(8.dp))
+            Text(
+                shortHeadline(short),
+                style = MaterialTheme.typography.titleMedium,
+                color = IronvellumColors.Ink,
+            )
+            Spacer(Modifier.height(8.dp))
+        }
+        Box(Modifier.weight(1f)) {
+            CoveragePage(
+                view = CoverageView.CYCLE,
+                ui = ui,
+                lit = lit,
+                openExercise = openExercise,
+                onOpenExercise = { openExercise = it },
+            )
+        }
+    }
+}
+
 /** What the page is short of, and the way to forge a rite that fills it. */
 @Composable
 private fun CoverageDock(short: Int, scope: String, onForge: () -> Unit) {
@@ -265,7 +337,7 @@ private fun CoverageDock(short: Int, scope: String, onForge: () -> Unit) {
     ) {
         Column(Modifier.weight(1f)) {
             Text(
-                "$short ${if (short == 1) "muscle" else "muscles"} short",
+                shortHeadline(short),
                 style = MaterialTheme.typography.titleMedium,
                 color = IronvellumColors.Ink,
             )
@@ -277,7 +349,7 @@ private fun CoverageDock(short: Int, scope: String, onForge: () -> Unit) {
 
 /** One view's page: its own scroll and numbers, both read through the same rules. */
 @Composable
-private fun CoveragePage(
+internal fun CoveragePage(
     view: CoverageView,
     ui: CoverageUi,
     lit: MutableState<Muscle?>,
