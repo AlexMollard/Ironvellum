@@ -68,7 +68,9 @@ import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.SealedEdit
 import com.ironvellum.app.domain.SessionAudience
+import com.ironvellum.app.domain.SessionPeaks
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.TrialDraft
 import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
@@ -156,6 +158,28 @@ class WorkoutDetailViewModel(
     val shareTargets: StateFlow<Map<Long, Int>> =
         flow { emit(repo.exerciseTargets(sessionId)) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /**
+     * The records this trial set, judged against the trials completed before
+     * it and none after, so the share shows the same 🏆 the victory screen did.
+     */
+    val sharePeaks: StateFlow<List<SessionPeaks.Peak>> = combine(
+        repo.observeHistory(),
+        repo.observeStats(),
+        repo.observeExercises(),
+    ) { history, stats, catalogue ->
+        val hit = history.firstOrNull { it.first.id == sessionId } ?: return@combine emptyList()
+        val session = hit.first
+        val bodyweightAt = SetRecords.bodyweightLookup(stats)
+        val metrics = catalogue.associate { it.id to it.metric }
+        val records = SetRecords.records(
+            history,
+            bodyweightAt,
+            excludeSessionId = sessionId,
+            beforeMs = session.completedAtMs ?: session.startedAtMs,
+        ) { metrics[it.exerciseId] }
+        SessionPeaks.of(hit.second, records, bodyweightAt(session.startedAtMs)) { metrics[it.exerciseId] }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /**
      * Written locally, then pushed at once: a lifter who hides a workout
@@ -287,6 +311,7 @@ fun WorkoutDetailScreen(
     val earnedDeeds by viewModel.earnedDeeds.collectAsStateWithLifecycle()
     val exerciseNotes by viewModel.exerciseNotes.collectAsStateWithLifecycle()
     val shareTargets by viewModel.shareTargets.collectAsStateWithLifecycle()
+    val sharePeaks by viewModel.sharePeaks.collectAsStateWithLifecycle()
     var sharing by remember { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
@@ -397,6 +422,7 @@ fun WorkoutDetailScreen(
                         session,
                         ui.sets,
                         ui.exercises,
+                        peaks = sharePeaks,
                         targets = shareTargets,
                         exerciseNotes = exerciseNotes,
                         includeNotes = includeNotes,
