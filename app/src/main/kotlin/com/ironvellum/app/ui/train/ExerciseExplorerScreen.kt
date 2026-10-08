@@ -1,27 +1,8 @@
 package com.ironvellum.app.ui.train
 
-import com.ironvellum.app.ui.components.PushedHeader
-import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.border
-import androidx.compose.material3.Icon
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
-import com.ironvellum.app.domain.SessionSet
-import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.domain.fmt
-import com.ironvellum.app.ui.theme.ChakraPetch
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,12 +14,16 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -49,11 +34,17 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseHistory
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.ExerciseSetEntry
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.ExercisePickerPanel
-import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.InkChip
+import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.InkRowPanel
+import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.formatLoadKg
@@ -61,15 +52,16 @@ import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.IronvellumTracking
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
+import java.util.Locale
 
 data class ExplorerUi(
     val exercises: List<Exercise> = emptyList(),
@@ -109,12 +101,18 @@ class ExerciseExplorerViewModel(private val repo: Repository) : ViewModel() {
     fun pick(exercise: Exercise) {
         selected.value = exercise
     }
+
+    /** Back to the list, so the lifter can choose another movement. */
+    fun clear() {
+        selected.value = null
+    }
 }
 
 @Composable
 fun ExerciseExplorerScreen(
     onBack: () -> Unit,
     initialName: String? = null,
+    onOpenChronicle: () -> Unit = {},
     viewModel: ExerciseExplorerViewModel =
         viewModel(factory = viewModelFactory { initializer { ExerciseExplorerViewModel(ironvellumRepository()) } }),
 ) {
@@ -137,10 +135,10 @@ fun ExerciseExplorerScreen(
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
-        PushedHeader("EXERCISES", onBack)
-        Spacer(Modifier.height(12.dp))
 
         if (selectedExercise == null) {
+            PushedHeader("EXERCISES", onBack)
+            Spacer(Modifier.height(12.dp))
             // The screen's own header names it and BACK leaves it, so this is
             // the bare list. No panel around it: its rows are already cards.
             ExercisePickerPanel(
@@ -149,193 +147,155 @@ fun ExerciseExplorerScreen(
                 modifier = Modifier.weight(1f),
             )
         } else {
-            InkPanel(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 6.dp),
-                onClick = { viewModel.pick(selectedExercise) },
-            ) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // The name and its descriptor line have to yield to SWITCH:
-                    // unweighted, a long name ("Jump Rope Intervals" plus a skill
-                    // tier) pushed the control off the right edge.
-                    Column(Modifier.weight(1f)) {
-                        Text(
-                            selectedExercise.name,
-                            style = MaterialTheme.typography.titleLarge,
-                            color = IronvellumColors.SovereignGold,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                        val skill = Skills.forName(selectedExercise.name)
-                        Text(
-                            buildString {
-                                append(selectedExercise.muscleGroup.name.lowercase())
-                                append("  ·  ")
-                                append(if (selectedExercise.isWeighted) "weighted" else "bodyweight")
-                                if (skill != null) {
-                                    append("  ·  technique tier ${Skills.tierLabel(skill.tier)}")
-                                }
-                            },
-                            style = MaterialTheme.typography.labelMedium,
-                            color = IronvellumColors.SystemGreen,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
-                    }
-                    Spacer(Modifier.width(10.dp))
-                    Text(
-                        "SWITCH",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        letterSpacing = 3.sp,
-                    )
-                }
+            // The movement names the screen; Switch returns to the list.
+            PushedHeader(selectedExercise.name, onBack) {
+                InkChip("Switch", onClick = viewModel::clear)
             }
+            val skill = Skills.forName(selectedExercise.name)
+            Text(
+                buildString {
+                    append(selectedExercise.muscleGroup.name.lowercase().replaceFirstChar { it.uppercase() })
+                    append(" · ")
+                    append(if (selectedExercise.isWeighted) "weighted" else "bodyweight")
+                    if (skill != null) append(" · technique tier ${Skills.tierLabel(skill.tier)}")
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
+            Spacer(Modifier.height(14.dp))
 
             val history = ui.history
             if (history == null || history.isEmpty) {
-                InkPanel(Modifier.fillMaxWidth().padding(top = 10.dp)) {
-                    Text(
-                        "The Chronicle holds no sets for this yet. Seal a trial with it and they appear.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = IronvellumColors.InkMuted,
-                    )
-                }
+                Text(
+                    "The Chronicle holds no sets for this yet. Seal a trial with it and they appear.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.InkMuted,
+                )
             } else {
-                Spacer(Modifier.height(14.dp))
-                StatGrid(history)
-                Spacer(Modifier.height(14.dp))
+                PeakCard(history)
+                Spacer(Modifier.height(10.dp))
                 ScoreChart(history)
+                if (ui.setRecords.isNotEmpty()) {
+                    Spacer(Modifier.height(10.dp))
+                    SetRecordPanel(ui.setRecords, history.exercise.metric == ExerciseMetric.HOLD)
+                }
                 Spacer(Modifier.height(14.dp))
-                RepsChart(history)
-                Spacer(Modifier.height(14.dp))
-                SetRecordPanel(ui.setRecords, history.exercise.metric == ExerciseMetric.HOLD)
-                SectionHeader("Set Chronicle")
-                SetLog(history)
+                Text("Recent sets", style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
+                Spacer(Modifier.height(8.dp))
+                RecentSets(history, onOpenChronicle)
             }
         }
         Spacer(Modifier.height(if (selectedExercise == null) 8.dp else 96.dp))
     }
 }
 
-@Composable
-private fun StatCard(label: String, value: String, hint: String = "") {
-    InkPanel(Modifier.fillMaxWidth()) {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = 2.sp,
-        )
-        Spacer(Modifier.height(4.dp))
-        Text(
-            value,
-            style = MaterialTheme.typography.titleLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
-        )
-        if (hint.isNotBlank()) {
-            Text(hint, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
-        }
+/** One set as the lifter reads it: "100 kg × 5", "BW × 12", or for a hold "45 s · 20 kg". */
+internal fun setText(reps: Int, weightKg: Double?, hold: Boolean): String =
+    if (hold) {
+        "$reps s" + (weightKg?.let { " · ${formatLoadKg(it)} kg" } ?: "")
+    } else {
+        (weightKg?.let { "${formatLoadKg(it)} kg" } ?: "BW") + " × $reps"
     }
+
+/** The short form for a line of sets: "100 × 5", "BW × 12", "45 s · 20". */
+internal fun compactSet(reps: Int, weightKg: Double?, hold: Boolean): String =
+    if (hold) "$reps s" + (weightKg?.let { " · ${formatLoadKg(it)}" } ?: "")
+    else (weightKg?.let { formatLoadKg(it) } ?: "BW") + " × $reps"
+
+/** The done set with the best strength score: the one the hero names. Null when none scored. */
+internal fun peakSet(history: ExerciseHistory): ExerciseSetEntry? =
+    history.entries.filter { it.done && it.score > 0.0 }.maxByOrNull { it.score }
+
+/**
+ * Trials per week over the span from the first trial to [nowMs], never shorter than a
+ * week. Null below two trials: one trial has no rate, only a date.
+ */
+internal fun trialsPerWeek(trials: Int, firstMs: Long?, nowMs: Long): Double? {
+    if (trials < 2 || firstMs == null) return null
+    val weeks = ((nowMs - firstMs) / WEEK_MS.toDouble()).coerceAtLeast(1.0)
+    return trials / weeks
 }
 
+private const val WEEK_MS = 7L * 24 * 60 * 60 * 1000
+
+/** One gold hero (the peak) over one card of 52dp stat rows. */
 @Composable
-private fun StatGrid(history: ExerciseHistory) {
+private fun PeakCard(history: ExerciseHistory) {
     val hold = history.exercise.metric == ExerciseMetric.HOLD
-    // With zero completed sets every "best/heaviest" figure is a placeholder,
-    // not a record — "BW" and "0 × 0.0 kg" read as claims. Same guard as
-    // BEST STRENGTH SCORE below.
-    val noSets = history.completedSets == 0
-    val rows = listOf(
-        listOf(
-            "TRIALS" to history.sessions.toString(),
-            "COMPLETED SETS" to history.completedSets.toString(),
-        ),
-        // A hold has no rep count and no rep-volume; reporting either invents
-        // a figure. Its own totals are seconds.
-        if (hold) {
-            listOf(
-                "TOTAL TIME HELD" to "${history.totalReps}s",
-                "LONGEST HOLD" to "${history.bestSetReps}s",
+    val peak = peakSet(history)
+    val frequency = remember(history) { trialsPerWeek(history.sessions, history.firstLoggedAtMs, System.currentTimeMillis()) }
+    InkRowPanel(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 8.dp)) {
+            Text(
+                "PEAK",
+                style = MaterialTheme.typography.labelSmall,
+                fontFamily = ChakraPetch,
+                color = IronvellumColors.InkMuted,
+                letterSpacing = IronvellumTracking.InlineLabel,
             )
-        } else {
-            listOf(
-                "TOTAL REPS" to history.totalReps.toString(),
-                "TOTAL VOLUME" to (history.totalVolumeKg?.let { "${formatKg(it)} kg" } ?: "—"),
-            )
-        },
-        if (hold) {
-            listOf(
-                "ADDED LOAD" to (if (noSets) "—" else history.heaviestWeightKg?.let { "${formatLoadKg(it)} kg" } ?: "BW"),
-                "BEST HOLD (TIME × LOAD)" to (
-                    if (noSets) "—" else
-                        // Null added weight is a bodyweight hold, not the lifter's
-                        // bodyweight printed as if it were added load.
-                        "${history.bestSetReps}s×" + (history.bestSetLoadKg?.let { "${formatLoadKg(it)} kg" } ?: "BW")
-                    ),
-            )
-        } else {
-            listOf(
-                "HEAVIEST SET" to (if (noSets) "—" else history.heaviestWeightKg?.let { "${formatLoadKg(it)} kg×${history.heaviestReps}" } ?: "BW"),
-                "BEST SET (REPS × LOAD)" to (
-                    if (noSets) "—" else
-                        "${history.bestSetReps}×" + (history.bestSetLoadKg?.let { "${formatLoadKg(it)} kg" } ?: "BW")
-                    ),
-            )
-        },
-        listOf(
-            "BEST STRENGTH SCORE" to (if (history.bestScore > 0.0) formatKg(history.bestScore) else "—"),
-            "DAYS SINCE LAST" to (history.daysSinceLast?.toString() ?: "—"),
-        ),
-        listOf(
-            "FIRST TRIAL" to (history.firstLoggedAtMs?.let { formatDate(it) } ?: "—"),
-            "LAST TRIAL" to (history.lastLoggedAtMs?.let { formatDate(it) } ?: "—"),
-        ),
-    )
-    rows.forEach { pair ->
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-        ) {
-            pair.forEachIndexed { index, (label, value) ->
-                val hint = when (label) {
-                    "HEAVIEST SET" -> history.heaviestAtMs?.let { formatDate(it, "MMM d") } ?: ""
-                    "BEST SET (REPS × LOAD)" -> history.bestSetAtMs?.let { formatDate(it, "MMM d") } ?: ""
-                    "BEST STRENGTH SCORE" -> history.bestScoreAtMs?.let { formatDate(it, "MMM d") } ?: ""
-                    else -> ""
-                }
-                androidx.compose.foundation.layout.Box(Modifier.weight(1f)) {
-                    StatCard(label, value, hint)
+            Spacer(Modifier.height(4.dp))
+            Row(verticalAlignment = Alignment.Bottom) {
+                Text(
+                    // Gold is for an earned peak; with nothing scored there is no peak to name.
+                    peak?.let { setText(it.reps, it.weightKg, hold) } ?: "—",
+                    style = MaterialTheme.typography.headlineLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (peak != null) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if (peak != null) {
+                    Text(
+                        "score ${formatScore(history.bestScore)}",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                        maxLines = 1,
+                        modifier = Modifier.padding(start = 8.dp, bottom = 5.dp),
+                    )
                 }
             }
         }
-        Spacer(Modifier.height(10.dp))
+        val heavyKg = history.heaviestWeightKg
+        // Only when it is a different set from the peak; otherwise it repeats the hero.
+        if (heavyKg != null && history.completedSets > 0 &&
+            (peak == null || heavyKg != peak.weightKg || history.heaviestReps != peak.reps)
+        ) {
+            InkDivider()
+            ListRow("Heaviest", value = setText(history.heaviestReps, heavyKg, hold))
+        }
+        if (hold) {
+            InkDivider()
+            ListRow("Time held", value = "${"%,d".fmt(history.totalReps)} s")
+        } else {
+            history.totalVolumeKg?.let { volume ->
+                InkDivider()
+                ListRow("Volume", subline = "All time", value = "${"%,d".fmt(Math.round(volume))} kg")
+            }
+        }
+        frequency?.let {
+            InkDivider()
+            ListRow("Frequency", value = String.format(Locale.US, "%.1f a week", it))
+        }
+        InkDivider()
+        ListRow("Trials", value = history.sessions.toString())
     }
 }
 
-private fun formatKg(v: Double): String =
-    if (v >= 100.0) v.toInt().toString() else String.format(java.util.Locale.US, "%.1f", v)
+private fun formatScore(v: Double): String =
+    if (v >= 100.0) v.toInt().toString() else String.format(Locale.US, "%.1f", v)
 
-/** Best-set strength score per session, hand-drawn line. */
+/** One flat line of best-set score per trial; gold only on the peak point, which the chart draws. */
 @Composable
 private fun ScoreChart(history: ExerciseHistory) {
     val values = history.series.map { it.bestSetScore }
     InkPanel(Modifier.fillMaxWidth()) {
+        Text("Strength per trial", style = MaterialTheme.typography.titleSmall, color = IronvellumColors.Ink)
         Text(
-            "STRENGTH SCORE PER TRIAL",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = 2.sp,
+            if (values.size < 2) "Best set score" else
+                "Best set score, ${values.size} ${plural(values.size, "trial", "trials")}",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
         )
         if (values.size < 2) {
             Spacer(Modifier.height(8.dp))
@@ -348,206 +308,65 @@ private fun ScoreChart(history: ExerciseHistory) {
             // Scores sit in a narrow band, so this one scales to its own span.
             TrendChart(
                 values,
-                color = IronvellumColors.SovereignGold,
                 fromZero = false,
                 modifier = Modifier.fillMaxWidth().height(110.dp).padding(top = 8.dp),
+                startLabel = formatDate(history.series.first().atMs, "d MMM"),
+                endLabel = formatDate(history.series.last().atMs, "d MMM"),
                 valueText = { "%.1f score".fmt(it) },
                 dateText = { formatDate(history.series[it].atMs, "d MMM") },
             )
         }
-        Text(
-            "best set score per trial · ${history.series.size} ${plural(history.series.size, "trial", "trials")}",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
     }
 }
 
-/**
- * Total completed work per session, hand-drawn bars. For a hold the series
- * carries SECONDS in its reps-named field, so the labels must follow the
- * metric — "TOTAL REPS" over a stack of hold seconds is the same lie the
- * per-set record row used to tell.
- */
-@Composable
-private fun RepsChart(history: ExerciseHistory) {
-    val isHold = history.exercise.metric == ExerciseMetric.HOLD
-    val values = history.series.map { it.totalReps.toDouble() }
-    InkPanel(Modifier.fillMaxWidth()) {
-        Text(
-            if (isHold) "TOTAL TIME HELD PER TRIAL" else "TOTAL REPS PER TRIAL",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = 2.sp,
-        )
-        if (values.isEmpty()) {
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "No completed sets yet.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-        } else {
-            // Rep counts are volume, so zero-based like every other count.
-            TrendChart(
-                values,
-                modifier = Modifier.fillMaxWidth().height(110.dp).padding(top = 8.dp),
-                valueText = { "%,d".fmt(Math.round(it)) + if (isHold) " s" else " reps" },
-                dateText = { formatDate(history.series[it].atMs, "d MMM") },
-            )
-        }
-        Text(
-            if (isHold) "seconds held per trial · oldest to newest" else "completed reps per trial · oldest to newest",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-    }
-}
-
-/** One line per set position: the standing PR for THAT slot of the movement. */
+/** A folded row: the standing best for each set position of the movement, opened on tap. */
 @Composable
 private fun SetRecordPanel(records: Map<Int, SetRecords.Record>, isHold: Boolean) {
-    InkPanel(Modifier.fillMaxWidth()) {
-        Text(
-            "PER-SET PEAKS",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            letterSpacing = 2.sp,
+    var open by rememberSaveable { mutableStateOf(false) }
+    InkRowPanel(Modifier.fillMaxWidth()) {
+        ListRow(
+            "Peaks by set",
+            subline = if (isHold) "Best hold for each set number" else "Best weight × reps for each set number",
+            onClick = { open = !open },
         )
-        Spacer(Modifier.height(6.dp))
-        if (records.isEmpty()) {
-            Text(
-                "No completed sets yet — peaks appear once you seal a trial.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-        } else {
+        if (open) {
             records.keys.sorted().forEach { setIndex ->
                 val record = records[setIndex] ?: return@forEach
-                Row(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "SET ${setIndex + 1}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                    )
-                    // Three siblings under SpaceBetween: the middle value is the
-                    // only elastic one, so it takes the slack instead of the
-                    // score/date column being squeezed off the row.
-                    Text(
-                        // A hold's figure is seconds — "30×" read as thirty reps.
-                        // The load still belongs here: a weighted plank PR is
-                        // "45s · 20 kg", not a bare "45s".
-                        (if (isHold) "${record.reps}s · " else "${record.reps}×") +
-                            (record.weightKg?.let { "${formatLoadKg(it)} kg" } ?: "BW"),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = IronvellumColors.Ink,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 10.dp),
-                    )
-                    Column(horizontalAlignment = Alignment.End) {
-                        // "STR", not a gold bolt: the bolt is the app's PR
-                        // glyph and read as XP here; this is neither.
-                        Text(
-                            "${record.score.toInt()} STR",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.SovereignGold,
-                            maxLines = 1,
-                            softWrap = false,
-                        )
-                        Text(
-                            formatDate(record.achievedAtMs),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = IronvellumColors.InkMuted,
-                        )
-                    }
-                }
+                InkDivider()
+                ListRow(
+                    "Set ${setIndex + 1}",
+                    subline = formatDate(record.achievedAtMs, "d MMM yyyy"),
+                    value = setText(record.reps, record.weightKg, isHold),
+                )
             }
         }
     }
 }
 
+/** The latest few days of sets in one card, then the way into the whole Chronicle. */
 @Composable
-private fun SetLog(history: ExerciseHistory) {
+private fun RecentSets(history: ExerciseHistory, onOpenChronicle: () -> Unit) {
     val hold = history.exercise.metric == ExerciseMetric.HOLD
-    // Grouped by day, most recent first, and capped: a movement trained twice
-    // a week for years has hundreds of days of sets, and this list lives in a
-    // plain scrolling Column that composes every row it is given. The summary
-    // and chart above cover the whole record.
-    val byDay = history.entries
-        .sortedByDescending { it.atMs }
-        .groupBy { formatDate(it.atMs, "EEE · MMM d, yyyy") }
-    byDay.entries.take(SET_LOG_DAYS).forEach { (day, sets) ->
-        InkPanel(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-            Text(
-                day,
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SovereignGold,
-                letterSpacing = 2.sp,
-            )
-            Spacer(Modifier.height(6.dp))
-            sets.forEach { set ->
-                Row(
-                    Modifier.fillMaxWidth().padding(vertical = 3.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Text(
-                        "SET ${set.setIndex + 1}",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                    )
-                    // Same three-sibling row as the PR panel: the reps/weight
-                    // value absorbs the slack so a long modifier list cannot
-                    // shove it out of the window.
-                    Text(
-                        (if (hold) "${set.reps}s · " else "${set.reps} reps · ") +
-                            (set.weightKg?.let { "${formatLoadKg(it)} kg" } ?: "BW"),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = IronvellumColors.Ink,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 10.dp),
-                    )
-                    Column(horizontalAlignment = Alignment.End) {
-                        if (set.modifiers.isNotBlank()) {
-                            Text(
-                                set.modifiers.split(",").joinToString(" · ") { it.trim() },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = IronvellumColors.SystemGreen,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                        if (!set.done) {
-                            Text(
-                                "✕ not completed",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = IronvellumColors.InkMuted,
-                            )
-                        }
-                    }
-                }
+    val days = history.entries
+        .filter { it.done }
+        .sortedWith(compareByDescending<ExerciseSetEntry> { it.atMs }.thenBy { it.setIndex })
+        .groupBy { formatDate(it.atMs, "EEE d MMM") }
+        .entries.take(RECENT_DAYS)
+    InkRowPanel(Modifier.fillMaxWidth()) {
+        days.forEach { (day, sets) ->
+            Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
+                Text(day, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                Text(
+                    sets.joinToString(" · ") { compactSet(it.reps, it.weightKg, hold) },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.Ink,
+                )
             }
         }
+        InkDivider()
+        ListRow("Full chronicle", onClick = onOpenChronicle)
     }
 }
 
-/** Recent training days; the summary above spans the whole record. */
-private const val SET_LOG_DAYS = 14
+/** Recent training days; the Chronicle holds the rest. */
+private const val RECENT_DAYS = 3
