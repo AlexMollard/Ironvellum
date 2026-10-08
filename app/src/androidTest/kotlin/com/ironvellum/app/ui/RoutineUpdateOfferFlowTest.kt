@@ -51,7 +51,12 @@ class RoutineUpdateOfferFlowTest {
     @Test
     fun sealingAChangedTrialShowsTheRiteOfferAfterDone() {
         selectATrainingDay()
-        val plan = driver.awaitAnyText(predicate = ::isQuestCard)
+        driver.awaitAnyText(predicate = ::isQuestCard)
+        // The Today pager keeps its neighbours composed, so yesterday's card can
+        // come first; today's is the one that answers a tap.
+        val plan = driver.allText().filter(::isQuestCard).let { cards ->
+            cards.firstOrNull { it.startsWith("Today's trial", ignoreCase = true) } ?: cards.first()
+        }
         compose.onAllNodesWithText(plan).onFirst().performSemanticsAction(SemanticsActions.OnClick)
         driver.settle()
         val cta = driver.awaitAnyText { it.startsWith("Begin ", true) || it.startsWith("Continue ", true) }
