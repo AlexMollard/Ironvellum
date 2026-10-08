@@ -37,7 +37,7 @@ class OnboardingBackTest {
 
     @Test
     fun backOnTheTrainingQuestionsReturnsToTheProfileInsteadOfLeavingTheApp() {
-        compose.onNodeWithText("WHO YOU ARE").assertIsDisplayed()
+        compose.onNodeWithText("Who you are").assertIsDisplayed()
 
         compose.onNodeWithText("Your name").performTextInput("Sam")
         compose.onNodeWithText("Height (cm)").performTextInput("165")
@@ -45,14 +45,14 @@ class OnboardingBackTest {
         compose.onNodeWithText("Continue").performClick()
         compose.waitForIdle()
 
-        compose.onNodeWithText("HOW YOU TRAIN").assertIsDisplayed()
+        compose.onNodeWithText("How you train").assertIsDisplayed()
 
         // The step the flow owns: back walks it, and the field focus left behind
         // by the profile form must not swallow the press.
         compose.activityRule.scenario.onActivity { it.onBackPressedDispatcher.onBackPressed() }
         compose.waitForIdle()
 
-        compose.onNodeWithText("WHO YOU ARE").assertIsDisplayed()
+        compose.onNodeWithText("Who you are").assertIsDisplayed()
     }
 
     companion object {
