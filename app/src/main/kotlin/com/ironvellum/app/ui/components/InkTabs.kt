@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.components
 
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -59,6 +60,9 @@ private val RuleY = 40.dp
  * [badges] is a count per tab (same order as [labels]); above 0 it draws a red count at the
  * label's corner without widening the tab.
  *
+ * [fill] spreads the tabs evenly across the width with centred sentence-case labels, the open tab
+ * in Ink over a full-width underline, and an unread count as a small green pill after the label.
+ *
  * Each tab is a 48dp tall touch target (Role.Tab, selected, "2 of 3") around about 32dp of ink.
  * The strip is pulled left by the tab padding so the first label lines up with the screen's own
  * margin; place it inside that margin and let the first tab's touch area spill into it.
@@ -71,8 +75,9 @@ fun InkTabs(
     modifier: Modifier = Modifier,
     badges: List<Int> = emptyList(),
     indicatorPosition: (() -> Float)? = null,
+    fill: Boolean = false,
 ) {
-    val tabPad = if (labels.size > 3) CrowdedTabPad else TabPad
+    val tabPad = if (fill) 0.dp else if (labels.size > 3) CrowdedTabPad else TabPad
     val widths = remember(labels.size) { mutableStateListOf(*Array(labels.size) { 0 }) }
     val settled = animateFloatAsState(selectedIndex.toFloat(), label = "inkTabsIndicator")
     Box(modifier.fillMaxWidth().height(LedgerSpace.Target)) {
@@ -86,6 +91,7 @@ fun InkTabs(
         )
         Row(
             Modifier
+                .then(if (fill) Modifier.fillMaxWidth() else Modifier)
                 .offset(x = -tabPad)
                 .drawBehind {
                     if (labels.size < 2 || widths.any { it == 0 }) return@drawBehind
@@ -107,6 +113,7 @@ fun InkTabs(
                 val badge = badges.getOrElse(index) { 0 }
                 Box(
                     Modifier
+                        .then(if (fill) Modifier.weight(1f) else Modifier)
                         .heightIn(min = LedgerSpace.Target)
                         .onSizeChanged { widths[index] = it.width }
                         .selectable(
@@ -124,7 +131,43 @@ fun InkTabs(
                         .padding(bottom = 4.dp),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Text(
+                    if (fill) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontFamily = ChakraPetch,
+                                fontSize = 13.sp,
+                                // Tabs have equal widths here, so the open one can be heavier.
+                                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                                maxLines = 1,
+                                softWrap = false,
+                            )
+                            if (badge > 0) {
+                                Text(
+                                    if (badge > 99) "99+" else badge.toString(),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontFamily = ChakraPetch,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 10.sp,
+                                    letterSpacing = 0.sp,
+                                    color = IronvellumColors.Abyss,
+                                    maxLines = 1,
+                                    softWrap = false,
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier
+                                        .padding(start = 6.dp)
+                                        .background(IronvellumColors.SystemGreen, DotShape)
+                                        .defaultMinSize(minWidth = 16.dp, minHeight = 16.dp)
+                                        .padding(horizontal = 4.dp)
+                                        .wrapContentHeight(Alignment.CenterVertically)
+                                        // Announced through the tab's stateDescription instead.
+                                        .clearAndSetSemantics { },
+                                )
+                            }
+                        }
+                    } else Text(
                         label,
                         style = MaterialTheme.typography.labelMedium,
                         fontFamily = ChakraPetch,
@@ -135,7 +178,7 @@ fun InkTabs(
                         maxLines = 1,
                         softWrap = false,
                     )
-                    if (badge > 0) {
+                    if (badge > 0 && !fill) {
                         Text(
                             if (badge > 99) "99+" else badge.toString(),
                             style = MaterialTheme.typography.labelSmall,

@@ -1,5 +1,9 @@
 package com.ironvellum.app.ui.social
 
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.foundation.text.BasicTextField
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -859,7 +863,7 @@ private fun SignedInPanels(
         )
     }
 
-    SectionHeader("Circle")
+    SectionHeader("Circle", topPadding = 20.dp)
     CircleSection(onOpenLifter = onOpenLifter, refreshSignal = circleRefreshSignal)
 
     val incoming = ui.friends.filter { it.incoming && !it.accepted }
@@ -898,13 +902,13 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
         .collectAsStateWithLifecycle(initialValue = null)
     val titleId = profile?.currentTitleId
 
-    InkPanel(Modifier.fillMaxWidth()) {
+    InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(start = 14.dp, top = 14.dp, end = 6.dp, bottom = 12.dp)) {
         IdentityRow(
             displayName = acct.displayName,
             userId = acct.userId,
             wornTitle = titleId?.let { Titles.byId(it)?.name },
             level = profile?.let { Xp.progress(it.totalXp).level },
-            size = IdentitySize.Standard,
+            size = IdentitySize.Profile,
             isMe = true,
             titleId = titleId,
             trailing = {
@@ -918,7 +922,7 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
             },
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.height(6.dp))
+        Spacer(Modifier.height(4.dp))
         VisibilityChip(acct.visibility)
     }
 }
@@ -1041,27 +1045,40 @@ private fun ClaimNamePanel(
 private fun AddAllyPanel(loading: Boolean, onRequest: (String) -> Unit) {
     var friendName by remember { mutableStateOf("") }
     val canInvite = friendName.trim().length >= 2 && !loading
-    OutlinedTextField(
-        shape = MaterialTheme.shapes.small,
-        colors = ironvellumFieldColors(),
-        value = friendName,
-        onValueChange = { friendName = it.take(24) },
-        label = { Text("Add an ally by true name") },
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-        trailingIcon = {
+    val label = "Add an ally by true name"
+    // A caption over a hairline field with "Invite" inside it: no box, like the mockup.
+    Column(Modifier.fillMaxWidth()) {
+        Text(label, style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            BasicTextField(
+                value = friendName,
+                onValueChange = { friendName = it.take(24) },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.bodyLarge.copy(color = IronvellumColors.Ink, fontWeight = FontWeight.Medium),
+                cursorBrush = SolidColor(IronvellumColors.Emerald),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                modifier = Modifier.weight(1f).semantics { contentDescription = label },
+                decorationBox = { inner ->
+                    Box(Modifier.heightIn(min = 44.dp), contentAlignment = Alignment.CenterStart) {
+                        if (friendName.isEmpty()) {
+                            Text("True name", style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.InkMuted)
+                        }
+                        inner()
+                    }
+                },
+            )
             InkTextLink(
                 label = "Invite",
                 enabled = canInvite,
-                modifier = Modifier.padding(horizontal = 12.dp),
+                modifier = Modifier.padding(start = 12.dp, end = 4.dp),
                 onClick = {
                     onRequest(friendName.trim())
                     friendName = ""
                 },
             )
-        },
-        modifier = Modifier.fillMaxWidth(),
-    )
+        }
+        InkDivider()
+    }
 }
 
 /**

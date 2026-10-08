@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.social
 
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.layout.layout
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -388,7 +390,7 @@ private fun Feed(
     equippedFrame: String?,
 ) {
     Row(
-        Modifier.fillMaxWidth(),
+        Modifier.fillMaxWidth().padding(horizontal = 2.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
@@ -520,7 +522,11 @@ private fun FeedCard(
     var picking by remember { mutableStateOf(false) }
     // The whole card opens the workout: the identity row, chips and ally chip
     // keep their own clickables, which consume the tap before the panel sees it.
-    InkPanel(Modifier.fillMaxWidth(), onClick = { onOpenComments(entry) }) {
+    InkPanel(
+        Modifier.fillMaxWidth(),
+        onClick = { onOpenComments(entry) },
+        contentPadding = PaddingValues(start = 16.dp, top = 14.dp, end = 16.dp, bottom = 4.dp),
+    ) {
         Column {
             // Identity header carries only the LV chip, so the worn title keeps a
             // wide column and sits directly under the name. The ally control is
@@ -531,7 +537,7 @@ private fun FeedCard(
                 wornTitle = entry.currentTitleId?.let { Titles.byId(it)?.name },
                 titleId = entry.currentTitleId,
                 level = entry.level,
-                size = IdentitySize.Hero,
+                size = IdentitySize.Card,
                 isMe = isMe,
                 frameId = if (isMe) equippedFrame else null,
                 onClick = { onOpenLifter(entry.userId, entry.displayName) },
@@ -544,7 +550,8 @@ private fun FeedCard(
                     entry.title.ifBlank { entry.label },
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = IronvellumColors.Ink,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
@@ -552,10 +559,12 @@ private fun FeedCard(
             }
 
             if (entry.note.isNotBlank()) {
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(3.dp))
                 Text(
                     entry.note,
                     style = MaterialTheme.typography.bodySmall,
+                    fontSize = 13.sp,
+                    lineHeight = 18.sp,
                     color = IronvellumColors.InkMuted,
                     maxLines = 6,
                     overflow = TextOverflow.Ellipsis,
@@ -572,12 +581,12 @@ private fun FeedCard(
             // ally chip off a 360dp card. relativeTime already falls back to the
             // date for anything older than yesterday, so stamp() prints it once.
             entry.completedAtMs?.let { ms ->
-                Spacer(Modifier.height(6.dp))
+                Spacer(Modifier.height(4.dp))
                 Text(
                     // An amended workout says so, or an ally who saw it before
                     // is left wondering why the figures moved.
                     stamp(ms) + if (entry.editedAtMs != null) " · amended" else "",
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.labelMedium,
                     fontFamily = ChakraPetch,
                     color = IronvellumColors.InkMuted,
                     maxLines = 1,
@@ -587,7 +596,14 @@ private fun FeedCard(
 
             Spacer(Modifier.height(4.dp))
             Row(
-                Modifier.fillMaxWidth(),
+                // The buttons carry 8dp of padding; pull them left so the icons line up with the text.
+                Modifier
+                    .layout { measurable, constraints ->
+                        val pull = 8.dp.roundToPx()
+                        val placeable = measurable.measure(constraints.copy(maxWidth = constraints.maxWidth + pull))
+                        layout(constraints.maxWidth, placeable.height) { placeable.place(-pull, 0) }
+                    }
+                    .fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -628,19 +644,18 @@ private fun FeedCard(
                     },
                 )
             }
-            // Reserved-height failure line: the space exists whether or not a
-            // reaction failed, so surfacing the message never reflows the card.
-            Box(Modifier.fillMaxWidth().height(18.dp)) {
-                if (reactionError != null) {
-                    Text(
-                        "Tribute not saved: $reactionError",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.DangerRed,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
+            // The failure line takes space only while there is a failure: an empty
+            // reserved strip left a blank band under every card.
+            if (reactionError != null) {
+                Text(
+                    "Tribute not saved: $reactionError",
+                    style = MaterialTheme.typography.labelSmall,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.DangerRed,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
             }
         }
     }
@@ -830,6 +845,7 @@ private fun StatLine(entry: FeedEntry) {
             }
         },
         style = MaterialTheme.typography.labelMedium,
+        fontSize = 13.sp,
         fontFamily = ChakraPetch,
         color = IronvellumColors.Ink,
         maxLines = 1,
@@ -879,7 +895,7 @@ private fun MovementLine(entry: FeedEntry) {
         Spacer(Modifier.height(3.dp))
         Text(
             meta.joinToString(" · "),
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
             color = IronvellumColors.InkMuted,
             maxLines = 1,

@@ -38,7 +38,15 @@ import androidx.compose.ui.platform.LocalDensity
 import com.ironvellum.app.ui.theme.IronvellumColors
 
 /** One lifter's identity, rendered the same way on every social surface. */
-internal enum class IdentitySize { Compact, Standard, Hero }
+internal enum class IdentitySize {
+    Compact, Standard, Hero,
+
+    /** A feed card header: 40dp crest, 15sp name, "You . Title" under it, "Level n" at the right. */
+    Card,
+
+    /** The lifter's own card: 48dp crest, 18sp name, "Title . Level n" under it, no level at the right. */
+    Profile,
+}
 
 /**
  * The single identity row: avatar crest + name + worn title + LV chip on one
@@ -66,14 +74,18 @@ internal fun IdentityRow(
 ) {
     val badgeSize = when (size) {
         IdentitySize.Compact -> 32.dp
-        IdentitySize.Standard -> 40.dp
+        IdentitySize.Standard, IdentitySize.Card -> 40.dp
         IdentitySize.Hero -> 56.dp
+        IdentitySize.Profile -> 48.dp
     }
     val nameSize = when (size) {
         IdentitySize.Compact -> 13.sp
         IdentitySize.Standard -> 16.sp
         IdentitySize.Hero -> 22.sp
+        IdentitySize.Card -> 15.sp
+        IdentitySize.Profile -> 18.sp
     }
+    val plain = size == IdentitySize.Card || size == IdentitySize.Profile
     // The worn title always sits directly under the name. An earlier version
     // dropped it below the whole row at Hero size, which pushed it far from the
     // name it belongs to; the column is kept wide instead by callers putting
@@ -103,17 +115,34 @@ internal fun IdentityRow(
                     displayName.ifBlank { "IRONBOUND" },
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
+                    fontWeight = if (plain) FontWeight.SemiBold else FontWeight.Bold,
                     fontSize = nameSize,
                     color = IronvellumColors.Ink,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
-                if (wornTitle != null) {
+                if (plain) {
+                    // One muted line: no gold title, no separate "You" line.
+                    val sub = listOfNotNull(
+                        "You".takeIf { isMe && size == IdentitySize.Card },
+                        wornTitle,
+                        level?.takeIf { size == IdentitySize.Profile }?.let { "Level $it" },
+                    ).joinToString(" · ")
+                    if (sub.isNotEmpty()) {
+                        Text(
+                            sub,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = ChakraPetch,
+                            color = IronvellumColors.InkMuted,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                    }
+                } else if (wornTitle != null) {
                     WornTitle(wornTitle)
                 }
                 // Your own row says so in words, not in gold.
-                if (isMe) {
+                if (isMe && !plain) {
                     Text(
                         "You",
                         style = MaterialTheme.typography.labelMedium,
@@ -123,7 +152,16 @@ internal fun IdentityRow(
                     )
                 }
             }
-            if (level != null) {
+            if (level != null && size == IdentitySize.Card) {
+                Text(
+                    "Level $level",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            } else if (level != null && size != IdentitySize.Profile) {
                 LevelChip(level)
             }
             // Trailing slot (ally chip, like count, rank…) at intrinsic width.
