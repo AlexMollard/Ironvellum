@@ -167,15 +167,10 @@ class InkCoverageTest {
             // Ink.kt holds the primitives: these calls are how every other surface is
             // drawn (inkTick and inkStroke, inkArc, inkDot).
             "Ink.kt" to sortedMapOf("drawArc" to 1, "drawCircle" to 1, "drawLine" to 2),
-            // Ambient washes behind the essence counter: low-alpha gradient fills,
-            // not geometry. Brushed, they read as dirt on the screen.
-            "MusterBackdrop.kt" to sortedMapOf("drawCircle" to 2),
             // Sigil.kt used to be listed here for the procedural crest's
             // gradient fills and bevel highlights. The crests are drawn art
             // now, that composable is deleted, and the file has no ruled call
             // left - so it is absent rather than exempt.
-            // Drifting motes in the idle scene: breathing alpha fills.
-            "IdleScreen.kt" to sortedMapOf("drawCircle" to 1),
         )
     }
 }
