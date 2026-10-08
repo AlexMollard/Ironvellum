@@ -1267,7 +1267,6 @@ fun SessionScreen(
                     )
                     val sets = ui.sets
                     val catalogue = exercises.associateBy { it.id }
-                    val peakNames = peaks.map { it.exerciseName }
                     val notes = exerciseNotes
                     val targets = shareTargets
                     shareRender = { includeNotes ->
@@ -1275,7 +1274,7 @@ fun SessionScreen(
                             sealed,
                             sets,
                             catalogue,
-                            peaks = peakNames,
+                            peaks = peaks,
                             targets = targets,
                             exerciseNotes = notes,
                             includeNotes = includeNotes,
