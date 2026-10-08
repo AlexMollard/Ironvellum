@@ -33,6 +33,7 @@ import com.ironvellum.app.data.db.SkillPracticeEntity
 import com.ironvellum.app.data.db.StatDao
 import com.ironvellum.app.domain.RelicHouses
 import com.ironvellum.app.domain.RelicRow
+import com.ironvellum.app.domain.Relics
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.data.db.StatEntity
 import com.ironvellum.app.data.db.SyncStateDao
@@ -140,11 +141,15 @@ abstract class IronvellumDatabase : RoomDatabase() {
                     )
                 }
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_owned_relics_relicId` ON `owned_relics` (`relicId`)")
-                // The stored relic number is now the active (strongest) relic, shown beside the rate.
-                db.execSQL(
-                    "UPDATE idle_state SET relicMultiplier = (SELECT MAX(multiplier) FROM owned_relics) " +
-                        "WHERE EXISTS (SELECT 1 FROM owned_relics)",
-                )
+                // The stored relic number stays the whole vault stacked, now over the placed relics. Placing
+                // keeps every multiplier, so it only differs from the stored one if a tier overflowed and
+                // two relics folded into one.
+                if (placed.isNotEmpty()) {
+                    db.execSQL(
+                        "UPDATE idle_state SET relicMultiplier = ?",
+                        arrayOf<Any?>(Relics.effectiveMultiplier(placed.map { it.multiplier })),
+                    )
+                }
             }
         }
 

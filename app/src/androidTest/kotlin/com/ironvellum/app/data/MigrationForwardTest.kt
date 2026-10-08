@@ -771,9 +771,11 @@ class MigrationForwardTest {
             var weight = 0
             val ids = mutableSetOf<String>()
             var best = 0.0
+            val held = mutableListOf<Double>()
             db.query("SELECT id, name, multiplier, drawnAtMs, relicId, refinements FROM owned_relics").use { c ->
                 while (c.moveToNext()) {
                     rows++
+                    held += c.getDouble(2)
                     weight += 1 + c.getInt(5)
                     assertTrue("a house id on every row", c.getString(4).contains('.'))
                     assertTrue("unique ids", ids.add(c.getString(4)))
@@ -789,7 +791,10 @@ class MigrationForwardTest {
             }
             db.query("SELECT relicMultiplier FROM idle_state WHERE id = 1").use { c ->
                 assertTrue(c.moveToFirst())
-                assertEquals("the stored relic number is the active relic", 2.1, c.getDouble(0), 0.0)
+                assertEquals(
+                    "the stored relic number is the whole vault stacked, a real factor of the rate",
+                    com.ironvellum.app.domain.Relics.effectiveMultiplier(held), c.getDouble(0), 1e-9,
+                )
             }
         }
     }

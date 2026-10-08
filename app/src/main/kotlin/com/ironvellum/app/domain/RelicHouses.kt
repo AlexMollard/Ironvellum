@@ -3,9 +3,9 @@ package com.ironvellum.app.domain
 import kotlin.math.roundToInt
 
 /**
- * The four relic houses. Each follows one habit and a relic of the house lifts only that part of
- * the essence rate (see [Idle.rate]), so it pays while the lifter keeps the habit. Nothing here
- * touches XP, levels, strength or titles.
+ * The four relic houses. Each follows one habit. A relic of any house lifts the WHOLE essence rate
+ * ([Relics.effectiveMultiplier]); the house only adds set bonuses, which pay while the lifter keeps
+ * the habit (see [Idle.rate]). Nothing here touches XP, levels, strength or titles.
  *
  * Ids are stable: a relic is `house.form` (for example `iron.band`), its name and its art seed
  * follow from it, and neither ever changes once released. Add relics at the END of a house, never
@@ -25,34 +25,29 @@ enum class RelicHouse(
     val fullBonus: String,
     /** What the 4-relic bonus adds, for "Two more relics add ...". */
     val fullGain: String,
-    /** The sentence a relic of this house carries, with the percentage filled in. */
-    private val effectLine: String,
 ) {
     Iron(
-        "iron", "Iron", "Lifting", "the weight you move", "volume",
-        "volume term +5%", "full-strength window +2 h", "2 h of full strength",
-        "Lifts the weight-moved part of your rate by %d%%. It pays while you keep lifting.",
+        "iron", "Iron", "Lifting", "the trials you seal and the weight you move", "lifting",
+        "lifting term +5%", "full-strength window +2 h", "2 h of full strength",
     ),
     Vigil(
         "vigil", "Vigil", "Consistency", "how steadily you train", "consistency",
         "consistency term +5%", "one absence pays 4 days, not 3", "a fourth day of absence pay",
-        "Lifts the consistency part of your rate by %d%%. It pays while you keep showing up.",
     ),
     Craft(
         "craft", "Craft", "Technique", "the techniques you claim", "technique",
         "technique term +5%", "technique ceiling ×2.0 to ×2.1", "a higher technique ceiling",
-        "Lifts the technique part of your rate by %d%%. It pays on every technique you claim.",
     ),
     Return(
         "return", "Return", "Coming back", "how soon you return after a gap", "comeback",
         "comeback term +5%", "taper floor 10% to 15%", "a higher taper floor",
-        "Lifts the comeback part of your rate by %d%%. It pays when you return after time away.",
     );
 
     val title: String get() = "House of $label"
 
-    /** What a relic of this house does at [multiplier], in the app's voice. */
-    fun effect(multiplier: Double): String = effectLine.format(((multiplier - 1.0) * 100).roundToInt())
+    /** What a relic does at [multiplier], in the app's voice: the same for every house. */
+    fun effect(multiplier: Double): String =
+        "Lifts your whole essence rate by ${((multiplier - 1.0) * 100).roundToInt()}%, stacking with your other relics."
 
     companion object {
         fun byId(id: String?): RelicHouse? = entries.firstOrNull { it.id == id }
@@ -94,14 +89,12 @@ data class OwnedRelic(
 data class HouseStanding(
     val house: RelicHouse,
     val owned: Int,
-    /** The house's relics stacked on their excess ([Relics.effectiveMultiplier]); 1.0 with none. */
-    val boost: Double,
 ) {
     val pairReached: Boolean get() = owned >= RelicHouses.PAIR
     val fullReached: Boolean get() = owned >= RelicHouses.FULL
 
-    /** What the house's term of the rate is multiplied by: the relics, then the 2-relic bonus. */
-    val termMultiplier: Double get() = boost * (if (pairReached) 1.0 + RelicHouses.PAIR_BONUS else 1.0)
+    /** What the house's term of the rate is multiplied by: only the 2-relic bonus. The relics themselves lift the whole rate. */
+    val termMultiplier: Double get() = if (pairReached) 1.0 + RelicHouses.PAIR_BONUS else 1.0
 }
 
 /**
@@ -285,7 +278,7 @@ object RelicHouses {
     fun effects(owned: List<OwnedRelic>): HouseEffects = HouseEffects(
         RelicHouse.entries.map { house ->
             val held = owned.filter { BY_ID[it.relicId]?.house == house }
-            HouseStanding(house, held.size, Relics.effectiveMultiplier(held.map { it.multiplier }))
+            HouseStanding(house, held.size)
         },
     )
 
