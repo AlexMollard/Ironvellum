@@ -1,5 +1,9 @@
 package com.ironvellum.app.ui.social
 
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -535,7 +539,8 @@ private fun CircleRoster(
                     circle.name,
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
+                    fontSize = 17.sp,
+                    fontWeight = FontWeight.SemiBold,
                     color = IronvellumColors.Ink,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -546,6 +551,7 @@ private fun CircleRoster(
                 Text(
                     if (met) "Goal met" else if (hasGoal) "$total / $goal this week" else "Warm-up week",
                     style = MaterialTheme.typography.labelMedium,
+                    fontSize = 13.sp,
                     color = if (met) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                     maxLines = 1,
                     softWrap = false,
@@ -656,7 +662,7 @@ private fun CircleMemberRow(
         Modifier
             .fillMaxWidth()
             .clickable(role = Role.Button) { onOpenLifter(member.userId, member.displayName) }
-            .heightIn(min = ListRowHeight)
+            .heightIn(min = 48.dp)
             .padding(start = 16.dp, end = if (onRemove != null) 8.dp else 16.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -668,19 +674,21 @@ private fun CircleMemberRow(
             level = member.level,
             titleId = member.titleId,
         )
-        Column(Modifier.weight(1f)) {
-            Text(
-                member.displayName.ifBlank { "Ironbound" },
-                style = MaterialTheme.typography.bodyMedium,
-                color = IronvellumColors.Ink,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-            val role = listOfNotNull("You".takeIf { isMe }, "Keeper".takeIf { isKeeper }).joinToString(" · ")
-            if (role.isNotEmpty()) {
-                Text(role, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
-            }
-        }
+        val role = listOfNotNull("You".takeIf { isMe }, "Keeper".takeIf { isKeeper }).joinToString(" · ")
+        // The name and the role share one line, the role small and muted.
+        Text(
+            buildAnnotatedString {
+                append(member.displayName.ifBlank { "Ironbound" })
+                if (role.isNotEmpty()) {
+                    withStyle(SpanStyle(color = IronvellumColors.InkMuted, fontSize = 12.sp)) { append("   $role") }
+                }
+            },
+            style = MaterialTheme.typography.bodyLarge,
+            color = IronvellumColors.Ink,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
         // A member who has not trained shows nothing: a row of zeroes is
         // guilt, not information. A tick marks those who met the week's goal.
         if (member.daysThisWeek >= 1) {

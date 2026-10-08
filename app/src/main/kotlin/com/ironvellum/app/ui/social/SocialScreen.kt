@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.social
 
+import androidx.compose.ui.unit.sp
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,12 +39,12 @@ import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkTabbedPager
 
 private enum class GuildTab(val label: String) {
-    FEED("TIDINGS"),
-    INBOX("MISSIVES"),
-    BOARD("RECKONING"),
+    FEED("Tidings"),
+    INBOX("Missives"),
+    BOARD("Reckoning"),
     // "ALLIES", not "GUILD" — the bottom nav tab already says Allies; repeating
     // it here put the same word on screen three times.
-    ALLIES("ALLIES"),
+    ALLIES("Allies"),
 }
 
 /**
@@ -150,7 +151,9 @@ fun SocialScreen(
         Text(
             "ALLIES",
             style = MaterialTheme.typography.headlineSmall,
+            fontSize = 22.sp,
             fontWeight = FontWeight.Bold,
+            letterSpacing = 3.sp,
             color = IronvellumColors.Ink,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 8.dp),
         )
@@ -160,7 +163,8 @@ fun SocialScreen(
             state = pager,
             modifier = Modifier.weight(1f),
             tabsModifier = Modifier.padding(horizontal = 16.dp),
-            tabsGap = 14.dp,
+            tabsGap = 12.dp,
+            fillTabs = true,
         ) { page ->
             Box(Modifier.fillMaxSize().padding(horizontal = 16.dp)) {
                 when (GuildTab.entries[page]) {

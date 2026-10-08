@@ -27,6 +27,8 @@ import kotlinx.coroutines.launch
  * [tabsGap] is the space between strip and pages; the pages themselves run edge to edge, so each
  * one adds its own gutter and a swipe is not clipped inside the margins.
  *
+ * [fillTabs] spreads the tabs evenly across the width (see [InkTabs]).
+ *
  * Give [modifier] a weight or a fixed height: the pager fills what it is given.
  */
 @Composable
@@ -37,6 +39,7 @@ fun InkTabbedPager(
     badges: List<Int> = emptyList(),
     tabsModifier: Modifier = Modifier,
     tabsGap: Dp = 0.dp,
+    fillTabs: Boolean = false,
     pageContent: @Composable PagerScope.(page: Int) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -47,6 +50,7 @@ fun InkTabbedPager(
             selectedIndex = state.currentPage,
             onSelect = { index -> scope.launch { state.animateScrollToPage(index) } },
             modifier = tabsModifier,
+            fill = fillTabs,
             indicatorPosition = { state.currentPage + state.currentPageOffsetFraction },
         )
         if (tabsGap > 0.dp) Spacer(Modifier.height(tabsGap))
