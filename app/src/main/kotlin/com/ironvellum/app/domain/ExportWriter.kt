@@ -52,6 +52,10 @@ object ExportWriter {
         val name: String,
         val multiplier: Double,
         val drawnAtMs: Long,
+        // v8. Absent in a v7 archive (and in an early v8 one), whose relics the reader
+        // places in a house by their old name and multiplier ([RelicHouses.place]).
+        val relicId: String = "",
+        val refinements: Int = 0,
     )
 
     fun write(
@@ -207,6 +211,8 @@ object ExportWriter {
             append("{\"name\":").appendEscaped(r.name)
             append(",\"multiplier\":").append(r.multiplier)
             append(",\"drawnAtMs\":").append(r.drawnAtMs)
+            append(",\"relicId\":").appendEscaped(r.relicId)
+            append(",\"refinements\":").append(r.refinements)
             append("}")
         }
         append("]")

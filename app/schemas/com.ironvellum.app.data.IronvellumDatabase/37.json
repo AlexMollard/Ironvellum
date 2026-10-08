@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 37,
-    "identityHash": "0f7e222cb5471e0773480ad3e44e646b",
+    "identityHash": "73bddc3cfe3cd546c1917ab31ef15276",
     "entities": [
       {
         "tableName": "exercises",
@@ -805,7 +805,7 @@
       },
       {
         "tableName": "owned_relics",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `multiplier` REAL NOT NULL, `drawnAtMs` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `multiplier` REAL NOT NULL, `drawnAtMs` INTEGER NOT NULL, `relicId` TEXT NOT NULL, `refinements` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -830,6 +830,18 @@
             "columnName": "drawnAtMs",
             "affinity": "INTEGER",
             "notNull": true
+          },
+          {
+            "fieldPath": "relicId",
+            "columnName": "relicId",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "refinements",
+            "columnName": "refinements",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -837,7 +849,18 @@
           "columnNames": [
             "id"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_owned_relics_relicId",
+            "unique": true,
+            "columnNames": [
+              "relicId"
+            ],
+            "orders": [],
+            "createSql": "CREATE UNIQUE INDEX IF NOT EXISTS `index_owned_relics_relicId` ON `${TABLE_NAME}` (`relicId`)"
+          }
+        ]
       },
       {
         "tableName": "favourite_exercises",
@@ -945,7 +968,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0f7e222cb5471e0773480ad3e44e646b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '73bddc3cfe3cd546c1917ab31ef15276')"
     ]
   }
 }

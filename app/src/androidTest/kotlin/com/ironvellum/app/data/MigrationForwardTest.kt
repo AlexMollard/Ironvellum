@@ -749,6 +749,52 @@ class MigrationForwardTest {
     }
 
     /**
+     * Schema 36 -> 37, relic houses: every stored relic gets a stable house + form id, keeps its
+     * multiplier and its drawn time, none is lost (an overflowing tier folds into counted
+     * refinements), and the strongest stays the active one.
+     */
+    @Test
+    fun upgradeTo37PlacesEveryLegacyRelicInAHouse() = runTest {
+        helper.createDatabase(dbName, 36).use { old ->
+            old.execSQL("INSERT OR REPLACE INTO idle_state (id, essence, shadows, relicMultiplier, lastCollectedAtMs) VALUES (1, 0, 0, 1.9, 1)")
+            old.execSQL("INSERT INTO owned_relics (id, name, multiplier, drawnAtMs) VALUES (1, 'Fang of the Mark', 1.20, 100)")
+            old.execSQL("INSERT INTO owned_relics (id, name, multiplier, drawnAtMs) VALUES (2, 'Sigil of the Margin', 1.30, 200)")
+            old.execSQL("INSERT INTO owned_relics (id, name, multiplier, drawnAtMs) VALUES (3, 'Greater Crown of the Abyss', 1.50, 300)")
+            old.execSQL("INSERT INTO owned_relics (id, name, multiplier, drawnAtMs) VALUES (4, 'Masterwork Ember of the Ashen King', 2.10, 400)")
+            // Eight Commons for six Common cells: two must fold, not vanish.
+            for (i in 0 until 8) {
+                old.execSQL("INSERT INTO owned_relics (id, name, multiplier, drawnAtMs) VALUES (${10 + i}, 'Nameless Relic', ${1.06 + i * 0.01}, ${500 + i})")
+            }
+        }
+        helper.runMigrationsAndValidate(dbName, 37, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            var rows = 0
+            var weight = 0
+            val ids = mutableSetOf<String>()
+            var best = 0.0
+            db.query("SELECT id, name, multiplier, drawnAtMs, relicId, refinements FROM owned_relics").use { c ->
+                while (c.moveToNext()) {
+                    rows++
+                    weight += 1 + c.getInt(5)
+                    assertTrue("a house id on every row", c.getString(4).contains('.'))
+                    assertTrue("unique ids", ids.add(c.getString(4)))
+                    best = maxOf(best, c.getDouble(2))
+                }
+            }
+            assertEquals("a relic is never lost", 12, weight)
+            assertEquals(10, rows)
+            assertEquals("the strongest relic is kept as it was", 2.1, best, 0.0)
+            db.query("SELECT relicId FROM owned_relics WHERE id = 4").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals("craft.chisel", c.getString(0))
+            }
+            db.query("SELECT relicMultiplier FROM idle_state WHERE id = 1").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals("the stored relic number is the active relic", 2.1, c.getDouble(0), 0.0)
+            }
+        }
+    }
+
+    /**
      * Schema 36 -> 37: the Veil's new counters start at zero beside the banked rolls, the grant
      * version starts at 0 so the retro pass runs once, and lifetime essence starts at the
      * essence already held (nothing has been spent yet).

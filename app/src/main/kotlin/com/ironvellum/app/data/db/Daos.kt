@@ -528,6 +528,12 @@ interface GachaDao {
     @Query("SELECT multiplier FROM owned_relics")
     suspend fun relicMultipliers(): List<Double>
 
+    @Query("SELECT * FROM owned_relics ORDER BY id")
+    suspend fun relics(): List<OwnedRelicEntity>
+
+    @Update
+    suspend fun updateRelic(relic: OwnedRelicEntity)
+
     @Insert
     suspend fun insertRelic(relic: OwnedRelicEntity)
 

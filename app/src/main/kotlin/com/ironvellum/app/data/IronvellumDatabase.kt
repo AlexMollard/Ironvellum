@@ -31,6 +31,8 @@ import com.ironvellum.app.data.db.SetLogEntity
 import com.ironvellum.app.data.db.SkillPracticeDao
 import com.ironvellum.app.data.db.SkillPracticeEntity
 import com.ironvellum.app.data.db.StatDao
+import com.ironvellum.app.domain.RelicHouses
+import com.ironvellum.app.domain.RelicRow
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.data.db.StatEntity
 import com.ironvellum.app.data.db.SyncStateDao
@@ -108,6 +110,11 @@ abstract class IronvellumDatabase : RoomDatabase() {
          * and a monotonic lifetime essence on the idle row. Lifetime starts at
          * the essence held now (nothing has been spent yet). The grant version
          * starts at 0 so the retro pass runs once on the next launch.
+         *
+         * Relic houses ride the same version (37 is not released): owned_relics gains a stable
+         * relicId and a refinement count, every stored relic is placed in a house by
+         * [RelicHouses.place], and the relicId becomes unique. Nothing is lost: a relic that cannot
+         * have a cell of its own folds into one as a counted refinement.
          */
         private val MIGRATION_36_37 = object : Migration(36, 37) {
             override fun migrate(db: SupportSQLiteDatabase) {
@@ -117,6 +124,27 @@ abstract class IronvellumDatabase : RoomDatabase() {
                 db.execSQL("ALTER TABLE gacha_state ADD COLUMN veilGrantVersion INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("ALTER TABLE idle_state ADD COLUMN lifetimeEssence INTEGER NOT NULL DEFAULT 0")
                 db.execSQL("UPDATE idle_state SET lifetimeEssence = essence")
+                db.execSQL("ALTER TABLE owned_relics ADD COLUMN relicId TEXT NOT NULL DEFAULT ''")
+                db.execSQL("ALTER TABLE owned_relics ADD COLUMN refinements INTEGER NOT NULL DEFAULT 0")
+                val legacy = db.query("SELECT id, name, multiplier, drawnAtMs FROM owned_relics").use { c ->
+                    buildList {
+                        while (c.moveToNext()) add(RelicRow(c.getLong(0), null, c.getString(1), c.getDouble(2), c.getLong(3)))
+                    }
+                }
+                val placed = RelicHouses.place(legacy)
+                db.execSQL("DELETE FROM owned_relics")
+                placed.forEach {
+                    db.execSQL(
+                        "INSERT INTO owned_relics (id, name, multiplier, drawnAtMs, relicId, refinements) VALUES (?, ?, ?, ?, ?, ?)",
+                        arrayOf<Any?>(it.key, RelicHouses.byId(it.relicId)!!.name, it.multiplier, it.drawnAtMs, it.relicId, it.refinements),
+                    )
+                }
+                db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_owned_relics_relicId` ON `owned_relics` (`relicId`)")
+                // The stored relic number is now the active (strongest) relic, shown beside the rate.
+                db.execSQL(
+                    "UPDATE idle_state SET relicMultiplier = (SELECT MAX(multiplier) FROM owned_relics) " +
+                        "WHERE EXISTS (SELECT 1 FROM owned_relics)",
+                )
             }
         }
 

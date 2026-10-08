@@ -211,9 +211,10 @@ class GachaTest {
     }
 
     @Test
-    fun `relic names and bands are untouched by pacing`() {
-        // Names derive from the multiplier, so the bands are the identity of every
-        // relic a lifter already owns. 141 reachable names is the audited count.
+    fun `relic bands and the legacy names are untouched by pacing and houses`() {
+        // Before houses a relic's name derived from its multiplier, so the bands are how every
+        // legacy relic is told its tier by the migration. 141 reachable legacy names is the
+        // audited count; relics now drawn are house relics (RelicHousesTest).
         assertEquals(
             listOf(1.05 to 1.15, 1.15 to 1.35, 1.35 to 1.75, 1.75 to 2.50),
             Gacha.DROP_TABLE.map { it.relicLow to it.relicHigh },

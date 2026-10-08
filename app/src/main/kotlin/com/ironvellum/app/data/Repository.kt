@@ -45,6 +45,7 @@ import com.ironvellum.app.domain.ExportReader
 import com.ironvellum.app.domain.ExportWriter
 import com.ironvellum.app.domain.Gacha
 import com.ironvellum.app.domain.HealthDay
+import com.ironvellum.app.domain.HouseEffects
 import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.IdleRate
 import com.ironvellum.app.domain.IdleState
@@ -103,7 +104,11 @@ import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.EXERCISE_NOTE_MAX
 import com.ironvellum.app.domain.ExerciseNote
 import com.ironvellum.app.domain.Xp
+import com.ironvellum.app.domain.OwnedRelic
+import com.ironvellum.app.domain.RelicHouses
+import com.ironvellum.app.domain.RelicRow
 import com.ironvellum.app.domain.Relics
+import com.ironvellum.app.domain.VaultState
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -1889,17 +1894,19 @@ class Repository(
         val g = gachaDao.get() ?: GachaStateEntity()
         if (g.veilGrantVersion >= Veil.GRANT_VERSION) return@withTransaction null
         val level = Xp.levelFor(profileDao.get()?.totalXp ?: 0L)
+        val heldRelics = gachaDao.relics()
         val grant = Veil.retroGrant(
             level = level,
             banked = g.rolls,
-            relicCount = gachaDao.relicMultipliers().size,
+            relicCount = heldRelics.size,
             ownedFrames = gachaDao.ownedFrameIds().toSet(),
             echoes = idleDao.get()?.shadows ?: 0,
+            ownedRelicIds = heldRelics.map { it.relicId }.toSet(),
         )
         val now = System.currentTimeMillis()
         grant.crestIds.forEach { gachaDao.insertFrame(OwnedCrestFrameEntity(frameId = it, ownedAtMs = now)) }
         grant.relics.forEach {
-            gachaDao.insertRelic(OwnedRelicEntity(name = it.name, multiplier = it.multiplier, drawnAtMs = now))
+            gachaDao.insertRelic(OwnedRelicEntity(name = it.name, multiplier = it.multiplier, drawnAtMs = now, relicId = it.relicId))
         }
         if (grant.relics.isNotEmpty()) applyRelicVault()
         // The level is marked paid too: every level up to it is now accounted
@@ -2492,7 +2499,7 @@ class Repository(
             ExportWriter.CrestFrameSnapshot(it.frameId, it.ownedAtMs)
         }
         val relics = gachaDao.observeRelics().first().map {
-            ExportWriter.RelicSnapshot(it.name, it.multiplier, it.drawnAtMs)
+            ExportWriter.RelicSnapshot(it.name, it.multiplier, it.drawnAtMs, it.relicId, it.refinements)
         }
         val json = ExportWriter.write(
             profile = profile,
@@ -2775,16 +2782,23 @@ class Repository(
                     // from the file: a stored number could outrun the relics it
                     // claims to come from. Each restored relic is held to the band
                     // the roller can produce, and an impossible one is dropped.
-                    val restoredRelics = archive.relics.mapNotNull { r ->
-                        Relics.restorable(r.multiplier)?.let { r.copy(multiplier = it) }
-                    }
+                    // Every relic is then placed in a house by RelicHouses.place: a v8 row keeps its
+                    // id, a row from before houses (v7, or an early v8) is mapped like the migration
+                    // maps it, and duplicates merge, so the vault is one row per relic either way.
+                    val restoredRelics = RelicHouses.place(
+                        archive.relics.mapIndexedNotNull { i, r ->
+                            Relics.restorable(r.multiplier)?.let { m ->
+                                RelicRow(i.toLong(), r.relicId.ifBlank { null }, r.name, m, r.drawnAtMs, r.refinements.coerceAtLeast(0))
+                            }
+                        },
+                    )
                     archive.idle?.let {
                         val essence = it.essence.coerceAtLeast(0)
                         idleDao.upsert(
                             IdleStateEntity(
                                 essence = essence,
                                 shadows = it.shadows.coerceAtLeast(0),
-                                relicMultiplier = Relics.effectiveMultiplier(restoredRelics.map { r -> r.multiplier }),
+                                relicMultiplier = restoredRelics.maxOfOrNull { r -> r.multiplier } ?: 1.0,
                                 lastCollectedAtMs = it.lastCollectedAtMs,
                                 lifetimeEssence = maxOf(it.lifetimeEssence, essence),
                             ),
@@ -2808,7 +2822,15 @@ class Repository(
                         gachaDao.insertFrame(OwnedCrestFrameEntity(frameId = it.frameId, ownedAtMs = it.ownedAtMs))
                     }
                     restoredRelics.forEach {
-                        gachaDao.insertRelic(OwnedRelicEntity(name = it.name, multiplier = it.multiplier, drawnAtMs = it.drawnAtMs))
+                        gachaDao.insertRelic(
+                            OwnedRelicEntity(
+                                name = RelicHouses.byId(it.relicId)!!.name,
+                                multiplier = it.multiplier,
+                                drawnAtMs = it.drawnAtMs,
+                                relicId = it.relicId,
+                                refinements = it.refinements,
+                            ),
+                        )
                     }
                 }
 
@@ -2999,8 +3021,9 @@ class Repository(
     fun observeIdleRate(): Flow<IdleRate> = combine(
         observeIdle(),
         observeIdleInputs(),
-    ) { state, inputs ->
-        Idle.rate(state, inputs.sessionsLast7d, inputs.volumeLast7d, inputs.skillsUnlocked, inputs.streakDays)
+        observeHouseEffects(),
+    ) { state, inputs, houses ->
+        Idle.rate(state, inputs.sessionsLast7d, inputs.volumeLast7d, inputs.skillsUnlocked, inputs.streakDays, houses)
     }
 
     /** State plus the live rate, so the screen never recomputes the formula. */
@@ -3037,7 +3060,11 @@ class Repository(
             sessionDao.observeCompletedWithSets().first(),
             skillPracticeDao.observeAll().first(),
         )
-        val rate = Idle.rate(state, inputs.sessionsLast7d, inputs.volumeLast7d, inputs.skillsUnlocked, inputs.streakDays)
+        // The same houses the rate on screen is built from, or the banked essence and the shown rate drift.
+        val rate = Idle.rate(
+            state, inputs.sessionsLast7d, inputs.volumeLast7d, inputs.skillsUnlocked, inputs.streakDays,
+            RelicHouses.effects(gachaDao.relics().map { it.toOwned() }),
+        )
         val gained = Idle.accrued(state, rate, nowMs)
         if (gained > 0) {
             val balance = Veil.Balance(current.essence, current.lifetimeEssence).earn(gained)
@@ -3069,10 +3096,26 @@ class Repository(
     fun observeOwnedFrames(): Flow<Set<String>> =
         gachaDao.observeOwnedFrames().map { it.toSet() }
 
-    /** Every relic drawn, strongest first; the rate uses the top one. */
+    /** Every relic held, strongest first. */
     fun observeRelics(): Flow<List<RelicHolding>> = gachaDao.observeRelics().map { rows ->
-        rows.map { RelicHolding(it.id, it.name, it.multiplier, it.drawnAtMs) }
+        rows.map { RelicHolding(it.id, it.name, it.multiplier, it.drawnAtMs, it.relicId, it.refinements) }
     }
+
+    private fun OwnedRelicEntity.toOwned() = OwnedRelic(relicId, multiplier, refinements, drawnAtMs)
+
+    /** What the relic houses change in the rate right now. */
+    fun observeHouseEffects(): Flow<HouseEffects> =
+        gachaDao.observeRelics().map { rows -> RelicHouses.effects(rows.map { it.toOwned() }) }
+
+    /**
+     * The vault grid: per house and form whether it is held, its tier and whether it is the active
+     * relic, plus each house's progress, the set bonuses it has reached and the effects in force.
+     */
+    fun observeVault(): Flow<VaultState> =
+        gachaDao.observeRelics().map { rows -> RelicHouses.vault(rows.map { it.toOwned() }) }
+
+    /** [observeVault] once, for the reveal that follows a draw. */
+    suspend fun vaultNow(): VaultState = RelicHouses.vault(gachaDao.relics().map { it.toOwned() })
 
     fun observeEquippedFrame(): Flow<String?> = gachaDao.observeEquipped()
 
@@ -3098,7 +3141,9 @@ class Repository(
      * derived state, and a relic that is owned but not applied is a lie.
      */
     private suspend fun applyRelicVault() {
-        val effective = Relics.effectiveMultiplier(gachaDao.relicMultipliers())
+        // The stored relic number is the active (strongest) relic. The rate itself is built from the
+        // houses ([RelicHouses.effects]) wherever it is computed, never from this number.
+        val effective = RelicHouses.active(gachaDao.relics().map { it.toOwned() })?.multiplier ?: 1.0
         val state = idleDao.get() ?: IdleStateEntity()
         idleDao.upsert(state.copy(relicMultiplier = effective))
     }
@@ -3140,13 +3185,14 @@ class Repository(
         if (current.rolls <= 0) return@withTransaction null
         // Owned frames are excluded from the draw: a duplicate was silently
         // deduped on insert, so the roll was spent and nothing was granted.
+        val held = gachaDao.relics()
         val pity = Gacha.Pity(
             figureStreak = current.figureStreak,
             relicStreak = current.relicPity,
             draws = current.drawsSpent,
-            hasRelic = gachaDao.relicMultipliers().isNotEmpty(),
+            hasRelic = held.isNotEmpty(),
         )
-        val result = Gacha.roll(seed, gachaDao.ownedFrameIds().toSet(), pity)
+        val result = Gacha.roll(seed, gachaDao.ownedFrameIds().toSet(), pity, held.associate { it.relicId to it.multiplier })
         // The streaks are written in the SAME transaction as the payout, so a
         // crash between the two can never leave pity counting a draw that was
         // never paid.
@@ -3164,13 +3210,21 @@ class Repository(
             is Reward.Relic -> {
                 // Keep the relic itself, not just its number, then DERIVE the
                 // live multiplier from the whole vault so every relic counts.
-                gachaDao.insertRelic(
-                    OwnedRelicEntity(
-                        name = reward.name,
-                        multiplier = reward.multiplier,
-                        drawnAtMs = System.currentTimeMillis(),
-                    ),
-                )
+                val row = held.firstOrNull { it.relicId == reward.relicId }
+                if (row == null) {
+                    gachaDao.insertRelic(
+                        OwnedRelicEntity(
+                            name = reward.name,
+                            multiplier = reward.multiplier,
+                            drawnAtMs = System.currentTimeMillis(),
+                            relicId = reward.relicId,
+                        ),
+                    )
+                } else {
+                    // A duplicate refines the relic it repeats; at its tier's cap it pays echoes.
+                    gachaDao.updateRelic(row.copy(multiplier = reward.multiplier, refinements = row.refinements + 1))
+                    if (reward.echoes > 0) grantIdle(reward.echoes, 1.0)
+                }
                 applyRelicVault()
             }
             is Reward.CrestFrame -> gachaDao.insertFrame(
@@ -3290,4 +3344,6 @@ data class RelicHolding(
     val name: String,
     val multiplier: Double,
     val drawnAtMs: Long,
+    val relicId: String = "",
+    val refinements: Int = 0,
 )

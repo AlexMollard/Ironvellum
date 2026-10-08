@@ -89,10 +89,27 @@ class VeilTest {
     }
 
     @Test
-    fun `retro relics are deterministic and in the Rare band`() {
-        val a = Gacha.stipendRelic(2)
-        assertEquals(a, Gacha.stipendRelic(2))
-        (0..40).forEach { assertTrue(Gacha.stipendRelic(it).multiplier in 1.15..1.35) }
+    fun `retro relics are real house relics, deterministic, Rare first and never one already held`() {
+        val a = Gacha.stipendRelics(3, setOf("iron.band"))
+        assertEquals(a, Gacha.stipendRelics(3, setOf("iron.band")))
+        assertEquals(3, a.size)
+        a.forEach {
+            val cell = RelicHouses.byId(it.relicId)!!
+            assertEquals(cell.name, it.name)
+            assertEquals(RewardRarity.Rare, cell.tier)
+            assertTrue(it.multiplier in 1.15..1.35)
+        }
+        assertEquals("no relic twice", 3, a.map { it.relicId }.toSet().size)
+        assertTrue("iron.band" !in a.map { it.relicId })
+    }
+
+    @Test
+    fun `the retro grant never pays a relic the lifter holds and stops when the catalogue is full`() {
+        val all = RelicHouses.CATALOGUE.map { it.id }.toSet()
+        val held = all - setOf("iron.band", "door.nothing")
+        val g = Veil.retroGrant(80, banked = 0, relicCount = 15, ownedFrames = emptySet(), echoes = 0, ownedRelicIds = held)
+        assertEquals(listOf("iron.band"), g.relics.map { it.relicId })
+        assertTrue(Veil.retroGrant(80, 0, 16, emptySet(), 0, all).relics.isEmpty())
     }
 
     @Test
