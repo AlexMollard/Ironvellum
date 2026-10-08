@@ -2,23 +2,18 @@ package com.ironvellum.app.ui.onboarding
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
@@ -36,20 +31,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.onFocusChanged
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.progressBarRangeInfo
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -76,8 +68,8 @@ import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingMode
 import com.ironvellum.app.domain.TrainingSplit
 import com.ironvellum.app.domain.DecimalInput
-import com.ironvellum.app.ui.components.CrestMark
-import com.ironvellum.app.ui.components.InkRail
+import com.ironvellum.app.ui.components.DockedActionBar
+import com.ironvellum.app.ui.components.InkChip
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
@@ -96,7 +88,6 @@ import com.ironvellum.app.ui.program.volumeCaption
 import com.ironvellum.app.ui.settings.SettingsConfirmDialog
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.ironvellumFieldColors
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -426,54 +417,43 @@ fun OnboardingScreen(
     var fieldFocused by remember { mutableStateOf(false) }
     val focusManager = LocalFocusManager.current
 
-    Box(
+    // Back belongs to the flow, not the task stack: with a field focused it
+    // puts the keyboard away, past the first step it walks a step back, and
+    // only on step one untouched does it leave the app - which is what back
+    // means on a first screen. Without this, one press during a weigh-in
+    // dismissed the keyboard AND killed the app.
+    BackHandler(enabled = fieldFocused || step > 0) {
+        if (fieldFocused) {
+            focusManager.clearFocus()
+        } else {
+            step -= 1
+        }
+    }
+
+    // Flat Abyss, the app's own surface: the bar and Skip on top, the page
+    // taking every remaining pixel and scrolling when it does not fit (the
+    // keyboard up, a large font, landscape), and the action bar docked below
+    // it so Continue is always in reach.
+    Column(
         Modifier
             .fillMaxSize()
-            .background(Brush.verticalGradient(listOf(IronvellumColors.Abyss, Color(0xFF111110)))),
+            .background(IronvellumColors.Abyss)
+            .imePadding()
+            .statusBarsPadding(),
     ) {
-        // The app's own crest, faint, anchoring the space the old layout left
-        // dead. Decorative: not announced, not interactive.
-        Box(Modifier.matchParentSize(), contentAlignment = Alignment.BottomCenter) {
-            CrestMark(
-                "masterwork",
-                Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .alpha(0.07f),
-            )
-        }
+        StepBar(step = step, onBack = { step -= 1 }, onSkip = viewModel::skip)
 
-        // The whole screen scrolls, header and footer included: with the
-        // keyboard up, a large font or in landscape the fixed parts alone can
-        // outgrow the window, and a fixed header left the fields no room.
-        // fillMaxSize before verticalScroll keeps the viewport as the minimum
-        // height, so the spacer below still pins the footer on a tall screen.
+        // A step is a plain Column inside this one scroller: never a lazy list
+        // or a second scroller nested in it - that pairing crashes at runtime
+        // in this repo.
         Column(
             Modifier
-                .fillMaxSize()
-                .imePadding()
-                .statusBarsPadding()
-                .navigationBarsPadding()
+                .weight(1f)
+                .fillMaxWidth()
                 .verticalScroll(rememberScrollState())
-                .padding(horizontal = 20.dp),
+                .padding(horizontal = 16.dp),
         ) {
-            Spacer(Modifier.height(16.dp))
-            StepHeader(step = step, onSkip = viewModel::skip)
-            Spacer(Modifier.height(20.dp))
-
-            // System back belongs to the flow, not the task stack: with a field
-            // focused it puts the keyboard away, past the first step it walks a
-            // step back, and only on step one untouched does it leave the app -
-            // which is what back means on a first screen. Without this, one
-            // press during a weigh-in dismissed the keyboard AND killed the app.
-            BackHandler(enabled = fieldFocused || step > 0) {
-                if (fieldFocused) {
-                    focusManager.clearFocus()
-                } else {
-                    step -= 1
-                }
-            }
-
+            StepHeader(step = step)
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -514,30 +494,46 @@ fun OnboardingScreen(
                     )
                 }
             }
-
-            Spacer(Modifier.weight(1f))
             Spacer(Modifier.height(16.dp))
+        }
 
-            StepFooter(
-                step = step,
-                missing = missing,
-                profileValid = profileValid,
-                planReady = plan?.isTakeable() == true,
-                planEmpty = plan != null && plan?.isTakeable() != true,
-                armouryPicked = equipment != null,
-                applyError = applyError,
-                onContinueProfile = {
+        StepNotes(
+            step = step,
+            missing = missing,
+            profileValid = profileValid,
+            planReady = plan?.isTakeable() == true,
+            planEmpty = plan != null && plan?.isTakeable() != true,
+            armouryPicked = equipment != null,
+            applyError = applyError,
+        )
+        // Taking the cycle is the one primary of the last step, emerald like
+        // every other screen's: gold is for what was earned, not for accepting.
+        when (step) {
+            0 -> DockedActionBar(
+                primary = "Continue",
+                onPrimary = {
                     // Only reachable when profileValid, so the !! is safe -
                     // the same bounds the repository enforces, checked first.
                     viewModel.saveProfile(name, sex, DecimalInput.parse(heightInput)!!, DecimalInput.parse(weightInput)!!)
                     step = 1
                 },
-                onBack = { step -= 1 },
-                onForward = { step = 2 },
-                onAccept = {
+                primaryEnabled = profileValid,
+                reserveLink = false,
+            )
+            1 -> DockedActionBar(
+                primary = "Continue",
+                onPrimary = { step = 2 },
+                primaryEnabled = equipment != null,
+                reserveLink = false,
+            )
+            else -> DockedActionBar(
+                primary = "Take this cycle",
+                onPrimary = {
                     // Taking a cycle replaces every existing rite: never silently.
                     if (existingRites > 0) confirmReplace = true else takeCycle()
                 },
+                primaryEnabled = plan?.isTakeable() == true,
+                reserveLink = false,
             )
         }
     }
@@ -546,11 +542,11 @@ fun OnboardingScreen(
 /** Why Continue is off on the training step until the armoury is answered. */
 private const val ARMOURY_REQUIRED_CAPTION = "Pick your armoury to continue. Nothing means bodyweight only."
 
-/** Per-step title and one line of prose. "WELCOME, LIFTER" on every step was a bug, not a header. */
+/** Per-step title and one line of prose. "Welcome, lifter" on every step was a bug, not a header. */
 private fun stepTitle(step: Int): String = when (step) {
-    0 -> "WHO YOU ARE"
-    1 -> "HOW YOU TRAIN"
-    else -> "YOUR CYCLE"
+    0 -> "Who you are"
+    1 -> "How you train"
+    else -> "Your cycle"
 }
 
 private fun stepProse(step: Int): String = when (step) {
@@ -559,89 +555,70 @@ private fun stepProse(step: Int): String = when (step) {
     else -> "Built from your answers. Tap an exercise to adjust it."
 }
 
-/** Rune numerals, the skill tree's own counting: I, II, III. Reads as a quiet crest row, not a progress bar. */
+/**
+ * The top bar: Back (past the first step) and Skip as outlined chips. Skip's
+ * consequence is on the quiet line below the bar and again in its own
+ * accessibility description.
+ */
 @Composable
-private fun StepRunes(step: Int, modifier: Modifier = Modifier) {
+private fun StepBar(step: Int, onBack: () -> Unit, onSkip: () -> Unit) {
     Row(
-        modifier
-            .clearAndSetSemantics { contentDescription = "Step ${step + 1} of 3" },
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        Modifier
+            .fillMaxWidth()
+            .heightIn(min = 48.dp)
+            .padding(horizontal = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        listOf("I", "II", "III").forEachIndexed { index, rune ->
-            Text(
-                rune,
-                style = MaterialTheme.typography.labelLarge,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = when {
-                    index == step -> IronvellumColors.EmeraldBright
-                    index < step -> IronvellumColors.SystemGreen
-                    else -> IronvellumColors.Bracket
-                },
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
-        }
+        if (step > 0) InkChip(label = "BACK", description = "Back to ${stepTitle(step - 1).lowercase()}", onClick = onBack)
+        Spacer(Modifier.weight(1f))
+        InkChip(
+            label = "SKIP",
+            description = "Skip the Binding. Set your details and cycle later in Settings or the Ledger",
+            onClick = onSkip,
+        )
     }
 }
 
 /**
- * The header band: where she is (runes + ink rail), what this step is, and the
- * skip affordance, with its consequence on one quiet visible line and again
- * in its own description.
+ * The page head: the skip caveat, one three-segment bar for where she is, the
+ * step's own title and one line of prose.
  */
 @Composable
-private fun StepHeader(step: Int, onSkip: () -> Unit) {
+private fun StepHeader(step: Int) {
     Column(Modifier.fillMaxWidth()) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            StepRunes(step, Modifier.weight(1f))
-            Box(
-                Modifier
-                    .heightIn(min = 48.dp)
-                    .widthIn(min = 64.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable(onClick = onSkip)
-                    .semantics {
-                        role = Role.Button
-                        contentDescription =
-                            "Skip the Binding — set your details and cycle later in Settings or the Ledger"
-                    }
-                    .padding(horizontal = 10.dp),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    "SKIP",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SystemGreen,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-            }
-        }
         // Sighted people get the cost of skipping too, not only TalkBack.
         Text(
             "Skipping leaves your scores blank and builds no cycle. Add your body in Settings and build a cycle in Train any time.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
-            textAlign = TextAlign.End,
-            modifier = Modifier.fillMaxWidth(),
         )
         Spacer(Modifier.height(12.dp))
-        // The filled portion grows with her progress; the rail is the same
-        // brushed stroke the dashboard and the Codex use.
-        InkRail(fraction = (step + 1f) / 3f, height = 4.dp)
-        Spacer(Modifier.height(22.dp))
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clearAndSetSemantics {
+                    contentDescription = "Step ${step + 1} of 3"
+                    progressBarRangeInfo = ProgressBarRangeInfo(step + 1f, 1f..3f, 1)
+                },
+            horizontalArrangement = Arrangement.spacedBy(3.dp),
+        ) {
+            repeat(3) { index ->
+                Box(
+                    Modifier
+                        .weight(1f)
+                        .height(4.dp)
+                        .background(if (index <= step) IronvellumColors.Emerald else IronvellumColors.Rune),
+                )
+            }
+        }
+        Spacer(Modifier.height(12.dp))
         Text(
             stepTitle(step),
-            style = MaterialTheme.typography.titleLarge,
+            style = MaterialTheme.typography.headlineSmall,
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.Bold,
             color = IronvellumColors.Ink,
-            letterSpacing = IronvellumTracking.ScreenTitle,
-            modifier = Modifier.semantics { contentDescription = stepTitle(step).lowercase() },
+            modifier = Modifier.semantics { heading() },
         )
         Spacer(Modifier.height(4.dp))
         Text(
@@ -649,16 +626,17 @@ private fun StepHeader(step: Int, onSkip: () -> Unit) {
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )
+        Spacer(Modifier.height(14.dp))
     }
 }
 
 /**
- * Actions pinned at the bottom, where a thumb lands. The disabled state
- * speaks: when the primary cannot proceed, the missing pieces are named
- * inline, quiet, right above the button.
+ * What sits between the scrolling page and the docked bar: the refused-write
+ * error in DangerRed and, when the primary cannot proceed, the missing pieces
+ * named quietly right above it. Nothing is drawn when there is nothing to say.
  */
 @Composable
-private fun StepFooter(
+private fun StepNotes(
     step: Int,
     missing: List<String>,
     profileValid: Boolean,
@@ -666,82 +644,27 @@ private fun StepFooter(
     planEmpty: Boolean,
     armouryPicked: Boolean,
     applyError: String?,
-    onContinueProfile: () -> Unit,
-    onBack: () -> Unit,
-    onForward: () -> Unit,
-    onAccept: () -> Unit,
 ) {
-    Column(Modifier.fillMaxWidth()) {
+    val hint = when {
+        step == 0 && !profileValid -> "Add ${joinHuman(missing)} to continue."
+        step == 1 && !armouryPicked -> ARMOURY_REQUIRED_CAPTION
+        step >= 2 && !planReady ->
+            if (planEmpty) "Add exercises back or rebuild to take a cycle." else "Still consulting the catalogue…"
+        else -> null
+    }
+    if (applyError == null && hint == null) return
+    Column(
+        Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
         if (applyError != null) {
-            Text(
-                applyError,
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
-            Spacer(Modifier.height(8.dp))
+            Text(applyError, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.DangerRed)
         }
-        when (step) {
-            0 -> {
-                if (!profileValid) {
-                    Text(
-                        "Add ${joinHuman(missing)} to continue.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = IronvellumColors.InkMuted,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-                IronvellumButton(
-                    label = "Continue",
-                    onClick = onContinueProfile,
-                    enabled = profileValid,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            1 -> Column(Modifier.fillMaxWidth()) {
-                if (!armouryPicked) {
-                    Text(
-                        ARMOURY_REQUIRED_CAPTION,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = IronvellumColors.InkMuted,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IronvellumButton(label = "Back", onClick = onBack, quiet = true)
-                    Spacer(Modifier.width(10.dp))
-                    IronvellumButton(
-                        label = "Continue",
-                        onClick = onForward,
-                        enabled = armouryPicked,
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-            }
-            else -> Row(verticalAlignment = Alignment.CenterVertically) {
-                IronvellumButton(label = "Back", onClick = onBack, quiet = true)
-                Spacer(Modifier.width(10.dp))
-                Column(Modifier.weight(1f)) {
-                    if (!planReady) {
-                        Text(
-                            if (planEmpty) "Add exercises back or rebuild to take a cycle." else "Still consulting the catalogue…",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = IronvellumColors.InkMuted,
-                        )
-                        Spacer(Modifier.height(8.dp))
-                    }
-                    // Accepting the routine is the earned moment: the one gold
-                    // button in the flow.
-                    IronvellumButton(
-                        label = "Take this cycle",
-                        onClick = onAccept,
-                        enabled = planReady,
-                        gold = true,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
+        if (hint != null) {
+            Text(hint, style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted)
         }
-        Spacer(Modifier.height(12.dp))
     }
 }
 
@@ -764,63 +687,59 @@ private fun ProfileStep(
     // The screen scrolls as a whole (see OnboardingScreen), so a step is a plain
     // Column: never a lazy list or a second scroller nested inside - that
     // pairing crashes at runtime in this repo.
-    Column(
-        Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
-        InkPanel(Modifier.fillMaxWidth()) {
+    Column(Modifier.fillMaxWidth()) {
+        OutlinedTextField(
+            shape = MaterialTheme.shapes.small,
+            colors = ironvellumFieldColors(),
+            value = name,
+            onValueChange = { onName(it.take(24)) },
+            label = { Text("Your name") },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Spacer(Modifier.height(10.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
                 colors = ironvellumFieldColors(),
-                value = name,
-                onValueChange = { onName(it.take(24)) },
-                label = { Text("Your name") },
+                value = heightInput,
+                onValueChange = { onHeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
+                label = { Text("Height (cm)") },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth(),
+                keyboardOptions = decimalKeyboard(ImeAction.Next),
+                modifier = Modifier.weight(1f),
             )
-            Spacer(Modifier.height(10.dp))
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                OutlinedTextField(
-                    shape = MaterialTheme.shapes.small,
-                    colors = ironvellumFieldColors(),
-                    value = heightInput,
-                    onValueChange = { onHeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
-                    label = { Text("Height (cm)") },
-                    singleLine = true,
-                    keyboardOptions = decimalKeyboard(ImeAction.Next),
-                    modifier = Modifier.weight(1f),
-                )
-                OutlinedTextField(
-                    shape = MaterialTheme.shapes.small,
-                    colors = ironvellumFieldColors(),
-                    value = weightInput,
-                    onValueChange = { onWeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
-                    label = { Text("Weight (kg)") },
-                    singleLine = true,
-                    keyboardOptions = decimalKeyboard(ImeAction.Done),
-                    modifier = Modifier.weight(1f),
-                )
-            }
-            Spacer(Modifier.height(14.dp))
-            FieldLabel("SEX")
-            InkSegmented(
-                options = Sex.entries.map { it to it.name },
-                selected = sex,
-                onPick = onSex,
+            OutlinedTextField(
+                shape = MaterialTheme.shapes.small,
+                colors = ironvellumFieldColors(),
+                value = weightInput,
+                onValueChange = { onWeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
+                label = { Text("Weight (kg)") },
+                singleLine = true,
+                keyboardOptions = decimalKeyboard(ImeAction.Done),
+                modifier = Modifier.weight(1f),
             )
         }
+        Spacer(Modifier.height(14.dp))
+        FieldLabel("Sex")
+        InkSegmented(
+            options = Sex.entries.map { it to it.name.lowercase().replaceFirstChar(Char::titlecase) },
+            selected = sex,
+            onPick = onSex,
+        )
     }
 }
 
 /**
  * Step 2 - how you train. Plain language on every control: a stranger does
  * not know what SKILL means, and an enum name is never user-facing text.
- * One small panel per question, so each reads on its own. The split leads:
- * it is the choice lifters think in; volume is the dose on top of it.
+ * Four stacked questions, each a muted label, its control and one caption.
+ * The split leads: it is the choice lifters think in; volume is the dose on
+ * top of it.
  */
 @Composable
 private fun TrainingStep(
@@ -834,85 +753,74 @@ private fun TrainingStep(
     tier: VolumeLevel,
     onTier: (VolumeLevel) -> Unit,
 ) {
-    Column(
-        Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        InkPanel(Modifier.fillMaxWidth()) {
-            FieldLabel("HOW YOU DIVIDE THE WEEK")
-            Spacer(Modifier.height(8.dp))
-            SplitPicker(split = split, days = daysPerWeek, onPick = onSplit)
-            Spacer(Modifier.height(8.dp))
-            Text(
-                splitCaption(split, daysPerWeek),
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-        InkPanel(Modifier.fillMaxWidth()) {
-            FieldLabel("WEEKLY VOLUME")
-            Spacer(Modifier.height(8.dp))
-            InkSegmented(
-                options = VolumeLevel.entries.map { it to it.label },
-                selected = tier,
-                onPick = onTier,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                volumeCaption(tier, focus),
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-        InkPanel(Modifier.fillMaxWidth()) {
-            FieldLabel("YOUR ARMOURY")
-            Spacer(Modifier.height(8.dp))
-            GearPicker(equipment = equipment, onChange = onEquipment)
-        }
-        InkPanel(Modifier.fillMaxWidth()) {
-            FieldLabel("WHAT YOU ARE CHASING")
-            Spacer(Modifier.height(8.dp))
-            InkSegmented(
-                options = listOf(
-                    TrainingFocus.STRENGTH to "Power",
-                    TrainingFocus.MUSCLE to "Muscle",
-                    TrainingFocus.SKILL to "Techniques",
-                    // "All-round" clipped to "All-roun" at 360dp: four equal
-                    // segments leave ~72dp each. Keep every label short.
-                    TrainingFocus.GENERAL to "Mixed",
-                ),
-                selected = focus,
-                onPick = onFocus,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                when (focus) {
-                    TrainingFocus.STRENGTH ->
-                        "Low reps, heavy load. Bigger numbers on the main exercises."
-                    TrainingFocus.MUSCLE ->
-                        "Higher volume, moderate load. Size comes before bragging rights."
-                    TrainingFocus.SKILL ->
-                        "Handstands, levers, the planche. Practice over pump."
-                    TrainingFocus.GENERAL ->
-                        "A balanced mix: a bit stronger, a bit bigger, nothing neglected."
-                },
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-        }
+    Column(Modifier.fillMaxWidth()) {
+        FieldLabel("How you divide the week")
+        SplitPicker(split = split, days = daysPerWeek, onPick = onSplit)
+        FieldCaption(splitCaption(split, daysPerWeek))
+
+        Spacer(Modifier.height(12.dp))
+        FieldLabel("Weekly volume")
+        InkSegmented(
+            options = VolumeLevel.entries.map { it to it.label },
+            selected = tier,
+            onPick = onTier,
+        )
+        FieldCaption(volumeCaption(tier, focus))
+
+        Spacer(Modifier.height(12.dp))
+        FieldLabel("Your armoury")
+        GearPicker(equipment = equipment, onChange = onEquipment)
+
+        Spacer(Modifier.height(12.dp))
+        FieldLabel("What you are chasing")
+        InkSegmented(
+            options = listOf(
+                TrainingFocus.STRENGTH to "Power",
+                TrainingFocus.MUSCLE to "Muscle",
+                TrainingFocus.SKILL to "Techniques",
+                // "All-round" clipped to "All-roun" at 360dp: four equal
+                // segments leave ~72dp each. Keep every label short.
+                TrainingFocus.GENERAL to "Mixed",
+            ),
+            selected = focus,
+            onPick = onFocus,
+        )
+        FieldCaption(
+            when (focus) {
+                TrainingFocus.STRENGTH ->
+                    "Low reps, heavy load. Bigger numbers on the main exercises."
+                TrainingFocus.MUSCLE ->
+                    "Higher volume, moderate load. Size comes before bragging rights."
+                TrainingFocus.SKILL ->
+                    "Handstands, levers, the planche. Practice over pump."
+                TrainingFocus.GENERAL ->
+                    "A balanced mix: a bit stronger, a bit bigger, nothing neglected."
+            },
+        )
     }
 }
 
-/** A small on-field caption in the app's HUD voice. */
+/** A question's label: sentence case, InkMuted. */
 @Composable
 private fun FieldLabel(text: String) {
     Text(
         text,
-        style = MaterialTheme.typography.labelSmall,
-        fontFamily = ChakraPetch,
+        style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
-        letterSpacing = IronvellumTracking.InlineLabel,
-        modifier = Modifier.semantics { contentDescription = text },
+        modifier = Modifier
+            .padding(bottom = 4.dp)
+            .semantics { contentDescription = text },
+    )
+}
+
+/** The one line under a control saying what the pick does. */
+@Composable
+private fun FieldCaption(text: String) {
+    Text(
+        text,
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.InkMuted,
+        modifier = Modifier.padding(top = 6.dp),
     )
 }
 
