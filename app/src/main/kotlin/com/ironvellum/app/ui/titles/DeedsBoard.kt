@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -45,6 +46,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -415,7 +417,7 @@ private fun GoldCheck() {
 }
 
 /**
- * Every deed held as a plain row: a glyph and rarity word in the tier's metal, the name, the day
+ * Every deed held as a plain row: its forged seal and rarity word in the tier's metal, the name, the day
  * it was earned. Rarest groups the rows under a tier header; Newest is one flat run.
  * Each opens its detail sheet.
  */
@@ -448,7 +450,7 @@ private fun EarnedWall(
                 subline = def.rarity.label,
                 // The tier's metal is the word's colour, so worn is a word of its own, never a colour.
                 sublineColor = rarityColor(def.rarity, earned = true),
-                leading = { RarityGlyph(def.rarity) },
+                leading = { DeedSeal(def.rarity, category = Titles.category(def.rule)) },
                 value = when {
                     worn && date != null -> "Worn \u00B7 $date"
                     worn -> "Worn"
@@ -465,17 +467,25 @@ private fun EarnedWall(
     }
 }
 
-/** A tier's name and how many of its deeds are held, in the tier's metal. */
+/** A tier's mini seal, its name in the tier's metal, and how many of its deeds are held. */
 @Composable
 private fun TierHeader(rarity: TitleRarity, count: Int, first: Boolean) {
-    Text(
-        "${rarity.label} \u00B7 $count",
-        style = MaterialTheme.typography.labelMedium,
-        color = RarityTint.of(rarity),
-        modifier = Modifier
+    Row(
+        Modifier
             .padding(top = if (first) 12.dp else 20.dp, bottom = 6.dp)
-            .semantics { heading() },
-    )
+            .semantics(mergeDescendants = true) { heading() },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        DeedSeal(rarity, size = 20.dp)
+        Text(
+            rarity.label,
+            style = MaterialTheme.typography.labelMedium,
+            color = RarityTint.of(rarity),
+            fontWeight = if (rarity == TitleRarity.Masterwork) FontWeight.Bold else null,
+        )
+        Text("$count", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+    }
 }
 
 // ------------------------------------------------------------ category ----
