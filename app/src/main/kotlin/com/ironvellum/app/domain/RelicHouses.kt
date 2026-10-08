@@ -371,9 +371,17 @@ object RelicHouses {
      * - A legacy row is placed by its multiplier (its tier is the band it sits in) on the free cell
      *   of that tier nearest its old house word and form, so its multiplier is kept as it is.
      * - Rows are taken strongest first, so the active relic is always placed and stays on top.
-     * - A relic NEVER disappears: when a tier has no free cell the row folds into the cell it
-     *   wanted as one refinement, and every refinement is counted, so the sum of 1 + refinements
+     * - A relic NEVER disappears and the rate NEVER drops. When a tier has no free cell the row
+     *   takes the nearest free cell of an adjacent tier (one tier down, then one up, then two down,
+     *   and so on) and keeps its exact multiplier: a migrated relic is not held to its new tier's
+     *   cap, and a later duplicate cannot lower it (a refine never moves a relic down).
+     * - Only when all 16 cells are taken does a row fold into the cell it wanted: the stronger
+     *   multiplier stays and the other becomes counted refinements, so the sum of 1 + refinements
      *   over the result always equals the same sum over the input.
+     * - Folding drops a relic from the stacked rate, so the result is then checked against
+     *   [Relics.effectiveMultiplier] over the input. If it fell short, the strongest placed relic is
+     *   raised by the least amount that makes the stack equal the old one (the folded relics'
+     *   strength moves into it). A vault of 16 or fewer relics never needs this.
      *
      * Deterministic and independent of the order of [rows].
      */
@@ -390,9 +398,11 @@ object RelicHouses {
                 absorb(held, row)
             }
         }
+        val legacyMultipliers = mutableListOf<Double>()
         val (known, legacy) = ordered.partition { BY_ID.containsKey(it.relicId) }
         // A relic is never stronger than its tier's cap, so a hand-edited archive cannot restore a Common at x2.4.
         known.forEach { put(it.relicId!!, it.copy(multiplier = minOf(it.multiplier, band(BY_ID.getValue(it.relicId!!).tier).endInclusive))) }
+        val knownHeld = placed.values.map { it.multiplier }
         legacy.forEach { row ->
             val sane = row.copy(multiplier = if (row.multiplier.isFinite() && row.multiplier > 1.0) row.multiplier else 1.0 + 1e-6)
             val tier = tierOf(sane.multiplier)
@@ -402,9 +412,45 @@ object RelicHouses {
                 compareBy<HouseRelic> { if (it.house == house) 0 else 1 }
                     .thenBy { (CATALOGUE.indexOf(it) + CATALOGUE.size - form) % CATALOGUE.size },
             )
-            val target = wanted.firstOrNull { it.id !in placed } ?: wanted.first()
+            val target = nearestFree(tier, house, form, placed.keys) ?: wanted.first()
             put(target.id, sane)
+            legacyMultipliers += sane.multiplier
         }
-        return placed.values.toList()
+        return keepRate(placed.values.toList(), knownHeld + legacyMultipliers)
+    }
+
+    /** The free cell nearest [tier]: the tier itself, then one down, one up, two down, and so on. */
+    private fun nearestFree(tier: RewardRarity, house: RelicHouse?, form: Int, taken: Set<String>): HouseRelic? {
+        val tiers = RewardRarity.entries
+        for (d in 0 until tiers.size) {
+            for (t in listOf(tier.ordinal - d, tier.ordinal + d).distinct()) {
+                val cell = tiers.getOrNull(t)?.let { candidate ->
+                    ofTier(candidate).filter { it.id !in taken }.minWithOrNull(
+                        compareBy<HouseRelic> { if (it.house == house) 0 else 1 }
+                            .thenBy { (CATALOGUE.indexOf(it) + CATALOGUE.size - form) % CATALOGUE.size },
+                    )
+                }
+                if (cell != null) return cell
+            }
+        }
+        return null
+    }
+
+    /**
+     * Raises the strongest placed relic, by the least amount, until the stack is at least what the
+     * stored multipliers stacked to. [Relics.effectiveMultiplier] only grows with its strongest
+     * relic, so a bisection finds it.
+     */
+    private fun keepRate(placed: List<PlacedRelic>, held: List<Double>): List<PlacedRelic> {
+        val before = placed.map { it.multiplier }
+        val wanted = Relics.effectiveMultiplier(held)
+        if (Relics.effectiveMultiplier(before) >= wanted) return placed
+        val top = placed.indices.maxByOrNull { placed[it].multiplier } ?: return placed
+        fun stack(m: Double) = Relics.effectiveMultiplier(before.mapIndexed { i, v -> if (i == top) m else v })
+        var lo = before[top]
+        var hi = lo + 1.0
+        while (stack(hi) < wanted) hi += hi - lo
+        repeat(60) { val mid = (lo + hi) / 2; if (stack(mid) < wanted) lo = mid else hi = mid }
+        return placed.mapIndexed { i, p -> if (i == top) p.copy(multiplier = hi) else p }
     }
 }

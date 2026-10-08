@@ -142,8 +142,8 @@ abstract class IronvellumDatabase : RoomDatabase() {
                 }
                 db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_owned_relics_relicId` ON `owned_relics` (`relicId`)")
                 // The stored relic number stays the whole vault stacked, now over the placed relics. Placing
-                // keeps every multiplier, so it only differs from the stored one if a tier overflowed and
-                // two relics folded into one.
+                // keeps every multiplier and never lowers the stack, so it only differs from the stored one
+                // when more than 16 relics folded and the strongest was raised to hold the rate.
                 if (placed.isNotEmpty()) {
                     db.execSQL(
                         "UPDATE idle_state SET relicMultiplier = ?",

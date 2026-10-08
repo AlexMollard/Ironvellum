@@ -761,7 +761,7 @@ class MigrationForwardTest {
             old.execSQL("INSERT INTO owned_relics (id, name, multiplier, drawnAtMs) VALUES (2, 'Sigil of the Margin', 1.30, 200)")
             old.execSQL("INSERT INTO owned_relics (id, name, multiplier, drawnAtMs) VALUES (3, 'Greater Crown of the Abyss', 1.50, 300)")
             old.execSQL("INSERT INTO owned_relics (id, name, multiplier, drawnAtMs) VALUES (4, 'Masterwork Ember of the Ashen King', 2.10, 400)")
-            // Eight Commons for six Common cells: two must fold, not vanish.
+            // Eight Commons for six Common cells: two move to the nearest free cell of the next tier, keeping their multiplier.
             for (i in 0 until 8) {
                 old.execSQL("INSERT INTO owned_relics (id, name, multiplier, drawnAtMs) VALUES (${10 + i}, 'Nameless Relic', ${1.06 + i * 0.01}, ${500 + i})")
             }
@@ -783,7 +783,7 @@ class MigrationForwardTest {
                 }
             }
             assertEquals("a relic is never lost", 12, weight)
-            assertEquals(10, rows)
+            assertEquals(12, rows)
             assertEquals("the strongest relic is kept as it was", 2.1, best, 0.0)
             db.query("SELECT relicId FROM owned_relics WHERE id = 4").use { c ->
                 assertTrue(c.moveToFirst())
