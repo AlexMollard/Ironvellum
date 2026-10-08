@@ -150,7 +150,8 @@ internal fun HeaderProgress(progress: Xp.Progress, days: Int, onLevel: () -> Uni
             title = "Oath",
             fraction = next?.let { days.toFloat() / it.first } ?: 1f,
             value = buildAnnotatedString {
-                withStyle(SpanStyle(color = IronvellumColors.SovereignGold)) { append(days.toString()) }
+                // Gold is for what was earned: no days kept yet reads in plain Ink.
+                withStyle(SpanStyle(color = if (days > 0) IronvellumColors.SovereignGold else IronvellumColors.Ink)) { append(days.toString()) }
                 append(next?.let { " / ${it.first} days" } ?: " ${plural(days, "day", "days")} kept")
             },
             caption = when {

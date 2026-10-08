@@ -126,7 +126,7 @@ private val SLOT_HEIGHT = 44.dp
 private val RING_TICK = Color(0xFF5C5850)
 
 @Composable
-internal fun VeilSection(veil: VeilGlance?, form: VeilForm, nowMs: Long, onOpen: () -> Unit) {
+internal fun VeilSection(veil: VeilGlance?, form: VeilForm, nowMs: Long, onOpen: () -> Unit, firstRun: Boolean = false) {
     val animate = LocalTodayLive.current && LocalTodayMotion.current
     // The accrual is recomputed against the wall clock, offset so a caller's fixed `nowMs` stays consistent.
     val now = rememberVeilNow(nowMs, animate, TICK_MS)
@@ -156,7 +156,7 @@ internal fun VeilSection(veil: VeilGlance?, form: VeilForm, nowMs: Long, onOpen:
                 ) {
                     when (form) {
                         VeilForm.COMPACT -> CompactBody(snapshot, essence, strength, phase, animate)
-                        VeilForm.FULL -> FullBody(snapshot, essence, strength, phase, animate)
+                        VeilForm.FULL -> FullBody(snapshot, essence, strength, phase, animate, firstRun)
                         VeilForm.HERO -> HeroBody(snapshot, veil?.active, essence, strength, phase, animate)
                     }
                 }
@@ -234,6 +234,7 @@ private fun FullBody(
     strength: VeilStrength?,
     phase: State<Float>,
     animate: Boolean,
+    firstRun: Boolean,
 ) {
     TitleRow(trailing = { RateLabel(snapshot) })
     if (essence != null) {
@@ -250,6 +251,15 @@ private fun FullBody(
     strength?.let {
         VeilBar(it, phase, animate, Modifier.padding(top = 10.dp))
         Text(it.caption, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 5.dp))
+    }
+    // Where the rate comes from, said to a lifter who has not sealed a trial to raise it yet.
+    if (firstRun) {
+        Text(
+            FIRST_RUN_VEIL_LINE,
+            style = MaterialTheme.typography.labelSmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.padding(top = 8.dp),
+        )
     }
 }
 

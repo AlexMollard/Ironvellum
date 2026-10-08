@@ -56,6 +56,33 @@ internal fun dayKind(
     else -> DayKind.PLANNED
 }
 
+/**
+ * A lifter with nothing sealed yet: a profile that exists and holds no XP. An unknown profile (still
+ * loading) is not a first run, so nothing first-run flashes in before the truth arrives.
+ */
+internal fun isFirstRun(totalXp: Long?): Boolean = totalXp != null && totalXp <= 0L
+
+/** The ways to start that a first-run Today adds when the day itself has nothing to begin. */
+internal enum class FirstBegin {
+    /** Begin the cycle's next rite, a day early. */
+    RITE,
+
+    /** Begin a trial with no rite. */
+    OPEN,
+}
+
+/**
+ * Right after setup, today may fall on a day the cycle leaves free: Respite, with nothing to begin. A
+ * first-run lifter is still offered a way to start, the cycle's next rite when there is one and an open
+ * trial always. Anywhere else the day card already carries its own primary action.
+ */
+internal fun firstBegins(kind: DayKind, isToday: Boolean, firstRun: Boolean, hasNextRite: Boolean): List<FirstBegin> =
+    if (kind == DayKind.RESPITE && isToday && firstRun) {
+        listOfNotNull(FirstBegin.RITE.takeIf { hasNextRite }, FirstBegin.OPEN)
+    } else {
+        emptyList()
+    }
+
 /** One movement in the day card: its [value] reads "3×7" before, "4/5" under way, "3/3 · 90 kg × 7" sealed. */
 internal data class DayRow(val name: String, val value: String, val done: Int, val total: Int, val checked: Boolean) {
     /** Some sets logged but not all: a mini bar rides the value. */
