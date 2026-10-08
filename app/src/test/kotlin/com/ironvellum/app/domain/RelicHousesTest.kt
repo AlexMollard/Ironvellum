@@ -92,10 +92,9 @@ class RelicHousesTest {
         assertEquals("every relic is counted once", 141, weight(placed))
         assertEquals("one row per relic id", placed.size, placed.map { it.relicId }.toSet().size)
         assertTrue(placed.all { RelicHouses.byId(it.relicId) != null })
-        // Every tier fills each cell it has a relic for before anything folds.
-        val perTier = rows.groupingBy { RelicHouses.tierOf(it.multiplier) }.eachCount()
-        val expectedCells = RewardRarity.entries.sumOf { minOf(RelicHouses.ofTier(it).size, perTier[it] ?: 0) }
-        assertEquals(expectedCells, placed.size)
+        // 141 relics fill all 16 cells; only then does anything fold.
+        assertEquals(16, placed.size)
+        assertEquals(141 - 16, placed.sumOf { it.refinements })
     }
 
     @Test
@@ -134,14 +133,44 @@ class RelicHousesTest {
     }
 
     @Test
-    fun `an overflowing vault folds the extras into counted refinements`() {
-        // 8 Common relics but only 6 Common cells.
+    fun `an overflowing tier moves to the nearest free cell with its multiplier intact`() {
+        // 8 Common relics but only 6 Common cells: the two weakest go to the next tier up (Rare).
         val rows = (0 until 8).map { RelicRow(it.toLong(), null, "Fang of the Mark", 1.06 + it * 0.01, it.toLong()) }
         val placed = RelicHouses.place(rows)
-        assertEquals(6, placed.size)
-        assertEquals("nothing lost", 8, weight(placed))
-        assertEquals("the two folded relics are counted", 2, placed.sumOf { it.refinements })
-        assertEquals("the strongest is never the one folded", 1.13, placed.maxOf { it.multiplier }, 1e-9)
+        assertEquals(8, placed.size)
+        assertEquals("nothing folds while a cell is free", 0, placed.sumOf { it.refinements })
+        assertEquals(rows.map { it.multiplier }.sorted(), placed.map { it.multiplier }.sorted())
+        assertEquals(2, placed.count { RelicHouses.byId(it.relicId)!!.tier == RewardRarity.Rare })
+    }
+
+    @Test
+    fun `two Masterwork relics keep both multipliers, the second in an Epic cell`() {
+        val rows = listOf(
+            RelicRow(1, null, "Masterwork Fang of the Ledger", 2.1, 1),
+            RelicRow(2, null, "Masterwork Ember of the Abyss", 2.0, 2),
+        )
+        val placed = RelicHouses.place(rows)
+        assertEquals(2, placed.size)
+        assertEquals(listOf(2.1, 2.0), placed.map { it.multiplier })
+        assertEquals("craft.chisel", placed[0].relicId)
+        assertEquals(RewardRarity.Epic, RelicHouses.byId(placed[1].relicId)!!.tier)
+        assertEquals(0, placed.sumOf { it.refinements })
+        assertEquals(
+            Relics.effectiveMultiplier(rows.map { it.multiplier }),
+            Relics.effectiveMultiplier(placed.map { it.multiplier }),
+            1e-12,
+        )
+    }
+
+    @Test
+    fun `a full vault folds the extras into counted refinements and keeps the stack`() {
+        val rows = (0 until 20).map { RelicRow(it.toLong(), null, "Fang of the Mark", 1.05 + it * 0.07, it.toLong()) }
+        val placed = RelicHouses.place(rows)
+        assertEquals(16, placed.size)
+        assertEquals("nothing lost", 20, weight(placed))
+        assertTrue(
+            Relics.effectiveMultiplier(placed.map { it.multiplier }) >= Relics.effectiveMultiplier(rows.map { it.multiplier }) - 1e-12,
+        )
     }
 
     @Test
@@ -402,11 +431,10 @@ class RelicHousesTest {
     }
 
     @Test
-    fun `placing two legacy relics never lowers the rate`() {
-        fun legacy(a: Reward.Relic, b: Reward.Relic) = listOf(
-            RelicRow(1, null, a.name, a.multiplier, 100L),
-            RelicRow(2, null, b.name, b.multiplier, 200L),
-        )
+    fun `placing legacy relics never lowers the rate`() {
+        fun legacy(rels: List<Reward.Relic>) = rels.mapIndexed { i, r ->
+            RelicRow(i.toLong() + 1, null, r.name, r.multiplier, 100L * (i + 1))
+        }
         // Logged this week: sessions, volume, skills, streak.
         data class Week(val sessions: Int, val volume: Double, val skills: Int, val streak: Int)
         val weeks = listOf(
@@ -414,24 +442,31 @@ class RelicHousesTest {
             Week(4, 3_200.0, 5, 3),     // sets logged
             Week(3, 0.0, 5, 2),         // bodyweight only: trials sealed, no load
         )
-        val catalogue = Gacha.relicCatalogue()
-        // Every pair of the 141 legacy relics. Only a pair that must share the single Masterwork cell
-        // folds into one relic; the rest keep every multiplier and so can only gain.
-        var folded = 0
-        for (i in catalogue.indices) for (j in i + 1 until catalogue.size) {
-            val rows = legacy(catalogue[i], catalogue[j])
+        fun check(label: String, rels: List<Reward.Relic>) {
+            val rows = legacy(rels)
             val before = Relics.effectiveMultiplier(rows.map { it.multiplier })
             val placed = RelicHouses.place(rows)
-            if (placed.size < rows.size) { folded++; continue }
+            assertEquals(label, rows.size, weight(placed))
             val after = Relics.effectiveMultiplier(placed.map { it.multiplier })
+            assertTrue("$label: $after < $before", after >= before - 1e-9)
             val houses = RelicHouses.effects(placed.map { OwnedRelic(it.relicId, it.multiplier, it.refinements, it.drawnAtMs) })
             weeks.forEach { w ->
                 val old = Idle.rate(state(relic = before), w.sessions, w.volume, w.skills, w.streak).perHour
                 val now = Idle.rate(state(relic = after), w.sessions, w.volume, w.skills, w.streak, houses).perHour
-                assertTrue("${catalogue[i].name} + ${catalogue[j].name}: $now < $old", now >= old - 1e-9)
+                assertTrue("$label: $now < $old", now >= old - 1e-9)
             }
         }
-        assertTrue("only pairs sharing the one Masterwork cell fold", folded > 0)
+        val catalogue = Gacha.relicCatalogue()
+        // Every pair of the 141 legacy relics, folded or not.
+        for (i in catalogue.indices) for (j in i + 1 until catalogue.size) {
+            check("${catalogue[i].name} + ${catalogue[j].name}", listOf(catalogue[i], catalogue[j]))
+        }
+        // Vaults of 20 (more than the 16 cells): spread, strongest, weakest, and seeded picks.
+        check("every 7th", catalogue.filterIndexed { i, _ -> i % 7 == 0 }.take(20))
+        check("20 strongest", catalogue.sortedByDescending { it.multiplier }.take(20))
+        check("20 weakest", catalogue.sortedBy { it.multiplier }.take(20))
+        repeat(50) { seed -> check("seed $seed", catalogue.shuffled(Random(seed.toLong())).take(20)) }
+        check("all 141", catalogue)
     }
 
     private fun full(house: RelicHouse): HouseEffects {
