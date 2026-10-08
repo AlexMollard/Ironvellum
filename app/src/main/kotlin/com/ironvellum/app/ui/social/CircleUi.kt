@@ -668,11 +668,8 @@ private fun CircleMemberRow(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         LifterAvatar(
-            userId = member.userId,
             displayName = member.displayName,
             size = 32.dp,
-            level = member.level,
-            titleId = member.titleId,
         )
         val role = listOfNotNull("You".takeIf { isMe }, "Keeper".takeIf { isKeeper }).joinToString(" · ")
         // The name and the role share one line, the role small and muted.

@@ -607,11 +607,8 @@ private fun PodiumSlot(
             Spacer(Modifier.height(6.dp))
             if (row != null) {
                 LifterAvatar(
-                    userId = row.userId,
                     displayName = row.displayName,
                     size = avatarSize,
-                    level = row.level,
-                    titleId = row.currentTitleId,
                     frameId = if (isMe) equippedFrame else null,
                 )
                 Spacer(Modifier.height(8.dp))
@@ -704,11 +701,8 @@ private fun BoardRow(
             modifier = Modifier.width(22.dp),
         )
         LifterAvatar(
-            userId = userId,
             displayName = displayName,
             size = 36.dp,
-            level = level,
-            titleId = titleId,
             // The equipped crest frame is worn by the local lifter alone.
             frameId = if (isMe) equippedFrame else null,
         )
