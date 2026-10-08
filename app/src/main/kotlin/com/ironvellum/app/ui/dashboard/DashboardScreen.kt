@@ -80,6 +80,7 @@ import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
+import com.ironvellum.app.domain.VaultSlot
 import com.ironvellum.app.domain.VeilGrant
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.TrainFocus
@@ -130,8 +131,11 @@ import java.util.Locale
 /** Which of height and weight the scores still need. */
 enum class BodyGap { HEIGHT, WEIGHT, BOTH }
 
-/** The Veil at a glance on Today: its live snapshot and the inscriptions waiting to be spent. */
-data class VeilGlance(val snapshot: IdleSnapshot, val inscriptions: Int)
+/**
+ * The Veil at a glance on Today: its live snapshot, the inscriptions waiting to be spent and the relic
+ * setting the rate ([active], null with no relic), which the respite form shows as its centrepiece.
+ */
+data class VeilGlance(val snapshot: IdleSnapshot, val inscriptions: Int, val active: VaultSlot? = null)
 
 class DashboardUi(
     val profile: PlayerProfile? = null,
@@ -268,8 +272,8 @@ class DashboardViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** The Veil at a glance: its snapshot (essence, rate, echoes, relic) and the inscriptions waiting. */
-    val veil: StateFlow<VeilGlance?> = combine(repo.observeIdleSnapshot(), repo.observeRolls()) { snapshot, rolls ->
-        VeilGlance(snapshot, rolls)
+    val veil: StateFlow<VeilGlance?> = combine(repo.observeIdleSnapshot(), repo.observeRolls(), repo.observeVault()) { snapshot, rolls, vault ->
+        VeilGlance(snapshot, rolls, vault.active)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
@@ -289,6 +293,14 @@ class DashboardViewModel(
 
     /** What the Veil paid outside a draw (milestone crests, the one-time catch-up), owed its moment. */
     val pendingVeilGrant: StateFlow<VeilGrant?> = repo.pendingVeilGrant
+
+    /** The crest worn now, so a crest moment can offer to swap it. */
+    val wornCrest: StateFlow<String?> = repo.observeEquippedFrame()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    fun wearCrest(frameId: String) {
+        viewModelScope.launchGuarded("wear crest") { repo.equipFrame(frameId) }
+    }
 
     fun celebrationsSeen() {
         repo.clearPendingCelebrations()
@@ -439,11 +451,14 @@ fun DashboardScreen(
     val owed by viewModel.pendingCelebrations.collectAsStateWithLifecycle()
     val sex by viewModel.sex.collectAsStateWithLifecycle()
     val veilGrant by viewModel.pendingVeilGrant.collectAsStateWithLifecycle()
+    val wornCrest by viewModel.wornCrest.collectAsStateWithLifecycle()
     AchievementOverlay(
         pages = deedPages(owed, sex) + veilGrantPages(veilGrant),
         onDone = { viewModel.celebrationsSeen() },
         wornTitleId = ui.profile?.currentTitleId,
         onWear = viewModel::wearTitle,
+        wornCrestId = wornCrest,
+        onWearCrest = viewModel::wearCrest,
     )
 }
 
