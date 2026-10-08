@@ -22,6 +22,8 @@ object SessionPeaks {
         /** The record the headline set passed. */
         val was: SetRecords.Record,
         val deltaScore: Double,
+        /** Every set position that peaked, for the share grid's purple squares. */
+        val setIndexes: Set<Int> = emptySet(),
     )
 
     /**
@@ -66,6 +68,7 @@ object SessionPeaks {
                     isHold = hold,
                     was = delta.record!!,
                     deltaScore = delta.deltaScore,
+                    setIndexes = peaks.map { (set, _) -> set.setIndex }.toSet(),
                 )
             }
     }
