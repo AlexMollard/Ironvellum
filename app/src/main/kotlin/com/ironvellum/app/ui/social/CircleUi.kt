@@ -701,6 +701,9 @@ private fun CircleMemberRow(
                     tint = IronvellumColors.Emerald,
                     modifier = Modifier.size(16.dp),
                 )
+            } else {
+                // Keeps "n of n" in one column whether or not the tick shows, as the mockup does.
+                Spacer(Modifier.width(16.dp))
             }
         }
         onRemove?.let {
