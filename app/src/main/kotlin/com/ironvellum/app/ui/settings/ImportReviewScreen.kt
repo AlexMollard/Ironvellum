@@ -1,10 +1,17 @@
 package com.ironvellum.app.ui.settings
 
+import androidx.activity.compose.BackHandler
 import com.ironvellum.app.ui.components.PushedHeader
+import com.ironvellum.app.ui.components.DockedActionBar
+import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.InkRowPanel
+import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.TapRow
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,10 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.ui.draw.clip
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.ui.components.ExercisePickerSheet
-import com.ironvellum.app.ui.theme.inkBorder
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -30,17 +35,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.CsvWorkoutReader
-import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.InkSpinner
-import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.plural
-import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.IronvellumTracking
 
 /**
  * One review row per movement name the curated aliases could NOT resolve.
@@ -79,6 +79,7 @@ data class ImportReviewUi(
  * Settings (an overlay, not a nav route) because the parsed payload is held
  * in the SettingsViewModel — a route would need a process-wide holder to
  * survive navigation, and this review is a step of the Settings import flow.
+ * System back closes the review, not Data underneath it.
  */
 @Composable
 fun ImportReviewOverlay(
@@ -89,25 +90,27 @@ fun ImportReviewOverlay(
     onImport: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    Box(
+    BackHandler(onBack = onDismiss)
+    val trials = ui.parsed.workouts.size
+    Column(
         Modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .padding(horizontal = 16.dp),
+            .background(MaterialTheme.colorScheme.background),
     ) {
         Column(
             Modifier
-                .fillMaxSize()
+                .weight(1f)
+                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState()),
         ) {
             Spacer(Modifier.height(8.dp))
-            PushedHeader("IMPORT FROM ANOTHER APP", onBack = onDismiss)
-            Spacer(Modifier.height(6.dp))
+            PushedHeader("Import from another app", onBack = onDismiss)
+            Spacer(Modifier.height(4.dp))
 
             val range = ui.parsed.dateRange
             Text(
                 buildString {
-                    append("${ui.parsed.workouts.size} ${plural(ui.parsed.workouts.size, "trial", "trials")}")
+                    append("$trials ${plural(trials, "trial", "trials")}")
                     append(" · ${ui.parsed.totalSets} ${plural(ui.parsed.totalSets, "set", "sets")}")
                     if (range != null) {
                         append(" · from ${formatDate(range.second, "d MMM yyyy")}")
@@ -126,136 +129,115 @@ fun ImportReviewOverlay(
             // confirms. The pre-selection is the barbell heuristic, labelled
             // as an estimate — never a silent guess.
             if (ui.source == CsvWorkoutReader.Source.STRONG) {
-                Spacer(Modifier.height(14.dp))
-                InkPanel(Modifier.fillMaxWidth()) {
-                    Text(
-                        "WEIGHT UNIT",
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.SystemGreen,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    InkSegmented<CsvWorkoutReader.WeightUnit>(
-                        options = listOf(
-                            CsvWorkoutReader.WeightUnit.KG to "kg",
-                            CsvWorkoutReader.WeightUnit.LB to "lb",
-                        ),
-                        selected = ui.selectedUnit ?: CsvWorkoutReader.WeightUnit.KG,
-                        onPick = onUnitPick,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        if (ui.unitGuessed) {
-                            "Estimated ${ui.selectedUnit?.name?.lowercase()} from your barbell numbers — check a familiar exercise before importing."
-                        } else {
-                            "Strong exports carry no unit column, so choose."
-                        },
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.InkMuted,
-                    )
-                }
+                Spacer(Modifier.height(18.dp))
+                Text("Weight unit", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                Spacer(Modifier.height(6.dp))
+                InkSegmented<CsvWorkoutReader.WeightUnit>(
+                    options = listOf(
+                        CsvWorkoutReader.WeightUnit.KG to "kg",
+                        CsvWorkoutReader.WeightUnit.LB to "lb",
+                    ),
+                    selected = ui.selectedUnit ?: CsvWorkoutReader.WeightUnit.KG,
+                    onPick = onUnitPick,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    if (ui.unitGuessed) {
+                        "Estimated ${ui.selectedUnit?.name?.lowercase()} from your barbell numbers. Check a familiar exercise before importing."
+                    } else {
+                        "Strong exports carry no unit column, so choose."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
             }
 
-            Spacer(Modifier.height(14.dp))
-            Text(
-                "EXERCISES WE COULD NOT MATCH",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = 2.sp,
-            )
-            Spacer(Modifier.height(6.dp))
+            SectionHeader("Exercises we could not match", topPadding = 22.dp)
             if (ui.unmatched.isEmpty()) {
                 Text(
                     "Every exercise matched the catalogue.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                 )
-            }
-            ui.unmatched.forEach { name ->
-                UnmatchedRow(
-                    name = name,
-                    choices = ui.choices,
-                    exercises = exercises,
-                    onPick = onPick,
-                )
-                Spacer(Modifier.height(8.dp))
+            } else {
+                InkRowPanel {
+                    ui.unmatched.forEachIndexed { i, name ->
+                        if (i > 0) InkDivider()
+                        UnmatchedRow(
+                            name = name,
+                            chosen = ui.choices[name.rawName],
+                            exercises = exercises,
+                            onPick = onPick,
+                        )
+                    }
+                }
             }
 
-            Spacer(Modifier.height(20.dp))
-            if (ui.importing) {
-                InkSpinner()
-            } else {
-                IronvellumButton(
-                    label = if (ui.result == null) "IMPORT" else "DONE",
-                    onClick = if (ui.result == null) onImport else onDismiss,
-                    gold = true,
-                    enabled = ui.parsed.workouts.isNotEmpty(),
-                )
-            }
             ui.result?.let {
-                Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(14.dp))
                 Text(it, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(14.dp))
             Text(
                 "Nothing here replaces your Chronicle. Trials already in the app are skipped; " +
                     "imported trials stay on this device and out of the Tidings.",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
             )
-            Spacer(Modifier.height(10.dp))
-            IronvellumButton(
-                label = "CANCEL",
-                onClick = onDismiss,
-                quiet = true,
-            )
-            Spacer(Modifier.height(24.dp))
+            if (ui.importing) {
+                Spacer(Modifier.height(14.dp))
+                InkSpinner()
+            }
+            Spacer(Modifier.height(16.dp))
         }
+        DockedActionBar(
+            primary = when {
+                ui.importing -> "Importing"
+                ui.result != null -> "Done"
+                else -> "Import $trials ${plural(trials, "trial", "trials")}"
+            },
+            onPrimary = if (ui.result == null) onImport else onDismiss,
+            primaryEnabled = !ui.importing && (ui.result != null || trials > 0),
+            reserveLink = false,
+        )
     }
 }
 
 @Composable
 private fun UnmatchedRow(
     name: UnmatchedImportName,
-    choices: Map<String, String?>,
+    chosen: String?,
     exercises: List<Exercise>,
     onPick: (String, String?) -> Unit,
 ) {
     var picking by remember { mutableStateOf(false) }
-    val chosen = choices[name.rawName]
-    InkPanel(Modifier.fillMaxWidth()) {
+    val action = if (chosen == null) "Choose" else "Change"
+    TapRow(onClickLabel = "$action match for ${name.rawName}", onClick = { picking = true }) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                name.rawName,
+                style = MaterialTheme.typography.bodyMedium,
+                color = IronvellumColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                if (chosen == null) "keep as new exercise · measured in ${name.inferredMetric.lowercase()}" else "maps to $chosen",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
+        }
         Text(
-            name.rawName,
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Bold,
-        )
-        Text(
-            when (chosen) {
-                null -> "keep as new exercise · measured in ${name.inferredMetric.lowercase()}"
-                else -> "maps to $chosen"
-            },
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            if (chosen == null) "CHOOSE" else "CHANGE",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
+            action,
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.SemiBold,
             color = IronvellumColors.SystemGreen,
-            letterSpacing = IronvellumTracking.InlineLabel,
-            modifier = Modifier
-                .heightIn(min = 44.dp)
-                .clickable { picking = true }
-                .padding(vertical = 14.dp),
         )
     }
     if (picking) {
         ExercisePickerSheet(
             exercises = exercises,
-            title = "MATCH EXERCISE",
+            title = "Match exercise",
             // Old history is often gym work the saved gear cannot do; the
             // chip is still there, but the mapping starts unfiltered.
             defaultMyGear = false,
@@ -269,27 +251,22 @@ private fun UnmatchedRow(
                     Column(
                         Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 10.dp)
-                            .clip(MaterialTheme.shapes.extraSmall)
-                            .inkBorder(IronvellumColors.SystemGreen, MaterialTheme.shapes.extraSmall, 1.dp)
-                            .clickable {
+                            .clickable(role = Role.Button) {
                                 picking = false
                                 onPick(name.rawName, null)
                             }
-                            .heightIn(min = 44.dp)
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                            .heightIn(min = 52.dp)
+                            .padding(vertical = 8.dp),
                         verticalArrangement = Arrangement.Center,
                     ) {
                         Text(
-                            "KEEP AS NEW EXERCISE",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = ChakraPetch,
+                            "Keep as new exercise",
+                            style = MaterialTheme.typography.bodyMedium,
                             color = IronvellumColors.SystemGreen,
-                            letterSpacing = IronvellumTracking.InlineLabel,
                         )
                         Text(
                             "measured in ${name.inferredMetric.lowercase()}",
-                            style = MaterialTheme.typography.labelSmall,
+                            style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
                     }
