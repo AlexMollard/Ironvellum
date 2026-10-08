@@ -7,16 +7,25 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.vector.PathParser
+import androidx.navigation.NavHostController
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AutoStories
 import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.Groups
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.WorkspacePremium
 import androidx.compose.material3.Icon
@@ -72,12 +81,6 @@ import com.ironvellum.app.ui.social.CommentsScreen
 import com.ironvellum.app.ui.theme.DotShape
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.foundation.layout.requiredSize
-import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.ui.res.vectorResource
-import com.ironvellum.app.R
 import kotlinx.coroutines.flow.first
 import com.ironvellum.app.ui.train.WorkoutLogScreen
 import com.ironvellum.app.ui.train.WorkoutDetailScreen
@@ -198,9 +201,9 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
         BottomDestination(Routes.STATS, "Ledger", Icons.Outlined.BarChart),
         // Training is what the app is for, so its tab takes the middle slot,
         // under the thumb, and stands proud of the bar.
-        BottomDestination(Routes.PRESETS, "Train", ImageVector.vectorResource(R.drawable.ic_sword), raised = true),
+        BottomDestination(Routes.PRESETS, "Train", DumbbellIcon, raised = true),
         BottomDestination(Routes.TITLES, "Codex", Icons.Outlined.AutoStories),
-        BottomDestination(Routes.SOCIAL, "Allies", Icons.Outlined.Groups),
+        BottomDestination(Routes.SOCIAL, "Allies", Icons.Outlined.Person),
         // The Garrison is reached from Today's footer, not a tab: five is the
         // most a bottom bar should carry, and it is a place visited now and then.
     )
@@ -265,57 +268,6 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                 }
             }
         }
-        // Train stands proud of the bar only while today asks something of the
-        // lifter: a scheduled rite not yet sealed, or a trial under way. Sealed,
-        // resting or with no cycle, it settles in with the other tabs, so a
-        // finished day is not still being shouted at. The same rule and the same
-        // recent-sessions source as Today's card, so the two never disagree.
-        // shortcut: the day is read when a source emits, so the plate does not
-        // rise at midnight on its own; it catches up on the next emission.
-        val trainRaised by androidx.compose.runtime.remember(repo) {
-            kotlinx.coroutines.flow.combine(
-                repo.observePresets(),
-                // The whole sealed history: a rite sealed early in the week can
-                // sit behind more than a handful of later trials.
-                repo.observeHistory(),
-                repo.observeLiveSession(),
-            ) { presets, history, live ->
-                val day = java.time.LocalDate.now()
-                val zone = java.time.ZoneId.systemDefault()
-                val start = day.atStartOfDay(zone).toInstant().toEpochMilli()
-                val weekStart = day.with(java.time.DayOfWeek.MONDAY).atStartOfDay(zone).toInstant().toEpochMilli()
-                val sessions = history.map { it.first }
-                when (com.ironvellum.app.domain.TrainFocus.resolve(presets, sessions, live, day.dayOfWeek.value, start, weekStart)) {
-                    is com.ironvellum.app.domain.TrainFocus.Begin, is com.ironvellum.app.domain.TrainFocus.Live -> true
-                    else -> false
-                }
-            }
-        }.collectAsStateWithLifecycle(initialValue = null)
-        // 0 = settled, 1 = raised. Snapped to the first real reading so a cold
-        // start does not play the rise; animated on every change after that.
-        // A trial is sealed on a screen with no bar, so the change waits for the
-        // bar to come back and plays where it can be seen: the plate sinks in as
-        // the lifter returns from a finished day.
-        val lift = androidx.compose.runtime.remember { androidx.compose.animation.core.Animatable(0f) }
-        var liftLoaded by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf(false) }
-        val barShown = currentRoute in destinations.map { it.route }
-        androidx.compose.runtime.LaunchedEffect(trainRaised, barShown) {
-            val target = if (trainRaised ?: return@LaunchedEffect) 1f else 0f
-            if (!liftLoaded) {
-                lift.snapTo(target)
-                liftLoaded = true
-            } else if (barShown && lift.targetValue != target) {
-                // Past the screen transition, so the eye is on the bar.
-                kotlinx.coroutines.delay(350)
-                lift.animateTo(
-                    target,
-                    androidx.compose.animation.core.spring(
-                        dampingRatio = 0.7f,
-                        stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow,
-                    ),
-                )
-            }
-        }
         // A tapped trial notification reopens the live trial; its Seal action
         // also asks the trial for its seal prompt. The serial the trial has
         // served is saveable, so a rotation does not reopen the prompt.
@@ -341,163 +293,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
             containerColor = Color.Transparent,
             bottomBar = {
                 if (currentRoute in destinations.map { it.route }) {
-                    Row(
-                        Modifier
-                            .fillMaxWidth()
-                            // Raised: VaultHigh with a 1dp Rune rule on its top edge, flat.
-                            .background(IronvellumColors.VaultHigh)
-                            .drawBehind {
-                                drawRect(IronvellumColors.Rune, size = androidx.compose.ui.geometry.Size(size.width, 1.dp.toPx()))
-                            }
-                            .navigationBarsPadding()
-                            // Five labels share the width. At 360dp - the most
-                            // common modern phone - the old 10dp/8dp gaps left
-                            // the longest label one glyph short and clipped.
-                            .padding(horizontal = 6.dp, vertical = 10.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    ) {
-                        destinations.forEach { destination ->
-                            val selected = currentRoute == destination.route
-                            // Theme shape, not a local cut corner: the nav is
-                            // the one chrome element on every screen, so it has
-                            // to carry the same hand-drawn edge as the panels.
-                            val slotShape = MaterialTheme.shapes.small
-                            // How far this slot's plate stands out: only Train's
-                            // moves, and only while today asks for a trial.
-                            val p = if (destination.raised) lift.value else 0f
-                            val plated = p > 0f
-                            val open = {
-                                // Home is the graph start: saving and
-                                // restoring its state would restore the
-                                // stack pushed ON TOP of it (e.g. the
-                                // presets screen), stranding the user.
-                                val isHome = destination.route == Routes.DASHBOARD
-                                navController.navigate(destination.route) {
-                                    popUpTo(Routes.DASHBOARD) {
-                                        inclusive = isHome
-                                        saveState = !isHome
-                                    }
-                                    launchSingleTop = true
-                                    restoreState = !isHome
-                                }
-                            }
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    // Not on the raised slot: the clip would cut
-                                    // off the plate standing above it.
-                                    .then(if (plated) Modifier else Modifier.clip(slotShape))
-                                    .clickable(
-                                        interactionSource = remember { MutableInteractionSource() },
-                                        indication = InkPressIndication,
-                                        onClick = open,
-                                    )
-                                    // 48dp is the documented minimum touch
-                                    // target; the icon and label together only
-                                    // came to 31dp, and this is the one control
-                                    // present on every screen.
-                                    .heightIn(min = 48.dp)
-                                    // Selection is an Emerald icon and an Ink label,
-                                    // which says nothing to a screen reader: without
-                                    // this it announces "Today" whether you are on
-                                    // that screen or not.
-                                    .semantics {
-                                        role = Role.Tab
-                                        this.selected = selected
-                                    }
-                                    .padding(vertical = 8.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                            ) {
-                                // The dot is the whole signal, so the slot's
-                                // description carries the count for a screen
-                                // reader; with nothing unread it stays plain
-                                // "Allies", which is how tests find the tab.
-                                val unreadHere = destination.route == Routes.SOCIAL && inboxUnread > 0
-                                Box(
-                                    if (plated) {
-                                        // Lifted out of the bar on a square emerald
-                                        // plate, the height of a selected tab's,
-                                        // raised just clear of its label. The plate
-                                        // overflows an icon-sized
-                                        // slot and offset() moves the drawing only,
-                                        // so the bar keeps its height and the label
-                                        // stays in line with the other four.
-                                        Modifier
-                                            .size(24.dp)
-                                            .wrapContentSize(unbounded = true)
-                                            .offset(y = androidx.compose.ui.unit.lerp(0.dp, (-16).dp, p))
-                                            .requiredSize(androidx.compose.ui.unit.lerp(24.dp, 48.dp, p))
-                                            .clip(slotShape)
-                                            .background(IronvellumColors.Emerald.copy(alpha = p))
-                                            .inkBorder(IronvellumColors.EmeraldBright.copy(alpha = p), slotShape)
-                                            // The plate stands above the slot's
-                                            // bounds, so it takes taps itself:
-                                            // otherwise its top third was dead.
-                                            // A bare tap detector, not clickable(),
-                                            // so a screen reader still meets one
-                                            // Train tab - the slot - not two.
-                                            .pointerInput(destination.route) { detectTapGestures { open() } }
-                                    } else {
-                                        Modifier
-                                    },
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    Icon(
-                                        destination.icon,
-                                        contentDescription = if (unreadHere) {
-                                            "${destination.label}, $inboxUnread unread"
-                                        } else {
-                                            destination.label
-                                        },
-                                        tint = when {
-                                            // Dark on the plate; once settled, the same
-                                            // tint as every other tab, so a bar at rest
-                                            // reads as one row rather than one green sword.
-                                            destination.raised -> androidx.compose.ui.graphics.lerp(
-                                                if (selected) IronvellumColors.Emerald else IronvellumColors.InkMuted,
-                                                IronvellumColors.Vault,
-                                                p,
-                                            )
-                                            selected -> IronvellumColors.Emerald
-                                            else -> IronvellumColors.InkMuted
-                                        },
-                                        // The sword scales with its plate so it does
-                                        // not sit lost in the middle of it.
-                                        modifier = if (destination.raised) Modifier.size(androidx.compose.ui.unit.lerp(24.dp, 30.dp, p)) else Modifier,
-                                    )
-                                    if (unreadHere) {
-                                        Box(
-                                            Modifier
-                                                .align(Alignment.TopEnd)
-                                                .size(8.dp)
-                                                .clip(DotShape)
-                                                .background(IronvellumColors.Ink),
-                                        )
-                                    }
-                                }
-                                Text(
-                                    destination.label,
-                                    style = MaterialTheme.typography.labelMedium,
-                                    fontFamily = ChakraPetch,
-                                    color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
-                                    // Five slots share one screen width, so the
-                                    // label must never wrap. It cannot grow
-                                    // either: the app pins the text scale
-                                    // (IronvellumTheme), so this row has one size
-                                    // to fit rather than a range.
-                                    //
-                                    // No tracking here. labelMedium carries
-                                    // 2sp, which on a six-glyph label is 12dp
-                                    // of pure letter spacing - the reason an
-                                    // old nav label lost its last glyph at
-                                    // 360dp.
-                                    letterSpacing = 0.sp,
-                                    maxLines = 1,
-                                    softWrap = false,
-                                )
-                            }
-                        }
-                    }
+                    IronvellumBottomBar(destinations, currentRoute, inboxUnread, navController)
                 }
             },
         ) { padding ->
@@ -787,5 +583,165 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
             }
         }
         }
+    }
+}
+
+private val BarHeight = 64.dp
+
+/** How far Train's round button stands above the bar's top rule. */
+private val TrainRise = 9.dp
+
+/**
+ * The mockup's dumbbell: a 2dp round-capped stroke on a 24 grid, tinted by the
+ * caller like the Material icons beside it.
+ */
+private val DumbbellIcon: ImageVector = ImageVector.Builder(
+    name = "Dumbbell",
+    defaultWidth = 24.dp,
+    defaultHeight = 24.dp,
+    viewportWidth = 24f,
+    viewportHeight = 24f,
+).addPath(
+    pathData = PathParser().parsePathString("M6 8v8M18 8v8M3 10v4M21 10v4M6 12h12").toNodes(),
+    stroke = SolidColor(Color.Black),
+    strokeLineWidth = 2f,
+    strokeLineCap = StrokeCap.Round,
+).build()
+
+/**
+ * Five items spread evenly on a 64dp VaultHigh bar with a 1dp Rune rule. The
+ * selected item is an Emerald icon over an Ink label; the rest are InkMuted.
+ * Train, in the middle, sits in a round button raised above the bar. The
+ * bar's own height includes that rise, so screens above it still clear the
+ * button and nothing is clipped.
+ */
+@Composable
+private fun IronvellumBottomBar(
+    destinations: List<BottomDestination>,
+    currentRoute: String?,
+    inboxUnread: Int,
+    navController: NavHostController,
+) {
+    Column(Modifier.fillMaxWidth()) {
+        Box(Modifier.fillMaxWidth().height(BarHeight + TrainRise)) {
+            Box(
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .height(BarHeight)
+                    .background(IronvellumColors.VaultHigh)
+                    .drawBehind {
+                        drawRect(IronvellumColors.Rune, size = androidx.compose.ui.geometry.Size(size.width, 1.dp.toPx()))
+                    },
+            )
+            Row(
+                Modifier.fillMaxSize(),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.Bottom,
+            ) {
+                destinations.forEach { destination ->
+                    val selected = currentRoute == destination.route
+                    val tint = if (selected) IronvellumColors.Emerald else IronvellumColors.InkMuted
+                    // The dot is the whole signal, so the slot's description
+                    // carries the count for a screen reader; with nothing
+                    // unread it stays plain "Allies", which is how tests find
+                    // the tab.
+                    val unreadHere = destination.route == Routes.SOCIAL && inboxUnread > 0
+                    Column(
+                        modifier = Modifier
+                            .width(64.dp)
+                            .height(BarHeight)
+                            .then(if (destination.raised) Modifier.offset(y = -TrainRise) else Modifier)
+                            .clip(MaterialTheme.shapes.small)
+                            .clickable(
+                                interactionSource = remember { MutableInteractionSource() },
+                                indication = InkPressIndication,
+                                onClick = {
+                                    // Home is the graph start: saving and
+                                    // restoring its state would restore the
+                                    // stack pushed ON TOP of it (e.g. the
+                                    // presets screen), stranding the user.
+                                    val isHome = destination.route == Routes.DASHBOARD
+                                    navController.navigate(destination.route) {
+                                        popUpTo(Routes.DASHBOARD) {
+                                            inclusive = isHome
+                                            saveState = !isHome
+                                        }
+                                        launchSingleTop = true
+                                        restoreState = !isHome
+                                    }
+                                },
+                            )
+                            // Selection is an Emerald icon and an Ink label,
+                            // which says nothing to a screen reader.
+                            .semantics {
+                                role = Role.Tab
+                                this.selected = selected
+                            },
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        val glyph: @Composable () -> Unit = {
+                            Box(Modifier.size(20.dp)) {
+                                Icon(
+                                    destination.icon,
+                                    contentDescription = if (unreadHere) {
+                                        "${destination.label}, $inboxUnread unread"
+                                    } else {
+                                        destination.label
+                                    },
+                                    tint = tint,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
+                                if (unreadHere) {
+                                    Box(
+                                        Modifier
+                                            .align(Alignment.TopEnd)
+                                            .offset(x = 3.dp, y = (-3).dp)
+                                            .size(8.dp)
+                                            .clip(DotShape)
+                                            .background(IronvellumColors.Ink),
+                                    )
+                                }
+                            }
+                        }
+                        if (destination.raised) {
+                            Box(
+                                Modifier
+                                    .size(48.dp)
+                                    .clip(DotShape)
+                                    .background(IronvellumColors.Vault)
+                                    .inkBorder(IronvellumColors.Rune, DotShape),
+                                contentAlignment = Alignment.Center,
+                            ) { glyph() }
+                        } else {
+                            glyph()
+                        }
+                        Spacer(Modifier.height(3.dp))
+                        Text(
+                            destination.label,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontFamily = ChakraPetch,
+                            fontSize = 10.sp,
+                            lineHeight = 12.sp,
+                            color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                            // Five slots share one screen width, so the label
+                            // never wraps and carries no tracking (labelMedium's
+                            // 2sp once clipped the last glyph at 360dp).
+                            letterSpacing = 0.sp,
+                            maxLines = 1,
+                            softWrap = false,
+                        )
+                    }
+                }
+            }
+        }
+        // The system navigation bar's inset, in the bar's own colour.
+        Spacer(
+            Modifier
+                .fillMaxWidth()
+                .windowInsetsBottomHeight(WindowInsets.navigationBars)
+                .background(IronvellumColors.VaultHigh),
+        )
     }
 }
