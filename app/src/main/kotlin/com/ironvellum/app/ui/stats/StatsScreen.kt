@@ -672,10 +672,10 @@ private fun AddStatDialog(
         onDismissRequest = onDismiss,
         title = { Text("Log weight") },
         text = {
-            // Scrollable: with the estimator open and the keyboard up the
-            // buttons used to sit below the fold.
+            // The dialog body scrolls: with the estimator open and the keyboard up the
+            // buttons used to sit below the fold. Never nest a second scroll in here.
             Column(
-                Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 // A rejected figure used to do nothing at all: the primary greyed

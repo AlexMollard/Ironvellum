@@ -33,6 +33,10 @@ import com.ironvellum.app.ui.theme.inkHairline
  * then a button row: the dismiss on the left as a text button, the confirm on the right as the
  * primary fill. Danger stays [IronvellumButton]'s DangerRed `danger` look. It rises above the
  * keyboard and the navigation bar; the scrim, a swipe down and back all dismiss.
+ *
+ * The title and text scroll together as one column, so [text] is measured against unbounded
+ * height: never put a `verticalScroll` or a Lazy list in it (that throws "Vertically scrollable
+ * component was measured with an infinity maximum height"); bound a tall child with `heightIn(max)`.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
