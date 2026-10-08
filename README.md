@@ -6,7 +6,7 @@
 
 **An offline-first strength training app that scores what you actually lift.**
 
-![Gate](https://img.shields.io/badge/gate-1183%20unit%20%2B%20217%20instrumented-2E7D32)
+![Gate](https://img.shields.io/badge/gate-1183%20unit%20%2B%20218%20instrumented-2E7D32)
 ![Tested locally](https://img.shields.io/badge/tested-locally%2C%20not%20CI-555555)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
