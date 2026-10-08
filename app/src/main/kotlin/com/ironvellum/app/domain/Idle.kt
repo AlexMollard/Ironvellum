@@ -22,6 +22,11 @@ data class IdleState(
     val figures: Int,
     val relicMultiplier: Double,
     val lastCollectedAtMs: Long,
+    /**
+     * Essence ever earned, never spent. [essence] drops when it buys an
+     * inscription; this is what the board ranks and the server keeps greatest of.
+     */
+    val lifetimeEssence: Long = 0L,
 )
 
 data class IdleRate(val perHour: Double, val trainingFactor: Double, val skillFactor: Double)
