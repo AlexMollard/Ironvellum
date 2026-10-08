@@ -398,7 +398,8 @@ object RelicHouses {
             }
         }
         val (known, legacy) = ordered.partition { BY_ID.containsKey(it.relicId) }
-        known.forEach { put(it.relicId!!, it) }
+        // A relic is never stronger than its tier's cap, so a hand-edited archive cannot restore a Common at x2.4.
+        known.forEach { put(it.relicId!!, it.copy(multiplier = minOf(it.multiplier, band(BY_ID.getValue(it.relicId!!).tier).endInclusive))) }
         legacy.forEach { row ->
             val sane = row.copy(multiplier = if (row.multiplier.isFinite() && row.multiplier > 1.0) row.multiplier else 1.0 + 1e-6)
             val tier = tierOf(sane.multiplier)
