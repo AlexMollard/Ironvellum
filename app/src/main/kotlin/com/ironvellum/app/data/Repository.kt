@@ -88,6 +88,8 @@ import com.ironvellum.app.domain.StatEntry
 import com.ironvellum.app.domain.StrengthIndex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.Veil
+import com.ironvellum.app.domain.VeilGrant
 import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.data.cloud.localNameToAdopt
 import com.ironvellum.app.domain.TrainingMode
@@ -114,6 +116,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -1843,6 +1846,78 @@ class Repository(
         if (due > 0 || mark != g.rollLevelMark) {
             gachaDao.upsert(g.copy(rolls = g.rolls + due, rollLevelMark = mark))
         }
+        // Milestone crests ride the same once-per-level mark, so a refund and a
+        // climb back never pay one twice. They are on top of the chance drops.
+        val milestones = Veil.milestonesCrossed(maxOf(levelBefore, g.rollLevelMark), levelAfter)
+        if (milestones.isNotEmpty()) {
+            val owned = gachaDao.ownedFrameIds().toMutableSet()
+            val won = milestones.mapNotNull { level ->
+                Veil.milestoneCrest(level, owned)?.also {
+                    gachaDao.insertFrame(OwnedCrestFrameEntity(frameId = it, ownedAtMs = System.currentTimeMillis()))
+                    owned += it
+                }
+            }
+            if (won.isNotEmpty()) addPendingVeilGrant(VeilGrant(crests = won.map { crestName(it) }))
+        }
+    }
+
+    private fun crestName(frameId: String): String =
+        Gacha.CREST_FRAMES.firstOrNull { it.id == frameId }?.name ?: frameId
+
+    private val _pendingVeilGrant = MutableStateFlow<VeilGrant?>(null)
+
+    /** What the Veil paid outside a draw (milestone crests, the one-time grant), awaiting its screen. */
+    val pendingVeilGrant: StateFlow<VeilGrant?> = _pendingVeilGrant.asStateFlow()
+
+    private fun addPendingVeilGrant(grant: VeilGrant) {
+        _pendingVeilGrant.update { (it ?: VeilGrant()) + grant }
+    }
+
+    fun clearPendingVeilGrant() {
+        _pendingVeilGrant.value = null
+    }
+
+    /**
+     * The one-time Veil pass, guarded by [Veil.GRANT_VERSION] so it runs once per
+     * lifter and never again. It only ADDS: crests for milestones already
+     * reached, relics up to the floor the pacing implies, and the inscriptions
+     * for levels that never paid ([Veil.retroGrant]). Nothing is ever taken away.
+     * Queues one celebration. Returns what was paid, or null when it had already
+     * run or there was nothing to pay.
+     */
+    suspend fun applyVeilGrant(): VeilGrant? = db.withTransaction {
+        val g = gachaDao.get() ?: GachaStateEntity()
+        if (g.veilGrantVersion >= Veil.GRANT_VERSION) return@withTransaction null
+        val level = Xp.levelFor(profileDao.get()?.totalXp ?: 0L)
+        val grant = Veil.retroGrant(
+            level = level,
+            banked = g.rolls,
+            relicCount = gachaDao.relicMultipliers().size,
+            ownedFrames = gachaDao.ownedFrameIds().toSet(),
+            echoes = idleDao.get()?.shadows ?: 0,
+        )
+        val now = System.currentTimeMillis()
+        grant.crestIds.forEach { gachaDao.insertFrame(OwnedCrestFrameEntity(frameId = it, ownedAtMs = now)) }
+        grant.relics.forEach {
+            gachaDao.insertRelic(OwnedRelicEntity(name = it.name, multiplier = it.multiplier, drawnAtMs = now))
+        }
+        if (grant.relics.isNotEmpty()) applyRelicVault()
+        // The level is marked paid too: every level up to it is now accounted
+        // for, so the live level-up path cannot pay any of them a second time.
+        gachaDao.upsert(
+            g.copy(
+                rolls = g.rolls + grant.inscriptions,
+                rollLevelMark = maxOf(g.rollLevelMark, level),
+                veilGrantVersion = Veil.GRANT_VERSION,
+            ),
+        )
+        if (grant.isEmpty) return@withTransaction null
+        VeilGrant(
+            retro = true,
+            inscriptions = grant.inscriptions,
+            relics = grant.relics.map { it.name },
+            crests = grant.crestIds.map { crestName(it) },
+        ).also { addPendingVeilGrant(it) }
     }
 
     private val _pendingCelebrations = MutableStateFlow<List<TitleDef>>(emptyList())
@@ -2392,10 +2467,27 @@ class Repository(
         }
         val idleRow = idleDao.get()
         val idle = idleRow?.let {
-            ExportWriter.IdleSnapshot(it.essence, it.shadows, it.relicMultiplier, it.lastCollectedAtMs)
+            ExportWriter.IdleSnapshot(
+                it.essence,
+                it.shadows,
+                it.relicMultiplier,
+                it.lastCollectedAtMs,
+                lifetimeEssence = maxOf(it.lifetimeEssence, it.essence),
+            )
         }
         val gachaRow = gachaDao.get()
-        val gacha = gachaRow?.let { ExportWriter.GachaSnapshot(it.rolls, it.equippedFrame) }
+        val gacha = gachaRow?.let {
+            ExportWriter.GachaSnapshot(
+                rolls = it.rolls,
+                equippedFrame = it.equippedFrame,
+                figureStreak = it.figureStreak,
+                rollLevelMark = it.rollLevelMark,
+                relicPity = it.relicPity,
+                drawsSpent = it.drawsSpent,
+                offeringsMade = it.offeringsMade,
+                veilGrantVersion = it.veilGrantVersion,
+            )
+        }
         val crestFrames = gachaDao.ownedFrames().map {
             ExportWriter.CrestFrameSnapshot(it.frameId, it.ownedAtMs)
         }
@@ -2673,32 +2765,49 @@ class Repository(
                     val paidThrough = maxOf(
                         gachaDao.get()?.rollLevelMark ?: 0,
                         Xp.levelFor(profileDao.get()?.totalXp ?: 0L),
+                        archive.gacha?.rollLevelMark ?: 0,
                     )
                     idleDao.clearAll()
                     gachaDao.clearRolls()
                     gachaDao.clearFrames()
                     gachaDao.clearRelics()
+                    // The rate multiplier is derived from the vault, never trusted
+                    // from the file: a stored number could outrun the relics it
+                    // claims to come from. Each restored relic is held to the band
+                    // the roller can produce, and an impossible one is dropped.
+                    val restoredRelics = archive.relics.mapNotNull { r ->
+                        Relics.restorable(r.multiplier)?.let { r.copy(multiplier = it) }
+                    }
                     archive.idle?.let {
+                        val essence = it.essence.coerceAtLeast(0)
                         idleDao.upsert(
                             IdleStateEntity(
-                                essence = it.essence,
-                                shadows = it.shadows,
-                                relicMultiplier = it.relicMultiplier,
+                                essence = essence,
+                                shadows = it.shadows.coerceAtLeast(0),
+                                relicMultiplier = Relics.effectiveMultiplier(restoredRelics.map { r -> r.multiplier }),
                                 lastCollectedAtMs = it.lastCollectedAtMs,
+                                lifetimeEssence = maxOf(it.lifetimeEssence, essence),
                             ),
                         )
                     }
                     gachaDao.upsert(
                         GachaStateEntity(
-                            rolls = archive.gacha?.rolls ?: 0,
+                            rolls = (archive.gacha?.rolls ?: 0).coerceAtLeast(0),
                             equippedFrame = archive.gacha?.equippedFrame,
+                            figureStreak = (archive.gacha?.figureStreak ?: 0).coerceAtLeast(0),
                             rollLevelMark = paidThrough,
+                            relicPity = (archive.gacha?.relicPity ?: 0).coerceAtLeast(0),
+                            drawsSpent = (archive.gacha?.drawsSpent ?: 0).coerceAtLeast(0),
+                            offeringsMade = (archive.gacha?.offeringsMade ?: 0).coerceAtLeast(0),
+                            // An archive from before v8 carries 0, so the one-time grant
+                            // runs for it on the next launch; a v8 archive is already paid.
+                            veilGrantVersion = (archive.gacha?.veilGrantVersion ?: 0).coerceAtLeast(0),
                         ),
                     )
                     archive.crestFrames.forEach {
                         gachaDao.insertFrame(OwnedCrestFrameEntity(frameId = it.frameId, ownedAtMs = it.ownedAtMs))
                     }
-                    archive.relics.forEach {
+                    restoredRelics.forEach {
                         gachaDao.insertRelic(OwnedRelicEntity(name = it.name, multiplier = it.multiplier, drawnAtMs = it.drawnAtMs))
                     }
                 }
@@ -2931,7 +3040,14 @@ class Repository(
         val rate = Idle.rate(state, inputs.sessionsLast7d, inputs.volumeLast7d, inputs.skillsUnlocked, inputs.streakDays)
         val gained = Idle.accrued(state, rate, nowMs)
         if (gained > 0) {
-            idleDao.upsert(current.copy(essence = state.essence + gained, lastCollectedAtMs = nowMs))
+            val balance = Veil.Balance(current.essence, current.lifetimeEssence).earn(gained)
+            idleDao.upsert(
+                current.copy(
+                    essence = balance.essence,
+                    lifetimeEssence = balance.lifetime,
+                    lastCollectedAtMs = nowMs,
+                ),
+            )
         }
         gained
     }
@@ -2992,6 +3108,27 @@ class Repository(
         gachaDao.upsert(current.copy(rolls = current.rolls + count))
     }
 
+    /** Extra inscriptions bought with essence so far; sets the price of the next ([Veil.offeringCost]). */
+    fun observeOfferingsMade(): Flow<Int> =
+        gachaDao.observeRolls().map { it?.offeringsMade ?: 0 }
+
+    /**
+     * Spends essence on one extra inscription, atomically: the price check, the
+     * debit and the banked roll share one transaction, so two taps cannot both
+     * buy on one balance. Returns false (and changes nothing) when the banked
+     * essence is short of the price. Lifetime essence is left alone, so the
+     * board number never falls.
+     */
+    suspend fun buyInscription(): Boolean = db.withTransaction {
+        val g = gachaDao.get() ?: GachaStateEntity()
+        val idle = idleDao.get() ?: IdleStateEntity()
+        val paid = Veil.Balance(idle.essence, idle.lifetimeEssence).buy(Veil.offeringCost(g.offeringsMade))
+            ?: return@withTransaction false
+        idleDao.upsert(idle.copy(essence = paid.essence, lifetimeEssence = paid.lifetime))
+        gachaDao.upsert(g.copy(rolls = g.rolls + 1, offeringsMade = g.offeringsMade + 1))
+        true
+    }
+
     /**
      * Spends one banked roll and applies the payout atomically: the decrement,
      * the draw, and the figures/relic/frame grant all run inside one
@@ -3003,12 +3140,25 @@ class Repository(
         if (current.rolls <= 0) return@withTransaction null
         // Owned frames are excluded from the draw: a duplicate was silently
         // deduped on insert, so the roll was spent and nothing was granted.
-        val result = Gacha.roll(seed, gachaDao.ownedFrameIds().toSet(), current.figureStreak)
-        // The streak is written in the SAME transaction as the payout, so a
+        val pity = Gacha.Pity(
+            figureStreak = current.figureStreak,
+            relicStreak = current.relicPity,
+            draws = current.drawsSpent,
+            hasRelic = gachaDao.relicMultipliers().isNotEmpty(),
+        )
+        val result = Gacha.roll(seed, gachaDao.ownedFrameIds().toSet(), pity)
+        // The streaks are written in the SAME transaction as the payout, so a
         // crash between the two can never leave pity counting a draw that was
         // never paid.
-        val streak = if (result.reward is Reward.Figures) current.figureStreak + 1 else 0
-        gachaDao.upsert(current.copy(rolls = current.rolls - 1, figureStreak = streak))
+        val next = pity.after(result.reward)
+        gachaDao.upsert(
+            current.copy(
+                rolls = current.rolls - 1,
+                figureStreak = next.figureStreak,
+                relicPity = next.relicStreak,
+                drawsSpent = next.draws,
+            ),
+        )
         when (val reward = result.reward) {
             is Reward.Figures -> grantIdle(reward.count, 1.0)
             is Reward.Relic -> {
@@ -3055,7 +3205,13 @@ class Repository(
 
     /** `shadows` is the on-disk column name; `figures` is what the app calls it now. */
     private fun IdleStateEntity.toIdleState() =
-        IdleState(essence = essence, figures = shadows, relicMultiplier = relicMultiplier, lastCollectedAtMs = lastCollectedAtMs)
+        IdleState(
+            essence = essence,
+            figures = shadows,
+            relicMultiplier = relicMultiplier,
+            lastCollectedAtMs = lastCollectedAtMs,
+            lifetimeEssence = maxOf(lifetimeEssence, essence),
+        )
 
     /** Serialises the circle bonus: two concurrent reads must not both see "unpaid". */
     private val circlePayoutMutex = Mutex()

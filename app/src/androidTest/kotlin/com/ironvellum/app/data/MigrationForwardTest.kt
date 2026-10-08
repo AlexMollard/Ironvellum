@@ -747,4 +747,38 @@ class MigrationForwardTest {
             }
         }
     }
+
+    /**
+     * Schema 36 -> 37: the Veil's new counters start at zero beside the banked rolls, the grant
+     * version starts at 0 so the retro pass runs once, and lifetime essence starts at the
+     * essence already held (nothing has been spent yet).
+     */
+    @Test
+    fun upgradeTo37SeedsLifetimeEssenceAndLeavesTheGrantUnpaid() = runTest {
+        helper.createDatabase(dbName, 36).use { old ->
+            old.execSQL("INSERT OR REPLACE INTO idle_state (id, essence, shadows, relicMultiplier, lastCollectedAtMs) VALUES (1, 4321, 9, 1.4, 777)")
+            old.execSQL("INSERT OR REPLACE INTO gacha_state (id, rolls, equippedFrame, figureStreak, rollLevelMark) VALUES (1, 3, 'iron', 2, 15)")
+        }
+        helper.runMigrationsAndValidate(dbName, 37, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT essence, shadows, relicMultiplier, lastCollectedAtMs, lifetimeEssence FROM idle_state WHERE id = 1").use { c ->
+                assertTrue("the idle row must survive", c.moveToFirst())
+                assertEquals(4321L, c.getLong(0))
+                assertEquals(9, c.getInt(1))
+                assertEquals(1.4, c.getDouble(2), 0.0)
+                assertEquals(777L, c.getLong(3))
+                assertEquals("nothing has been spent, so lifetime equals the balance", 4321L, c.getLong(4))
+            }
+            db.query("SELECT rolls, equippedFrame, figureStreak, rollLevelMark, relicPity, drawsSpent, offeringsMade, veilGrantVersion FROM gacha_state WHERE id = 1").use { c ->
+                assertTrue("the gacha row must survive", c.moveToFirst())
+                assertEquals(3, c.getInt(0))
+                assertEquals("iron", c.getString(1))
+                assertEquals(2, c.getInt(2))
+                assertEquals(15, c.getInt(3))
+                assertEquals(0, c.getInt(4))
+                assertEquals(0, c.getInt(5))
+                assertEquals(0, c.getInt(6))
+                assertEquals("the retro grant has not run yet", 0, c.getInt(7))
+            }
+        }
+    }
 }

@@ -39,6 +39,7 @@ import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.SkillClaimResult
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.domain.TitleDef
+import com.ironvellum.app.domain.VeilGrant
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -139,6 +140,31 @@ internal fun inscribedPage(result: RollResult): CelebrationPage.Inscribed {
         sigilSeed = (result.reward as? Reward.Relic)?.name,
         notes = notes,
     )
+}
+
+/**
+ * What the Veil paid outside a draw, as moments. The one-time catch-up is a single page that
+ * lists everything it paid; a milestone crest is a page of its own, one per crest.
+ */
+internal fun veilGrantPages(grant: VeilGrant?): List<CelebrationPage> {
+    if (grant == null || grant.isEmpty) return emptyList()
+    val retro = if (grant.retro) {
+        val notes = buildList {
+            if (grant.inscriptions > 0) {
+                add("${grant.inscriptions} ${if (grant.inscriptions == 1) "inscription" else "inscriptions"} to draw")
+            }
+            if (grant.crests.isNotEmpty()) add("${grant.crests.size} ${if (grant.crests.size == 1) "crest" else "crests"} inscribed")
+            if (grant.relics.isNotEmpty()) add("${grant.relics.size} ${if (grant.relics.size == 1) "relic" else "relics"} restored")
+        }
+        listOf(CelebrationPage.Inscribed(rarity = RewardRarity.Rare, name = "The Veil remembered you", notes = notes))
+    } else {
+        emptyList()
+    }
+    // A crest already named by the catch-up page is not told twice; one won at a milestone since is.
+    val milestones = if (grant.retro) emptyList() else grant.crests.map {
+        CelebrationPage.Inscribed(rarity = RewardRarity.Rare, name = it, notes = listOf("Milestone crest", "Wear it on your folio"))
+    }
+    return retro + milestones
 }
 
 /** The one narrator line of an inscription, in the voice of Today's: a short sentence with a full stop. */

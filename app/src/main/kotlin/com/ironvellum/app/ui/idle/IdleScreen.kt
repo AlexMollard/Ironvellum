@@ -28,9 +28,12 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +59,7 @@ import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.RewardRarity
 import com.ironvellum.app.domain.Relics
 import com.ironvellum.app.domain.RollResult
+import com.ironvellum.app.domain.Veil
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.CrestRail
@@ -146,6 +150,15 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
         }
     }
 
+    /** Extra inscriptions bought so far; sets the price of the next. */
+    val offerings: StateFlow<Int> = repo.observeOfferingsMade()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
+
+    /** The repository re-checks the price inside its own transaction, so a stale tap buys nothing. */
+    fun buyInscription() {
+        viewModelScope.launch { repo.buyInscription() }
+    }
+
     /** Cosmetic only — the repository rejects equipping a frame not owned. */
     fun equipFrame(frameId: String?) {
         viewModelScope.launch { repo.equipFrame(frameId) }
@@ -172,6 +185,7 @@ fun IdleScreen(
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val away by viewModel.away.collectAsStateWithLifecycle()
     val relics by viewModel.relics.collectAsStateWithLifecycle()
+    val offerings by viewModel.offerings.collectAsStateWithLifecycle()
     // The reveal for a spent inscription; null once the overlay finishes so it never re-shows.
     var inscriptionResult by remember { mutableStateOf<RollResult?>(null) }
 
@@ -212,6 +226,11 @@ fun IdleScreen(
             InscribeBlock(
                 rolls = ui.rolls,
                 onInscribe = { viewModel.inscribeFigure { result -> if (result != null) inscriptionResult = result } },
+            )
+            BuyInscriptionRow(
+                cost = Veil.offeringCost(offerings),
+                essence = snapshot.state.essence,
+                onBuy = viewModel::buyInscription,
             )
             RateBlock(snapshot, inputs)
             Spacer(Modifier.height(14.dp))
@@ -375,6 +394,25 @@ private fun InscribeBlock(rolls: Int, onInscribe: () -> Unit) {
         onClick = { oddsOpen = !oddsOpen },
     )
     if (oddsOpen) OddsTable()
+    InkDivider()
+}
+
+/**
+ * Essence's one use: an extra inscription at [Veil.offeringCost]. Disabled, not hidden, while the banked
+ * essence is short, so the price is always visible. The full design comes later.
+ */
+@Composable
+private fun BuyInscriptionRow(cost: Long, essence: Long, onBuy: () -> Unit) {
+    val affordable = essence >= cost
+    ListRow(
+        "Buy an inscription · %,d essence".fmt(cost),
+        modifier = Modifier
+            .alpha(if (affordable) 1f else 0.45f)
+            .semantics { if (!affordable) disabled() },
+        subline = if (affordable) null else "%,d more essence to go".fmt(cost - essence),
+        onClickLabel = "Buy an inscription",
+        onClick = if (affordable) onBuy else null,
+    )
     InkDivider()
 }
 
@@ -568,7 +606,8 @@ private fun OddsTable() {
         // would otherwise be quietly wrong about what the roller does.
         Text(
             "After ${Gacha.PITY_AFTER} inscriptions that yield only echoes, the next one " +
-                "is guaranteed a relic or a crest.",
+                "is guaranteed a relic or a crest. A relic always lands within ${Gacha.RELIC_PITY} " +
+                "inscriptions, and your first inscription is a relic.",
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
         )

@@ -261,6 +261,10 @@ data class IdleStateEntity(
     val shadows: Int = 0,
     val relicMultiplier: Double = 1.0,
     val lastCollectedAtMs: Long = 0,
+    // Essence ever earned, never spent: [essence] falls when it buys an
+    // inscription, and the board and the server's greatest() rule need a number
+    // that only rises.
+    val lifetimeEssence: Long = 0,
 )
 
 /**
@@ -283,6 +287,14 @@ data class GachaStateEntity(
     // when XP is refunded; without this a claim, unclaim, reclaim loop would
     // pay the same level again every lap.
     val rollLevelMark: Int = 0,
+    // Draws since the last relic: at Gacha.RELIC_PITY - 1 the next is a relic.
+    val relicPity: Int = 0,
+    // Inscriptions ever spent, so the first draw can be told from a later one.
+    val drawsSpent: Int = 0,
+    // Extra inscriptions bought with essence; sets the price of the next.
+    val offeringsMade: Int = 0,
+    // The last one-time grant pass this lifter has had (Veil.GRANT_VERSION).
+    val veilGrantVersion: Int = 0,
 )
 
 /** One owned crest frame per row; id is the stable catalogue id from Gacha. */

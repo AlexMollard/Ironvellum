@@ -115,8 +115,8 @@ class ExportWriterTest {
             ),
             heightCm = 181.0,
             sex = "MALE",
-            idle = ExportWriter.IdleSnapshot(essence = 42, shadows = 2, relicMultiplier = 1.1, lastCollectedAtMs = 7),
-            gacha = ExportWriter.GachaSnapshot(rolls = 1, equippedFrame = null),
+            idle = ExportWriter.IdleSnapshot(essence = 42, shadows = 2, relicMultiplier = 1.1, lastCollectedAtMs = 7, lifetimeEssence = 99),
+            gacha = ExportWriter.GachaSnapshot(rolls = 1, equippedFrame = null, figureStreak = 2, rollLevelMark = 15, relicPity = 3, drawsSpent = 11, offeringsMade = 4, veilGrantVersion = 1),
             crestFrames = listOf(ExportWriter.CrestFrameSnapshot("ember", 10)),
             relics = listOf(ExportWriter.RelicSnapshot("Whetstone", 1.31, 20)),
             exportedAtMs = 0,
@@ -126,8 +126,13 @@ class ExportWriterTest {
         assertTrue(json.contains("\"sex\":\"MALE\""))
         assertTrue(json.contains("\"inkStyle\":false"))
         assertTrue(json.contains("\"exercises\":[{\"name\":\"Planche Press\",\"muscleGroup\":\"PUSH\",\"isWeighted\":false,\"metric\":\"ATTEMPTS_GRADE\",\"category\":\"\"}]"))
-        assertTrue(json.contains("\"idle\":{\"essence\":42,\"shadows\":2,\"relicMultiplier\":1.1,\"lastCollectedAtMs\":7}"))
-        assertTrue(json.contains("\"gacha\":{\"rolls\":1,\"equippedFrame\":null}"))
+        assertTrue(json.contains("\"idle\":{\"essence\":42,\"shadows\":2,\"relicMultiplier\":1.1,\"lastCollectedAtMs\":7,\"lifetimeEssence\":99}"))
+        assertTrue(
+            json.contains(
+                "\"gacha\":{\"rolls\":1,\"equippedFrame\":null,\"figureStreak\":2,\"rollLevelMark\":15," +
+                    "\"relicPity\":3,\"drawsSpent\":11,\"offeringsMade\":4,\"veilGrantVersion\":1}",
+            ),
+        )
         assertTrue(json.contains("\"crestFrames\":[{\"frameId\":\"ember\",\"ownedAtMs\":10}]"))
         assertTrue(json.contains("\"relics\":[{\"name\":\"Whetstone\",\"multiplier\":1.31,\"drawnAtMs\":20}]"))
     }

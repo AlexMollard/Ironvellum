@@ -204,7 +204,10 @@ class CloudSync(
                                 totalXp = profile.totalXp,
                                 lifetimeStrength = lifetimeStrength,
                                 streakDays = streakDays,
-                                shadowEssence = idle?.state?.essence ?: 0L,
+                                // Lifetime, not the balance: spending essence on an inscription
+                                // must never lower what the board ranks. The server column and its
+                                // greatest() rule are unchanged.
+                                shadowEssence = idle?.state?.let { maxOf(it.lifetimeEssence, it.essence) } ?: 0L,
                                 shadowCount = idle?.state?.figures ?: 0,
                                 shadowRate = idle?.rate?.perHour ?: 0.0,
                             ),

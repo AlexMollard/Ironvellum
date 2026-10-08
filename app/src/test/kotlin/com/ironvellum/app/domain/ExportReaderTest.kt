@@ -59,8 +59,17 @@ class ExportReaderTest {
         ),
         heightCm = 178.5,
         sex = "MALE",
-        idle = ExportWriter.IdleSnapshot(essence = 12_345L, shadows = 7, relicMultiplier = 1.24, lastCollectedAtMs = 5_000),
-        gacha = ExportWriter.GachaSnapshot(rolls = 3, equippedFrame = "ember"),
+        idle = ExportWriter.IdleSnapshot(essence = 12_345L, shadows = 7, relicMultiplier = 1.24, lastCollectedAtMs = 5_000, lifetimeEssence = 40_000L),
+        gacha = ExportWriter.GachaSnapshot(
+            rolls = 3,
+            equippedFrame = "ember",
+            figureStreak = 2,
+            rollLevelMark = 15,
+            relicPity = 3,
+            drawsSpent = 11,
+            offeringsMade = 4,
+            veilGrantVersion = 1,
+        ),
         crestFrames = listOf(
             ExportWriter.CrestFrameSnapshot(frameId = "ember", ownedAtMs = 100),
             ExportWriter.CrestFrameSnapshot(frameId = "verdant", ownedAtMs = 200),
@@ -152,8 +161,11 @@ class ExportReaderTest {
             ),
             archive.exercises,
         )
-        assertEquals(ExportWriter.IdleSnapshot(12_345L, 7, 1.24, 5_000), archive.idle)
-        assertEquals(ExportWriter.GachaSnapshot(3, "ember"), archive.gacha)
+        assertEquals(ExportWriter.IdleSnapshot(12_345L, 7, 1.24, 5_000, lifetimeEssence = 40_000L), archive.idle)
+        assertEquals(
+            ExportWriter.GachaSnapshot(3, "ember", figureStreak = 2, rollLevelMark = 15, relicPity = 3, drawsSpent = 11, offeringsMade = 4, veilGrantVersion = 1),
+            archive.gacha,
+        )
         assertEquals(
             listOf(
                 ExportWriter.CrestFrameSnapshot("ember", 100),
@@ -165,6 +177,24 @@ class ExportReaderTest {
             listOf(ExportWriter.RelicSnapshot("Old King's Whetstone", 1.31, 300)),
             archive.relics,
         )
+    }
+
+    @Test
+    fun `v7 archive without the v8 Veil fields still reads, lifetime falling back to essence`() {
+        val v7 = """
+            {"formatVersion":7,"exportedAtMs":42,
+             "profile":{"name":"Old Lifter","totalXp":55,"currentTitleId":null},
+             "trainingMode":"STRENGTH",
+             "presets":[],"sessions":[],"stats":[],"titles":[],"skills":[],"healthDays":[],
+             "idle":{"essence":900,"shadows":3,"relicMultiplier":1.2,"lastCollectedAtMs":5},
+             "gacha":{"rolls":2,"equippedFrame":"iron"}}
+        """.trimIndent()
+
+        val archive = ExportReader.read(v7).getOrThrow()
+
+        assertEquals(900L, archive.idle!!.lifetimeEssence)
+        assertEquals(ExportWriter.GachaSnapshot(rolls = 2, equippedFrame = "iron"), archive.gacha)
+        assertEquals("no grant recorded, so the catch-up runs for it", 0, archive.gacha!!.veilGrantVersion)
     }
 
     @Test
