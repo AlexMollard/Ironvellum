@@ -16,7 +16,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Diamond
+import androidx.compose.material.icons.outlined.StarBorder
+import androidx.compose.material.icons.outlined.WaterDrop
 import androidx.compose.material3.Icon
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -81,8 +85,10 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.text.style.TextAlign
 import kotlin.math.roundToInt
 import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.dashboard.FIRST_RUN_VEIL_LINE
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.SectionHeader
@@ -107,7 +113,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import android.content.Context
 import androidx.compose.ui.platform.LocalContext
+import com.ironvellum.app.data.FirstRunPrefs
+import com.ironvellum.app.domain.FirstRun
 import kotlin.math.ceil
 
 
@@ -125,7 +134,7 @@ data class IdleUi(
     val equippedFrame: String? = null,
 )
 
-class IdleViewModel(private val repo: Repository) : ViewModel() {
+class IdleViewModel(private val repo: Repository, private val appContext: Context) : ViewModel() {
 
     val ui: StateFlow<IdleUi> = combine(
         repo.observeIdleSnapshot(),
@@ -161,12 +170,31 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
     /** The away haul, banked automatically — there is nothing to claim. */
     val away: StateFlow<AwayReport?> = _away.asStateFlow()
 
+    private val _intro = MutableStateFlow(false)
+
+    /** True while the Veil's one-time introduction is on screen: the first visit of a lifter who has seen none of it. */
+    val intro: StateFlow<Boolean> = _intro.asStateFlow()
+
+    /** Marks the introduction seen, for good. */
+    fun introSeen() {
+        _intro.value = false
+        FirstRunPrefs.setVeilIntroSeen(appContext)
+    }
+
     init {
         // Essence banks itself the moment you arrive. Making a player press a
         // button for money they already earned is busywork; what they actually
         // want is to see what the figures did while they were gone.
         viewModelScope.launch {
             val state = repo.observeIdle().first()
+            // Decided before the collect below, which banks essence and would make a first visit look like
+            // a returning lifter's. Lifetime essence, relics and crests are what a lifter who has been here
+            // before has; the answer is kept either way.
+            if (!FirstRunPrefs.veilIntroSeen(appContext)) {
+                val relics = repo.vaultNow().ownedCount
+                val crests = repo.observeOwnedFrames().first().size
+                if (FirstRun.veilIntroDue(seen = false, state.lifetimeEssence, relics, crests)) _intro.value = true else introSeen()
+            }
             val awayMs = (System.currentTimeMillis() - state.lastCollectedAtMs).coerceAtLeast(0L)
             val banked = repo.collectIdle(System.currentTimeMillis())
             if (banked > 0) _away.value = AwayReport(banked, awayMs)
@@ -210,8 +238,13 @@ fun IdleScreen(
     onOpenCircle: () -> Unit = {},
     onOpenVault: () -> Unit = {},
     onOpenCrests: () -> Unit = {},
+    appContext: Context = LocalContext.current,
     viewModel: IdleViewModel =
-        viewModel(factory = viewModelFactory { initializer { IdleViewModel(ironvellumRepository()) } }),
+        viewModel(
+            factory = viewModelFactory {
+                initializer { IdleViewModel(ironvellumRepository(), appContext.applicationContext) }
+            },
+        ),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val away by viewModel.away.collectAsStateWithLifecycle()
@@ -221,6 +254,7 @@ fun IdleScreen(
     // The reveal for a spent inscription; null once the overlay finishes so it never re-shows.
     var inscriptionPage by remember { mutableStateOf<CelebrationPage.Inscribed?>(null) }
     var housesOpen by rememberSaveable { mutableStateOf(false) }
+    val intro by viewModel.intro.collectAsStateWithLifecycle()
 
     // The ticker and motes move under the same gate as the Veil on Today: resumed, animators on, not a preview.
     val animate = rememberTodayMotion()
@@ -289,6 +323,46 @@ fun IdleScreen(
         )
     }
     if (housesOpen) HousesSheet { housesOpen = false }
+    if (intro) VeilIntroSheet(onDone = viewModel::introSeen)
+}
+
+/**
+ * The Veil's one-time introduction, a bottom sheet over the screen the first time it opens. Three rows,
+ * one for each thing the screen shows. There is no scroll in the text slot: the dialog scrolls its own
+ * column, and three short rows fit.
+ */
+@Composable
+private fun VeilIntroSheet(onDone: () -> Unit) {
+    val fullHours = HouseEffects.NONE.fullStrengthHours.toInt()
+    IronvellumDialog(
+        onDismissRequest = onDone,
+        title = { Text("How the Veil works") },
+        text = {
+            Column {
+                IntroRow(
+                    Icons.Outlined.WaterDrop,
+                    "Essence",
+                    "It gathers on its own while you are away. Full strength for $fullHours hours after you last collected, then it tapers.",
+                )
+                InkDivider()
+                IntroRow(Icons.Outlined.StarBorder, "Inscriptions", "Each level-up earns one. Spend it on echoes, a relic or a crest.")
+                InkDivider()
+                IntroRow(Icons.Outlined.Diamond, "Relics", "They lift your rate. Only the strongest counts in full.")
+            }
+        },
+        confirmButton = { IronvellumButton(label = "Got it", onClick = onDone) },
+    )
+}
+
+@Composable
+private fun IntroRow(icon: ImageVector, title: String, body: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(14.dp)) {
+        Icon(icon, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 1.dp).size(24.dp))
+        Column(Modifier.weight(1f)) {
+            Text(title, style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.Ink)
+            Text(body, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 2.dp))
+        }
+    }
 }
 
 private val EssenceBoxHeight = 72.dp
@@ -475,7 +549,7 @@ private fun RateBlock(snapshot: IdleSnapshot, inputs: IdleInputs) {
     if (firstRun || atFloor) {
         Text(
             if (firstRun) {
-                "The Veil gathers essence while you're away. Seal trials to raise the pace; your echoes and Chronicle will fill in as you train."
+                FIRST_RUN_VEIL_LINE
             } else {
                 "The echoes have heard nothing from you. Your rate has decayed to its floor; return to training and they will rise again."
             },
