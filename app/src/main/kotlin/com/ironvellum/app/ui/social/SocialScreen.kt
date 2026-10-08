@@ -12,7 +12,10 @@ import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.ironvellum.app.ui.components.IronvellumDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
+import com.ironvellum.app.ui.theme.IronvellumColors
 import androidx.compose.runtime.mutableIntStateOf
 import com.ironvellum.app.data.InboxNotifier
 import androidx.compose.runtime.Composable
@@ -143,7 +146,14 @@ fun SocialScreen(
     // pills; the tabs themselves add no outer padding or screen title. The
     // pages run edge to edge so a swipe is not clipped inside the margins.
     Column(Modifier.fillMaxSize()) {
-        Spacer(Modifier.height(18.dp))
+        // One shared title above the pills, the same weight as the other tabs' headers.
+        Text(
+            "ALLIES",
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = IronvellumColors.Ink,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 18.dp, bottom = 8.dp),
+        )
         InkTabbedPager(
             labels = GuildTab.entries.map { it.label },
             badges = GuildTab.entries.map { if (it == GuildTab.INBOX) unread else 0 },
@@ -170,6 +180,7 @@ fun SocialScreen(
                         onBack = { scope.launch { pager.animateScrollToPage(GuildTab.FEED.ordinal) } },
                         onOpenLifter = onOpenLifter,
                         onOpenAccount = onOpenAccount,
+                        onOpenMissives = { scope.launch { pager.animateScrollToPage(GuildTab.INBOX.ordinal) } },
                     )
                 }
             }

@@ -1,6 +1,16 @@
 package com.ironvellum.app.ui.social
 
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,7 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.CheckCircle
+import androidx.compose.material.icons.filled.Check
 import com.ironvellum.app.ui.components.IronvellumDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -64,7 +74,9 @@ import com.ironvellum.app.data.CloudCircleGateway
 import com.ironvellum.app.ui.components.CelebrationPage
 import com.ironvellum.app.ui.components.AchievementOverlay
 import com.ironvellum.app.ui.components.InkPanel
-import com.ironvellum.app.ui.components.InkRail
+import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.InkSpinner
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.plural
@@ -268,6 +280,7 @@ fun CircleSection(
     val loadError = ui.error
     val actionError = ui.actionError
 
+    var showManage by rememberSaveable { mutableStateOf(false) }
     var showCreate by rememberSaveable { mutableStateOf(false) }
     var showJoin by rememberSaveable { mutableStateOf(false) }
     var confirmLeave by rememberSaveable { mutableStateOf(false) }
@@ -305,20 +318,28 @@ fun CircleSection(
                 CircleRoster(
                     circle = circle,
                     refreshFailed = ui.refreshFailed,
-                    busy = ui.actionBusy,
                     error = actionError,
+                    myUserId = ui.myUserId,
                     isOwner = circle.ownerId == ui.myUserId,
                     onOpenLifter = onOpenLifter,
-                    onLeave = { confirmLeave = true },
-                    onEditGoal = { showGoalEditor = true },
-                    onRename = { showRename = true },
-                    onRotate = { confirmRotate = true },
+                    onManage = { showManage = true },
                     onRemove = { removeId = it },
                 )
             }
         }
     }
 
+    if (showManage && circle != null) {
+        ManageCircleSheet(
+            circle = circle,
+            isOwner = circle.ownerId == ui.myUserId,
+            onDismiss = { showManage = false },
+            onRename = { showManage = false; showRename = true },
+            onRotate = { showManage = false; confirmRotate = true },
+            onEditGoal = { showManage = false; showGoalEditor = true },
+            onLeave = { showManage = false; confirmLeave = true },
+        )
+    }
     if (showCreate) {
         CircleNameDialog(
             title = "Form a circle",
@@ -394,7 +415,7 @@ fun CircleSection(
                 }
             },
             confirmButton = {
-                IronvellumButton(label = "Remove", enabled = !ui.actionBusy, onClick = {
+                IronvellumButton(label = "Remove", enabled = !ui.actionBusy, danger = true, onClick = {
                     vm.remove(removing.userId) { removeId = null }
                 })
             },
@@ -431,7 +452,7 @@ fun CircleSection(
                 )
             },
             confirmButton = {
-                IronvellumButton(label = "Leave", onClick = {
+                IronvellumButton(label = "Leave", danger = true, onClick = {
                     confirmLeave = false
                     vm.leave()
                 })
@@ -472,15 +493,6 @@ private fun CirclePitch(
 ) {
     InkPanel(Modifier.fillMaxWidth()) {
         Text(
-            "YOUR CIRCLE",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.SovereignGold,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(6.dp))
-        Text(
             "Form a circle of up to 8 allies — share one code, chase one week.",
             style = MaterialTheme.typography.bodyMedium,
             color = IronvellumColors.Ink,
@@ -498,19 +510,14 @@ private fun CirclePitch(
 private fun CircleRoster(
     circle: Circle,
     refreshFailed: Boolean,
-    busy: Boolean,
     error: String?,
+    myUserId: String?,
     isOwner: Boolean,
     onOpenLifter: (userId: String, displayName: String) -> Unit,
-    onLeave: () -> Unit,
-    onEditGoal: () -> Unit,
-    onRename: () -> Unit,
-    onRotate: () -> Unit,
+    onManage: () -> Unit,
     onRemove: (userId: String) -> Unit,
 ) {
     val context = LocalContext.current
-    val clipboard = LocalClipboard.current
-    val scope = rememberCoroutineScope()
 
     // The server's canonical total: summing what the viewer was handed could
     // differ from the next member's sum and split GOAL MET between phones.
@@ -520,109 +527,73 @@ private fun CircleRoster(
     val goal = circle.goal
     val hasGoal = goal > 0
     val met = hasGoal && total >= goal
-    val resets = remember { circleResetLabel(Instant.now(), ZoneId.systemDefault(), Locale.getDefault()) }
 
-    InkPanel(Modifier.fillMaxWidth()) {
-        Text(
-            circle.name,
-            style = MaterialTheme.typography.titleMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.Ink,
-        )
-        if (refreshFailed) {
-            // The roster below is the last good read; say so rather than let a
-            // stale week pass for the current one.
-            Spacer(Modifier.height(4.dp))
-            Text(
-                "The ink has faded — this roster is from your last sync. Pull down to try again.",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-        Spacer(Modifier.height(6.dp))
-        // The weekly challenge: the circle's progress toward the owner's goal.
-        // At goal the rail reads full and the mark turns gold — the moment the
-        // payout overlay fires for contributors.
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            InkRail(
-                fraction = if (hasGoal) (total.toFloat() / goal).coerceIn(0f, 1f) else 0f,
-                modifier = Modifier.weight(1f),
-                height = 8.dp,
-            )
-            Text(
-                if (met) "GOAL MET" else if (hasGoal) "$total / $goal this week" else "WARM-UP WEEK",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = if (met) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
-            if (isOwner) {
-                // 48dp minimum touch target via TapPad; the label is announced
-                // with the current goal so a screen reader hears what it edits.
-                TapPad("EDIT", "Change the weekly goal, currently ${circle.perMember} days each", minSize = 48.dp) { onEditGoal() }
+    InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+        Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 14.dp, bottom = 4.dp)) {
+            Row(verticalAlignment = Alignment.Bottom, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    circle.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.Bold,
+                    color = IronvellumColors.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+                // The weekly challenge: the circle's progress toward the owner's goal.
+                // Gold only once it is met, the moment the payout overlay fires.
+                Text(
+                    if (met) "Goal met" else if (hasGoal) "$total / $goal this week" else "Warm-up week",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (met) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+                    maxLines = 1,
+                    softWrap = false,
+                )
             }
-        }
-        Spacer(Modifier.height(8.dp))
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            // The text takes what COPY and SHARE leave and wraps, so at 360dp or
-            // a large font scale the actions are never squeezed out of the row.
-            Text(
-                "CIRCLE CODE ${circle.code}",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.InlineLabel,
-                modifier = Modifier.weight(1f),
-            )
-            RowAction("Copy", IronvellumColors.SystemGreen, contentDescription = "Copy the circle code") {
-                scope.launch {
-                    clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("Ironvellum circle code", circle.code)))
-                }
-                // Android 13+ shows its own confirmation; a second toast would double it.
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
-                    Toast.makeText(context, "Circle code copied", Toast.LENGTH_SHORT).show()
+            if (refreshFailed) {
+                // The roster below is the last good read; say so rather than let a
+                // stale week pass for the current one.
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "The ink has faded — this roster is from your last sync. Pull down to try again.",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontFamily = ChakraPetch,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
+            if (hasGoal) {
+                Spacer(Modifier.height(10.dp))
+                SegmentedRail(done = total, segments = goal)
+            }
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // The text takes what SHARE leaves and wraps, so at 360dp or a
+                // large font scale the action is never squeezed out of the row.
+                Text(
+                    "Code ${circle.code}",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.weight(1f),
+                )
+                RowAction("Share", IronvellumColors.SystemGreen, contentDescription = "Share the circle code") {
+                    val intent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(
+                            Intent.EXTRA_TEXT,
+                            "Join my Ironvellum circle ${circle.name} — code ${circle.code}",
+                        )
+                    }
+                    context.startActivity(Intent.createChooser(intent, "Share circle"))
                 }
             }
-            RowAction("Share", IronvellumColors.SystemGreen, contentDescription = "Share the circle code") {
-                val intent = Intent(Intent.ACTION_SEND).apply {
-                    type = "text/plain"
-                    putExtra(
-                        Intent.EXTRA_TEXT,
-                        "Join my Ironvellum circle ${circle.name} — code ${circle.code}",
-                    )
-                }
-                context.startActivity(Intent.createChooser(intent, "Share circle"))
-            }
         }
-        if (isOwner) {
-            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                RowAction("Rename", IronvellumColors.SystemGreen, contentDescription = "Rename the circle", onClick = onRename)
-                RowAction("New code", IronvellumColors.SystemGreen, contentDescription = "Make a new circle code", onClick = onRotate)
-            }
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            buildString {
-                append("$total ${plural(total, "day", "days")} trained")
-                if (hasGoal) append(" · ${circle.perMember} each")
-                circle.pendingPerMember?.let { append(" · $it from next week") }
-                append(" · weeks met: ${circle.weeksMet}")
-                append(" · resets $resets")
-            },
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
         // Members render oldest first (the server's order), the owner wears a mark.
         circle.members.forEach { member ->
+            InkDivider()
             CircleMemberRow(
                 member = member,
-                isOwner = member.userId == circle.ownerId,
+                isMe = member.userId == myUserId,
+                isKeeper = member.userId == circle.ownerId,
                 perMember = circle.perMember,
                 onOpenLifter = onOpenLifter,
                 onRemove = if (isOwner && member.userId != circle.ownerId) {
@@ -632,16 +603,51 @@ private fun CircleRoster(
                 },
             )
         }
-        Spacer(Modifier.height(12.dp))
-        IronvellumButton(label = "Leave", onClick = onLeave, enabled = !busy, quiet = true)
+        InkDivider()
+        ListRow(
+            label = "Manage circle",
+            value = if (isOwner) "Rename, new code, goal, leave" else "Leave",
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            onClick = onManage,
+        )
         InlineActionError(error)
+    }
+}
+
+/**
+ * The week's goal as one straight rail cut into [segments] days: [done] of them
+ * Emerald, the rest Rune. Past 20 segments the gaps shrink so each stays visible.
+ */
+@Composable
+private fun SegmentedRail(done: Int, segments: Int, modifier: Modifier = Modifier) {
+    val count = segments.coerceAtLeast(1)
+    val filled = done.coerceIn(0, count)
+    Canvas(
+        modifier
+            .fillMaxWidth()
+            .height(4.dp)
+            .semantics {
+                contentDescription = "Circle goal, $filled of $count days"
+                progressBarRangeInfo = ProgressBarRangeInfo(filled.toFloat(), 0f..count.toFloat())
+            },
+    ) {
+        val gap = (if (count > 20) 1.dp else 3.dp).toPx()
+        val width = (size.width - gap * (count - 1)) / count
+        for (i in 0 until count) {
+            drawRect(
+                color = if (i < filled) IronvellumColors.Emerald else IronvellumColors.Rune,
+                topLeft = Offset(i * (width + gap), 0f),
+                size = Size(width, size.height),
+            )
+        }
     }
 }
 
 @Composable
 private fun CircleMemberRow(
     member: CircleMember,
-    isOwner: Boolean,
+    isMe: Boolean,
+    isKeeper: Boolean,
     perMember: Int,
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onRemove: (() -> Unit)?,
@@ -649,71 +655,101 @@ private fun CircleMemberRow(
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .clickable(role = Role.Button) { onOpenLifter(member.userId, member.displayName) }
+            .heightIn(min = ListRowHeight)
+            .padding(start = 16.dp, end = if (onRemove != null) 8.dp else 16.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        IdentityRow(
-            displayName = member.displayName,
+        LifterAvatar(
             userId = member.userId,
-            wornTitle = member.titleId?.let { Titles.byId(it)?.name },
+            displayName = member.displayName,
+            size = 32.dp,
             level = member.level,
             titleId = member.titleId,
-            size = IdentitySize.Compact,
-            onClick = { onOpenLifter(member.userId, member.displayName) },
-            modifier = Modifier.weight(1f),
         )
-        Column(horizontalAlignment = Alignment.End) {
-            // A member who has not trained shows nothing: a row of zeroes is
-            // guilt, not information. A check marks those who have.
-            if (member.daysThisWeek >= 1) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Icon(
-                        Icons.Outlined.CheckCircle,
-                        contentDescription = "Trained this week",
-                        tint = IronvellumColors.SystemGreen,
-                        modifier = Modifier.size(14.dp),
-                    )
-                    Text(
-                        "${member.daysThisWeek} of $perMember",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.SystemGreen,
-                    )
-                }
-            }
-            // The member's share of the week's goal, on the same rail language
-            // as the circle's own progress — a slim stroke, not a second counter.
-            InkRail(
-                fraction = (member.daysThisWeek.toFloat() / perMember).coerceIn(0f, 1f),
-                modifier = Modifier.width(96.dp),
-                height = 3.dp,
+        Column(Modifier.weight(1f)) {
+            Text(
+                member.displayName.ifBlank { "Ironbound" },
+                style = MaterialTheme.typography.bodyMedium,
+                color = IronvellumColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
             )
-            member.lastWorkoutAtMs?.let { ms ->
-                Text(
-                    relativeTime(ms),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
-                )
+            val role = listOfNotNull("You".takeIf { isMe }, "Keeper".takeIf { isKeeper }).joinToString(" · ")
+            if (role.isNotEmpty()) {
+                Text(role, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
             }
-            if (isOwner) {
-                Text(
-                    "KEEPER",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SovereignGold,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-            }
-            onRemove?.let {
-                RowAction(
-                    "Remove",
-                    IronvellumColors.DangerRed,
-                    contentDescription = "Remove ${member.displayName} from the circle",
-                    onClick = it,
+        }
+        // A member who has not trained shows nothing: a row of zeroes is
+        // guilt, not information. A tick marks those who met the week's goal.
+        if (member.daysThisWeek >= 1) {
+            Text(
+                "${member.daysThisWeek} of $perMember",
+                style = MaterialTheme.typography.labelMedium,
+                color = IronvellumColors.InkMuted,
+            )
+            if (member.daysThisWeek >= perMember) {
+                Icon(
+                    Icons.Filled.Check,
+                    contentDescription = "Goal met",
+                    tint = IronvellumColors.Emerald,
+                    modifier = Modifier.size(16.dp),
                 )
             }
         }
+        onRemove?.let {
+            RowAction(
+                "Remove",
+                IronvellumColors.DangerRed,
+                contentDescription = "Remove ${member.displayName} from the circle",
+                onClick = it,
+            )
+        }
     }
+}
+
+/**
+ * Everything that changes the circle itself, behind one row: the Keeper renames
+ * it, makes a new code or edits the goal; anyone can leave. The week's facts the
+ * roster no longer carries (weeks met, reset time) ride here as one muted line.
+ */
+@Composable
+private fun ManageCircleSheet(
+    circle: Circle,
+    isOwner: Boolean,
+    onDismiss: () -> Unit,
+    onRename: () -> Unit,
+    onRotate: () -> Unit,
+    onEditGoal: () -> Unit,
+    onLeave: () -> Unit,
+) {
+    val resets = remember { circleResetLabel(Instant.now(), ZoneId.systemDefault(), Locale.getDefault()) }
+    IronvellumDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Manage ${circle.name}") },
+        text = {
+            Column {
+                Text(
+                    buildString {
+                        append("${circle.perMember} ${plural(circle.perMember, "day", "days")} each")
+                        circle.pendingPerMember?.let { append(" · $it from next week") }
+                        append(" · weeks met ${circle.weeksMet} · resets $resets")
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+                if (isOwner) {
+                    Spacer(Modifier.height(8.dp))
+                    ListRow("Rename the circle", onClick = onRename)
+                    ListRow("New code", onClick = onRotate)
+                    ListRow("Weekly goal", value = "${circle.perMember} ${plural(circle.perMember, "day", "days")}", onClick = onEditGoal)
+                }
+            }
+        },
+        confirmButton = { IronvellumButton(label = "Done", onClick = onDismiss) },
+        dismissButton = { IronvellumButton(label = "Leave circle", onClick = onLeave, danger = true) },
+    )
 }
 
 /** Forms or renames a circle: one name field, mirroring the server's 1-24 check. */
