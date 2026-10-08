@@ -13,6 +13,7 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.EditNote
@@ -145,6 +146,7 @@ import com.ironvellum.app.ui.components.ExerciseInfoSheet
 import com.ironvellum.app.ui.components.ExercisePickerSheet
 import com.ironvellum.app.ui.components.lastLoggedLine
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.InkChip
 import com.ironvellum.app.ui.components.NavChip
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.formatDate
@@ -1316,378 +1318,6 @@ private fun reopenRefusalText(reason: SealedReopen.Refusal): String = when (reas
     SealedReopen.Refusal.LEDGER_SHORT -> "The XP it paid has been spent, so it cannot be taken back."
 }
 
-@Composable
-internal fun SetRow(
-    label: String,
-    exerciseName: String,
-    setIndex: Int,
-    records: Map<Pair<String, Int>, SetRecords.Record>,
-    bodyweight: Double?,
-    reps: Int,
-    weightKg: Double?,
-    done: Boolean,
-    /** True when [reps] is seconds held: the column counts time, not repetitions. */
-    isHold: Boolean = false,
-    /** Which columns this row renders; REPS is the lifting default. */
-    metric: ExerciseMetric = ExerciseMetric.REPS,
-    /** Weighted DURATION work (Weighted Skipping) keeps its LOAD column. */
-    isWeighted: Boolean = false,
-    durationSec: Int? = null,
-    distanceM: Double? = null,
-    grade: String = "",
-    /**
-     * False for activity work: its figure is not strength, so it never gets a
-     * PR line at all.
-     */
-    scoresStrength: Boolean = true,
-    /** Best score of this exercise's earlier done sets today; a PR must beat it too. */
-    bestEarlierThisWorkout: Double? = null,
-    showColumnLabels: Boolean = true,
-    /**
-     * Keep the PR line's height even while it is empty, so ticking a set does
-     * not nudge the rows beneath it. The block's last row has nothing beneath,
-     * so it passes false and the card ends at the steppers.
-     */
-    reserveDeltaLine: Boolean = true,
-    onRemove: (() -> Unit)? = null,
-    onChange: (Int, Double?, Boolean) -> Unit,
-    /** Opens the typed-load dialog; the stepper's ± only walk the plate grid. */
-    onLoadTap: () -> Unit = {},
-    /**
-     * The activity route: writes the whole set shape. Every caller passes the
-     * set's CURRENT values for the fields its metric does not edit — a null
-     * for an unowned field is what used to erase a duration on a checkbox tick.
-     */
-    onActivityChange: (reps: Int, durationSec: Int?, distanceM: Double?, grade: String?, weightKg: Double?, done: Boolean) -> Unit =
-        { _, _, _, _, _, _ -> },
-) {
-    // The controls are one row; the PR delta is a line UNDER them. It used to be
-    // a sibling inside the row calling fillMaxWidth(), which ate the whole width
-    // and starved the two weight(1f) stepper columns to zero - LOAD and REPS
-    // wrapped one letter per line and the steppers vanished.
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .alpha(if (done) 0.6f else 1f)
-            .padding(vertical = 3.dp),
-    ) {
-        Row(
-            Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-        // Material's checkbox is a rounded square with a machine-drawn tick,
-        // the last stock control in the app. Swapping it for a drawn plate is a
-        // styling change; the SEMANTICS are not optional, so they are restored
-        // explicitly here:
-        //  - toggleable(role = Role.Checkbox) carries checked state and the role
-        //    announcement that a bare clickable drops entirely,
-        //  - the outer 48dp box keeps Material's minimum touch target, which a
-        //    26dp visual would otherwise shrink (and which also restores the
-        //    row spacing Material's own 48dp reservation gave this row).
-        Box(
-            Modifier
-                // 48dp reserved, 42dp effective: the set row's own
-                // padding(vertical = 3.dp) clips it, and Compose delivers touch
-                // only within the parent's bounds, so requiredSize cannot
-                // reclaim it (measured on device: 126px = 42dp either way).
-                // Material's Checkbox was clipped identically here, so this is
-                // the pre-existing row geometry, not a regression - widening it
-                // means changing the row's padding, which moves every set row.
-                .size(48.dp)
-                .toggleable(
-                    value = done,
-                    role = Role.Checkbox,
-                    // The tick passes the set's CURRENT duration, distance,
-                    // grade and load straight back through: this line is the
-                    // whole fix for the historical bug where ticking done
-                    // rewrote the row and wiped an activity's seconds.
-                    onValueChange = {
-                        if (metric.isStrength) {
-                            onChange(reps, weightKg, it)
-                        } else {
-                            onActivityChange(reps, durationSec, distanceM, grade, weightKg, it)
-                        }
-                    },
-                ),
-            contentAlignment = Alignment.Center,
-        ) {
-            Box(
-                Modifier
-                    .size(26.dp)
-                    .background(
-                        if (done) IronvellumColors.SystemGreen.copy(alpha = 0.18f) else Color.Transparent,
-                        MaterialTheme.shapes.extraSmall,
-                    )
-                    .inkBorder(
-                        if (done) IronvellumColors.SystemGreen else IronvellumColors.Bracket,
-                        MaterialTheme.shapes.extraSmall,
-                        1.5.dp,
-                    ),
-                contentAlignment = Alignment.Center,
-            ) {
-                if (done) {
-                    Text(
-                        "\u2713",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.SystemGreen,
-                    )
-                }
-            }
-        }
-        Text(
-            label,
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            // Fixed width and centred: Chakra Petch's digits are proportional, so
-            // a bare "1" was narrower than "2" and shifted every column of the
-            // ticked row about 5px against the unticked one.
-            textAlign = TextAlign.Center,
-            modifier = Modifier.widthIn(min = 14.dp),
-        )
-        if (metric.isStrength) {
-            // LOAD gets the wider share: "102.5kg" is the longest figure in the
-            // row and was drawn over its own − and + at 360dp.
-            Column(Modifier.weight(1.25f)) {
-                if (showColumnLabels) ColumnLabel("LOAD")
-                Stepper(
-                    // A barbell lift with no load yet is unset, not bodyweight:
-                    // "BW" on a first bench press read as an instruction. A bare
-                    // unit, because Chakra Petch has no dash glyph.
-                    value = if (isWeighted && (weightKg ?: 0.0) <= 0.0) "kg" else formatKg(weightKg),
-                    what = "load",
-                    onMinus = { onChange(reps, stepDownKg(weightKg), done) },
-                    onPlus = { onChange(reps, stepUpKg(weightKg), done) },
-                    onValueClick = onLoadTap,
-                    dimmed = done,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-            Column(Modifier.weight(1f)) {
-                if (showColumnLabels) ColumnLabel(if (isHold) "SECONDS" else "REPS")
-                // A hold steps in 5s: tapping + fifty-nine times to reach a
-                // minute is not an input method.
-                val step = if (isHold) HOLD_STEP_SECONDS else 1
-                Stepper(
-                    value = if (isHold) "${reps}s" else reps.toString(),
-                    what = if (isHold) "seconds" else "reps",
-                    onMinus = { onChange((reps - step).coerceAtLeast(0), weightKg, done) },
-                    onPlus = { onChange(reps + step, weightKg, done) },
-                    dimmed = done,
-                    modifier = Modifier.fillMaxWidth(),
-                )
-            }
-        } else when (metric) {
-            ExerciseMetric.DURATION -> {
-                // ActivityScore pays a load bonus here, so Weighted Skipping
-                // keeps its LOAD column; plain Yoga does not.
-                if (isWeighted) {
-                    Column(Modifier.weight(1f)) {
-                        if (showColumnLabels) ColumnLabel("LOAD")
-                        Stepper(
-                            value = formatKg(weightKg),
-                            what = "load",
-                            onMinus = { onActivityChange(reps, durationSec, distanceM, grade, stepDownKg(weightKg), done) },
-                            onPlus = { onActivityChange(reps, durationSec, distanceM, grade, stepUpKg(weightKg), done) },
-                            onValueClick = onLoadTap,
-                            dimmed = done,
-                            modifier = Modifier.fillMaxWidth(),
-                        )
-                    }
-                }
-                Column(Modifier.weight(1f)) {
-                    if (showColumnLabels) ColumnLabel("MINUTES")
-                    val minutes = (durationSec ?: 0) / 60
-                    Stepper(
-                        value = minutes.toString(),
-                        what = "minutes",
-                        onMinus = {
-                            onActivityChange(reps, (minutes - DURATION_STEP_MINUTES).coerceAtLeast(0) * 60, distanceM, grade, weightKg, done)
-                        },
-                        onPlus = {
-                            onActivityChange(reps, (minutes + DURATION_STEP_MINUTES) * 60, distanceM, grade, weightKg, done)
-                        },
-                        dimmed = done,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-            ExerciseMetric.DISTANCE_TIME -> {
-                // ActivityScore ignores weight for this metric, so there is no
-                // LOAD column to sit there dead.
-                Column(Modifier.weight(1f)) {
-                    if (showColumnLabels) ColumnLabel("KM")
-                    val km = (distanceM ?: 0.0) / 1000.0
-                    Stepper(
-                        value = formatBodyValue(km),
-                        what = "distance",
-                        onMinus = {
-                            onActivityChange(reps, durationSec, ((km - DISTANCE_STEP_KM).coerceAtLeast(0.0)) * 1000.0, grade, weightKg, done)
-                        },
-                        onPlus = {
-                            onActivityChange(reps, durationSec, (km + DISTANCE_STEP_KM) * 1000.0, grade, weightKg, done)
-                        },
-                        dimmed = done,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-                Column(Modifier.weight(1f)) {
-                    if (showColumnLabels) ColumnLabel("MINUTES")
-                    val minutes = (durationSec ?: 0) / 60
-                    Stepper(
-                        value = minutes.toString(),
-                        what = "minutes",
-                        onMinus = {
-                            onActivityChange(reps, (minutes - DURATION_STEP_MINUTES).coerceAtLeast(0) * 60, distanceM, grade, weightKg, done)
-                        },
-                        onPlus = {
-                            onActivityChange(reps, (minutes + DURATION_STEP_MINUTES) * 60, distanceM, grade, weightKg, done)
-                        },
-                        dimmed = done,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-            ExerciseMetric.ATTEMPTS_GRADE -> {
-                // The attempt count rides the reps column (as ActivityScore
-                // reads it), but calling that column REPS invited typing a
-                // lift's numbers into a bouldering problem.
-                Column(Modifier.weight(1f)) {
-                    if (showColumnLabels) ColumnLabel("ATTEMPTS")
-                    Stepper(
-                        value = reps.toString(),
-                        what = "attempts",
-                        onMinus = { onActivityChange((reps - 1).coerceAtLeast(0), durationSec, distanceM, grade, weightKg, done) },
-                        onPlus = { onActivityChange(reps + 1, durationSec, distanceM, grade, weightKg, done) },
-                        dimmed = done,
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-                Column(Modifier.weight(1f)) {
-                    if (showColumnLabels) ColumnLabel("GRADE")
-                    // Capped at the server's ceiling here so a long entry
-                    // cannot be typed at all, not truncated after the fact.
-                    OutlinedTextField(
-                        shape = MaterialTheme.shapes.small,
-                        value = grade,
-                        onValueChange = { onActivityChange(reps, durationSec, distanceM, it.take(WireLimits.GRADE_MAX), weightKg, done) },
-                        singleLine = true,
-                        placeholder = { Text("V5", style = MaterialTheme.typography.labelSmall, color = IronvellumColors.InkMuted) },
-                        textStyle = MaterialTheme.typography.labelLarge.copy(
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = IronvellumColors.Ink,
-                        ),
-                        colors = fieldColors(accent = IronvellumColors.SystemGreen),
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                }
-            }
-            ExerciseMetric.REPS, ExerciseMetric.HOLD -> {}
-        }
-            onRemove?.let { remove ->
-                Text(
-                    "✕",
-                    style = MaterialTheme.typography.titleSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier
-                        .clickable { remove() }
-                        .padding(horizontal = 6.dp, vertical = 10.dp),
-                )
-            }
-        }
-        // Fixed-height delta line under the steppers: always allocated, so
-        // ticking a set never reflows the row. Only a DONE set speaks: under
-        // an undone one the figure is still a plan, and a fresh session read
-        // "NEW PR" under every one of its seventeen sets.
-        val delta = bodyweight?.takeIf { scoresStrength && done }?.let { bw ->
-            SetRecords.delta(
-                records, exerciseName, setIndex, reps, weightKg, bw,
-                isHold = isHold,
-                bestEarlierThisWorkout = bestEarlierThisWorkout,
-            )
-        }
-        if (reserveDeltaLine || delta != null) SetDeltaBadge(delta, displaySetNo = setIndex + 1)
-    }
-}
-
-/** Shared 10sp column heading for the activity stepper columns. */
-@Composable
-private fun ColumnLabel(text: String) {
-    Text(
-        text,
-        style = MaterialTheme.typography.labelSmall,
-        fontFamily = ChakraPetch,
-        fontSize = 10.sp,
-        letterSpacing = 1.sp,
-        color = IronvellumColors.InkMuted,
-    )
-    Spacer(Modifier.height(2.dp))
-}
-
-/** Glanceable per-set-position PR readout. Copy is deliberately telegraphic. */
-@Composable
-private fun SetDeltaBadge(delta: SetRecords.Delta?, displaySetNo: Int) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .height(16.dp)
-            .padding(start = 44.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-    ) {
-        if (delta == null) return@Row
-        val record = delta.record
-        if (record == null) {
-            Text(
-                "Set $displaySetNo — first peak",
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
-            return@Row
-        }
-        if (delta.isRecord) {
-            Icon(
-                Icons.Filled.Bolt,
-                contentDescription = "New peak",
-                tint = IronvellumColors.SovereignGold,
-                modifier = Modifier.size(12.dp),
-            )
-            Text(
-                "NEW PEAK",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SovereignGold,
-            )
-        }
-        // Any set above its position's record says "was", the record it
-        // passed, whether or not an earlier set today already took NEW PEAK:
-        // equal sets read the same line, one of them with the gold mark. "PEAK"
-        // stays for a set at or under the record it is chasing.
-        val beaten = delta.deltaScore > 0.0
-        Text(
-            (if (beaten) "was " else "PEAK ") + "${record.reps}×${prLoad(record.weightKg)}",
-            style = MaterialTheme.typography.labelSmall,
-            color = IronvellumColors.InkMuted,
-        )
-        // Shortfall is muted, never red: a lighter back-off set is normal.
-        val colour = if (delta.deltaScore >= 0.0) IronvellumColors.EmeraldBright else IronvellumColors.InkMuted
-        Text(
-            (if (delta.deltaScore >= 0.0) "▲ +" else "▽ ") + "%.1f".fmt(delta.deltaScore),
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = colour,
-        )
-    }
-}
-
-/** "40kg" or plain "BW" when the PR was a pure bodyweight set. formatKg already carries the unit. */
-private fun prLoad(weightKg: Double?): String =
-    weightKg?.let { formatKg(it) } ?: "BW"
-
 /** The ± buttons walk the plate grid, so 15.2 kg steps to 17.5 or 15, never 17.7 or 12.7. */
 internal const val LOAD_STEP_KG = 2.5
 
@@ -1724,110 +1354,6 @@ internal fun parseLoadKg(text: String): Result<Double> {
 internal fun loadText(kg: Double): String =
     if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
 
-/**
- * A ± stepper. The drawn frame stays [STEPPER_FRAME_HEIGHT] tall; the box
- * around it is [STEPPER_HIT_HEIGHT] of touch target, which the set row's 48dp
- * tick already reserves, so the row grows no taller. Each ± zone takes half
- * the width (the figure's own tap target, when there is one, sits on top of
- * the middle and wins there).
- */
-@Composable
-private fun Stepper(
-    value: String,
-    /** What the figure is, for the ± announcements: "Decrease load". */
-    what: String,
-    onMinus: () -> Unit,
-    onPlus: () -> Unit,
-    dimmed: Boolean = false,
-    /** When set, tapping the figure itself opens exact entry. */
-    onValueClick: (() -> Unit)? = null,
-    modifier: Modifier = Modifier,
-) {
-    Box(modifier.height(STEPPER_HIT_HEIGHT), contentAlignment = Alignment.Center) {
-        Box(
-            Modifier
-                .fillMaxWidth()
-                .height(STEPPER_FRAME_HEIGHT)
-                .clip(MaterialTheme.shapes.extraSmall)
-                .background(IronvellumColors.Abyss)
-                .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp),
-        )
-        Row(Modifier.fillMaxSize()) {
-            StepZone("−", "Decrease $what", onMinus, Alignment.CenterStart, Modifier.weight(1f))
-            StepZone("+", "Increase $what", onPlus, Alignment.CenterEnd, Modifier.weight(1f))
-        }
-        // A load's "kg" drops to a small suffix and a five-character figure
-        // ("102.5") steps down a size, so the figure fits between the − and +
-        // glyphs of a 360dp row instead of being drawn over them.
-        val unitAt = if (value.length > 2 && value.endsWith("kg")) value.length - 2 else value.length
-        val number = value.substring(0, unitAt)
-        val unit = value.substring(unitAt)
-        val figure = @Composable {
-            Text(
-                buildAnnotatedString {
-                    append(number)
-                    if (unit.isNotEmpty()) {
-                        withStyle(SpanStyle(fontSize = 9.sp, fontWeight = FontWeight.Normal)) { append(unit) }
-                    }
-                },
-                style = MaterialTheme.typography.labelLarge,
-                fontSize = if (number.length >= 5) 12.sp else TextUnit.Unspecified,
-                // The theme's label tracking pushed "12.5kg" into the glyphs.
-                letterSpacing = if (number.length >= 4) 0.5.sp else TextUnit.Unspecified,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = if (dimmed) IronvellumColors.InkMuted else IronvellumColors.Ink,
-                maxLines = 1,
-                softWrap = false,
-            )
-        }
-        if (onValueClick != null) {
-            Box(
-                Modifier
-                    .fillMaxHeight()
-                    .clickable(onClickLabel = "Type a load", role = Role.Button, onClick = onValueClick)
-                    .padding(horizontal = 4.dp),
-                contentAlignment = Alignment.Center,
-            ) { figure() }
-        } else {
-            figure()
-        }
-    }
-}
-
-/** Half a stepper: the whole 44dp-tall half is the target, the glyph sits at the frame's edge. */
-@Composable
-private fun StepZone(symbol: String, description: String, onClick: () -> Unit, glyphAt: Alignment, modifier: Modifier) {
-    Box(
-        modifier
-            .fillMaxHeight()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = InkPressIndication,
-                role = Role.Button,
-                onClick = onClick,
-            )
-            .semantics { contentDescription = description },
-        contentAlignment = glyphAt,
-    ) {
-        Text(
-            symbol,
-            style = MaterialTheme.typography.titleMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SystemGreen,
-            modifier = Modifier
-                .clearAndSetSemantics {}
-                .padding(horizontal = 9.dp),
-        )
-    }
-}
-
-/** The drawn stepper frame: what the old 2dp-padded glyph row measured. */
-private val STEPPER_FRAME_HEIGHT = 30.dp
-
-/** The stepper's touch height; the set row's 48dp tick box already reserves it. */
-private val STEPPER_HIT_HEIGHT = 44.dp
-
 
 private const val TITLE_CAP = 80
 
@@ -1838,7 +1364,7 @@ private const val PUBLIC_NOTE_CAP = 500
 
 
 /** One exercise of the live trial: its sets in order, and where the rite put it. */
-private class TrialBlock(val id: Long, val position: Int, val sets: List<SessionSet>) {
+internal class TrialBlock(val id: Long, val position: Int, val sets: List<SessionSet>) {
     val first: SessionSet get() = sets.first()
 }
 
@@ -1858,7 +1384,7 @@ private sealed interface UndoPrompt {
 }
 
 /** What a stepper moves. LOAD has its own entry dialog; the others share one. */
-private enum class FigureKind { LOAD, REPS, SECONDS, MINUTES, KM, ATTEMPTS }
+internal enum class FigureKind { LOAD, REPS, SECONDS, MINUTES, KM, ATTEMPTS }
 
 /** A stepper's figure, with the set as it would stand after a − or a +. */
 private class Figure(
@@ -1962,7 +1488,7 @@ private fun SessionSet.typedFigure(kind: FigureKind): Int = when (kind) {
     FigureKind.LOAD, FigureKind.KM -> 0
 }
 
-private fun SessionSet.withTypedFigure(kind: FigureKind, n: Int): SessionSet = when (kind) {
+internal fun SessionSet.withTypedFigure(kind: FigureKind, n: Int): SessionSet = when (kind) {
     FigureKind.REPS, FigureKind.ATTEMPTS -> copy(reps = n)
     FigureKind.SECONDS -> copy(durationSec = n)
     FigureKind.MINUTES -> copy(durationSec = n * 60)
@@ -2047,7 +1573,7 @@ private fun newPeakSetIds(
 }
 
 /** A folded exercise's second line, by how far along it is. */
-private fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: Boolean): String {
+internal fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: Boolean): String {
     val done = block.sets.filter { it.done }
     val total = block.sets.count { !it.warmup }
     val first = block.sets.firstOrNull { !it.warmup } ?: block.first
@@ -2177,7 +1703,7 @@ private fun TrialHeader(
 
 /** The one exercise being worked: its figures, then its sets. The only boxed thing on the screen. */
 @Composable
-private fun OpenExerciseCard(
+internal fun OpenExerciseCard(
     block: TrialBlock,
     metric: ExerciseMetric,
     weighted: Boolean,
@@ -2185,7 +1711,7 @@ private fun OpenExerciseCard(
     reason: String?,
     note: String?,
     lastNote: String?,
-    onNote: () -> Unit,
+    onNote: (() -> Unit)?,
     modifiersEditable: Boolean,
     activeSetId: Long?,
     editingSetId: Long?,
@@ -2206,6 +1732,11 @@ private fun OpenExerciseCard(
     onToggleWarmup: (SessionSet) -> Unit,
     onUnlog: (SessionSet) -> Unit,
     modifier: Modifier = Modifier,
+    /** The sealed trial's amend mode: any set can open for editing, and there is no live-only chrome. */
+    amend: Boolean = false,
+    onChangeExercise: (() -> Unit)? = null,
+    onLog: (SessionSet) -> Unit = {},
+    footer: (@Composable () -> Unit)? = null,
 ) {
     val first = block.first
     val shape = MaterialTheme.shapes.medium
@@ -2248,15 +1779,20 @@ private fun OpenExerciseCard(
                     modifier = Modifier.padding(start = 4.dp).size(18.dp),
                 )
             }
+            onChangeExercise?.let { change ->
+                InkChip("Change", clickLabel = "Change exercise", icon = Icons.Filled.SwapHoriz, onClick = change)
+            }
             ExerciseMenu(
                 name = first.exerciseName,
                 onMoveUp = if (canMoveUp) ({ onMove(true) }) else null,
                 onMoveDown = if (canMoveDown) ({ onMove(false) }) else null,
                 onModifiers = if (modifiersEditable) onEditModifiers else null,
                 onEditLoad = onEditLoad,
-                onAddSet = onAddSet,
+                // Amending has its own Add set row under the sets.
+                onAddSet = if (amend) null else onAddSet,
                 // Only a set not yet logged: removing a logged one loses its log.
-                onRemoveLastSet = block.sets.last().takeIf { block.sets.size > 1 && !it.done }?.let { last -> { onRemoveSet(last) } },
+                // An amendment may drop any set; Save is the commit.
+                onRemoveLastSet = block.sets.last().takeIf { block.sets.size > 1 && (amend || !it.done) }?.let { last -> { onRemoveSet(last) } },
                 onRemoveExercise = onRemoveExercise,
             )
         }
@@ -2305,7 +1841,7 @@ private fun OpenExerciseCard(
         block.sets.forEach { set ->
             key(set.id) {
                 val state = when {
-                    (set.done || set.warmup) && set.id == editingSetId -> RowState.EDITING
+                    (set.done || set.warmup || amend) && set.id == editingSetId -> RowState.EDITING
                     set.warmup -> RowState.WARMUP
                     set.done -> RowState.DONE
                     set.id == activeSetId -> RowState.ACTIVE
@@ -2326,10 +1862,13 @@ private fun OpenExerciseCard(
                     onToggleWarmup = { onToggleWarmup(set) },
                     onUnlog = { onUnlog(set) },
                     onRemove = { onRemoveSet(set) },
+                    amend = amend,
+                    onLog = { onLog(set) },
                 )
             }
         }
-        ExerciseNoteRow(first.exerciseName, note, onNote)
+        footer?.invoke()
+        if (onNote != null) ExerciseNoteRow(first.exerciseName, note, onNote)
     }
 }
 
@@ -2371,7 +1910,7 @@ private fun ExerciseMenu(
     onMoveDown: (() -> Unit)?,
     onModifiers: (() -> Unit)?,
     onEditLoad: (() -> Unit)?,
-    onAddSet: () -> Unit,
+    onAddSet: (() -> Unit)?,
     onRemoveLastSet: (() -> Unit)?,
     onRemoveExercise: () -> Unit,
 ) {
@@ -2396,7 +1935,7 @@ private fun ExerciseMenu(
                     },
                 )
             }
-            item("Add set", action = onAddSet)
+            onAddSet?.let { item("Add set", action = it) }
             onEditLoad?.let { item("Edit load", action = it) }
             onModifiers?.let { item("Edit modifiers", action = it) }
             onMoveUp?.let { item("Move up", action = it) }
@@ -2427,6 +1966,8 @@ private fun TrialSetRow(
     onToggleWarmup: () -> Unit,
     onUnlog: () -> Unit,
     onRemove: () -> Unit,
+    amend: Boolean = false,
+    onLog: () -> Unit = {},
 ) {
     if (state == RowState.ACTIVE || state == RowState.EDITING) {
         val figures = figuresFor(set, metric, weighted)
@@ -2471,7 +2012,10 @@ private fun TrialSetRow(
             if (state == RowState.EDITING) {
                 Row(Modifier.fillMaxWidth().padding(start = 22.dp), verticalAlignment = Alignment.CenterVertically) {
                     // A warm-up was never logged, so there is nothing to un-log.
-                    if (!set.warmup) RowAction("Un-log", IronvellumColors.Ink, onUnlog)
+                    // An amendment can also open a set that was never logged.
+                    if (!set.warmup) {
+                        if (set.done) RowAction("Un-log", IronvellumColors.Ink, onUnlog) else RowAction("Log set", IronvellumColors.Ink, onLog)
+                    }
                     RowAction("Remove", IronvellumColors.DangerRed, onRemove)
                     Spacer(Modifier.weight(1f))
                     RowAction("Close", IronvellumColors.InkMuted, onToggleEdit)
@@ -2485,7 +2029,7 @@ private fun TrialSetRow(
     }
     val done = state == RowState.DONE
     // A warm-up reads as a muted line like a logged set, and opens the same edit row.
-    val editable = done || state == RowState.WARMUP
+    val editable = done || state == RowState.WARMUP || amend
     val tone = if (editable) IronvellumColors.InkMuted else IronvellumColors.InkMuted.copy(alpha = 0.7f)
     Row(
         Modifier
@@ -2662,7 +2206,7 @@ private fun RowAction(label: String, color: Color, onClick: () -> Unit) {
  * complete a small emerald tick and its best set. Tapping opens it.
  */
 @Composable
-private fun FoldedExerciseRow(
+internal fun FoldedExerciseRow(
     name: String,
     subline: String,
     done: Int,
@@ -2739,7 +2283,7 @@ private const val MINI_BAR_SEGMENTS = 8
 
 /** A straight 1dp rule between folded rows, inset to the text. */
 @Composable
-private fun FolderRule() {
+internal fun FolderRule() {
     Box(Modifier.fillMaxWidth().padding(start = 32.dp).height(1.dp).background(IronvellumColors.Rune))
 }
 
@@ -2950,7 +2494,7 @@ private fun restNow(timer: RestTimer?): Long {
 
 /** Typed reps, seconds, minutes or attempts: the stepper's number, exactly. */
 @Composable
-private fun FigureEntryDialog(
+internal fun FigureEntryDialog(
     set: SessionSet,
     number: Int,
     kind: FigureKind,
