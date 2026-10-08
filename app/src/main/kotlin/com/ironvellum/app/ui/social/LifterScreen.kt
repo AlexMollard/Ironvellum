@@ -5,21 +5,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import com.ironvellum.app.data.cloud.FriendRow
 import com.ironvellum.app.domain.fmt
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import com.ironvellum.app.ui.components.IronvellumDialog
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -28,10 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -47,7 +44,11 @@ import com.ironvellum.app.data.cloud.ReportReason
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.SettingsSwitchRow
+import com.ironvellum.app.ui.components.TapRow
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.plural
@@ -55,9 +56,7 @@ import java.util.Locale
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.ironvellumRepository
-import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -236,6 +235,7 @@ internal fun LifterScreen(
     userId: String,
     displayName: String,
     onBack: () -> Unit,
+    onOpenTrial: (sessionId: String, ownerId: String, headline: String) -> Unit,
     viewModel: LifterViewModel = viewModel(
         factory = viewModelFactory { initializer { LifterViewModel(ironvellumCloudSync(), ironvellumAccount(), ironvellumRepository()) } },
     ),
@@ -250,6 +250,7 @@ internal fun LifterScreen(
     var confirmBlock by remember { mutableStateOf(false) }
     var reporting by remember { mutableStateOf(false) }
     val name = displayName.ifBlank { "this Ironbound" }
+    val canManage = ui.myUserId != null && !isMe
 
     Column(
         Modifier
@@ -259,7 +260,10 @@ internal fun LifterScreen(
     ) {
         Spacer(Modifier.height(18.dp))
 
-        PushedHeader("FOLIO", onBack)
+        PushedHeader("Folio", onBack)
+        // The ally state sits beside the name: the one offer ("Add ally") is a chip, the
+        // settled states are InkMuted text so they never read as a button. Unknown until the
+        // friends read answers: nothing is shown, never a premature offer.
         IdentityRow(
             displayName = displayName,
             userId = userId,
@@ -269,104 +273,55 @@ internal fun LifterScreen(
             size = IdentitySize.Hero,
             isMe = isMe,
             frameId = if (isMe) equippedFrame else null,
+            trailing = if (canManage) {
+                {
+                    when (ui.allyState) {
+                        null -> {}
+                        AllyState.None -> AllyChip(
+                            label = if (ui.allyBusy) "Sending…" else "Add ally",
+                            tappable = !ui.allyBusy,
+                            onClick = { viewModel.addAlly(userId) },
+                        )
+                        AllyState.Pending, AllyState.Incoming -> AllyStatus("Request pending", check = false)
+                        AllyState.Ally -> AllyStatus("Ally", check = true)
+                    }
+                }
+            } else {
+                null
+            },
             modifier = Modifier.fillMaxWidth(),
         )
-        Spacer(Modifier.height(8.dp))
-
-        // ADD ALLY stays tappable (a real action); settled states render as a
-        // non-tappable status chip so they never read as a CTA.
-        if (ui.myUserId != null && !isMe) {
+        // The ally read itself failed, or a sent request was refused: say
+        // so instead of silently guessing or snapping the button back.
+        if (canManage && ui.allyError != null && (ui.allyState == null || ui.allyState == AllyState.None)) {
             Spacer(Modifier.height(6.dp))
-            when (ui.allyState) {
-                // Unknown until the friends read answers — no chip, never a
-                // premature ADD ALLY offer.
-                null -> {}
-                AllyState.None -> AllyChip(
-                    label = if (ui.allyBusy) "Sending…" else "Add ally",
-                    tappable = !ui.allyBusy,
-                    onClick = { viewModel.addAlly(userId) },
-                )
-                AllyState.Pending, AllyState.Incoming -> AllyChip(
-                    label = "Request pending",
-                    tappable = false,
-                    onClick = {},
-                )
-                AllyState.Ally -> AllyChip(
-                    label = "Ally",
-                    tappable = false,
-                    onClick = {},
-                )
-            }
-            // The ally read itself failed, or a sent request was refused: say
-            // so instead of silently guessing or snapping the button back.
-            if (ui.allyError != null && (ui.allyState == null || ui.allyState == AllyState.None)) {
-                Spacer(Modifier.height(6.dp))
-                SocialErrorBanner("Ally request failed: ${ui.allyError}")
-            }
+            SocialErrorBanner("Ally request failed: ${ui.allyError}")
         }
         Spacer(Modifier.height(14.dp))
 
         when {
-            ui.loading -> InkPanel(Modifier.fillMaxWidth()) {
-                Text(
-                    "Opening the folio…",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
+            ui.loading -> Text(
+                "Opening the folio…",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
 
-            ui.error != null -> InkPanel(Modifier.fillMaxWidth()) {
-                Text(
-                    "THE FOLIO WON'T OPEN",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.DangerRed,
-                    letterSpacing = IronvellumTracking.SectionHeader,
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    ui.error.orEmpty(),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
+            ui.error != null -> Text(
+                "The folio won't open. ${ui.error.orEmpty()}",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.DangerRed,
+            )
 
-            ui.sessions.isEmpty() -> InkPanel(Modifier.fillMaxWidth()) {
-                Text(
-                    "NOTHING SHARED",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SovereignGold,
-                    letterSpacing = IronvellumTracking.SectionHeader,
-                )
-                Spacer(Modifier.height(6.dp))
-                Text(
-                    "This Ironbound has no trials you may read — either none are sealed, " +
-                        "or their visibility does not include you.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
-            }
+            ui.sessions.isEmpty() -> Text(
+                "Nothing shared. This Ironbound has no trials you may read: either none are sealed, " +
+                    "or their visibility does not include you.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+            )
 
             else -> {
-                // Stat strip built only from data already in LifterUi
-                // (sessions list) — fills the former dead space below the list.
-                val xpShared = ui.sessions.sumOf { it.xpAwarded }
-                val bestStr = ui.sessions.maxOf { it.strengthScore }
-                InkPanel(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                    ) {
-                        Stat("SHARED", ui.sessions.size.toString(), IronvellumColors.SystemGreen)
-                        Stat("XP SHARED", "+$xpShared", IronvellumColors.EmeraldBright)
-                        Stat("BEST STR SHARED", bestStr.toString(), IronvellumColors.SovereignGold)
-                    }
-                }
-
-                // ---- derived record: cadence, strength line, strongest hunt ----
-                // All computed from the sessions already in state — no extra
-                // server chatter, and the former dead space carries rhythm.
+                // Everything below is derived from the sessions already in state:
+                // no extra server chatter.
                 val dayMs = 24L * 60 * 60 * 1000
                 val now = System.currentTimeMillis()
                 val times = ui.sessions.mapNotNull { it.completedAtMs }.sorted()
@@ -374,186 +329,117 @@ internal fun LifterScreen(
                 val perWeek = times.count { now - it <= 28 * dayMs } / 4.0
                 val chrono = ui.sessions.sortedBy { it.completedAtMs ?: Long.MAX_VALUE }
                 val strSeries = chrono.map { it.strengthScore.toDouble() }
-                val best = chrono.maxBy { it.strengthScore }
 
-                InkPanel(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                    ) {
-                        Stat(
-                            "LAST TRIAL",
-                            daysSince?.let { "${it}D AGO" } ?: "UNRECORDED",
-                            IronvellumColors.SystemGreen,
-                        )
-                        Stat("CADENCE SHARED", String.format(Locale.ENGLISH, "%.1f", perWeek) + "/WK", IronvellumColors.EmeraldBright)
-                        Stat("SETS MOVED", ui.sessions.sumOf { it.sets }.toString(), IronvellumColors.SovereignGold)
+                val summary = buildList {
+                    add("${ui.sessions.size} ${plural(ui.sessions.size, "trial", "trials")} shared")
+                    add("+${ui.sessions.sumOf { it.xpAwarded }} XP")
+                    add(String.format(Locale.ENGLISH, "%.1f", perWeek) + " a week")
+                    daysSince?.let {
+                        add("last trial " + when (it) { 0 -> "today"; 1 -> "yesterday"; else -> "$it days ago" })
                     }
-                }
+                }.joinToString(" · ")
+                Text(
+                    summary,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+                Spacer(Modifier.height(14.dp))
 
-                // The house line chart: strength across sessions, oldest to newest.
-                InkPanel(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                    Text(
-                        "STRENGTH LINE",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                    )
-                    Spacer(Modifier.height(6.dp))
+                // The one strength chart; TrendChart marks the peak gold on its own.
+                InkPanel(Modifier.fillMaxWidth()) {
+                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            "Strength line",
+                            style = MaterialTheme.typography.titleSmall,
+                            color = IronvellumColors.Ink,
+                            modifier = Modifier.weight(1f),
+                        )
+                        if (strSeries.size >= 2) {
+                            Text(
+                                "PEAK ${strSeries.max().toInt()}",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = IronvellumColors.SovereignGold,
+                                letterSpacing = IronvellumTracking.InlineLabel,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
                     if (strSeries.size >= 2) {
                         TrendChart(
                             strSeries,
-                            IronvellumColors.SystemGreen,
+                            startLabel = chrono.first().completedAtMs?.let { formatDate(it, "d MMM") },
+                            endLabel = chrono.last().completedAtMs?.let { formatDate(it, "d MMM") },
                             valueText = { "%.0f strength".fmt(it) },
                             dateText = { chrono[it].completedAtMs?.let { ms -> formatDate(ms, "d MMM") } },
                         )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            "${strSeries.size} ${plural(strSeries.size, "trial", "trials")} on the line · best ${strSeries.max().toInt()}",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = ChakraPetch,
-                            color = IronvellumColors.InkMuted,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
                     } else {
-                        // A single hunt cannot draw a line — say so instead of
+                        // A single trial cannot draw a line: say so instead of
                         // leaving a blank canvas.
                         Text(
-                            "One trial on record — the line begins with the next.",
+                            "One trial on record. The line begins with the next.",
                             style = MaterialTheme.typography.bodySmall,
                             color = IronvellumColors.InkMuted,
                         )
                     }
                 }
 
-                // The signature hunt, framed gold so the record has a summit.
-                InkPanel(Modifier.fillMaxWidth().padding(bottom = 10.dp)) {
-                    Text(
-                        "STRONGEST TRIAL",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.SovereignGold,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    Text(
-                        best.title.ifBlank { best.label },
-                        style = MaterialTheme.typography.titleSmall,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = IronvellumColors.EmeraldBright,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        "STR ${best.strengthScore} · +${best.xpAwarded} XP" +
-                            (best.completedAtMs?.let { " · ${formatDate(it, "MMM d") }" } ?: ""),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-
-                SectionHeader("Recent trials")
+                SectionHeader("Recent trials", topPadding = 20.dp)
                 // Bounded at the source: CloudSync.friendSessions fetches at
                 // most 20 rows, so this plain Column never composes more.
                 ui.sessions.forEach { session ->
-                    InkPanel(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                session.title.ifBlank { session.label },
-                                style = MaterialTheme.typography.titleSmall,
-                                fontFamily = ChakraPetch,
-                                fontWeight = FontWeight.Bold,
-                                color = IronvellumColors.EmeraldBright,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f),
-                            )
-                            session.completedAtMs?.let {
-                                Text(
-                                    formatDate(it, "MMM d") + if (session.editedAtMs != null) " · amended" else "",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = IronvellumColors.InkMuted,
-                                )
-                            }
-                        }
-                        if (session.note.isNotBlank()) {
-                            Spacer(Modifier.height(4.dp))
-                            Text(
-                                session.note,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = IronvellumColors.InkMuted,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Row(
-                            Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        ) {
-                            Stat("SETS", session.sets.toString(), IronvellumColors.SystemGreen)
-                            Stat("XP", "+${session.xpAwarded}", IronvellumColors.EmeraldBright)
-                            Stat("STR", session.strengthScore.toString(), IronvellumColors.SovereignGold)
-                        }
-                    }
+                    val headline = session.title.ifBlank { session.label }.ifBlank { "Trial" }
+                    val subline = buildList {
+                        session.completedAtMs?.let { add(formatDate(it, "d MMM")) }
+                        add("${session.sets} ${plural(session.sets, "set", "sets")}")
+                        add("STR ${session.strengthScore}")
+                        if (session.editedAtMs != null) add("amended")
+                    }.joinToString(" · ")
+                    ListRow(
+                        label = headline,
+                        subline = subline,
+                        value = "+${session.xpAwarded} XP",
+                        valueColor = IronvellumColors.SovereignGold,
+                        onClickLabel = "Open trial",
+                        onClick = if (session.id.isNotBlank()) {
+                            { onOpenTrial(session.id, userId, headline) }
+                        } else {
+                            null
+                        },
+                    )
+                    InkDivider()
                 }
             }
         }
 
         // Last, after the record: these are rare, heavy actions, and at the top
         // they crowded out the training the screen exists to show.
-        if (ui.myUserId != null && !isMe) {
-            SectionHeader("Manage folio")
-            InkPanel(Modifier.fillMaxWidth()) {
-                FlowRow(
-                    Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (ui.allyState == AllyState.Ally) {
-                        IronvellumButton(label = "Remove ally", onClick = { confirmRemove = true }, enabled = !ui.actionBusy, quiet = true)
-                    }
-                    ui.muted?.let { muted ->
-                        IronvellumButton(
-                            label = if (muted) "Unmute" else "Mute",
-                            onClick = { viewModel.setMuted(userId, !muted) },
-                            enabled = !ui.actionBusy,
-                            quiet = true,
-                        )
-                    }
-                    IronvellumButton(label = "Block", onClick = { confirmBlock = true }, enabled = !ui.actionBusy, quiet = true)
-                    IronvellumButton(label = "Report", onClick = { reporting = true }, enabled = !ui.actionBusy, quiet = true)
-                }
-                Spacer(Modifier.height(8.dp))
+        if (canManage) {
+            SectionHeader("Manage folio", topPadding = 20.dp)
+            ui.muted?.let { muted ->
+                SettingsSwitchRow(
+                    label = "Mute",
+                    caption = "Hides their trials, remarks and tributes. They aren't told.",
+                    checked = muted,
+                    onCheckedChange = { if (!ui.actionBusy) viewModel.setMuted(userId, it) },
+                )
+                InkDivider()
+            }
+            if (ui.allyState == AllyState.Ally) {
+                ManageRow("Remove ally", IronvellumColors.Ink) { if (!ui.actionBusy) confirmRemove = true }
+            }
+            ManageRow("Block", IronvellumColors.DangerRed) { if (!ui.actionBusy) confirmBlock = true }
+            ManageRow("Report", IronvellumColors.DangerRed) { if (!ui.actionBusy) reporting = true }
+            ui.notice?.let {
+                Spacer(Modifier.height(10.dp))
                 Text(
-                    "Mute hides their trials, remarks and tributes from you. They aren't told.",
-                    style = MaterialTheme.typography.bodySmall,
+                    it,
+                    style = MaterialTheme.typography.labelMedium,
                     color = IronvellumColors.InkMuted,
                 )
-                ui.notice?.let {
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        it,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.EmeraldBright,
-                    )
-                }
-                ui.actionError?.let {
-                    Spacer(Modifier.height(6.dp))
-                    SocialErrorBanner(it)
-                }
+            }
+            ui.actionError?.let {
+                Spacer(Modifier.height(10.dp))
+                SocialErrorBanner(it)
             }
         }
 
@@ -584,14 +470,14 @@ internal fun LifterScreen(
             text = {
                 Text(
                     "You and $name will no longer see each other's trials, remarks or tributes, " +
-                        "any alliance ends, and neither of you can send an ally request. Unblock any time under ALLIES.",
+                        "any alliance ends, and neither of you can send an ally request. Unblock any time under Allies.",
                 )
             },
             confirmButton = {
                 IronvellumButton(label = "Block", onClick = {
                     confirmBlock = false
                     viewModel.block(userId)
-                })
+                }, danger = true)
             },
             dismissButton = {
                 IronvellumButton(label = "Cancel", onClick = { confirmBlock = false }, quiet = true)
@@ -611,24 +497,26 @@ internal fun LifterScreen(
     }
 }
 
-
-
+/** A settled ally state beside the name: InkMuted text, with a check once allied. No box, no tap. */
 @Composable
-private fun Stat(label: String, value: String, accent: androidx.compose.ui.graphics.Color) {
-    Column {
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Text(
-            value,
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = accent,
-        )
+private fun AllyStatus(label: String, check: Boolean) {
+    Row(
+        Modifier.padding(start = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        if (check) {
+            Icon(Icons.Filled.Check, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(14.dp))
+        }
+        Text(label, style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
     }
+}
+
+/** One plain end-of-list action: a 52dp row with no chevron, [color] Ink or DangerRed, a rule beneath. */
+@Composable
+private fun ManageRow(label: String, color: Color, onClick: () -> Unit) {
+    TapRow(onClickLabel = label, onClick = onClick) {
+        Text(label, style = MaterialTheme.typography.bodyMedium, color = color)
+    }
+    InkDivider()
 }

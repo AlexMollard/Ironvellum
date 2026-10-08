@@ -259,6 +259,8 @@ data class ProfileNameDto(
 
 @Serializable
 data class FriendSessionDto(
+    // Defaulted: opens the trial thread from a folio row; a row without it stays plain.
+    @SerialName("id") val id: String = "",
     @SerialName("label") val label: String,
     @SerialName("title") val title: String = "",
     @SerialName("note") val note: String = "",
@@ -737,6 +739,8 @@ data class ReportDto(
 )
 
 data class FriendSession(
+    /** The trial's id, for opening its thread; blank when the server sent none. */
+    val id: String = "",
     val label: String,
     val title: String,
     val note: String,
