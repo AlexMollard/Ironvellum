@@ -32,6 +32,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ironvellum.app.domain.ArmyClass
+import com.ironvellum.app.domain.Gacha
+import com.ironvellum.app.domain.RelicHouses
+import com.ironvellum.app.domain.RelicReveal
 import com.ironvellum.app.domain.Reward
 import com.ironvellum.app.domain.RewardRarity
 import com.ironvellum.app.domain.RollResult
@@ -39,6 +42,9 @@ import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.SkillClaimResult
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.domain.TitleDef
+import com.ironvellum.app.domain.Veil
+import com.ironvellum.app.domain.VaultSlot
+import com.ironvellum.app.domain.VaultState
 import com.ironvellum.app.domain.VeilGrant
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -65,12 +71,20 @@ internal sealed interface CelebrationPage {
         val opened: List<String> = emptyList(),
     ) : CelebrationPage
 
-    /** A reward drawn beyond the Veil. [sigilSeed] is set for a relic only. */
+    /**
+     * A reward drawn beyond the Veil. [sigilSeed] is set for a relic only. A house relic carries its
+     * [relic] reveal and the four [houseSlots] of its house; a crest carries its [crestId] and the
+     * [crestLine] under its name. Without them the page is the plain stamp it always was.
+     */
     data class Inscribed(
         val rarity: RewardRarity,
         val name: String,
         val sigilSeed: String? = null,
         val notes: List<String> = emptyList(),
+        val relic: RelicReveal? = null,
+        val houseSlots: List<VaultSlot> = emptyList(),
+        val crestId: String? = null,
+        val crestLine: String? = null,
     ) : CelebrationPage
 
     /** A circle's weekly goal met, and the XP its member's share paid. */
@@ -120,8 +134,13 @@ internal fun techniquePages(result: SkillClaimResult, sex: Sex): List<Celebratio
 /** The rarity as the glossary names it: Epic reads as Fabled. */
 internal fun rarityWord(rarity: RewardRarity): String = if (rarity == RewardRarity.Epic) "Fabled" else rarity.name
 
-/** An inscription's draw as a page: its name, rarity, relic art and what it did. */
-internal fun inscribedPage(result: RollResult): CelebrationPage.Inscribed {
+/**
+ * An inscription's draw as a page: its name, rarity, relic art and what it did. [vault] is the vault
+ * AFTER the draw, which a house relic's reveal reads its set progress from; [crestsOwned] is how many
+ * crests the lifter holds after it.
+ */
+internal fun inscribedPage(result: RollResult, vault: VaultState? = null, crestsOwned: Int? = null): CelebrationPage.Inscribed {
+    val relic = (result.reward as? Reward.Relic)?.let { reward -> vault?.let { RelicHouses.reveal(reward, it) } }
     val notes = when (val reward = result.reward) {
         is Reward.Figures -> listOf("Added to the Veil")
         is Reward.Relic -> listOf("Rate multiplier ×%.2f".fmt(reward.multiplier))
@@ -139,8 +158,16 @@ internal fun inscribedPage(result: RollResult): CelebrationPage.Inscribed {
         // would misrepresent the frame that was won.
         sigilSeed = (result.reward as? Reward.Relic)?.name,
         notes = notes,
+        relic = relic,
+        houseSlots = relic?.let { r -> vault?.houses?.firstOrNull { it.house == r.relic.house }?.slots }.orEmpty(),
+        crestId = (result.reward as? Reward.CrestFrame)?.id,
+        crestLine = (result.reward as? Reward.CrestFrame)?.let { crestLine("Chance draw", crestsOwned) },
     )
 }
+
+/** "Chance draw · 5 of 10 crests", or just the lead when the count is not known. */
+internal fun crestLine(lead: String, owned: Int?): String =
+    if (owned == null) lead else "$lead · $owned of ${Gacha.CREST_FRAMES.size} crests"
 
 /**
  * What the Veil paid outside a draw, as moments. The one-time catch-up is a single page that
@@ -161,8 +188,16 @@ internal fun veilGrantPages(grant: VeilGrant?): List<CelebrationPage> {
         emptyList()
     }
     // A crest already named by the catch-up page is not told twice; one won at a milestone since is.
-    val milestones = if (grant.retro) emptyList() else grant.crests.map {
-        CelebrationPage.Inscribed(rarity = RewardRarity.Rare, name = it, notes = listOf("Milestone crest", "Wear it on your folio"))
+    val milestones = if (grant.retro) emptyList() else grant.crests.map { name ->
+        val id = Gacha.CREST_FRAMES.firstOrNull { it.name == name }?.id
+        val level = Veil.CREST_LADDER.indexOf(id).takeIf { it >= 0 }?.let { (it + 1) * Veil.MILESTONE_EVERY }
+        CelebrationPage.Inscribed(
+            rarity = RewardRarity.Rare,
+            name = name,
+            notes = if (id == null) listOf("Milestone crest", "Wear it on your folio") else emptyList(),
+            crestId = id,
+            crestLine = level?.let { "Level $it milestone" },
+        )
     }
     return retro + milestones
 }
@@ -205,6 +240,10 @@ internal fun AchievementOverlay(
     onWear: ((titleId: String) -> Unit)? = null,
     /** Opens the one technique a claim unlocked, then moves on; null hides the link. */
     onOpenTechnique: ((name: String) -> Unit)? = null,
+    /** The crest worn now, so a crest reveal offers to swap to the new one or keep this. */
+    wornCrestId: String? = null,
+    /** Wears a crest; null makes a crest reveal a plain Continue. */
+    onWearCrest: ((crestId: String) -> Unit)? = null,
 ) {
     if (pages.isEmpty()) return
     var index by remember(pages) { mutableIntStateOf(0) }
@@ -267,7 +306,30 @@ internal fun AchievementOverlay(
                             notes = page.opened.map { "Technique opened · $it" },
                         )
                     }
-                    is CelebrationPage.Inscribed -> MomentPage(
+                    is CelebrationPage.Inscribed -> if (page.relic != null && page.houseSlots.isNotEmpty()) {
+                        RelicRevealPage(step = at, steps = pages.size, reveal = page.relic, slots = page.houseSlots, onContinue = advance)
+                    } else if (page.crestId != null) {
+                        val id = page.crestId
+                        val canWear = onWearCrest != null && id != wornCrestId
+                        val keep = wornCrestId?.let { worn -> Gacha.CREST_FRAMES.firstOrNull { it.id == worn }?.name?.replace(" Crest", "") }
+                        CrestRevealPage(
+                            step = at,
+                            steps = pages.size,
+                            crestId = id,
+                            line = page.crestLine,
+                            dock = {
+                                CelebrationDock(
+                                    primary = if (canWear) "Wear crest" else "Continue",
+                                    onPrimary = {
+                                        if (canWear) onWearCrest?.invoke(id)
+                                        advance()
+                                    },
+                                    link = if (canWear) (keep?.let { "Keep wearing $it" } ?: "Not now") else null,
+                                    onLink = advance,
+                                )
+                            },
+                        )
+                    } else MomentPage(
                         step = at,
                         steps = pages.size,
                         tag = "Inscribed",
