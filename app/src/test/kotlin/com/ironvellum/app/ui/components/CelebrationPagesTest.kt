@@ -2,6 +2,8 @@ package com.ironvellum.app.ui.components
 
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.ironvellum.app.domain.ArmyClass
+import com.ironvellum.app.domain.OwnedRelic
+import com.ironvellum.app.domain.RelicHouses
 import com.ironvellum.app.domain.Reward
 import com.ironvellum.app.domain.RewardRarity
 import com.ironvellum.app.domain.RollResult
@@ -9,6 +11,7 @@ import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.SkillClaimResult
 import com.ironvellum.app.domain.Skills
 import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.VeilGrant
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -112,4 +115,26 @@ class CelebrationPagesTest {
         assertEquals(List(2) { HapticFeedbackType.Confirm }, inscribedBeats(RewardRarity.Epic).map { it.second })
         assertEquals(listOf(HapticFeedbackType.LongPress), inscribedBeats(RewardRarity.Masterwork).map { it.second })
     }
+
+    @Test
+    fun `a house relic reveals its house and a crest names its source`() {
+        val vault = RelicHouses.vault(listOf(OwnedRelic("iron.crown", 1.5), OwnedRelic("iron.band", 1.1)))
+        val relic = Reward.Relic(1.5, "Crown of Iron", "iron.crown")
+        val page = inscribedPage(RollResult(relic, RewardRarity.Epic), vault)
+        assertEquals("2 of 4 in House of Iron", page.relic?.setProgress)
+        assertEquals(4, page.houseSlots.size)
+        assertTrue(page.relic!!.effect.contains("whole essence rate"))
+
+        val crest = inscribedPage(RollResult(Reward.CrestFrame("gold", "Gold Crest"), RewardRarity.Rare), crestsOwned = 5)
+        assertEquals("gold", crest.crestId)
+        assertEquals("Chance draw · 5 of 10 crests", crest.crestLine)
+    }
+
+    @Test
+    fun `a milestone crest page carries the crest and its level`() {
+        val page = veilGrantPages(VeilGrant(crests = listOf("Gold Crest"))).single() as CelebrationPage.Inscribed
+        assertEquals("gold", page.crestId)
+        assertEquals("Level 20 milestone", page.crestLine)
+    }
 }
+
