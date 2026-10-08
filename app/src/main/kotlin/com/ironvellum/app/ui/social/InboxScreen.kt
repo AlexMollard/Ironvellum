@@ -302,12 +302,21 @@ internal fun InboxScreen(
 
 @Composable
 private fun EmptyInbox() {
-    Text(
-        "No missives yet. Ally requests, remarks and tributes on your trials land here.",
-        style = MaterialTheme.typography.bodySmall,
-        color = IronvellumColors.InkMuted,
-        modifier = Modifier.padding(vertical = 8.dp),
-    )
+    // One quiet plate, the same card the list would sit in: a plain title and one muted line.
+    InkPanel(Modifier.fillMaxWidth()) {
+        Text(
+            "No missives yet",
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = IronvellumColors.Ink,
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            "Ally requests, remarks and tributes on your trials land here.",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
+    }
 }
 
 @Composable
@@ -379,7 +388,7 @@ private fun InboxRow(
                     item.actorName.ifBlank { "An Ironbound" },
                     style = MaterialTheme.typography.labelLarge,
                     fontFamily = ChakraPetch,
-                    fontWeight = if (unread) FontWeight.Bold else FontWeight.Medium,
+                    fontWeight = if (unread) FontWeight.SemiBold else FontWeight.Medium,
                     color = IronvellumColors.Ink,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
