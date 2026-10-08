@@ -48,7 +48,13 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.data.DeedOrderStore
 import com.ironvellum.app.domain.DeedLadder
+import com.ironvellum.app.domain.EarnedOrder
+import com.ironvellum.app.domain.TitleRarity
+import com.ironvellum.app.domain.groupEarned
+import com.ironvellum.app.ui.theme.RarityTint
+import androidx.compose.ui.platform.LocalContext
 import com.ironvellum.app.domain.DeedLadders
 import com.ironvellum.app.domain.RungState
 import com.ironvellum.app.domain.Sex
@@ -170,6 +176,7 @@ private fun DeedsHome(
     modifier: Modifier,
 ) {
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
     val earned = Titles.ALL.filter { it.id in earnedIds }
     val worn = equippedId?.let { Titles.byId(it) }
 
@@ -280,12 +287,22 @@ private fun DeedsHome(
         item(key = "wall") {
             Column {
                 SectionLabel("EARNED  ${earned.size}")
+                val store = remember { DeedOrderStore(context) }
+                var order by remember { mutableStateOf(store.order) }
+                if (earned.isNotEmpty()) {
+                    RangeChips(
+                        options = EarnedOrder.entries.map { it to it.label },
+                        selected = order,
+                        onPick = {
+                            order = it
+                            store.order = it
+                        },
+                    )
+                }
                 EarnedWall(
                     unlocked = unlocked,
-                    earned = earned.sortedWith(
-                        compareByDescending<TitleDef> { it.rarity.ordinal }
-                            .thenByDescending { unlocked[it.id] ?: 0L },
-                    ),
+                    earned = earned,
+                    order = order,
                     equippedId = equippedId,
                     onOpenDeed = onOpenDeed,
                 )
@@ -397,10 +414,15 @@ private fun GoldCheck() {
     )
 }
 
-/** Every deed held as a plain row: name, rarity word, the day it was earned. Each opens its detail sheet. */
+/**
+ * Every deed held as a plain row: a glyph and rarity word in the tier's metal, the name, the day
+ * it was earned. Rarest groups the rows under a tier header; Newest is one flat run.
+ * Each opens its detail sheet.
+ */
 @Composable
 private fun EarnedWall(
     earned: List<TitleDef>,
+    order: EarnedOrder,
     unlocked: Map<String, Long>,
     equippedId: String?,
     onOpenDeed: (String) -> Unit,
@@ -413,16 +435,20 @@ private fun EarnedWall(
         )
         return
     }
-    InkRowPanel(Modifier.fillMaxWidth()) {
-        earned.forEachIndexed { i, def ->
+    val groups = remember(earned, unlocked, order) { groupEarned(earned, unlocked, order) }
+    groups.forEachIndexed { g, group ->
+        group.rarity?.let { TierHeader(it, group.deeds.size, first = g == 0) }
+        InkRowPanel(Modifier.fillMaxWidth()) {
+        group.deeds.forEachIndexed { i, def ->
             val worn = def.id == equippedId
             val date = unlocked[def.id]?.let { formatDate(it, "d MMM yyyy") }
             if (i > 0) InkDivider()
             ListRow(
                 label = def.name,
                 subline = def.rarity.label,
-                // A Masterwork's word is gold, so worn is a word of its own, never a colour.
+                // The tier's metal is the word's colour, so worn is a word of its own, never a colour.
                 sublineColor = rarityColor(def.rarity, earned = true),
+                leading = { RarityGlyph(def.rarity) },
                 value = when {
                     worn && date != null -> "Worn \u00B7 $date"
                     worn -> "Worn"
@@ -435,7 +461,21 @@ private fun EarnedWall(
                 },
             )
         }
+        }
     }
+}
+
+/** A tier's name and how many of its deeds are held, in the tier's metal. */
+@Composable
+private fun TierHeader(rarity: TitleRarity, count: Int, first: Boolean) {
+    Text(
+        "${rarity.label} \u00B7 $count",
+        style = MaterialTheme.typography.labelMedium,
+        color = RarityTint.of(rarity),
+        modifier = Modifier
+            .padding(top = if (first) 12.dp else 20.dp, bottom = 6.dp)
+            .semantics { heading() },
+    )
 }
 
 // ------------------------------------------------------------ category ----
