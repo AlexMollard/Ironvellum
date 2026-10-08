@@ -8,8 +8,10 @@ object ExportWriter {
 
     // 5: adds idle/gacha/cosmetic state, profile height/sex/inkStyle and real
     // per-exercise metadata. 6: per-set warmup and supersetGroup. 7: per-trial
-    // exercise notes. ExportReader still accepts 6 and below.
-    const val FORMAT_VERSION = 7
+    // exercise notes. 8: lifetime essence, and the pacing state the Veil needs to
+    // come back whole (draw counters, round level mark, purchases, grant version).
+    // ExportReader still accepts 7 and below.
+    const val FORMAT_VERSION = 8
 
     /** Real catalogue attributes for one movement, matched by name on import. */
     data class ExerciseMeta(
@@ -25,11 +27,20 @@ object ExportWriter {
         val shadows: Int,
         val relicMultiplier: Double,
         val lastCollectedAtMs: Long,
+        /** v8. Absent in older archives, where the reader falls back to [essence]. */
+        val lifetimeEssence: Long = 0,
     )
 
     data class GachaSnapshot(
         val rolls: Int,
         val equippedFrame: String?,
+        // v8. Absent in older archives, which read as 0.
+        val figureStreak: Int = 0,
+        val rollLevelMark: Int = 0,
+        val relicPity: Int = 0,
+        val drawsSpent: Int = 0,
+        val offeringsMade: Int = 0,
+        val veilGrantVersion: Int = 0,
     )
 
     data class CrestFrameSnapshot(
@@ -161,6 +172,7 @@ object ExportWriter {
         append(",\"shadows\":").append(idle.shadows)
         append(",\"relicMultiplier\":").append(idle.relicMultiplier)
         append(",\"lastCollectedAtMs\":").append(idle.lastCollectedAtMs)
+        append(",\"lifetimeEssence\":").append(idle.lifetimeEssence)
         append("}")
     }
 
@@ -168,6 +180,12 @@ object ExportWriter {
         append("{\"rolls\":").append(gacha.rolls)
         append(",\"equippedFrame\":")
         appendNullable(gacha.equippedFrame) { appendEscaped(it) }
+        append(",\"figureStreak\":").append(gacha.figureStreak)
+        append(",\"rollLevelMark\":").append(gacha.rollLevelMark)
+        append(",\"relicPity\":").append(gacha.relicPity)
+        append(",\"drawsSpent\":").append(gacha.drawsSpent)
+        append(",\"offeringsMade\":").append(gacha.offeringsMade)
+        append(",\"veilGrantVersion\":").append(gacha.veilGrantVersion)
         append("}")
     }
 

@@ -103,6 +103,9 @@ class IronvellumApp : Application() {
             // Titles used to be awarded only at the moment a workout finished,
             // so anything satisfied by imported health data stayed locked.
             runCatching { repository.reconcileTitles() }
+            // The Veil's one-time catch-up for levels that never paid out. Guarded
+            // by a stored version, so every launch after the first is a no-op.
+            runCatching { repository.applyVeilGrant() }
             // Restore a stored sign-in before any screen asks who we are,
             // otherwise the social surfaces flash "signed out" on every launch.
             val restored = runCatching { accountRepository.restore() }.getOrNull()?.isSuccess == true

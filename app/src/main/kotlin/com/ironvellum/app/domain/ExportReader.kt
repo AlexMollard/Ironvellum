@@ -221,11 +221,19 @@ object ExportReader {
         shadows = o.int("shadows") ?: 0,
         relicMultiplier = o.dbl("relicMultiplier") ?: 1.0,
         lastCollectedAtMs = o.long("lastCollectedAtMs") ?: 0,
+        // Before v8 nothing was ever spent, so what is held is what was earned.
+        lifetimeEssence = o.long("lifetimeEssence") ?: o.long("essence") ?: 0,
     )
 
     private fun readGacha(o: Obj) = ExportWriter.GachaSnapshot(
         rolls = o.int("rolls") ?: 0,
         equippedFrame = legacyFrameId(o.str("equippedFrame")),
+        figureStreak = o.int("figureStreak") ?: 0,
+        rollLevelMark = o.int("rollLevelMark") ?: 0,
+        relicPity = o.int("relicPity") ?: 0,
+        drawsSpent = o.int("drawsSpent") ?: 0,
+        offeringsMade = o.int("offeringsMade") ?: 0,
+        veilGrantVersion = o.int("veilGrantVersion") ?: 0,
     )
 
     private fun readCrestFrame(o: Obj) = ExportWriter.CrestFrameSnapshot(

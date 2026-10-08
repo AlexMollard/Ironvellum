@@ -80,6 +80,7 @@ import com.ironvellum.app.domain.SessionClock
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
+import com.ironvellum.app.domain.VeilGrant
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.TrainFocus
 import com.ironvellum.app.domain.TrainingFocus
@@ -98,6 +99,7 @@ import com.ironvellum.app.ui.components.RankSheet
 import com.ironvellum.app.ui.components.Term
 import com.ironvellum.app.ui.components.TermDialog
 import com.ironvellum.app.ui.components.deedPages
+import com.ironvellum.app.ui.components.veilGrantPages
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
@@ -285,7 +287,13 @@ class DashboardViewModel(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    fun celebrationsSeen() = repo.clearPendingCelebrations()
+    /** What the Veil paid outside a draw (milestone crests, the one-time catch-up), owed its moment. */
+    val pendingVeilGrant: StateFlow<VeilGrant?> = repo.pendingVeilGrant
+
+    fun celebrationsSeen() {
+        repo.clearPendingCelebrations()
+        repo.clearPendingVeilGrant()
+    }
 
     fun wearTitle(titleId: String) {
         viewModelScope.launchGuarded("wear title") { repo.equipTitle(titleId) }
@@ -430,8 +438,9 @@ fun DashboardScreen(
     // celebrate in, so the moment is paid out here on the first screen.
     val owed by viewModel.pendingCelebrations.collectAsStateWithLifecycle()
     val sex by viewModel.sex.collectAsStateWithLifecycle()
+    val veilGrant by viewModel.pendingVeilGrant.collectAsStateWithLifecycle()
     AchievementOverlay(
-        pages = deedPages(owed, sex),
+        pages = deedPages(owed, sex) + veilGrantPages(veilGrant),
         onDone = { viewModel.celebrationsSeen() },
         wornTitleId = ui.profile?.currentTitleId,
         onWear = viewModel::wearTitle,

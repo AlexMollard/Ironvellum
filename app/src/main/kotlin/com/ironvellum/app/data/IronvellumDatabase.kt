@@ -80,7 +80,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 36
+        const val VERSION = 37
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -102,6 +102,24 @@ abstract class IronvellumDatabase : RoomDatabase() {
          * [SessionExerciseNoteEntity] (composite key, both foreign keys
          * cascading, the exerciseId index) or Room refuses to open.
          */
+        /**
+         * Veil pacing and the essence sink: relic pity, draws spent, extra
+         * inscriptions bought and the one-time grant version on the gacha row,
+         * and a monotonic lifetime essence on the idle row. Lifetime starts at
+         * the essence held now (nothing has been spent yet). The grant version
+         * starts at 0 so the retro pass runs once on the next launch.
+         */
+        private val MIGRATION_36_37 = object : Migration(36, 37) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE gacha_state ADD COLUMN relicPity INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE gacha_state ADD COLUMN drawsSpent INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE gacha_state ADD COLUMN offeringsMade INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE gacha_state ADD COLUMN veilGrantVersion INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("ALTER TABLE idle_state ADD COLUMN lifetimeEssence INTEGER NOT NULL DEFAULT 0")
+                db.execSQL("UPDATE idle_state SET lifetimeEssence = essence")
+            }
+        }
+
         private val MIGRATION_35_36 = object : Migration(35, 36) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL(
@@ -528,6 +546,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_33_34,
             MIGRATION_34_35,
             MIGRATION_35_36,
+            MIGRATION_36_37,
         )
 
         const val NAME = "ironvellum.db"
