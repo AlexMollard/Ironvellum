@@ -46,6 +46,8 @@ fun ListRow(
     sublineColor: Color = IronvellumColors.InkMuted,
     valueColor: Color = IronvellumColors.InkMuted,
     onClickLabel: String? = null,
+    /** Replaces [icon] with a composable of the caller's own, e.g. a tinted glyph. */
+    leading: (@Composable () -> Unit)? = null,
     contentPadding: PaddingValues = LocalRowPadding.current,
     onClick: (() -> Unit)? = null,
 ) {
@@ -58,7 +60,7 @@ fun ListRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        icon?.let { Icon(it, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(22.dp)) }
+        if (leading != null) leading() else icon?.let { Icon(it, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(22.dp)) }
         Column(Modifier.weight(1f)) {
             Text(label, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
             if (subline != null) Text(subline, style = MaterialTheme.typography.bodySmall, color = sublineColor)

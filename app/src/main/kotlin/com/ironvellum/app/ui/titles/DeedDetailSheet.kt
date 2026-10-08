@@ -1,13 +1,26 @@
 package com.ironvellum.app.ui.titles
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
@@ -19,16 +32,44 @@ import com.ironvellum.app.ui.components.InfoAction
 import com.ironvellum.app.ui.components.InfoProgress
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.formatDate
+import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.RarityTint
 import java.util.Locale
 
 /**
- * Rarity is a word in InkMuted. Gold is spent only on an earned Masterwork, as it is on the
- * Veil's inscriptions: the rarest deed is the most earned thing there is. Worn is marked in
- * words (WORN), never by colour alone, so the two cannot be confused.
+ * An earned deed's rarity word takes its tier's metal ([RarityTint]); a locked deed's stays
+ * InkMuted, so a tier is only shown in colour once it is held. Worn is marked in words, never
+ * by colour alone.
  */
 internal fun rarityColor(rarity: TitleRarity, earned: Boolean = false): Color =
-    if (earned && rarity == TitleRarity.Masterwork) IronvellumColors.SovereignGold else IronvellumColors.InkMuted
+    if (earned) RarityTint.of(rarity) else IronvellumColors.InkMuted
+
+/**
+ * A deed's glyph in its tier's metal. The top two tiers sit on a soft static ring, so there is
+ * no motion to gate. A locked deed's glyph is muted.
+ */
+@Composable
+internal fun RarityGlyph(rarity: TitleRarity, modifier: Modifier = Modifier, size: Dp = 22.dp, earned: Boolean = true) {
+    val tint = rarityColor(rarity, earned)
+    val ring = earned && RarityTint.glows(rarity)
+    // Two stacked discs of the tier's metal at low alpha: a halo, no stroke.
+    Box(
+        modifier
+            .size(size + 12.dp)
+            .then(if (ring) Modifier.clip(DotShape).background(tint.copy(alpha = 0.08f)) else Modifier),
+        contentAlignment = Alignment.Center,
+    ) {
+        Box(
+            Modifier
+                .size(size + 4.dp)
+                .then(if (ring) Modifier.clip(DotShape).background(tint.copy(alpha = 0.18f)) else Modifier),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(Icons.Filled.Star, contentDescription = null, tint = tint, modifier = Modifier.size(size))
+        }
+    }
+}
 
 /** The tier's name as a word; the word carries the meaning, so it takes no dot or box. */
 @Composable
@@ -38,7 +79,7 @@ internal fun RarityMark(rarity: TitleRarity, modifier: Modifier = Modifier, earn
         modifier = modifier,
         style = MaterialTheme.typography.bodySmall,
         color = rarityColor(rarity, earned),
-        fontWeight = if (rarity == TitleRarity.Masterwork) FontWeight.Bold else null,
+        fontWeight = if (earned && rarity == TitleRarity.Masterwork) FontWeight.Bold else null,
         maxLines = 1,
     )
 }
@@ -162,6 +203,18 @@ internal fun DeedDetailSheet(
         subtitle = "${def.rarity.label} · ${Titles.category(def.rule)}",
         subtitleColor = rarityColor(def.rarity, earned),
         summary = {
+            Row(
+                Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                RarityGlyph(def.rarity, size = 36.dp, earned = earned)
+                Text(
+                    def.rarity.label,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = rarityColor(def.rarity, earned),
+                )
+            }
             InfoProgress(
                 fraction = if (earned) 1f else progress.fraction,
                 line = "${progressText.counts} · ${progressText.toGo}",

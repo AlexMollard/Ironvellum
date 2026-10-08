@@ -24,7 +24,7 @@ class BackupRulesTest {
     private val dbDependent = setOf("onboarding", "program_answers", "reminders", "warmup", "inbox_notifier", "warband_payout", "circle_payout", "rank_state")
 
     /** Safe to restore alone: appearance, a custom backend URL/key or a seen-this-hint flag, not training state. */
-    private val restorable = setOf("cloud_config", "info_sheet_hints", "appearance")
+    private val restorable = setOf("cloud_config", "info_sheet_hints", "appearance", "deeds")
 
     @Test
     fun `every prefs file the app opens is classified`() {
