@@ -21,6 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.rotate
@@ -29,11 +30,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.ironvellum.app.domain.TitleRarity
-import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.inkBorder
-import com.ironvellum.app.ui.theme.InkPlateShape
+import com.ironvellum.app.ui.theme.DotShape
 import androidx.compose.ui.platform.LocalDensity
 import com.ironvellum.app.ui.theme.IronvellumColors
 
@@ -63,9 +63,6 @@ internal fun IdentityRow(
     size: IdentitySize = IdentitySize.Standard,
     isMe: Boolean = false,
     avatarUrl: String? = null,
-    // The equipped title's id, not its display name: the crest resolves the
-    // rarity from the catalogue so the badge reflects WHAT was earned.
-    titleId: String? = null,
     // Equipped gacha crest frame; null = today's rarity/level rendering.
     frameId: String? = null,
     trailing: (@Composable () -> Unit)? = null,
@@ -101,15 +98,7 @@ internal fun IdentityRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            LifterAvatar(
-                userId = userId,
-                displayName = displayName,
-                size = badgeSize,
-                avatarUrl = avatarUrl,
-                level = level,
-                titleId = titleId,
-                frameId = frameId,
-            )
+            LifterAvatar(displayName = displayName, size = badgeSize, frameId = frameId)
             Column(Modifier.weight(1f)) {
                 Text(
                     displayName.ifBlank { "IRONBOUND" },
@@ -126,7 +115,7 @@ internal fun IdentityRow(
                     val sub = listOfNotNull(
                         "You".takeIf { isMe && size == IdentitySize.Card },
                         wornTitle,
-                        level?.takeIf { size == IdentitySize.Profile }?.let { "Level $it" },
+                        level?.takeIf { size == IdentitySize.Profile }?.let { "${ArmyClass.forLevel(it).title} $it" },
                     ).joinToString(" · ")
                     if (sub.isNotEmpty()) {
                         Text(
@@ -247,133 +236,52 @@ internal fun crestFrameTreatment(frameId: String): CrestFrameTreatment? = when (
     else -> null
 }
 
-private val CrestPlates get() = listOf(
-    IronvellumColors.EmeraldBright to IronvellumColors.Vault,
-    IronvellumColors.SystemGreen to IronvellumColors.VaultHigh,
-    IronvellumColors.SovereignGold to IronvellumColors.Vault,
-    IronvellumColors.Rune to IronvellumColors.VaultHigh,
-    IronvellumColors.VaultHigh to IronvellumColors.Vault,
-)
-
 /**
- * Deterministic lifter crest, seeded ONLY by userId: the same lifter gets the
- * same crest on every screen, every launch. avatarUrl is reserved for a real
- * uploaded picture later — until an in-house loader exists we still render the
- * generated crest rather than pulling in an image dependency.
+ * The one lifter mark on every Allies surface, as the mockups draw it: a round
+ * Vault-high plate, a 1dp Rune ring and the lifter's initials in Chakra Petch
+ * semi-bold, sized to the plate. Only an equipped crest frame (the wearer's own,
+ * earned) restyles it; level, title rarity and the user id no longer decorate
+ * the mark. An uploaded picture is not supported yet, so the monogram is drawn.
  */
 @Composable
 internal fun LifterAvatar(
-    userId: String,
     displayName: String,
     size: Dp,
-    avatarUrl: String? = null,
-    level: Int? = null,
-    titleId: String? = null,
     frameId: String? = null,
 ) {
-
-    // Stable integer hash — never random, never recomposition-dependent.
-    val seed = userId.fold(0) { acc, c -> acc * 31 + c.code }
-    val plateCut = with(LocalDensity.current) { (size / 4).toPx() }
-    val shape = InkPlateShape(plateCut)
-    // Channel split: RARITY owns the plate gradient and the frame (colour +
-    // weight), so a Masterwork crest is unmistakable at any size. The LEVEL
-    // ring keeps the border only when the lifter wears no rarity (null or
-    // Common), so the two never fight over the same visual channel. The
-    // interior pattern stays seeded by userId regardless — two lifters in the
-    // same title still look like different people.
-    /**
-     * Channel split when a gacha frame is equipped: the FRAME owns the plate
-     * gradient, the border and the monogram colour (its whole look), while
-     * the LEVEL ring is fully yielded — a worn frame replaces the level/rarity
-     * border treatment rather than stacking on it, so the two never fight for
-     * the same visual channel. With frameId null or unknown, the rarity owns
-     * the plate gradient and the level ring keeps the border, byte-identical
-     * to the pre-frame rendering.
-     */
-    val frameTreatment = frameId?.let { crestFrameTreatment(it) }
-    val rarity = Titles.rarityOf(titleId)
-    val (plateTop, plateBottom) = when {
-        frameTreatment != null -> frameTreatment.plateTop to frameTreatment.plateBottom
-        rarity == null -> CrestPlates[Math.floorMod(seed, CrestPlates.size)]
-        rarity == TitleRarity.Common -> CrestPlates[Math.floorMod(seed, CrestPlates.size)]
-        rarity == TitleRarity.Rare -> IronvellumColors.SystemGreen to IronvellumColors.Vault
-        rarity == TitleRarity.Epic -> IronvellumColors.EmeraldBright to IronvellumColors.Vault
-        else -> IronvellumColors.SovereignGold to IronvellumColors.Rune
-    }
-    val frame = when {
-        frameTreatment != null -> frameTreatment.frameColor
-        rarity == null || rarity == TitleRarity.Common -> when {
-            level == null -> IronvellumColors.Rune
-            level < 10 -> IronvellumColors.Rune
-            level < 25 -> IronvellumColors.SystemGreen
-            level < 50 -> IronvellumColors.EmeraldBright
-            else -> IronvellumColors.SovereignGold
-        }
-        rarity == TitleRarity.Rare -> IronvellumColors.EmeraldBright
-        rarity == TitleRarity.Epic -> IronvellumColors.SovereignGold
-        else -> IronvellumColors.SovereignGold
-    }
-    val frameWidth = when {
-        frameTreatment != null -> frameTreatment.frameWidth
-        rarity == TitleRarity.Epic || rarity == TitleRarity.Masterwork -> 3.dp
-        else -> 2.dp
-    }
-    // Elite frames draw their second ring by padding the avatar inside a thin
-    // wrapper border of the same cut-corner shape; 0 padding = no wrapper.
-    val ringPad = if (frameTreatment?.outerRing != null) 3.dp else 0.dp
-    val outerCut = with(LocalDensity.current) { ((size + ringPad * 2) / 4).toPx() }
-    val outerColor = frameTreatment?.outerRing
-
+    val frame = frameId?.let { crestFrameTreatment(it) }
+    val outerRing = frame?.outerRing
+    val ringPad = if (outerRing != null) 3.dp else 0.dp
+    val plate: Brush = if (frame != null) Brush.verticalGradient(listOf(frame.plateTop, frame.plateBottom)) else SolidColor(IronvellumColors.VaultHigh)
     Box(
         Modifier
             .size(size + ringPad * 2)
-            .then(
-                if (outerColor != null) {
-                    Modifier.inkBorder(
-                        outerColor,
-                        InkPlateShape(outerCut),
-                        1.5.dp,
-                    )
-                } else {
-                    Modifier
-                },
-            )
+            .then(if (outerRing != null) Modifier.inkBorder(outerRing, DotShape, 1.5.dp) else Modifier)
             .padding(ringPad)
-            .clip(shape)
-            .background(Brush.linearGradient(listOf(plateTop, plateBottom), start = Offset.Zero, end = Offset.Infinite), shape)
-            .inkBorder(frame, shape, frameWidth),
+            .clip(DotShape)
+            .background(plate, DotShape)
+            .inkBorder(frame?.frameColor ?: IronvellumColors.Rune, DotShape, frame?.frameWidth ?: 1.dp),
         contentAlignment = Alignment.Center,
     ) {
-        // Seeded geometric backdrop: a rotated triangle plus a rotated square
-        // whose angles come from the hash — depth without any hand-drawn art.
-        Canvas(Modifier.fillMaxSize()) {
-            val w = this.size.width
-            val center = Offset(w / 2f, w / 2f)
-            rotate(seed % 90f) {
-                val tri = Path().apply {
-                    moveTo(center.x, center.y - w * 0.55f)
-                    lineTo(center.x + w * 0.55f, center.y + w * 0.45f)
-                    lineTo(center.x - w * 0.55f, center.y + w * 0.45f)
-                    close()
-                }
-                drawPath(tri, Color.Black.copy(alpha = 0.25f))
-            }
-            rotate((seed / 7) % 180f) {
-                drawRect(
-                    Color.Black.copy(alpha = 0.20f),
-                    topLeft = Offset(center.x - w * 0.42f, center.y - w * 0.42f),
-                    size = this.size.copy(width = w * 0.84f, height = w * 0.84f),
-                )
-            }
-        }
         Text(
             initials(displayName),
-            style = MaterialTheme.typography.labelMedium,
             fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = frameTreatment?.initialColor
-                ?: if (rarity == TitleRarity.Masterwork) IronvellumColors.SovereignGold else IronvellumColors.Ink,
+            fontWeight = FontWeight.SemiBold,
+            fontSize = avatarInitialsSize(size),
+            color = frame?.initialColor ?: IronvellumColors.Ink,
+            maxLines = 1,
+            softWrap = false,
         )
     }
+}
+
+/** The mockups' initials sizes per plate: 56 to 18sp, 52 to 17, 48 to 16, 44 to 15, 40 to 14, 36 to 13, 32 to 12. */
+private fun avatarInitialsSize(size: Dp) = when {
+    size >= 56.dp -> 18.sp
+    size >= 52.dp -> 17.sp
+    size >= 48.dp -> 16.sp
+    size >= 44.dp -> 15.sp
+    size >= 40.dp -> 14.sp
+    size >= 36.dp -> 13.sp
+    else -> 12.sp
 }

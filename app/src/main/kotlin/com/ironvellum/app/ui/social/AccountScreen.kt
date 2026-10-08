@@ -910,7 +910,6 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
             level = profile?.let { Xp.progress(it.totalXp).level },
             size = IdentitySize.Profile,
             isMe = true,
-            titleId = titleId,
             trailing = {
                 InkIconButton(onClick = onOpenAccount, modifier = Modifier.size(48.dp)) {
                     Icon(
@@ -1128,11 +1127,8 @@ private fun AlliesPanel(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             LifterAvatar(
-                userId = friend.userId,
                 displayName = friend.displayName,
                 size = 36.dp,
-                level = friend.level,
-                titleId = friend.currentTitleId,
             )
             Column(Modifier.weight(1f)) {
                 Text(

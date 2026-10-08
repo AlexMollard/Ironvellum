@@ -269,7 +269,6 @@ internal fun LifterScreen(
             userId = userId,
             wornTitle = ui.wornTitle,
             level = null, // level is not in LifterUi; omitted rather than fetched
-            titleId = ui.wornTitleId,
             size = IdentitySize.Hero,
             isMe = isMe,
             frameId = if (isMe) equippedFrame else null,

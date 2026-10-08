@@ -498,7 +498,6 @@ private fun WorkoutHeaderPanel(
                 displayName = owner.name,
                 userId = owner.userId,
                 wornTitle = owner.titleId?.let { Titles.byId(it)?.name },
-                titleId = owner.titleId,
                 level = owner.level,
                 size = IdentitySize.Standard,
                 isMe = isMe,
