@@ -2,28 +2,26 @@ package com.ironvellum.app.ui.social
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.ArrowDropDown
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,16 +37,20 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.ironvellum.app.domain.ExerciseSearch
 import com.ironvellum.app.domain.LiftGroup
+import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPickerSheet
+import com.ironvellum.app.ui.components.InkSegmented
+import com.ironvellum.app.ui.components.IronvellumDialog
+import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.ListRowHeight
 import com.ironvellum.app.ui.components.PickerSectionHeader
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
@@ -70,12 +72,9 @@ import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.ironvellumRepository
-import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.IronvellumTracking
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -122,19 +121,19 @@ data class LiftsBoardUi(
 
 /** Which board the BOARD tab shows; the muster roll is deliberately a separate board, not a metric. */
 private enum class Board(val label: String) {
-    Training("TRAINING"),
-    Lifts("LIFTS"),
-    Muster("THE VEIL"),
+    Training("Training"),
+    Lifts("Lifts"),
+    Muster("The Veil"),
 }
 
 /** Pickable ranking metric; each entry owns its sort key and display formatting. */
 private enum class BoardMetric(val label: String) {
     Xp("XP"),
-    Level("LEVEL"),
-    Streak("OATH"),
-    Titles("DEEDS"),
-    Strength("STRENGTH SCORE"),
-    Last7("7-DAY"),
+    Level("Level"),
+    Streak("Oath"),
+    Titles("Deeds"),
+    Strength("Strength score"),
+    Last7("Last 7 days"),
     ;
 
     /** The raw value this metric ranks by. */
@@ -150,11 +149,11 @@ private enum class BoardMetric(val label: String) {
     /** The big per-row display of this metric's value. */
     fun format(row: LeaderboardRow): String = when (this) {
         Xp -> "${row.totalXp} XP"
-        Level -> "LV ${row.level}"
-        Streak -> "${row.streakDays} " + plural(row.streakDays, "DAY", "DAYS")
-        Titles -> "${row.titlesCount} " + plural(row.titlesCount, "DEED", "DEEDS")
+        Level -> "Level ${row.level}"
+        Streak -> "${row.streakDays} " + plural(row.streakDays, "day", "days")
+        Titles -> "${row.titlesCount} " + plural(row.titlesCount, "deed", "deeds")
         Strength -> "STR ${row.lifetimeStrength}"
-        Last7 -> "${row.sessionsLast7d} IN 7D"
+        Last7 -> "${row.sessionsLast7d} in 7 days"
     }
 }
 
@@ -281,9 +280,9 @@ fun LeaderboardScreen(
     val lifts by viewModel.lifts.collectAsStateWithLifecycle()
     val equippedFrame by viewModel.equippedFrame.collectAsStateWithLifecycle()
     var board by remember { mutableStateOf(Board.Training) }
-    // Metric lives here so it can share the board row: one selector row at
-    // rest, with the ranking metric as a right-aligned dropdown on TRAINING.
+    // The ranking metric is picked from a row under the board picker, on Training only.
     var metric by remember { mutableStateOf(BoardMetric.Xp) }
+    var pickingMetric by remember { mutableStateOf(false) }
 
     // SocialScreen owns the margins, the top gap and the signed-out screen, so
     // every tab starts its content at the same spot under the pills.
@@ -293,24 +292,27 @@ fun LeaderboardScreen(
             .verticalScroll(rememberScrollState()),
     ) {
         // The picker sits above every state, so a lifter with an empty or
-        // failed TRAINING board can still reach LIFTS. GARRISON is offered
+        // failed Training board can still reach Lifts. The Veil is offered
         // only once the cloud actually has the muster board.
-        BoardSelector(
-            boards = Board.entries.filter { it != Board.Muster || muster.available },
+        InkSegmented(
+            options = Board.entries.filter { it != Board.Muster || muster.available }.map { it to it.label },
             selected = board,
             onPick = {
                 board = it
                 if (it == Board.Muster) viewModel.loadMuster()
                 if (it == Board.Lifts) viewModel.loadLifts()
             },
-            // The ranking metric hides behind this dropdown on the same row:
-            // a second stacked rail would break the one-selector-row rule.
-            trailing = if (board == Board.Training) {
-                { MetricDropdown(selected = metric, onPick = { metric = it }) }
-            } else {
-                null
-            },
         )
+        if (board == Board.Training) {
+            Spacer(Modifier.height(12.dp))
+            ListRow(
+                label = "Ranked by",
+                value = metric.label,
+                onClickLabel = "Change ranking",
+                onClick = { pickingMetric = true },
+            )
+            InkDivider()
+        }
         Spacer(Modifier.height(12.dp))
         when {
             // Three separate boards behind one tab: training measures what a
@@ -329,7 +331,7 @@ fun LeaderboardScreen(
                 equippedFrame = equippedFrame,
                 onRefresh = { viewModel.loadMuster(force = true) },
             )
-            ui.loading && ui.rows.isEmpty() -> LoadingPanel()
+            ui.loading && ui.rows.isEmpty() -> LoadingLine()
             ui.rows.isEmpty() && ui.error == null -> EmptyBoard(onRefresh = viewModel::load)
             ui.rows.isEmpty() -> ErrorPanel(onRefresh = viewModel::load)
             else -> {
@@ -354,7 +356,7 @@ fun LeaderboardScreen(
                     },
                 ) {
                     // PullToRefreshBox's content slot is a Box: emitted straight
-                    // into it, every row stacks at the same origin — the podium
+                    // into it, every row stacks at the same origin, so the podium
                     // vanished under the pinned self-row. A Column restores flow.
                     Column(Modifier.fillMaxWidth()) {
                         Board(ui, metric, viewModel::load, onOpenFriend, equippedFrame)
@@ -365,64 +367,60 @@ fun LeaderboardScreen(
 
         Spacer(Modifier.height(28.dp))
     }
+
+    if (pickingMetric) {
+        // A bottom sheet: six short rows, no scroll of its own in the text slot.
+        IronvellumDialog(
+            onDismissRequest = { pickingMetric = false },
+            title = { Text("Ranked by") },
+            text = {
+                Column {
+                    BoardMetric.entries.forEach { candidate ->
+                        ChoiceRow(
+                            label = candidate.label,
+                            selected = candidate == metric,
+                            onClick = {
+                                metric = candidate
+                                pickingMetric = false
+                            },
+                        )
+                    }
+                }
+            },
+            confirmButton = { IronvellumButton(label = "Done", onClick = { pickingMetric = false }) },
+        )
+    }
 }
 
 @Composable
-private fun LoadingPanel() {
-    InkPanel(Modifier.fillMaxWidth()) {
-        Text(
-            "Reading the reckoning…",
-            style = MaterialTheme.typography.bodyMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-        )
-    }
+private fun LoadingLine() {
+    Text(
+        "Reading the reckoning…",
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.InkMuted,
+    )
 }
 
 @Composable
 private fun EmptyBoard(onRefresh: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth()) {
-        Text(
-            "THE RECKONING IS YOURS ALONE",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.EmeraldBright,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "No standings yet. Add allies by true name on the ALLIES tab.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(10.dp))
-        // Kept explicitly: an empty board has nothing to pull down on.
-        SocialRefreshLink(onClick = onRefresh, label = "Check again")
-    }
+    Text(
+        "No standings yet. Add allies by true name on the Allies tab.",
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.InkMuted,
+    )
+    // Kept explicitly: an empty board has nothing to pull down on.
+    SocialRefreshLink(onClick = onRefresh, label = "Try again")
 }
 
-/** Load failed with nothing on the board: name the failure and offer one clean retry. */
+/** Load failed with nothing on the board: one muted line and one clean retry. */
 @Composable
 private fun ErrorPanel(onRefresh: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth()) {
-        Text(
-            "THE RECKONING IS SMUDGED",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.DangerRed,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "The Ledger could not read the reckoning. Try again in a moment.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(12.dp))
-        SocialRefreshLink(onClick = onRefresh, label = "Retry")
-    }
+    Text(
+        "The Ledger could not read the reckoning. Try again in a moment.",
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.InkMuted,
+    )
+    SocialRefreshLink(onClick = onRefresh, label = "Try again")
 }
 
 @Composable
@@ -443,82 +441,82 @@ private fun Board(
     val meVisible = myIndex in 0 until (podiumCount + visibleLimit)
     val visible = rest.take(visibleLimit)
 
-    Row(
-        Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(
-            "Standings by ${metric.label.lowercase()}",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            modifier = Modifier.weight(1f),
-        )
-        // Retry link only survives in the error state; the banner below carries
-        // the message so stale rows are never silently served.
-        if (ui.error != null) SocialRefreshLink(onClick = onRefresh, label = "Retry")
-    }
+    // Retry link only survives in the error state; the banner below carries
+    // the message so stale rows are never silently served.
     if (ui.error != null) {
         SocialErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
-        Spacer(Modifier.height(10.dp))
+        SocialRefreshLink(onClick = onRefresh, label = "Try again")
     }
-    Spacer(Modifier.height(10.dp))
 
+    Spacer(Modifier.height(4.dp))
     Podium(sorted.take(podiumCount), metric, ui.myUserId, equippedFrame)
-    Spacer(Modifier.height(14.dp))
+    Spacer(Modifier.height(12.dp))
 
     if (sorted.size == 1) {
         Text(
-            "You stand alone in the reckoning. Add allies from the ALLIES tab to fill it.",
-            style = MaterialTheme.typography.labelMedium,
-            fontFamily = ChakraPetch,
+            "You stand alone in the reckoning. Add allies from the Allies tab to fill it.",
+            style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(bottom = 10.dp),
         )
     }
 
-    visible.forEachIndexed { index, row ->
-        RankRow(
-            rank = podiumCount + index + 1,
-            row = row,
-            metric = metric,
-            leaderValue = metric.value(sorted.first()) ,
-            isMe = row.userId == ui.myUserId,
-            equippedFrame = equippedFrame,
-            onOpenFriend = { onOpenFriend(row.userId, row.displayName) },
-        )
-        Spacer(Modifier.height(10.dp))
+    // The list below the podium starts at rank 4, so no lifter shows twice.
+    if (visible.isNotEmpty()) {
+        InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+            visible.forEachIndexed { index, row ->
+                if (index > 0) InkDivider()
+                TrainingRow(podiumCount + index + 1, row, metric, row.userId == ui.myUserId, equippedFrame, onOpenFriend)
+            }
+        }
     }
 
     // Always answer "where am I": if the board is long enough that my row was collapsed
     // out of the visible slice, pin my actual rank to the bottom.
     if (!meVisible && myRank > 0) {
         val myRow = sorted[myIndex]
-        Spacer(Modifier.height(4.dp))
+        Spacer(Modifier.height(16.dp))
         Text(
-            "— YOUR STANDING —",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.SovereignGold,
-            letterSpacing = IronvellumTracking.InlineLabel,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.fillMaxWidth(),
+            "Your standing",
+            style = MaterialTheme.typography.labelMedium,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.padding(start = 2.dp, bottom = 6.dp),
         )
-        Spacer(Modifier.height(6.dp))
-        RankRow(
-            rank = myRank,
-            row = myRow,
-            metric = metric,
-            leaderValue = metric.value(sorted.first()),
-            isMe = true,
-            equippedFrame = equippedFrame,
-            onOpenFriend = { onOpenFriend(myRow.userId, myRow.displayName) },
-        )
+        InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+            TrainingRow(myRank, myRow, metric, true, equippedFrame, onOpenFriend)
+        }
     }
 }
 
-/** Three-column podium; missing lifters render as open ally slots, never blank boxes. */
+/** One training row: the one-fact subline is the level, or the XP when the board already ranks by level. */
+@Composable
+private fun TrainingRow(
+    rank: Int,
+    row: LeaderboardRow,
+    metric: BoardMetric,
+    isMe: Boolean,
+    equippedFrame: String?,
+    onOpenFriend: (String, String) -> Unit,
+) {
+    BoardRow(
+        rank = rank,
+        userId = row.userId,
+        displayName = row.displayName,
+        level = row.level,
+        titleId = row.currentTitleId,
+        subline = if (metric == BoardMetric.Level) "${row.totalXp} XP" else "Level ${row.level}",
+        figure = metric.format(row),
+        isMe = isMe,
+        equippedFrame = equippedFrame,
+        onClick = { onOpenFriend(row.userId, row.displayName) },
+    )
+}
+
+/**
+ * Three-column podium, flattened: second, first, third on one floor, stepped heights, flat Vault
+ * cards. The "1" is the one reward-accent mark on the board; no medal colours. Missing lifters
+ * render as open ally slots, never blank boxes.
+ */
 @Composable
 private fun Podium(
     top: List<LeaderboardRow>,
@@ -526,24 +524,18 @@ private fun Podium(
     myUserId: String?,
     equippedFrame: String?,
 ) {
-    // Visual order silver / gold / bronze; plinth heights and emblem sizes step down from the crown.
-    // Bottom alignment is what makes this read as a podium: the plinths share a
-    // floor and step down from the crown, instead of hanging from a ragged top.
     Row(
         Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.Bottom,
     ) {
-        // Floors step 2 / 1 / 3 so the leader stands tallest; the avatar steps
-        // with it so rank reads from size as well as height.
         PodiumSlot(
             row = top.getOrNull(1),
             rank = 2,
             metric = metric,
             isMe = top.getOrNull(1)?.userId == myUserId,
             equippedFrame = equippedFrame,
-            plinthHeight = 26.dp,
-            emblemSize = 24.sp,
+            minHeight = 150.dp,
             avatarSize = 44.dp,
             modifier = Modifier.weight(1f),
         )
@@ -553,9 +545,8 @@ private fun Podium(
             metric = metric,
             isMe = top.getOrNull(0)?.userId == myUserId,
             equippedFrame = equippedFrame,
-            plinthHeight = 52.dp,
-            emblemSize = 34.sp,
-            avatarSize = 56.dp,
+            minHeight = 186.dp,
+            avatarSize = 52.dp,
             modifier = Modifier.weight(1f),
         )
         PodiumSlot(
@@ -564,8 +555,7 @@ private fun Podium(
             metric = metric,
             isMe = top.getOrNull(2)?.userId == myUserId,
             equippedFrame = equippedFrame,
-            plinthHeight = 14.dp,
-            emblemSize = 20.sp,
+            minHeight = 128.dp,
             avatarSize = 40.dp,
             modifier = Modifier.weight(1f),
         )
@@ -579,313 +569,210 @@ private fun PodiumSlot(
     metric: BoardMetric,
     isMe: Boolean,
     equippedFrame: String?,
-    plinthHeight: androidx.compose.ui.unit.Dp,
-    emblemSize: androidx.compose.ui.unit.TextUnit,
-    avatarSize: androidx.compose.ui.unit.Dp,
+    minHeight: Dp,
+    avatarSize: Dp,
     modifier: Modifier = Modifier,
 ) {
-    val accent = when (rank) {
-        1 -> IronvellumColors.SovereignGold
-        2 -> IronvellumColors.EmeraldBright
-        else -> Color(0xFFB08A5A) // bronze — no palette token exists for it
-    }
-    val emblem = when (rank) {
-        1 -> "\u2654" // white king — the top seat
-        2 -> "\u265B" // queen
-        else -> "\u265C" // rook
-    }
     val shape = MaterialTheme.shapes.medium
-    // ONE card per slot, not a cap welded to a plinth: the two-box version left a
-    // visible seam and squeezed an IdentityRow so hard that the lifter's NAME was
-    // ellipsized away entirely, leaving bare initials. A podium slot is a vertical
-    // card, so it is built as one.
-    Column(
+    // The metric figure is pinned to the floor of the card, so the stepped heights read as a
+    // podium; the column above leaves room for it.
+    Box(
         modifier
-            .clip(shape)
-            .background(
-                if (row != null) {
-                    Brush.verticalGradient(listOf(IronvellumColors.VaultHigh, IronvellumColors.Abyss))
-                } else {
-                    Brush.verticalGradient(listOf(IronvellumColors.Vault, IronvellumColors.Abyss))
-                },
-            )
-            .inkBorder(if (row != null) accent else IronvellumColors.Rune, shape, 1.dp)
-            .padding(horizontal = 6.dp, vertical = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
+            .heightIn(min = minHeight)
+            .background(IronvellumColors.Vault, shape)
+            .inkBorder(IronvellumColors.Rune, shape, 1.dp),
     ) {
-        if (row != null) {
-            // Rank emblem crowns the card instead of floating in an empty box below.
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .padding(start = 6.dp, end = 6.dp, top = 12.dp, bottom = 34.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
             Text(
-                emblem,
-                fontFamily = ChakraPetch,
+                rank.toString(),
+                style = if (rank == 1) MaterialTheme.typography.titleMedium else MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.Bold,
-                fontSize = emblemSize,
-                color = accent,
+                // The one reward-accent mark on the board: first place.
+                color = if (rank == 1) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
             )
             Spacer(Modifier.height(6.dp))
-            LifterAvatar(
-                userId = row.userId,
-                displayName = row.displayName,
-                size = avatarSize,
-                level = row.level,
-                titleId = row.currentTitleId,
-                frameId = if (isMe) equippedFrame else null,
-            )
-            Spacer(Modifier.height(6.dp))
-            Text(
-                if (isMe) "YOU" else row.displayName,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = if (isMe) IronvellumColors.SovereignGold else IronvellumColors.Ink,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            wornTitle(row.currentTitleId)?.let { title ->
+            if (row != null) {
+                LifterAvatar(
+                    userId = row.userId,
+                    displayName = row.displayName,
+                    size = avatarSize,
+                    level = row.level,
+                    titleId = row.currentTitleId,
+                    frameId = if (isMe) equippedFrame else null,
+                )
+                Spacer(Modifier.height(8.dp))
                 Text(
-                    title,
+                    if (isMe) "You" else row.displayName,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SovereignGold,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    color = IronvellumColors.Ink,
                     modifier = Modifier.fillMaxWidth(),
                 )
+                wornTitle(row.currentTitleId)?.let { title ->
+                    Text(
+                        title,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IronvellumColors.InkMuted,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+            } else {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Ally slot open",
+                    maxLines = 2,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                )
             }
-            Spacer(Modifier.height(4.dp))
+        }
+        if (row != null) {
             Text(
                 metric.format(row),
                 maxLines = 1,
                 softWrap = false,
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = accent,
-            )
-        } else {
-            Text(
-                rank.toString(),
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                fontSize = 14.sp,
-                color = IronvellumColors.InkMuted,
-            )
-            Spacer(Modifier.height(8.dp))
-            Text(
-                "ALLY SLOT\nOPEN",
-                maxLines = 2,
-                textAlign = TextAlign.Center,
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.InkMuted,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (rank == 1) FontWeight.Bold else FontWeight.SemiBold,
+                color = IronvellumColors.Ink,
+                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 12.dp),
             )
         }
-        // The stepped floor: rank 1 stands tallest, so the trio reads as a podium.
-        Spacer(Modifier.height(plinthHeight))
     }
 }
 
-@Composable
-private fun RankRow(
-    rank: Int,
-    row: LeaderboardRow,
-    metric: BoardMetric,
-    leaderValue: Long,
-    isMe: Boolean,
-    equippedFrame: String?,
-    onOpenFriend: () -> Unit,
-) {
-    // Podium ranks get distinct emblems: gold for first place, silvered emerald for 2, bronze for 3.
-    val accent = when {
-        isMe -> IronvellumColors.SovereignGold
-        rank == 1 -> IronvellumColors.SovereignGold
-        rank == 2 -> IronvellumColors.EmeraldBright
-        rank == 3 -> Color(0xFFB08A5A) // bronze — no palette token exists for it
-        else -> IronvellumColors.Rune
-    }
-    val fill = if (isMe) {
-        Brush.verticalGradient(listOf(Color(0xFF2A2312), Color(0xFF171307)))
-    } else {
-        Brush.verticalGradient(listOf(Color(0xFF141A18), Color(0xFF0E1312)))
-    }
-    // Intensity bar: this row's metric value relative to the current leader on that metric,
-    // so relative standing is visible without reading numbers. Zero leader → zero-width fill.
-    val intensity = if (leaderValue > 0) (metric.value(row).toFloat() / leaderValue).coerceIn(0f, 1f) else 0f
-    val extras = buildList {
-        if (metric != BoardMetric.Level) add("LV ${row.level}")
-        if (metric != BoardMetric.Xp) add("${row.totalXp} XP")
-        if (metric != BoardMetric.Streak) add("${row.streakDays}-day oath")
-        if (metric != BoardMetric.Titles) add("${row.titlesCount} " + plural(row.titlesCount, "title", "titles"))
-        if (metric != BoardMetric.Strength) add("lifetime strength ${row.lifetimeStrength}")
-        if (metric != BoardMetric.Last7) add("${row.sessionsLast7d} " + plural(row.sessionsLast7d, "trial", "trials") + " in 7 days")
-    }.joinToString(" · ")
-
-    InkPanel(
-        modifier = Modifier.fillMaxWidth(),
-        onClick = onOpenFriend,
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                "#$rank",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = if (rank <= 3 || isMe) accent else IronvellumColors.InkMuted,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-            // Shared identity component: avatar crest, name, worn title and level chip.
-            IdentityRow(
-                displayName = if (isMe) "${row.displayName} — YOU" else row.displayName,
-                userId = row.userId,
-                wornTitle = wornTitle(row.currentTitleId),
-                titleId = row.currentTitleId,
-                level = row.level,
-                size = IdentitySize.Standard,
-                frameId = if (isMe) equippedFrame else null,
-                isMe = isMe,
-                trailing = {
-                    Text(
-                        metric.format(row),
-                        maxLines = 1,
-                        softWrap = false,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = accent,
-                    )
-                },
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            extras,
-            // Two lines, because one clipped "lifetime ..." mid-word and
-            // the rest of the stats were repeated below to compensate.
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(8.dp))
-        // Intensity bar: this row's metric value relative to the current leader on that metric,
-        // so relative standing is visible without reading numbers. Zero leader → zero-width fill.
-        InkRail(
-            fraction = intensity,
-            height = 3.dp,
-            track = IronvellumColors.Abyss,
-            fill = Brush.horizontalGradient(listOf(accent, IronvellumColors.EmeraldBright)),
-        )
-    }
-}
-
-
-/** Segmented TRAINING / LIFTS / GARRISON picker, styled after the metric chips.
- *
- *  The optional trailing slot keeps a subordinate control (the TRAINING
- *  metric dropdown) on the same row, so the screen never stacks two
- *  selector rails.
+/**
+ * The one board row: rank, avatar, name over a one-fact subline, the metric trailing. A row in
+ * the signed-in lifter's own place carries a thin primary bar on its left and a faint tint, and
+ * says "You" in the subline. The rank is InkMuted, except a first place, which takes the reward accent.
  */
 @Composable
-private fun BoardSelector(
-    boards: List<Board>,
-    selected: Board,
-    onPick: (Board) -> Unit,
-    trailing: (@Composable () -> Unit)? = null,
+private fun BoardRow(
+    rank: Int,
+    userId: String,
+    displayName: String,
+    level: Int,
+    titleId: String?,
+    subline: String,
+    figure: String,
+    isMe: Boolean,
+    equippedFrame: String?,
+    onClick: (() -> Unit)? = null,
 ) {
     Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        Modifier
+            .fillMaxWidth()
+            .then(
+                if (isMe) {
+                    Modifier
+                        .background(IronvellumColors.Ink.copy(alpha = 0.04f))
+                        .drawBehind { drawRect(IronvellumColors.Emerald, size = Size(3.dp.toPx(), size.height)) }
+                } else {
+                    Modifier
+                },
+            )
+            .then(if (onClick != null) Modifier.clickable(onClickLabel = "Open folio", role = Role.Button, onClick = onClick) else Modifier)
+            .heightIn(min = 56.dp)
+            .padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Row(
-            Modifier
-                .weight(1f, fill = false)
-                .horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            boards.forEach { candidate ->
-                val active = candidate == selected
-                Text(
-                    candidate.label,
-                    maxLines = 1,
-                    softWrap = false,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontFamily = ChakraPetch,
-                    fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                    color = if (active) MaterialTheme.colorScheme.onTertiary else IronvellumColors.InkMuted,
-                    modifier = Modifier
-                        // 44dp hit area around a compact pill: the visual stays small.
-                        .heightIn(min = 44.dp)
-                        .selectable(selected = active, role = Role.Tab) { onPick(candidate) }
-                        .wrapContentHeight()
-                        .clip(MaterialTheme.shapes.small)
-                        .background(if (active) IronvellumColors.SovereignGold else Color(0xFF141A18))
-                        .inkBorder(if (active) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
-                        .padding(horizontal = 12.dp, vertical = 6.dp),
-                )
-            }
+        Text(
+            rank.toString(),
+            style = MaterialTheme.typography.labelLarge,
+            color = if (rank == 1) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
+            modifier = Modifier.width(22.dp),
+        )
+        LifterAvatar(
+            userId = userId,
+            displayName = displayName,
+            size = 36.dp,
+            level = level,
+            titleId = titleId,
+            // The equipped crest frame is worn by the local lifter alone.
+            frameId = if (isMe) equippedFrame else null,
+        )
+        Column(Modifier.weight(1f)) {
+            Text(
+                displayName.ifBlank { "Ironbound" },
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (isMe) FontWeight.SemiBold else FontWeight.Medium,
+                color = IronvellumColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Text(
+                if (isMe) "You · $subline" else subline,
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
         }
-        trailing?.invoke()
+        Text(
+            figure,
+            maxLines = 2,
+            textAlign = TextAlign.End,
+            overflow = TextOverflow.Ellipsis,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = IronvellumColors.Ink,
+            modifier = Modifier.widthIn(max = 140.dp),
+        )
     }
 }
 
-/** The TRAINING ranking metric, folded onto the board row as a compact dropdown. */
+/** One choice in a picker: label over an optional subline, a muted [trailing] note and a check on the open one. */
 @Composable
-private fun MetricDropdown(selected: BoardMetric, onPick: (BoardMetric) -> Unit) {
-    var open by remember { mutableStateOf(false) }
-    Box {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .heightIn(min = 44.dp)
-                .clip(MaterialTheme.shapes.small)
-                .background(Color(0xFF141A18))
-                .inkBorder(IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
-                .selectable(selected = false, role = Role.DropdownList) { open = true }
-                .padding(horizontal = 12.dp, vertical = 6.dp),
-        ) {
+private fun ChoiceRow(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    subline: String? = null,
+    trailing: String? = null,
+) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .heightIn(min = ListRowHeight)
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Column(Modifier.weight(1f)) {
             Text(
-                selected.label,
-                maxLines = 1,
-                softWrap = false,
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = IronvellumColors.Emerald,
+                label,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                color = IronvellumColors.Ink,
             )
-            Icon(
-                Icons.Outlined.ArrowDropDown,
-                contentDescription = "Change reckoning metric",
-                tint = IronvellumColors.Emerald,
-            )
-        }
-        DropdownMenu(
-            expanded = open,
-            onDismissRequest = { open = false },
-            containerColor = Color(0xFF0D1110),
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            BoardMetric.entries.forEach { candidate ->
-                DropdownMenuItem(
-                    text = {
-                        Text(
-                            candidate.label,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontFamily = ChakraPetch,
-                            fontWeight = if (candidate == selected) FontWeight.Bold else FontWeight.Normal,
-                            color = if (candidate == selected) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
-                        )
-                    },
-                    onClick = {
-                        open = false
-                        onPick(candidate)
-                    },
+            if (subline != null) {
+                Text(
+                    subline,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
+        }
+        if (trailing != null) {
+            Text(trailing, style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+        }
+        if (selected) {
+            Icon(Icons.Filled.Check, contentDescription = "Selected", tint = IronvellumColors.Emerald, modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -899,7 +786,7 @@ private fun MusterBoard(
     onRefresh: () -> Unit,
 ) {
     when {
-        ui.loading && ui.rows.isEmpty() -> LoadingPanel()
+        ui.loading && ui.rows.isEmpty() -> LoadingLine()
         ui.rows.isEmpty() && ui.error != null -> MusterErrorPanel(ui.error, onRefresh)
         ui.rows.isEmpty() -> MusterEmptyPanel(onRefresh)
         else -> {
@@ -923,7 +810,6 @@ private fun MusterBoard(
                     Text(
                         "Ranks Veil progress — echoes inscribed — separate from the training reckoning.",
                         style = MaterialTheme.typography.bodySmall,
-                        fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(bottom = 10.dp),
                     )
@@ -932,14 +818,21 @@ private fun MusterBoard(
                         SocialErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
                         Spacer(Modifier.height(10.dp))
                     }
-                    ui.rows.forEachIndexed { index, row ->
-                        MusterRankRow(
-                            rank = index + 1,
-                            row = row,
-                            isMe = row.userId == myUserId,
-                            equippedFrame = equippedFrame,
-                        )
-                        Spacer(Modifier.height(10.dp))
+                    InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+                        ui.rows.forEachIndexed { index, row ->
+                            if (index > 0) InkDivider()
+                            BoardRow(
+                                rank = index + 1,
+                                userId = row.userId,
+                                displayName = row.displayName,
+                                level = row.level,
+                                titleId = row.currentTitleId,
+                                subline = "${row.shadows} echoes · ${formatRate(row.ratePerHour)}",
+                                figure = "${formatEssence(row.essence)} essence",
+                                isMe = row.userId == myUserId,
+                                equippedFrame = equippedFrame,
+                            )
+                        }
                     }
                 }
             }
@@ -947,117 +840,39 @@ private fun MusterBoard(
     }
 }
 
-/** One muster roll row: rank, identity, banked essence as the headline, roll figures beneath. */
-@Composable
-private fun MusterRankRow(
-    rank: Int,
-    row: ShadowBoardRow,
-    isMe: Boolean,
-    equippedFrame: String?,
-) {
-    val accent = if (isMe) IronvellumColors.SovereignGold else if (rank == 1) IronvellumColors.SovereignGold else IronvellumColors.Rune
-    InkPanel(modifier = Modifier.fillMaxWidth()) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                "#$rank",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = if (rank <= 3 || isMe) accent else IronvellumColors.InkMuted,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-            IdentityRow(
-                displayName = if (isMe) "${row.displayName} — YOU" else row.displayName,
-                userId = row.userId,
-                wornTitle = wornTitle(row.currentTitleId),
-                titleId = row.currentTitleId,
-                level = row.level,
-                size = IdentitySize.Standard,
-                // The equipped crest frame is worn by the local lifter alone.
-                frameId = if (isMe) equippedFrame else null,
-                isMe = isMe,
-                trailing = {
-                    Text(
-                        "${formatEssence(row.essence)} ESS",
-                        maxLines = 1,
-                        softWrap = false,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = accent,
-                    )
-                },
-            )
-        }
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "${row.shadows} echoes · ${formatRate(row.ratePerHour)}",
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-        )
-    }
-}
-
-/** The muster fetch failed with nothing to show: name the failure, offer one clean retry. */
+/** The muster fetch failed with nothing to show: one muted line and one clean retry. */
 @Composable
 private fun MusterErrorPanel(message: String?, onRefresh: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth()) {
-        Text(
-            "THE VEIL WILL NOT PART",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.DangerRed,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            message ?: "The Ledger could not read the Veil's reckoning. Try again in a moment.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(12.dp))
-        IronvellumButton(label = "RETRY", onClick = onRefresh)
-    }
+    Text(
+        message ?: "The Ledger could not read the Veil's reckoning. Try again in a moment.",
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.InkMuted,
+    )
+    SocialRefreshLink(onClick = onRefresh, label = "Try again")
 }
 
 /** The muster board answered, but no lifter has banked essence yet. */
 @Composable
 private fun MusterEmptyPanel(onRefresh: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth()) {
-        Text(
-            "THE VEIL IS STILL",
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.EmeraldBright,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            "No Ironbound has inscribed echoes yet — the Veil is empty and every top standing here is unclaimed.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(10.dp))
-        SocialRefreshLink(onClick = onRefresh, label = "Check again")
-    }
+    Text(
+        "No Ironbound has inscribed echoes yet. The Veil is empty and every top standing here is unclaimed.",
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.InkMuted,
+    )
+    SocialRefreshLink(onClick = onRefresh, label = "Check again")
 }
 
 /** Thousands-separated essence, e.g. 12,480. */
 private fun formatEssence(value: Long): String =
     "%,d".fmt(value)
 
-/** Extraction rate as e.g. 218.2/H. */
-private fun formatRate(ratePerHour: Double): String = "%.1f/H".fmt(ratePerHour)
+/** Extraction rate as e.g. 218.2/h. */
+private fun formatRate(ratePerHour: Double): String = "%.1f/h".fmt(ratePerHour)
 
 /** Which slice of a lift board ranks: the best set of the last 7 days, or the best ever. */
 private enum class LiftWindow(val label: String) {
-    Week("WEEK"),
-    AllTime("ALL TIME"),
+    Week("Week"),
+    AllTime("All time"),
 }
 
 /** One lifter's place on one lift board; [step] is the tier step that ranked them, never a ratio. */
@@ -1087,7 +902,7 @@ private fun liftStandings(rows: List<LiftBoardRow>, lift: Lift, window: LiftWind
     }
 }
 
-/** The lift boards: one chip per lift, WEEK / ALL TIME, ranked by tier name only. */
+/** The lift boards: a Row that picks the lift, Week / All time, ranked by tier name only. */
 @Composable
 private fun LiftsBoard(
     ui: LiftsBoardUi,
@@ -1101,13 +916,12 @@ private fun LiftsBoard(
     val standings = remember(ui.rows, lift, window) { liftStandings(ui.rows, lift, window) }
 
     when {
-        ui.loading && ui.rows.isEmpty() -> LoadingPanel()
+        ui.loading && ui.rows.isEmpty() -> LoadingLine()
         // Nothing to filter yet (e.g. the server is below schema 20): say why
         // and offer the retry, without controls that would act on no data.
         ui.rows.isEmpty() && ui.error != null -> {
             SocialErrorBanner(ui.error)
-            Spacer(Modifier.height(10.dp))
-            SocialRefreshLink(onClick = onRefresh, label = "Retry")
+            SocialRefreshLink(onClick = onRefresh, label = "Try again")
         }
         else -> {
             val pullState = remember { PullToRefreshState() }
@@ -1130,7 +944,6 @@ private fun LiftsBoard(
                     Text(
                         "Rungs only — bodyweight stays on each phone.",
                         style = MaterialTheme.typography.bodySmall,
-                        fontFamily = ChakraPetch,
                         color = IronvellumColors.InkMuted,
                         modifier = Modifier.padding(bottom = 10.dp),
                     )
@@ -1139,37 +952,39 @@ private fun LiftsBoard(
                         SocialErrorBanner("The ink has faded — these standings are from your last sync: ${ui.error}")
                         Spacer(Modifier.height(10.dp))
                     }
-                    // One selector row: the board bar and the WEEK / ALL TIME
-                    // window share it, with 44dp targets on both.
-                    Row(
-                        Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    ) {
-                        LiftPicker(
-                            selected = lift,
-                            rankedCount = { liftStandings(ui.rows, it, window).size },
-                            onPick = { lift = it },
-                            modifier = Modifier.weight(1f),
-                        )
-                        CompactSegmented(
-                            options = LiftWindow.entries.map { it to it.label },
-                            selected = window,
-                            onPick = { window = it },
-                        )
-                    }
+                    LiftPicker(
+                        selected = lift,
+                        rankedCount = { liftStandings(ui.rows, it, window).size },
+                        onPick = { lift = it },
+                    )
+                    InkDivider()
+                    Spacer(Modifier.height(12.dp))
+                    InkSegmented(
+                        options = LiftWindow.entries.map { it to it.label },
+                        selected = window,
+                        onPick = { window = it },
+                    )
                     Spacer(Modifier.height(12.dp))
                     if (standings.isEmpty()) {
                         LiftEmptyPanel(onRefresh)
                     } else {
-                        standings.forEach { standing ->
-                            LiftRankRow(
-                                standing = standing,
-                                isMe = standing.row.userId == myUserId,
-                                equippedFrame = equippedFrame,
-                                onOpenFriend = { onOpenFriend(standing.row.userId, standing.row.displayName) },
-                            )
-                            Spacer(Modifier.height(10.dp))
+                        InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(0.dp)) {
+                            standings.forEachIndexed { index, standing ->
+                                if (index > 0) InkDivider()
+                                val row = standing.row
+                                BoardRow(
+                                    rank = standing.rank,
+                                    userId = row.userId,
+                                    displayName = row.displayName,
+                                    level = row.level,
+                                    titleId = row.currentTitleId,
+                                    subline = LiftBoards.stepDetail(row.lift, standing.step) ?: "Level ${row.level}",
+                                    figure = LiftBoards.stepLabel(row.lift, standing.step),
+                                    isMe = row.userId == myUserId,
+                                    equippedFrame = equippedFrame,
+                                    onClick = { onOpenFriend(row.userId, row.displayName) },
+                                )
+                            }
                         }
                     }
                 }
@@ -1179,7 +994,7 @@ private fun LiftsBoard(
 }
 
 /**
- * One bar naming the current board; tapping it opens the shared picker
+ * One Row naming the current board; tapping it opens the shared picker
  * sheet, grouped Pull / Push / Static / Legs / Barbell and searchable by
  * board or rung name ("fl" finds the front lever board). Each row says how
  * many lifters it ranks, so an empty board is visible before it is opened.
@@ -1189,39 +1004,14 @@ private fun LiftPicker(
     selected: Lift,
     rankedCount: (Lift) -> Int,
     onPick: (Lift) -> Unit,
-    modifier: Modifier = Modifier,
 ) {
     var open by remember { mutableStateOf(false) }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-            .heightIn(min = 48.dp)
-            .clip(MaterialTheme.shapes.small)
-            .background(Color(0xFF141A18))
-            .inkBorder(IronvellumColors.SovereignGold, MaterialTheme.shapes.small, 1.dp)
-            .clickable(onClickLabel = "Choose a reckoning") { open = true }
-            .padding(horizontal = 14.dp),
-    ) {
-        Text(
-            selected.group.label.uppercase(),
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.width(12.dp))
-        Text(
-            selected.label.uppercase(),
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            letterSpacing = IronvellumTracking.SectionHeader,
-            color = IronvellumColors.SovereignGold,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-        )
-        Icon(Icons.Outlined.ArrowDropDown, contentDescription = null, tint = IronvellumColors.SovereignGold)
-    }
+    ListRow(
+        label = selected.label,
+        subline = selected.group.label,
+        onClickLabel = "Choose a reckoning",
+        onClick = { open = true },
+    )
     if (!open) return
 
     var query by remember { mutableStateOf("") }
@@ -1232,7 +1022,7 @@ private fun LiftPicker(
     // Board order within a group is progression order; a query re-sorts by how well it matched.
     val shown = if (query.isBlank()) matches.map { it.first } else matches.sortedBy { it.second }.map { it.first }
     InkPickerSheet(
-        title = "CHOOSE A RECKONING",
+        title = "Choose a reckoning",
         onDismiss = { open = false },
         query = query,
         onQueryChange = { query = it },
@@ -1255,41 +1045,6 @@ private fun LiftPicker(
     }
 }
 
-/** Pill-style compact segmented control for a right-aligned same-row slot; 44dp targets. */
-@Composable
-private fun <T> CompactSegmented(
-    options: List<Pair<T, String>>,
-    selected: T,
-    onPick: (T) -> Unit,
-) {
-    Row(
-        horizontalArrangement = Arrangement.spacedBy(6.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        options.forEach { (candidate, label) ->
-            val active = candidate == selected
-            Text(
-                label,
-                maxLines = 1,
-                softWrap = false,
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                color = if (active) MaterialTheme.colorScheme.onTertiary else IronvellumColors.InkMuted,
-                modifier = Modifier
-                    // 44dp hit area around a compact pill: the visual stays small.
-                    .heightIn(min = 44.dp)
-                    .selectable(selected = active, role = Role.Tab) { onPick(candidate) }
-                    .wrapContentHeight()
-                    .clip(MaterialTheme.shapes.small)
-                    .background(if (active) IronvellumColors.SovereignGold else Color(0xFF141A18))
-                    .inkBorder(if (active) IronvellumColors.SovereignGold else IronvellumColors.Rune, MaterialTheme.shapes.small, 1.dp)
-                    .padding(horizontal = 10.dp, vertical = 6.dp),
-            )
-        }
-    }
-}
-
 @Composable
 private fun BoardPickerRow(lift: Lift, isSelected: Boolean, ranked: Int, onClick: () -> Unit) {
     val rungs = LiftBoards.rungs(lift)
@@ -1298,121 +1053,22 @@ private fun BoardPickerRow(lift: Lift, isSelected: Boolean, ranked: Int, onClick
     } else {
         "${rungs.size} rungs · ${rungs.first().exercise} to ${rungs.last().exercise}"
     }
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        // Same card as the exercise picker rows, so both sheets read as lists of things to press.
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp)
-            .clip(MaterialTheme.shapes.medium)
-            .background(Brush.verticalGradient(listOf(Color(0xFF17201C), Color(0xFF111815))))
-            .inkBorder(
-                if (isSelected) IronvellumColors.SovereignGold else IronvellumColors.Rune,
-                MaterialTheme.shapes.medium,
-                1.dp,
-            )
-            .selectable(selected = isSelected, role = Role.RadioButton, onClick = onClick)
-            .heightIn(min = 60.dp)
-            .padding(horizontal = 14.dp, vertical = 8.dp),
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                lift.label,
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                color = if (isSelected) IronvellumColors.SovereignGold else IronvellumColors.Ink,
-            )
-            Text(
-                detail,
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        }
-        Spacer(Modifier.width(12.dp))
-        Text(
-            if (ranked == 0) "none yet" else "$ranked ranked",
-            style = MaterialTheme.typography.labelSmall,
-            color = if (ranked == 0) IronvellumColors.InkMuted else IronvellumColors.EmeraldBright,
-        )
-    }
-}
-
-/** One lift board row: rank, identity, tier name as the headline. */
-@Composable
-private fun LiftRankRow(
-    standing: LiftStanding,
-    isMe: Boolean,
-    equippedFrame: String?,
-    onOpenFriend: () -> Unit,
-) {
-    val rank = standing.rank
-    val row = standing.row
-    val accent = when {
-        isMe -> IronvellumColors.SovereignGold
-        rank == 1 -> IronvellumColors.SovereignGold
-        rank == 2 -> IronvellumColors.EmeraldBright
-        rank == 3 -> Color(0xFFB08A5A) // bronze — no palette token exists for it
-        else -> IronvellumColors.Rune
-    }
-    InkPanel(modifier = Modifier.fillMaxWidth(), onClick = onOpenFriend) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                "#$rank",
-                style = MaterialTheme.typography.labelMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = if (rank <= 3 || isMe) accent else IronvellumColors.InkMuted,
-                modifier = Modifier.padding(top = 2.dp),
-            )
-            IdentityRow(
-                displayName = if (isMe) "${row.displayName} — YOU" else row.displayName,
-                userId = row.userId,
-                wornTitle = wornTitle(row.currentTitleId),
-                titleId = row.currentTitleId,
-                level = row.level,
-                size = IdentitySize.Standard,
-                // The equipped crest frame is worn by the local lifter alone.
-                frameId = if (isMe) equippedFrame else null,
-                isMe = isMe,
-                trailing = {
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            LiftBoards.stepLabel(row.lift, standing.step),
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.End,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontFamily = ChakraPetch,
-                            fontWeight = FontWeight.Bold,
-                            color = accent,
-                        )
-                        LiftBoards.stepDetail(row.lift, standing.step)?.let { detail ->
-                            Text(
-                                detail,
-                                maxLines = 1,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = IronvellumColors.InkMuted,
-                            )
-                        }
-                    }
-                },
-            )
-        }
-    }
+    ChoiceRow(
+        label = lift.label,
+        selected = isSelected,
+        onClick = onClick,
+        subline = detail,
+        trailing = if (ranked == 0) "none yet" else "$ranked ranked",
+    )
 }
 
 /** The board answered, but nobody is ranked on it in this window. */
 @Composable
 private fun LiftEmptyPanel(onRefresh: () -> Unit) {
-    InkPanel(Modifier.fillMaxWidth()) {
-        Text(
-            "No allies stand here yet — log one of its exercises to claim a standing.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-        )
-        Spacer(Modifier.height(10.dp))
-        SocialRefreshLink(onClick = onRefresh, label = "Check again")
-    }
+    Text(
+        "No allies stand here yet. Log one of its exercises to claim a standing.",
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.InkMuted,
+    )
+    SocialRefreshLink(onClick = onRefresh, label = "Check again")
 }
