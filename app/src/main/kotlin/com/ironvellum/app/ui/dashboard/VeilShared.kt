@@ -37,6 +37,10 @@ import com.ironvellum.app.ui.theme.inkDot
 import kotlinx.coroutines.delay
 import kotlin.math.min
 
+/** Said once to a lifter who has sealed nothing, on Today's Veil and again on the Veil screen. */
+internal const val FIRST_RUN_VEIL_LINE =
+    "The Veil gathers essence while you're away. Seal trials to raise the pace; your echoes and Chronicle will fill in as you train."
+
 /*
  * The Veil's ticker and motes, shared by the Veil section on Today (TodayVeil.kt) and the Veil screen
  * (idle/IdleScreen.kt) so the two cannot drift apart. Both gate their motion the same way: the caller
