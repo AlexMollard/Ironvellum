@@ -33,6 +33,9 @@ object SetRecords {
      * so casing differences between installs or imports cannot split a
      * record. Completed sets only: an unticked prescription is not a performance.
      *
+     * @param beforeMs when set, only sessions completed (started, if never
+     *   completed) strictly before it count: a trial judged as history stood
+     *   when it was done, so a later, better trial never takes its record away.
      * @param metricOf the movement's metric, so a static hold is scored on its
      *   seconds. Without it a hold records `reps = 0` and can never set a PR.
      */
@@ -40,6 +43,7 @@ object SetRecords {
         history: List<Pair<WorkoutSession, List<SessionSet>>>,
         bodyweightAt: (atMs: Long) -> Double,
         excludeSessionId: Long? = null,
+        beforeMs: Long? = null,
         metricOf: (SessionSet) -> ExerciseMetric? = { null },
     ): Map<Pair<String, Int>, Record> {
         val best = mutableMapOf<Pair<String, Int>, Record>()
@@ -49,6 +53,7 @@ object SetRecords {
             .sortedBy { (session, _) -> session.startedAtMs }
             .forEach { (session, sets) ->
                 if (excludeSessionId != null && session.id == excludeSessionId) return@forEach
+                if (beforeMs != null && (session.completedAtMs ?: session.startedAtMs) >= beforeMs) return@forEach
                 sets.filter { it.done }.forEach { set ->
                     // An activity metric (Bouldering's ATTEMPTS_GRADE, a run's
                     // DISTANCE_TIME) is not strength work at any set position:

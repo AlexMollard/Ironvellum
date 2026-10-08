@@ -118,4 +118,31 @@ class SessionPeaksTest {
 
         assertEquals(listOf("Dip", "Pull-up"), names)
     }
+
+    private fun trial(id: Long, startedAt: Long, reps: Int) =
+        WorkoutSession(id = id, label = "t", startedAtMs = startedAt, completedAtMs = startedAt + 1_000) to
+            listOf(set(setIndex = 0, reps = reps))
+
+    /** A trial seen from history is judged as history stood when it was done. */
+    private fun peaksAsOfThen(thisReps: Int, earlierReps: Int, laterReps: Int): List<SessionPeaks.Peak> {
+        val mine = trial(2, 5_000, thisReps)
+        val history = listOf(trial(1, 1_000, earlierReps), mine, trial(3, 9_000, laterReps))
+        val records = SetRecords.records(
+            history,
+            bwAt,
+            excludeSessionId = mine.first.id,
+            beforeMs = mine.first.completedAtMs,
+        )
+        return SessionPeaks.of(mine.second, records, bw, reps)
+    }
+
+    @Test
+    fun aLaterBetterTrialDoesNotTakeThePeakAway() {
+        assertEquals(1, peaksAsOfThen(thisReps = 10, earlierReps = 8, laterReps = 14).size)
+    }
+
+    @Test
+    fun anEarlierBetterTrialPreventsThePeak() {
+        assertTrue(peaksAsOfThen(thisReps = 10, earlierReps = 12, laterReps = 14).isEmpty())
+    }
 }
