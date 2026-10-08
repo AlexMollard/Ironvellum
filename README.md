@@ -7,9 +7,9 @@
 **An Android training tracker that scores what you actually lift.**
 
 Log a workout, get a number that means something. Body-scaled strength scoring,
-a 119-technique calisthenics tree, and a first-run flow that builds you a cycle.
+a 119-technique calisthenics tree, and a first-run flow that builds you a cycle, all in one flat Clean look.
 
-![Gate](https://img.shields.io/badge/gate-1006%20unit%20%2B%20122%20instrumented-2E7D32)
+![Gate](https://img.shields.io/badge/gate-1135%20unit%20%2B%20217%20instrumented-2E7D32)
 ![Tested locally](https://img.shields.io/badge/tested-locally%2C%20not%20CI-555555)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
@@ -24,15 +24,15 @@ a 119-technique calisthenics tree, and a first-run flow that builds you a cycle.
 
 | Your day | The cycle it built you | The trial |
 |:---:|:---:|:---:|
-| <img src="docs/images/dashboard.png" width="230" alt="Today screen showing strength rank, oath, deeds and today's trial" /> | <img src="docs/images/train.png" width="230" alt="Rites screen listing the forged rites" /> | <img src="docs/images/session.png" width="230" alt="A trial in progress with per-set load and rep steppers" /> |
+| <img src="docs/images/dashboard.png" width="230" alt="Today with the level seal, strength rank, the Veil section and the day card for today's rite" /> | <img src="docs/images/train.png" width="230" alt="Train with today's rite to begin, the cycle and your rites" /> | <img src="docs/images/session.png" width="230" alt="A trial in progress with one open exercise, per-set load and rep steppers and a docked action bar" /> |
 
 | Paths | Deeds | Share card |
 |:---:|:---:|:---:|
-| <img src="docs/images/skilltree.png" width="230" alt="The Pull path as illustrated technique nodes, with the path strip and prerequisite lines" /> | <img src="docs/images/codex.png" width="230" alt="Deeds board grouped by category with progress bars" /> | <img src="docs/images/share.png" width="230" alt="Wordle-style plain text share card" /> |
+| <img src="docs/images/skilltree.png" width="230" alt="The Pull path as flat technique nodes, with the path strip and prerequisite lines" /> | <img src="docs/images/codex.png" width="230" alt="Codex deeds grouped by category with progress bars" /> | <img src="docs/images/share.png" width="230" alt="Wordle-style plain text share card" /> |
 
-| Weekly Coverage | Muscle tiles | Info sheet |
+| Weekly coverage | The Chronicle | Info sheet |
 |:---:|:---:|:---:|
-| <img src="docs/images/coverage.png" width="230" alt="Weekly Coverage with the anatomical body map and the quads lit with a line of context" /> | <img src="docs/images/coverage_tiles.png" width="230" alt="Swipeable MUSCLES tiles, gaps first, with sets against target range" /> | <img src="docs/images/info.png" width="230" alt="Swipeable exercise info sheet with the muscles worked shown on the figure" /> |
+| <img src="docs/images/coverage.png" width="230" alt="Weekly coverage with the body map and one list of muscles, the short ones first, above a docked Forge a rite button" /> | <img src="docs/images/chronicle.png" width="230" alt="The Chronicle as a totals line and one card of sealed trials per month, each row with its XP and strength" /> | <img src="docs/images/info.png" width="230" alt="Swipeable exercise info sheet with the muscles worked shown on the figure" /> |
 
 </div>
 
@@ -67,19 +67,21 @@ training.
 The app keeps its own words, all defined in [docs/GLOSSARY.md](docs/GLOSSARY.md):
 a saved workout is a **rite**, the weekly plan is a **cycle**, a workout in
 progress is a **trial**, sealed when you finish and written into your
-**chronicle**.
+**Chronicle**. It wears one flat look, Clean, with pop-ups as bottom sheets, and
+you can pick your own accent pair in settings.
 
 |  | |
 |---|---|
+| **Today** | A full-screen status page: a day card for the rite you keep, the muscle map when there is room, the level seal, your Strength Rank and the Veil. Swipe between days. |
 | **The Binding** | A guided first run. Pick your split (full body, upper/lower, push/pull/legs), weekly volume, armoury (the equipment you own) and goal, then review an editable cycle built from the real catalogue. No cycle is imposed on you. |
-| **The Forge** | An evidence-based builder. Hand-written patterns for each split, for strength or muscle, fitted to your weekly volume (low, standard or high) and your armoury: a full gym, nothing, or toggles for a pull-up bar, dip bars, parallettes, rings, dumbbells, barbell, bench and ab wheel, with dumbbell loads capped at your heaviest and reps raised to match. Or forge a cycle or a single rite sized to the 2020-2026 volume research, or temper a rite you already have and see the before and after. Cap the exercises per rite (5 by default) or turn on Compound & technique only to leave isolation work out. Every exercise says in plain words why it was picked and cites the study. Loads come from your own peaks. |
-| **Weekly muscle coverage** | An anatomical body map, male or female to match your profile, on the Rites tab shows the sets each muscle gets in your planned cycle or the last seven days, against the range for your volume and goal. Tap the map to open Weekly Coverage and swipe between MUSCLES, tiles with the gaps first, and EXERCISES, cards you open for the muscles each works. Tap a muscle on any figure to light it with one line of context. The chest counts as upper, mid and lower, and lever and planche holds count toward the muscles they work. Helpers your other exercises mostly train (upper and lower chest, traps, front delts, rotator cuff, serratus, brachialis, forearms, obliques, lower back, hip flexors, adductors, abductors, tibialis) are held to a floor of 3 sets a week instead of a range, and the neck is tracked with no weekly target. Every exercise and technique has a swipeable info sheet that shows its main and assisting muscles on the figure, on the live trial screen too. |
-| **Live trials** | Type a set's exact load, watch a running timer, and continue a trial you left instead of starting over. Time estimates learn your pace from the trials you seal. After a trial, tick which changes to sets, reps, load and modifiers go back into your cycle. |
+| **The Forge** | An evidence-based builder. Hand-written patterns for each split, for strength or muscle, fitted to your weekly volume (low, standard or high) and your armoury: a full gym, nothing, or toggles for a pull-up bar, dip bars, parallettes, rings, dumbbells, barbell, bench and ab wheel, with dumbbell loads capped at your heaviest and reps raised to match. Or forge a cycle or a single rite sized to the 2020-2026 volume research, or temper a rite you already have and see the before and after. A forge previews the coverage of the cycle it would give you before you accept it. Cap the exercises per rite (5 by default) or turn on Compound & technique only to leave isolation work out. Every exercise says in plain words why it was picked and cites the study. Loads come from your own peaks. |
+| **Weekly coverage** | An anatomical body map, male or female to match your profile, on the Train tab shows the sets each muscle gets in your cycle or the last seven days, against the range for your volume and goal. Tap it to open Weekly coverage: one list of muscles with the short ones first, those in range folded away, and a By exercise row for the muscles each exercise works. A docked bar counts the muscles that are short and forges a rite to fill them. Tap a muscle on any figure to light it with one line of context. The chest counts as upper, mid and lower, and lever and planche holds count toward the muscles they work. Helpers your other exercises mostly train (upper and lower chest, traps, front delts, rotator cuff, serratus, brachialis, forearms, obliques, lower back, hip flexors, adductors, abductors, tibialis) are held to a floor of 3 sets a week instead of a range, and the neck is tracked with no weekly target. Every exercise and technique has a swipeable info sheet that shows its main and assisting muscles on the figure, on the live trial screen too. |
+| **Live trials** | One open exercise at a time and a docked action bar. Type a set's exact load; a load or rep count you change by hand carries to the later sets. Rest runs on a timer you can trim by 15 s, with each movement's own window, a ready buzz and a suggested maximum. Mark warm-up sets, or add an optional warm-up step before the first set. Keep a note per exercise and see it again as Last time. Undo a removed set or exercise, continue a trial you left, and keep exercise swaps in the rite. Time estimates learn your pace from the trials you seal. After a trial, tick which changes to sets, reps, load and modifiers go back into your cycle; amend a sealed trial, or delete it from its detail. |
 | **256 exercises** | Barbell, dumbbell, cable, plate-loaded, selectorised, smith, assisted, bodyweight, plus cardio, sport, climbing, water and mobility. |
 | **Paths: 119 techniques** | Fourteen paths: pull, push, handstand, lever, planche, rings, movement, legs, core, mobility, plus squat, bench, press and deadlift ladders with bodyweight-relative bars. Pick a path from the grid and follow its game-style nodes. Each technique is gated on the one before it and carries a written claim standard. |
-| **105 deeds** | Level, volume, oath (days kept in a row), strength and activity milestones, with progress you can watch rather than a surprise. Each deed grants a title to wear. |
-| **Progressive overload** | Strength and hypertrophy schools with their own rep bands, per-exercise load steps and a stall rule that deloads instead of repeating a failed trial. |
-| **The Ledger** | Scrubbable charts over BODY (weight, body fat, BMI, FFMI), TRAINING (lift records and a calendar) and DAILY tabs; optional Health Connect read of weight, body fat, resting heart rate, steps, distance, energy and sleep, with past history and a background refresh. |
+| **105 deeds** (the Codex) | Level, volume, oath (days kept in a row), strength and activity milestones, with progress you can watch rather than a surprise. Each deed grants a title to wear. |
+| **Progressive overload** | Strength and hypertrophy schools with their own rep bands, per-exercise load steps and a stall rule that deloads instead of repeating a failed trial. Advice follows the movement: range, tempo or hold time for control and mobility work, holds progress on seconds, and bodyweight reps stop at 15 before it suggests load or a harder variation. |
+| **The Ledger** | Scrubbable charts over BODY (weight, body fat, BMI, FFMI), TRAINING (lift records and a calendar) and DAILY tabs; optional Health Connect read of weight, body fat, resting heart rate, steps, distance, energy and sleep, with past history and a background refresh. The Codex Journal keeps figures, a heat strip and a timeline, and each exercise has a detail page built around its peak. |
 | **Shareable trials** | A plain text card shaped after Wordle, no link and no image, that states only what you did. |
 | **The Veil** | An idle layer: each trial leaves an echo, and echoes gather essence while you are away, spent on inscriptions for relics and crests. |
 | **Optional cloud** | Sign in to back up training, follow your allies' tidings, form a circle with a shared weekly goal and a Keeper, and stand in the Reckoning, a leaderboard for each lift. Body measurements and health data never leave the device. Delete your cloud account from the app at any time. |
@@ -106,7 +108,7 @@ source of truth: the cloud is a backup, never an authority.
 | Layer | Choice |
 |---|---|
 | Language | Kotlin 2.4.20 |
-| UI | Jetpack Compose, Material 3, a cut-corner Clean theme |
+| UI | Jetpack Compose, Material 3, the flat Clean look with customisable accent pairs |
 | Local data | Room 2.8.5 with versioned migrations and migration tests |
 | Background | WorkManager |
 | Health | Health Connect 1.1.0 (read only, optional) |
