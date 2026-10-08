@@ -100,7 +100,9 @@ import com.ironvellum.app.ui.train.PresetEditorScreen
 import com.ironvellum.app.ui.program.ProgramBuilderScreen
 import com.ironvellum.app.ui.program.MuscleCoverageScreen
 import com.ironvellum.app.ui.train.SessionScreen
+import com.ironvellum.app.ui.idle.CrestCollectionScreen
 import com.ironvellum.app.ui.idle.IdleScreen
+import com.ironvellum.app.ui.idle.RelicVaultScreen
 
 /** Ledger back stack flag: open the weigh-in on arrival. */
 private const val LOG_WEIGHT = "log_weight"
@@ -112,6 +114,8 @@ object Routes {
     const val STATS = "stats"
     const val TITLES = "titles"
     const val IDLE = "idle"
+    const val VAULT = "idle/vault"
+    const val CRESTS = "idle/crests"
     const val SETTINGS = "settings"
     const val SETTINGS_SECTION = "settings/{section}"
     const val SUPPORT = "support"
@@ -497,9 +501,17 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         MeasurementDetailScreen(site = site, onBack = { navController.popBackStack() })
                     }
                 }
+                composable(Routes.VAULT) {
+                    RelicVaultScreen(onBack = { navController.popBackStack() })
+                }
+                composable(Routes.CRESTS) {
+                    CrestCollectionScreen(onBack = { navController.popBackStack() })
+                }
                 composable(Routes.IDLE) {
                     IdleScreen(
                         onBack = { navController.popBackStack() },
+                        onOpenVault = { navController.navigate(Routes.VAULT) { launchSingleTop = true } },
+                        onOpenCrests = { navController.navigate(Routes.CRESTS) { launchSingleTop = true } },
                         onOpenCircle = {
                             navController.navigate(Routes.SOCIAL) {
                                 popUpTo(Routes.DASHBOARD) { saveState = false }

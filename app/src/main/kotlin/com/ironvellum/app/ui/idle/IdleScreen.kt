@@ -51,18 +51,35 @@ import com.ironvellum.app.IronvellumApp
 import com.ironvellum.app.data.IdleInputs
 import com.ironvellum.app.data.IdleSnapshot
 import com.ironvellum.app.data.Repository
-import com.ironvellum.app.data.RelicHolding
 import com.ironvellum.app.data.cloud.Cloud
 import com.ironvellum.app.domain.Circle
 import com.ironvellum.app.domain.Gacha
 import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.RewardRarity
-import com.ironvellum.app.domain.Relics
+import com.ironvellum.app.domain.HouseEffects
+import com.ironvellum.app.domain.RelicHouse
+import com.ironvellum.app.domain.Reward
+import com.ironvellum.app.domain.VaultState
+import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.RollResult
 import com.ironvellum.app.domain.Veil
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.ui.components.AchievementOverlay
-import com.ironvellum.app.ui.components.CrestRail
+import com.ironvellum.app.ui.components.CelebrationPage
+import com.ironvellum.app.ui.components.CrestPlate
+import com.ironvellum.app.ui.components.HouseEmblem
+import com.ironvellum.app.ui.components.HouseRelicSigil
+import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.rarityWord
+import com.ironvellum.app.ui.theme.RarityTint
+import com.ironvellum.app.ui.theme.TileShape
+import com.ironvellum.app.ui.theme.inkBorder
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.text.style.TextAlign
+import kotlin.math.roundToInt
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.IronvellumButton
@@ -87,6 +104,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import androidx.compose.ui.platform.LocalContext
@@ -126,11 +144,16 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), IdleUi())
 
     /**
-     * Relics ride their own flow: `combine` tops out at five typed sources and
-     * the vault is independent of the roll snapshot anyway.
+     * The vault rides its own flow: `combine` tops out at five typed sources and the vault is
+     * independent of the roll snapshot anyway. It holds the active relic, the houses and what they add.
      */
-    val relics: StateFlow<List<RelicHolding>> = repo.observeRelics()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val vault: StateFlow<VaultState?> = repo.observeVault()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** The lifter level, which says how far off the next milestone crest is. */
+    val level: StateFlow<Int> = repo.observeProfile()
+        .map { Xp.levelFor(it?.totalXp ?: 0L) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 1)
 
     private val _away = MutableStateFlow<AwayReport?>(null)
 
@@ -164,10 +187,16 @@ class IdleViewModel(private val repo: Repository) : ViewModel() {
         viewModelScope.launch { repo.equipFrame(frameId) }
     }
 
-    /** Transactional on the repo side — payout and inscription spend land together. */
-    fun inscribeFigure(onInscribed: (RollResult?) -> Unit) {
+    /**
+     * Transactional on the repo side — payout and inscription spend land together. A relic comes back
+     * with the vault AFTER the draw, a crest with how many crests are now held, for their reveals.
+     */
+    fun inscribeFigure(onInscribed: (RollResult?, VaultState?, Int?) -> Unit) {
         viewModelScope.launch {
-            onInscribed(repo.spendRoll(seed = System.nanoTime()))
+            val result = repo.spendRoll(seed = System.nanoTime())
+            val vault = if (result?.reward is Reward.Relic) repo.vaultNow() else null
+            val crests = if (result?.reward is Reward.CrestFrame) repo.observeOwnedFrames().first().size else null
+            onInscribed(result, vault, crests)
         }
     }
 }
@@ -179,15 +208,19 @@ private const val TICK_MS = 1_000L
 fun IdleScreen(
     onBack: () -> Unit,
     onOpenCircle: () -> Unit = {},
+    onOpenVault: () -> Unit = {},
+    onOpenCrests: () -> Unit = {},
     viewModel: IdleViewModel =
         viewModel(factory = viewModelFactory { initializer { IdleViewModel(ironvellumRepository()) } }),
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val away by viewModel.away.collectAsStateWithLifecycle()
-    val relics by viewModel.relics.collectAsStateWithLifecycle()
+    val vault by viewModel.vault.collectAsStateWithLifecycle()
+    val level by viewModel.level.collectAsStateWithLifecycle()
     val offerings by viewModel.offerings.collectAsStateWithLifecycle()
     // The reveal for a spent inscription; null once the overlay finishes so it never re-shows.
-    var inscriptionResult by remember { mutableStateOf<RollResult?>(null) }
+    var inscriptionPage by remember { mutableStateOf<CelebrationPage.Inscribed?>(null) }
+    var housesOpen by rememberSaveable { mutableStateOf(false) }
 
     // The ticker and motes move under the same gate as the Veil on Today: resumed, animators on, not a preview.
     val animate = rememberTodayMotion()
@@ -221,37 +254,41 @@ fun IdleScreen(
         } else {
             EssenceBlock(snapshot, now, animate)
             away?.let { AwayLine(it) }
+            ActiveRelicPanel(vault, animate, onOpenVault)
             // Inscriptions are ALWAYS visible. Hiding them until the first
             // level-up made the whole feature undiscoverable.
             InscribeBlock(
                 rolls = ui.rolls,
-                onInscribe = { viewModel.inscribeFigure { result -> if (result != null) inscriptionResult = result } },
+                onInscribe = {
+                    viewModel.inscribeFigure { result, vaultAfter, crests ->
+                        if (result != null) inscriptionPage = inscribedPage(result, vaultAfter, crests)
+                    }
+                },
             )
             BuyInscriptionRow(
                 cost = Veil.offeringCost(offerings),
+                bought = offerings,
                 essence = snapshot.state.essence,
                 onBuy = viewModel::buyInscription,
             )
+            HousesSummary(vault, onOpenVault, onShowHouses = { housesOpen = true })
+            NextCrestRow(level, ui.ownedFrames, onOpenCrests)
             RateBlock(snapshot, inputs)
-            Spacer(Modifier.height(14.dp))
-            RelicVault(relics = relics)
-            CrestCollection(
-                owned = ui.ownedFrames,
-                equipped = ui.equippedFrame,
-                onEquip = viewModel::equipFrame,
-            )
-            CapNote()
+            CapNote(snapshot.rate.effects)
         }
 
         // Bottom-nav clearance — the last row must never sit under it.
         Spacer(Modifier.height(120.dp))
     }
-    inscriptionResult?.let { result ->
+    inscriptionPage?.let { page ->
         AchievementOverlay(
-            pages = listOf(inscribedPage(result)),
-            onDone = { inscriptionResult = null },
+            pages = listOf(page),
+            onDone = { inscriptionPage = null },
+            wornCrestId = ui.equippedFrame,
+            onWearCrest = { viewModel.equipFrame(it) },
         )
     }
+    if (housesOpen) HousesSheet { housesOpen = false }
 }
 
 private val EssenceBoxHeight = 72.dp
@@ -295,11 +332,13 @@ private fun EssenceBlock(snapshot: IdleSnapshot, now: Long, animate: Boolean) {
         FigurePair("Echoes", state.figures.toString())
         FigurePair("Relic", "×${"%.2f".fmt(state.relicMultiplier)}")
     }
-    veilStrength(state.lastCollectedAtMs, now)?.let { strength ->
+    // The window is the houses: 24 h, 26 h with a full Iron house.
+    val window = rate.effects.fullStrengthHours
+    veilStrength(state.lastCollectedAtMs, now, rate.effects)?.let { strength ->
         InkRail(strength.fraction, Modifier.padding(top = 12.dp), height = 4.dp)
-        val hours = ceil(strength.fraction * Idle.FULL_RATE_HOURS).toInt()
+        val hours = ceil(strength.fraction * window).toInt()
         Text(
-            if (strength.fraction > 0f) "$hours h of ${Idle.FULL_RATE_HOURS.toInt()} at full strength, then it tapers" else strength.caption,
+            if (strength.fraction > 0f) "$hours h of ${window.roundToInt()} at full strength, then it tapers" else strength.caption,
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
             modifier = Modifier.padding(top = 6.dp),
@@ -382,7 +421,7 @@ private fun InscribeBlock(rolls: Int, onInscribe: () -> Unit) {
     // showing only frames made a relic roll look like a lost crest.
     Text(
         "Each level-up earns one inscription: echoes for the Veil, a relic " +
-            "that lifts your rate, or a crest worn on your folio.",
+            "that lifts your whole essence rate, or a crest worn on your folio.",
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
         modifier = Modifier.padding(top = 8.dp),
@@ -399,17 +438,21 @@ private fun InscribeBlock(rolls: Int, onInscribe: () -> Unit) {
 
 /**
  * Essence's one use: an extra inscription at [Veil.offeringCost]. Disabled, not hidden, while the banked
- * essence is short, so the price is always visible. The full design comes later.
+ * essence is short, so the price is always visible.
  */
 @Composable
-private fun BuyInscriptionRow(cost: Long, essence: Long, onBuy: () -> Unit) {
+private fun BuyInscriptionRow(cost: Long, bought: Int, essence: Long, onBuy: () -> Unit) {
     val affordable = essence >= cost
     ListRow(
         "Buy an inscription · %,d essence".fmt(cost),
         modifier = Modifier
             .alpha(if (affordable) 1f else 0.45f)
             .semantics { if (!affordable) disabled() },
-        subline = if (affordable) null else "%,d more essence to go".fmt(cost - essence),
+        subline = if (affordable) {
+            "$bought bought so far, the price rises by ${Veil.OFFERING_STEP} each time"
+        } else {
+            "%,d more essence to go".fmt(cost - essence)
+        },
         onClickLabel = "Buy an inscription",
         onClick = if (affordable) onBuy else null,
     )
@@ -447,6 +490,22 @@ private fun RateBlock(snapshot: IdleSnapshot, inputs: IdleInputs) {
     ListRow("Technique factor", value = "×${"%.2f".fmt(rate.skillFactor)}", valueColor = IronvellumColors.Ink)
     InkDivider()
     ListRow(
+        "Relics",
+        subline = "Every relic lifts the whole rate",
+        value = "×${"%.2f".fmt(snapshot.state.relicMultiplier)}",
+        valueColor = IronvellumColors.Ink,
+    )
+    InkDivider()
+    // A house whose 2-relic bonus is reached lifts its own part of the rate.
+    RelicHouse.entries.filter { rate.effects.term(it) > 1.0 }.forEach { house ->
+        ListRow(
+            "${house.title} · ${house.term} term",
+            value = "×${"%.2f".fmt(rate.effects.term(house))}",
+            valueColor = IronvellumColors.Ink,
+        )
+        InkDivider()
+    }
+    ListRow(
         "What feeds it",
         subline = "${inputs.sessionsLast7d} ${plural(inputs.sessionsLast7d, "trial", "trials")} in 7 days" +
             " · ${"%,.0f".fmt(inputs.volumeLast7d)} kg" +
@@ -456,94 +515,146 @@ private fun RateBlock(snapshot: IdleSnapshot, inputs: IdleInputs) {
     InkDivider()
 }
 
-/**
- * RELIC VAULT: every relic an inscription produced. The rate only uses the strongest at full weight, so
- * the rows say what each adds. Collapsed to one row; the list sits behind it.
- */
+/** The title line of a relic: "Fabled · House of Iron", the rarity in its metal. */
 @Composable
-private fun RelicVault(relics: List<RelicHolding>) {
-    var open by rememberSaveable { mutableStateOf(false) }
-    ListRow(
-        "Relic vault",
-        subline = if (relics.isEmpty()) {
-            "Nothing inscribed yet"
-        } else {
-            "${relics.size} ${plural(relics.size, "relic", "relics")} · vault total ×%.2f".fmt(
-                Relics.effectiveMultiplier(relics.map { it.multiplier }),
-            )
+private fun TierLine(tier: RewardRarity, house: RelicHouse, modifier: Modifier = Modifier) {
+    Text(
+        buildAnnotatedString {
+            withStyle(SpanStyle(color = RarityTint.of(tier), fontWeight = FontWeight.SemiBold)) { append(rarityWord(tier)) }
+            append(" · ${house.title}")
         },
-        onClickLabel = if (open) "Hide the relic vault" else "Show the relic vault",
-        onClick = { open = !open },
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.InkMuted,
+        modifier = modifier,
     )
-    if (open) {
-        Text(
-            "A relic is a permanent boost to your idle rate, won from an " +
-                "inscription. Every relic you own counts: the strongest at full " +
-                "weight, the second at a half, the third at a third, and " +
-                "so on down the vault.",
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-            modifier = Modifier.padding(bottom = 4.dp),
-        )
-        // Only the relics that actually move the rate are listed. An
-        // uncapped vault ran to a hundred rows and buried every section
-        // below it; the tail contributes fractions of a percent each.
-        relics.take(VAULT_ROWS).forEachIndexed { index, relic ->
-            ListRow(
-                relic.name,
-                // Its real contribution, not a flat label: the rank sets the weight, so show what it adds.
-                subline = "+%.2f rate · %s".fmt(
-                    (relic.multiplier - 1.0) * Relics.weightAt(index),
-                    if (index == 0) "full weight" else "%d%% weight".fmt((Relics.weightAt(index) * 100).toInt()),
-                ),
-                value = "×%.2f".fmt(relic.multiplier),
-                valueColor = IronvellumColors.Ink,
-            )
-        }
-        if (relics.size > VAULT_ROWS) {
-            Text(
-                "+${relics.size - VAULT_ROWS} more held, counted in the vault total",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-                modifier = Modifier.padding(vertical = 8.dp),
-            )
-        }
-    }
-    InkDivider()
 }
 
 /**
- * CREST COLLECTION: the whole catalogue as a horizontal rail of large plates, so the per-frame art is
- * actually visible. Collapsed to one row; the rail sits behind it.
+ * The relic setting the rate, large on its rarity plate with what it does, and the way into the vault.
+ * The plate turns slowly while motion is on; with none it is the same picture, still.
  */
 @Composable
-private fun CrestCollection(
-    owned: Set<String>,
-    equipped: String?,
-    onEquip: (String?) -> Unit,
-) {
-    var open by rememberSaveable { mutableStateOf(false) }
-    ListRow(
-        "Crest collection",
-        subline = "${owned.size} of ${Gacha.CREST_FRAMES.size} crests inscribed",
-        onClickLabel = if (open) "Hide the crest collection" else "Show the crest collection",
-        onClick = { open = !open },
-    )
-    if (open) {
-        CrestRail(owned = owned, equipped = equipped, onEquip = onEquip, modifier = Modifier.padding(vertical = 8.dp))
+private fun ActiveRelicPanel(vault: VaultState?, animate: Boolean, onOpenVault: () -> Unit) {
+    val active = vault?.active
+    InkPanel(Modifier.padding(top = 12.dp), contentPadding = PaddingValues(0.dp)) {
+        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 12.dp)) {
+            Text("Active relic", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
+            Text("Sets your relic rate", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+        }
+        Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+            if (active != null) {
+                HouseRelicSigil(active.relic.id, active.tier, Modifier.size(150.dp), ringed = true, spin = animate)
+                Text(active.relic.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = IronvellumColors.Ink, textAlign = TextAlign.Center)
+                TierLine(active.tier, active.relic.house, Modifier.padding(top = 2.dp))
+                Text(
+                    active.relic.house.effect(active.owned?.multiplier ?: 1.0),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.InkMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 6.dp, bottom = 10.dp),
+                )
+            } else {
+                HouseRelicSigil("iron.crown", RewardRarity.Epic, Modifier.size(120.dp), owned = false)
+                Text("No relic yet", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = IronvellumColors.Ink)
+                Text(
+                    "Your first inscription is a relic. It lifts your whole essence rate.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.InkMuted,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(top = 6.dp, bottom = 10.dp),
+                )
+            }
+        }
+        InkDivider()
+        ListRow(
+            "Relic vault",
+            value = vault?.let { "${it.ownedCount} of ${it.total}" },
+            onClickLabel = "Open the relic vault",
+            onClick = onOpenVault,
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+        )
+    }
+}
+
+/** The four houses in a row, each how many of its four relics are held; a tap opens the vault. */
+@Composable
+private fun HousesSummary(vault: VaultState?, onOpenVault: () -> Unit, onShowHouses: () -> Unit) {
+    Row(Modifier.fillMaxWidth().padding(top = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text("Relic houses", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f).semantics { heading() })
+        HousesLink(onShowHouses)
+    }
+    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        (vault?.houses ?: emptyList()).forEach { house ->
+            Column(
+                Modifier
+                    .weight(1f)
+                    .background(IronvellumColors.Vault, TileShape)
+                    .inkBorder(IronvellumColors.Rune, TileShape, 1.dp)
+                    .clickable(role = Role.Button, onClickLabel = "Open the relic vault", onClick = onOpenVault)
+                    .heightIn(min = 72.dp)
+                    .padding(top = 8.dp, bottom = 6.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                HouseEmblem(house.house, if (house.owned > 0) IronvellumColors.SystemGreen else IronvellumColors.Bracket, Modifier.size(32.dp))
+                Text(house.house.label, style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.SemiBold, color = IronvellumColors.Ink)
+                Text("${house.owned} / ${house.size}", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            }
+        }
+    }
+}
+
+/**
+ * The next crest the ladder pays and how many levels off it is, opening the collection. Past the
+ * last milestone, or with the ladder owned, it is the plain collection row.
+ */
+@Composable
+private fun NextCrestRow(level: Int, owned: Set<String>, onOpenCrests: () -> Unit) {
+    val next = (level / Veil.MILESTONE_EVERY + 1) * Veil.MILESTONE_EVERY
+    val crest = Veil.milestoneCrest(next, owned)?.takeIf { next / Veil.MILESTONE_EVERY <= Veil.CREST_LADDER.size }
+    Spacer(Modifier.height(12.dp))
+    InkDivider()
+    if (crest == null) {
+        ListRow(
+            "Crest collection",
+            value = "${owned.size} of ${Gacha.CREST_FRAMES.size}",
+            onClickLabel = "Open the crest collection",
+            onClick = onOpenCrests,
+        )
+    } else {
+        val toGo = next - level
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(role = Role.Button, onClickLabel = "Open the crest collection", onClick = onOpenCrests)
+                .heightIn(min = 64.dp)
+                .padding(horizontal = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            CrestPlate(crest, Modifier.size(40.dp), owned = false)
+            Column(Modifier.weight(1f)) {
+                Text("Crest at level $next · $toGo ${plural(toGo, "level", "levels")}", style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.Ink)
+                InkRail(
+                    ((level - (next - Veil.MILESTONE_EVERY)).toFloat() / Veil.MILESTONE_EVERY).coerceIn(0f, 1f),
+                    Modifier.padding(top = 6.dp).clearAndSetSemantics {},
+                    height = 4.dp,
+                )
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
+        }
     }
     InkDivider()
 }
 
-/** The offline cap, stated plainly. No player should expect three days to pay out. */
+/** The offline cap, stated plainly, from the houses in force: a full Iron house is 26 hours, a full Vigil house 4 days. */
 @Composable
-private fun CapNote() {
+private fun CapNote(houses: HouseEffects) {
     // Unbounded and short: at maxLines = 3 the last clause — the cap
     // itself — was the part the ellipsis cut on a 360dp phone.
     Text(
-        "Echoes work at full strength for ${Idle.FULL_RATE_HOURS.toInt()} hours, then taper over " +
-            "${Idle.TAPER_WINDOW_HOURS.toInt()} to a tenth. One absence pays at most " +
-            "${(Idle.MAX_EFFECTIVE_HOURS / 24).toInt()} days.",
+        "Echoes work at full strength for ${houses.fullStrengthHours.roundToInt()} hours, then taper over " +
+            "${Idle.TAPER_WINDOW_HOURS.toInt()} to ${(houses.minEfficiency * 100).roundToInt()}% of the pace. " +
+            "One absence pays at most ${(houses.maxEffectiveHours / 24).roundToInt()} days.",
         style = MaterialTheme.typography.bodySmall,
         color = IronvellumColors.InkMuted,
         modifier = Modifier.padding(top = 14.dp),
@@ -641,9 +752,6 @@ private fun formatChance(fraction: Double): String {
 
 private fun rarityLabel(rarity: RewardRarity): String =
     if (rarity == RewardRarity.Epic) "Fabled" else rarity.name
-
-/** Relics listed before the tail is summarised: past this each adds < 1%. */
-private const val VAULT_ROWS = 12
 
 /**
  * The circle's pooled week on the Veil screen: "Circle · <name> · N / goal
