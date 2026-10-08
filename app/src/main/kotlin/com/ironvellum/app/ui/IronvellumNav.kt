@@ -610,6 +610,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                     ExerciseExplorerScreen(
                         onBack = { navController.popBackStack() },
                         initialName = entry.arguments?.getString("name"),
+                        onOpenChronicle = { navController.navigate(Routes.WORKOUT_LOG) },
                     )
                 }
                 composable(
