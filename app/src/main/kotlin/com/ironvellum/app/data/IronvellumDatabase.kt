@@ -26,6 +26,7 @@ import com.ironvellum.app.data.db.ProfileDao
 import com.ironvellum.app.data.db.ProfileEntity
 import com.ironvellum.app.data.db.SessionDao
 import com.ironvellum.app.data.db.SessionEntity
+import com.ironvellum.app.data.db.SessionExerciseNoteEntity
 import com.ironvellum.app.data.db.SetLogEntity
 import com.ironvellum.app.data.db.SkillPracticeDao
 import com.ironvellum.app.data.db.SkillPracticeEntity
@@ -57,6 +58,7 @@ import com.ironvellum.app.data.db.OwnedRelicEntity
         OwnedCrestFrameEntity::class,
         OwnedRelicEntity::class,
         FavouriteExerciseEntity::class,
+        SessionExerciseNoteEntity::class,
     ],
     version = IronvellumDatabase.VERSION,
     exportSchema = true,
@@ -78,7 +80,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 35
+        const val VERSION = 36
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -94,6 +96,28 @@ abstract class IronvellumDatabase : RoomDatabase() {
          * Warm-ups and supersets, kept from a Hevy import. Every existing set
          * is a plain working set outside any superset, which the defaults say.
          */
+        /**
+         * A note per exercise per trial. Purely additive: one new table, no
+         * existing row read or rewritten. DDL matches
+         * [SessionExerciseNoteEntity] (composite key, both foreign keys
+         * cascading, the exerciseId index) or Room refuses to open.
+         */
+        private val MIGRATION_35_36 = object : Migration(35, 36) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `session_exercise_notes` (" +
+                        "`sessionId` INTEGER NOT NULL, `exerciseId` INTEGER NOT NULL, `note` TEXT NOT NULL, " +
+                        "PRIMARY KEY(`sessionId`, `exerciseId`), " +
+                        "FOREIGN KEY(`sessionId`) REFERENCES `sessions`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE, " +
+                        "FOREIGN KEY(`exerciseId`) REFERENCES `exercises`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE)",
+                )
+                db.execSQL(
+                    "CREATE INDEX IF NOT EXISTS `index_session_exercise_notes_exerciseId` " +
+                        "ON `session_exercise_notes` (`exerciseId`)",
+                )
+            }
+        }
+
         private val MIGRATION_34_35 = object : Migration(34, 35) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE set_logs ADD COLUMN warmup INTEGER NOT NULL DEFAULT 0")
@@ -503,6 +527,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_32_33,
             MIGRATION_33_34,
             MIGRATION_34_35,
+            MIGRATION_35_36,
         )
 
         const val NAME = "ironvellum.db"

@@ -140,6 +140,13 @@ object ExportReader {
         // trial never amended.
         editedAtMs = o.long("editedAtMs"),
         sealedXp = o.int("sealedXp"),
+        // v7, written only when a trial has any: an older archive has none.
+        exerciseNotes = (o.arr("exerciseNotes") ?: emptyList()).mapNotNull { n ->
+            val note = n as Obj
+            val name = note.str("exerciseName")?.takeIf { it.isNotBlank() } ?: return@mapNotNull null
+            val text = note.str("note")?.trim().orEmpty().take(EXERCISE_NOTE_MAX)
+            if (text.isEmpty()) null else ExerciseNote(name, text)
+        },
     ) to (o.arr("sets") ?: emptyList()).map { s ->
         val set = s as Obj
         SessionSet(

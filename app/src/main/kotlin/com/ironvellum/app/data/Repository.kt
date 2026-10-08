@@ -19,6 +19,7 @@ import com.ironvellum.app.data.db.ProfileDao
 import com.ironvellum.app.data.db.ProfileEntity
 import com.ironvellum.app.data.db.SessionDao
 import com.ironvellum.app.data.db.SessionEntity
+import com.ironvellum.app.data.db.SessionExerciseNoteEntity
 import com.ironvellum.app.data.db.SessionWithSets
 import com.ironvellum.app.data.db.SetLogEntity
 import com.ironvellum.app.data.db.SkillPracticeDao
@@ -97,6 +98,8 @@ import com.ironvellum.app.domain.SessionAudience
 import com.ironvellum.app.domain.WeighIn
 import com.ironvellum.app.domain.WorkoutCsvWriter
 import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.domain.EXERCISE_NOTE_MAX
+import com.ironvellum.app.domain.ExerciseNote
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.Relics
 import java.time.Instant
@@ -1419,6 +1422,25 @@ class Repository(
         sessionDao.setNote(sessionId, note.trim().take(WireLimits.SESSION_NOTE_MAX))
     }
 
+    /** This trial's per-exercise notes, by exercise id. */
+    fun observeExerciseNotes(sessionId: Long): Flow<Map<Long, String>> =
+        sessionDao.observeExerciseNotes(sessionId).map { rows -> rows.associate { it.exerciseId to it.note } }
+
+    /** Writes one exercise's note for this trial; blank clears it. A trial that is gone takes no note. */
+    suspend fun setExerciseNote(sessionId: Long, exerciseId: Long, note: String) = db.withTransaction {
+        if (sessionDao.byId(sessionId) == null) return@withTransaction
+        val text = note.trim().take(EXERCISE_NOTE_MAX)
+        if (text.isEmpty()) {
+            sessionDao.deleteExerciseNote(sessionId, exerciseId)
+        } else {
+            sessionDao.putExerciseNote(SessionExerciseNoteEntity(sessionId, exerciseId, text))
+        }
+    }
+
+    /** For each exercise that has one, the note it was last given at a sealed trial other than this one. */
+    suspend fun lastExerciseNotes(sessionId: Long, exerciseIds: Collection<Long>): Map<Long, String> =
+        exerciseIds.mapNotNull { id -> sessionDao.lastExerciseNote(id, sessionId)?.let { id to it } }.toMap()
+
     suspend fun setSessionPrivateNote(sessionId: Long, privateNote: String) {
         sessionDao.setPrivateNote(sessionId, privateNote.take(WireLimits.PRIVATE_NOTE_MAX))
     }
@@ -2310,7 +2332,11 @@ class Repository(
                 },
             )
         }
-        val sessions = completedSessionsWithSets(names)
+        val notesBySession = sessionDao.allExerciseNotes().groupBy { it.sessionId }
+        val sessions = completedSessionsWithSets(names).map { (session, sets) ->
+            val notes = notesBySession[session.id].orEmpty().map { ExerciseNote(names[it.exerciseId] ?: "Unknown", it.note) }
+            session.copy(exerciseNotes = notes) to sets
+        }
         val stats = statDao.observeAll().first().map { StatEntry(it.id, it.takenAtMs, it.weightKg, it.heightCm, it.bodyFatPct) }
         val skills = skillPracticeDao.observeAll().first().map {
             SkillPractice(it.skillName, it.practicedAtMs, it.claimed, it.value, it.weightKg)
@@ -2528,6 +2554,10 @@ class Repository(
                             sealedXp = session.sealedXp,
                         ),
                     )
+                    session.exerciseNotes.forEach { n ->
+                        val exerciseId = resolveExercise(n.exerciseName) ?: return@forEach
+                        sessionDao.putExerciseNote(SessionExerciseNoteEntity(newSessionId, exerciseId, n.note.take(EXERCISE_NOTE_MAX)))
+                    }
                     restoredSets += sessionDao.insertSets(
                         sets.mapNotNull { s ->
                             val exerciseId = resolveExercise(s.exerciseName)

@@ -100,6 +100,33 @@ interface SessionDao {
     @Query("UPDATE sessions SET audience = :audience WHERE id = :id")
     suspend fun setAudience(id: Long, audience: String)
 
+    @Query("SELECT * FROM session_exercise_notes WHERE sessionId = :sessionId")
+    fun observeExerciseNotes(sessionId: Long): Flow<List<SessionExerciseNoteEntity>>
+
+    @Query("SELECT * FROM session_exercise_notes")
+    suspend fun allExerciseNotes(): List<SessionExerciseNoteEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun putExerciseNote(note: SessionExerciseNoteEntity)
+
+    @Query("DELETE FROM session_exercise_notes WHERE sessionId = :sessionId AND exerciseId = :exerciseId")
+    suspend fun deleteExerciseNote(sessionId: Long, exerciseId: Long)
+
+    /**
+     * The note left on this exercise at its latest sealed trial that has one
+     * (a trial where it went unannotated is skipped), never the live trial
+     * itself. The EXISTS keeps a note whose exercise was later taken out of
+     * that trial from surfacing.
+     */
+    @Query(
+        "SELECT n.note FROM session_exercise_notes n JOIN sessions x ON n.sessionId = x.id " +
+            "WHERE n.exerciseId = :exerciseId AND n.sessionId != :excludeSessionId " +
+            "AND x.completedAtMs IS NOT NULL AND TRIM(n.note) != '' " +
+            "AND EXISTS (SELECT 1 FROM set_logs l WHERE l.sessionId = n.sessionId AND l.exerciseId = n.exerciseId) " +
+            "ORDER BY x.startedAtMs DESC, x.id DESC LIMIT 1",
+    )
+    suspend fun lastExerciseNote(exerciseId: Long, excludeSessionId: Long): String?
+
     @Query("SELECT * FROM sessions WHERE id = :id")
     suspend fun byId(id: Long): SessionEntity?
 

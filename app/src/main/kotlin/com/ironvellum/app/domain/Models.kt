@@ -106,7 +106,15 @@ data class WorkoutSession(
     val editedAtMs: Long? = null,
     /** What the trial paid when sealed; recorded by its first amendment, device-only. */
     val sealedXp: Int? = null,
+    /** Per-exercise notes, carried only by the archive; the live screen reads them from Room. */
+    val exerciseNotes: List<ExerciseNote> = emptyList(),
 )
+
+/** What was written about one exercise in one trial; matched to the exercise by name on import. */
+data class ExerciseNote(val exerciseName: String, val note: String)
+
+/** A per-exercise note is a line or two; this is far past that and bounds what an archive can inject. */
+const val EXERCISE_NOTE_MAX = 500
 
 /**
  * Per-workout cloud audience. [wire] is the `sessions.audience` value in both
