@@ -4,6 +4,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -54,11 +55,15 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.currentStateAsState
 import com.ironvellum.app.domain.Idle
+import com.ironvellum.app.domain.VaultSlot
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.components.HouseRelicSigil
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkRail
 import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.components.plural
+import com.ironvellum.app.ui.components.rarityWord
+import com.ironvellum.app.ui.theme.RarityTint
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.inkArc
@@ -111,6 +116,10 @@ private const val TICK_MS = 3_000L
 /** The rune ring's diameter on a respite day. */
 private val RING_SIZE = 184.dp
 
+/** The relic centrepiece: the plate and the column it heads. */
+private val RELIC_SIZE = 116.dp
+private val RELIC_HERO_HEIGHT = 216.dp
+
 /** The Veil's reserved inscriptions slot: the same height whether or not any wait. */
 private val SLOT_HEIGHT = 44.dp
 
@@ -125,7 +134,7 @@ internal fun VeilSection(veil: VeilGlance?, form: VeilForm, nowMs: Long, onOpen:
 
     val snapshot = veil?.snapshot
     val essence = snapshot?.let { Idle.collect(it.state, it.rate, now).essence }
-    val strength = snapshot?.let { veilStrength(it.state.lastCollectedAtMs, now) }
+    val strength = snapshot?.let { veilStrength(it.state.lastCollectedAtMs, now, it.rate.effects) }
     val motes = remember(form) {
         when (form) {
             VeilForm.HERO -> veilMotes(34, 11, maxRadiusDp = 2.5f)
@@ -148,7 +157,7 @@ internal fun VeilSection(veil: VeilGlance?, form: VeilForm, nowMs: Long, onOpen:
                     when (form) {
                         VeilForm.COMPACT -> CompactBody(snapshot, essence, strength, phase, animate)
                         VeilForm.FULL -> FullBody(snapshot, essence, strength, phase, animate)
-                        VeilForm.HERO -> HeroBody(snapshot, essence, strength, phase, animate)
+                        VeilForm.HERO -> HeroBody(snapshot, veil?.active, essence, strength, phase, animate)
                     }
                 }
                 InscriptionsSlot(veil?.inscriptions, onOpen)
@@ -244,17 +253,24 @@ private fun FullBody(
     }
 }
 
-/** The respite hero: the essence inside a slowly turning rune ring on a breathing glow. */
+/**
+ * The respite hero. With a relic held it is the centrepiece: the relic large on its rarity plate, the
+ * essence under it and the relic named. Without one it is the essence inside a slowly turning rune
+ * ring on a breathing glow.
+ */
 @Composable
 private fun HeroBody(
     snapshot: com.ironvellum.app.data.IdleSnapshot?,
+    active: VaultSlot?,
     essence: Long?,
     strength: VeilStrength?,
     phase: State<Float>,
     animate: Boolean,
 ) {
     TitleRow(trailing = { RateLabel(snapshot) })
-    Box(Modifier.fillMaxWidth().height(RING_SIZE + 8.dp).testTag("veil-hero"), contentAlignment = Alignment.Center) {
+    if (active != null) {
+        RelicCentrepiece(snapshot, active, essence, animate)
+    } else Box(Modifier.fillMaxWidth().height(RING_SIZE + 8.dp).testTag("veil-hero"), contentAlignment = Alignment.Center) {
         BreathingGlow(phase)
         RuneRing(phase, Modifier.size(RING_SIZE))
         if (essence != null && snapshot != null) {
@@ -277,6 +293,51 @@ private fun HeroBody(
     strength?.let {
         VeilBar(it, phase, animate, Modifier.padding(top = 4.dp))
         Text(it.caption, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 5.dp))
+    }
+}
+
+/** The relic centrepiece of the respite Veil: the relic, then the essence and what it is. */
+@Composable
+private fun RelicCentrepiece(
+    snapshot: com.ironvellum.app.data.IdleSnapshot?,
+    active: VaultSlot,
+    essence: Long?,
+    animate: Boolean,
+) {
+    Column(
+        Modifier.fillMaxWidth().height(RELIC_HERO_HEIGHT).testTag("veil-hero"),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        HouseRelicSigil(active.relic.id, active.tier, Modifier.size(RELIC_SIZE), ringed = true, spin = animate)
+        if (essence != null && snapshot != null) {
+            val state = snapshot.state
+            EssenceFigure(essence, 34.sp, animate, Modifier.padding(top = 4.dp))
+            Text(
+                buildString {
+                    append("essence · ${state.figures} ${plural(state.figures, "echo", "echoes")}")
+                    if (state.relicMultiplier > 1.0) append(" · relic ×${"%.2f".fmt(state.relicMultiplier)}")
+                },
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+            )
+        }
+        Text(
+            buildAnnotatedString {
+                withStyle(SpanStyle(color = IronvellumColors.Ink, fontWeight = FontWeight.SemiBold)) { append(active.relic.name) }
+                append(" · ")
+                withStyle(SpanStyle(color = RarityTint.of(active.tier))) { append(rarityWord(active.tier)) }
+                append(" · ${active.relic.house.title}")
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            textAlign = TextAlign.Center,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.padding(top = 6.dp),
+        )
     }
 }
 
