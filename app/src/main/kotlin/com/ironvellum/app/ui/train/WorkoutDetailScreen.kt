@@ -101,6 +101,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -145,6 +146,16 @@ class WorkoutDetailViewModel(
             exercises = byId,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), WorkoutDetailUi())
+
+    /** This trial's per-exercise notes, for the share card. */
+    val exerciseNotes: StateFlow<Map<Long, String>> =
+        repo.observeExerciseNotes(sessionId)
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** What the trial's rite prescribed, for the share card's squares; empty until loaded. */
+    val shareTargets: StateFlow<Map<Long, Int>> =
+        flow { emit(repo.exerciseTargets(sessionId)) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /**
      * Written locally, then pushed at once: a lifter who hides a workout
@@ -274,7 +285,9 @@ fun WorkoutDetailScreen(
     val pendingSave by viewModel.pendingSave.collectAsStateWithLifecycle()
     val amendError by viewModel.amendError.collectAsStateWithLifecycle()
     val earnedDeeds by viewModel.earnedDeeds.collectAsStateWithLifecycle()
-    var shareText by remember { mutableStateOf<String?>(null) }
+    val exerciseNotes by viewModel.exerciseNotes.collectAsStateWithLifecycle()
+    val shareTargets by viewModel.shareTargets.collectAsStateWithLifecycle()
+    var sharing by remember { mutableStateOf(false) }
     var confirmDiscard by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
     var pickAudience by remember { mutableStateOf(false) }
@@ -304,7 +317,7 @@ fun WorkoutDetailScreen(
                         "Share",
                         icon = Icons.Outlined.IosShare,
                         description = "Share this trial",
-                        onClick = { shareText = WorkoutShare.format(session, ui.sets, ui.exercises) },
+                        onClick = { sharing = true },
                     )
                 }
             },
@@ -376,8 +389,23 @@ fun WorkoutDetailScreen(
     }
     }
 
-    shareText?.let { text ->
-        ShareCardDialog(text = text, onDismiss = { shareText = null })
+    if (sharing) {
+        ui.session?.let { session ->
+            ShareCardDialog(
+                render = { includeNotes ->
+                    WorkoutShare.format(
+                        session,
+                        ui.sets,
+                        ui.exercises,
+                        targets = shareTargets,
+                        exerciseNotes = exerciseNotes,
+                        includeNotes = includeNotes,
+                    )
+                },
+                hasNotes = exerciseNotes.isNotEmpty(),
+                onDismiss = { sharing = false },
+            )
+        }
     }
     pendingSave?.let { settlement ->
         AmendConfirmDialog(settlement, onConfirm = viewModel::confirmSave, onDismiss = viewModel::dismissSave)

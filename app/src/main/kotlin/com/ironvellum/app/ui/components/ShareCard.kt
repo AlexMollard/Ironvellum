@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.components
 
 import android.content.ClipData
+import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -15,6 +16,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.core.content.edit
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,16 +48,24 @@ import kotlinx.coroutines.launch
  * `EXTRA_TEXT` string. Anything that could grow with training history — the
  * full data export — goes through FileProvider instead, because Intent extras
  * share a ~512 KB binder buffer.
+ *
+ * [render] builds the card for the current "Include exercise notes" choice, so
+ * the preview, the clipboard and the share sheet always carry the same text.
+ * The switch is offered only when the trial has a note to include ([hasNotes]),
+ * starts off, and is remembered between shares.
  */
 @Composable
 fun ShareCardDialog(
-    text: String,
+    render: (includeNotes: Boolean) -> String,
+    hasNotes: Boolean,
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
     val scope = rememberCoroutineScope()
     var copied by remember { mutableStateOf(false) }
+    var includeNotes by remember { mutableStateOf(readIncludeNotes(context)) }
+    val text = remember(render, includeNotes, hasNotes) { render(includeNotes && hasNotes) }
 
     LaunchedEffect(copied) {
         if (copied) {
@@ -85,6 +95,17 @@ fun ShareCardDialog(
                         .verticalScroll(rememberScrollState())
                         .padding(10.dp),
                 )
+                if (hasNotes) {
+                    SettingsSwitchRow(
+                        label = "Include exercise notes",
+                        caption = "Prints each note under its movement",
+                        checked = includeNotes,
+                        onCheckedChange = {
+                            includeNotes = it
+                            writeIncludeNotes(context, it)
+                        },
+                    )
+                }
                 Spacer(Modifier.height(10.dp))
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     IronvellumButton(
@@ -119,3 +140,13 @@ fun ShareCardDialog(
         dismissButton = { IronvellumButton("Close", quiet = true, onClick = onDismiss) },
     )
 }
+
+private const val SHARE_PREFS = "share_card"
+private const val KEY_INCLUDE_NOTES = "include_exercise_notes"
+
+/** Off until the lifter turns it on: a note is their own words, not something to publish by default. */
+private fun readIncludeNotes(context: Context): Boolean =
+    context.getSharedPreferences(SHARE_PREFS, Context.MODE_PRIVATE).getBoolean(KEY_INCLUDE_NOTES, false)
+
+private fun writeIncludeNotes(context: Context, on: Boolean) =
+    context.getSharedPreferences(SHARE_PREFS, Context.MODE_PRIVATE).edit { putBoolean(KEY_INCLUDE_NOTES, on) }

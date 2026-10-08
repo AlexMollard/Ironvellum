@@ -1,5 +1,6 @@
 package com.ironvellum.app.domain
 
+import com.ironvellum.app.RETIRED_WORDS
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -12,17 +13,23 @@ class WorkoutShareTest {
     private val started = 1_758_000_000_000L
     private val finished = started + 47 * 60_000L
 
+    private val g = WorkoutShare.HIT
+    private val y = WorkoutShare.UNDER
+    private val b = WorkoutShare.SKIPPED
+    private val star = WorkoutShare.PEAK
+
     private fun session(
         title: String = "",
         note: String = "",
         privateNote: String = "",
         xp: Int = 248,
         strength: Int = 1204,
+        minutes: Long? = 47,
     ) = WorkoutSession(
         id = 1,
         label = "Push Day",
         startedAtMs = started,
-        completedAtMs = finished,
+        completedAtMs = minutes?.let { started + it * 60_000L },
         xpAwarded = xp,
         strengthScore = strength,
         title = title,
@@ -30,8 +37,12 @@ class WorkoutShareTest {
         privateNote = privateNote,
     )
 
-    private fun exercise(id: Long, name: String, metric: ExerciseMetric = ExerciseMetric.REPS) =
-        Exercise(id = id, name = name, muscleGroup = MuscleGroup.PUSH, isWeighted = false, metric = metric)
+    private fun exercise(
+        id: Long,
+        name: String,
+        metric: ExerciseMetric = ExerciseMetric.REPS,
+        weighted: Boolean = false,
+    ) = Exercise(id = id, name = name, muscleGroup = MuscleGroup.PUSH, isWeighted = weighted, metric = metric)
 
     private fun set(
         exerciseId: Long,
@@ -45,6 +56,7 @@ class WorkoutShareTest {
         distanceM: Double? = null,
         grade: String? = null,
         modifiers: String = "",
+        warmup: Boolean = false,
     ) = SessionSet(
         id = index.toLong() + exerciseId * 100,
         exerciseId = exerciseId,
@@ -58,7 +70,296 @@ class WorkoutShareTest {
         durationSec = durationSec,
         distanceM = distanceM,
         grade = grade,
+        warmup = warmup,
     )
+
+    private fun card(
+        sets: List<SessionSet>,
+        catalogue: List<Exercise>,
+        session: WorkoutSession = session(),
+        peaks: List<String> = emptyList(),
+        targets: Map<Long, Int> = emptyMap(),
+        notes: Map<Long, String> = emptyMap(),
+        includeNotes: Boolean = false,
+    ): String = WorkoutShare.format(
+        session,
+        sets,
+        catalogue.associateBy { it.id },
+        zone,
+        peaks = peaks,
+        targets = targets,
+        exerciseNotes = notes,
+        includeNotes = includeNotes,
+    )
+
+    /** The approved preview, line for line. */
+    @Test
+    fun `the card is the approved grid`() {
+        val bench = exercise(1, "Bench Press", weighted = true)
+        val ohp = exercise(2, "Overhead Press", weighted = true)
+        val dip = exercise(3, "Dip")
+        val raise = exercise(4, "Lateral Raise", weighted = true)
+        val sets = List(5) { set(1, "Bench Press", it, 5, 80.0) } +
+            List(4) { set(2, "Overhead Press", it, if (it == 3) 4 else 5, 45.0, position = 1) } +
+            List(3) { set(3, "Dip", it, 8, 10.0, position = 2) } +
+            List(3) { set(4, "Lateral Raise", it, 12, 8.0, position = 3) }
+        val text = card(
+            sets,
+            listOf(bench, ohp, dip, raise),
+            session(title = "Push day", xp = 214, strength = 380, minutes = 52),
+            peaks = listOf("Bench Press"),
+            targets = mapOf(1L to 5, 2L to 5, 3L to 8, 4L to 12),
+        )
+        assertEquals(
+            "Ironvellum · Push day · 16 Sep\n" +
+                "\n" +
+                "Bench    $g$g$g$g$g 80kg $star\n" +
+                "OHP      $g$g$g$y 45kg\n" +
+                "Dips     $g$g$g +10kg\n" +
+                "Laterals $g$g$g 8kg\n" +
+                "\n" +
+                "52 min · +214 XP · 380 STR",
+            text,
+        )
+    }
+
+    @Test
+    fun `squares are green when hit, yellow when under, black when not done`() {
+        val text = card(
+            listOf(
+                set(1, "Push-up", 0, 12),
+                set(1, "Push-up", 1, 9),
+                set(1, "Push-up", 2, 12, done = false),
+                set(1, "Push-up", 3, 15),
+            ),
+            listOf(exercise(1, "Push-up")),
+            targets = mapOf(1L to 12),
+        )
+        assertTrue(text, text.contains("Push-up $g$y$b$g"))
+    }
+
+    @Test
+    fun `warm-up sets get no square`() {
+        val text = card(
+            listOf(
+                set(1, "Bench Press", 0, 8, 40.0, done = false, warmup = true),
+                set(1, "Bench Press", 1, 5, 80.0),
+                set(1, "Bench Press", 2, 5, 80.0),
+            ),
+            listOf(exercise(1, "Bench Press", weighted = true)),
+            targets = mapOf(1L to 5),
+        )
+        assertTrue(text, text.contains("Bench $g$g 80kg"))
+        assertFalse(text, text.contains(b))
+    }
+
+    @Test
+    fun `a movement with only warm-ups has no line`() {
+        val text = card(
+            listOf(set(1, "Bench Press", 0, 8, 40.0, done = false, warmup = true), set(2, "Push-up", 0, 12, position = 1)),
+            listOf(exercise(1, "Bench Press", weighted = true), exercise(2, "Push-up")),
+        )
+        assertFalse(text, text.contains("Bench"))
+        assertTrue(text, text.contains("Push-up $g"))
+    }
+
+    @Test
+    fun `with no target known a done set is green`() {
+        val text = card(listOf(set(1, "Push-up", 0, 3), set(1, "Push-up", 1, 1)), listOf(exercise(1, "Push-up")))
+        assertTrue(text, text.contains("Push-up $g$g"))
+    }
+
+    @Test
+    fun `an unticked set is prescribed and not done`() {
+        val text = card(
+            listOf(set(1, "Push-up", 0, 12), set(1, "Push-up", 1, 12, done = false)),
+            listOf(exercise(1, "Push-up")),
+            targets = mapOf(1L to 12),
+        )
+        assertTrue(text, text.contains("Push-up $g$b"))
+    }
+
+    @Test
+    fun `added load on bodyweight reads with a plus and a lifted weight reads plain`() {
+        val dip = exercise(1, "Dip")
+        val press = exercise(2, "Dumbbell Shoulder Press", weighted = true)
+        val text = card(
+            List(3) { set(1, "Dip", it, 8, 10.0) } + List(3) { set(2, "Dumbbell Shoulder Press", it, 5, 18.0, position = 1) },
+            listOf(dip, press),
+        )
+        assertTrue(text, text.contains("Dips   $g$g$g +10kg"))
+        assertTrue(text, text.contains("DB OHP $g$g$g 18kg"))
+        assertFalse(text, text.contains("+18"))
+    }
+
+    @Test
+    fun `pure bodyweight prints no load and the top load wins`() {
+        val bare = card(List(3) { set(1, "Push-up", it, 12) }, listOf(exercise(1, "Push-up")))
+        assertTrue(bare, bare.lines().any { it == "Push-up $g$g$g" })
+        assertFalse(bare, bare.contains("kg"))
+
+        val ramp = card(
+            listOf(set(1, "Dip", 0, 6, 20.0), set(1, "Dip", 1, 6, 22.5), set(1, "Dip", 2, 6)),
+            listOf(exercise(1, "Dip")),
+        )
+        assertTrue(ramp, ramp.contains("Dips $g$g$g +22.5kg"))
+    }
+
+    /** The isolation step is 1.25 kg, so a real load can sit on a quarter kilo. */
+    @Test
+    fun `a quarter-kilo load is printed, not rounded`() {
+        val text = card(
+            List(3) { set(1, "Lateral Raise", it, 8, 8.75) },
+            listOf(exercise(1, "Lateral Raise", weighted = true)),
+        )
+        assertTrue(text, text.contains("Laterals $g$g$g 8.75kg"))
+    }
+
+    @Test
+    fun `a hold scores its seconds against the target seconds`() {
+        val plank = exercise(1, "Plank", ExerciseMetric.HOLD)
+        val text = card(
+            listOf(
+                set(1, "Plank", 0, 0, durationSec = 60),
+                set(1, "Plank", 1, 0, durationSec = 45),
+                set(1, "Plank", 2, 0, durationSec = 60, done = false),
+            ),
+            listOf(plank),
+            targets = mapOf(1L to 60),
+        )
+        assertTrue(text, text.contains("Plank $g$y$b"))
+    }
+
+    @Test
+    fun `a weighted hold carries its added load`() {
+        val text = card(
+            listOf(set(1, "L-sit", 0, 0, 5.0, durationSec = 20), set(1, "L-sit", 1, 0, 5.0, durationSec = 20)),
+            listOf(exercise(1, "L-sit", ExerciseMetric.HOLD)),
+            targets = mapOf(1L to 20),
+        )
+        assertTrue(text, text.contains("L-sit $g$g +5kg"))
+    }
+
+    @Test
+    fun `a run and a climb read as one compact figure`() {
+        val run = exercise(1, "Run", ExerciseMetric.DISTANCE_TIME)
+        val climb = exercise(2, "Climb", ExerciseMetric.ATTEMPTS_GRADE)
+        val text = card(
+            listOf(
+                set(1, "Run", 0, 0, distanceM = 5200.0, durationSec = 1690),
+                set(2, "Climb", 0, 6, grade = "V4", position = 1),
+            ),
+            listOf(run, climb),
+        )
+        assertTrue(text, text.contains("Run   5.2km in 28:10"))
+        assertTrue(text, text.contains("Climb 6 attempts · V4"))
+        assertFalse(text, text.contains(g))
+    }
+
+    @Test
+    fun `a short timed activity keeps its seconds and a long one rounds to minutes`() {
+        val sprint = exercise(1, "Sprint", ExerciseMetric.DURATION)
+        val swim = exercise(2, "Swim", ExerciseMetric.DURATION)
+        val text = card(
+            listOf(set(1, "Sprint", 0, 0, durationSec = 45), set(2, "Swim", 0, 0, durationSec = 1800, position = 1)),
+            listOf(sprint, swim),
+        )
+        assertTrue(text, text.contains("Sprint 45s"))
+        assertTrue(text, text.contains("Swim   30 min"))
+    }
+
+    @Test
+    fun `an activity nobody did has no line`() {
+        val text = card(
+            listOf(set(1, "Run", 0, 0, distanceM = 5000.0, durationSec = 1500, done = false), set(2, "Push-up", 0, 12, position = 1)),
+            listOf(exercise(1, "Run", ExerciseMetric.DISTANCE_TIME), exercise(2, "Push-up")),
+        )
+        assertFalse(text, text.contains("Run"))
+    }
+
+    @Test
+    fun `exercise notes appear under their movement only when asked for`() {
+        val sets = listOf(set(1, "Push-up", 0, 12), set(2, "Dip", 0, 8, position = 1))
+        val catalogue = listOf(exercise(1, "Push-up"), exercise(2, "Dip"))
+        val notes = mapOf(1L to "  left wrist clicked\non the last rep  ")
+
+        val on = card(sets, catalogue, notes = notes, includeNotes = true)
+        assertTrue(on, on.contains("Push-up $g\n  ↳ \"left wrist clicked on the last rep\"\nDips"))
+        assertEquals(1, on.lines().count { it.contains("↳") })
+
+        val off = card(sets, catalogue, notes = notes, includeNotes = false)
+        assertFalse(off, off.contains("↳"))
+        assertFalse(off, off.contains("wrist"))
+    }
+
+    @Test
+    fun `a long note is cut to eighty characters with an ellipsis`() {
+        val long = "x".repeat(200)
+        val text = card(
+            listOf(set(1, "Push-up", 0, 12)),
+            listOf(exercise(1, "Push-up")),
+            notes = mapOf(1L to long),
+            includeNotes = true,
+        )
+        val line = text.lines().first { it.contains("↳") }
+        assertEquals("  ↳ \"" + "x".repeat(79) + "…\"", line)
+    }
+
+    @Test
+    fun `a blank note adds no line`() {
+        val text = card(
+            listOf(set(1, "Push-up", 0, 12)),
+            listOf(exercise(1, "Push-up")),
+            notes = mapOf(1L to "   "),
+            includeNotes = true,
+        )
+        assertFalse(text, text.contains("↳"))
+    }
+
+    @Test
+    fun `common lifts take their short name and long ones are cut`() {
+        assertEquals("Bench", WorkoutShare.shortName("Bench Press"))
+        assertEquals("OHP", WorkoutShare.shortName("overhead press"))
+        assertEquals("Laterals", WorkoutShare.shortName("Lateral Raise"))
+        assertEquals("Pull-up", WorkoutShare.shortName("Pull-up"))
+        val cut = WorkoutShare.shortName("Single-Leg Romanian Deadlift")
+        assertEquals(WorkoutShare.NAME_MAX, cut.length)
+        assertTrue(cut, cut.endsWith("…"))
+    }
+
+    @Test
+    fun `names are padded so the squares start in one column`() {
+        val text = card(
+            listOf(set(1, "Bench Press", 0, 5, 80.0), set(2, "Dip", 0, 8, position = 1)),
+            listOf(exercise(1, "Bench Press", weighted = true), exercise(2, "Dip")),
+        )
+        val columns = text.lines().filter { it.contains(g) }.map { it.indexOf(g) }.distinct()
+        assertEquals(text, 1, columns.size)
+    }
+
+    @Test
+    fun `a peak is starred on its own movement only`() {
+        val sets = listOf(set(1, "Push-up", 0, 12), set(2, "Dip", 0, 8, position = 1))
+        val catalogue = listOf(exercise(1, "Push-up"), exercise(2, "Dip"))
+        val text = card(sets, catalogue, peaks = listOf("push-up"))
+        assertEquals(text, 1, text.count { it.toString() == star })
+        assertTrue(text, text.lines().first { it.startsWith("Push-up") }.endsWith(star))
+        assertFalse(card(sets, catalogue).contains(star))
+    }
+
+    @Test
+    fun `the footer drops its zero parts`() {
+        val sets = listOf(set(1, "Push-up", 0, 12))
+        val catalogue = listOf(exercise(1, "Push-up"))
+        assertTrue(card(sets, catalogue, session(xp = 0, strength = 0)).endsWith("\n\n47 min"))
+        assertTrue(card(sets, catalogue, session(xp = 120, strength = 0)).endsWith("47 min · +120 XP"))
+        assertTrue(card(sets, catalogue, session(xp = 0, strength = 910)).endsWith("47 min · 910 STR"))
+        assertTrue(card(sets, catalogue, session(xp = 248, strength = 1204, minutes = null)).endsWith("+248 XP · 1,204 STR"))
+        val bare = card(sets, catalogue, session(xp = 0, strength = 0, minutes = null))
+        assertFalse(bare, bare.contains("min"))
+        assertFalse(bare, bare.contains("XP"))
+        assertEquals(bare.trimEnd(), bare)
+    }
 
     /**
      * The private note is the one field the app promises never leaves the
@@ -66,250 +367,45 @@ class WorkoutShareTest {
      */
     @Test
     fun `the private note never reaches the card`() {
-        val card = WorkoutShare.format(
-            session(note = "felt strong", privateNote = "shoulder twinge, see physio"),
+        val text = card(
             listOf(set(1, "Push-up", 0, 12)),
-            mapOf(1L to exercise(1, "Push-up")),
-            zone,
+            listOf(exercise(1, "Push-up")),
+            session(note = "felt strong", privateNote = "shoulder twinge, see physio"),
         )
-        assertFalse(card, card.contains("physio"))
-        assertTrue(card, card.contains("felt strong"))
+        assertFalse(text, text.contains("physio"))
+        assertTrue(text, text.endsWith("“felt strong”"))
     }
 
     @Test
-    fun `identical sets collapse and varied sets are listed`() {
-        val card = WorkoutShare.format(
-            session(),
-            listOf(
-                set(1, "Pull-up", 0, 8),
-                set(1, "Pull-up", 1, 8),
-                set(1, "Pull-up", 2, 8),
-                set(2, "Dip", 0, 10, position = 1),
-                set(2, "Dip", 1, 8, position = 1),
-            ),
-            mapOf(1L to exercise(1, "Pull-up"), 2L to exercise(2, "Dip")),
-            zone,
+    fun `a named trial is titled by its name, not its rite`() {
+        val text = card(emptyList(), emptyList(), session(title = "Dungeon Raid"))
+        assertTrue(text, text.startsWith("Ironvellum · Dungeon Raid · 16 Sep"))
+        assertFalse(text, text.contains("Push Day"))
+        assertTrue(card(emptyList(), emptyList()).startsWith("Ironvellum · Push Day · 16 Sep"))
+    }
+
+    @Test
+    fun `no retired glossary word reaches the card`() {
+        val sets = listOf(
+            set(1, "Bench Press", 0, 5, 80.0),
+            set(2, "Run", 0, 0, distanceM = 5000.0, durationSec = 1500, position = 1),
+            set(3, "Climb", 0, 6, grade = "V4", position = 2),
         )
-        assertTrue(card, card.contains("Pull-up \u00B7 3\u00D78"))
-        assertTrue(card, card.contains("Dip \u00B7 10/8"))
-    }
-
-    /** A hold reads as seconds, not as a suspiciously heroic rep count. */
-    @Test
-    fun `holds render in seconds`() {
-        val card = WorkoutShare.format(
-            session(),
-            listOf(set(1, "Hollow Hold", 0, 60), set(1, "Hollow Hold", 1, 60)),
-            mapOf(1L to exercise(1, "Hollow Hold")),
-            zone,
+        val catalogue = listOf(
+            exercise(1, "Bench Press", weighted = true),
+            exercise(2, "Run", ExerciseMetric.DISTANCE_TIME),
+            exercise(3, "Climb", ExerciseMetric.ATTEMPTS_GRADE),
         )
-        assertTrue(card, card.contains("Hollow Hold \u00B7 2\u00D760s"))
-    }
-
-    @Test
-    fun `a load carried by every set is stated plainly`() {
-        val card = WorkoutShare.format(
-            session(),
-            listOf(set(1, "Weighted Dip", 0, 6, weightKg = 20.0), set(1, "Weighted Dip", 1, 6, weightKg = 20.0)),
-            mapOf(1L to exercise(1, "Weighted Dip")),
-            zone,
+        val text = card(
+            sets,
+            catalogue,
+            session(title = "Push day", note = "good one"),
+            peaks = listOf("Bench Press"),
+            notes = mapOf(1L to "felt light"),
+            includeNotes = true,
         )
-        assertTrue(card, card.contains("2\u00D76 +20\u00A0kg"))
-        assertFalse(card, card.contains("top"))
-    }
-
-    @Test
-    fun `a load only the best set carried is labelled as the top set`() {
-        val card = WorkoutShare.format(
-            session(),
-            listOf(set(1, "Weighted Dip", 0, 6, weightKg = 20.0), set(1, "Weighted Dip", 1, 6, weightKg = 22.5)),
-            mapOf(1L to exercise(1, "Weighted Dip")),
-            zone,
-        )
-        // "2x6 +22.5 kg" would tell a reader both sets carried 22.5 kg.
-        assertTrue(card, card.contains("2\u00D76 \u00B7 top\u00A0+22.5\u00A0kg"))
-        assertFalse(card, card.contains("+20\u00A0kg"))
-    }
-
-    @Test
-    fun `one loaded set among bodyweight sets never reads as a loaded block`() {
-        val card = WorkoutShare.format(
-            session(),
-            listOf(
-                set(1, "Back Squat", 0, 5, weightKg = 60.0),
-                set(1, "Back Squat", 1, 5),
-                set(1, "Back Squat", 2, 5),
-                set(1, "Back Squat", 3, 5),
-            ),
-            mapOf(1L to exercise(1, "Back Squat")),
-            zone,
-        )
-        // The defect this pins was read off a real share card on a device.
-        assertFalse(card, card.contains("4\u00D75 +60\u00A0kg"))
-        assertTrue(card, card.contains("4\u00D75 \u00B7 top\u00A0+60\u00A0kg"))
-    }
-
-    /** The isolation step is 1.25 kg, so a real load can sit on a quarter kilo. */
-    @Test
-    fun `a quarter-kilo load is printed as loaded, not rounded`() {
-        val raise = Exercise(id = 1, name = "Lateral Raise", muscleGroup = MuscleGroup.PUSH, isWeighted = true)
-        val card = WorkoutShare.format(
-            session(),
-            List(3) { set(1, "Lateral Raise", it, 8, weightKg = 8.75) },
-            mapOf(1L to raise),
-            zone,
-        )
-        assertTrue(card, card.contains("Lateral Raise \u00B7 3\u00D78 \u00B7 8.75\u00A0kg"))
-    }
-
-    /** A dumbbell in the hand is the whole load, not load added on top of the lifter. */
-    @Test
-    fun `an implement's load is not written as added load`() {
-        val press = Exercise(id = 1, name = "Dumbbell Shoulder Press", muscleGroup = MuscleGroup.PUSH, isWeighted = true)
-        val card = WorkoutShare.format(
-            session(),
-            List(3) { set(1, "Dumbbell Shoulder Press", it, 5, weightKg = 18.0) },
-            mapOf(1L to press),
-            zone,
-        )
-        assertTrue(card, card.contains("Dumbbell Shoulder Press \u00B7 3\u00D75 \u00B7 18\u00A0kg"))
-        assertFalse(card, card.contains("+18"))
-    }
-
-    @Test
-    fun `distance work reports pace-readable figures`() {
-        val card = WorkoutShare.format(
-            session(),
-            listOf(set(1, "Running", 0, 0, distanceM = 5000.0, durationSec = 1450)),
-            mapOf(1L to exercise(1, "Running", ExerciseMetric.DISTANCE_TIME)),
-            zone,
-        )
-        assertTrue(card, card.contains("Running \u00B7 5 km in 24:10"))
-    }
-
-    /** Distance metres are not reps: they must not land in the rep total. */
-    @Test
-    fun `only counted movements contribute to the rep total`() {
-        val card = WorkoutShare.format(
-            session(),
-            listOf(
-                set(1, "Push-up", 0, 12),
-                set(2, "Running", 0, 0, distanceM = 5000.0, durationSec = 1450, position = 1),
-            ),
-            mapOf(1L to exercise(1, "Push-up"), 2L to exercise(2, "Running", ExerciseMetric.DISTANCE_TIME)),
-            zone,
-        )
-        assertTrue(card, card.contains("12 reps"))
-    }
-
-    /**
-     * A hold's seconds sit in the reps field. Summing them into the rep total
-     * printed "140 reps" for a session that was 65 reps and 75 seconds of
-     * hollow hold.
-     */
-    @Test
-    fun `hold seconds are reported as time, not added to the rep total`() {
-        val card = WorkoutShare.format(
-            session(strength = 610),
-            listOf(
-                set(1, "Push-up", 0, 26),
-                set(2, "Hollow Hold", 0, 45, position = 1),
-                set(2, "Hollow Hold", 1, 30, position = 1),
-            ),
-            mapOf(1L to exercise(1, "Push-up"), 2L to exercise(2, "Hollow Hold")),
-            zone,
-        )
-        assertTrue(card, card.contains("26 reps"))
-        assertTrue(card, card.contains("75s held"))
-        assertFalse(card, card.contains("101 reps"))
-    }
-
-    /** Unfinished sets stay out of the movement list and the set count. */
-    @Test
-    fun `skipped sets are not claimed`() {
-        val card = WorkoutShare.format(
-            session(),
-            listOf(
-                set(1, "Push-up", 0, 12),
-                set(1, "Push-up", 1, 12),
-                set(1, "Push-up", 2, 12, done = false),
-            ),
-            mapOf(1L to exercise(1, "Push-up")),
-            zone,
-        )
-        assertTrue(card, card.contains("2 sets · 24 reps"))
-        assertFalse(card, card.contains("3 sets"))
-        assertTrue(card, card.contains("Push-up \u00B7 2\u00D712"))
-    }
-
-    @Test
-    fun `the card opens with the session name and carries no emoji`() {
-        val card = WorkoutShare.format(session(), listOf(set(1, "Push-up", 0, 12)), mapOf(1L to exercise(1, "Push-up")), zone)
-        assertTrue(card, card.startsWith("Push Day · Ironvellum\n"))
-        assertFalse(card, card.codePoints().anyMatch { it >= 0x2190 })
-    }
-
-    /** Kilograms moved counts barbell and dumbbell work only, never added load on a bodyweight move. */
-    @Test
-    fun `kilograms moved sums loaded lifts and skips belts`() {
-        val squat = Exercise(id = 2, name = "Back Squat", muscleGroup = MuscleGroup.LEGS, isWeighted = true)
-        val card = WorkoutShare.format(
-            session(),
-            listOf(
-                set(2, "Back Squat", 0, 5, weightKg = 100.0),
-                set(2, "Back Squat", 1, 5, weightKg = 100.0),
-                set(1, "Pull-up", 0, 5, weightKg = 20.0, position = 1),
-            ),
-            mapOf(1L to exercise(1, "Pull-up"), 2L to squat),
-            zone,
-        )
-        assertTrue(card, card.contains("1,000 kg moved · 1,204 STR"))
-    }
-
-    @Test
-    fun `a named session is titled by its name, not its preset`() {
-        val card = WorkoutShare.format(session(title = "Dungeon Raid"), emptyList(), emptyMap(), zone)
-        assertTrue(card, card.contains("Dungeon Raid"))
-        assertFalse(card, card.contains("Push Day"))
-    }
-
-    @Test
-    fun `the card reports duration and the session's own figures`() {
-        val card = WorkoutShare.format(session(), listOf(set(1, "Push-up", 0, 12)), mapOf(1L to exercise(1, "Push-up")), zone)
-        assertTrue(card, card.contains("47 min"))
-        assertTrue(card, card.contains("+248 XP"))
-        assertTrue(card, card.contains("1,204 STR"))
-    }
-
-    /** Pasted into a chat, a trailing run of blank lines is just noise. */
-    @Test
-    fun `the card has no trailing blank lines`() {
-        val card = WorkoutShare.format(session(), listOf(set(1, "Push-up", 0, 12)), mapOf(1L to exercise(1, "Push-up")), zone)
-        assertEquals(card.trimEnd(), card)
-    }
-
-    @Test
-    fun `attempts read as attempts and short durations keep their seconds`() {
-        val climb = exercise(1, "Boulder", ExerciseMetric.ATTEMPTS_GRADE)
-        val run = exercise(2, "Sprint", ExerciseMetric.DURATION)
-        val card = WorkoutShare.format(
-            session(),
-            listOf(set(1, "Boulder", 0, 5, grade = "V4"), set(2, "Sprint", 0, 0, durationSec = 45, position = 1)),
-            mapOf(1L to climb, 2L to run),
-            zone,
-        )
-        assertTrue(card, card.contains("5 attempts · V4"))
-        assertTrue(card, card.contains("45 s"))
-        assertFalse(card, card.contains("sent"))
-    }
-
-    @Test
-    fun `peaks get one line and none means no line`() {
-        val sets = listOf(set(1, "Push-up", 0, 12), set(2, "Dip", 0, 8, position = 1))
-        val catalogue = mapOf(1L to exercise(1, "Push-up"), 2L to exercise(2, "Dip"))
-        val card = WorkoutShare.format(session(), sets, catalogue, zone, peaks = listOf("Push-up", "Dip"))
-        assertTrue(card, card.contains("New peaks: Push-up, Dip"))
-        assertFalse(WorkoutShare.format(session(), sets, catalogue, zone).contains("New peaks"))
+        val hits = RETIRED_WORDS.filter { it.containsMatchIn(text) }
+        assertTrue("$text\n$hits", hits.isEmpty())
     }
 
     @Test
@@ -324,5 +420,48 @@ class WorkoutShareTest {
             mapOf(1L to exercise(1, "Push-up"), 2L to plank),
         )
         assertEquals(WorkoutShare.Totals(sets = 2, reps = 12, heldSeconds = 40, movedKg = 0), totals)
+    }
+
+    /** A hold's seconds sit in the reps field of an old archive; they are time, not reps. */
+    @Test
+    fun `hold seconds are reported as time, not added to the rep total`() {
+        val totals = WorkoutShare.totals(
+            listOf(
+                set(1, "Push-up", 0, 26),
+                set(2, "Hollow Hold", 0, 45, position = 1),
+                set(2, "Hollow Hold", 1, 30, position = 1),
+            ),
+            mapOf(1L to exercise(1, "Push-up"), 2L to exercise(2, "Hollow Hold")),
+        )
+        assertEquals(26, totals.reps)
+        assertEquals(75, totals.heldSeconds)
+    }
+
+    /** Kilograms moved counts barbell and dumbbell work only, never added load on a bodyweight move. */
+    @Test
+    fun `kilograms moved sums loaded lifts and skips belts`() {
+        val squat = Exercise(id = 2, name = "Back Squat", muscleGroup = MuscleGroup.LEGS, isWeighted = true)
+        val totals = WorkoutShare.totals(
+            listOf(
+                set(2, "Back Squat", 0, 5, weightKg = 100.0),
+                set(2, "Back Squat", 1, 5, weightKg = 100.0),
+                set(1, "Pull-up", 0, 5, weightKg = 20.0, position = 1),
+            ),
+            mapOf(1L to exercise(1, "Pull-up"), 2L to squat),
+        )
+        assertEquals(1000, totals.movedKg)
+    }
+
+    /** Distance metres are not reps: they must not land in the rep total. */
+    @Test
+    fun `only counted movements contribute to the rep total`() {
+        val totals = WorkoutShare.totals(
+            listOf(
+                set(1, "Push-up", 0, 12),
+                set(2, "Running", 0, 0, distanceM = 5000.0, durationSec = 1450, position = 1),
+            ),
+            mapOf(1L to exercise(1, "Push-up"), 2L to exercise(2, "Running", ExerciseMetric.DISTANCE_TIME)),
+        )
+        assertEquals(12, totals.reps)
     }
 }
