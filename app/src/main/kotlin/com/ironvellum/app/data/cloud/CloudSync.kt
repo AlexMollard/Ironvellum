@@ -1025,6 +1025,7 @@ class CloudSync(
             // as "not shared with you".
             list.map { dto ->
                 FriendSession(
+                    id = dto.id,
                     label = dto.label,
                     title = dto.title,
                     note = dto.note,

@@ -562,6 +562,9 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         userId = entry.arguments?.getString("userId").orEmpty(),
                         displayName = entry.arguments?.getString("name").orEmpty(),
                         onBack = { navController.popBackStack() },
+                        onOpenTrial = { sessionId, ownerId, headline ->
+                            navController.navigate(Routes.comments(sessionId, ownerId, headline))
+                        },
                     )
                 }
                 composable(
