@@ -1252,6 +1252,20 @@ class Repository(
         )
     }
 
+    /**
+     * What each movement of the trial's rite prescribed: its target reps, or
+     * seconds for a hold, by exercise id. Empty for a free trial or a rite
+     * since deleted. The share card scores a set against it; a rite updated
+     * after the trial scores the trial against the newer prescription.
+     */
+    suspend fun exerciseTargets(sessionId: Long): Map<Long, Int> {
+        val presetId = sessionDao.byId(sessionId)?.presetId ?: return emptyMap()
+        val pw = presetDao.presetWithEntries(presetId) ?: return emptyMap()
+        return buildMap {
+            pw.entries.sortedBy { it.position }.filter { it.targetReps > 0 }.forEach { putIfAbsent(it.exerciseId, it.targetReps) }
+        }
+    }
+
     /** The preset a finished session came from, and the entries that session would change. */
     data class RoutineUpdateOffer(
         val presetId: Long,

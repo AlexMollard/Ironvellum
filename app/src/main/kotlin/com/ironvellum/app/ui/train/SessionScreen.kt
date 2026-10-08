@@ -228,6 +228,11 @@ class SessionViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** This trial's own note on each exercise. */
+    /** What each movement's rite prescribed, for the share card's squares; empty until loaded. */
+    val shareTargets: StateFlow<Map<Long, Int>> =
+        flow { emit(repo.exerciseTargets(sessionId)) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
     val exerciseNotes: StateFlow<Map<Long, String>> =
         repo.observeExerciseNotes(sessionId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
@@ -574,6 +579,7 @@ fun SessionScreen(
     val claiming by viewModel.claiming.collectAsStateWithLifecycle()
     val lastLogged by viewModel.lastLogged.collectAsStateWithLifecycle()
     val exerciseNotes by viewModel.exerciseNotes.collectAsStateWithLifecycle()
+    val shareTargets by viewModel.shareTargets.collectAsStateWithLifecycle()
     val lastNotes by viewModel.lastNotes.collectAsStateWithLifecycle()
     val reasons by viewModel.reasons.collectAsStateWithLifecycle()
     val rest by viewModel.rest.collectAsStateWithLifecycle()
@@ -1211,7 +1217,7 @@ fun SessionScreen(
         )
     }
 
-    var shareText by remember { mutableStateOf<String?>(null) }
+    var shareRender by remember { mutableStateOf<((Boolean) -> String)?>(null) }
 
     // Celebrate first, then ask about the routine, then leave. The stage lives
     // in the view model, so a rotation resumes where the lifter was; the
@@ -1252,18 +1258,29 @@ fun SessionScreen(
                 onSkipToSummary = { viewModel.advanceFinish(SessionViewModel.Finish.SUMMARY) },
                 onWear = viewModel::wearTitle,
                 onShare = {
-                    shareText = WorkoutShare.format(
-                        // The session row in the flow may not have refreshed yet;
-                        // the completion result carries the authoritative figures.
-                        session.copy(
-                            completedAtMs = session.completedAtMs ?: System.currentTimeMillis(),
-                            xpAwarded = result.xpAwarded,
-                            strengthScore = result.strengthScore,
-                        ),
-                        ui.sets,
-                        exercises.associateBy { it.id },
-                        peaks = peaks.map { it.exerciseName },
+                    // The session row in the flow may not have refreshed yet;
+                    // the completion result carries the authoritative figures.
+                    val sealed = session.copy(
+                        completedAtMs = session.completedAtMs ?: System.currentTimeMillis(),
+                        xpAwarded = result.xpAwarded,
+                        strengthScore = result.strengthScore,
                     )
+                    val sets = ui.sets
+                    val catalogue = exercises.associateBy { it.id }
+                    val peakNames = peaks.map { it.exerciseName }
+                    val notes = exerciseNotes
+                    val targets = shareTargets
+                    shareRender = { includeNotes ->
+                        WorkoutShare.format(
+                            sealed,
+                            sets,
+                            catalogue,
+                            peaks = peakNames,
+                            targets = targets,
+                            exerciseNotes = notes,
+                            includeNotes = includeNotes,
+                        )
+                    }
                 },
                 onReopen = { confirmReopen = true },
             )
@@ -1304,8 +1321,8 @@ fun SessionScreen(
         )
     }
 
-    shareText?.let { text ->
-        ShareCardDialog(text = text, onDismiss = { shareText = null })
+    shareRender?.let { render ->
+        ShareCardDialog(render = render, hasNotes = exerciseNotes.isNotEmpty(), onDismiss = { shareRender = null })
     }
 }
 
