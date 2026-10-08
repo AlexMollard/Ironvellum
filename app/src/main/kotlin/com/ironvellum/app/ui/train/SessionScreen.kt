@@ -160,6 +160,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -179,6 +180,7 @@ import com.ironvellum.app.domain.WEIGHTED_MODIFIER
 import com.ironvellum.app.domain.applicableModifiers
 import com.ironvellum.app.domain.fmt
 import com.ironvellum.app.domain.DecimalInput
+import com.ironvellum.app.domain.EXERCISE_NOTE_MAX
 import com.ironvellum.app.ui.program.RiteMusclesSheet
 
 data class SessionUi(
@@ -221,6 +223,17 @@ class SessionViewModel(
      * change while a trial is live, so it is read once.
      */
     val reasons: StateFlow<Map<Long, String>> = flow { emit(repo.trialReasons(sessionId)) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** This trial's own note on each exercise. */
+    val exerciseNotes: StateFlow<Map<Long, String>> =
+        repo.observeExerciseNotes(sessionId).stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
+
+    /** Each exercise's note from the last sealed trial that left one, re-read only when the exercises change. */
+    val lastNotes: StateFlow<Map<Long, String>> = repo.observeSessionSets(sessionId)
+        .map { sets -> sets.map { it.exerciseId }.distinct().sorted() }
+        .distinctUntilChanged()
+        .map { ids -> repo.lastExerciseNotes(sessionId, ids) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyMap())
 
     /** Each exercise's top set of its last sealed trial, for the info dialog. */
@@ -496,6 +509,10 @@ class SessionViewModel(
         viewModelScope.launch { repo.setSessionNote(sessionId, note) }
     }
 
+    fun setExerciseNote(exerciseId: Long, note: String) {
+        viewModelScope.launch { repo.setExerciseNote(sessionId, exerciseId, note) }
+    }
+
     fun setSessionPrivateNote(privateNote: String) {
         viewModelScope.launch { repo.setSessionPrivateNote(sessionId, privateNote) }
     }
@@ -554,6 +571,8 @@ fun SessionScreen(
     val wornTitleId by viewModel.wornTitleId.collectAsStateWithLifecycle()
     val claiming by viewModel.claiming.collectAsStateWithLifecycle()
     val lastLogged by viewModel.lastLogged.collectAsStateWithLifecycle()
+    val exerciseNotes by viewModel.exerciseNotes.collectAsStateWithLifecycle()
+    val lastNotes by viewModel.lastNotes.collectAsStateWithLifecycle()
     val reasons by viewModel.reasons.collectAsStateWithLifecycle()
     val rest by viewModel.rest.collectAsStateWithLifecycle()
     var confirmAbandon by remember { mutableStateOf(false) }
@@ -568,6 +587,8 @@ fun SessionScreen(
     var typing by remember { mutableStateOf<Pair<SessionSet, FigureKind>?>(null) }
     var showName by rememberSaveable { mutableStateOf(false) }
     var showNote by rememberSaveable { mutableStateOf(false) }
+    // The exercise whose own note is being written.
+    var noteForExercise by rememberSaveable { mutableStateOf<Long?>(null) }
     // The exercise the lifter opened by hand; null follows the next unlogged set.
     var openOverride by rememberSaveable { mutableStateOf<Long?>(null) }
     // A logged set opened for editing or un-logging.
@@ -791,6 +812,9 @@ fun SessionScreen(
                                 weighted = weighted,
                                 reference = referenceLine(exercise, metric, lastLogged[block.id], peak),
                                 reason = reasons[block.id],
+                                note = exerciseNotes[block.id],
+                                lastNote = lastNotes[block.id],
+                                onNote = { noteForExercise = block.id },
                                 modifiersEditable = modifiersEditable,
                                 activeSetId = if (activeSet?.exerciseId == block.id) activeSet.id else null,
                                 editingSetId = editingSetId,
@@ -850,6 +874,7 @@ fun SessionScreen(
                                 subline = foldedSubline(block, metric, weighted),
                                 done = block.sets.count { it.done },
                                 total = block.sets.count { !it.warmup },
+                                hasNote = exerciseNotes[block.id] != null,
                                 onOpen = { openOverride = block.id },
                             )
                             previousFolded = true
@@ -1109,6 +1134,24 @@ fun SessionScreen(
             },
             onDismiss = { showNote = false },
         )
+    }
+
+    noteForExercise?.let { exerciseId ->
+        val name = ui.sets.firstOrNull { it.exerciseId == exerciseId }?.exerciseName
+        if (name == null) {
+            noteForExercise = null
+        } else {
+            ExerciseNoteDialog(
+                name = name,
+                current = exerciseNotes[exerciseId].orEmpty(),
+                lastNote = lastNotes[exerciseId],
+                onSave = {
+                    viewModel.setExerciseNote(exerciseId, it)
+                    noteForExercise = null
+                },
+                onDismiss = { noteForExercise = null },
+            )
+        }
     }
 
     if (showRiteMuscles) {
@@ -2140,6 +2183,9 @@ private fun OpenExerciseCard(
     weighted: Boolean,
     reference: AnnotatedString?,
     reason: String?,
+    note: String?,
+    lastNote: String?,
+    onNote: () -> Unit,
     modifiersEditable: Boolean,
     activeSetId: Long?,
     editingSetId: Long?,
@@ -2222,6 +2268,17 @@ private fun OpenExerciseCard(
                     color = IronvellumColors.InkMuted,
                 )
             }
+            // What the last trial that left a note on this exercise said.
+            if (lastNote != null) {
+                Text(
+                    "Last time: $lastNote",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
             // Only real modifiers get a line.
             if (first.modifiers.isNotBlank()) {
                 Text(
@@ -2272,6 +2329,37 @@ private fun OpenExerciseCard(
                 )
             }
         }
+        ExerciseNoteRow(first.exerciseName, note, onNote)
+    }
+}
+
+/** This exercise's own note for the trial: one muted line, or a quiet invitation to write one. */
+@Composable
+private fun ExerciseNoteRow(name: String, note: String?, onClick: () -> Unit) {
+    val label = if (note == null) "Add a note for $name" else "Edit note for $name"
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp)
+            .heightIn(min = 48.dp)
+            .clickable(onClick = onClick)
+            .semantics {
+                contentDescription = label
+                role = Role.Button
+            }
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        Icon(Icons.Outlined.EditNote, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(16.dp))
+        Text(
+            note ?: "Add a note",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+        )
     }
 }
 
@@ -2579,6 +2667,7 @@ private fun FoldedExerciseRow(
     subline: String,
     done: Int,
     total: Int,
+    hasNote: Boolean,
     onOpen: () -> Unit,
 ) {
     val complete = total > 0 && done == total
@@ -2586,7 +2675,7 @@ private fun FoldedExerciseRow(
         Modifier
             .fillMaxWidth()
             .heightIn(min = 60.dp)
-            .clickable(onClickLabel = "Open $name", onClick = onOpen)
+            .clickable(onClickLabel = if (hasNote) "Open $name. Has a note." else "Open $name", onClick = onOpen)
             .padding(horizontal = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -2627,6 +2716,14 @@ private fun FoldedExerciseRow(
                     )
                 }
             }
+        }
+        if (hasNote) {
+            Icon(
+                Icons.Outlined.EditNote,
+                contentDescription = "Has a note",
+                tint = IronvellumColors.InkMuted,
+                modifier = Modifier.padding(end = 10.dp).size(14.dp),
+            )
         }
         Icon(
             Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -2945,6 +3042,54 @@ private fun TrialNameDialog(
                 colors = fieldColors(accent = IronvellumColors.SystemGreen, unfocusedBorder = IronvellumColors.Rune),
                 modifier = Modifier.fillMaxWidth(),
             )
+        },
+        confirmButton = { IronvellumButton("Save", onClick = { onSave(draft.trim()) }) },
+        dismissButton = { IronvellumButton("Cancel", quiet = true, onClick = onDismiss) },
+    )
+}
+
+/**
+ * One exercise's note for this trial, in a sheet of its own. It stays on the
+ * device; the note the last trial left on the same exercise sits beneath the
+ * field. Saved on Save, trimmed; a blank note clears it.
+ */
+@Composable
+private fun ExerciseNoteDialog(
+    name: String,
+    current: String,
+    lastNote: String?,
+    onSave: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var draft by rememberSaveable { mutableStateOf(current) }
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    IronvellumDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Column {
+                Text(name)
+                Text("Note for this trial", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+            }
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    shape = MaterialTheme.shapes.small,
+                    value = draft,
+                    onValueChange = { draft = it.take(EXERCISE_NOTE_MAX) },
+                    minLines = 4,
+                    trailingIcon = { CharCounter(draft.length, EXERCISE_NOTE_MAX, IronvellumColors.SystemGreen) },
+                    colors = fieldColors(accent = IronvellumColors.SystemGreen, unfocusedBorder = IronvellumColors.Rune),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .focusRequester(focus)
+                        .semantics { contentDescription = "Note for $name" },
+                )
+                if (lastNote != null) {
+                    Text("Last time: $lastNote", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+                }
+            }
         },
         confirmButton = { IronvellumButton("Save", onClick = { onSave(draft.trim()) }) },
         dismissButton = { IronvellumButton("Cancel", quiet = true, onClick = onDismiss) },
