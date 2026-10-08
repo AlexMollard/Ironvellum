@@ -4,12 +4,9 @@
 
 # Ironvellum
 
-**An Android training tracker that scores what you actually lift.**
+**An offline-first strength training app that scores what you actually lift.**
 
-Log a workout, get a number that means something. Body-scaled strength scoring,
-a 119-technique calisthenics tree, and a first-run flow that builds you a cycle, all in one flat Clean look.
-
-![Gate](https://img.shields.io/badge/gate-1135%20unit%20%2B%20217%20instrumented-2E7D32)
+![Gate](https://img.shields.io/badge/gate-1183%20unit%20%2B%20217%20instrumented-2E7D32)
 ![Tested locally](https://img.shields.io/badge/tested-locally%2C%20not%20CI-555555)
 ![Kotlin](https://img.shields.io/badge/Kotlin-2.4.20-7F52FF?logo=kotlin&logoColor=white)
 ![Jetpack Compose](https://img.shields.io/badge/Jetpack%20Compose-Material%203-4285F4?logo=jetpackcompose&logoColor=white)
@@ -20,234 +17,219 @@ a 119-technique calisthenics tree, and a first-run flow that builds you a cycle,
 
 ---
 
+## What it is
+
+Ironvellum is a training log for Android that keeps its own book of what you
+do. You plan a week, perform it set by set, and every finished session is
+written down and scored. Nothing needs an account, a signal or a subscription.
+
+Most trackers add up kilograms, which rewards being heavy. Ironvellum scores a
+set by what it cost you: your bodyweight is factored in, a marked kilogram is
+priced by the machine it was lifted on, and a handstand push-up is not the same
+rep as a push-up. The result is a number you can chase without gaming it.
+
+The app speaks in its own words, all defined in
+[docs/GLOSSARY.md](docs/GLOSSARY.md). A saved workout is a **rite**. The weekly
+plan that places rites on days is a **cycle**. Performing a rite is a
+**trial**, and finishing it **seals** it into your **Chronicle**. You are an
+Ironbound, and the iron-bound book that keeps the record is the **Ledger**.
+
 <div align="center">
 
-| Your day | The cycle it built you | The trial |
+| Today | Train | The trial |
 |:---:|:---:|:---:|
-| <img src="docs/images/dashboard.png" width="230" alt="Today with the level seal, strength rank, the Veil section and the day card for today's rite" /> | <img src="docs/images/train.png" width="230" alt="Train with today's rite to begin, the cycle and your rites" /> | <img src="docs/images/session.png" width="230" alt="A trial in progress with one open exercise, per-set load and rep steppers and a docked action bar" /> |
+| <img src="docs/images/dashboard.png" width="230" alt="Today: the level seal, Strength Rank, the Veil and the day card for today's rite" /> | <img src="docs/images/train.png" width="230" alt="Train: today's rite to begin, your cycle and your rites" /> | <img src="docs/images/session.png" width="230" alt="A trial in progress: one open exercise with load and rep steppers and a docked action bar" /> |
 
-| Paths | Deeds | Share card |
+| Paths | Deeds | Share text |
 |:---:|:---:|:---:|
-| <img src="docs/images/skilltree.png" width="230" alt="The Pull path as flat technique nodes, with the path strip and prerequisite lines" /> | <img src="docs/images/codex.png" width="230" alt="Codex deeds grouped by category with progress bars" /> | <img src="docs/images/share.png" width="230" alt="Wordle-style plain text share card" /> |
+| <img src="docs/images/skilltree.png" width="230" alt="The Pull path as technique nodes joined by prerequisite lines, with the path strip above" /> | <img src="docs/images/codex.png" width="230" alt="The Codex: deeds grouped by category with progress bars" /> | <img src="docs/images/share.png" width="230" alt="A sealed trial as Wordle-style share text: a row per movement, a square per set, a trophy on record sets" /> |
 
 | Weekly coverage | The Chronicle | Info sheet |
 |:---:|:---:|:---:|
-| <img src="docs/images/coverage.png" width="230" alt="Weekly coverage with the body map and one list of muscles, the short ones first, above a docked Forge a rite button" /> | <img src="docs/images/chronicle.png" width="230" alt="The Chronicle as a totals line and one card of sealed trials per month, each row with its XP and strength" /> | <img src="docs/images/info.png" width="230" alt="Swipeable exercise info sheet with the muscles worked shown on the figure" /> |
+| <img src="docs/images/coverage.png" width="230" alt="Weekly coverage: a body map and one list of muscles, the short ones first, above a docked Forge a rite button" /> | <img src="docs/images/chronicle.png" width="230" alt="The Chronicle: a totals line and a card of sealed trials per month, each with its XP and strength" /> | <img src="docs/images/info.png" width="230" alt="A swipeable exercise info sheet showing the muscles worked on the body figure" /> |
 
 </div>
 
-## Why this exists
-
-Most trackers add up kilograms. That rewards being heavy and rewards machines
-that hide how much load you are really moving, so the number you chase drifts
-away from the training that earned it.
-
-Ironvellum scores a set by what it costs you:
-
-- **Body-scaled.** A rep is worth `reps × (bodyweight + added) / bodyweight^0.67`,
-  the standard allometric exponent, so a lighter body is not permanently
-  outranked for being light.
-- **Priced per implement.** A marked kilogram is not the same load on every
-  machine. A 45 degree sled transmits `0.70`, a smith bar `0.90`, a pinned stack
-  `0.85`, a dual pulley `0.50`. The plate you see is converted to the load you
-  actually carry.
-- **Difficulty-weighted.** A handstand push-up and a push-up are not the same
-  rep. Tiers come from the skill tree the app already ships, so the ordering is
-  the one the progression states.
-- **Per-sex standards.** Strength score is normalised by muscle group using
-  published gaps (Miller et al., sanity-checked against IPF GL), and every
-  strength deed states the bar for the person reading it rather than the men's
-  number with a footnote.
-
-Everything works offline. An account is optional and only ever backs up
-training.
-
 ## Features
 
-The app keeps its own words, all defined in [docs/GLOSSARY.md](docs/GLOSSARY.md):
-a saved workout is a **rite**, the weekly plan is a **cycle**, a workout in
-progress is a **trial**, sealed when you finish and written into your
-**Chronicle**. It wears one flat look, Clean, with pop-ups as bottom sheets, and
-you can pick your own accent pair in settings.
+### Today
 
-|  | |
-|---|---|
-| **Today** | A full-screen status page: a day card for the rite you keep, the muscle map when there is room, the level seal, your Strength Rank and the Veil. Swipe between days. |
-| **The Binding** | A guided first run. Pick your split (full body, upper/lower, push/pull/legs), weekly volume, armoury (the equipment you own) and goal, then review an editable cycle built from the real catalogue. No cycle is imposed on you. |
-| **The Forge** | An evidence-based builder. Hand-written patterns for each split, for strength or muscle, fitted to your weekly volume (low, standard or high) and your armoury: a full gym, nothing, or toggles for a pull-up bar, dip bars, parallettes, rings, dumbbells, barbell, bench and ab wheel, with dumbbell loads capped at your heaviest and reps raised to match. Or forge a cycle or a single rite sized to the 2020-2026 volume research, or temper a rite you already have and see the before and after. A forge previews the coverage of the cycle it would give you before you accept it. Cap the exercises per rite (5 by default) or turn on Compound & technique only to leave isolation work out. Every exercise says in plain words why it was picked and cites the study. Loads come from your own peaks. |
-| **Weekly coverage** | An anatomical body map, male or female to match your profile, on the Train tab shows the sets each muscle gets in your cycle or the last seven days, against the range for your volume and goal. Tap it to open Weekly coverage: one list of muscles with the short ones first, those in range folded away, and a By exercise row for the muscles each exercise works. A docked bar counts the muscles that are short and forges a rite to fill them. Tap a muscle on any figure to light it with one line of context. The chest counts as upper, mid and lower, and lever and planche holds count toward the muscles they work. Helpers your other exercises mostly train (upper and lower chest, traps, front delts, rotator cuff, serratus, brachialis, forearms, obliques, lower back, hip flexors, adductors, abductors, tibialis) are held to a floor of 3 sets a week instead of a range, and the neck is tracked with no weekly target. Every exercise and technique has a swipeable info sheet that shows its main and assisting muscles on the figure, on the live trial screen too. |
-| **Live trials** | One open exercise at a time and a docked action bar. Type a set's exact load; a load or rep count you change by hand carries to the later sets. Rest runs on a timer you can trim by 15 s, with each movement's own window, a ready buzz and a suggested maximum. Mark warm-up sets, or add an optional warm-up step before the first set. Keep a note per exercise and see it again as Last time. Undo a removed set or exercise, continue a trial you left, and keep exercise swaps in the rite. Time estimates learn your pace from the trials you seal. After a trial, tick which changes to sets, reps, load and modifiers go back into your cycle; amend a sealed trial, or delete it from its detail. |
-| **256 exercises** | Barbell, dumbbell, cable, plate-loaded, selectorised, smith, assisted, bodyweight, plus cardio, sport, climbing, water and mobility. |
-| **Paths: 119 techniques** | Fourteen paths: pull, push, handstand, lever, planche, rings, movement, legs, core, mobility, plus squat, bench, press and deadlift ladders with bodyweight-relative bars. Pick a path from the grid and follow its game-style nodes. Each technique is gated on the one before it and carries a written claim standard. |
-| **105 deeds** (the Codex) | Level, volume, oath (days kept in a row), strength and activity milestones, with progress you can watch rather than a surprise. Each deed grants a title to wear. |
-| **Progressive overload** | Strength and hypertrophy schools with their own rep bands, per-exercise load steps and a stall rule that deloads instead of repeating a failed trial. Advice follows the movement: range, tempo or hold time for control and mobility work, holds progress on seconds, and bodyweight reps stop at 15 before it suggests load or a harder variation. |
-| **The Ledger** | Scrubbable charts over BODY (weight, body fat, BMI, FFMI), TRAINING (lift records and a calendar) and DAILY tabs; optional Health Connect read of weight, body fat, resting heart rate, steps, distance, energy and sleep, with past history and a background refresh. The Codex Journal keeps figures, a heat strip and a timeline, and each exercise has a detail page built around its peak. |
-| **Shareable trials** | A plain text card shaped after Wordle, no link and no image, that states only what you did. |
-| **The Veil** | An idle layer: each trial leaves an echo, and echoes gather essence while you are away, spent on inscriptions for relics and crests. |
-| **Optional cloud** | Sign in to back up training, follow your allies' tidings, form a circle with a shared weekly goal and a Keeper, and stand in the Reckoning, a leaderboard for each lift. Body measurements and health data never leave the device. Delete your cloud account from the app at any time. |
+- A status page: the rite your cycle puts on today, the level seal, your
+  Strength Rank and the way into the Veil. Swipe between days.
+- **The Binding**, a guided first run: pick your split, weekly volume, armoury
+  (the equipment you own) and goal, then review an editable cycle built from
+  the real catalogue. No cycle is imposed on you.
+- **The Clean look**: one flat appearance, pop-ups as bottom sheets, and accent
+  pairs you can change in settings.
 
-## Architecture
+### Training
 
-```mermaid
-flowchart TD
-    UI["Compose UI<br/>screens + ViewModels"] --> REPO["Repository<br/>single write path"]
-    UI --> DOM["Domain<br/>pure Kotlin, no Android"]
-    REPO --> DOM
-    REPO --> ROOM[("Room<br/>local, authoritative")]
-    REPO --> HC["Health Connect<br/>read only"]
-    REPO -. optional .-> SYNC["CloudSync worker"]
-    SYNC -. training only .-> SB[("Supabase<br/>Postgres + RLS")]
-```
+- **Live trial.** One exercise open at a time and a docked action bar.
+  - Type a set's exact load. A load or rep count you change by hand carries to
+    the later sets.
+  - Rest runs on a timer with -15 s and +15 s buttons, a ready time for each
+    movement, a ready buzz and a suggested maximum.
+  - Mark sets as warm-ups, or turn on an optional warm-up step before the first
+    set.
+  - Keep a note per exercise and see it again as *Last time*.
+  - Undo a removed set or exercise, and continue a trial you left.
+  - Swapped an exercise? The app offers to keep the swap in the rite.
+- **After a trial**, tick which changes to sets, reps, load and modifiers go
+  back into your cycle. **Amend** a sealed trial later, or delete it from its
+  detail page.
+- **Progression advice follows the movement.** Each exercise asks for the one
+  thing that moves it forward: load; reps, then load; control; mobility; holds;
+  or skill. Strength and hypertrophy schools have their own rep bands and
+  per-exercise load steps, and a stall deloads instead of repeating a failed
+  trial.
+- **Weekly coverage.** A body map on the Train tab shows the sets each muscle
+  gets in your cycle or the last seven days against the range for your volume
+  and goal. Open it for one list with the short muscles first.
+- **The Forge** builds a cycle or a single rite from hand-written patterns,
+  fitted to your volume and armoury, with the reason for every pick and its
+  citation. **Forge a cycle** previews the coverage the cycle would give you
+  before you accept it, and **Temper** improves a rite you already have.
+- **256 exercises**: barbell, dumbbell, cable, machine, bodyweight, cardio,
+  sport, climbing, water and mobility. Each has a swipeable info sheet showing
+  the muscles it works, on the live trial screen too.
 
-The domain layer holds the scoring, progression, titles and skill rules as pure
-Kotlin, which is why most of it is covered by fast unit tests. Room is the
-source of truth: the cloud is a backup, never an authority.
+### Progress
 
-## Tech stack
+- **Body-scaled scoring.** A rep is worth `reps × (bodyweight + added) /
+  bodyweight^0.67`, the allometric exponent. Loads are converted per implement
+  (a sled, a smith bar, a pinned stack), movements are weighted by difficulty,
+  and strength is normalised by muscle group with per-sex standards.
+- **XP, level and Strength Rank** (Untrained to Elite), built from your best
+  marks on pull, push and legs.
+- **The Ledger** charts body (weight, body fat, BMI, FFMI), training (lift
+  records and a calendar) and daily readings. Health Connect reading is
+  optional.
+- **The Chronicle** lists every sealed trial, month by month.
+- **Share a trial** as plain text in the shape of a Wordle grid: a row per
+  movement, a square per set, a trophy on a record set, and your load. No link,
+  no image. Your per-exercise notes go in only if you opt in; the private note
+  never does.
+- **The Veil** is an idle layer: each trial leaves an echo, echoes gather
+  essence while you are away, and you spend it on relics and crests.
 
-| Layer | Choice |
-|---|---|
-| Language | Kotlin 2.4.20 |
-| UI | Jetpack Compose, Material 3, the flat Clean look with customisable accent pairs |
-| Local data | Room 2.8.5 with versioned migrations and migration tests |
-| Background | WorkManager |
-| Health | Health Connect 1.1.0 (read only, optional) |
-| Cloud | Supabase 3.8.0 over Ktor 3.5.2, row level security, optional |
-| Build | AGP 9.4.0, Gradle version catalog, R8 + resource shrinking on release |
-| Min / target | Android 10 (API 29) / API 36 |
+### Codex
 
-## Getting started
+- **119 techniques on 14 paths** (pull, push, handstand, lever, planche, rings,
+  movement, legs, core, mobility, and squat, bench, press and deadlift
+  ladders). Each technique is gated on the one before it and carries a written
+  claim standard.
+- **105 deeds** with progress you can watch. Each grants a title to wear.
+
+### Allies
+
+Optional, and only with an account.
+
+- Add allies and read their **tidings**.
+- Form a **circle** of 2 to 8 allies with a shared weekly goal and a Keeper.
+- Stand in **the Reckoning**, a leaderboard for each lift.
+
+### Your data
+
+- Everything is stored on the phone first.
+- Export a full JSON archive or a CSV of your trials, and import the archive
+  again.
+- Import trials from a Strong or Hevy CSV.
+- Delete your cloud account from inside the app at any time.
+
+## Install
+
+- **F-Droid:** the listing is still in review with F-Droid, so it is not in
+  the store yet. The `foss` build carries no proprietary libraries.
+- **Releases:** tagged versions are on
+  [GitHub Releases](https://github.com/AlexMollard/Ironvellum/releases).
+- **From source:** needs a JDK and the Android SDK.
+
+  ```bash
+  git clone https://github.com/AlexMollard/Ironvellum.git
+  cd Ironvellum
+  ./gradlew :app:assembleFossDebug
+  ```
+
+  Two flavours share one application id. `foss` is the F-Droid and GitHub
+  build and shows support links. `play` adds Google sign-in and shows none;
+  build it with `assemblePlayDebug`. The app needs Android 10 (API 29) or
+  newer.
+
+## Privacy and data
+
+Ironvellum works with no account and no network. All training data lives in a
+local database, which Android's own backup does not copy.
+
+If you sign in, the app syncs your training record and nothing more: completed
+trials and their sets, display name, visibility, earned titles, tributes and
+alliances. Body measurements and everything read from Health Connect never
+leave the device. You can export or import your data at any time.
+
+The cloud is optional and does not have to be ours. Settings, then Cloud,
+accepts any Supabase project of your own, hosted or self-hosted. See
+[supabase/SELF_HOSTING.md](supabase/SELF_HOSTING.md).
+
+Full statement: [PRIVACY.md](PRIVACY.md) and
+[Play Data Safety answers](docs/PLAY_DATA_SAFETY.md).
+
+## For developers
+
+Kotlin 2.4.20, Jetpack Compose with Material 3, Room 2.8.5, WorkManager,
+Health Connect 1.1.0 (read only), and Supabase 3.8.0 over Ktor 3.5.2. AGP
+9.4.0, minSdk 29, targetSdk 36. The domain layer is pure Kotlin, which is why
+most of it is covered by fast unit tests. Room is the source of truth; the
+cloud is a backup, never an authority.
+
+**There is no CI.** The repository is private and every runner minute is
+billed, so the workflows are manual (`workflow_dispatch`) only. The gate runs
+on your machine:
 
 ```bash
-git clone https://github.com/AlexMollard/Ironvellum.git
-cd Ironvellum
-./gradlew :app:assembleFossDebug
+python3 tools/gate.py              # build, unit, lint, instrumented
+python3 tools/gate.py --backend    # plus the Supabase schema assertions (Docker)
+python3 tools/gate.py --no-device  # no emulator: compiles instrumented instead
 ```
-
-The app runs with no backend. The cloud defaults are committed in
-`cloud-defaults.properties` (public URL + publishable key — row-level security
-is what protects the data); `local.properties` overrides them. Google sign-in
-keys are read from `local.properties` only and only reach the `play` flavour.
-Build `assemblePlayDebug` for the Google sign-in variant.
-
-Prefer not to use the shared cloud at all? Settings → CLOUD accepts any
-Supabase project of your own — hosted free tier or self-hosted with Docker.
-See [supabase/SELF_HOSTING.md](supabase/SELF_HOSTING.md).
-
-```properties
-# local.properties, gitignored
-supabase.url=
-supabase.key=
-google.webClientId=
-
-# only needed for a signed release build (env vars of the same name also work)
-ironvellum.keystore.path=
-ironvellum.keystore.password=
-ironvellum.key.alias=
-ironvellum.key.password=
-```
-
-### Without a phone attached
-
-Everything runs on a headless emulator, so no cable is needed:
-
-```bash
-python tools/device.py up        # boots the IronvellumEmu AVD if nothing is attached
-python tools/device.py install
-python tools/device.py launch
-python tools/device.py shot home # .tmp/shots/home.png
-python tools/device.py labels    # visible text, for finding a tap target
-```
-
-> [!NOTE]
-> The emulator renders on the host GPU (`-gpu host`). Its screenshots are still not
-> pixel-comparable with a real device: the GL translation differs and the ink seeds
-> resolve per pixel size, so only compare shots taken on the same target.
 
 > [!WARNING]
-> The instrumented suite calls `pm clear` and writes to the app's own database.
-> With a personal phone attached, pin the run to the emulator or it will destroy
-> real training history:
+> The instrumented suite calls `pm clear`, deletes rows from the app's own
+> database and uninstalls the app. Pointed at a phone with real training on it,
+> it destroys that history. `tools/gate.py` pins the run to an emulator and
+> refuses a physical device unless you pass `--serial`. If you run Gradle by
+> hand, pin it yourself:
 > ```bash
 > ANDROID_SERIAL=emulator-5554 ./gradlew :app:connectedFossDebugAndroidTest
 > ```
 
-## Testing
+`python tools/device.py up` boots the emulator, and `install`, `launch` and
+`shot` drive it. Cloud defaults live in `cloud-defaults.properties`;
+`local.properties` (gitignored) overrides them and holds the Google sign-in
+and release signing keys.
 
-| Command | What it is there to catch |
-|---|---|
-| `:app:testFossDebugUnitTest` | Scoring maths, progression, titles, catalogue invariants, the cloud wire format, crash journal, migration registry |
-| `:app:connectedFossDebugAndroidTest` | Room migrations against real SQLite, data survival across upgrades, navigation reachability, accessibility floors, and the user journeys (workout loop, skill practice, workout auto-fill, first run, delete) |
-| `:app:lintFossRelease` | Release-variant lint; triage the SARIF report, not the HTML |
-| `supabase/test/assert_all.sql` | What no Kotlin test can see: which tables have row security, who may execute which function, which columns a lifter may write, whether a feed row can pin itself, what sign-up does with a name |
+Depth lives in `docs/`:
 
-The backend assertions need Docker rather than a device:
+- [docs/DESIGN.md](docs/DESIGN.md) - the Clean look
+- [docs/GLOSSARY.md](docs/GLOSSARY.md) - every word the app shows
+- [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) - what ships before a release
+- [docs/TODO.md](docs/TODO.md) - outstanding work
+- [docs/open-source/](docs/open-source/README.md) - open-sourcing, funding and self-hosting plans
+- [COSTS.md](COSTS.md) - what the shared cloud costs
+- [AGENTS.md](AGENTS.md) - standing rules for agents working in the repo
+- [GOAL.md](GOAL.md) - product direction
 
-```bash
-docker run -d --rm --name pg -e POSTGRES_PASSWORD=probe -p 5432:5432 postgres:16
-psql -h localhost -U postgres -f supabase/test/supabase_stub.sql
-psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/migrations/0001_baseline.sql
-psql -h localhost -U postgres -v ON_ERROR_STOP=1 -f supabase/test/assert_all.sql
-```
-
-`python tools/gate.py --backend` does all of that and also proves the hosted
-reset: it seeds data, runs `supabase/reset.sql`, checks nothing was left
-behind, re-applies the baseline and asserts again.
-
-<details>
-<summary><b>Project layout</b></summary>
-
-```
-app/src/main/kotlin/com/ironvellum/app/
-  domain/      pure Kotlin: scoring, progression, titles, skills, share text
-  data/        Room database, DAOs, Repository, seed catalogue, cloud sync
-  ui/          Compose screens by feature, plus theme and shared components
-app/src/test/          unit tests over the domain and wire format
-app/src/androidTest/   instrumented: migrations, journeys, accessibility
-supabase/migrations/   the whole schema and row level security, one baseline file
-supabase/reset.sql     wipes the hosted debug project before the baseline is applied
-supabase/test/         SQL assertions the Kotlin tests cannot make
-tools/                 device driving, art generation, geometry sweeps
-docs/                  release checklist, data safety, TODO, attribution
-```
-
-</details>
-
-## Privacy
-
-Signing in and syncing uploads the training record only: completed workouts and
-their sets, display name, visibility, earned titles, likes, friendships and the
-muster aggregates. Body measurements and everything read from Health Connect
-stay on the device, and the app is fully usable without an account.
-
-Full statement: [PRIVACY.md](PRIVACY.md) ·
-[Play Data Safety answers](docs/PLAY_DATA_SAFETY.md)
-
-## Contributing
-
-Issues and pull requests are welcome. There is no automatic CI: run the gate on
-your own machine before opening a pull request.
-
-```bash
-python3 tools/gate.py              # build, unit, lint, instrumented (emulator)
-python3 tools/gate.py --backend    # plus the Supabase schema assertions (Docker)
-```
-
-Point instrumented runs at an emulator, never a phone with real training on it.
-
-## Licence
+## Licence and support
 
 Ironvellum is free software under the
-[GNU General Public License v3.0 or later](LICENSE). The artwork is original
-or generated for this project and shares that licence; the Chakra Petch font is
-under the SIL Open Font License 1.1. The muscle map's body shapes and outlines are
-derived from [react-native-body-highlighter](https://github.com/HichamELBSI/react-native-body-highlighter)
+[GNU General Public License v3.0 or later](LICENSE), with no ads, trackers or
+paid tier. The artwork is original or generated for this project and shares
+that licence; see [docs/ART_ATTRIBUTION.md](docs/ART_ATTRIBUTION.md). The Chakra
+Petch font is under the SIL Open Font License 1.1, and the muscle map's body
+shapes derive from
+[react-native-body-highlighter](https://github.com/HichamELBSI/react-native-body-highlighter)
 (MIT). See [NOTICE](NOTICE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-## Docs
-
-- [GOAL.md](GOAL.md) - product direction
-- [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md) - what ships before a release
-- [docs/TODO.md](docs/TODO.md) - outstanding work and open decisions
-- [docs/ART_ATTRIBUTION.md](docs/ART_ATTRIBUTION.md) - how the artwork was made
-- [docs/open-source/](docs/open-source/README.md) - plan for open-sourcing, funding and self-hosting
+Bug reports and pull requests are welcome in
+[Issues](https://github.com/AlexMollard/Ironvellum/issues). To help keep the
+shared cloud running, support the project through
+[GitHub Sponsors](https://github.com/sponsors/AlexMollard) or
+[Liberapay](https://liberapay.com/AlexMollard); the `foss` build links to
+both.
