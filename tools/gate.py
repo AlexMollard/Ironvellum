@@ -83,6 +83,76 @@ def counts(pattern: str) -> tuple[int, int]:
     return total, failed
 
 
+def responsive(serial: str) -> bool:
+    """True when the device's shell answers; `adb devices` alone is not proof."""
+    try:
+        out = subprocess.run(
+            [ADB, "-s", serial, "shell", "getprop", "ro.build.version.sdk"],
+            capture_output=True, text=True, timeout=10,
+        ).stdout.strip()
+    except subprocess.TimeoutExpired:
+        return False
+    return out.isdigit()
+
+
+def revive(serial: str) -> bool:
+    """Bring a wedged emulator back before the suite runs.
+
+    An emulator left idle between runs can stay listed by `adb devices` while
+    its shell hangs. Gradle then skips it as "Unknown API Level" and the gate
+    goes red with one of N tests run. Restart adb first; if the emulator is
+    still silent, kill that port's emulator and cold boot it. A physical
+    device is never touched.
+    """
+    if responsive(serial):
+        return True
+    if not serial.startswith("emulator-"):
+        print(f"!! {serial} does not answer; not restarting a physical device")
+        return False
+    print(f"-- {serial} does not answer; restarting adb")
+    for cmd in ("kill-server", "start-server"):
+        subprocess.run([ADB, cmd], capture_output=True, timeout=30)
+    if responsive(serial):
+        print(f"-- {serial} answers again")
+        return True
+
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import device
+
+    port = serial.split("-", 1)[1]
+    print(f"-- {serial} still silent; cold booting the emulator on port {port}")
+    subprocess.run(
+        ["powershell", "-NoProfile", "-Command",
+         "Get-CimInstance Win32_Process -Filter \"Name like 'qemu-system%' or Name='emulator.exe'\""
+         f" | Where-Object {{ $_.CommandLine -match '-port {port}( |$)' }}"
+         " | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }"],
+        capture_output=True, timeout=60,
+    )
+    time.sleep(3)
+    subprocess.Popen(
+        [str(device.EMULATOR), "-avd", device.AVD, "-no-window", "-no-audio",
+         "-no-boot-anim", "-gpu", "host", "-port", port, "-no-snapshot-load"],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+    )
+    deadline = time.time() + 300
+    while time.time() < deadline:
+        try:
+            booted = subprocess.run(
+                [ADB, "-s", serial, "shell", "getprop", "sys.boot_completed"],
+                capture_output=True, text=True, timeout=10,
+            ).stdout.strip() == "1"
+        except subprocess.TimeoutExpired:
+            booted = False
+        if booted:
+            # Package manager and friends settle a little after boot_completed.
+            time.sleep(20)
+            print(f"-- {serial} cold booted")
+            return responsive(serial)
+        time.sleep(5)
+    print(f"!! {serial} did not finish booting")
+    return False
+
+
 LOCK = os.path.join(ROOT, ".tmp", "emulator.lock")
 
 
@@ -296,6 +366,9 @@ def main() -> int:
     print(f"-- gradle: {' '.join(tasks)}")
     failures = []
     with emulator_lock(serial):
+        if serial and not revive(serial):
+            print("\nGATE RED: the device does not answer")
+            return 1
         if gradle(tasks, serial):
             failures.append("gradle")
 
