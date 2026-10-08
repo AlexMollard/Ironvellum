@@ -90,6 +90,7 @@ class WorkoutLogRendersHistoryTest {
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         compose.onAllNodes(hasText("Full chronicle", substring = true) or hasContentDescription("Full chronicle")).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        awaitHistory()
 
         val onScreen = compose.onAllNodesWithText("", substring = true).fetchSemanticsNodes().size
         assertTrue("the log screen rendered nothing at all", onScreen > 0)
@@ -118,6 +119,7 @@ class WorkoutLogRendersHistoryTest {
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
         compose.onAllNodes(hasText("Full chronicle", substring = true) or hasContentDescription("Full chronicle")).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        awaitHistory()
 
         // The totals line pluralises its own nouns, so one set trained reads
         // "1 set". Counting the prescription instead would read "N sets".
@@ -129,7 +131,24 @@ class WorkoutLogRendersHistoryTest {
         )
     }
 
+    /**
+     * The Chronicle opens on its blank state and fills when the history flow
+     * delivers, which happens off the frame clock. Wait for the totals line, so
+     * the assertions read the filled screen rather than racing the first frame.
+     */
+    private fun awaitHistory() {
+        // The clock is manual in this test, so the wait must tick it itself.
+        val deadline = System.currentTimeMillis() + HISTORY_TIMEOUT_MS
+        while (compose.onAllNodes(hasText(" trial · ", substring = true)).fetchSemanticsNodes().isEmpty()) {
+            check(System.currentTimeMillis() < deadline) { "the Chronicle never listed the seeded trial" }
+            Thread.sleep(100)
+            compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
+        }
+    }
+
     private companion object {
+        const val HISTORY_TIMEOUT_MS = 10_000L
+
         const val FRAME_BUDGET_MS = 1_200L
     }
 }
