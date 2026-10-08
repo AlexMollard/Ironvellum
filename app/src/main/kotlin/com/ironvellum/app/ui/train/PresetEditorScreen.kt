@@ -1,52 +1,63 @@
 package com.ironvellum.app.ui.train
 
-import com.ironvellum.app.ui.components.PushedHeader
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.ui.draw.clip
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Close
-import com.ironvellum.app.ui.components.IronvellumDialog
-import androidx.compose.ui.text.style.TextOverflow
-import com.ironvellum.app.ui.components.IronvellumButton
-import androidx.compose.ui.graphics.Color
-import com.ironvellum.app.ui.components.ExercisePickerSheet
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.DragHandle
+import androidx.compose.material.icons.outlined.Add
+import androidx.compose.material.icons.outlined.CalendarMonth
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import com.ironvellum.app.ui.components.InkOutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -55,16 +66,23 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
+import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
-import com.ironvellum.app.domain.DecimalInput
-import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.DockedActionBar
+import com.ironvellum.app.ui.components.ExercisePickerSheet
+import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.IronvellumDialog
+import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.PushedHeader
+import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.UndoBar
 import com.ironvellum.app.ui.components.decimalKeyboard
 import com.ironvellum.app.ui.components.wholeKeyboard
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.ironvellumFieldColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -153,6 +171,13 @@ class PresetEditorViewModel(
 
     fun removeEntry(index: Int) {
         _ui.value = _ui.value.copy(entries = _ui.value.entries.filterIndexed { i, _ -> i != index })
+    }
+
+    /** Puts a removed [entry] back where it was, for Undo. */
+    fun insertEntry(index: Int, entry: EditorEntry) {
+        val list = _ui.value.entries.toMutableList()
+        list.add(index.coerceIn(0, list.size), entry)
+        _ui.value = _ui.value.copy(entries = list)
     }
 
     fun moveEntry(index: Int, delta: Int) {
@@ -255,10 +280,44 @@ internal fun editorChanged(baseline: EditorUi, current: EditorUi): Boolean =
 private fun formatWeight(kg: Double): String =
     if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
 
-private val DAY_OPTIONS = listOf(
-    1 to "Mon", 2 to "Tue", 3 to "Wed", 4 to "Thu",
-    5 to "Fri", 6 to "Sat", 7 to "Sun", null to "—",
-)
+
+private val DAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+
+/** The cycle day as the Day row shows it. */
+private fun dayName(day: Int?): String = day?.let { DAY_NAMES.getOrNull(it - 1) } ?: "No day"
+
+/** Sets cap at 30 and reps at 500 when saved, so two and three digits. */
+private const val SETS_DIGITS = 2
+private const val REPS_DIGITS = 3
+private const val MAX_SETS = 30
+private const val MAX_REPS = 500
+
+/** How far a reorder drag travels before the row swaps with its neighbour. */
+private val DRAG_STEP = 56.dp
+
+/** One tap of a count stepper: [delta] more (or fewer), kept within 1..[max]. */
+internal fun stepWhole(current: String, delta: Int, max: Int): String =
+    ((DecimalInput.parseWhole(current) ?: 0) + delta).coerceIn(1, max).toString()
+
+/** One tap of a kg or km stepper: [delta] steps of [step]; at or below zero it clears (bodyweight, no target). */
+internal fun stepDecimal(current: String, delta: Int, step: Double): String {
+    val next = Math.round(((DecimalInput.parse(current) ?: 0.0) + delta * step) * 100) / 100.0
+    return if (next <= 0.0) "" else formatWeight(next.coerceAtMost(MAX_LOAD_KG))
+}
+
+/** The folded row's second line: the targets the metric uses, "–" where one is not typed yet. */
+internal fun entrySummary(entry: EditorEntry, metric: ExerciseMetric): String {
+    fun v(s: String) = s.ifBlank { "–" }
+    return when (metric) {
+        ExerciseMetric.REPS ->
+            "${v(entry.sets)} × ${v(entry.reps)}" + if (entry.weight.isBlank()) "" else " · ${entry.weight} kg"
+        ExerciseMetric.HOLD ->
+            "${v(entry.sets)} × ${v(entry.reps)} s" + if (entry.weight.isBlank()) "" else " · ${entry.weight} kg"
+        ExerciseMetric.DURATION -> "${v(entry.sets)} × ${v(entry.reps)} min"
+        ExerciseMetric.DISTANCE_TIME -> "${v(entry.sets)} × ${v(entry.weight)} km"
+        ExerciseMetric.ATTEMPTS_GRADE -> "${v(entry.sets)} × ${v(entry.reps)} attempts"
+    }
+}
 
 @Composable
 fun PresetEditorScreen(
@@ -273,130 +332,144 @@ fun PresetEditorScreen(
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val baseline by viewModel.baseline.collectAsStateWithLifecycle()
     var adding by remember { mutableStateOf(false) }
+    var swapping by remember { mutableStateOf<Int?>(null) }
     var confirmDiscard by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var pickingDay by remember { mutableStateOf(false) }
+    // One exercise is unfolded at a time; its index follows it through reorders and removals.
+    var open by remember { mutableStateOf<Int?>(null) }
+    var removed by remember { mutableStateOf<Pair<Int, EditorEntry>?>(null) }
+    var dragIndex by remember { mutableIntStateOf(-1) }
 
     // Back used to drop every edit without a word; with anything changed it
     // asks first.
     BackHandler(enabled = editorChanged(baseline, ui)) { confirmDiscard = true }
 
-    Column(
-        Modifier
-            .fillMaxSize()
-            .imePadding()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
-    ) {
+    fun move(index: Int, delta: Int) {
+        val to = index + delta
+        if (index !in ui.entries.indices || to !in ui.entries.indices) return
+        viewModel.moveEntry(index, delta)
+        open = when (open) {
+            index -> to
+            to -> index
+            else -> open
+        }
+    }
+
+    fun remove(index: Int) {
+        val gone = ui.entries.getOrNull(index) ?: return
+        viewModel.removeEntry(index)
+        removed = index to gone
+        val was = open
+        open = when {
+            was == null || was == index -> null
+            was > index -> was - 1
+            else -> was
+        }
+    }
+
+    Column(Modifier.fillMaxSize().imePadding()) {
         Spacer(Modifier.height(20.dp))
         PushedHeader(
-            if (ui.presetId == null) "NEW RITE" else "REFORGE THIS RITE",
+            if (ui.presetId == null) "New rite" else "Edit rite",
             onBack = { if (editorChanged(baseline, ui)) confirmDiscard = true else onDone() },
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
-        Spacer(Modifier.height(10.dp))
-        OutlinedTextField(
-            shape = MaterialTheme.shapes.small,
-            colors = ironvellumFieldColors(),
-            value = ui.name,
-            onValueChange = viewModel::setName,
-            label = { Text("Rite name") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(8.dp))
-        OutlinedTextField(
-            shape = MaterialTheme.shapes.small,
-            colors = ironvellumFieldColors(),
-            value = ui.note,
-            onValueChange = viewModel::setNote,
-            label = { Text("Note") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(10.dp))
-        Text("Cycle day", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.SystemGreen)
-        Spacer(Modifier.height(4.dp))
-        Column(verticalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-            DAY_OPTIONS.chunked(4).forEach { chunk ->
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                    chunk.forEach { (day, label) ->
-                        val selected = ui.scheduledDay == day
-                        InkOutlinedButton(
-                            // Material's button shape is a stadium; the theme's is drawn.
-                            shape = MaterialTheme.shapes.small,
-                            onClick = { viewModel.setScheduledDay(day) },
-                            modifier = Modifier
-                                .weight(1f)
-                                .heightIn(min = 48.dp)
-                                // The unscheduled option is drawn as "—", which a
-                                // screen reader announces as a dash. Say what it means.
-                                .semantics { contentDescription = label.takeIf { day != null } ?: "No day in the cycle" },
-                            contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp),
-                        ) {
-                            Text(
-                                label,
-                                style = MaterialTheme.typography.labelSmall,
-                                color = if (selected) IronvellumColors.SovereignGold else MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
+        Box(Modifier.weight(1f).fillMaxWidth()) {
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
+            ) {
+                UnderlineField("Rite name", ui.name, viewModel::setName)
+                UnderlineField("Note", ui.note, viewModel::setNote)
+                Spacer(Modifier.height(6.dp))
+                ListRow(
+                    label = "Day",
+                    value = dayName(ui.scheduledDay),
+                    icon = Icons.Outlined.CalendarMonth,
+                    onClick = { pickingDay = true },
+                )
+                InkDivider()
+
+                SectionHeader("Exercises", topPadding = 14.dp)
+                ui.entries.forEachIndexed { index, entry ->
+                    val metric = ui.exercises.firstOrNull { it.id == entry.exerciseId }?.metric ?: ExerciseMetric.REPS
+                    EntryItem(
+                        entry = entry,
+                        metric = metric,
+                        open = open == index,
+                        onToggle = { open = if (open == index) null else index },
+                        onEntry = { viewModel.updateEntry(index, it) },
+                        onChange = { swapping = index },
+                        onRemove = { remove(index) },
+                        onMove = { move(index, it) },
+                        onDragStart = { dragIndex = index },
+                        onDragStep = { delta ->
+                            if (dragIndex + delta in ui.entries.indices) {
+                                move(dragIndex, delta)
+                                dragIndex += delta
+                            }
+                        },
+                    )
+                }
+                // Opens the picker: appending the catalogue's first row put an
+                // Assault Bike in the workout, a machine most lifters do not have.
+                ListRow(
+                    label = "Add exercise",
+                    icon = Icons.Outlined.Add,
+                    onClick = if (ui.exercises.isNotEmpty()) ({ adding = true }) else null,
+                )
+                InkDivider()
+
+                if (ui.name.isNotBlank() && ui.entries.isNotEmpty() && !ui.canSave()) {
+                    Spacer(Modifier.height(12.dp))
+                    Text(
+                        "Fill in the marked targets to save. Kg tops out at ${MAX_LOAD_KG.toInt()}.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = IronvellumColors.InkMuted,
+                    )
+                }
+                if (ui.presetId != null) {
+                    Spacer(Modifier.height(16.dp))
+                    InkDivider()
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .heightIn(min = 52.dp)
+                            .clickable(role = Role.Button) { confirmDelete = true }
+                            .padding(horizontal = 2.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    ) {
+                        Icon(Icons.Outlined.Delete, contentDescription = null, tint = IronvellumColors.DangerRed, modifier = Modifier.size(22.dp))
+                        Text("Delete rite", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
                     }
                 }
+                Spacer(Modifier.height(24.dp))
             }
-        }
-
-        SectionHeader("Exercises")
-        ui.entries.forEachIndexed { index, entry ->
-            EntryRow(
-                entry = entry,
-                exercises = ui.exercises,
-                isFirst = index == 0,
-                isLast = index == ui.entries.lastIndex,
-                onEntry = { viewModel.updateEntry(index, it) },
-                onRemove = { viewModel.removeEntry(index) },
-                onMove = { viewModel.moveEntry(index, it) },
-            )
-        }
-        // Opens the picker: appending the catalogue's first row put an
-        // Assault Bike in the workout, a machine most lifters do not have.
-        IronvellumButton(
-            label = "+ Add exercise",
-            onClick = { adding = true },
-            enabled = ui.exercises.isNotEmpty(),
-            quiet = true,
-        )
-
-        Spacer(Modifier.height(12.dp))
-        if (ui.name.isNotBlank() && ui.entries.isNotEmpty() && !ui.canSave()) {
-            Text(
-                "Fill in the marked targets to save. Kg tops out at ${MAX_LOAD_KG.toInt()}.",
-                style = MaterialTheme.typography.labelSmall,
-                color = IronvellumColors.InkMuted,
-            )
-            Spacer(Modifier.height(8.dp))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            IronvellumButton(
-                label = "Save Rite",
-                onClick = { viewModel.save(onDone) },
-                enabled = ui.canSave(),
-                modifier = Modifier.weight(1f),
-            )
-            if (ui.presetId != null) {
-                // Delete used to fire on the first tap; a new user prodding the
-                // button lost the whole training day. Arm first, name the cost.
-                var armedDelete by remember { mutableStateOf(false) }
-                IronvellumButton(
-                    label = if (armedDelete) "Confirm delete" else "Delete",
-                    onClick = {
-                        if (armedDelete) {
-                            viewModel.delete(onDone)
-                        } else {
-                            armedDelete = true
-                        }
+            val pending = removed
+            pending?.let { (index, gone) ->
+                UndoBar(
+                    message = "${gone.exerciseName.ifBlank { "Exercise" }} removed",
+                    onUndo = {
+                        viewModel.insertEntry(index, gone)
+                        open = open?.let { if (it >= index) it + 1 else it }
+                        removed = null
                     },
-                    quiet = true,
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(horizontal = 16.dp, vertical = 8.dp),
+                    onExpired = { removed = null },
+                    key = pending,
                 )
             }
         }
-        Spacer(Modifier.height(24.dp))
+        DockedActionBar(
+            primary = "Save rite",
+            onPrimary = { viewModel.save(onDone) },
+            primaryEnabled = ui.canSave(),
+            reserveLink = false,
+        )
     }
 
     if (adding) {
@@ -404,16 +477,72 @@ fun PresetEditorScreen(
             exercises = ui.exercises,
             onPick = { exercise ->
                 viewModel.addEntry(exercise)
+                open = ui.entries.size
                 adding = false
             },
             onDismiss = { adding = false },
         )
     }
 
+    swapping?.let { index ->
+        val entry = ui.entries.getOrNull(index)
+        if (entry == null) {
+            swapping = null
+        } else {
+            ExercisePickerSheet(
+                exercises = ui.exercises,
+                onPick = { exercise ->
+                    // A metric switch invalidates the old targets (10 reps ≠ 40 min).
+                    val kept = if (exercise.metric == ExerciseMetric.REPS) entry else entry.copy(reps = "", weight = "")
+                    viewModel.updateEntry(index, kept.copy(exerciseId = exercise.id, exerciseName = exercise.name))
+                    swapping = null
+                },
+                onDismiss = { swapping = null },
+            )
+        }
+    }
+
+    if (pickingDay) {
+        IronvellumDialog(
+            onDismissRequest = { pickingDay = false },
+            title = { Text("Day") },
+            text = {
+                Column {
+                    (1..7).map { it to DAY_NAMES[it - 1] }.plus(null to "No day").forEach { (day, label) ->
+                        val selected = ui.scheduledDay == day
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 52.dp)
+                                .clickable(role = Role.RadioButton) {
+                                    viewModel.setScheduledDay(day)
+                                    pickingDay = false
+                                }
+                                .semantics { this.selected = selected },
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                label,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = IronvellumColors.Ink,
+                                modifier = Modifier.weight(1f),
+                            )
+                            if (selected) {
+                                Icon(Icons.Filled.Check, contentDescription = null, tint = IronvellumColors.Emerald)
+                            }
+                        }
+                        InkDivider()
+                    }
+                }
+            },
+            confirmButton = { IronvellumButton(label = "Close", onClick = { pickingDay = false }, quiet = true) },
+        )
+    }
+
     if (confirmDiscard) {
         IronvellumDialog(
             onDismissRequest = { confirmDiscard = false },
-            title = { Text("Discard changes?") },
+            title = { Text("Discard your changes?") },
             text = { Text("Unsaved edits to this rite will be lost.") },
             confirmButton = {
                 IronvellumButton(
@@ -430,188 +559,355 @@ fun PresetEditorScreen(
             },
         )
     }
-}
 
-@Composable
-private fun EntryRow(
-    entry: EditorEntry,
-    exercises: List<Exercise>,
-    isFirst: Boolean,
-    isLast: Boolean,
-    onEntry: (EditorEntry) -> Unit,
-    onRemove: () -> Unit,
-    onMove: (Int) -> Unit,
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    InkPanel(Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            // The name yields, the controls do not: a long name ("Dumbbell
-            // Shoulder Press") pushed the remove button off the card and
-            // squashed the arrows.
-            Box(Modifier.weight(1f)) {
-                InkOutlinedButton(
-                    onClick = { expanded = true },
-                    shape = MaterialTheme.shapes.small,
-                    contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp),
-                ) {
-                    Text(
-                        entry.exerciseName.ifBlank { "Pick exercise" },
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                }
-                if (expanded) {
-                    ExercisePickerSheet(
-                        exercises = exercises,
-                        onPick = { exercise ->
-                            // A metric switch invalidates the old targets (10 reps ≠ 40 min).
-                            val defaults = if (exercise.metric == ExerciseMetric.REPS) {
-                                entry
-                            } else {
-                                entry.copy(reps = "", weight = "")
-                            }
-                            onEntry(defaults.copy(exerciseId = exercise.id, exerciseName = exercise.name))
-                            expanded = false
-                        },
-                        onDismiss = { expanded = false },
-                    )
-                }
-            }
-            Spacer(Modifier.width(4.dp))
-            RowControl("▲", "Move up", enabled = !isFirst) { onMove(-1) }
-            RowControl("▼", "Move down", enabled = !isLast) { onMove(1) }
-            Box(
-                Modifier
-                    .size(48.dp)
-                    .clip(MaterialTheme.shapes.extraSmall)
-                    .clickable(onClickLabel = "Remove exercise", onClick = onRemove)
-                    .semantics {
-                        contentDescription = "Remove exercise"
-                        role = Role.Button
+    if (confirmDelete) {
+        IronvellumDialog(
+            onDismissRequest = { confirmDelete = false },
+            title = { Text("Delete rite?") },
+            text = { Text("${ui.name.ifBlank { "This rite" }} and its exercises will be removed. Trials you have already sealed stay in your history.") },
+            confirmButton = {
+                IronvellumButton(
+                    label = "Delete rite",
+                    onClick = {
+                        confirmDelete = false
+                        viewModel.delete(onDone)
                     },
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(Icons.Outlined.Close, contentDescription = null)
-            }
-        }
-
-        Spacer(Modifier.height(6.dp))
-        // Targets follow the movement's metric — sets × reps is meaningless for a 5 km run
-        // or a football match. Non-REPS targets reuse the same fields:
-        // DURATION/ATTEMPTS_GRADE store whole numbers in `reps`; DISTANCE_TIME stores
-        // kilometres in `weight` so save() keeps mapping to targetWeightKg untouched.
-        val metric = exercises.firstOrNull { it.id == entry.exerciseId }?.metric ?: ExerciseMetric.REPS
-        val bad = missingTargets(entry, metric)
-        when (metric) {
-            ExerciseMetric.REPS -> {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS, isError = TargetField.SETS in bad) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Reps", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS, isError = TargetField.REPS in bad) { onEntry(entry.copy(reps = it)) }
-                    NumberField("kg", entry.weight, Modifier.weight(1f), decimal = true, isError = TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
-                }
-            }
-            ExerciseMetric.HOLD -> {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS, isError = TargetField.SETS in bad) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Seconds", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS, isError = TargetField.REPS in bad) { onEntry(entry.copy(reps = it)) }
-                    NumberField("kg", entry.weight, Modifier.weight(1f), decimal = true, isError = TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
-                }
-            }
-            ExerciseMetric.DURATION -> {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS, isError = TargetField.SETS in bad) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Min (target)", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS, isError = TargetField.REPS in bad) { onEntry(entry.copy(reps = it)) }
-                }
-            }
-            ExerciseMetric.DISTANCE_TIME -> {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS, isError = TargetField.SETS in bad) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Km (target)", entry.weight, Modifier.weight(1f), decimal = true, isError = TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
-                }
-            }
-            ExerciseMetric.ATTEMPTS_GRADE -> {
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    NumberField("Sets", entry.sets, Modifier.weight(1f), maxDigits = SETS_DIGITS, isError = TargetField.SETS in bad) { onEntry(entry.copy(sets = it)) }
-                    NumberField("Attempts (target)", entry.reps, Modifier.weight(1f), maxDigits = REPS_DIGITS, isError = TargetField.REPS in bad) { onEntry(entry.copy(reps = it)) }
-                }
-            }
-        }
-        Spacer(Modifier.height(6.dp))
-        OutlinedTextField(
-            shape = MaterialTheme.shapes.small,
-            colors = ironvellumFieldColors(),
-            value = entry.modifiers,
-            onValueChange = { onEntry(entry.copy(modifiers = it.take(60))) },
-            // The examples used to ride in the label, so a six-movement preset
-            // printed "(weighted, deficit, elevated…)" six times. They belong
-            // in the field that is still empty.
-            label = { Text("Modifiers") },
-            placeholder = { Text("weighted, deficit, elevated…") },
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            modifier = Modifier.fillMaxWidth(),
+                    danger = true,
+                )
+            },
+            dismissButton = {
+                IronvellumButton(label = "Keep rite", onClick = { confirmDelete = false }, quiet = true)
+            },
         )
     }
 }
 
-/** One fixed 48dp reorder control; the glyph alone read to TalkBack as a triangle. */
+/**
+ * One exercise: folded it is a row (handle, name, targets), unfolded a card with a stepper per
+ * target, the modifiers, and Change / Remove well away from the reorder handle. One row at a time
+ * is open; [onToggle] folds or unfolds it.
+ *
+ * Targets follow the movement's [metric] — sets × reps is meaningless for a 5 km run or a
+ * football match. Non-REPS targets reuse the same fields: DURATION/ATTEMPTS_GRADE store whole
+ * numbers in `reps`; DISTANCE_TIME stores kilometres in `weight` so save() keeps mapping to
+ * targetWeightKg untouched.
+ */
 @Composable
-private fun RowControl(glyph: String, description: String, enabled: Boolean, onClick: () -> Unit) {
+private fun EntryItem(
+    entry: EditorEntry,
+    metric: ExerciseMetric,
+    open: Boolean,
+    onToggle: () -> Unit,
+    onEntry: (EditorEntry) -> Unit,
+    onChange: () -> Unit,
+    onRemove: () -> Unit,
+    onMove: (Int) -> Unit,
+    onDragStart: () -> Unit,
+    onDragStep: (Int) -> Unit,
+) {
+    val name = entry.exerciseName.ifBlank { "Pick exercise" }
+    val bad = missingTargets(entry, metric)
+    if (!open) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .clickable(onClickLabel = "Edit $name", role = Role.Button, onClick = onToggle),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ReorderHandle(name, onDragStart, onDragStep, onMove)
+            Column(Modifier.weight(1f)) {
+                Text(
+                    name,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium,
+                    color = IronvellumColors.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    entrySummary(entry, metric),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (bad.isEmpty()) IronvellumColors.InkMuted else IronvellumColors.DangerRed,
+                )
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
+        }
+        InkDivider()
+        return
+    }
+    InkPanel(
+        Modifier.fillMaxWidth().padding(vertical = 6.dp),
+        contentPadding = PaddingValues(start = 4.dp, end = 16.dp, top = 6.dp, bottom = 4.dp),
+    ) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 48.dp)
+                .clickable(onClickLabel = "Fold $name", role = Role.Button, onClick = onToggle),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            ReorderHandle(name, onDragStart, onDragStep, onMove)
+            Text(
+                name,
+                style = MaterialTheme.typography.titleMedium,
+                color = IronvellumColors.Ink,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Column(Modifier.padding(start = 12.dp)) {
+            WholeStepper("Sets", entry.sets, "sets", TargetField.SETS in bad, SETS_DIGITS, MAX_SETS) { onEntry(entry.copy(sets = it)) }
+            when (metric) {
+                ExerciseMetric.REPS ->
+                    WholeStepper("Reps", entry.reps, "reps", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+                ExerciseMetric.HOLD ->
+                    WholeStepper("Seconds", entry.reps, "seconds", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+                ExerciseMetric.DURATION ->
+                    WholeStepper("Minutes", entry.reps, "minutes", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+                ExerciseMetric.ATTEMPTS_GRADE ->
+                    WholeStepper("Attempts", entry.reps, "attempts", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+                ExerciseMetric.DISTANCE_TIME -> Unit
+            }
+            when (metric) {
+                ExerciseMetric.REPS, ExerciseMetric.HOLD ->
+                    DecimalStepper("Load", entry.weight, "kg", "Lighter load", "Heavier load", 2.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
+                ExerciseMetric.DISTANCE_TIME ->
+                    DecimalStepper("Distance", entry.weight, "km", "Shorter distance", "Longer distance", 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
+                else -> Unit
+            }
+            UnderlineField(
+                label = "Modifiers",
+                value = entry.modifiers,
+                onValueChange = { onEntry(entry.copy(modifiers = it.take(60))) },
+                // The examples used to ride in the label, so a six-movement preset
+                // printed "(weighted, deficit, elevated…)" six times. They belong
+                // in the field that is still empty.
+                placeholder = "weighted, deficit, elevated…",
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+            )
+        }
+        InkDivider()
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            TextAction("Change exercise", onChange)
+            TextAction("Remove exercise", onRemove)
+        }
+    }
+}
+
+/** A quiet, 44dp-tall text action. */
+@Composable
+private fun TextAction(label: String, onClick: () -> Unit) {
+    Box(
+        Modifier.heightIn(min = 44.dp).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 4.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+    }
+}
+
+/**
+ * The reorder grip. Dragging it swaps the row with its neighbours one [DRAG_STEP] at a time;
+ * screen readers get Move up / Move down actions instead, since a drag is not available to them.
+ */
+@Composable
+private fun ReorderHandle(
+    name: String,
+    onDragStart: () -> Unit,
+    onDragStep: (Int) -> Unit,
+    onMove: (Int) -> Unit,
+) {
+    val start by rememberUpdatedState(onDragStart)
+    val step by rememberUpdatedState(onDragStep)
+    val stepPx = with(LocalDensity.current) { DRAG_STEP.toPx() }
     Box(
         Modifier
-            .size(48.dp)
-            .clip(MaterialTheme.shapes.extraSmall)
-            .clickable(enabled = enabled, onClickLabel = description, onClick = onClick)
+            .size(44.dp)
+            .pointerInput(Unit) {
+                var travelled = 0f
+                detectVerticalDragGestures(
+                    onDragStart = {
+                        travelled = 0f
+                        start()
+                    },
+                    onVerticalDrag = { change, dy ->
+                        change.consume()
+                        travelled += dy
+                        while (travelled >= stepPx) {
+                            step(1)
+                            travelled -= stepPx
+                        }
+                        while (travelled <= -stepPx) {
+                            step(-1)
+                            travelled += stepPx
+                        }
+                    },
+                )
+            }
+            .semantics {
+                contentDescription = "Drag to reorder $name"
+                role = Role.Button
+                customActions = listOf(
+                    CustomAccessibilityAction("Move up") { onMove(-1); true },
+                    CustomAccessibilityAction("Move down") { onMove(1); true },
+                )
+            },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Filled.DragHandle, contentDescription = null, tint = IronvellumColors.InkMuted)
+    }
+}
+
+@Composable
+private fun WholeStepper(
+    label: String,
+    value: String,
+    noun: String,
+    error: Boolean,
+    maxDigits: Int,
+    max: Int,
+    onValue: (String) -> Unit,
+) = StepperRow(
+    label = label,
+    value = value,
+    unit = null,
+    less = "Fewer $noun",
+    more = "More $noun",
+    error = error,
+    decimal = false,
+    maxDigits = maxDigits,
+    onValue = onValue,
+    onLess = { onValue(stepWhole(value, -1, max)) },
+    onMore = { onValue(stepWhole(value, 1, max)) },
+)
+
+@Composable
+private fun DecimalStepper(
+    label: String,
+    value: String,
+    unit: String,
+    less: String,
+    more: String,
+    step: Double,
+    error: Boolean,
+    onValue: (String) -> Unit,
+) = StepperRow(
+    label = label,
+    value = value,
+    unit = unit,
+    less = less,
+    more = more,
+    error = error,
+    decimal = true,
+    maxDigits = 0,
+    onValue = onValue,
+    onLess = { onValue(stepDecimal(value, -1, step)) },
+    onMore = { onValue(stepDecimal(value, 1, step)) },
+)
+
+/** A label, then − value +. The value is still typeable, so 62.5 kg does not take twenty taps. */
+@Composable
+private fun StepperRow(
+    label: String,
+    value: String,
+    unit: String?,
+    less: String,
+    more: String,
+    error: Boolean,
+    decimal: Boolean,
+    maxDigits: Int,
+    onValue: (String) -> Unit,
+    onLess: () -> Unit,
+    onMore: () -> Unit,
+) {
+    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
+        StepButton("−", less, onLess)
+        Box(Modifier.width(56.dp).heightIn(min = 44.dp), contentAlignment = Alignment.Center) {
+            BasicTextField(
+                value = value,
+                onValueChange = { input ->
+                    onValue(
+                        if (decimal) DecimalInput.sanitize(input, maxDecimals = 2, maxLength = 7)
+                        else DecimalInput.sanitizeWhole(input, maxDigits),
+                    )
+                },
+                singleLine = true,
+                textStyle = MaterialTheme.typography.titleMedium.copy(
+                    color = if (error) IronvellumColors.DangerRed else IronvellumColors.Ink,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                ),
+                cursorBrush = SolidColor(IronvellumColors.SystemGreen),
+                keyboardOptions = if (decimal) decimalKeyboard(ImeAction.Next) else wholeKeyboard(ImeAction.Next),
+                modifier = Modifier.fillMaxWidth().semantics { contentDescription = label },
+            )
+            if (value.isEmpty()) {
+                Text(
+                    "–",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = if (error) IronvellumColors.DangerRed else IronvellumColors.InkMuted,
+                )
+            }
+        }
+        StepButton("+", more, onMore)
+        // Every row keeps the unit's slot so the figures line up down the card.
+        Text(
+            unit.orEmpty(),
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.width(28.dp).padding(start = 4.dp),
+        )
+    }
+}
+
+/** One fixed 44dp stepper control; the glyph alone reads to TalkBack as a dash or a cross. */
+@Composable
+private fun StepButton(glyph: String, description: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .size(44.dp)
+            .clickable(onClickLabel = description, onClick = onClick)
             .semantics {
                 contentDescription = description
                 role = Role.Button
             },
         contentAlignment = Alignment.Center,
     ) {
-        Text(
-            glyph,
-            color = if (enabled) IronvellumColors.SystemGreen else IronvellumColors.Rune,
-            style = MaterialTheme.typography.labelMedium,
-        )
+        Text(glyph, style = MaterialTheme.typography.titleLarge, color = IronvellumColors.InkMuted)
     }
 }
 
-/** Sets cap at 30 and reps at 500 when saved, so two and three digits. */
-private const val SETS_DIGITS = 2
-private const val REPS_DIGITS = 3
-
-/** A target figure: kg and km take a decimal, counts (sets, reps, seconds, minutes) do not. */
+/** A flat field: a small label over the text and a Rune rule underneath, no box. */
 @Composable
-private fun NumberField(
+private fun UnderlineField(
     label: String,
     value: String,
-    modifier: Modifier = Modifier,
-    decimal: Boolean = false,
-    maxDigits: Int = 3,
-    isError: Boolean = false,
     onValueChange: (String) -> Unit,
+    modifier: Modifier = Modifier,
+    placeholder: String? = null,
+    keyboardOptions: KeyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
 ) {
-    OutlinedTextField(
-        shape = MaterialTheme.shapes.small,
-        colors = ironvellumFieldColors(),
-        value = value,
-        isError = isError,
-        onValueChange = { input ->
-            onValueChange(
-                if (decimal) DecimalInput.sanitize(input, maxDecimals = 2, maxLength = 7)
-                else DecimalInput.sanitizeWhole(input, maxDigits),
-            )
-        },
-        // One line: a wrapped label made its field taller than its neighbours.
-        label = { Text(label, maxLines = 1, overflow = TextOverflow.Ellipsis) },
-        singleLine = true,
-        keyboardOptions = if (decimal) decimalKeyboard(ImeAction.Next) else wholeKeyboard(ImeAction.Next),
-        modifier = modifier,
-    )
+    Column(modifier.fillMaxWidth()) {
+        Text(label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.padding(top = 8.dp))
+        BasicTextField(
+            value = value,
+            onValueChange = onValueChange,
+            singleLine = true,
+            textStyle = MaterialTheme.typography.bodyLarge.copy(color = IronvellumColors.Ink),
+            cursorBrush = SolidColor(IronvellumColors.SystemGreen),
+            keyboardOptions = keyboardOptions,
+            modifier = Modifier.fillMaxWidth().semantics { contentDescription = label },
+            decorationBox = { inner ->
+                Box(Modifier.heightIn(min = 44.dp), contentAlignment = Alignment.CenterStart) {
+                    if (value.isEmpty() && placeholder != null) {
+                        Text(placeholder, style = MaterialTheme.typography.bodyLarge, color = IronvellumColors.InkMuted)
+                    }
+                    inner()
+                }
+            },
+        )
+        InkDivider()
+    }
 }

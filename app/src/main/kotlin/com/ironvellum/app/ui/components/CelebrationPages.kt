@@ -175,6 +175,8 @@ internal fun CelebrationDock(
     linkOn: Boolean = true,
     linkColor: Color = IronvellumColors.SystemGreen,
     onLink: () -> Unit = {},
+    primaryEnabled: Boolean = true,
+    reserveLink: Boolean = true,
 ) {
     Column(
         Modifier
@@ -189,8 +191,8 @@ internal fun CelebrationDock(
                 .fillMaxWidth()
                 .height(52.dp)
                 .clip(MaterialTheme.shapes.medium)
-                .background(IronvellumColors.Emerald)
-                .clickable(role = Role.Button, onClick = onPrimary),
+                .background(if (primaryEnabled) IronvellumColors.Emerald else IronvellumColors.Rune)
+                .clickable(enabled = primaryEnabled, role = Role.Button, onClick = onPrimary),
             contentAlignment = Alignment.Center,
         ) {
             Text(
@@ -198,11 +200,11 @@ internal fun CelebrationDock(
                 fontFamily = ChakraPetch,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 16.sp,
-                color = MaterialTheme.colorScheme.onPrimary,
+                color = if (primaryEnabled) MaterialTheme.colorScheme.onPrimary else IronvellumColors.InkMuted,
             )
         }
-        Spacer(Modifier.height(16.dp))
-        Box(
+        if (link != null || reserveLink) Spacer(Modifier.height(16.dp))
+        if (link != null || reserveLink) Box(
             Modifier
                 .fillMaxWidth()
                 .height(48.dp)
@@ -255,7 +257,9 @@ internal fun DockedActionBar(
     linkOn: Boolean = true,
     linkColor: Color = IronvellumColors.SystemGreen,
     onLink: () -> Unit = {},
-) = CelebrationDock(primary, onPrimary, link, linkOn, linkColor, onLink)
+    primaryEnabled: Boolean = true,
+    reserveLink: Boolean = true,
+) = CelebrationDock(primary, onPrimary, link, linkOn, linkColor, onLink, primaryEnabled, reserveLink)
 
 /** "1 of 2": two dots and a count at the top of a step page. */
 @Composable
