@@ -2674,7 +2674,7 @@ private fun TrialNoteDialog(
         onDismissRequest = onDismiss,
         title = { Text("Add a note") },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
+            Column {
                 OutlinedTextField(
                     shape = MaterialTheme.shapes.small,
                     value = pub,
@@ -3093,7 +3093,7 @@ private fun RoutineUpdateDialog(
             }
         },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState())) {
+            Column {
                 offer.changes.forEach { change ->
                     Text(
                         change.before.exerciseName,

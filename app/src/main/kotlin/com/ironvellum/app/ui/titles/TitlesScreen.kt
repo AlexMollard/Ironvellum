@@ -497,7 +497,7 @@ private fun RiteChoiceDialog(
             )
         },
         text = {
-            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState())) {
+            Column(Modifier.fillMaxWidth()) {
                 Text(
                     "Add it to the end of a rite, three sets at the standard.",
                     style = MaterialTheme.typography.bodySmall,
