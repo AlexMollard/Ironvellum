@@ -2798,7 +2798,7 @@ class Repository(
                             IdleStateEntity(
                                 essence = essence,
                                 shadows = it.shadows.coerceAtLeast(0),
-                                relicMultiplier = restoredRelics.maxOfOrNull { r -> r.multiplier } ?: 1.0,
+                                relicMultiplier = Relics.effectiveMultiplier(restoredRelics.map { r -> r.multiplier }),
                                 lastCollectedAtMs = it.lastCollectedAtMs,
                                 lifetimeEssence = maxOf(it.lifetimeEssence, essence),
                             ),
@@ -3141,9 +3141,9 @@ class Repository(
      * derived state, and a relic that is owned but not applied is a lie.
      */
     private suspend fun applyRelicVault() {
-        // The stored relic number is the active (strongest) relic. The rate itself is built from the
-        // houses ([RelicHouses.effects]) wherever it is computed, never from this number.
-        val effective = RelicHouses.active(gachaDao.relics().map { it.toOwned() })?.multiplier ?: 1.0
+        // The stored relic number is the whole vault stacked: the factor of the whole rate. The
+        // houses ([RelicHouses.effects]) add only their set bonuses on top of it.
+        val effective = Relics.effectiveMultiplier(gachaDao.relicMultipliers())
         val state = idleDao.get() ?: IdleStateEntity()
         idleDao.upsert(state.copy(relicMultiplier = effective))
     }

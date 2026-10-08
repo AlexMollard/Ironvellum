@@ -341,7 +341,7 @@ class ExportRoundTripTest {
         assertEquals("no relic is lost", 2, relics.size)
         assertEquals(setOf(1.2, 1.5), relics.map { it.multiplier }.toSet())
         assertTrue(relics.all { it.relicId.isNotBlank() })
-        assertEquals("the active relic is the strongest", 1.5, db.idleDao().get()!!.relicMultiplier, 0.0001)
+        assertEquals("the stored relic number is the vault stacked", com.ironvellum.app.domain.Relics.effectiveMultiplier(listOf(1.2, 1.5)), db.idleDao().get()!!.relicMultiplier, 0.0001)
     }
 
     @Test

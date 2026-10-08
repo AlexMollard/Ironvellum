@@ -5,17 +5,18 @@ package com.ironvellum.app.domain
  * that rate. Nothing here touches XP, strength score, or the training board —
  * this is a parallel economy with its own leaderboard later.
  * Rate formula (per hour):
- *   perHour = FLOOR * trainingFactor * skillFactor
+ *   perHour = FLOOR * trainingFactor * skillFactor * relicMultiplier
  *   trainingFactor = 1 + min(TRAINING_CAP, sessionsLast7d * SESSION_WEIGHT
  *                              + volumeLast7d * VOLUME_WEIGHT
  *                              + streakDays * STREAK_WEIGHT) / FLOOR
  *   skillFactor    = 1 + SKILL_CEILING * (1 - e^(-SKILL_RATE * skillsUnlocked))
  *
- * Relics no longer multiply the whole rate. A relic belongs to a house and lifts only that house's
- * term ([HouseEffects]): Iron the volume part of trainingFactor, Vigil its sessions and consecutive
- * days, Craft the technique part of skillFactor, and Return the time paid for an absence beyond the
- * full-strength day. The lifts are applied AFTER TRAINING_CAP, so a lifter who is already at the cap
- * still gains from them. A full house also moves one window (see [HouseEffects]).
+ * relicMultiplier is the whole vault stacked by [Relics.effectiveMultiplier]: every relic lifts the
+ * WHOLE rate, whatever its house. A house adds only its SET bonuses ([HouseEffects]): with 2 relics
+ * +5% on the house's term (Iron the lifting part of trainingFactor, that is volume and trials sealed;
+ * Vigil its consecutive days; Craft the technique part of skillFactor; Return the time paid for an
+ * absence beyond the full-strength day), and with 4 relics one window moves. The +5% is applied AFTER
+ * TRAINING_CAP, so a lifter who is already at the cap still gains from it.
  *
  * Balance intent: RECENT TRAINING is the engine — a committed week reaches x4
  * and dominates everything else. Skills are a permanent bonus that approaches
@@ -35,10 +36,7 @@ data class IdleState(
     val lifetimeEssence: Long = 0L,
 )
 
-/**
- * [relicMultiplier] is the active (strongest) relic, shown beside the rate. It is NOT a factor of
- * [Idle.rate]: relics act through their houses, see [HouseEffects].
- */
+/** [IdleState.relicMultiplier] is a factor of [perHour]: the "relic ×" figure shown beside it is what it was multiplied by. */
 data class IdleRate(
     val perHour: Double,
     val trainingFactor: Double,
@@ -96,6 +94,8 @@ object Idle {
     val MAX_SKILL_FACTOR = 1.0 + SKILL_CEILING
     const val SKILL_RATE = 0.045    // approach speed per unlock
 
+    // Guards so a corrupt relic multiplier can't push the rate to Infinity.
+    private const val MAX_RELIC = 1e6
     private const val MAX_PER_HOUR = 1e15
 
     fun rate(
@@ -111,15 +111,16 @@ object Idle {
         val streak = streakDays.coerceAtLeast(0)
         val skills = skillsUnlocked.coerceAtLeast(0)
 
-        // Two houses share the training term: Iron owns the volume part, Vigil the sessions and
-        // consecutive days. The cap is applied to the whole first, each part keeps its share of
-        // what the cap lets through, and only then does a house lift its part: a relic can lift a
-        // lifter who is already at the cap.
-        val volumeRaw = volume * VOLUME_WEIGHT
-        val steadyRaw = sessions * SESSION_WEIGHT + streak * STREAK_WEIGHT
-        val trainingRaw = volumeRaw + steadyRaw
+        // Two houses share the training term. Iron owns the lifting part: the volume AND the trials
+        // sealed, so a lifter who logs only bodyweight sets (no load, no volume) still earns it.
+        // Vigil owns the consecutive days. The cap is applied to the whole first, each part keeps
+        // its share of what the cap lets through, and only then does a house's 2-relic bonus lift
+        // its part: a set bonus can lift a lifter who is already at the cap.
+        val ironRaw = volume * VOLUME_WEIGHT + sessions * SESSION_WEIGHT
+        val steadyRaw = streak * STREAK_WEIGHT
+        val trainingRaw = ironRaw + steadyRaw
         val keep = if (trainingRaw > TRAINING_CAP) TRAINING_CAP / trainingRaw else 1.0
-        val liftedRaw = (volumeRaw * houses.term(RelicHouse.Iron) + steadyRaw * houses.term(RelicHouse.Vigil)) * keep
+        val liftedRaw = (ironRaw * houses.term(RelicHouse.Iron) + steadyRaw * houses.term(RelicHouse.Vigil)) * keep
         val trainingFactor = 1.0 + liftedRaw / FLOOR
 
         // Asymptotic: 2 skills ~x1.09, 25 ~x1.67, 95 ~x1.99 — always rising,
@@ -128,7 +129,12 @@ object Idle {
         val skillFactor = 1.0 + houses.skillCeiling * (1.0 - kotlin.math.exp(-SKILL_RATE * skills)) *
             houses.term(RelicHouse.Craft)
 
-        val perHour = (FLOOR * trainingFactor * skillFactor).coerceIn(0.0, MAX_PER_HOUR)
+        val relic = when {
+            !state.relicMultiplier.isFinite() -> 1.0
+            else -> state.relicMultiplier.coerceIn(1.0, MAX_RELIC)
+        }
+
+        val perHour = (FLOOR * trainingFactor * skillFactor * relic).coerceIn(0.0, MAX_PER_HOUR)
         return IdleRate(perHour, trainingFactor, skillFactor, houses)
     }
 

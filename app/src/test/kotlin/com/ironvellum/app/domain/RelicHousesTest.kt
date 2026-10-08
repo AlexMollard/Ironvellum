@@ -14,10 +14,16 @@ class RelicHousesTest {
 
     private fun owned(vararg pairs: Pair<String, Double>) = pairs.map { (id, m) -> OwnedRelic(id, m) }
 
-    private fun state(lastCollectedAtMs: Long = base) = IdleState(0, 0, 1.0, lastCollectedAtMs)
+    private fun state(lastCollectedAtMs: Long = base, relic: Double = 1.0) = IdleState(0, 0, relic, lastCollectedAtMs)
 
-    private fun rate(houses: HouseEffects = HouseEffects.NONE, sessions: Int = 0, volume: Double = 0.0, skills: Int = 0, streak: Int = 0) =
-        Idle.rate(state(), sessions, volume, skills, streak, houses)
+    private fun rate(
+        houses: HouseEffects = HouseEffects.NONE,
+        sessions: Int = 0,
+        volume: Double = 0.0,
+        skills: Int = 0,
+        streak: Int = 0,
+        relic: Double = 1.0,
+    ) = Idle.rate(state(relic = relic), sessions, volume, skills, streak, houses)
 
     // ------------------------------------------------------------------ the catalogue
 
@@ -318,9 +324,9 @@ class RelicHousesTest {
         assertEquals("Crown of Iron", reveal.name)
         assertEquals(RewardRarity.Epic, reveal.tier)
         assertEquals(RelicHouse.Iron, reveal.relic.house)
-        assertEquals("Lifts the weight-moved part of your rate by 45%. It pays while you keep lifting.", reveal.effect)
+        assertEquals("Lifts your whole essence rate by 45%, stacking with your other relics.", reveal.effect)
         assertEquals("2 of 4 in House of Iron", reveal.setProgress)
-        assertEquals("volume term +5%", reveal.bonusReached)
+        assertEquals("lifting term +5%", reveal.bonusReached)
         assertEquals("Two more relics add 2 h of full strength", reveal.nextBonus)
         assertEquals("2 of 16", reveal.vaultProgress)
     }
@@ -337,20 +343,23 @@ class RelicHousesTest {
     }
 
     @Test
-    fun `a relic lifts only its own house's term`() {
-        val iron = RelicHouses.effects(owned("iron.band" to 1.2))
-        // Volume only: raw 10 -> training x2.0, Iron lifts all of it.
-        assertEquals(1 + 10 * 1.2 / 10, rate(iron, volume = 200.0).trainingFactor, 1e-12)
-        // Sessions only: Iron has no say.
-        assertEquals(rate(sessions = 2).trainingFactor, rate(iron, sessions = 2).trainingFactor, 1e-12)
-        val vigil = RelicHouses.effects(owned("vigil.key" to 1.3))
-        assertEquals(1 + (2 * 3.0 + 1.0) * 1.3 / 10, rate(vigil, sessions = 2, streak = 1).trainingFactor, 1e-12)
-        assertEquals("volume is Iron's", rate(volume = 200.0).trainingFactor, rate(vigil, volume = 200.0).trainingFactor, 1e-12)
-        val craft = RelicHouses.effects(owned("craft.quill" to 1.3))
-        val plain = rate(skills = 20).skillFactor
-        assertEquals(1 + (plain - 1) * 1.3, rate(craft, skills = 20).skillFactor, 1e-12)
-        assertEquals("no skills, nothing to lift", 1.0, rate(craft, skills = 0).skillFactor, 0.0)
-        assertEquals("Return is not in the per-hour rate", rate(sessions = 2).perHour, rate(RelicHouses.effects(owned("return.gate" to 1.3)), sessions = 2).perHour, 1e-12)
+    fun `a relic lifts the whole rate whatever its house, and houses add nothing alone`() {
+        val held = owned("iron.band" to 1.2)
+        val houses = RelicHouses.effects(held)
+        val stored = Relics.effectiveMultiplier(held.map { it.multiplier })
+        val plain = rate(sessions = 3, volume = 200.0, skills = 5, streak = 2)
+        val withRelic = rate(houses, sessions = 3, volume = 200.0, skills = 5, streak = 2, relic = stored)
+        assertEquals("the relic number is a real factor of the rate", plain.perHour * 1.2, withRelic.perHour, 1e-9)
+        assertEquals("a lone relic changes no term", plain.trainingFactor, withRelic.trainingFactor, 0.0)
+        assertEquals("a lone relic changes no term", plain.skillFactor, withRelic.skillFactor, 0.0)
+        // A relic of any house is the same factor.
+        listOf("vigil.key", "craft.quill", "return.gate").forEach {
+            val h = owned(it to 1.2)
+            assertEquals(it, withRelic.perHour, rate(RelicHouses.effects(h), sessions = 3, volume = 200.0, skills = 5, streak = 2, relic = 1.2).perHour, 1e-9)
+        }
+        // Several relics stack as they always did: ranked, saturating toward the ceiling.
+        val two = owned("iron.band" to 1.2, "vigil.key" to 1.5)
+        assertEquals(1.5 + (1.0 - Math.exp(-0.1)), Relics.effectiveMultiplier(two.map { it.multiplier }), 1e-9)
     }
 
     @Test
@@ -358,25 +367,71 @@ class RelicHousesTest {
         val one = RelicHouses.effects(owned("iron.band" to 1.1))
         val two = RelicHouses.effects(owned("iron.band" to 1.1, "iron.chain" to 1.1))
         assertFalse(one.standings.first { it.house == RelicHouse.Iron }.pairReached)
-        val stacked = Relics.effectiveMultiplier(listOf(1.1, 1.1))
-        assertEquals(stacked * 1.05, two.term(RelicHouse.Iron), 1e-12)
-        assertEquals(1.1, one.term(RelicHouse.Iron), 1e-12)
+        assertTrue(two.standings.first { it.house == RelicHouse.Iron }.pairReached)
+        assertEquals(1.05, two.term(RelicHouse.Iron), 1e-12)
+        assertEquals(1.0, one.term(RelicHouse.Iron), 0.0)
         assertEquals("other houses untouched", 1.0, two.term(RelicHouse.Vigil), 0.0)
         // Two relics in two different houses is not a pair.
         val split = RelicHouses.effects(owned("iron.band" to 1.1, "vigil.bell" to 1.1))
-        assertEquals(1.1, split.term(RelicHouse.Iron), 1e-12)
+        assertEquals(1.0, split.term(RelicHouse.Iron), 0.0)
     }
 
     @Test
-    fun `the lift is applied after the training cap so a capped lifter still gains`() {
+    fun `the Iron pair pays a lifter who logs only bodyweight sets`() {
+        // No load means no volume, but the trials sealed still count: Iron's term is volume and trials.
+        val iron = RelicHouses.effects(owned("iron.band" to 1.1, "iron.chain" to 1.1))
+        val without = rate(sessions = 3, volume = 0.0, streak = 0)
+        val with = rate(iron, sessions = 3, volume = 0.0, streak = 0)
+        assertTrue("${with.perHour} vs ${without.perHour}", with.perHour > without.perHour)
+        assertEquals(1 + 3 * 3.0 * 1.05 / 10, with.trainingFactor, 1e-12)
+        // Consecutive days stay Vigil's, so the Iron pair leaves them alone.
+        assertEquals(rate(streak = 4).trainingFactor, rate(iron, streak = 4).trainingFactor, 1e-12)
+        val vigil = RelicHouses.effects(owned("vigil.bell" to 1.1, "vigil.key" to 1.1))
+        assertEquals(1 + 4.0 * 1.05 / 10, rate(vigil, streak = 4).trainingFactor, 1e-12)
+        assertEquals(rate(sessions = 3).trainingFactor, rate(vigil, sessions = 3).trainingFactor, 1e-12)
+    }
+
+    @Test
+    fun `the pair bonus is applied after the training cap so a capped lifter still gains`() {
         val capped = rate(volume = 4_000.0, sessions = 5)
         assertEquals(1 + 30.0 / 10, capped.trainingFactor, 1e-12)
-        val lifted = rate(RelicHouses.effects(owned("iron.band" to 1.2)), volume = 4_000.0, sessions = 5)
+        val lifted = rate(RelicHouses.effects(owned("iron.band" to 1.2, "iron.chain" to 1.2)), volume = 4_000.0, sessions = 5)
         assertTrue("${lifted.trainingFactor}", lifted.trainingFactor > capped.trainingFactor)
-        // Volume is nearly all of the capped raw, so its share is lifted by 20%.
-        val raw = 4_000 * 0.05 + 5 * 3.0
-        val keep = 30.0 / raw
-        assertEquals(1 + (4_000 * 0.05 * 1.2 + 5 * 3.0) * keep / 10, lifted.trainingFactor, 1e-12)
+        // Iron's share (volume and trials) is all of the capped raw, so all of it is lifted by 5%.
+        assertEquals(1 + 30.0 * 1.05 / 10, lifted.trainingFactor, 1e-12)
+    }
+
+    @Test
+    fun `placing two legacy relics never lowers the rate`() {
+        fun legacy(a: Reward.Relic, b: Reward.Relic) = listOf(
+            RelicRow(1, null, a.name, a.multiplier, 100L),
+            RelicRow(2, null, b.name, b.multiplier, 200L),
+        )
+        // Logged this week: sessions, volume, skills, streak.
+        data class Week(val sessions: Int, val volume: Double, val skills: Int, val streak: Int)
+        val weeks = listOf(
+            Week(0, 0.0, 0, 0),         // nothing logged
+            Week(4, 3_200.0, 5, 3),     // sets logged
+            Week(3, 0.0, 5, 2),         // bodyweight only: trials sealed, no load
+        )
+        val catalogue = Gacha.relicCatalogue()
+        // Every pair of the 141 legacy relics. Only a pair that must share the single Masterwork cell
+        // folds into one relic; the rest keep every multiplier and so can only gain.
+        var folded = 0
+        for (i in catalogue.indices) for (j in i + 1 until catalogue.size) {
+            val rows = legacy(catalogue[i], catalogue[j])
+            val before = Relics.effectiveMultiplier(rows.map { it.multiplier })
+            val placed = RelicHouses.place(rows)
+            if (placed.size < rows.size) { folded++; continue }
+            val after = Relics.effectiveMultiplier(placed.map { it.multiplier })
+            val houses = RelicHouses.effects(placed.map { OwnedRelic(it.relicId, it.multiplier, it.refinements, it.drawnAtMs) })
+            weeks.forEach { w ->
+                val old = Idle.rate(state(relic = before), w.sessions, w.volume, w.skills, w.streak).perHour
+                val now = Idle.rate(state(relic = after), w.sessions, w.volume, w.skills, w.streak, houses).perHour
+                assertTrue("${catalogue[i].name} + ${catalogue[j].name}: $now < $old", now >= old - 1e-9)
+            }
+        }
+        assertTrue("only pairs sharing the one Masterwork cell fold", folded > 0)
     }
 
     private fun full(house: RelicHouse): HouseEffects {
