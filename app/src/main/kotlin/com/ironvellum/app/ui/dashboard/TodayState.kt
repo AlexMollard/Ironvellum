@@ -2,6 +2,7 @@ package com.ironvellum.app.ui.dashboard
 
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.HouseEffects
 import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.LiftRecord
 import com.ironvellum.app.domain.PresetEntry
@@ -116,19 +117,21 @@ internal data class VeilStrength(val fraction: Float, val caption: String)
 
 /**
  * The Veil's full-strength bar, read as time in hand: full right after collecting, draining across
- * [Idle.FULL_RATE_HOURS] away, with the whole hours left in the caption (rounded up, so the last
- * stretch never reads "0 h left"). Past that the bar is empty and the caption reports the tapering
- * output. Null when there is nothing to measure: no collection baseline yet, or a clock set backwards.
+ * the full-strength window (24 h, 26 h with a full Iron house: [HouseEffects.fullStrengthHours]) away,
+ * with the whole hours left in the caption (rounded up, so the last stretch never reads "0 h left").
+ * Past that the bar is empty and the caption reports the tapering output. Null when there is nothing
+ * to measure: no collection baseline yet, or a clock set backwards.
  */
-internal fun veilStrength(lastCollectedAtMs: Long, nowMs: Long): VeilStrength? {
+internal fun veilStrength(lastCollectedAtMs: Long, nowMs: Long, houses: HouseEffects = HouseEffects.NONE): VeilStrength? {
     if (lastCollectedAtMs <= 0L || nowMs < lastCollectedAtMs) return null
     val elapsed = nowMs - lastCollectedAtMs
     val hours = elapsed / 3_600_000.0
-    if (hours >= Idle.FULL_RATE_HOURS) {
-        return VeilStrength(0f, "Tapering, at ${(Idle.efficiencyAtHours(hours) * 100).roundToInt()}% strength")
+    val window = houses.fullStrengthHours
+    if (hours >= window) {
+        return VeilStrength(0f, "Tapering, at ${(Idle.efficiencyAtHours(hours, houses) * 100).roundToInt()}% strength")
     }
-    val left = 1.0 - Idle.fullStrengthFraction(elapsed)
-    return VeilStrength(left.toFloat(), "${ceil(left * Idle.FULL_RATE_HOURS).toInt()} h left at full strength")
+    val left = 1.0 - Idle.fullStrengthFraction(elapsed, houses)
+    return VeilStrength(left.toFloat(), "${ceil(left * window).toInt()} h left at full strength")
 }
 
 /** The set a peak was lifted with, as the Ledger's rows read it: "100 kg × 5", "+11 kg × 8" for load added to the body. */
