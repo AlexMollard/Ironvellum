@@ -7,9 +7,9 @@ package com.ironvellum.app.domain
 object ExportWriter {
 
     // 5: adds idle/gacha/cosmetic state, profile height/sex/inkStyle and real
-    // per-exercise metadata. 6: per-set warmup and supersetGroup. ExportReader
-    // still accepts 5 and below.
-    const val FORMAT_VERSION = 6
+    // per-exercise metadata. 6: per-set warmup and supersetGroup. 7: per-trial
+    // exercise notes. ExportReader still accepts 6 and below.
+    const val FORMAT_VERSION = 7
 
     /** Real catalogue attributes for one movement, matched by name on import. */
     data class ExerciseMeta(
@@ -257,6 +257,18 @@ object ExportWriter {
             session.editedAtMs?.let { append(",\"editedAtMs\":").append(it) }
             // Carried so a restore keeps the amendment cap where it was.
             session.sealedXp?.let { append(",\"sealedXp\":").append(it) }
+            // Device-only like the private note: in the lifter's own archive,
+            // never in the cloud copy. Written only when there are any.
+            if (includeDeviceOnly && session.exerciseNotes.isNotEmpty()) {
+                append(",\"exerciseNotes\":[")
+                session.exerciseNotes.forEachIndexed { ni, n ->
+                    if (ni > 0) append(",")
+                    append("{\"exerciseName\":").appendEscaped(n.exerciseName)
+                    append(",\"note\":").appendEscaped(n.note)
+                    append("}")
+                }
+                append("]")
+            }
             append(",\"sets\":[")
             sets.forEachIndexed { ti, set ->
                 if (ti > 0) append(",")

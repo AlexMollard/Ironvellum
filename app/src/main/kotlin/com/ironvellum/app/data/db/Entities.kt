@@ -297,6 +297,36 @@ data class OwnedCrestFrameEntity(
  * relic still has a name and a moment it was drawn — discarding those left the
  * lifter with a bare ×1.24 and no way to see what earned it.
  */
+/**
+ * What the lifter wrote about one exercise in one trial. Device-only like the
+ * private trial note: nothing in the cloud push reads it. A blank note is not
+ * stored, so a row always has text.
+ */
+@Entity(
+    tableName = "session_exercise_notes",
+    primaryKeys = ["sessionId", "exerciseId"],
+    foreignKeys = [
+        ForeignKey(
+            entity = SessionEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["sessionId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+        ForeignKey(
+            entity = ExerciseEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["exerciseId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("exerciseId")],
+)
+data class SessionExerciseNoteEntity(
+    val sessionId: Long,
+    val exerciseId: Long,
+    val note: String,
+)
+
 @Entity(tableName = "owned_relics")
 data class OwnedRelicEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,

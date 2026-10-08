@@ -708,4 +708,43 @@ class MigrationForwardTest {
             }
         }
     }
+
+    /** Schema 35 -> 36: the notes table starts empty, and the trial and its sets survive untouched. */
+    @Test
+    fun upgradeTo36AddsAnEmptyExerciseNotesTable() = runTest {
+        helper.createDatabase(dbName, 35).use { old ->
+            old.execSQL(
+                "INSERT INTO exercises (id, name, muscleGroup, isWeighted, metric, category) " +
+                    "VALUES (1, 'Bench Press', 'PUSH', 1, 'REPS', '')",
+            )
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, xpAwarded, " +
+                    "strengthScore, title, note, privateNote, imported, audience, editedAtMs, sealedXp) " +
+                    "VALUES (2, NULL, 'Push', 1789782608320, 1789785525853, 330, 610, '', '', '', 0, 'profile', NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade, warmup, supersetGroup) " +
+                    "VALUES (7, 2, 1, 0, 0, 5, 80.0, '', 1, NULL, NULL, NULL, 0, NULL)",
+            )
+        }
+        helper.runMigrationsAndValidate(dbName, 36, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT COUNT(*) FROM session_exercise_notes").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals("no trial had a note before the table existed", 0, c.getInt(0))
+            }
+            db.query("SELECT reps FROM set_logs WHERE id = 7").use { c ->
+                assertTrue("the set must survive", c.moveToFirst())
+                assertEquals(5, c.getInt(0))
+            }
+            // The table works as the entity describes it: a note per (trial, exercise), gone with its trial.
+            db.execSQL("PRAGMA foreign_keys = ON")
+            db.execSQL("INSERT INTO session_exercise_notes (sessionId, exerciseId, note) VALUES (2, 1, 'Bar felt fast')")
+            db.execSQL("DELETE FROM sessions WHERE id = 2")
+            db.query("SELECT COUNT(*) FROM session_exercise_notes").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals("a note goes with its trial", 0, c.getInt(0))
+            }
+        }
+    }
 }
