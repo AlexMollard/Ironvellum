@@ -601,7 +601,6 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         mode = entry.arguments?.getString("mode") ?: "week",
                         presetId = entry.arguments?.getLong("presetId")?.takeIf { it > 0 },
                         onDone = { navController.popBackStack() },
-                        onOpenCoverage = { navController.navigate(Routes.MUSCLE_COVERAGE) },
                     )
                 }
                 composable(

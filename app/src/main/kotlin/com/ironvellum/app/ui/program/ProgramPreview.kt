@@ -359,7 +359,7 @@ fun TapPad(
 
 /**
  * The week's coverage in one row: how many muscles the proposal leaves short, and a way into the
- * Weekly coverage screen for the full picture. Judgement stays in words (a count, not a colour),
+ * coverage of that same proposal for the full picture. Judgement stays in words (a count, not a colour),
  * because "legible without colour alone" is an accessibility floor here, not a nice-to-have.
  */
 @Composable
@@ -371,14 +371,13 @@ fun CoverageSummaryRow(
     onOpen: () -> Unit,
 ) {
     val short = remember(presets, tier, focus, priorities) {
-        val goal = CoverageGoal(tier, focus, priorities.flatMap { it.muscles }.toSet())
-        coverageGaps(ProgramRules.weeklyVolume(presets), goal).size
+        shortCount(presets, coverageGoal(tier, focus, priorities))
     }
     InkDivider()
     ListRow(
-        label = if (short == 0) "Every muscle covered" else "$short ${if (short == 1) "muscle" else "muscles"} short",
+        label = shortHeadline(short),
         value = "Coverage",
-        onClickLabel = "Open weekly coverage",
+        onClickLabel = "Open coverage of this cycle",
         onClick = onOpen,
     )
     InkDivider()
