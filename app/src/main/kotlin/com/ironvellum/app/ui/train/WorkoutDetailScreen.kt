@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -33,6 +34,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -227,6 +229,9 @@ class WorkoutDetailViewModel(
         }
     }
 
+    /** What the draft would move the trial's XP by, for the Save label. */
+    suspend fun previewXp(draft: TrialDraft): Int = repo.previewSealedEdit(sessionId, draft).applied
+
     fun dismissAmendError() {
         _amendError.value = null
     }
@@ -274,20 +279,22 @@ fun WorkoutDetailScreen(
     var confirmDelete by remember { mutableStateOf(false) }
     var pickAudience by remember { mutableStateOf(false) }
     // Back while amending asks before dropping edits; an untouched draft just closes.
-    BackHandler(enabled = draft != null) {
+    val leaveAmend = {
         if (draft != TrialDraft.of(ui.sets)) confirmDiscard = true else viewModel.cancelAmend()
     }
+    BackHandler(enabled = draft != null, onBack = leaveAmend)
 
+    Column(Modifier.fillMaxSize().imePadding()) {
     Column(
         Modifier
-            .fillMaxSize()
+            .weight(1f)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
     ) {
         Spacer(Modifier.height(20.dp))
         PushedHeader(
-            ui.session?.let { it.title.ifBlank { it.label } } ?: "Trial",
-            onBack = { onBack() },
+            if (draft != null) "Amend trial" else ui.session?.let { it.title.ifBlank { it.label } } ?: "Trial",
+            onBack = { if (draft != null) leaveAmend() else onBack() },
             actions = {
                 ui.session?.takeIf { draft == null }?.let { session ->
                     if (session.completedAtMs != null && ui.sets.isNotEmpty()) {
@@ -331,7 +338,8 @@ fun WorkoutDetailScreen(
                     exercises = ui.exercises,
                     onChange = viewModel::changeDraft,
                     onSave = viewModel::requestSave,
-                    onCancel = viewModel::cancelAmend,
+                    onCancel = leaveAmend,
+                    showSaveBar = false,
                 )
             }
             else -> {
@@ -357,7 +365,15 @@ fun WorkoutDetailScreen(
                 }
             }
         }
-        Spacer(Modifier.height(96.dp))
+        Spacer(Modifier.height(if (draft != null) 24.dp else 96.dp))
+    }
+    draft?.takeIf { ui.session != null }?.let { current ->
+        val canSave = current.tickedCount > 0
+        val xpDelta by produceState<Int?>(null, current, canSave) {
+            value = if (canSave) runCatching { viewModel.previewXp(current) }.getOrNull() else null
+        }
+        AmendSaveBar(canSave = canSave, xpDelta = xpDelta, onSave = viewModel::requestSave, onCancel = leaveAmend)
+    }
     }
 
     shareText?.let { text ->
