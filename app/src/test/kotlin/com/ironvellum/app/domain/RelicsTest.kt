@@ -7,6 +7,17 @@ import org.junit.Test
 class RelicsTest {
 
     @Test
+    fun `a restored multiplier is held to the band a draw could have made`() {
+        assertEquals(1.31, Relics.restorable(1.31)!!, 0.0)
+        assertEquals(2.5, Relics.restorable(9_999.0)!!, 0.0)
+        assertEquals(null, Relics.restorable(1.0))
+        assertEquals(null, Relics.restorable(0.4))
+        assertEquals(null, Relics.restorable(Double.NaN))
+        assertEquals(null, Relics.restorable(Double.POSITIVE_INFINITY))
+    }
+
+
+    @Test
     fun `an empty vault does not change the rate`() {
         assertEquals(1.0, Relics.effectiveMultiplier(emptyList()), 1e-9)
     }

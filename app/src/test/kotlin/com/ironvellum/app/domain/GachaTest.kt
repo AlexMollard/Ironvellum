@@ -173,9 +173,51 @@ class GachaTest {
     @Test
     fun `figures no longer dominate the table`() {
         val figures = sample().count { it.reward is Reward.Figures } / sampleSize.toDouble()
-        // Was 81.9%. The point of the rebalance is that a draw is usually
-        // still figures but no longer overwhelmingly so.
-        assertTrue("figures share drifted high: $figures", figures < 0.72)
-        assertTrue("figures share drifted low: $figures", figures > 0.60)
+        // Was 81.9%, then 66.4%. Pacing moved the table to 50.0% so a lifter holds
+        // about 6.7 relics by level 15 (see VeilPacingTest); echoes are still the
+        // single most common draw.
+        assertTrue("figures share drifted high: $figures", figures < 0.55)
+        assertTrue("figures share drifted low: $figures", figures > 0.46)
+    }
+
+    @Test
+    fun `the first inscription is always a relic of at least the Rare band`() {
+        val rareFloor = Gacha.DROP_TABLE[1].relicLow
+        (0L until 20_000L).forEach { seed ->
+            val reward = Gacha.roll(seed, emptySet(), Gacha.Pity()).reward
+            assertTrue("seed $seed paid $reward", reward is Reward.Relic)
+            assertTrue("seed $seed first relic below Rare", (reward as Reward.Relic).multiplier >= rareFloor)
+        }
+    }
+
+    @Test
+    fun `a lifter who already holds a relic gets no first-draw guarantee`() {
+        val notRelic = (0L until 5_000L).count { seed ->
+            Gacha.roll(seed, emptySet(), Gacha.Pity(hasRelic = true)).reward !is Reward.Relic
+        }
+        assertTrue("an ordinary first draw never missed a relic", notRelic > 0)
+    }
+
+    @Test
+    fun `a relic lands at least every five draws`() {
+        (0L until 20_000L).forEach { seed ->
+            val reward = Gacha.roll(seed, relicStreak = Gacha.RELIC_PITY - 1).reward
+            assertTrue("seed $seed escaped relic pity", reward is Reward.Relic)
+        }
+        val short = (0L until 5_000L).count { seed ->
+            Gacha.roll(seed, relicStreak = Gacha.RELIC_PITY - 2).reward !is Reward.Relic
+        }
+        assertTrue("relic pity fired a draw early", short > 0)
+    }
+
+    @Test
+    fun `relic names and bands are untouched by pacing`() {
+        // Names derive from the multiplier, so the bands are the identity of every
+        // relic a lifter already owns. 141 reachable names is the audited count.
+        assertEquals(
+            listOf(1.05 to 1.15, 1.15 to 1.35, 1.35 to 1.75, 1.75 to 2.50),
+            Gacha.DROP_TABLE.map { it.relicLow to it.relicHigh },
+        )
+        assertEquals(141, Gacha.relicCatalogue().size)
     }
 }

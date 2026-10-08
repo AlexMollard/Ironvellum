@@ -41,6 +41,15 @@ object Relics {
     private const val EXCESS_CAP = 3.0
 
     /**
+     * A multiplier read back from an archive, held to the band the roller can
+     * produce: (1.0, the top of the highest band]. Null for one no draw could
+     * have made (not finite, or at most 1.0), which a restore drops.
+     */
+    fun restorable(multiplier: Double): Double? =
+        multiplier.takeIf { it.isFinite() && it > 1.0 }
+            ?.coerceAtMost(Gacha.DROP_TABLE.maxOf { it.relicHigh })
+
+    /**
      * Rate multiplier for a set of owned relics, strongest first. Values at or
      * below 1.0 contribute nothing; an empty vault yields exactly 1.0.
      */
