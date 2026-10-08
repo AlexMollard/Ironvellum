@@ -113,7 +113,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import android.os.SystemClock
+import com.ironvellum.app.data.FirstRunPrefs
 import com.ironvellum.app.data.Notifications
+import com.ironvellum.app.domain.FirstRun
 import com.ironvellum.app.data.RestClock
 import com.ironvellum.app.ui.components.NotificationBlockedNotice
 import com.ironvellum.app.ui.components.rememberNotificationAccess
@@ -630,25 +632,41 @@ fun SessionScreen(
     val screenContext = LocalContext.current
     // Android 13+ posts nothing without POST_NOTIFICATIONS, and before this
     // only the reminder toggle asked for it, so most lifters never saw the
-    // trial notification. Asked ONCE, the first time a trial opens; a refusal
-    // is final here (Settings can still grant it), so there is no nagging.
+    // trial notification. An in-app sheet says why, and only its Allow fires
+    // the system prompt, which gets one chance: that is what the asked flag
+    // spends. "Not now" spends nothing and asks again on the next trial, up to
+    // FirstRun.MAX_NOTIFICATION_ASKS times in all (Settings can still grant it).
     val restAccess = rememberNotificationAccess(Notifications.CHANNEL_REST)
     val askNotifications = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Re-announce so the service posts now, not at the next ticked set.
         if (granted) WorkoutSessionService.start(screenContext, sessionId)
     }
+    var notificationSheet by rememberSaveable { mutableStateOf(false) }
     LaunchedEffect(sessionId) {
         WorkoutSessionService.start(screenContext, sessionId)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
             ContextCompat.checkSelfPermission(screenContext, Manifest.permission.POST_NOTIFICATIONS) !=
-            PackageManager.PERMISSION_GRANTED
+            PackageManager.PERMISSION_GRANTED &&
+            FirstRun.askForNotifications(
+                asked = FirstRunPrefs.notificationsAsked(screenContext),
+                notNowCount = FirstRunPrefs.notificationsNotNow(screenContext),
+            )
         ) {
-            val prefs = screenContext.getSharedPreferences(TRIAL_PREFS, Context.MODE_PRIVATE)
-            if (!prefs.getBoolean(KEY_ASKED_NOTIFICATIONS, false)) {
-                prefs.edit().putBoolean(KEY_ASKED_NOTIFICATIONS, true).apply()
-                askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
-            }
+            notificationSheet = true
         }
+    }
+    if (notificationSheet) {
+        NotificationAskSheet(
+            onAllow = {
+                notificationSheet = false
+                FirstRunPrefs.setNotificationsAsked(screenContext)
+                askNotifications.launch(Manifest.permission.POST_NOTIFICATIONS)
+            },
+            onNotNow = {
+                notificationSheet = false
+                FirstRunPrefs.addNotificationsNotNow(screenContext)
+            },
+        )
     }
 
     val session = ui.session
@@ -1373,9 +1391,6 @@ internal fun loadText(kg: Double): String =
 
 private const val TITLE_CAP = 80
 
-/** Where the one-time trial notification ask is remembered. */
-private const val TRIAL_PREFS = "trial"
-private const val KEY_ASKED_NOTIFICATIONS = "asked_post_notifications"
 private const val PUBLIC_NOTE_CAP = 500
 
 
