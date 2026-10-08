@@ -254,6 +254,8 @@ object ExportReader {
         name = o.str("name") ?: fail("relic missing name"),
         multiplier = o.dbl("multiplier") ?: 1.0,
         drawnAtMs = o.long("drawnAtMs") ?: 0,
+        relicId = o.str("relicId") ?: "",
+        refinements = o.int("refinements") ?: 0,
     )
 
     // --- JSON value model ---------------------------------------------------

@@ -23,7 +23,18 @@ enum class RewardRarity { Common, Rare, Epic, Masterwork }
 
 sealed interface Reward {
     data class Figures(val count: Int) : Reward
-    data class Relic(val multiplier: Double, val name: String) : Reward
+    /**
+     * A relic of the house catalogue ([RelicHouses]). [relicId] is `house.form`, [name] follows from
+     * it, [multiplier] is the relic's strength AFTER this draw. [outcome] says whether it joined the
+     * vault, refined a duplicate, or (at its tier's cap) paid [echoes] instead.
+     */
+    data class Relic(
+        val multiplier: Double,
+        val name: String,
+        val relicId: String = "",
+        val outcome: RelicOutcome = RelicOutcome.New,
+        val echoes: Int = 0,
+    ) : Reward
     data class CrestFrame(val id: String, val name: String) : Reward
 }
 
@@ -125,9 +136,15 @@ object Gacha {
     }
 
     /** [roll] driven by a [Pity] state, the one entry point the repository and the simulations share. */
-    fun roll(seed: Long, ownedFrames: Set<String>, pity: Pity): RollResult = roll(
+    fun roll(
+        seed: Long,
+        ownedFrames: Set<String>,
+        pity: Pity,
+        ownedRelics: Map<String, Double> = emptyMap(),
+    ): RollResult = roll(
         seed = seed,
         ownedFrames = ownedFrames,
+        ownedRelics = ownedRelics,
         figureStreak = pity.figureStreak,
         relicStreak = pity.relicStreak,
         guaranteeRelic = pity.guaranteeFirstRelic,
@@ -145,6 +162,11 @@ object Gacha {
      * [relicStreak] is how many draws since the last relic: at
      * [RELIC_PITY] - 1 the draw is a relic. [guaranteeRelic] forces one too,
      * from at least the Rare band so a first relic is never the weakest.
+     *
+     * [ownedRelics] maps each held relic id to its multiplier. The rolled rarity picks the tier of
+     * the relic and the house and form are drawn from that tier's cells the lifter does not hold
+     * yet (as a crest frame is drawn from the unowned ones). Only when the whole tier is held is
+     * the draw a duplicate, which refines the relic (see [relicDraw]).
      */
     fun roll(
         seed: Long,
@@ -152,6 +174,7 @@ object Gacha {
         figureStreak: Int = 0,
         relicStreak: Int = 0,
         guaranteeRelic: Boolean = false,
+        ownedRelics: Map<String, Double> = emptyMap(),
     ): RollResult {
         val rng = Random(seed)
         val rarityRoll = rng.nextDouble()
@@ -181,26 +204,61 @@ object Gacha {
             }
         }
         val reward = when {
-            forcedRelic -> relic(odds, valueRoll)
+            forcedRelic -> relicDraw(odds, valueRoll, rng, ownedRelics)
             forced -> {
                 // Rescale the rarity's relic/frame split to fill the whole
                 // roll. A row with no frame share still pays its relic.
                 val nonFigure = odds.relicChance + odds.frameChance
                 val relicShare = if (nonFigure <= 0.0) 1.0 else odds.relicChance / nonFigure
-                if (typeRoll < relicShare) relic(odds, valueRoll) else frameOrFigures()
+                if (typeRoll < relicShare) relicDraw(odds, valueRoll, rng, ownedRelics) else frameOrFigures()
             }
             typeRoll < odds.figureChance ->
                 Reward.Figures(lerp(odds.figuresLow, odds.figuresHigh, valueRoll))
             typeRoll < odds.figureChance + odds.relicChance ->
-                relic(odds, valueRoll)
+                relicDraw(odds, valueRoll, rng, ownedRelics)
             else -> frameOrFigures()
         }
         return RollResult(reward, odds.rarity)
     }
 
     /**
-     * Relic names are composed, not fixed: multipliers are continuous, so every
-     * relic needs its own identity. The name is DERIVED from the rolled value,
+     * The relic a draw pays: a cell of the house catalogue ([RelicHouses.CATALOGUE]).
+     *
+     * The tier is [odds]' rarity, so the existing rarity odds are untouched. Among that tier's
+     * cells the draw prefers one the lifter does not hold, so progress is never wasted while a cell
+     * is open. When the whole tier is held the draw is a DUPLICATE and refines a cell chosen at
+     * random: its multiplier rises by [RelicHouses.refineStep] (a quarter of the tier's band),
+     * capped at the top of the tier's band. A relic already at the cap pays echoes instead, the top
+     * of the tier's figure band, the same fallback a crest frame has once all are owned. Why
+     * refining: a duplicate always does something, the vault stays one row per relic, and the rate
+     * stays bounded by the tier.
+     *
+     * One rng call, after the rolls the table has always made, so every seeded result before it
+     * (rarity, type, value) is exactly what it was.
+     */
+    private fun relicDraw(odds: Odds, t: Double, rng: Random, owned: Map<String, Double>): Reward.Relic {
+        val cells = RelicHouses.ofTier(odds.rarity)
+        val open = cells.filter { it.id !in owned }
+        val cell = (open.ifEmpty { cells })[rng.nextInt(open.ifEmpty { cells }.size)]
+        val have = owned[cell.id]
+        val rolled = odds.relicLow + (odds.relicHigh - odds.relicLow) * t
+        if (have == null) return Reward.Relic(rolled, cell.name, cell.id)
+        val cap = odds.relicHigh
+        val refined = minOf(cap, have + RelicHouses.refineStep(odds.rarity))
+        return if (refined > have + 1e-9) {
+            Reward.Relic(refined, cell.name, cell.id, RelicOutcome.Refined)
+        } else {
+            Reward.Relic(have, cell.name, cell.id, RelicOutcome.Maxed, echoes = odds.figuresHigh)
+        }
+    }
+
+    /**
+     * THE LEGACY NAMES. Before houses a relic's identity was a name composed from its multiplier,
+     * and every relic a lifter owned today still carries one. Only [relicCatalogue] and the
+     * migration's reading of old names use these now.
+     *
+     * Relic names were composed, not fixed: multipliers are continuous, so every
+     * relic needed its own identity. The name is DERIVED from the rolled value,
      * so the same roll always yields the same relic, and it doubles as the seed
      * for the sigil the UI draws.
      *
@@ -221,7 +279,7 @@ object Gacha {
         else -> ""
     }
 
-    private fun relic(odds: Odds, t: Double): Reward.Relic {
+    private fun legacyRelic(odds: Odds, t: Double): Reward.Relic {
         val multiplier = odds.relicLow + (odds.relicHigh - odds.relicLow) * t
         // Quantised so the name is stable for a multiplier rather than drifting
         // with floating-point noise.
@@ -231,15 +289,32 @@ object Gacha {
         return Reward.Relic(multiplier, "${tierWord(odds.rarity)}$form of $house")
     }
 
-    /**
-     * The relic the retro grant pays for slot [index]: deterministic (the same
-     * slot is always the same relic) and always in the Rare band, so the bands
-     * and therefore every relic name stay exactly as they were.
-     */
-    fun stipendRelic(index: Int): Reward.Relic = relic(DROP_TABLE[1], (index * 0.37 + 0.13) % 1.0)
+    /** The order the retro grant fills cells in: Rare first, then Common, then the rest. */
+    private val STIPEND_ORDER: List<HouseRelic> =
+        listOf(RewardRarity.Rare, RewardRarity.Common, RewardRarity.Epic, RewardRarity.Masterwork)
+            .flatMap { RelicHouses.ofTier(it) }
 
     /**
-     * Every relic the roller can actually produce, strongest first. Names are
+     * The [count] relics the retro grant pays to a lifter who holds [ownedIds]: the first open cells
+     * in [STIPEND_ORDER], each with a deterministic multiplier inside its tier's band (so the same
+     * lifter always gets the same relics). Fewer than [count] when the catalogue has no open cell.
+     */
+    fun stipendRelics(count: Int, ownedIds: Set<String>): List<Reward.Relic> {
+        val taken = ownedIds.toMutableSet()
+        val out = mutableListOf<Reward.Relic>()
+        repeat(count.coerceAtLeast(0)) { i ->
+            val cell = STIPEND_ORDER.firstOrNull { it.id !in taken } ?: return out
+            val odds = DROP_TABLE.first { it.rarity == cell.tier }
+            val t = ((ownedIds.size + i) * 0.37 + 0.13) % 1.0
+            taken += cell.id
+            out += Reward.Relic(odds.relicLow + (odds.relicHigh - odds.relicLow) * t, cell.name, cell.id)
+        }
+        return out
+    }
+
+    /**
+     * Every relic the roller could produce BEFORE houses, strongest first: the 141 legacy names,
+     * kept to pin what an old vault can hold. Names are
      * derived from the quantised multiplier, so the reachable set is finite and
      * enumerable — used to preview the catalogue.
      *
@@ -253,7 +328,7 @@ object Gacha {
             // Fine sweep: the name changes on multiplier quantisation, so a
             // dense walk visits every distinct relic in the band.
             for (i in 0 until 2_000) {
-                val r = relic(odds, i / 2_000.0)
+                val r = legacyRelic(odds, i / 2_000.0)
                 val held = seen[r.name]
                 if (held == null || r.multiplier > held.multiplier) seen[r.name] = r
             }

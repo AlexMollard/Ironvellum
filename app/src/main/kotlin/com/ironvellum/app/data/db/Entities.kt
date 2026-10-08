@@ -339,12 +339,21 @@ data class SessionExerciseNoteEntity(
     val note: String,
 )
 
-@Entity(tableName = "owned_relics")
+@Entity(
+    tableName = "owned_relics",
+    // One row per relic: a duplicate refines the row instead of adding one.
+    indices = [Index(value = ["relicId"], unique = true)],
+)
 data class OwnedRelicEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val multiplier: Double,
     val drawnAtMs: Long,
+    // Stable `house.form` id from RelicHouses.CATALOGUE; the name follows from it. Empty only for a
+    // row written by a test that does not care; every real row has one.
+    val relicId: String = "",
+    // Duplicates this relic has absorbed (draws, or legacy relics folded into it by the migration).
+    val refinements: Int = 0,
 )
 
 /**

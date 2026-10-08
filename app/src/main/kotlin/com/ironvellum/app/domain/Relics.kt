@@ -3,7 +3,9 @@ package com.ironvellum.app.domain
 import kotlin.math.exp
 
 /**
- * How a collection of relics turns into one rate multiplier.
+ * How a collection of relics turns into one rate multiplier. Relics now stack WITHIN a house
+ * ([RelicHouses.effects]): each house's relics make one multiplier for that house's term of the
+ * rate, with the rules below. A vault of one relic per house simply gives each its own term.
  *
  * The first implementation used only the STRONGEST relic, which meant a lifter
  * holding ten relics saw nine of them do nothing — owning a thing that has no

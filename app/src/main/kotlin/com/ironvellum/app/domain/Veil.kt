@@ -22,8 +22,7 @@ object Veil {
     /**
      * Milestone crests in the order they are won: iron L5, bronze L10, silver L15,
      * gold L20, jade L25, crimson L30, obsidian L35. Aurora, void and masterwork
-     * stay chance-only. Houses (stable relic ids, set bonuses) are not in this pass;
-     * relic identity is still the name derived from the multiplier band.
+     * stay chance-only. Relics are the house catalogue ([RelicHouses]).
      */
     val CREST_LADDER: List<String> = Gacha.CREST_FRAMES.take(7).map { it.id }
 
@@ -81,7 +80,8 @@ object Veil {
      * inscriptions, [relicCount] relics, [ownedFrames] crests and [echoes].
      *
      * - Crests: every milestone crest up to [level] that is not owned.
-     * - Relics: the difference up to [relicFloor], as deterministic Rare relics.
+     * - Relics: the difference up to [relicFloor], as real house relics: the open cells of the
+     *   catalogue, Rare first ([Gacha.stipendRelics]), given [ownedRelicIds] already held.
      * - Inscriptions: levels that never paid. How many draws were really spent
      *   is not stored, so this pays only what is PROVABLY forgone: a level is
      *   paid for unless it can be accounted for by a draw. Each relic or crest
@@ -90,10 +90,16 @@ object Veil {
      *   draw pays at least the smallest band). The rest of the L - 1 levels,
      *   less what is banked, was forgone. It can never exceed a lifter's levels.
      */
-    fun retroGrant(level: Int, banked: Int, relicCount: Int, ownedFrames: Set<String>, echoes: Int): RetroGrant {
+    fun retroGrant(
+        level: Int,
+        banked: Int,
+        relicCount: Int,
+        ownedFrames: Set<String>,
+        echoes: Int,
+        ownedRelicIds: Set<String> = emptySet(),
+    ): RetroGrant {
         val crests = CREST_LADDER.take(level / MILESTONE_EVERY).filter { it !in ownedFrames }
-        val relics = (0 until (relicFloor(level) - relicCount).coerceAtLeast(0))
-            .map { Gacha.stipendRelic(relicCount + it) }
+        val relics = Gacha.stipendRelics((relicFloor(level) - relicCount).coerceAtLeast(0), ownedRelicIds)
         val nonFigure = relicCount + ownedFrames.size
         val smallestFigure = Gacha.DROP_TABLE.minOf { it.figuresLow }
         val figureDraws = minOf(Gacha.PITY_AFTER * (nonFigure + 1), echoes.coerceAtLeast(0) / smallestFigure)

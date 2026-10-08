@@ -228,7 +228,7 @@ class ExportRoundTripTest {
         db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "ember", ownedAtMs = 10))
         db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "verdant", ownedAtMs = 20))
         assertTrue(repo.equipFrame("ember"))
-        db.gachaDao().insertRelic(OwnedRelicEntity(name = "Old King's Whetstone", multiplier = 1.31, drawnAtMs = 30))
+        db.gachaDao().insertRelic(OwnedRelicEntity(name = "Chain of Iron", multiplier = 1.31, drawnAtMs = 30, relicId = "iron.chain", refinements = 2))
 
         val export = repo.exportArchive()
         assertTrue("export reported problems: ${export.problems}", export.problems.isEmpty())
@@ -269,7 +269,9 @@ class ExportRoundTripTest {
             assertEquals("ember", freshDb.gachaDao().get()!!.equippedFrame)
             assertEquals(setOf("ember", "verdant"), freshDb.gachaDao().ownedFrameIds().toSet())
             val relic = freshDb.gachaDao().observeRelics().first().single()
-            assertEquals("Old King's Whetstone", relic.name)
+            assertEquals("Chain of Iron", relic.name)
+            assertEquals("iron.chain", relic.relicId)
+            assertEquals(2, relic.refinements)
             assertEquals(1.31, relic.multiplier, 0.0001)
 
             val restored = freshDb.exerciseDao().byName(custom)!!
@@ -291,7 +293,7 @@ class ExportRoundTripTest {
             IdleStateEntity(essence = 5_000, shadows = 2, relicMultiplier = 1.1, lastCollectedAtMs = 999),
         )
         repo.grantRoll(2)
-        db.gachaDao().insertRelic(OwnedRelicEntity(name = "Local Relic", multiplier = 1.2, drawnAtMs = 5))
+        db.gachaDao().insertRelic(OwnedRelicEntity(name = "Local Relic", multiplier = 1.2, drawnAtMs = 5, relicId = "return.gate"))
         db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "local", ownedAtMs = 6))
 
         val v4 = """
@@ -317,6 +319,29 @@ class ExportRoundTripTest {
         assertEquals(2, db.gachaDao().get()!!.rolls)
         assertEquals(listOf("Local Relic"), db.gachaDao().observeRelics().first().map { it.name })
         assertEquals(listOf("local"), db.gachaDao().ownedFrameIds())
+    }
+
+    @Test
+    fun aV7ArchiveWithOldRelicNamesRestoresEachRelicIntoAHouse() = runTest {
+        val v7 = """
+            {"formatVersion":7,"exportedAtMs":42,
+             "profile":{"name":"Old Lifter","totalXp":55,"currentTitleId":null},
+             "trainingMode":"STRENGTH",
+             "presets":[],"sessions":[],"stats":[],"titles":[],"skills":[],"healthDays":[],
+             "idle":{"essence":900,"shadows":3,"relicMultiplier":1.5,"lastCollectedAtMs":5},
+             "gacha":{"rolls":2,"equippedFrame":"iron"},
+             "relics":[{"name":"Fang of the Mark","multiplier":1.2,"drawnAtMs":1},
+                       {"name":"Greater Crown of the Abyss","multiplier":1.5,"drawnAtMs":2}]}
+        """.trimIndent()
+
+        val result = repo.importArchive(v7)
+        assertTrue("import failed: ${result.exceptionOrNull()?.message}", result.isSuccess)
+
+        val relics = db.gachaDao().relics()
+        assertEquals("no relic is lost", 2, relics.size)
+        assertEquals(setOf(1.2, 1.5), relics.map { it.multiplier }.toSet())
+        assertTrue(relics.all { it.relicId.isNotBlank() })
+        assertEquals("the active relic is the strongest", 1.5, db.idleDao().get()!!.relicMultiplier, 0.0001)
     }
 
     @Test

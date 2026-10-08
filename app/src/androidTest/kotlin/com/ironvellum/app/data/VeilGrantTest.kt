@@ -47,8 +47,8 @@ class VeilGrantTest {
     private suspend fun ownerAtLevel15() {
         // 100 * (1 + ... + 14) = 10,500 XP is level 15; two relics, no crests, nothing banked.
         db.profileDao().addXp(10_500L)
-        db.gachaDao().insertRelic(OwnedRelicEntity(name = "Fang of the Mark", multiplier = 1.2, drawnAtMs = 1))
-        db.gachaDao().insertRelic(OwnedRelicEntity(name = "Sigil of the Margin", multiplier = 1.3, drawnAtMs = 2))
+        db.gachaDao().insertRelic(OwnedRelicEntity(name = "Key of Vigil", multiplier = 1.2, drawnAtMs = 1, relicId = "vigil.key"))
+        db.gachaDao().insertRelic(OwnedRelicEntity(name = "Chain of Iron", multiplier = 1.3, drawnAtMs = 2, relicId = "iron.chain"))
         db.idleDao().upsert(IdleStateEntity(essence = 0, shadows = 900))
     }
 
@@ -64,6 +64,8 @@ class VeilGrantTest {
         assertTrue("inscriptions to draw", (db.gachaDao().get()?.rolls ?: 0) >= 1)
         assertEquals(Veil.GRANT_VERSION, db.gachaDao().get()?.veilGrantVersion)
         assertTrue(db.gachaDao().relicMultipliers().containsAll(listOf(1.2, 1.3)))
+        // The relic floor creates a real house relic: the first open Rare cell.
+        assertEquals(setOf("vigil.key", "iron.chain", "iron.plate"), db.gachaDao().relics().map { it.relicId }.toSet())
         assertTrue("one celebration queued", repo.pendingVeilGrant.value?.retro == true)
     }
 

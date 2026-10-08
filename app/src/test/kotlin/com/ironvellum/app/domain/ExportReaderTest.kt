@@ -74,7 +74,7 @@ class ExportReaderTest {
             ExportWriter.CrestFrameSnapshot(frameId = "ember", ownedAtMs = 100),
             ExportWriter.CrestFrameSnapshot(frameId = "verdant", ownedAtMs = 200),
         ),
-        relics = listOf(ExportWriter.RelicSnapshot(name = "Old King's Whetstone", multiplier = 1.31, drawnAtMs = 300)),
+        relics = listOf(ExportWriter.RelicSnapshot(name = "Gate of Return", multiplier = 1.31, drawnAtMs = 300, relicId = "return.gate", refinements = 2)),
         exportedAtMs = 999,
     )
 
@@ -174,7 +174,7 @@ class ExportReaderTest {
             archive.crestFrames,
         )
         assertEquals(
-            listOf(ExportWriter.RelicSnapshot("Old King's Whetstone", 1.31, 300)),
+            listOf(ExportWriter.RelicSnapshot("Gate of Return", 1.31, 300, "return.gate", 2)),
             archive.relics,
         )
     }
@@ -195,6 +195,29 @@ class ExportReaderTest {
         assertEquals(900L, archive.idle!!.lifetimeEssence)
         assertEquals(ExportWriter.GachaSnapshot(rolls = 2, equippedFrame = "iron"), archive.gacha)
         assertEquals("no grant recorded, so the catch-up runs for it", 0, archive.gacha!!.veilGrantVersion)
+    }
+
+    @Test
+    fun `v7 relics carry no house id and are placed in houses without losing one`() {
+        val v7 = """
+            {"formatVersion":7,"exportedAtMs":42,
+             "profile":{"name":"Old Lifter","totalXp":55,"currentTitleId":null},
+             "trainingMode":"STRENGTH",
+             "presets":[],"sessions":[],"stats":[],"titles":[],"skills":[],"healthDays":[],
+             "relics":[{"name":"Fang of the Mark","multiplier":1.2,"drawnAtMs":1},
+                       {"name":"Greater Crown of the Abyss","multiplier":1.5,"drawnAtMs":2},
+                       {"name":"Sigil of the Margin","multiplier":1.3,"drawnAtMs":3}]}
+        """.trimIndent()
+
+        val archive = ExportReader.read(v7).getOrThrow()
+
+        assertEquals(listOf("", "", ""), archive.relics.map { it.relicId })
+        val placed = RelicHouses.place(
+            archive.relics.mapIndexed { i, r -> RelicRow(i.toLong(), r.relicId.ifBlank { null }, r.name, r.multiplier, r.drawnAtMs, r.refinements) },
+        )
+        assertEquals("every relic is kept", 3, placed.size)
+        assertEquals(setOf(1.2, 1.5, 1.3), placed.map { it.multiplier }.toSet())
+        assertTrue(placed.all { RelicHouses.byId(it.relicId) != null })
     }
 
     @Test

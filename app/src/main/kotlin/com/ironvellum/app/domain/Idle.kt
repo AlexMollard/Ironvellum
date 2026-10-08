@@ -5,11 +5,17 @@ package com.ironvellum.app.domain
  * that rate. Nothing here touches XP, strength score, or the training board —
  * this is a parallel economy with its own leaderboard later.
  * Rate formula (per hour):
- *   perHour = FLOOR * trainingFactor * skillFactor * relicMultiplier
+ *   perHour = FLOOR * trainingFactor * skillFactor
  *   trainingFactor = 1 + min(TRAINING_CAP, sessionsLast7d * SESSION_WEIGHT
  *                              + volumeLast7d * VOLUME_WEIGHT
  *                              + streakDays * STREAK_WEIGHT) / FLOOR
  *   skillFactor    = 1 + SKILL_CEILING * (1 - e^(-SKILL_RATE * skillsUnlocked))
+ *
+ * Relics no longer multiply the whole rate. A relic belongs to a house and lifts only that house's
+ * term ([HouseEffects]): Iron the volume part of trainingFactor, Vigil its sessions and consecutive
+ * days, Craft the technique part of skillFactor, and Return the time paid for an absence beyond the
+ * full-strength day. The lifts are applied AFTER TRAINING_CAP, so a lifter who is already at the cap
+ * still gains from them. A full house also moves one window (see [HouseEffects]).
  *
  * Balance intent: RECENT TRAINING is the engine — a committed week reaches x4
  * and dominates everything else. Skills are a permanent bonus that approaches
@@ -29,7 +35,17 @@ data class IdleState(
     val lifetimeEssence: Long = 0L,
 )
 
-data class IdleRate(val perHour: Double, val trainingFactor: Double, val skillFactor: Double)
+/**
+ * [relicMultiplier] is the active (strongest) relic, shown beside the rate. It is NOT a factor of
+ * [Idle.rate]: relics act through their houses, see [HouseEffects].
+ */
+data class IdleRate(
+    val perHour: Double,
+    val trainingFactor: Double,
+    val skillFactor: Double,
+    /** What the relic houses changed in this rate. [HouseEffects.NONE] before any relic. */
+    val effects: HouseEffects = HouseEffects.NONE,
+)
 
 object Idle {
 
@@ -68,7 +84,7 @@ object Idle {
     // asymptotically rather than hitting a wall: at +4% flat with a x2 cap the
     // ceiling arrived at 25 unlocks and every skill after that was worthless.
     // This way the 90th unlock still adds something, just far less than the 2nd.
-    private const val SKILL_CEILING = 1.0   // maximum ADDED on top of 1.0
+    const val SKILL_CEILING = 1.0   // maximum ADDED on top of 1.0
 
     /**
      * Ceilings the UI needs to draw progress against. Exposed here so a screen
@@ -80,8 +96,6 @@ object Idle {
     val MAX_SKILL_FACTOR = 1.0 + SKILL_CEILING
     const val SKILL_RATE = 0.045    // approach speed per unlock
 
-    // Guards so a corrupt relic multiplier can't push the rate to Infinity.
-    private const val MAX_RELIC = 1e6
     private const val MAX_PER_HOUR = 1e15
 
     fun rate(
@@ -90,26 +104,32 @@ object Idle {
         volumeLast7d: Double,
         skillsUnlocked: Int,
         streakDays: Int,
+        houses: HouseEffects = HouseEffects.NONE,
     ): IdleRate {
         val sessions = sessionsLast7d.coerceAtLeast(0)
         val volume = if (volumeLast7d.isFinite()) volumeLast7d.coerceAtLeast(0.0) else 0.0
         val streak = streakDays.coerceAtLeast(0)
         val skills = skillsUnlocked.coerceAtLeast(0)
 
-        val trainingRaw = sessions * SESSION_WEIGHT + volume * VOLUME_WEIGHT + streak * STREAK_WEIGHT
-        val trainingFactor = 1.0 + trainingRaw.coerceIn(0.0, TRAINING_CAP) / FLOOR
+        // Two houses share the training term: Iron owns the volume part, Vigil the sessions and
+        // consecutive days. The cap is applied to the whole first, each part keeps its share of
+        // what the cap lets through, and only then does a house lift its part: a relic can lift a
+        // lifter who is already at the cap.
+        val volumeRaw = volume * VOLUME_WEIGHT
+        val steadyRaw = sessions * SESSION_WEIGHT + streak * STREAK_WEIGHT
+        val trainingRaw = volumeRaw + steadyRaw
+        val keep = if (trainingRaw > TRAINING_CAP) TRAINING_CAP / trainingRaw else 1.0
+        val liftedRaw = (volumeRaw * houses.term(RelicHouse.Iron) + steadyRaw * houses.term(RelicHouse.Vigil)) * keep
+        val trainingFactor = 1.0 + liftedRaw / FLOOR
 
         // Asymptotic: 2 skills ~x1.09, 25 ~x1.67, 95 ~x1.99 — always rising,
         // never reaching x2, so no unlock is ever dead weight.
-        val skillFactor = 1.0 + SKILL_CEILING * (1.0 - kotlin.math.exp(-SKILL_RATE * skills))
+        // Craft lifts this term; a full Craft house also raises its ceiling from x2.0 to x2.1.
+        val skillFactor = 1.0 + houses.skillCeiling * (1.0 - kotlin.math.exp(-SKILL_RATE * skills)) *
+            houses.term(RelicHouse.Craft)
 
-        val relic = when {
-            !state.relicMultiplier.isFinite() -> 1.0
-            else -> state.relicMultiplier.coerceIn(1.0, MAX_RELIC)
-        }
-
-        val perHour = (FLOOR * trainingFactor * skillFactor * relic).coerceIn(0.0, MAX_PER_HOUR)
-        return IdleRate(perHour, trainingFactor, skillFactor)
+        val perHour = (FLOOR * trainingFactor * skillFactor).coerceIn(0.0, MAX_PER_HOUR)
+        return IdleRate(perHour, trainingFactor, skillFactor, houses)
     }
 
     /**
@@ -149,21 +169,28 @@ object Idle {
         // Clock moved backwards (manual change, timezone/DST shift): collect nothing.
         if (elapsedMs <= 0L) return 0.0
         val hours = elapsedMs.toDouble() / 3_600_000.0
-        val taperEnd = FULL_RATE_HOURS + TAPER_WINDOW_HOURS
-        val effectiveHours = when {
-            hours <= FULL_RATE_HOURS -> hours
+        val houses = rate.effects
+        val fullHours = houses.fullStrengthHours
+        val floor = houses.minEfficiency
+        val taperEnd = fullHours + TAPER_WINDOW_HOURS
+        val workedHours = when {
+            hours <= fullHours -> hours
             hours <= taperEnd -> {
                 // Average of the start and end efficiency over the elapsed slice
                 // of the ramp — the area of a trapezium.
-                val into = hours - FULL_RATE_HOURS
-                val endEfficiency = efficiencyAtHours(hours)
-                FULL_RATE_HOURS + into * (1.0 + endEfficiency) / 2.0
+                val into = hours - fullHours
+                val endEfficiency = efficiencyAtHours(hours, houses)
+                fullHours + into * (1.0 + endEfficiency) / 2.0
             }
             else -> {
-                val rampArea = TAPER_WINDOW_HOURS * (1.0 + MIN_EFFICIENCY) / 2.0
-                FULL_RATE_HOURS + rampArea + (hours - taperEnd) * MIN_EFFICIENCY
+                val rampArea = TAPER_WINDOW_HOURS * (1.0 + floor) / 2.0
+                fullHours + rampArea + (hours - taperEnd) * floor
             }
-        }.coerceAtMost(MAX_EFFECTIVE_HOURS)
+        }
+        // Return lifts only the time paid beyond the full-strength day: it pays for coming back.
+        val effectiveHours = (
+            if (workedHours <= fullHours) workedHours else fullHours + (workedHours - fullHours) * houses.term(RelicHouse.Return)
+            ).coerceAtMost(houses.maxEffectiveHours)
         val perHour = if (rate.perHour.isFinite()) rate.perHour.coerceAtLeast(0.0) else 0.0
         val amount = perHour * effectiveHours
         return if (amount.isFinite()) amount else 0.0
@@ -173,15 +200,19 @@ object Idle {
      * Share of full output after [hours] away: 1.0 through the full-strength day, then a straight
      * fall to [MIN_EFFICIENCY] across the taper window, then held there.
      */
-    fun efficiencyAtHours(hours: Double): Double = when {
-        hours <= FULL_RATE_HOURS -> 1.0
-        hours >= FULL_RATE_HOURS + TAPER_WINDOW_HOURS -> MIN_EFFICIENCY
-        else -> 1.0 - (1.0 - MIN_EFFICIENCY) * ((hours - FULL_RATE_HOURS) / TAPER_WINDOW_HOURS)
+    fun efficiencyAtHours(hours: Double, houses: HouseEffects = HouseEffects.NONE): Double {
+        val fullHours = houses.fullStrengthHours
+        val floor = houses.minEfficiency
+        return when {
+            hours <= fullHours -> 1.0
+            hours >= fullHours + TAPER_WINDOW_HOURS -> floor
+            else -> 1.0 - (1.0 - floor) * ((hours - fullHours) / TAPER_WINDOW_HOURS)
+        }
     }
 
     /** How much of the full-strength day [elapsedMs] away has used, 0..1; 1 once the taper begins. */
-    fun fullStrengthFraction(elapsedMs: Long): Double =
-        (elapsedMs / 3_600_000.0 / FULL_RATE_HOURS).coerceIn(0.0, 1.0)
+    fun fullStrengthFraction(elapsedMs: Long, houses: HouseEffects = HouseEffects.NONE): Double =
+        (elapsedMs / 3_600_000.0 / houses.fullStrengthHours).coerceIn(0.0, 1.0)
 
     fun collect(state: IdleState, rate: IdleRate, nowMs: Long): IdleState {
         val gained = accrued(state, rate, nowMs)

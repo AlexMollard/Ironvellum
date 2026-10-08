@@ -118,7 +118,7 @@ class ExportWriterTest {
             idle = ExportWriter.IdleSnapshot(essence = 42, shadows = 2, relicMultiplier = 1.1, lastCollectedAtMs = 7, lifetimeEssence = 99),
             gacha = ExportWriter.GachaSnapshot(rolls = 1, equippedFrame = null, figureStreak = 2, rollLevelMark = 15, relicPity = 3, drawsSpent = 11, offeringsMade = 4, veilGrantVersion = 1),
             crestFrames = listOf(ExportWriter.CrestFrameSnapshot("ember", 10)),
-            relics = listOf(ExportWriter.RelicSnapshot("Whetstone", 1.31, 20)),
+            relics = listOf(ExportWriter.RelicSnapshot("Crown of Iron", 1.45, 20, "iron.crown", 2)),
             exportedAtMs = 0,
         )
 
@@ -134,7 +134,7 @@ class ExportWriterTest {
             ),
         )
         assertTrue(json.contains("\"crestFrames\":[{\"frameId\":\"ember\",\"ownedAtMs\":10}]"))
-        assertTrue(json.contains("\"relics\":[{\"name\":\"Whetstone\",\"multiplier\":1.31,\"drawnAtMs\":20}]"))
+        assertTrue(json.contains("\"relics\":[{\"name\":\"Crown of Iron\",\"multiplier\":1.45,\"drawnAtMs\":20,\"relicId\":\"iron.crown\",\"refinements\":2}]"))
     }
 
     @Test
