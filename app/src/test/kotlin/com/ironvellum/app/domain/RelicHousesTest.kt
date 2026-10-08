@@ -170,6 +170,12 @@ class RelicHousesTest {
     }
 
     @Test
+    fun `a known id is held to its tier's cap`() {
+        val placed = RelicHouses.place(listOf(RelicRow(1, "iron.band", "Band of Iron", 2.4, 1)))
+        assertEquals(1.15, placed.single().multiplier, 1e-12)
+    }
+
+    @Test
     fun `an archive row with an unknown id is placed as a legacy relic`() {
         val placed = RelicHouses.place(listOf(RelicRow(1, "mystery.thing", "Fang of the Mark", 1.2, 1)))
         assertEquals(1, placed.size)
