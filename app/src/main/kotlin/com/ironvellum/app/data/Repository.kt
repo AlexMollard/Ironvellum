@@ -1177,6 +1177,8 @@ class Repository(
         val questBonus: Boolean,
         val durationMinutes: Long,
         val rankUp: String? = null,
+        /** Inscriptions this seal's level-up banked ([Xp.rollsDue]); 0 when it did not level up or the levels had paid. */
+        val inscriptionsBanked: Int = 0,
     )
 
     suspend fun completeSession(sessionId: Long): CompletionResult = db.withTransaction {
@@ -1237,7 +1239,7 @@ class Repository(
 
         // A level-up from ANY source banks inscriptions — workout XP included.
         // Without this, levelling through sessions never paid out at all.
-        bankLevelRolls(levelBefore, Xp.levelFor(newTotal))
+        val inscriptionsBanked = bankLevelRolls(levelBefore, Xp.levelFor(newTotal))
 
         val rankUp = highestBand?.let { store ->
             val outcome = RankUp.check(store.get(), rankBefore, rankNow())
@@ -1257,6 +1259,7 @@ class Repository(
             questBonus = questBonus,
             durationMinutes = durationMinutes,
             rankUp = rankUp,
+            inscriptionsBanked = inscriptionsBanked,
         )
     }
 
@@ -1843,8 +1846,9 @@ class Repository(
      * Banks the inscriptions owed for a rise in level, inside the caller's
      * transaction: each level pays once, ever ([Xp.rollsDue]), however many
      * a single gain crosses and however often a refund drops the level back.
+     * Returns how many it banked.
      */
-    private suspend fun bankLevelRolls(levelBefore: Int, levelAfter: Int) {
+    private suspend fun bankLevelRolls(levelBefore: Int, levelAfter: Int): Int {
         val g = gachaDao.get() ?: GachaStateEntity()
         val due = Xp.rollsDue(levelBefore, levelAfter, g.rollLevelMark)
         val mark = maxOf(g.rollLevelMark, levelAfter)
@@ -1864,6 +1868,7 @@ class Repository(
             }
             if (won.isNotEmpty()) addPendingVeilGrant(VeilGrant(crests = won.map { crestName(it) }))
         }
+        return due
     }
 
     private fun crestName(frameId: String): String =

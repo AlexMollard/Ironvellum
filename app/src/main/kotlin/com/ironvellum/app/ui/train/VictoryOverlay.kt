@@ -59,6 +59,7 @@ import com.ironvellum.app.ui.components.Haptics
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.LevelUp
 import com.ironvellum.app.ui.components.LevelUpPage
+import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.components.count
 import com.ironvellum.app.ui.components.phase
@@ -112,6 +113,13 @@ internal object CelebrationFlow {
     fun wearTarget(deeds: List<TitleDef>): TitleDef? = com.ironvellum.app.ui.components.wearTarget(deeds)
 }
 
+/**
+ * The level-up page's quiet line: what the level banked, from the inscriptions actually paid
+ * ([Repository.CompletionResult.inscriptionsBanked]). Null when none were, so no line is drawn.
+ */
+internal fun inscriptionNote(banked: Int): String? =
+    banked.takeIf { it > 0 }?.let { "+$it ${plural(it, "inscription", "inscriptions")} waiting in the Veil" }
+
 /** The level-up page's view of a sealed trial. */
 private fun Repository.CompletionResult.toLevelUp() =
     LevelUp(levelBefore, levelAfter, classBefore, classAfter, totalXp, xpAwarded)
@@ -162,6 +170,7 @@ internal fun TrialCelebration(
                     canSkip = deeds.isNotEmpty(),
                     onContinue = onContinue,
                     onSkip = onSkipToSummary,
+                    note = inscriptionNote(result.inscriptionsBanked),
                 )
                 SessionViewModel.Finish.DEEDS -> DeedsPage(
                     deeds = deeds,
