@@ -1,6 +1,8 @@
 package com.ironvellum.app.ui.train
 
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.ui.components.stepDecimal
+import com.ironvellum.app.ui.components.stepWhole
 import org.junit.Assert.assertEquals
 import org.junit.Test
 

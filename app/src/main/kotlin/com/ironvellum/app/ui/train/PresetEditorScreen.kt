@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -69,18 +68,20 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.ui.components.DecimalStepper
 import com.ironvellum.app.ui.components.DockedActionBar
+import com.ironvellum.app.ui.components.EntryCard
 import com.ironvellum.app.ui.components.ExercisePickerSheet
 import com.ironvellum.app.ui.components.InkDivider
-import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.IronvellumDialog
 import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.TextAction
 import com.ironvellum.app.ui.components.UndoBar
-import com.ironvellum.app.ui.components.decimalKeyboard
-import com.ironvellum.app.ui.components.wholeKeyboard
+import com.ironvellum.app.ui.components.WholeStepper
+import com.ironvellum.app.ui.components.formatSteppedFigure
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -136,7 +137,7 @@ class PresetEditorViewModel(
                                 exerciseName = entry.exerciseName,
                                 sets = entry.targetSets.toString(),
                                 reps = entry.targetReps.toString(),
-                                weight = entry.targetWeightKg?.let(::formatWeight) ?: "",
+                                weight = entry.targetWeightKg?.let(::formatSteppedFigure) ?: "",
                                 modifiers = entry.modifiers,
                             )
                         },
@@ -277,9 +278,6 @@ internal fun editorChanged(baseline: EditorUi, current: EditorUi): Boolean =
         baseline.scheduledDay != current.scheduledDay ||
         baseline.entries != current.entries
 
-private fun formatWeight(kg: Double): String =
-    if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
-
 
 private val DAY_NAMES = listOf("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
 
@@ -294,16 +292,6 @@ private const val MAX_REPS = 500
 
 /** How far a reorder drag travels before the row swaps with its neighbour. */
 private val DRAG_STEP = 56.dp
-
-/** One tap of a count stepper: [delta] more (or fewer), kept within 1..[max]. */
-internal fun stepWhole(current: String, delta: Int, max: Int): String =
-    ((DecimalInput.parseWhole(current) ?: 0) + delta).coerceIn(1, max).toString()
-
-/** One tap of a kg or km stepper: [delta] steps of [step]; at or below zero it clears (bodyweight, no target). */
-internal fun stepDecimal(current: String, delta: Int, step: Double): String {
-    val next = Math.round(((DecimalInput.parse(current) ?: 0.0) + delta * step) * 100) / 100.0
-    return if (next <= 0.0) "" else formatWeight(next.coerceAtMost(MAX_LOAD_KG))
-}
 
 /** The folded row's second line: the targets the metric uses, "–" where one is not typed yet. */
 internal fun entrySummary(entry: EditorEntry, metric: ExerciseMetric): String {
@@ -636,74 +624,45 @@ private fun EntryItem(
         InkDivider()
         return
     }
-    InkPanel(
-        Modifier.fillMaxWidth().padding(vertical = 6.dp),
-        contentPadding = PaddingValues(start = 4.dp, end = 16.dp, top = 6.dp, bottom = 4.dp),
-    ) {
-        Row(
-            Modifier
-                .fillMaxWidth()
-                .heightIn(min = 48.dp)
-                .clickable(onClickLabel = "Fold $name", role = Role.Button, onClick = onToggle),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            ReorderHandle(name, onDragStart, onDragStep, onMove)
-            Text(
-                name,
-                style = MaterialTheme.typography.titleMedium,
-                color = IronvellumColors.Ink,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-        }
-        Column(Modifier.padding(start = 12.dp)) {
-            WholeStepper("Sets", entry.sets, "sets", TargetField.SETS in bad, SETS_DIGITS, MAX_SETS) { onEntry(entry.copy(sets = it)) }
-            when (metric) {
-                ExerciseMetric.REPS ->
-                    WholeStepper("Reps", entry.reps, "reps", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
-                ExerciseMetric.HOLD ->
-                    WholeStepper("Seconds", entry.reps, "seconds", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
-                ExerciseMetric.DURATION ->
-                    WholeStepper("Minutes", entry.reps, "minutes", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
-                ExerciseMetric.ATTEMPTS_GRADE ->
-                    WholeStepper("Attempts", entry.reps, "attempts", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
-                ExerciseMetric.DISTANCE_TIME -> Unit
-            }
-            when (metric) {
-                ExerciseMetric.REPS, ExerciseMetric.HOLD ->
-                    DecimalStepper("Load", entry.weight, "kg", "Lighter load", "Heavier load", 2.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
-                ExerciseMetric.DISTANCE_TIME ->
-                    DecimalStepper("Distance", entry.weight, "km", "Shorter distance", "Longer distance", 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
-                else -> Unit
-            }
-            UnderlineField(
-                label = "Modifiers",
-                value = entry.modifiers,
-                onValueChange = { onEntry(entry.copy(modifiers = it.take(60))) },
-                // The examples used to ride in the label, so a six-movement preset
-                // printed "(weighted, deficit, elevated…)" six times. They belong
-                // in the field that is still empty.
-                placeholder = "weighted, deficit, elevated…",
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-            )
-        }
-        InkDivider()
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+    EntryCard(
+        name = name,
+        foldLabel = "Fold $name",
+        onFold = onToggle,
+        leading = { ReorderHandle(name, onDragStart, onDragStep, onMove) },
+        actions = {
             TextAction("Change exercise", onChange)
             TextAction("Remove exercise", onRemove)
-        }
-    }
-}
-
-/** A quiet, 44dp-tall text action. */
-@Composable
-private fun TextAction(label: String, onClick: () -> Unit) {
-    Box(
-        Modifier.heightIn(min = 44.dp).clickable(role = Role.Button, onClick = onClick).padding(horizontal = 4.dp),
-        contentAlignment = Alignment.Center,
+        },
     ) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+        WholeStepper("Sets", entry.sets, "sets", TargetField.SETS in bad, SETS_DIGITS, MAX_SETS) { onEntry(entry.copy(sets = it)) }
+        when (metric) {
+            ExerciseMetric.REPS ->
+                WholeStepper("Reps", entry.reps, "reps", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+            ExerciseMetric.HOLD ->
+                WholeStepper("Seconds", entry.reps, "seconds", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+            ExerciseMetric.DURATION ->
+                WholeStepper("Minutes", entry.reps, "minutes", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+            ExerciseMetric.ATTEMPTS_GRADE ->
+                WholeStepper("Attempts", entry.reps, "attempts", TargetField.REPS in bad, REPS_DIGITS, MAX_REPS) { onEntry(entry.copy(reps = it)) }
+            ExerciseMetric.DISTANCE_TIME -> Unit
+        }
+        when (metric) {
+            ExerciseMetric.REPS, ExerciseMetric.HOLD ->
+                DecimalStepper("Load", entry.weight, "kg", "Lighter load", "Heavier load", 2.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
+            ExerciseMetric.DISTANCE_TIME ->
+                DecimalStepper("Distance", entry.weight, "km", "Shorter distance", "Longer distance", 0.5, TargetField.WEIGHT in bad) { onEntry(entry.copy(weight = it)) }
+            else -> Unit
+        }
+        UnderlineField(
+            label = "Modifiers",
+            value = entry.modifiers,
+            onValueChange = { onEntry(entry.copy(modifiers = it.take(60))) },
+            // The examples used to ride in the label, so a six-movement preset
+            // printed "(weighted, deficit, elevated…)" six times. They belong
+            // in the field that is still empty.
+            placeholder = "weighted, deficit, elevated…",
+            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+        )
     }
 }
 
@@ -756,126 +715,6 @@ private fun ReorderHandle(
         contentAlignment = Alignment.Center,
     ) {
         Icon(Icons.Filled.DragHandle, contentDescription = null, tint = IronvellumColors.InkMuted)
-    }
-}
-
-@Composable
-private fun WholeStepper(
-    label: String,
-    value: String,
-    noun: String,
-    error: Boolean,
-    maxDigits: Int,
-    max: Int,
-    onValue: (String) -> Unit,
-) = StepperRow(
-    label = label,
-    value = value,
-    unit = null,
-    less = "Fewer $noun",
-    more = "More $noun",
-    error = error,
-    decimal = false,
-    maxDigits = maxDigits,
-    onValue = onValue,
-    onLess = { onValue(stepWhole(value, -1, max)) },
-    onMore = { onValue(stepWhole(value, 1, max)) },
-)
-
-@Composable
-private fun DecimalStepper(
-    label: String,
-    value: String,
-    unit: String,
-    less: String,
-    more: String,
-    step: Double,
-    error: Boolean,
-    onValue: (String) -> Unit,
-) = StepperRow(
-    label = label,
-    value = value,
-    unit = unit,
-    less = less,
-    more = more,
-    error = error,
-    decimal = true,
-    maxDigits = 0,
-    onValue = onValue,
-    onLess = { onValue(stepDecimal(value, -1, step)) },
-    onMore = { onValue(stepDecimal(value, 1, step)) },
-)
-
-/** A label, then − value +. The value is still typeable, so 62.5 kg does not take twenty taps. */
-@Composable
-private fun StepperRow(
-    label: String,
-    value: String,
-    unit: String?,
-    less: String,
-    more: String,
-    error: Boolean,
-    decimal: Boolean,
-    maxDigits: Int,
-    onValue: (String) -> Unit,
-    onLess: () -> Unit,
-    onMore: () -> Unit,
-) {
-    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp), verticalAlignment = Alignment.CenterVertically) {
-        Text(label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(1f))
-        StepButton("−", less, onLess)
-        Box(Modifier.width(56.dp).heightIn(min = 44.dp), contentAlignment = Alignment.Center) {
-            BasicTextField(
-                value = value,
-                onValueChange = { input ->
-                    onValue(
-                        if (decimal) DecimalInput.sanitize(input, maxDecimals = 2, maxLength = 7)
-                        else DecimalInput.sanitizeWhole(input, maxDigits),
-                    )
-                },
-                singleLine = true,
-                textStyle = MaterialTheme.typography.titleMedium.copy(
-                    color = if (error) IronvellumColors.DangerRed else IronvellumColors.Ink,
-                    fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center,
-                ),
-                cursorBrush = SolidColor(IronvellumColors.SystemGreen),
-                keyboardOptions = if (decimal) decimalKeyboard(ImeAction.Next) else wholeKeyboard(ImeAction.Next),
-                modifier = Modifier.fillMaxWidth().semantics { contentDescription = label },
-            )
-            if (value.isEmpty()) {
-                Text(
-                    "–",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = if (error) IronvellumColors.DangerRed else IronvellumColors.InkMuted,
-                )
-            }
-        }
-        StepButton("+", more, onMore)
-        // Every row keeps the unit's slot so the figures line up down the card.
-        Text(
-            unit.orEmpty(),
-            style = MaterialTheme.typography.bodySmall,
-            color = IronvellumColors.InkMuted,
-            modifier = Modifier.width(28.dp).padding(start = 4.dp),
-        )
-    }
-}
-
-/** One fixed 44dp stepper control; the glyph alone reads to TalkBack as a dash or a cross. */
-@Composable
-private fun StepButton(glyph: String, description: String, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .size(44.dp)
-            .clickable(onClickLabel = description, onClick = onClick)
-            .semantics {
-                contentDescription = description
-                role = Role.Button
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(glyph, style = MaterialTheme.typography.titleLarge, color = IronvellumColors.InkMuted)
     }
 }
 

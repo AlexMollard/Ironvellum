@@ -61,10 +61,13 @@ import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingSplit
+import com.ironvellum.app.ui.components.EntryCard
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.StepperRow
+import com.ironvellum.app.ui.components.TextAction
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -203,10 +206,10 @@ fun ProposedDay(
 }
 
 /**
- * One proposed exercise: name and scheme, tappable. Open, it shows why the
- * exercise is there and, when [editable], the set and rep pads and remove.
- * Every pad clears the 44dp touch floor, and each announces its purpose by
- * name, because a bare "−" tells a screen reader nothing.
+ * One proposed exercise: name and scheme, tappable. Open and [editable], it is the rite editor's
+ * card (the same steppers, [EntryCard]): why the exercise is there, Sets and Reps with their pads,
+ * and Remove. Every pad clears the 44dp touch floor and names its exercise, because a bare "-" tells
+ * a screen reader nothing.
  */
 @Composable
 fun ProposedEntryRow(
@@ -225,6 +228,60 @@ fun ProposedEntryRow(
         .map { Evidence.split(it).first }
         .filter { it.isNotBlank() }
     val opens = editable || reasons.isNotEmpty()
+    val reasonLines: @Composable () -> Unit = {
+        reasons.forEach { line ->
+            // A load worked out from a 1-rep max says what that is.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    line,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.weight(1f, fill = false),
+                )
+                if ("1-rep max" in line) TermInfo(Term.ONE_REP_MAX)
+            }
+        }
+    }
+    if (expanded && editable) {
+        EntryCard(
+            name = entry.exerciseName,
+            foldLabel = "Close ${entry.exerciseName}",
+            onFold = onToggle,
+            actions = {
+                Spacer(Modifier.weight(1f))
+                TextAction("Remove exercise", onRemove, description = "Remove ${entry.exerciseName} from $dayName")
+            },
+        ) {
+            reasonLines()
+            StepperRow(
+                label = "Sets",
+                value = entry.sets.toString(),
+                unit = null,
+                less = "Fewer sets for ${entry.exerciseName}",
+                more = "More sets for ${entry.exerciseName}",
+                error = false,
+                decimal = false,
+                maxDigits = 0,
+                onValue = null,
+                onLess = { onSets(-1) },
+                onMore = { onSets(1) },
+            )
+            StepperRow(
+                label = "Reps",
+                value = entry.reps.toString(),
+                unit = null,
+                less = "Fewer reps for ${entry.exerciseName}",
+                more = "More reps for ${entry.exerciseName}",
+                error = false,
+                decimal = false,
+                maxDigits = 0,
+                onValue = null,
+                onLess = { onReps(-1) },
+                onMore = { onReps(1) },
+            )
+        }
+        return
+    }
     Column(Modifier.fillMaxWidth()) {
         Row(
             Modifier
@@ -265,60 +322,15 @@ fun ProposedEntryRow(
             if (opens) {
                 Spacer(Modifier.width(6.dp))
                 Text(
-                    if (expanded) "\u25BE" else "\u25B8",
+                    if (expanded) "▾" else "▸",
                     style = MaterialTheme.typography.labelMedium,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.clearAndSetSemantics {},
                 )
             }
-            // On the name row, not the stepper row: five 44dp pads plus their
-            // captions do not fit a 360dp phone on one line.
-            if (expanded && editable) {
-                Spacer(Modifier.width(6.dp))
-                TapPad("\u2715", "Remove ${entry.exerciseName} from $dayName") { onRemove() }
-            }
         }
         if (expanded) {
-            reasons.forEach { line ->
-                // A load worked out from a 1-rep max says what that is.
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        line,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = IronvellumColors.InkMuted,
-                        modifier = Modifier.weight(1f, fill = false),
-                    )
-                    if ("1-rep max" in line) TermInfo(Term.ONE_REP_MAX)
-                }
-            }
-            if (editable) {
-                Spacer(Modifier.height(6.dp))
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                    Text(
-                        "SETS",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        modifier = Modifier.clearAndSetSemantics {},
-                    )
-                    TapPad("\u2212", "Fewer sets for ${entry.exerciseName}") { onSets(-1) }
-                    TapPad("+", "More sets for ${entry.exerciseName}") { onSets(1) }
-                    Spacer(Modifier.width(8.dp))
-                    Text(
-                        "REPS",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        modifier = Modifier.clearAndSetSemantics {},
-                    )
-                    TapPad("\u2212", "Fewer reps for ${entry.exerciseName}") { onReps(-1) }
-                    TapPad("+", "More reps for ${entry.exerciseName}") { onReps(1) }
-                }
-            }
+            reasonLines()
             Spacer(Modifier.height(8.dp))
         }
     }
