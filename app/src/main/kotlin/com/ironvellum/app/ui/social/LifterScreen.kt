@@ -332,7 +332,7 @@ internal fun LifterScreen(
 
                 val summary = buildList {
                     add("${ui.sessions.size} ${plural(ui.sessions.size, "trial", "trials")} shared")
-                    add("+${ui.sessions.sumOf { it.xpAwarded }} XP")
+                    add("+${grouped(ui.sessions.sumOf { it.xpAwarded }.toLong())} XP")
                     add(String.format(Locale.ENGLISH, "%.1f", perWeek) + " a week")
                     daysSince?.let {
                         add("last trial " + when (it) { 0 -> "today"; 1 -> "yesterday"; else -> "$it days ago" })
@@ -397,7 +397,7 @@ internal fun LifterScreen(
                     ListRow(
                         label = headline,
                         subline = subline,
-                        value = "+${session.xpAwarded} XP",
+                        value = "+${grouped(session.xpAwarded.toLong())} XP",
                         valueColor = IronvellumColors.SovereignGold,
                         onClickLabel = "Open trial",
                         onClick = if (session.id.isNotBlank()) {

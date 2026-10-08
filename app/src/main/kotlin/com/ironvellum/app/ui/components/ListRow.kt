@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
@@ -63,6 +64,9 @@ fun ListRow(
             if (subline != null) Text(subline, style = MaterialTheme.typography.bodySmall, color = sublineColor)
         }
         if (value != null) {
+            // Not weighted: two weighted siblings split the room evenly, which left the value
+            // floating mid-row with a gap before the chevron. The cap keeps a long value from
+            // starving the label.
             Text(
                 value,
                 style = MaterialTheme.typography.labelMedium,
@@ -70,7 +74,7 @@ fun ListRow(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.End,
-                modifier = Modifier.weight(1f, fill = false),
+                modifier = Modifier.widthIn(max = 160.dp),
             )
         }
         if (onClick != null) {

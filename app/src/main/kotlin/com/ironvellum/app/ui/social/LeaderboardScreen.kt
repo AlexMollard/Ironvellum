@@ -148,14 +148,17 @@ private enum class BoardMetric(val label: String) {
 
     /** The big per-row display of this metric's value. */
     fun format(row: LeaderboardRow): String = when (this) {
-        Xp -> "${row.totalXp} XP"
+        Xp -> "${grouped(row.totalXp)} XP"
         Level -> "Level ${row.level}"
         Streak -> "${row.streakDays} " + plural(row.streakDays, "day", "days")
         Titles -> "${row.titlesCount} " + plural(row.titlesCount, "deed", "deeds")
-        Strength -> "STR ${row.lifetimeStrength}"
+        Strength -> "STR ${grouped(row.lifetimeStrength)}"
         Last7 -> "${row.sessionsLast7d} in 7 days"
     }
 }
+
+/** Thousands-grouped whole number, e.g. 11,686: long figures read at a glance. */
+internal fun grouped(value: Long): String = "%,d".fmt(value)
 
 /** Local re-sort for the selected metric; XP breaks ties, then name for stability. No network call. */
 private fun sortRows(rows: List<LeaderboardRow>, metric: BoardMetric): List<LeaderboardRow> = rows.sortedWith(
@@ -504,7 +507,7 @@ private fun TrainingRow(
         displayName = row.displayName,
         level = row.level,
         titleId = row.currentTitleId,
-        subline = if (metric == BoardMetric.Level) "${row.totalXp} XP" else "Level ${row.level}",
+        subline = if (metric == BoardMetric.Level) "${grouped(row.totalXp)} XP" else "Level ${row.level}",
         figure = metric.format(row),
         isMe = isMe,
         equippedFrame = equippedFrame,
@@ -536,6 +539,7 @@ private fun Podium(
             isMe = top.getOrNull(1)?.userId == myUserId,
             equippedFrame = equippedFrame,
             minHeight = 150.dp,
+            openHeight = 108.dp,
             avatarSize = 44.dp,
             modifier = Modifier.weight(1f),
         )
@@ -546,6 +550,7 @@ private fun Podium(
             isMe = top.getOrNull(0)?.userId == myUserId,
             equippedFrame = equippedFrame,
             minHeight = 186.dp,
+            openHeight = 120.dp,
             avatarSize = 52.dp,
             modifier = Modifier.weight(1f),
         )
@@ -556,6 +561,7 @@ private fun Podium(
             isMe = top.getOrNull(2)?.userId == myUserId,
             equippedFrame = equippedFrame,
             minHeight = 128.dp,
+            openHeight = 92.dp,
             avatarSize = 40.dp,
             modifier = Modifier.weight(1f),
         )
@@ -570,22 +576,25 @@ private fun PodiumSlot(
     isMe: Boolean,
     equippedFrame: String?,
     minHeight: Dp,
+    openHeight: Dp,
     avatarSize: Dp,
     modifier: Modifier = Modifier,
 ) {
     val shape = MaterialTheme.shapes.medium
     // The metric figure is pinned to the floor of the card, so the stepped heights read as a
-    // podium; the column above leaves room for it.
+    // podium; the column above leaves room for it. An open slot is an outline only: no fill,
+    // a shorter step, and no figure to leave room for, so it reads as a vacancy, not a card.
+    val open = row == null
     Box(
         modifier
-            .heightIn(min = minHeight)
-            .background(IronvellumColors.Vault, shape)
+            .heightIn(min = if (open) openHeight else minHeight)
+            .then(if (open) Modifier else Modifier.background(IronvellumColors.Vault, shape))
             .inkBorder(IronvellumColors.Rune, shape, 1.dp),
     ) {
         Column(
             Modifier
                 .fillMaxWidth()
-                .padding(start = 6.dp, end = 6.dp, top = 12.dp, bottom = 34.dp),
+                .padding(start = 6.dp, end = 6.dp, top = 12.dp, bottom = if (open) 12.dp else 34.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Text(
@@ -634,7 +643,7 @@ private fun PodiumSlot(
                     maxLines = 2,
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.InkMuted,
+                    color = IronvellumColors.InkMuted.copy(alpha = 0.7f),
                 )
             }
         }
