@@ -661,6 +661,7 @@ private fun TodayDayBody(
         selectedPreset?.let { ProgramRules.weeklyVolume(listOf(PlannedPreset(it.name, "", null, it.toPlanned().entries))) }.orEmpty()
     }
     val daysKept = ui.streak
+    val firstRun = isFirstRun(ui.profile?.totalXp)
     val card: @Composable (rows: @Composable () -> Unit) -> Unit = { rows ->
         InkPanel(Modifier.fillMaxWidth().padding(top = 8.dp), onClick = cardClick) {
             when (kind) {
@@ -760,6 +761,23 @@ private fun TodayDayBody(
                 )
             }
         }
+        // Setup can end on a day the cycle leaves free: there is still something to begin.
+        firstBegins(kind, isTodaySelected, firstRun, nextRite != null).forEach { begin ->
+            add {
+                when (begin) {
+                    FirstBegin.RITE -> ListRow(
+                        label = "Begin ${nextRite!!.name}",
+                        subline = "Your cycle's next rite, a day early",
+                        onClick = { actions.onBeginPreset(nextRite.id) },
+                    )
+                    FirstBegin.OPEN -> ListRow(
+                        label = "Begin an open trial",
+                        subline = "Log exercises as you go, no cycle needed",
+                        onClick = actions.onBeginOpen,
+                    )
+                }
+            }
+        }
         // A trial under way off the card (another day selected) is one tap from here.
         if (liveTrial != null && kind != DayKind.LIVE) {
             add {
@@ -799,7 +817,7 @@ private fun TodayDayBody(
                 kind == DayKind.RESPITE -> VeilForm.HERO
                 else -> VeilForm.FULL
             }
-            VeilSection(veil, form, nowMs, actions.onOpenGarrison)
+            VeilSection(veil, form, nowMs, actions.onOpenGarrison, firstRun = firstRun && kind != DayKind.NO_CYCLE)
         },
     )
 }
