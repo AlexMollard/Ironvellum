@@ -37,6 +37,9 @@ class OnboardingBackTest {
 
     @Test
     fun backOnTheTrainingQuestionsReturnsToTheProfileInsteadOfLeavingTheApp() {
+        // The Welcome screen is the front door; Begin leads to the first step.
+        compose.onNodeWithText("Begin").performClick()
+        compose.waitForIdle()
         compose.onNodeWithText("Who you are").assertIsDisplayed()
 
         compose.onNodeWithText("Your name").performTextInput("Sam")
@@ -71,6 +74,9 @@ class OnboardingBackTest {
             prefs = app.getSharedPreferences("onboarding", Context.MODE_PRIVATE)
             dismissedBefore = prefs.getBoolean("dismissed", false)
             prefs.edit().putBoolean("dismissed", false).apply()
+            // The Welcome screen shows until it has been left once; this test starts at the front door.
+            welcomeSeenBefore = prefs.getBoolean("welcome_seen", false)
+            prefs.edit().putBoolean("welcome_seen", false).apply()
         }
 
         @AfterClass
@@ -78,9 +84,11 @@ class OnboardingBackTest {
         fun letTheAppBackIn() = runBlocking {
             app.database.profileDao().setHeight(TestProfile.HEIGHT_CM)
             prefs.edit().putBoolean("dismissed", dismissedBefore).apply()
+            prefs.edit().putBoolean("welcome_seen", welcomeSeenBefore).apply()
         }
 
         private lateinit var prefs: android.content.SharedPreferences
         private var dismissedBefore: Boolean = false
+        private var welcomeSeenBefore: Boolean = false
     }
 }

@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.composed
 import androidx.compose.foundation.focusGroup
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
@@ -49,6 +50,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import com.ironvellum.app.data.FirstRunPrefs
 import com.ironvellum.app.data.ProgramAnswers
 import com.ironvellum.app.data.ProgramAnswersStore
 import com.ironvellum.app.data.Repository
@@ -56,6 +58,7 @@ import com.ironvellum.app.data.Seed
 import com.ironvellum.app.domain.BodyLimits
 import com.ironvellum.app.domain.Equipment
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.FirstRun
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.PlannedPreset
 import com.ironvellum.app.domain.VolumeLevel
@@ -70,12 +73,15 @@ import com.ironvellum.app.domain.TrainingSplit
 import com.ironvellum.app.domain.DecimalInput
 import com.ironvellum.app.ui.components.DockedActionBar
 import com.ironvellum.app.ui.components.InkChip
+import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.IronvellumButton
 import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.components.formatBodyValue
 import com.ironvellum.app.ui.components.decimalKeyboard
 import com.ironvellum.app.ui.ironvellumRepository
+import com.ironvellum.app.ui.program.CoveragePreviewScreen
+import com.ironvellum.app.ui.program.CoverageSummaryRow
 import com.ironvellum.app.ui.program.OptionalEquipmentSaver
 import com.ironvellum.app.ui.program.GearPicker
 import com.ironvellum.app.ui.program.ProposedDay
@@ -98,6 +104,7 @@ import android.content.Context
 import androidx.core.content.edit
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -125,6 +132,35 @@ class OnboardingViewModel(
      */
     private val _dismissed = MutableStateFlow(prefs.getBoolean(KEY_DISMISSED, false))
     val dismissed: StateFlow<Boolean> = _dismissed.asStateFlow()
+
+    /** The Welcome screen stands in front of step 1 until it has been left once, for good. */
+    private val _welcomeSeen = MutableStateFlow(FirstRunPrefs.welcomeSeen(appContext))
+    val welcomeSeen: StateFlow<Boolean> = _welcomeSeen.asStateFlow()
+
+    fun leaveWelcome() {
+        _welcomeSeen.value = true
+        FirstRunPrefs.setWelcomeSeen(appContext)
+    }
+
+    /**
+     * A restore writes the height before it writes anything else, which would drop the gate on its own
+     * before the lifter has seen what came back. Hold it open until [restoreFinished] has looked.
+     */
+    fun restoreStarted() {
+        _flowActive.value = true
+    }
+
+    /** A restore that brought a body profile and rites has finished setup; anything less leaves setup open. */
+    fun restoreFinished() {
+        viewModelScope.launch {
+            val height = repo.observeBodyProfile().first().first
+            val rites = repo.observePresets().first().size
+            if (FirstRun.restoreCompletesSetup(height, rites)) {
+                leaveWelcome()
+                skip()
+            }
+        }
+    }
 
     /**
      * True from the moment the lifter leaves the profile step. The gate's own
@@ -333,6 +369,32 @@ private fun joinHuman(items: List<String>): String = when (items.size) {
 }
 
 /**
+ * What sits above Continue on step 1: what is still missing, and what is typed but out of range. An
+ * out-of-range figure is named as such, never as missing, with the range the repository enforces.
+ */
+internal fun profileHint(nameMissing: Boolean, height: BodyLimits.Reading, weight: BodyLimits.Reading): String? {
+    val missing = buildList {
+        if (nameMissing) add("a name")
+        if (height == BodyLimits.Reading.EMPTY) add("height")
+        if (weight == BodyLimits.Reading.EMPTY) add("weight")
+    }
+    val outOfRange = buildList {
+        if (height == BodyLimits.Reading.OUT_OF_RANGE) add(heightRangeLine())
+        if (weight == BodyLimits.Reading.OUT_OF_RANGE) add(weightRangeLine())
+    }
+    return when {
+        missing.isEmpty() && outOfRange.isEmpty() -> null
+        outOfRange.isEmpty() -> "Add ${joinHuman(missing)} to continue."
+        missing.isEmpty() -> outOfRange.joinToString(" ")
+        else -> "Add ${joinHuman(missing)}. ${outOfRange.joinToString(" ")}"
+    }
+}
+
+private fun heightRangeLine() = "Height must be ${BodyLimits.say(BodyLimits.HEIGHT_CM)} cm."
+
+private fun weightRangeLine() = "Weight must be ${BodyLimits.say(BodyLimits.WEIGHT_KG)} kg."
+
+/**
  * First-run setup, walked in three windows: who you are, how you train, and a
  * proposed week built from the real catalogue that she can review and change
  * before accepting. Every number this app shows a new lifter is body-scaled -
@@ -364,6 +426,15 @@ fun OnboardingScreen(
     ),
 ) {
     var step by rememberSaveable { mutableIntStateOf(0) }
+    val welcomeSeen by viewModel.welcomeSeen.collectAsStateWithLifecycle()
+    if (!welcomeSeen) {
+        WelcomeScreen(
+            onBegin = viewModel::leaveWelcome,
+            onRestoreStarted = viewModel::restoreStarted,
+            onRestoreFinished = viewModel::restoreFinished,
+        )
+        return
+    }
 
     // Step 1 answers.
     var name by rememberSaveable { mutableStateOf("") }
@@ -405,12 +476,28 @@ fun OnboardingScreen(
 
     // The same bounds the repository enforces, checked here so the footer can
     // name what is missing instead of leaving a dead button to explain itself.
-    val missing = buildList {
-        if (name.trim().isEmpty()) add("a name")
-        if (!BodyLimits.validHeight(DecimalInput.parse(heightInput))) add("height")
-        if (!BodyLimits.validWeight(DecimalInput.parse(weightInput))) add("weight")
+    val heightReading = BodyLimits.readHeight(heightInput)
+    val weightReading = BodyLimits.readWeight(weightInput)
+    val profileValid = name.trim().isNotEmpty() &&
+        heightReading == BodyLimits.Reading.VALID && weightReading == BodyLimits.Reading.VALID
+    val profileHint = profileHint(name.trim().isEmpty(), heightReading, weightReading)
+
+    // Hoisted so the page keeps its place while the coverage page is up.
+    val pageScroll = rememberScrollState()
+    var coverageOpen by rememberSaveable { mutableStateOf(false) }
+    val coverageOf = plan?.presets
+    if (coverageOpen && step == 2 && coverageOf != null) {
+        BackHandler { coverageOpen = false }
+        Column(
+            Modifier
+                .fillMaxSize()
+                .background(IronvellumColors.Abyss)
+                .statusBarsPadding(),
+        ) {
+            CoveragePreviewScreen(coverageOf, tier, focus, emptySet()) { coverageOpen = false }
+        }
+        return
     }
-    val profileValid = missing.isEmpty()
 
     // Deliberately not saved: a rotation should not restore a keyboard, and the
     // back contract below only cares about focus as it stands right now.
@@ -450,7 +537,7 @@ fun OnboardingScreen(
             Modifier
                 .weight(1f)
                 .fillMaxWidth()
-                .verticalScroll(rememberScrollState())
+                .verticalScroll(pageScroll)
                 .padding(horizontal = 16.dp),
         ) {
             StepHeader(step = step)
@@ -470,6 +557,8 @@ fun OnboardingScreen(
                         onHeight = { heightInput = it },
                         weightInput = weightInput,
                         onWeight = { weightInput = it },
+                        heightReading = heightReading,
+                        weightReading = weightReading,
                     )
                     1 -> TrainingStep(
                         split = split,
@@ -491,6 +580,7 @@ fun OnboardingScreen(
                         focus = focus,
                         tier = tier,
                         sex = sex,
+                        onOpenCoverage = { coverageOpen = true },
                     )
                 }
             }
@@ -499,8 +589,7 @@ fun OnboardingScreen(
 
         StepNotes(
             step = step,
-            missing = missing,
-            profileValid = profileValid,
+            profileHint = profileHint,
             planReady = plan?.isTakeable() == true,
             planEmpty = plan != null && plan?.isTakeable() != true,
             armouryPicked = equipment != null,
@@ -552,7 +641,7 @@ private fun stepTitle(step: Int): String = when (step) {
 private fun stepProse(step: Int): String = when (step) {
     0 -> "Your sex, height and weight scale every number Ironvellum shows you."
     1 -> "Answer four things and the Forge builds you a cycle."
-    else -> "Built from your answers. Tap an exercise to adjust it."
+    else -> "Built from your answers. Tap a day to open it, an exercise to adjust it."
 }
 
 /**
@@ -573,7 +662,7 @@ private fun StepBar(step: Int, onBack: () -> Unit, onSkip: () -> Unit) {
         Spacer(Modifier.weight(1f))
         InkChip(
             label = "SKIP",
-            description = "Skip the Binding. Set your details and cycle later in Settings or the Ledger",
+            description = "Skip setup. Set your details and cycle later in Settings or the Ledger",
             onClick = onSkip,
         )
     }
@@ -638,15 +727,14 @@ private fun StepHeader(step: Int) {
 @Composable
 private fun StepNotes(
     step: Int,
-    missing: List<String>,
-    profileValid: Boolean,
+    profileHint: String?,
     planReady: Boolean,
     planEmpty: Boolean,
     armouryPicked: Boolean,
     applyError: String?,
 ) {
     val hint = when {
-        step == 0 && !profileValid -> "Add ${joinHuman(missing)} to continue."
+        step == 0 -> profileHint
         step == 1 && !armouryPicked -> ARMOURY_REQUIRED_CAPTION
         step >= 2 && !planReady ->
             if (planEmpty) "Add exercises back or rebuild to take a cycle." else "Still consulting the catalogue…"
@@ -683,7 +771,15 @@ private fun ProfileStep(
     onHeight: (String) -> Unit,
     weightInput: String,
     onWeight: (String) -> Unit,
+    heightReading: BodyLimits.Reading,
+    weightReading: BodyLimits.Reading,
 ) {
+    // A figure is only called out of range once the lifter has left its field: "1" and "17" on the way
+    // to "175" are out of range too.
+    var heightLeft by rememberSaveable { mutableStateOf(false) }
+    var weightLeft by rememberSaveable { mutableStateOf(false) }
+    val heightOff = heightLeft && heightReading == BodyLimits.Reading.OUT_OF_RANGE
+    val weightOff = weightLeft && weightReading == BodyLimits.Reading.OUT_OF_RANGE
     // The screen scrolls as a whole (see OnboardingScreen), so a step is a plain
     // Column: never a lazy list or a second scroller nested inside - that
     // pairing crashes at runtime in this repo.
@@ -710,8 +806,9 @@ private fun ProfileStep(
                 onValueChange = { onHeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
                 label = { Text("Height (cm)") },
                 singleLine = true,
+                isError = heightOff,
                 keyboardOptions = decimalKeyboard(ImeAction.Next),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).onFieldLeft { heightLeft = true },
             )
             OutlinedTextField(
                 shape = MaterialTheme.shapes.small,
@@ -720,10 +817,26 @@ private fun ProfileStep(
                 onValueChange = { onWeight(DecimalInput.sanitize(it, maxDecimals = 1, maxLength = 5)) },
                 label = { Text("Weight (kg)") },
                 singleLine = true,
+                isError = weightOff,
                 keyboardOptions = decimalKeyboard(ImeAction.Done),
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).onFieldLeft { weightLeft = true },
             )
         }
+        // The limits the repository enforces, said before they bite; a figure outside them says so.
+        val ranges = listOfNotNull(
+            heightRangeLine().takeIf { heightOff },
+            weightRangeLine().takeIf { weightOff },
+        )
+        Text(
+            if (ranges.isEmpty()) {
+                "Height ${BodyLimits.say(BodyLimits.HEIGHT_CM)} cm. Weight ${BodyLimits.say(BodyLimits.WEIGHT_KG)} kg."
+            } else {
+                ranges.joinToString(" ")
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = if (ranges.isEmpty()) IronvellumColors.InkMuted else IronvellumColors.DangerRed,
+            modifier = Modifier.padding(top = 6.dp),
+        )
         Spacer(Modifier.height(14.dp))
         FieldLabel("Sex")
         InkSegmented(
@@ -731,6 +844,14 @@ private fun ProfileStep(
             selected = sex,
             onPick = onSex,
         )
+    }
+}
+
+/** Runs [onLeft] when the field it modifies loses focus after having had it. */
+private fun Modifier.onFieldLeft(onLeft: () -> Unit): Modifier = composed {
+    var had by remember { mutableStateOf(false) }
+    onFocusChanged {
+        if (it.isFocused) had = true else if (had) onLeft()
     }
 }
 
@@ -845,6 +966,7 @@ private fun ProposalStep(
     focus: TrainingFocus,
     tier: VolumeLevel,
     sex: Sex,
+    onOpenCoverage: () -> Unit,
 ) {
     val catalogue by viewModel.catalogue.collectAsStateWithLifecycle()
     val plan by viewModel.plan.collectAsStateWithLifecycle()
@@ -884,10 +1006,7 @@ private fun ProposalStep(
         viewModel.replacePlan(current.copy(presets = presets))
     }
 
-    Column(
-        Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-    ) {
+    Column(Modifier.fillMaxWidth()) {
         val current = plan
         if (current == null) {
             InkPanel(Modifier.fillMaxWidth()) {
@@ -899,6 +1018,7 @@ private fun ProposalStep(
             }
         } else {
             current.presets.forEachIndexed { presetIndex, preset ->
+                if (presetIndex > 0) InkDivider()
                 ProposedDay(
                     preset = preset,
                     editable = !isStarter,
@@ -914,7 +1034,14 @@ private fun ProposalStep(
                     },
                     onRemove = { entryIndex -> removeEntry(presetIndex, entryIndex) },
                     showNote = false,
+                    folded = true,
+                    startOpen = presetIndex == 0,
                 )
+            }
+            if (current.presets.isNotEmpty()) {
+                Spacer(Modifier.height(8.dp))
+                // The same coverage row as the Forge, with no priorities picked at this point.
+                CoverageSummaryRow(current.presets, tier, focus, emptySet(), onOpenCoverage)
             }
             if (current.presets.isEmpty()) {
                 Text(
@@ -947,10 +1074,12 @@ private fun ProposalStep(
                     line,
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(top = 10.dp),
                 )
             }
         }
 
+        Spacer(Modifier.height(4.dp))
         if (!isStarter) {
             IronvellumButton(
                 label = "Use the starter cycle",

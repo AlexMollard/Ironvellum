@@ -2,6 +2,7 @@ package com.ironvellum.app.ui
 
 import androidx.test.platform.app.InstrumentationRegistry
 import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.data.FirstRunPrefs
 import kotlinx.coroutines.runBlocking
 
 /**
@@ -24,6 +25,10 @@ import kotlinx.coroutines.runBlocking
  * app by hand left a generated routine behind, the helper honoured it, and a
  * test asserting on a starter preset failed on a machine where it had passed
  * an hour earlier. A UI test may not inherit whatever the last run left.
+ *
+ * The first-run introductions are cleared the same way: the Welcome screen, the Veil's introduction
+ * sheet and the notification explainer would each stand in front of the screen a test is driving
+ * (the sheets take the first tap), so a set-up lifter has already met all three.
  */
 object TestProfile {
 
@@ -33,6 +38,9 @@ object TestProfile {
     fun ensureSetUp() {
         val app = InstrumentationRegistry.getInstrumentation()
             .targetContext.applicationContext as IronvellumApp
+        FirstRunPrefs.setWelcomeSeen(app)
+        FirstRunPrefs.setVeilIntroSeen(app)
+        FirstRunPrefs.setNotificationsAsked(app)
         runBlocking {
             val repo = app.repository
             repo.ensureSeeded()

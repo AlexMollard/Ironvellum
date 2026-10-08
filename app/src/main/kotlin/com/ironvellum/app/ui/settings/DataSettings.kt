@@ -58,11 +58,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
         if (uri != null) {
             scope.launch {
                 // stream reads can stall on slow providers — never block the main thread
-                val json = withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)
-                        ?.use { stream -> stream.readBytes().toString(Charsets.UTF_8) }
-                        .orEmpty()
-                }
+                val json = readPickedText(context, uri)
                 if (json.isBlank()) viewModel.reportEmptyImport() else pendingArchive = json
             }
         }
@@ -73,23 +69,14 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
     val csvLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) {
             scope.launch {
-                val csv = withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)
-                        ?.use { stream -> stream.readBytes().toString(Charsets.UTF_8) }
-                        .orEmpty()
-                }
+                val csv = readPickedText(context, uri)
                 if (csv.isBlank()) viewModel.reportEmptyImport() else viewModel.startCsvImport(csv)
             }
         }
     }
 
     pendingArchive?.let { archive ->
-        SettingsConfirmDialog(
-            title = "Restore this archive?",
-            text = "Replaces your rites and cycle, Chronicle, readings, deeds and Journal on this device. This cannot be undone.",
-            confirmLabel = "Restore",
-            dismissLabel = "Keep local data",
-            danger = true,
+        RestoreConfirmDialog(
             onConfirm = {
                 pendingArchive = null
                 viewModel.importArchive(archive)
@@ -125,16 +112,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                 "Import from another app",
                 subline = "Adds trials from a Strong or Hevy CSV export.",
                 onClick = {
-                    csvLauncher.launch(
-                        arrayOf(
-                            "text/csv",
-                            "text/comma-separated-values",
-                            "application/csv",
-                            "application/vnd.ms-excel",
-                            "text/plain",
-                            "*/*",
-                        ),
-                    )
+                    csvLauncher.launch(CSV_MIME_TYPES)
                 },
             )
             InkDivider()
@@ -146,7 +124,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
                     "Restore from a file",
                     subline = "Replaces all data on this device with an archive.",
                     sublineColor = IronvellumColors.DangerRed,
-                    onClick = if (exporting) null else ({ importLauncher.launch(arrayOf("application/json", "text/plain", "*/*")) }),
+                    onClick = if (exporting) null else ({ importLauncher.launch(ARCHIVE_MIME_TYPES) }),
                 )
             }
         }
@@ -174,6 +152,40 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             onDismiss = viewModel::dismissImportReview,
         )
     }
+}
+
+/** Providers mislabel CSVs wildly, so offer every mime that could be one and let the header sniff decide. */
+internal val CSV_MIME_TYPES = arrayOf(
+    "text/csv",
+    "text/comma-separated-values",
+    "application/csv",
+    "application/vnd.ms-excel",
+    "text/plain",
+    "*/*",
+)
+
+internal val ARCHIVE_MIME_TYPES = arrayOf("application/json", "text/plain", "*/*")
+
+/** A picked file's text, read off the main thread (stream reads can stall on slow providers). */
+internal suspend fun readPickedText(context: Context, uri: android.net.Uri): String =
+    withContext(Dispatchers.IO) {
+        context.contentResolver.openInputStream(uri)
+            ?.use { stream -> stream.readBytes().toString(Charsets.UTF_8) }
+            .orEmpty()
+    }
+
+/** The one confirm in front of a restore, which replaces everything on this device. */
+@Composable
+internal fun RestoreConfirmDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    SettingsConfirmDialog(
+        title = "Restore this archive?",
+        text = "Replaces your rites and cycle, Chronicle, readings, deeds and Journal on this device. This cannot be undone.",
+        confirmLabel = "Restore",
+        dismissLabel = "Keep local data",
+        danger = true,
+        onConfirm = onConfirm,
+        onDismiss = onDismiss,
+    )
 }
 
 /**

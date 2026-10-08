@@ -115,9 +115,11 @@ fun ProposedDay(
     onRemove: (entryIndex: Int) -> Unit,
     showNote: Boolean = true,
     folded: Boolean = false,
+    /** A folded day opens on arrival: first-run's review opens its first day so the exercises are in view. */
+    startOpen: Boolean = !folded,
 ) {
     var open by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf<Int?>(null) }
-    var dayOpen by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf(!folded) }
+    var dayOpen by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf(startOpen) }
     val body: @Composable ColumnScope.() -> Unit = {
         val count = preset.entries.size
         Row(
