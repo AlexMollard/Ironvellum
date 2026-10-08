@@ -1,26 +1,27 @@
 package com.ironvellum.app.ui.titles
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.Icon
+import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
@@ -32,7 +33,6 @@ import com.ironvellum.app.ui.components.InfoAction
 import com.ironvellum.app.ui.components.InfoProgress
 import com.ironvellum.app.ui.components.InfoSheet
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.RarityTint
 import java.util.Locale
@@ -44,32 +44,6 @@ import java.util.Locale
  */
 internal fun rarityColor(rarity: TitleRarity, earned: Boolean = false): Color =
     if (earned) RarityTint.of(rarity) else IronvellumColors.InkMuted
-
-/**
- * A deed's glyph in its tier's metal. The top two tiers sit on a soft static ring, so there is
- * no motion to gate. A locked deed's glyph is muted.
- */
-@Composable
-internal fun RarityGlyph(rarity: TitleRarity, modifier: Modifier = Modifier, size: Dp = 22.dp, earned: Boolean = true) {
-    val tint = rarityColor(rarity, earned)
-    val ring = earned && RarityTint.glows(rarity)
-    // Two stacked discs of the tier's metal at low alpha: a halo, no stroke.
-    Box(
-        modifier
-            .size(size + 12.dp)
-            .then(if (ring) Modifier.clip(DotShape).background(tint.copy(alpha = 0.08f)) else Modifier),
-        contentAlignment = Alignment.Center,
-    ) {
-        Box(
-            Modifier
-                .size(size + 4.dp)
-                .then(if (ring) Modifier.clip(DotShape).background(tint.copy(alpha = 0.18f)) else Modifier),
-            contentAlignment = Alignment.Center,
-        ) {
-            Icon(Icons.Filled.Star, contentDescription = null, tint = tint, modifier = Modifier.size(size))
-        }
-    }
-}
 
 /** The tier's name as a word; the word carries the meaning, so it takes no dot or box. */
 @Composable
@@ -196,24 +170,26 @@ internal fun DeedDetailSheet(
 ) {
     val earned = earnedAtMs != null
     val progressText = deedProgressText(def, progress, ledger, earned)
+    val category = Titles.category(def.rule)
     InfoSheet(
         title = def.name,
         onDismiss = onDismiss,
-        titleColor = if (earned) IronvellumColors.SovereignGold else IronvellumColors.Ink,
-        subtitle = "${def.rarity.label} · ${Titles.category(def.rule)}",
+        subtitle = "${def.rarity.label} · $category",
         subtitleColor = rarityColor(def.rarity, earned),
         summary = {
             Row(
                 Modifier.fillMaxWidth().padding(bottom = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                RarityGlyph(def.rarity, size = 36.dp, earned = earned)
-                Text(
-                    def.rarity.label,
-                    style = MaterialTheme.typography.titleSmall,
-                    color = rarityColor(def.rarity, earned),
-                )
+                DeedSeal(def.rarity, category = category, size = 96.dp, earned = earned)
+                if (earnedAtMs != null) {
+                    Text(
+                        "Earned ${formatDate(earnedAtMs, "d MMM yyyy")}",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = IronvellumColors.SovereignGold,
+                    )
+                }
             }
             InfoProgress(
                 fraction = if (earned) 1f else progress.fraction,
@@ -225,12 +201,70 @@ internal fun DeedDetailSheet(
         actions = if (earned && !worn) listOf(InfoAction("Wear title", onWear)) else emptyList(),
     ) {
         if (earnedAtMs != null) {
-            text(null, "Earned ${formatDate(earnedAtMs, "d MMM yyyy")}", IronvellumColors.SovereignGold)
             text(null, def.describeFor(sex))
             if (worn) text(null, "Worn now", IronvellumColors.InkMuted)
         } else {
             text(null, def.describeFor(sex))
-            text("HOW TO EARN IT", earnPointer(Titles.category(def.rule)), IronvellumColors.InkMuted)
+            text("HOW TO EARN IT", earnPointer(category), IronvellumColors.InkMuted)
         }
+        section("RARITY") { RarityStrip(def.rarity, category, earned) }
+    }
+}
+
+/** How the tiers rank, in a sentence the strip above it repeats in shape. */
+internal fun rarityNote(rarity: TitleRarity): String {
+    val rank = when (rarity) {
+        TitleRarity.Common -> "the most common of the four tiers"
+        TitleRarity.Rare -> "the second of the four tiers"
+        TitleRarity.Epic -> "the third of the four tiers"
+        TitleRarity.Masterwork -> "the rarest of the four tiers"
+    }
+    return "${rarity.label} is $rank. Each tier has its own shape and frame, so you can tell them apart without colour."
+}
+
+/**
+ * The four tiers in order, each as its seal, with this deed's tier lit: full strength, a bold
+ * name and a short underline in its metal. The rest sit back at low strength. A locked deed's
+ * seals are all muted, as everywhere else.
+ */
+@Composable
+internal fun RarityStrip(current: TitleRarity, category: String, earned: Boolean) {
+    val order = TitleRarity.entries
+    Column(
+        Modifier.semantics(mergeDescendants = true) {
+            contentDescription = "Rarity tiers in order: ${order.joinToString(", ") { it.label }}. This deed is ${current.label}."
+        },
+    ) {
+        Row(Modifier.fillMaxWidth().padding(top = 10.dp), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+            order.forEach { tier ->
+                val lit = tier == current
+                Column(
+                    Modifier.weight(1f).alpha(if (lit) 1f else 0.42f).clearAndSetSemantics {},
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    DeedSeal(tier, category = category, earned = earned)
+                    Text(
+                        tier.label,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (lit) IronvellumColors.Ink else IronvellumColors.InkMuted,
+                        fontWeight = if (lit) FontWeight.Bold else FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                        maxLines = 1,
+                    )
+                    Box(
+                        Modifier
+                            .size(width = if (lit) 24.dp else 0.dp, height = 2.dp)
+                            .background(if (earned) RarityTint.of(tier) else IronvellumColors.InkMuted),
+                    )
+                }
+            }
+        }
+        Text(
+            rarityNote(current),
+            modifier = Modifier.padding(top = 12.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
     }
 }
