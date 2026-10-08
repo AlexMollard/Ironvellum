@@ -1,93 +1,107 @@
 package com.ironvellum.app.ui.train
 
-import com.ironvellum.app.ui.components.PushedHeader
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.unit.sp
-import com.ironvellum.app.ui.components.IronvellumButton
-import com.ironvellum.app.ui.components.formatBodyValue
-import androidx.compose.foundation.background
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material.icons.outlined.IosShare
-import androidx.activity.compose.BackHandler
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
-import com.ironvellum.app.ui.components.IronvellumDialog
+import androidx.compose.material.icons.outlined.IosShare
+import androidx.compose.material.icons.outlined.Visibility
 import androidx.compose.material3.Icon
-import com.ironvellum.app.ui.components.InkIconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
-import com.ironvellum.app.domain.SessionSet
-import com.ironvellum.app.domain.Exercise
-import com.ironvellum.app.domain.ExerciseMetric
-import com.ironvellum.app.domain.isStrength
+import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.domain.Energy
-import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.EnergyConfidence
 import com.ironvellum.app.domain.EnergyEstimate
-import com.ironvellum.app.domain.WorkoutSession
+import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.ExerciseMetric
+import com.ironvellum.app.domain.MovementDifficulty
 import com.ironvellum.app.domain.SealedEdit
-import com.ironvellum.app.domain.TrialDraft
-import com.ironvellum.app.ui.components.InfoNotice
-import com.ironvellum.app.ui.components.AchievementOverlay
-import com.ironvellum.app.ui.components.CelebrationPage
-import com.ironvellum.app.ui.components.deedPages
-import androidx.lifecycle.ViewModelProvider
-import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.domain.SessionAudience
+import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.TrialDraft
+import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.domain.fmt
-import com.ironvellum.app.ui.components.SectionHeader
-import com.ironvellum.app.ui.components.InkSegmented
-import com.ironvellum.app.ui.components.ShareCardDialog
+import com.ironvellum.app.ui.components.AchievementOverlay
+import com.ironvellum.app.ui.components.CelebrationPage
+import com.ironvellum.app.ui.components.InfoNotice
+import com.ironvellum.app.ui.components.InkChip
+import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.InkSegmented
+import com.ironvellum.app.ui.components.IronvellumButton
+import com.ironvellum.app.ui.components.IronvellumDialog
+import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.ListRowHeight
+import com.ironvellum.app.ui.components.PushedHeader
+import com.ironvellum.app.ui.components.SectionHeader
+import com.ironvellum.app.ui.components.ShareCardDialog
+import com.ironvellum.app.ui.components.deedPages
 import com.ironvellum.app.ui.components.formatDate
 import com.ironvellum.app.ui.components.formatLoadKg
 import com.ironvellum.app.ui.components.metricTotals
+import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.components.setFigure
 import com.ironvellum.app.ui.ironvellumRepository
-import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.IronvellumColors
-import com.ironvellum.app.ui.theme.IronvellumTracking
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class WorkoutDetailUi(
@@ -216,11 +230,23 @@ class WorkoutDetailViewModel(
     fun dismissAmendError() {
         _amendError.value = null
     }
+
+    /**
+     * Gives the trial's XP and strength back to the ledger and drops its sets, then leaves the
+     * screen: the history stream would otherwise re-emit and show "not found" first.
+     */
+    fun delete(onDone: () -> Unit) {
+        viewModelScope.launch {
+            repo.deleteWorkout(sessionId)
+            onDone()
+        }
+    }
 }
 
 /**
- * The full record of one workout: nothing hidden. The public note is feed
- * material; the private note is device-only and is labelled as such.
+ * The full record of one trial: nothing hidden. The shared note is feed material; the private
+ * note is device-only and is labelled as such. Deleting lives here, behind a confirm that names
+ * the XP and strength it gives back.
  */
 @Composable
 fun WorkoutDetailScreen(
@@ -245,6 +271,8 @@ fun WorkoutDetailScreen(
     val earnedDeeds by viewModel.earnedDeeds.collectAsStateWithLifecycle()
     var shareText by remember { mutableStateOf<String?>(null) }
     var confirmDiscard by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
+    var pickAudience by remember { mutableStateOf(false) }
     // Back while amending asks before dropping edits; an untouched draft just closes.
     BackHandler(enabled = draft != null) {
         if (draft != TrialDraft.of(ui.sets)) confirmDiscard = true else viewModel.cancelAmend()
@@ -258,32 +286,22 @@ fun WorkoutDetailScreen(
     ) {
         Spacer(Modifier.height(20.dp))
         PushedHeader(
-            "TRIAL",
+            ui.session?.let { it.title.ifBlank { it.label } } ?: "Trial",
             onBack = { onBack() },
             actions = {
                 ui.session?.takeIf { draft == null }?.let { session ->
                     if (session.completedAtMs != null && ui.sets.isNotEmpty()) {
-                        InkIconButton(onClick = viewModel::startAmend) {
-                            Icon(
-                                Icons.Outlined.Edit,
-                                contentDescription = "Amend this trial",
-                                tint = IronvellumColors.Emerald,
-                            )
-                        }
+                        InkChip("Amend", icon = Icons.Outlined.Edit, description = "Amend this trial", onClick = viewModel::startAmend)
                     }
-                    InkIconButton(onClick = {
-                        shareText = WorkoutShare.format(session, ui.sets, ui.exercises)
-                    }) {
-                        Icon(
-                            Icons.Outlined.IosShare,
-                            contentDescription = "Share this trial",
-                            tint = IronvellumColors.Emerald,
-                        )
-                    }
+                    InkChip(
+                        "Share",
+                        icon = Icons.Outlined.IosShare,
+                        description = "Share this trial",
+                        onClick = { shareText = WorkoutShare.format(session, ui.sets, ui.exercises) },
+                    )
                 }
             },
         )
-        Spacer(Modifier.height(12.dp))
 
         val session = ui.session
         when {
@@ -291,25 +309,21 @@ fun WorkoutDetailScreen(
                 // Brief startup window before the history stream emits; render
                 // structure, not a lie about missing data.
             }
-            session == null -> InkPanel(Modifier.fillMaxWidth()) {
-                Column(
-                    Modifier.fillMaxWidth().padding(vertical = 40.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                ) {
-                    Text(
-                        "TRIAL NOT FOUND",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = IronvellumColors.DangerRed,
-                    )
-                    Spacer(Modifier.height(6.dp))
-                    Text(
-                        "This trial may have been deleted.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = IronvellumColors.InkMuted,
-                    )
-                }
+            session == null -> Column(
+                Modifier.fillMaxWidth().padding(vertical = 40.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    "Trial not found",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = IronvellumColors.Ink,
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "This trial may have been deleted.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.InkMuted,
+                )
             }
             draft != null -> draft?.let { current ->
                 TrialAmendEditor(
@@ -325,45 +339,22 @@ fun WorkoutDetailScreen(
                 // number without its basis asks for blind trust.
                 var showBasis by remember { mutableStateOf(false) }
                 DetailHeader(session, ui.energy, showBasis) { showBasis = !showBasis }
-                AudiencePicker(session.audience, viewModel::setAudience)
-                if (session.note.isNotBlank()) {
-                    SectionHeader("NOTE · SHARED WITH ALLIES")
-                    InkPanel(Modifier.fillMaxWidth()) {
-                        Text(
-                            session.note,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = IronvellumColors.Ink,
-                        )
-                    }
-                }
-                if (session.privateNote.isNotBlank()) {
-                    SectionHeader("PRIVATE NOTE")
-                    InkPanel(Modifier.fillMaxWidth()) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Filled.Lock,
-                                contentDescription = "Private",
-                                tint = IronvellumColors.SovereignGold,
-                            )
-                            Text(
-                                "  NEVER LEAVES THIS DEVICE",
-                                style = MaterialTheme.typography.labelSmall,
-                                fontFamily = ChakraPetch,
-                                color = IronvellumColors.SovereignGold,
-                                letterSpacing = IronvellumTracking.InlineLabel,
-                            )
-                        }
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            session.privateNote,
-                            style = MaterialTheme.typography.bodyMedium,
-                            // Muted ink: the sealed note reads quieter than the
-                            // shared one, matching its device-only nature.
-                            color = IronvellumColors.InkMuted,
-                        )
-                    }
-                }
                 WorkoutSets(sets = ui.sets, exercises = ui.exercises)
+                NotesCard(session)
+                Spacer(Modifier.height(12.dp))
+                InkDivider()
+                ListRow(
+                    label = "Who sees this",
+                    value = audienceLabel(session.audience),
+                    icon = Icons.Outlined.Visibility,
+                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                    onClick = { pickAudience = true },
+                )
+                if (session.completedAtMs != null) {
+                    Spacer(Modifier.height(28.dp))
+                    InkDivider()
+                    DeleteRow { confirmDelete = true }
+                }
             }
         }
         Spacer(Modifier.height(96.dp))
@@ -374,6 +365,39 @@ fun WorkoutDetailScreen(
     }
     pendingSave?.let { settlement ->
         AmendConfirmDialog(settlement, onConfirm = viewModel::confirmSave, onDismiss = viewModel::dismissSave)
+    }
+    if (pickAudience) {
+        ui.session?.let { session ->
+            AudienceSheet(session.audience, viewModel::setAudience) { pickAudience = false }
+        }
+    }
+    if (confirmDelete) {
+        ui.session?.let { session ->
+            IronvellumDialog(
+                onDismissRequest = { confirmDelete = false },
+                title = { Text("Delete this trial?") },
+                text = {
+                    Text(
+                        deleteReturnLine(session),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = IronvellumColors.InkMuted,
+                    )
+                },
+                confirmButton = {
+                    IronvellumButton(
+                        label = "Delete",
+                        onClick = {
+                            confirmDelete = false
+                            viewModel.delete(onDone = onBack)
+                        },
+                        danger = true,
+                    )
+                },
+                dismissButton = {
+                    IronvellumButton(label = "Keep", onClick = { confirmDelete = false }, quiet = true)
+                },
+            )
+        }
     }
     if (confirmDiscard) {
         IronvellumDialog(
@@ -401,34 +425,99 @@ fun WorkoutDetailScreen(
     AchievementOverlay(pages = earnedDeeds, onDone = viewModel::dismissEarnedDeeds)
 }
 
+/** What deleting pays back, said plainly: the ledger loses exactly these two figures. */
+private fun deleteReturnLine(session: WorkoutSession): String = when {
+    session.xpAwarded > 0 && session.strengthScore > 0 ->
+        "+${session.xpAwarded} XP and ${"%,d".fmt(session.strengthScore)} strength will be taken back."
+    session.xpAwarded > 0 -> "+${session.xpAwarded} XP will be taken back."
+    session.strengthScore > 0 -> "${"%,d".fmt(session.strengthScore)} strength will be taken back."
+    else -> "This trial will be removed from the Chronicle."
+}
+
+private fun audienceLabel(audience: SessionAudience): String = when (audience) {
+    SessionAudience.PROFILE -> "Folio"
+    SessionAudience.FRIENDS -> "Allies"
+    SessionAudience.PRIVATE -> "Only me"
+}
+
 /**
- * Who may see this one workout in the cloud. The stricter of this and the
- * profile visibility wins, so PROFILE is "whatever my profile says".
- * "FOLIO", not "FOLIO SETTING": a third of a 360dp row clipped the longer
- * label mid-word, and the line below names the setting it follows.
+ * Who may see this one trial in the cloud. The stricter of this and the profile visibility wins,
+ * so Folio is "whatever my profile says". The line below names the setting it follows.
  */
 @Composable
-private fun AudiencePicker(audience: SessionAudience, onPick: (SessionAudience) -> Unit) {
-    SectionHeader("Who sees this trial")
-    InkSegmented(
-        options = listOf(
-            SessionAudience.PROFILE to "FOLIO",
-            SessionAudience.FRIENDS to "ALLIES",
-            SessionAudience.PRIVATE to "ONLY ME",
-        ),
-        selected = audience,
-        onPick = onPick,
-    )
-    Spacer(Modifier.height(6.dp))
-    Text(
-        when (audience) {
-            SessionAudience.PROFILE -> "Follows your folio's visibility on the ALLIES tab."
-            SessionAudience.FRIENDS -> "Only allies see it, even on a public folio."
-            SessionAudience.PRIVATE -> "Only you see it."
+private fun AudienceSheet(audience: SessionAudience, onPick: (SessionAudience) -> Unit, onDone: () -> Unit) {
+    IronvellumDialog(
+        onDismissRequest = onDone,
+        title = { Text("Who sees this trial") },
+        text = {
+            Column {
+                InkSegmented(
+                    options = listOf(
+                        SessionAudience.PROFILE to "Folio",
+                        SessionAudience.FRIENDS to "Allies",
+                        SessionAudience.PRIVATE to "Only me",
+                    ),
+                    selected = audience,
+                    onPick = onPick,
+                )
+                Spacer(Modifier.height(10.dp))
+                Text(
+                    when (audience) {
+                        SessionAudience.PROFILE -> "Follows your folio's visibility on the ALLIES tab."
+                        SessionAudience.FRIENDS -> "Only allies see it, even on a public folio."
+                        SessionAudience.PRIVATE -> "Only you see it."
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
         },
-        style = MaterialTheme.typography.bodySmall,
-        color = IronvellumColors.InkMuted,
+        confirmButton = { IronvellumButton(label = "Done", onClick = onDone) },
     )
+}
+
+@Composable
+private fun DeleteRow(onClick: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onClick)
+            .heightIn(min = ListRowHeight)
+            .padding(horizontal = 4.dp, vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Icon(Icons.Outlined.Delete, contentDescription = null, tint = IronvellumColors.DangerRed, modifier = Modifier.size(22.dp))
+        Text("Delete trial", style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.DangerRed)
+    }
+}
+
+/** The shared and private notes in one neutral card, each captioned with who can read it. */
+@Composable
+private fun NotesCard(session: WorkoutSession) {
+    if (session.note.isBlank() && session.privateNote.isBlank()) return
+    Spacer(Modifier.height(16.dp))
+    InkPanel(Modifier.fillMaxWidth()) {
+        if (session.note.isNotBlank()) {
+            Text(session.note, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+            Spacer(Modifier.height(6.dp))
+            NoteCaption(Icons.Outlined.IosShare, "Shared note · allies see it")
+        }
+        if (session.note.isNotBlank() && session.privateNote.isNotBlank()) Spacer(Modifier.height(16.dp))
+        if (session.privateNote.isNotBlank()) {
+            Text(session.privateNote, style = MaterialTheme.typography.bodyMedium, color = IronvellumColors.Ink)
+            Spacer(Modifier.height(6.dp))
+            NoteCaption(Icons.Filled.Lock, "Private note · only you see it")
+        }
+    }
+}
+
+@Composable
+private fun NoteCaption(icon: ImageVector, text: String) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Icon(icon, contentDescription = null, tint = IronvellumColors.InkMuted, modifier = Modifier.size(14.dp))
+        Text(text, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+    }
 }
 
 @Composable
@@ -438,87 +527,78 @@ private fun DetailHeader(
     showBasis: Boolean,
     onToggleBasis: () -> Unit,
 ) {
-    val durationMin = session.completedAtMs?.let { done ->
-        ((done - session.startedAtMs) / 60_000L).coerceAtLeast(0)
-    }
-    InkPanel(Modifier.fillMaxWidth()) {
+    Text(
+        listOfNotNull(formatDate(session.completedAtMs ?: session.startedAtMs, "EEE d MMM"), trialDuration(session))
+            .joinToString(" · "),
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.InkMuted,
+        modifier = Modifier.padding(start = 2.dp, top = 2.dp),
+    )
+    session.editedAtMs?.let { amended ->
         Text(
-            session.title.ifBlank { session.label },
-            style = MaterialTheme.typography.headlineSmall,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = IronvellumColors.Ink,
-        )
-        Text(
-            formatDate(session.completedAtMs ?: session.startedAtMs),
-            style = MaterialTheme.typography.labelMedium,
+            "Amended ${formatDate(amended)}",
+            style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
+            modifier = Modifier.padding(start = 2.dp),
         )
-        session.editedAtMs?.let { amended ->
+    }
+    Row(
+        Modifier.fillMaxWidth().padding(start = 2.dp, top = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(20.dp),
+    ) {
+        // XP is the one earned figure, so it alone is gold; strength is a plain figure.
+        Figure("+${session.xpAwarded}", "XP", IronvellumColors.SovereignGold)
+        if (session.strengthScore > 0) Figure("%,d".fmt(session.strengthScore), "STR", IronvellumColors.Ink)
+        Spacer(Modifier.weight(1f))
+        if (energy != null) {
             Text(
-                "Amended ${formatDate(amended)}",
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SovereignGold,
-                letterSpacing = IronvellumTracking.InlineLabel,
-            )
-        }
-        Spacer(Modifier.height(12.dp))
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceEvenly) {
-            LedgerStat(
-                // "0h 0m" for a sub-minute session read as broken data.
-                when {
-                    durationMin == null -> "—"
-                    durationMin < 1L -> "<1m"
-                    durationMin < 60L -> "${durationMin}m"
-                    else -> "${durationMin / 60}h ${durationMin % 60}m"
+                when (energy.confidence) {
+                    EnergyConfidence.MEASURED -> "${energy.kcal} kcal measured"
+                    EnergyConfidence.ESTIMATED -> "about ${energy.kcal} kcal"
+                    EnergyConfidence.COARSE -> "roughly ${energy.kcal} kcal"
                 },
-                "DURATION",
-            )
-            LedgerStat("+${session.xpAwarded}", "XP", IronvellumColors.Emerald)
-            if (session.strengthScore > 0) LedgerStat("${session.strengthScore}", "STRENGTH", IronvellumColors.SovereignGold)
-            if (energy != null) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.clip(MaterialTheme.shapes.extraSmall).clickable(onClick = onToggleBasis)) {
-                    Text(
-                        "\u2248${energy.kcal}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontFamily = ChakraPetch,
-                        fontWeight = FontWeight.Bold,
-                        color = IronvellumColors.SystemGreen,
-                    )
-                    Text(
-                        energyConfidenceLabel(energy.confidence),
-                        style = MaterialTheme.typography.labelSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.InkMuted,
-                        letterSpacing = IronvellumTracking.InlineLabel,
-                    )
-                }
-            }
-        }
-        if (showBasis && energy != null) {
-            Spacer(Modifier.height(10.dp))
-            Text(
-                energyBasisCopy(energy),
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
+                textDecoration = TextDecoration.Underline,
+                modifier = Modifier
+                    .clickable(role = Role.Button, onClickLabel = "Show how this was worked out", onClick = onToggleBasis)
+                    .heightIn(min = 48.dp)
+                    .wrapContentHeight(Alignment.CenterVertically),
             )
-            energy.missing.forEach { name ->
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Add a $name reading for a sharper estimate.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.SovereignGold,
-                )
-            }
+        }
+    }
+    if (showBasis && energy != null) {
+        Text(
+            energyBasisCopy(energy),
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+            modifier = Modifier.padding(start = 2.dp),
+        )
+        energy.missing.forEach { name ->
+            Spacer(Modifier.height(4.dp))
+            Text(
+                "Add a $name reading for a sharper estimate.",
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+                modifier = Modifier.padding(start = 2.dp),
+            )
         }
     }
 }
 
-private fun energyConfidenceLabel(confidence: EnergyConfidence): String = when (confidence) {
-    EnergyConfidence.MEASURED -> "KCAL · MEASURED"
-    EnergyConfidence.ESTIMATED -> "KCAL · EST."
-    EnergyConfidence.COARSE -> "KCAL · ROUGH"
+/** A headline figure: the number large, its unit small beside it. */
+@Composable
+private fun Figure(value: String, unit: String, color: Color) {
+    Text(
+        buildAnnotatedString {
+            append(value)
+            withStyle(SpanStyle(fontSize = 12.sp, letterSpacing = 0.5.sp)) { append(" $unit") }
+        },
+        style = MaterialTheme.typography.titleLarge,
+        fontWeight = FontWeight.Bold,
+        color = color,
+    )
 }
 
 private fun energyBasisCopy(energy: EnergyEstimate): String = when (energy.confidence) {
@@ -530,7 +610,7 @@ private fun energyBasisCopy(energy: EnergyEstimate): String = when (energy.confi
 
 @Composable
 private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) {
-    SectionHeader("THE WORK")
+    SectionHeader("The work")
     // Per-exercise groups in position order, sets in set order within each.
     val groups = sets
         .groupBy { it.exercisePosition }
@@ -539,177 +619,134 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
     // Supersets are numbered in the order the trial reached them.
     val supersetNumber = groups.mapNotNull { it.firstOrNull()?.supersetGroup }.distinct()
         .withIndex().associate { (i, group) -> group to i + 1 }
+    // The first movement opens; the rest fold to one line each until tapped.
+    var open by remember { mutableStateOf(setOf(0)) }
     groups.forEachIndexed { groupIndex, groupSets ->
-        val name = groupSets.firstOrNull()?.exerciseName.orEmpty()
-        val superset = groupSets.firstOrNull()?.supersetGroup
-        val hold = groupSets.firstOrNull()?.let { set ->
-            MovementDifficulty.isHoldSet(exercises[set.exerciseId]?.metric, set.exerciseName, set.modifiers)
-        } == true
+        val first = groupSets.first()
+        val hold = MovementDifficulty.isHoldSet(exercises[first.exerciseId]?.metric, first.exerciseName, first.modifiers)
         // A legacy hold catalogued as REPS still holds seconds, so the hold
         // detection overrides the catalogue before anything counts reps.
-        val metric = if (hold) ExerciseMetric.HOLD
-        else groupSets.firstOrNull()?.let { exercises[it.exerciseId]?.metric } ?: ExerciseMetric.REPS
-        val doneInGroup = groupSets.filter { it.done }
-        // Seconds are seconds, attempts are attempts. Summing them as reps is
-        // what printed "140 reps" for a session that held two thirds of that
-        // figure and "7 reps" for 7 boulder problems.
-        val totals = metricTotals(doneInGroup) { metric }
-        val volumeKg = if (metric.isStrength) doneInGroup.sumOf { set -> (set.weightKg ?: 0.0) * set.reps } else 0.0
-        InkPanel(Modifier.fillMaxWidth()) {
-            supersetNumber[superset]?.let { number ->
-                Text(
-                    "SUPERSET $number",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SovereignGold,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-                Spacer(Modifier.height(4.dp))
-            }
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    name.uppercase(),
-                    style = MaterialTheme.typography.titleSmall,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.SemiBold,
-                    color = IronvellumColors.SystemGreen,
-                    modifier = Modifier.weight(1f, fill = false),
-                )
-                Text(
-                    buildString {
-                        when (metric) {
-                            ExerciseMetric.HOLD -> append("${totals.heldSeconds}s held")
-                            ExerciseMetric.REPS -> append("${totals.reps} reps")
-                            ExerciseMetric.ATTEMPTS_GRADE -> {
-                                append("${totals.attempts} attempts")
-                                // Grades are free text with no ordering, so the
-                                // group shows the last one entered rather than
-                                // pretending to rank them.
-                                groupSets.lastOrNull { !it.grade.isNullOrBlank() }
-                                    ?.grade?.let { append(" · $it") }
-                            }
-                            ExerciseMetric.DISTANCE_TIME ->
-                                append(setFigure(metric, 0, totals.secondsWorked, totals.km * 1000.0).figure)
-                            ExerciseMetric.DURATION ->
-                                append(setFigure(metric, 0, totals.secondsWorked, null).figure)
-                        }
-                        if (volumeKg > 0.0) append(" · ${"%.0f".fmt(volumeKg)} kg vol")
-                    },
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                )
-            }
+        val metric = if (hold) ExerciseMetric.HOLD else exercises[first.exerciseId]?.metric ?: ExerciseMetric.REPS
+        val weighted = exercises[first.exerciseId]?.isWeighted == true
+        val working = groupSets.filter { !it.warmup }.ifEmpty { groupSets }
+        val doneWorking = working.filter { it.done }
+        // Seconds are seconds, attempts are attempts: never summed as reps.
+        val totals = metricTotals(doneWorking) { metric }
+        val summary = when {
+            doneWorking.isEmpty() -> null
+            metric == ExerciseMetric.REPS ->
+                "best " + setText(doneWorking.maxWith(compareBy({ it.weightKg ?: 0.0 }, { it.reps })), metric, hold, weighted)
+            metric == ExerciseMetric.HOLD ->
+                "best " + setText(doneWorking.maxBy { it.durationSec ?: it.reps }, metric, hold, weighted)
+            metric == ExerciseMetric.ATTEMPTS_GRADE ->
+                // Grades are free text with no ordering, so show the last one entered.
+                "${totals.attempts} ${plural(totals.attempts, "attempt", "attempts")}" +
+                    (groupSets.lastOrNull { !it.grade.isNullOrBlank() }?.grade?.let { " · $it" } ?: "")
+            metric == ExerciseMetric.DISTANCE_TIME ->
+                setFigure(metric, 0, totals.secondsWorked, totals.km * 1000.0).figure
+            else -> setFigure(metric, 0, totals.secondsWorked, null).figure
+        }
+        val subline = listOfNotNull(
+            supersetNumber[first.supersetGroup]?.let { "Superset $it" },
+            "${doneWorking.size}/${working.size}",
+            summary,
+        ).joinToString(" · ")
+        val expanded = groupIndex in open
+        val toggle = { open = if (expanded) open - groupIndex else open + groupIndex }
+        if (expanded) {
             Spacer(Modifier.height(10.dp))
-            // Sets as a wrapping strip, not one full-width row each: a
-            // five-movement session produced seventeen identical bars and a
-            // screen you had to scroll to read a single number off.
-            FlowRow(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                val weighted = groupSets.firstOrNull()?.let { exercises[it.exerciseId]?.isWeighted } == true
-                // Warm-ups read W and working sets count from 1 after them, as Hevy shows them.
-                var working = 0
+            InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp)) {
+                ExerciseRow(first.exerciseName, subline, doneWorking.size == working.size && doneWorking.isNotEmpty(), true, 0.dp, toggle)
+                // Warm-ups read as such and working sets count from 1 after them.
+                var number = 0
                 groupSets.forEach { set ->
-                    val label = if (set.warmup) "W" else (++working).toString()
-                    SetChip(set, metric, hold, weighted, label)
+                    val figure = setText(set, metric, hold, weighted) +
+                        set.modifiers.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
+                    when {
+                        set.warmup -> SetLine("", "Warm-up · $figure", muted = true)
+                        else -> SetLine((++number).toString(), if (set.done) figure else "$figure · not done", muted = !set.done)
+                    }
                 }
             }
+            Spacer(Modifier.height(10.dp))
+        } else {
+            if (groupIndex > 0 && (groupIndex - 1) !in open) InkDivider()
+            ExerciseRow(first.exerciseName, subline, doneWorking.size == working.size && doneWorking.isNotEmpty(), false, 4.dp, toggle)
         }
-        // Members of one superset sit closer together than separate movements.
-        val nextInSuperset = superset != null &&
-            groups.getOrNull(groupIndex + 1)?.firstOrNull()?.supersetGroup == superset
-        Spacer(Modifier.height(if (nextInSuperset) 4.dp else 10.dp))
     }
 }
 
+/** One movement's header: its single emerald check when every working set is done, name and a one-line summary. */
 @Composable
-private fun SetChip(set: SessionSet, metric: ExerciseMetric, hold: Boolean, weighted: Boolean, label: String) {
-    val weight = if (set.weightKg == null || set.weightKg == 0.0) "BW" else "${formatLoadKg(set.weightKg)} kg"
-    Column(
+private fun ExerciseRow(
+    name: String,
+    subline: String,
+    allDone: Boolean,
+    expanded: Boolean,
+    horizontalPadding: Dp,
+    onToggle: () -> Unit,
+) {
+    Row(
         Modifier
-            .clip(MaterialTheme.shapes.extraSmall)
-            .background(if (set.done) IronvellumColors.VaultHigh else Color.Transparent)
-            .inkBorder(if (set.done) IronvellumColors.Emerald.copy(alpha = 0.35f) else IronvellumColors.Rune, MaterialTheme.shapes.extraSmall, 1.dp)
-            .padding(horizontal = 10.dp, vertical = 7.dp),
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClickLabel = if (expanded) "Fold the sets" else "Show the sets", onClick = onToggle)
+            .heightIn(min = 56.dp)
+            .padding(horizontal = horizontalPadding),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Box(Modifier.size(18.dp)) {
+            if (allDone) Icon(Icons.Filled.Check, contentDescription = "All sets done", tint = IronvellumColors.Emerald, modifier = Modifier.fillMaxSize())
+        }
+        Column(Modifier.weight(1f)) {
+            Text(name, style = MaterialTheme.typography.titleMedium, color = IronvellumColors.Ink)
+            Text(subline, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted)
+        }
+        Icon(
+            if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+            contentDescription = null,
+            tint = IronvellumColors.InkMuted,
+        )
+    }
+}
+
+/** One set as a plain 44dp row: its number, then the figure. */
+@Composable
+private fun SetLine(label: String, text: String, muted: Boolean) {
+    Row(
+        Modifier.fillMaxWidth().heightIn(min = 44.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            when {
-                hold -> "${set.durationSec ?: set.reps}s" +
-                    if (set.weightKg != null && set.weightKg > 0.0) "×$weight" else ""
-                metric == ExerciseMetric.ATTEMPTS_GRADE ->
-                    // The grade is the climb's identity; the weight slot is not
-                    // (a boulder problem carries no load).
-                    set.reps.toString() + set.grade?.takeIf { it.isNotBlank() }?.let { "×$it" }.orEmpty()
-                metric == ExerciseMetric.DISTANCE_TIME ->
-                    setFigure(metric, set.reps, set.durationSec, set.distanceM).figure
-                metric == ExerciseMetric.DURATION ->
-                    setFigure(metric, set.reps, set.durationSec, null).figure
-                // A barbell lift with no load is unset, not bodyweight.
-                weighted && (set.weightKg ?: 0.0) <= 0.0 -> "${set.reps} reps"
-                else -> "${set.reps}×$weight"
-            },
-            style = MaterialTheme.typography.labelLarge,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = if (set.done) IronvellumColors.Ink else IronvellumColors.InkMuted,
-            maxLines = 1,
-            softWrap = false,
+            label,
+            style = MaterialTheme.typography.labelMedium,
+            color = IronvellumColors.InkMuted,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(18.dp),
         )
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            Text(
-                // Completed sets get the emerald diamond; skipped ones stay bare;
-                // a warm-up says so rather than reading as skipped.
-                when {
-                    set.warmup -> "$label \u00B7 WARM-UP"
-                    set.done -> "\u25C6 $label"
-                    else -> "\u25C7 $label"
-                },
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = if (set.done) IronvellumColors.Emerald else IronvellumColors.InkMuted,
-                letterSpacing = IronvellumTracking.InlineLabel,
-                maxLines = 1,
-                softWrap = false,
-            )
-            if (set.modifiers.isNotBlank()) {
-                Text(
-                    " · ${set.modifiers.uppercase()}",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.SovereignGold,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
+        Text(
+            text,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.SemiBold,
+            color = if (muted) IronvellumColors.InkMuted else IronvellumColors.Ink,
+        )
     }
 }
 
-@Composable
-private fun LedgerStat(value: String, label: String, accent: Color = IronvellumColors.Ink) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            value,
-            style = MaterialTheme.typography.titleMedium,
-            fontFamily = ChakraPetch,
-            fontWeight = FontWeight.Bold,
-            color = accent,
-        )
-        Text(
-            label,
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
+/** One set's figure in its own unit: "90 kg × 5", "45s", "12 reps", a climb's attempts. */
+private fun setText(set: SessionSet, metric: ExerciseMetric, hold: Boolean, weighted: Boolean): String {
+    val kg = set.weightKg ?: 0.0
+    return when {
+        hold -> "${set.durationSec ?: set.reps}s" + if (kg > 0.0) " × ${formatLoadKg(kg)} kg" else ""
+        metric == ExerciseMetric.ATTEMPTS_GRADE ->
+            // The grade is the climb's identity; the weight slot is not (a boulder problem carries no load).
+            "${set.reps} ${plural(set.reps, "attempt", "attempts")}" + set.grade?.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
+        metric == ExerciseMetric.DISTANCE_TIME -> setFigure(metric, set.reps, set.durationSec, set.distanceM).figure
+        metric == ExerciseMetric.DURATION -> setFigure(metric, set.reps, set.durationSec, null).figure
+        // A barbell lift with no load is unset, not bodyweight.
+        weighted && kg <= 0.0 -> "${set.reps} reps"
+        kg > 0.0 -> "${formatLoadKg(kg)} kg × ${set.reps}"
+        else -> "${set.reps} reps"
     }
 }

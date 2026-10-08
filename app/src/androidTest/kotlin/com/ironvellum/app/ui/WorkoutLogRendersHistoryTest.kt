@@ -10,6 +10,7 @@ import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.ironvellum.app.MainActivity
 import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.ui.train.monthLabel
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -19,6 +20,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.YearMonth
 
 /**
  * The workout log lists EVERY completed session, so it was converted from a
@@ -92,13 +94,11 @@ class WorkoutLogRendersHistoryTest {
         val onScreen = compose.onAllNodesWithText("", substring = true).fetchSemanticsNodes().size
         assertTrue("the log screen rendered nothing at all", onScreen > 0)
 
-        // A month header proves the grouping still runs inside the lazy list,
-        // and the XP stamp proves a row was actually emitted.
-        val headers = compose.onAllNodesWithText("·", substring = true).fetchSemanticsNodes()
-        assertTrue("no month group rendered in the lazy list", headers.isNotEmpty())
-        // The row's XP is a pill of two separate text nodes ("+120" and "XP"),
-        // so assert on the session's own label: that names THIS session's row
-        // rather than any text that happens to contain XP.
+        // The month label proves the grouping still runs inside the lazy list, and
+        // the session's own label proves a row was actually emitted.
+        val month = YearMonth.now()
+        val header = compose.onAllNodesWithText(monthLabel(month)).fetchSemanticsNodes()
+        assertTrue("no month group rendered in the lazy list", header.isNotEmpty())
         val rows = compose.onAllNodesWithText(sessionLabel, substring = true).fetchSemanticsNodes()
         assertTrue("the log did not render the session labelled \"$sessionLabel\"", rows.isNotEmpty())
     }
@@ -119,13 +119,13 @@ class WorkoutLogRendersHistoryTest {
         compose.onAllNodes(hasText("Full chronicle", substring = true) or hasContentDescription("Full chronicle")).onFirst().performClick()
         compose.mainClock.advanceTimeBy(FRAME_BUDGET_MS)
 
-        // The ledger pluralises its own label, so one set trained reads "SET".
-        // Counting the prescription instead would read "SETS".
-        val singular = compose.onAllNodesWithText("SET").fetchSemanticsNodes()
-        val plural = compose.onAllNodesWithText("SETS").fetchSemanticsNodes()
+        // The totals line pluralises its own nouns, so one set trained reads
+        // "1 set". Counting the prescription instead would read "N sets".
+        val trained = compose.onAllNodes(hasText("1 trial · 1 set · ", substring = true)).fetchSemanticsNodes()
+        val prescribed = compose.onAllNodes(hasText("$plannedSetCount sets", substring = true)).fetchSemanticsNodes()
         assertTrue(
             "the lifetime record credited $plannedSetCount prescribed sets, not the one trained",
-            singular.isNotEmpty() && plural.isEmpty(),
+            trained.isNotEmpty() && prescribed.isEmpty(),
         )
     }
 
