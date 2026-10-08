@@ -1,9 +1,12 @@
 package com.ironvellum.app.ui.dashboard
 
 import com.ironvellum.app.domain.Exercise
+import com.ironvellum.app.domain.HouseEffects
+import com.ironvellum.app.domain.HouseStanding
 import com.ironvellum.app.domain.LiftRecord
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.PresetEntry
+import com.ironvellum.app.domain.RelicHouse
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
@@ -116,6 +119,20 @@ class TodayStateTest {
         assertNull(veilStrength(0L, 5 * hour))
         assertNull(veilStrength(10 * hour, 5 * hour))
         assertNotNull(veilStrength(10 * hour, 10 * hour))
+    }
+
+    @Test
+    fun `a full Iron house stretches the bar to 26 hours`() {
+        val start = 1_000_000_000L
+        val iron = HouseEffects(listOf(HouseStanding(RelicHouse.Iron, 4)))
+        assertEquals("26 h left at full strength", veilStrength(start, start, iron)!!.caption)
+        // 24 h in, the plain bar has tapered; Iron's still has two hours in hand.
+        assertEquals("Tapering, at 100% strength", veilStrength(start, start + 24 * hour)!!.caption)
+        val held = veilStrength(start, start + 24 * hour, iron)!!
+        assertEquals("2 h left at full strength", held.caption)
+        assertEquals(2f / 26f, held.fraction, 0.001f)
+        // The taper starts at 26 h and runs 48 h: at 50 h it is halfway from 1.0 to the floor.
+        assertEquals("Tapering, at 55% strength", veilStrength(start, start + 50 * hour, iron)!!.caption)
     }
 
     @Test

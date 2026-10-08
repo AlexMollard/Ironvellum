@@ -1,6 +1,7 @@
 package com.ironvellum.app.ui.theme
 
 import androidx.compose.ui.graphics.Color
+import com.ironvellum.app.domain.RewardRarity
 import com.ironvellum.app.domain.TitleRarity
 
 /**
@@ -23,4 +24,14 @@ object RarityTint {
 
     /** The top two tiers sit on a soft ring. */
     fun glows(rarity: TitleRarity): Boolean = rarity >= TitleRarity.Epic
+
+    /** A drawn reward (relic or crest) wears the same ladder as a deed of its tier. */
+    fun of(rarity: RewardRarity): Color = when (rarity) {
+        RewardRarity.Common -> Iron
+        RewardRarity.Rare -> Bronze
+        RewardRarity.Epic -> Gold
+        RewardRarity.Masterwork -> Prismatic
+    }
+
+    fun glows(rarity: RewardRarity): Boolean = rarity >= RewardRarity.Epic
 }
