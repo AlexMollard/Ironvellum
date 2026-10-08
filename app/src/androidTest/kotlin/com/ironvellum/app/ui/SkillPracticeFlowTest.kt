@@ -68,12 +68,7 @@ class SkillPracticeFlowTest {
         // different screen reading a different query.
         driver.tab("Codex")
         driver.click(driver.awaitAnyText { it == "JOURNAL" })
-        val record = driver.awaitAnyText { it.contains("attempts logged") || it.endsWith("attempts") }
-
-        val logged = record.trim().takeWhile { it.isDigit() }.toIntOrNull() ?: 0
-        assertTrue(
-            "a logged attempt must appear in the journal, saw \"$record\"",
-            logged >= 1,
-        )
+        // The timeline lists the attempt under its day.
+        driver.awaitAnyText { it == "Dead Hang" }
     }
 }

@@ -443,15 +443,11 @@ fun TitlesScreen(
                 ) {
                     SkillJournal(
                         log = ui.log,
-                        claimed = ui.claimedSkills,
-                        practiceCounts = ui.practiceCounts,
-                        onOpenLine = { line ->
-                            openLine = line
+                        onOpenPaths = {
+                            openLine = null
                             scope.launch { pager.animateScrollToPage(TitlesTab.TREE.ordinal) }
                         },
                         onSelect = { openSkill = it },
-                        bodyweightKg = ui.bodyweightKg,
-                        female = ui.sex == Sex.FEMALE,
                     )
                     Spacer(Modifier.height(28.dp))
                 }

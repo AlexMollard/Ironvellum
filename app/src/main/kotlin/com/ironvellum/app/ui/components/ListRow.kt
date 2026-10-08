@@ -43,6 +43,7 @@ fun ListRow(
     subline: String? = null,
     icon: ImageVector? = null,
     sublineColor: Color = IronvellumColors.InkMuted,
+    valueColor: Color = IronvellumColors.InkMuted,
     onClickLabel: String? = null,
     contentPadding: PaddingValues = LocalRowPadding.current,
     onClick: (() -> Unit)? = null,
@@ -65,7 +66,7 @@ fun ListRow(
             Text(
                 value,
                 style = MaterialTheme.typography.labelMedium,
-                color = IronvellumColors.InkMuted,
+                color = valueColor,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.End,
