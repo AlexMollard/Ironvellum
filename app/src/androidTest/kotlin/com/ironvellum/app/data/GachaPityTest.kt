@@ -87,9 +87,11 @@ class GachaPityTest {
 
     @Test
     fun theStreakSurvivesTheDatabaseBeingReopened() = runTest {
-        repo.grantRoll(1)
-        // Seed 0 pays Common figures, so one draw leaves a live streak to lose.
-        repo.spendRoll(seed = 0L)
+        repo.grantRoll(10)
+        // The first draw is always a relic, so keep drawing until a figure
+        // draw leaves a live streak to lose.
+        var seed = 0L
+        while (streak() == 0 && repo.spendRoll(seed = seed++) != null) Unit
         val before = streak()
         assertTrue("expected a figure draw to open a streak", before > 0)
 
