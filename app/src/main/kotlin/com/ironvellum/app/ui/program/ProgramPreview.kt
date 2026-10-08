@@ -13,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -27,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -59,7 +61,10 @@ import com.ironvellum.app.domain.RoutinePlan
 import com.ironvellum.app.domain.VolumeLevel
 import com.ironvellum.app.domain.TrainingFocus
 import com.ironvellum.app.domain.TrainingSplit
+import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkPanel
+import com.ironvellum.app.ui.components.InkSegmented
+import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -86,11 +91,14 @@ private fun formatKg(kg: Double): String =
     if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
 
 /**
- * One proposed training day: a header line, then one compact row per
- * exercise. The reason, the steppers and the remove pad stay folded until the
- * lifter taps a row, one row open at a time. Unfolded, every row carried a
- * reason line and five pads, and the first-run review read as a wall of
- * controls eight screens long.
+ * One proposed training day: a header line (the weekday, the rite, how many exercises), then one
+ * compact row per exercise. The reason, the steppers and the remove pad stay folded until the
+ * lifter taps a row, one row open at a time. Unfolded, every row carried a reason line and five
+ * pads, and the first-run review read as a wall of controls eight screens long.
+ *
+ * [folded] makes the day itself a one-line row that opens its exercises on a tap (the builder's
+ * proposal, where seven days would otherwise push the actions off the screen); the default keeps
+ * the day open on its own card, as first-run review shows it.
  *
  * [showNote] is off where the caller shows the plan's notes once for the
  * whole routine instead of repeating the rest guidance under every day.
@@ -103,66 +111,94 @@ fun ProposedDay(
     onReps: (entryIndex: Int, delta: Int) -> Unit,
     onRemove: (entryIndex: Int) -> Unit,
     showNote: Boolean = true,
+    folded: Boolean = false,
 ) {
-    // Geometry comes from the theme: InkCoverageTest fails the build on an
-    // inline RoundedCornerShape or CircleShape in UI code.
-    val dayShape = MaterialTheme.shapes.medium
     var open by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf<Int?>(null) }
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .clip(dayShape)
-            .background(IronvellumColors.Vault)
-            .inkBorder(IronvellumColors.Rune, dayShape, 1.dp)
-            .padding(horizontal = 14.dp, vertical = 12.dp),
-    ) {
-        Row(verticalAlignment = Alignment.Bottom) {
+    var dayOpen by rememberSaveable(preset.name, preset.scheduledDay) { mutableStateOf(!folded) }
+    val body: @Composable ColumnScope.() -> Unit = {
+        val count = preset.entries.size
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 44.dp)
+                .then(
+                    if (folded) {
+                        Modifier.clickable(
+                            onClickLabel = if (dayOpen) "Fold ${preset.name}" else "Open ${preset.name}",
+                            role = Role.Button,
+                        ) { dayOpen = !dayOpen }
+                    } else {
+                        Modifier
+                    },
+                ),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp),
+        ) {
             Text(
-                dayLabel(preset.scheduledDay).uppercase(),
-                style = MaterialTheme.typography.titleMedium,
-                fontFamily = ChakraPetch,
-                fontWeight = FontWeight.Bold,
-                color = IronvellumColors.Ink,
-                letterSpacing = IronvellumTracking.InlineLabel,
+                dayLabel(preset.scheduledDay),
+                style = MaterialTheme.typography.bodySmall,
+                color = IronvellumColors.InkMuted,
+                modifier = Modifier.width(92.dp),
             )
-            Spacer(Modifier.width(10.dp))
             Text(
-                preset.name.uppercase(),
-                style = MaterialTheme.typography.labelSmall,
-                fontFamily = ChakraPetch,
-                color = IronvellumColors.SystemGreen,
-                letterSpacing = IronvellumTracking.InlineLabel,
+                preset.name,
+                style = MaterialTheme.typography.titleMedium,
+                color = IronvellumColors.Ink,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(bottom = 3.dp),
+                modifier = Modifier.weight(1f, fill = false),
             )
-        }
-        // Rest guidance rides every generated preset's note; its papers go to
-        // Sources.
-        val note = Evidence.split(preset.note).first
-        if (showNote && note.isNotBlank()) {
             Text(
-                note,
-                style = MaterialTheme.typography.labelSmall,
+                "$count ${if (count == 1) "exercise" else "exercises"}",
+                style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
+                maxLines = 1,
             )
         }
-        Spacer(Modifier.height(4.dp))
-        preset.entries.forEachIndexed { entryIndex, entry ->
-            ProposedEntryRow(
-                entry = entry,
-                dayName = dayLabel(preset.scheduledDay),
-                editable = editable,
-                expanded = open == entryIndex,
-                onToggle = { open = if (open == entryIndex) null else entryIndex },
-                onSets = { delta -> onSets(entryIndex, delta) },
-                onReps = { delta -> onReps(entryIndex, delta) },
-                onRemove = {
-                    open = null
-                    onRemove(entryIndex)
-                },
-            )
+        if (dayOpen) {
+            // Rest guidance rides every generated preset's note; its papers go to
+            // Sources.
+            val note = Evidence.split(preset.note).first
+            if (showNote && note.isNotBlank()) {
+                Text(
+                    note,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = IronvellumColors.InkMuted,
+                )
+            }
+            Spacer(Modifier.height(4.dp))
+            preset.entries.forEachIndexed { entryIndex, entry ->
+                ProposedEntryRow(
+                    entry = entry,
+                    dayName = dayLabel(preset.scheduledDay),
+                    editable = editable,
+                    expanded = open == entryIndex,
+                    onToggle = { open = if (open == entryIndex) null else entryIndex },
+                    onSets = { delta -> onSets(entryIndex, delta) },
+                    onReps = { delta -> onReps(entryIndex, delta) },
+                    onRemove = {
+                        open = null
+                        onRemove(entryIndex)
+                    },
+                )
+            }
         }
+    }
+    if (folded) {
+        Column(Modifier.fillMaxWidth(), content = body)
+    } else {
+        // Geometry comes from the theme: InkCoverageTest fails the build on an
+        // inline RoundedCornerShape or CircleShape in UI code.
+        val dayShape = MaterialTheme.shapes.medium
+        Column(
+            Modifier
+                .fillMaxWidth()
+                .clip(dayShape)
+                .background(IronvellumColors.Vault)
+                .inkBorder(IronvellumColors.Rune, dayShape, 1.dp)
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            content = body,
+        )
     }
 }
 
@@ -322,87 +358,30 @@ fun TapPad(
 }
 
 /**
- * Fractional weekly sets per tracked muscle against the evidence range for
- * this tier and goal. Judgement is carried in WORDS (under / in / over) as
- * well as colour, because "legible without colour alone" is an accessibility
- * floor here, not a nice-to-have.
+ * The week's coverage in one row: how many muscles the proposal leaves short, and a way into the
+ * Weekly coverage screen for the full picture. Judgement stays in words (a count, not a colour),
+ * because "legible without colour alone" is an accessibility floor here, not a nice-to-have.
  */
 @Composable
-fun WeeklyVolumePanel(
+fun CoverageSummaryRow(
     presets: List<PlannedPreset>,
     tier: VolumeLevel,
     focus: TrainingFocus,
-    priorities: Set<MuscleArea> = emptySet(),
+    priorities: Set<MuscleArea>,
+    onOpen: () -> Unit,
 ) {
-    val volume = ProgramRules.weeklyVolume(presets)
-    val goal = CoverageGoal(tier, focus, priorities.flatMap { it.muscles }.toSet())
-    InkPanel(Modifier.fillMaxWidth()) {
-        Text(
-            "WEEKLY VOLUME · SETS PER MUSCLE",
-            style = MaterialTheme.typography.labelSmall,
-            fontFamily = ChakraPetch,
-            color = IronvellumColors.InkMuted,
-            letterSpacing = IronvellumTracking.InlineLabel,
-        )
-        Spacer(Modifier.height(8.dp))
-        JUDGED.forEach { muscle ->
-            val sets = volume[muscle] ?: 0.0
-            // Helpers are judged against their floor with no ceiling.
-            val range = rangeFor(muscle, goal)
-            val open = range.endInclusive == Double.MAX_VALUE
-            val bound = if (open) "${trim1(range.start)}+" else "${trim1(range.start)}-${trim1(range.endInclusive)}"
-            val spoken = if (open) "at least ${trim1(range.start)}" else "${trim1(range.start)} to ${trim1(range.endInclusive)}"
-            val level = levelOf(muscle, sets, goal)
-            val verdict = when (level) {
-                CoverageLevel.NONE -> "UNTRAINED"
-                CoverageLevel.UNDER -> "UNDER"
-                CoverageLevel.LIGHT -> "LIGHT"
-                CoverageLevel.OVER -> "OVER"
-                CoverageLevel.IN_RANGE -> "IN RANGE"
-            }
-            val colour = verdictTextColour(level)
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 2.dp)
-                    // One announcement per row: the muscle, the count and the
-                    // verdict, instead of three swipes through bare fragments.
-                    .semantics {
-                        contentDescription =
-                            "${muscle.label}: ${trim1(sets)} ${if (trim1(sets) == "1") "set" else "sets"} weekly, " +
-                                "$verdict, target $spoken"
-                    },
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(
-                    muscle.label.uppercase(),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.Ink,
-                    modifier = Modifier
-                        .weight(1f)
-                        .clearAndSetSemantics {},
-                )
-                Text(
-                    "${trim1(sets)} / $bound",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.InkMuted,
-                    modifier = Modifier.clearAndSetSemantics {},
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    verdict,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = ChakraPetch,
-                    fontWeight = FontWeight.Bold,
-                    color = colour,
-                    letterSpacing = IronvellumTracking.InlineLabel,
-                    modifier = Modifier.clearAndSetSemantics {},
-                )
-            }
-        }
+    val short = remember(presets, tier, focus, priorities) {
+        val goal = CoverageGoal(tier, focus, priorities.flatMap { it.muscles }.toSet())
+        coverageGaps(ProgramRules.weeklyVolume(presets), goal).size
     }
+    InkDivider()
+    ListRow(
+        label = if (short == 0) "Every muscle covered" else "$short ${if (short == 1) "muscle" else "muscles"} short",
+        value = "Coverage",
+        onClickLabel = "Open weekly coverage",
+        onClick = onOpen,
+    )
+    InkDivider()
 }
 
 /** "Load set", not the enum's "Load_set". */
@@ -412,12 +391,6 @@ private fun changeKindLabel(kind: PlanChange.Kind): String = when (kind) {
     PlanChange.Kind.SWAPPED -> "Swapped"
     PlanChange.Kind.ADJUSTED -> "Adjusted"
     PlanChange.Kind.LOAD_SET -> "Load set"
-}
-
-/** One decimal, trimmed of a trailing .0 - "14" and "14.5", never "14.0000". */
-private fun trim1(value: Double): String {
-    val rounded = (value * 10).toLong() / 10.0
-    return if (rounded == rounded.toLong().toDouble()) rounded.toLong().toString() else rounded.toString()
 }
 
 /**
@@ -596,9 +569,9 @@ internal fun SourcesPanel(texts: List<String>) {
 }
 
 /**
- * The split question: every split and day count the generator offers
- * ([TrainingSplit.OPTIONS]), two per row. One pick sets both, so no invalid
- * pairing (upper/lower on three days) can be asked for.
+ * The split question: the split the generator offers ([TrainingSplit.OPTIONS]) as one segmented
+ * row, then, for a split that fits more than one day count, how many days. One pick sets both,
+ * so no invalid pairing (upper/lower on three days) can be asked for.
  */
 @Composable
 internal fun SplitPicker(
@@ -606,19 +579,24 @@ internal fun SplitPicker(
     days: Int,
     onPick: (TrainingSplit, Int) -> Unit,
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-        TrainingSplit.OPTIONS.chunked(2).forEach { chunk ->
-            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.fillMaxWidth()) {
-                chunk.forEach { (option, count) ->
-                    PickCell(
-                        label = "${option.label}\n$count days",
-                        selected = option == split && count == days,
-                        modifier = Modifier.weight(1f),
-                        description = "${option.label}, $count days a week",
-                        onClick = { onPick(option, count) },
-                    )
-                }
-            }
+    fun daysFor(option: TrainingSplit) = TrainingSplit.OPTIONS.filter { it.first == option }.map { it.second }
+    Column {
+        InkSegmented(
+            options = TrainingSplit.OPTIONS.map { it.first }.distinct().map { it to it.label },
+            selected = split,
+            onPick = { picked ->
+                val counts = daysFor(picked)
+                onPick(picked, if (days in counts) days else counts.first())
+            },
+        )
+        val counts = daysFor(split)
+        if (counts.size > 1) {
+            Spacer(Modifier.height(8.dp))
+            InkSegmented(
+                options = counts.map { it to "$it days" },
+                selected = days,
+                onPick = { onPick(split, it) },
+            )
         }
     }
 }
@@ -658,9 +636,9 @@ internal fun volumeCaption(volume: VolumeLevel, focus: TrainingFocus): String {
 }
 
 /**
- * One cell of a pick grid. The chosen cell is VaultHigh with an Emerald check and Ink text;
- * the rest sit on a Rune outline in InkMuted. [role] is Button for a single choice, Checkbox
- * for a toggle.
+ * One cell of a pick grid, drawn as an outlined chip: SystemGreen text on a half-strength SystemGreen
+ * outline when off, Ink on a tinted fill with a check and a full outline when chosen. [role] is Button
+ * for a single choice, Checkbox for a toggle.
  */
 @Composable
 internal fun PickCell(
@@ -676,8 +654,12 @@ internal fun PickCell(
         modifier
             .heightIn(min = 48.dp)
             .clip(shape)
-            .background(if (selected) IronvellumColors.VaultHigh else Color.Transparent)
-            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
+            .background(if (selected) IronvellumColors.SystemGreen.copy(alpha = 0.16f) else Color.Transparent)
+            .inkBorder(
+                if (selected) IronvellumColors.SystemGreen else IronvellumColors.SystemGreen.copy(alpha = 0.55f),
+                shape,
+                1.dp,
+            )
             .clickable(role = role, onClick = onClick)
             // The unscheduled option is drawn as "—", which a screen reader
             // announces as a dash. Say what it means (same rule as the editor).
@@ -685,7 +667,7 @@ internal fun PickCell(
                 this.selected = selected
                 if (description != null) contentDescription = description
             }
-            .padding(horizontal = 4.dp, vertical = 6.dp),
+            .padding(horizontal = 8.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
@@ -693,15 +675,15 @@ internal fun PickCell(
             Icon(
                 Icons.Filled.Check,
                 contentDescription = null,
-                tint = IronvellumColors.Emerald,
+                tint = IronvellumColors.Ink,
                 modifier = Modifier.padding(end = 4.dp).size(14.dp),
             )
         }
         Text(
             label,
-            style = MaterialTheme.typography.labelSmall,
+            style = MaterialTheme.typography.labelLarge,
             textAlign = TextAlign.Center,
-            color = if (selected) IronvellumColors.Ink else IronvellumColors.InkMuted,
+            color = if (selected) IronvellumColors.Ink else IronvellumColors.SystemGreen,
         )
     }
 }
@@ -828,7 +810,7 @@ internal fun GearPicker(
                 Text(
                     "Up to ${maxKg.toInt()} kg",
                     style = MaterialTheme.typography.labelSmall,
-                    color = IronvellumColors.SovereignGold,
+                    color = IronvellumColors.Ink,
                 )
                 TapPad(
                     label = "+",
