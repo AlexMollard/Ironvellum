@@ -3,6 +3,17 @@ package com.ironvellum.app.ui.social
 import com.ironvellum.app.ui.components.PushedHeader
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.PersonAdd
+import androidx.compose.ui.semantics.Role
+import com.ironvellum.app.domain.Titles
+import com.ironvellum.app.ui.components.InkDivider
+import com.ironvellum.app.ui.components.InkTextLink
+import com.ironvellum.app.ui.components.ListRow
+import com.ironvellum.app.ui.components.ListRowHeight
+import com.ironvellum.app.ui.components.plural
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Column
@@ -87,7 +98,6 @@ import com.ironvellum.app.ui.components.wholeKeyboard
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.ironvellumFieldColors
-import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.domain.DecimalInput
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -407,6 +417,8 @@ fun AccountScreen(
     onOpenLifter: (userId: String, displayName: String) -> Unit = { _, _ -> },
     // Same no-op default reasoning; SocialScreen wires the ACCOUNT route.
     onOpenAccount: () -> Unit = {},
+    // Ally requests live in Missives; the one row about them switches the pager there.
+    onOpenMissives: () -> Unit = {},
     // Pushed from Settings rather than hosted as the Allies tab: the signed-out
     // form then carries its own BACK header.
     pushed: Boolean = false,
@@ -462,9 +474,7 @@ fun AccountScreen(
                     ui = ui,
                     onOpenLifter = onOpenLifter,
                     onOpenAccount = onOpenAccount,
-                    onAccept = viewModel::acceptFriend,
-                    onDecline = viewModel::removeFriend,
-                    onRemoveAlly = viewModel::removeFriend,
+                    onOpenMissives = onOpenMissives,
                     onRequest = viewModel::requestFriend,
                     onClaim = viewModel::claimName,
                     onSkipClaim = viewModel::skipClaim,
@@ -827,9 +837,7 @@ private fun SignedInPanels(
     ui: AccountUi,
     onOpenLifter: (userId: String, displayName: String) -> Unit,
     onOpenAccount: () -> Unit,
-    onAccept: (String) -> Unit,
-    onDecline: (String) -> Unit,
-    onRemoveAlly: (String) -> Unit,
+    onOpenMissives: () -> Unit,
     onRequest: (String) -> Unit,
     onClaim: (String) -> Unit,
     onSkipClaim: () -> Unit,
@@ -854,6 +862,13 @@ private fun SignedInPanels(
     SectionHeader("Circle")
     CircleSection(onOpenLifter = onOpenLifter, refreshSignal = circleRefreshSignal)
 
+    val incoming = ui.friends.filter { it.incoming && !it.accepted }
+    val accepted = ui.friends.filter { it.accepted }
+    if (incoming.isNotEmpty()) {
+        Spacer(Modifier.height(14.dp))
+        RequestsRow(count = incoming.size, onClick = onOpenMissives)
+    }
+
     Spacer(Modifier.height(14.dp))
     AddAllyPanel(loading = ui.friendsLoading, onRequest = onRequest)
     // Right under the input: a refused invite (unknown name, rate limit) is
@@ -863,19 +878,11 @@ private fun SignedInPanels(
         SocialErrorBanner(it)
     }
 
-    val incoming = ui.friends.filter { it.incoming && !it.accepted }
-    val accepted = ui.friends.filter { it.accepted }
-    if (incoming.isNotEmpty()) {
-        SectionHeader("Requests")
-        RequestsPanel(incoming = incoming, onAccept = onAccept, onDecline = onDecline)
-    }
-
-    SectionHeader(if (accepted.isEmpty()) "Allies" else "Allies · ${accepted.size}")
+    SectionHeader(if (accepted.isEmpty()) "Allies" else "Allies · ${accepted.size}", topPadding = 18.dp)
     AlliesPanel(
         accepted = accepted,
         empty = incoming.isEmpty() && accepted.isEmpty() && !ui.friendsLoading,
         onOpenLifter = onOpenLifter,
-        onRemoveAlly = onRemoveAlly,
     )
 }
 
@@ -1026,127 +1033,114 @@ private fun ClaimNamePanel(
     }
 }
 
-/** Compact invite-by-name row; invites reach lifters by their exact name. */
+/**
+ * Invite by true name: one field with "Invite" as a link inside it, no card.
+ * Invites reach lifters by their exact name.
+ */
 @Composable
 private fun AddAllyPanel(loading: Boolean, onRequest: (String) -> Unit) {
     var friendName by remember { mutableStateOf("") }
-    InkPanel(Modifier.fillMaxWidth()) {
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            OutlinedTextField(
-                shape = MaterialTheme.shapes.small,
-                colors = ironvellumFieldColors(),
-                value = friendName,
-                onValueChange = { friendName = it.take(24) },
-                label = { Text("Add an ally by true name") },
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                modifier = Modifier.weight(1f),
-            )
-            IronvellumButton(
+    val canInvite = friendName.trim().length >= 2 && !loading
+    OutlinedTextField(
+        shape = MaterialTheme.shapes.small,
+        colors = ironvellumFieldColors(),
+        value = friendName,
+        onValueChange = { friendName = it.take(24) },
+        label = { Text("Add an ally by true name") },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+        trailingIcon = {
+            InkTextLink(
                 label = "Invite",
+                enabled = canInvite,
+                modifier = Modifier.padding(horizontal = 12.dp),
                 onClick = {
                     onRequest(friendName.trim())
                     friendName = ""
                 },
-                enabled = friendName.trim().length >= 2 && !loading,
             )
-        }
-    }
+        },
+        modifier = Modifier.fillMaxWidth(),
+    )
 }
 
-/** Incoming requests. Decline is the same delete as removing an ally: the row goes either way. */
+/**
+ * Pending requests are answered in Missives, which handles every request type.
+ * This row only counts them and switches the pager there.
+ */
 @Composable
-private fun RequestsPanel(
-    incoming: List<FriendRow>,
-    onAccept: (String) -> Unit,
-    onDecline: (String) -> Unit,
-) {
-    InkPanel(Modifier.fillMaxWidth()) {
-        incoming.forEachIndexed { index, pending ->
-            if (index > 0) Spacer(Modifier.height(10.dp))
-            Row(
-                Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        pending.displayName,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        style = MaterialTheme.typography.titleSmall,
-                        fontFamily = ChakraPetch,
-                        color = IronvellumColors.Ink,
-                    )
-                    Text(
-                        "wants to ally with you",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = IronvellumColors.SovereignGold,
-                    )
-                }
-                RowAction("Decline", IronvellumColors.SystemGreen) { onDecline(pending.userId) }
-                IronvellumButton(label = "Accept", onClick = { onAccept(pending.userId) })
-            }
-        }
+private fun RequestsRow(count: Int, onClick: () -> Unit) {
+    Column(Modifier.fillMaxWidth()) {
+        InkDivider()
+        ListRow(
+            label = "$count ally ${plural(count, "request", "requests")}",
+            value = "Missives",
+            icon = Icons.Outlined.PersonAdd,
+            onClickLabel = "Open Missives",
+            contentPadding = PaddingValues(horizontal = 2.dp, vertical = 8.dp),
+            onClick = onClick,
+        )
+        InkDivider()
     }
 }
 
+/** The accepted allies: unboxed 52dp rows, each opening the lifter's folio, where removing lives. */
 @Composable
 private fun AlliesPanel(
     accepted: List<FriendRow>,
     empty: Boolean,
     onOpenLifter: (userId: String, displayName: String) -> Unit,
-    onRemoveAlly: (String) -> Unit,
 ) {
-    var confirmRemove by remember { mutableStateOf<FriendRow?>(null) }
-
-    InkPanel(Modifier.fillMaxWidth()) {
-        if (empty) {
-            Text(
-                "No allies yet. Invite one by true name above.",
-                style = MaterialTheme.typography.bodySmall,
-                color = IronvellumColors.InkMuted,
-            )
-        }
-
-        // Allies look like lifters everywhere else - IdentityRow, tappable.
-        // Title and level ride along on the friends read, so an ally's crest
-        // shows its rarity here exactly as it does on the board and the feed.
-        accepted.forEach { friend ->
-            IdentityRow(
-                displayName = friend.displayName,
+    if (empty) {
+        Text(
+            "No allies yet. Invite one by true name above.",
+            style = MaterialTheme.typography.bodySmall,
+            color = IronvellumColors.InkMuted,
+        )
+    }
+    // Title and level ride along on the friends read, so an ally's crest
+    // shows its rarity here exactly as it does on the board and the feed.
+    accepted.forEach { friend ->
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .clickable(role = Role.Button) { onOpenLifter(friend.userId, friend.displayName) }
+                .heightIn(min = ListRowHeight)
+                .padding(horizontal = 2.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            LifterAvatar(
                 userId = friend.userId,
-                wornTitle = friend.currentTitleId?.let { Titles.byId(it)?.name },
+                displayName = friend.displayName,
+                size = 36.dp,
                 level = friend.level,
                 titleId = friend.currentTitleId,
-                size = IdentitySize.Compact,
-                onClick = { onOpenLifter(friend.userId, friend.displayName) },
-                trailing = { RowAction("Remove", IronvellumColors.DangerRed) { confirmRemove = friend } },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
             )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    friend.displayName.ifBlank { "Ironbound" },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = IronvellumColors.Ink,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                friend.currentTitleId?.let { Titles.byId(it)?.name }?.let {
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = IronvellumColors.InkMuted,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+            }
+            friend.level?.let {
+                Text("Level $it", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.InkMuted)
+            }
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = null, tint = IronvellumColors.InkMuted)
         }
-    }
-
-    confirmRemove?.let { friend ->
-        IronvellumDialog(
-            onDismissRequest = { confirmRemove = null },
-            title = { Text("Remove ${friend.displayName} as an ally?") },
-            text = { Text("Their allies-only trials leave your tidings. Either of you can send a new request later.") },
-            confirmButton = {
-                IronvellumButton(label = "Remove", onClick = {
-                    confirmRemove = null
-                    onRemoveAlly(friend.userId)
-                }, danger = true)
-            },
-            dismissButton = {
-                IronvellumButton(label = "Keep", onClick = { confirmRemove = null }, quiet = true)
-            },
-        )
+        InkDivider()
     }
 }
 
