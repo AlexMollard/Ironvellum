@@ -38,11 +38,11 @@ Ironbound, and the iron-bound book that keeps the record is the **Ledger**.
 
 | Today | Train | The trial |
 |:---:|:---:|:---:|
-| <img src="docs/images/dashboard.png" width="230" alt="Today: the level seal, Strength Rank, the Veil and the day card for today's rite" /> | <img src="docs/images/train.png" width="230" alt="Train: today's rite to begin, your cycle and your rites" /> | <img src="docs/images/session.png" width="230" alt="A trial in progress: one open exercise with load and rep steppers and a docked action bar" /> |
+| <img src="docs/images/dashboard.png" width="230" alt="Today: level and oath progress, the week strip, the day card (a rest day here) and the Veil" /> | <img src="docs/images/train.png" width="230" alt="Train: your cycle of rites with the sealed one ticked, weekly coverage and recent trials" /> | <img src="docs/images/session.png" width="230" alt="A trial in progress: one open exercise with load and rep steppers and a docked action bar" /> |
 
 | Paths | Deeds | Share text |
 |:---:|:---:|:---:|
-| <img src="docs/images/skilltree.png" width="230" alt="The Pull path as technique nodes joined by prerequisite lines, with the path strip above" /> | <img src="docs/images/codex.png" width="230" alt="The Codex: deeds grouped by category with progress bars" /> | <img src="docs/images/share.png" width="230" alt="A sealed trial as Wordle-style share text: a row per movement, a square per set, a trophy on record sets" /> |
+| <img src="docs/images/skilltree.png" width="230" alt="The Pull path as technique nodes joined by prerequisite lines, with the path strip above" /> | <img src="docs/images/codex.png" width="230" alt="The Codex: the deeds closest to earning with progress bars, above the categories" /> | <img src="docs/images/share.png" width="230" alt="A sealed trial as Wordle-style share text: a row per movement, a square per set, a trophy on record sets" /> |
 
 | Weekly coverage | The Chronicle | Info sheet |
 |:---:|:---:|:---:|
