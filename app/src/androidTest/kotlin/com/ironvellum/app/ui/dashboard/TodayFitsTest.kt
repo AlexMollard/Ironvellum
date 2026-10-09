@@ -160,7 +160,7 @@ class TodayFitsTest {
         compose.onAllNodesWithText("h left at full strength", substring = true).assertCountEquals(0)
         assertNotPlaced("veil-hero")
         assertInside("3 inscriptions waiting")
-        assertInside("Inscribe")
+        assertInside("Inscribe (3)")
         assertInside("more", substring = true)
         assertInside("Movement 1")
         saveShot("today-worst-case")
@@ -257,11 +257,11 @@ class TodayFitsTest {
         compose.mainClock.advanceTimeBy(500)
         val none = veilAndRowsBounds()
         compose.onNodeWithText("No inscriptions waiting").assertIsDisplayed()
-        compose.onAllNodesWithText("Inscribe").assertCountEquals(0)
+        compose.onAllNodesWithText("Inscribe (3)").assertCountEquals(0)
         compose.runOnUiThread { glance = veilWith(3) }
         compose.mainClock.advanceTimeBy(500)
         compose.onNodeWithText("3 inscriptions waiting").assertIsDisplayed()
-        compose.onNodeWithText("Inscribe").assertIsDisplayed()
+        compose.onNodeWithText("Inscribe (3)").assertIsDisplayed()
         assertEquals("an inscription arriving moved the Veil or the rows", none, veilAndRowsBounds())
         assertDoesNotScroll()
         return none
@@ -416,7 +416,7 @@ class TodayFitsTest {
         // Scrolling really has somewhere to go, and everything is still there to scroll to.
         val range = compose.onNode(hasScrollAction()).fetchSemanticsNode().config[SemanticsProperties.VerticalScrollAxisRange]
         assertTrue("nothing to scroll", range.maxValue() > 0f)
-        compose.onNodeWithText("Inscribe").assertExists()
+        compose.onNodeWithText("Inscribe (3)").assertExists()
         compose.onNodeWithText("Add your height and weight").assertExists()
     }
 

@@ -267,13 +267,16 @@ class TodayStateTest {
 
     @Test
     fun `the inscriptions line is always there, loud only when some wait`() {
-        assertEquals(InscriptionsLine("3 inscriptions waiting", waiting = true), inscriptionsLine(3))
-        assertEquals(InscriptionsLine("1 inscription waiting", waiting = true), inscriptionsLine(1))
+        assertEquals(InscriptionsLine("3 inscriptions waiting", waiting = true, action = "Inscribe (3)"), inscriptionsLine(3))
+        assertEquals(InscriptionsLine("1 inscription waiting", waiting = true, action = "Inscribe (1)"), inscriptionsLine(1))
         assertEquals(InscriptionsLine("No inscriptions waiting", waiting = false), inscriptionsLine(0))
         // Still loading: the slot is held, with nothing claimed in it.
         assertEquals(InscriptionsLine("", waiting = false), inscriptionsLine(null))
-        assertTrue(inscriptionsLine(3).inscribe)
-        assertFalse(inscriptionsLine(0).inscribe)
+        // None waiting and one affordable: the slot offers to buy it, with the price.
+        assertEquals(InscriptionsLine("No inscriptions waiting", waiting = false, action = "Buy one \u00b7 5,000"), inscriptionsLine(0, 5_000L))
+        // Waiting wins over a price: the action is to inscribe.
+        assertEquals("Inscribe (2)", inscriptionsLine(2, 5_000L).action)
+        assertNull(inscriptionsLine(0).action)
     }
 
     @Test

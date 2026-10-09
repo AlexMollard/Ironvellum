@@ -81,6 +81,7 @@ import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.VaultSlot
+import com.ironvellum.app.domain.Veil
 import com.ironvellum.app.domain.VeilGrant
 import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.TrainFocus
@@ -135,7 +136,7 @@ enum class BodyGap { HEIGHT, WEIGHT, BOTH }
  * The Veil at a glance on Today: its live snapshot, the inscriptions waiting to be spent and the relic
  * setting the rate ([active], null with no relic), which the respite form shows as its centrepiece.
  */
-data class VeilGlance(val snapshot: IdleSnapshot, val inscriptions: Int, val active: VaultSlot? = null)
+data class VeilGlance(val snapshot: IdleSnapshot, val inscriptions: Int, val active: VaultSlot? = null, val buyPrice: Long? = null)
 
 class DashboardUi(
     val profile: PlayerProfile? = null,
@@ -272,8 +273,10 @@ class DashboardViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** The Veil at a glance: its snapshot (essence, rate, echoes, relic) and the inscriptions waiting. */
-    val veil: StateFlow<VeilGlance?> = combine(repo.observeIdleSnapshot(), repo.observeRolls(), repo.observeVault()) { snapshot, rolls, vault ->
-        VeilGlance(snapshot, rolls, vault.active)
+    val veil: StateFlow<VeilGlance?> = combine(repo.observeIdleSnapshot(), repo.observeRolls(), repo.observeVault(), repo.observeOfferingsMade()) { snapshot, rolls, vault, offerings ->
+        // The price rides the slot only when none wait and one is affordable on the banked essence.
+        val price = Veil.offeringCost(offerings)
+        VeilGlance(snapshot, rolls, vault.active, buyPrice = price.takeIf { rolls == 0 && snapshot.state.essence >= it })
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**

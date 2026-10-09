@@ -251,15 +251,19 @@ internal fun narratorLine(kind: DayKind, setsDone: Int = 0, setsTotal: Int = 0, 
 /**
  * The Veil's reserved inscriptions line. It is shown in every Veil form whether or not any wait, so the
  * layout never shifts when one arrives: with none (or while the Veil is still loading) it is a quiet
- * line, and [InscriptionsLine.inscribe] says whether the "Inscribe" link rides it.
+ * line. [InscriptionsLine.action] is the link that rides it: "Inscribe (N)" when some wait, "Buy one"
+ * with its price when none wait and one is affordable, and nothing otherwise.
  */
-internal data class InscriptionsLine(val text: String, val waiting: Boolean) {
-    val inscribe: Boolean get() = waiting
-}
+internal data class InscriptionsLine(val text: String, val waiting: Boolean, val action: String? = null)
 
-internal fun inscriptionsLine(waiting: Int?): InscriptionsLine = when {
+internal fun inscriptionsLine(waiting: Int?, buyPrice: Long? = null): InscriptionsLine = when {
     waiting == null -> InscriptionsLine("", waiting = false)
-    waiting > 0 -> InscriptionsLine("$waiting ${plural(waiting, "inscription", "inscriptions")} waiting", waiting = true)
+    waiting > 0 -> InscriptionsLine(
+        "$waiting ${plural(waiting, "inscription", "inscriptions")} waiting",
+        waiting = true,
+        action = "Inscribe ($waiting)",
+    )
+    buyPrice != null -> InscriptionsLine("No inscriptions waiting", waiting = false, action = "Buy one \u00b7 ${"%,d".format(buyPrice)}")
     else -> InscriptionsLine("No inscriptions waiting", waiting = false)
 }
 
