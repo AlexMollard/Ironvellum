@@ -74,7 +74,7 @@ object Idle {
     const val MAX_EFFECTIVE_HOURS = 72.0
 
     // Rate floor: with zero recent training the roll still scavenges a trickle.
-    private const val FLOOR = 10.0
+    const val FLOOR = 10.0
 
     // Recent training is the PRIMARY driver: a committed week reaches x4.
     private const val TRAINING_CAP = 30.0

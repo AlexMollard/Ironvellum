@@ -135,6 +135,30 @@ object Gacha {
         )
     }
 
+    /** What one inscription can pay, as shares of every draw: echoes, a relic, a crest. They sum to 1. */
+    data class TypeShares(val echoes: Double, val relic: Double, val crest: Double)
+
+    /** [TypeShares] read straight off [DROP_TABLE], so the buy sheet can never tell a lifter a different story from the roller. */
+    fun typeShares(): TypeShares = TypeShares(
+        echoes = DROP_TABLE.sumOf { it.chance * it.figureChance },
+        relic = DROP_TABLE.sumOf { it.chance * it.relicChance },
+        crest = DROP_TABLE.sumOf { it.chance * it.frameChance },
+    )
+
+    /**
+     * What the pity rules say about the NEXT draw, in the app's voice: the first inscription is a relic,
+     * a run of [PITY_AFTER] echo draws forces a relic or a crest, and [RELIC_PITY] draws without a relic
+     * force one; otherwise how the first rule counts.
+     */
+    fun pityLine(pity: Pity): String = when {
+        pity.guaranteeFirstRelic -> "Your first inscription is a relic."
+        pity.figureStreak >= PITY_AFTER ->
+            "Your last ${pity.figureStreak} draws were echoes, so this one is a relic or a crest."
+        pity.relicStreak >= RELIC_PITY - 1 ->
+            "It has been ${pity.relicStreak} draws since your last relic, so this one is a relic."
+        else -> "After $PITY_AFTER echo draws in a row, the next one is a relic or a crest."
+    }
+
     /** [roll] driven by a [Pity] state, the one entry point the repository and the simulations share. */
     fun roll(
         seed: Long,
