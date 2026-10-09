@@ -19,6 +19,9 @@ package com.ironvellum.app.domain
  * absence beyond the full-strength day), and with 4 relics one window moves. The +5% is applied AFTER
  * TRAINING_CAP, so a lifter who is already at the cap still gains from it.
  *
+ * The worn crest ([CrestEffects], carried inside [HouseEffects]) changes a weight, a ceiling, a floor or a
+ * factor in this same formula and in [accrued]; with none worn every term is the one written above.
+ *
  * Balance intent: RECENT TRAINING is the engine — a committed week reaches x4
  * and dominates everything else. Skills are a permanent bonus that approaches
  * x2 asymptotically, so every unlock helps forever but the whole tree can
@@ -107,8 +110,11 @@ object Idle {
     val MAX_ECHO_FACTOR = 1.0 + ECHO_BONUS_CAP
 
     /** The factor [echoes] held put on the rate. Negative counts read as none. */
-    fun echoFactor(echoes: Int): Double =
-        1.0 + (echoes.coerceAtLeast(0) / ECHO_BONUS_PER * ECHO_BONUS_STEP).coerceAtMost(ECHO_BONUS_CAP)
+    fun echoFactor(echoes: Int): Double = echoFactor(echoes, CrestEffects.NONE)
+
+    /** [echoFactor] under a worn crest: Silver lifts the step and the ceiling. */
+    fun echoFactor(echoes: Int, crest: CrestEffects): Double =
+        1.0 + (echoes.coerceAtLeast(0) / ECHO_BONUS_PER * crest.echoStep).coerceAtMost(crest.echoCap)
 
     // Guards so a corrupt relic multiplier can't push the rate to Infinity.
     private const val MAX_RELIC = 1e6
@@ -132,17 +138,20 @@ object Idle {
         // Vigil owns the consecutive days. The cap is applied to the whole first, each part keeps
         // its share of what the cap lets through, and only then does a house's 2-relic bonus lift
         // its part: a set bonus can lift a lifter who is already at the cap.
-        val ironRaw = volume * VOLUME_WEIGHT + sessions * SESSION_WEIGHT
-        val steadyRaw = streak * STREAK_WEIGHT
+        // The worn crest moves a weight or the ceiling as a TERM here, never the constants: MAX_TRAINING_FACTOR stays.
+        val crest = houses.crest
+        val ironRaw = volume * (VOLUME_WEIGHT + crest.volumeWeightBonus) + sessions * (SESSION_WEIGHT + crest.sessionWeightBonus)
+        val steadyRaw = streak * (STREAK_WEIGHT + crest.streakWeightBonus)
         val trainingRaw = ironRaw + steadyRaw
-        val keep = if (trainingRaw > TRAINING_CAP) TRAINING_CAP / trainingRaw else 1.0
+        val cap = TRAINING_CAP + crest.trainingCapBonus
+        val keep = if (trainingRaw > cap) cap / trainingRaw else 1.0
         val liftedRaw = (ironRaw * houses.term(RelicHouse.Iron) + steadyRaw * houses.term(RelicHouse.Vigil)) * keep
         val trainingFactor = 1.0 + liftedRaw / FLOOR
 
         // Asymptotic: 2 skills ~x1.09, 25 ~x1.67, 95 ~x1.99 — always rising,
         // never reaching x2, so no unlock is ever dead weight.
         // Craft lifts this term; a full Craft house also raises its ceiling from x2.0 to x2.1.
-        val skillFactor = 1.0 + houses.skillCeiling * (1.0 - kotlin.math.exp(-SKILL_RATE * skills)) *
+        val skillFactor = 1.0 + houses.skillCeiling * (1.0 - kotlin.math.exp(-SKILL_RATE * crest.skillRateScale * skills)) *
             houses.term(RelicHouse.Craft)
 
         val relic = when {
@@ -150,9 +159,12 @@ object Idle {
             else -> state.relicMultiplier.coerceIn(1.0, MAX_RELIC)
         }
 
-        val echo = echoFactor(state.figures)
+        val echo = echoFactor(state.figures, crest)
 
-        val perHour = (FLOOR * trainingFactor * skillFactor * relic * echo).coerceIn(0.0, MAX_PER_HOUR)
+        // The crest's flat trickle joins the base before every multiplier; its factors multiply the whole.
+        val oath = if (streak >= CrestEffects.OATH_DAYS) crest.oathFactor else 1.0
+        val perHour = ((FLOOR * trainingFactor + crest.flatPerHour) * skillFactor * relic * echo *
+            crest.rateFactor * crest.relicFactor * oath).coerceIn(0.0, MAX_PER_HOUR)
         return IdleRate(perHour, trainingFactor, skillFactor, houses, echo)
     }
 
@@ -196,7 +208,8 @@ object Idle {
         val houses = rate.effects
         val fullHours = houses.fullStrengthHours
         val floor = houses.minEfficiency
-        val taperEnd = fullHours + TAPER_WINDOW_HOURS
+        val window = houses.taperWindowHours
+        val taperEnd = fullHours + window
         val workedHours = when {
             hours <= fullHours -> hours
             hours <= taperEnd -> {
@@ -207,14 +220,14 @@ object Idle {
                 fullHours + into * (1.0 + endEfficiency) / 2.0
             }
             else -> {
-                val rampArea = TAPER_WINDOW_HOURS * (1.0 + floor) / 2.0
+                val rampArea = window * (1.0 + floor) / 2.0
                 fullHours + rampArea + (hours - taperEnd) * floor
             }
         }
         // Return lifts only the time paid beyond the full-strength day: it pays for coming back.
         val effectiveHours = (
             if (workedHours <= fullHours) workedHours else fullHours + (workedHours - fullHours) * houses.term(RelicHouse.Return)
-            ).coerceAtMost(houses.maxEffectiveHours)
+            ).coerceAtMost(houses.maxEffectiveHours) * houses.crest.awayPay
         val perHour = if (rate.perHour.isFinite()) rate.perHour.coerceAtLeast(0.0) else 0.0
         val amount = perHour * effectiveHours
         return if (amount.isFinite()) amount else 0.0
@@ -227,10 +240,11 @@ object Idle {
     fun efficiencyAtHours(hours: Double, houses: HouseEffects = HouseEffects.NONE): Double {
         val fullHours = houses.fullStrengthHours
         val floor = houses.minEfficiency
+        val window = houses.taperWindowHours
         return when {
             hours <= fullHours -> 1.0
-            hours >= fullHours + TAPER_WINDOW_HOURS -> floor
-            else -> 1.0 - (1.0 - floor) * ((hours - fullHours) / TAPER_WINDOW_HOURS)
+            hours >= fullHours + window -> floor
+            else -> 1.0 - (1.0 - floor) * ((hours - fullHours) / window)
         }
     }
 

@@ -295,13 +295,21 @@ data class GachaStateEntity(
     val offeringsMade: Int = 0,
     // The last one-time grant pass this lifter has had (Veil.GRANT_VERSION).
     val veilGrantVersion: Int = 0,
+    // When the worn crest was last changed (an equip or an unequip), or null if it never was. The worn
+    // crest can change once a local day; the first change is always allowed.
+    val equippedChangedAtMs: Long? = null,
 )
 
-/** One owned crest frame per row; id is the stable catalogue id from Gacha. */
+/**
+ * One owned crest per row; id is the stable catalogue id from [com.ironvellum.app.domain.Crests]. [source] is how
+ * it was come by ([com.ironvellum.app.domain.CrestSource]): the retro grant counts a crest as a spent inscription
+ * only when a draw paid it. A row from before sources reads "legacy".
+ */
 @Entity(tableName = "owned_crest_frames")
 data class OwnedCrestFrameEntity(
     @PrimaryKey val frameId: String,
     val ownedAtMs: Long,
+    val source: String = "legacy",
 )
 
 /**

@@ -83,7 +83,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
 
     companion object {
         /** Bump together with a new Migration in MIGRATIONS; single source for tests too. */
-        const val VERSION = 37
+        const val VERSION = 38
 
         /**
          * When a sealed trial was amended, and what it paid when sealed (the
@@ -553,6 +553,22 @@ abstract class IronvellumDatabase : RoomDatabase() {
         }
 
 
+        /**
+         * Crests learn where they came from, and the worn crest learns when it last changed.
+         *
+         * `source` is "legacy" for every row that exists: it could have been a draw or a milestone, and the
+         * retro grant treats legacy as a draw, which can only ever under-pay it. Aurora, void and masterwork
+         * were never milestones, so they are known draws. `equippedChangedAtMs` is null: the first change
+         * after this release is always allowed.
+         */
+        private val MIGRATION_37_38 = object : Migration(37, 38) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("ALTER TABLE owned_crest_frames ADD COLUMN source TEXT NOT NULL DEFAULT 'legacy'")
+                db.execSQL("UPDATE owned_crest_frames SET source = 'draw' WHERE frameId IN ('aurora', 'void', 'masterwork')")
+                db.execSQL("ALTER TABLE gacha_state ADD COLUMN equippedChangedAtMs INTEGER")
+            }
+        }
+
         val MIGRATIONS: Array<Migration> = arrayOf(
             MIGRATION_11_12,
             MIGRATION_12_13,
@@ -580,6 +596,7 @@ abstract class IronvellumDatabase : RoomDatabase() {
             MIGRATION_34_35,
             MIGRATION_35_36,
             MIGRATION_36_37,
+            MIGRATION_37_38,
         )
 
         const val NAME = "ironvellum.db"

@@ -133,7 +133,7 @@ class ExportWriterTest {
                     "\"relicPity\":3,\"drawsSpent\":11,\"offeringsMade\":4,\"veilGrantVersion\":1}",
             ),
         )
-        assertTrue(json.contains("\"crestFrames\":[{\"frameId\":\"ember\",\"ownedAtMs\":10}]"))
+        assertTrue(json.contains("\"crestFrames\":[{\"frameId\":\"ember\",\"ownedAtMs\":10,\"source\":\"legacy\"}]"))
         assertTrue(json.contains("\"relics\":[{\"name\":\"Crown of Iron\",\"multiplier\":1.45,\"drawnAtMs\":20,\"relicId\":\"iron.crown\",\"refinements\":2}]"))
     }
 

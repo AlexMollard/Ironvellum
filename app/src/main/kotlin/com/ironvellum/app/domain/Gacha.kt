@@ -42,19 +42,11 @@ data class RollResult(val reward: Reward, val rarity: RewardRarity)
 
 object Gacha {
 
-    /** The full cosmetic catalogue; frames drop only from Rare and above. */
-    val CREST_FRAMES: List<Reward.CrestFrame> = listOf(
-        Reward.CrestFrame("iron", "Iron Crest"),
-        Reward.CrestFrame("bronze", "Bronze Crest"),
-        Reward.CrestFrame("silver", "Silver Crest"),
-        Reward.CrestFrame("gold", "Gold Crest"),
-        Reward.CrestFrame("jade", "Jade Crest"),
-        Reward.CrestFrame("crimson", "Crimson Crest"),
-        Reward.CrestFrame("obsidian", "Obsidian Crest"),
-        Reward.CrestFrame("aurora", "Aurora Crest"),
-        Reward.CrestFrame("void", "Void Crest"),
-        Reward.CrestFrame("masterwork", "Masterwork Crest"),
-    )
+    /**
+     * The crests a draw can pay: ONLY the six chance crests of [Crests.CHANCE]. The ladder, deed and house
+     * crests are earned, never drawn; [Crests.ALL] is the whole catalogue.
+     */
+    val CREST_FRAMES: List<Reward.CrestFrame> = Crests.CHANCE.map { Reward.CrestFrame(it.id, it.name) }
 
     /**
      * The drop table, declared once. The roller AND the on-screen odds panel
@@ -76,6 +68,9 @@ object Gacha {
         val relicHigh: Double,
     ) {
         val frameChance: Double get() = (1.0 - figureChance - relicChance).coerceAtLeast(0.0)
+
+        /** What an echo draw of this rarity can pay under [perks]: the same function the roller pays with. */
+        fun echoRange(perks: DrawPerks = DrawPerks.NONE): IntRange = perks.echoRange(figuresLow, figuresHigh)
     }
 
     /**
@@ -138,12 +133,20 @@ object Gacha {
     /** What one inscription can pay, as shares of every draw: echoes, a relic, a crest. They sum to 1. */
     data class TypeShares(val echoes: Double, val relic: Double, val crest: Double)
 
-    /** [TypeShares] read straight off [DROP_TABLE], so the buy sheet can never tell a lifter a different story from the roller. */
-    fun typeShares(): TypeShares = TypeShares(
-        echoes = DROP_TABLE.sumOf { it.chance * it.figureChance },
-        relic = DROP_TABLE.sumOf { it.chance * it.relicChance },
-        crest = DROP_TABLE.sumOf { it.chance * it.frameChance },
-    )
+    /**
+     * [TypeShares] read straight off [DROP_TABLE], so the buy sheet can never tell a lifter a different story from the roller.
+     * Once every crest the roller can draw is in [ownedFrames] a crest draw pays echoes instead ([roll]), so its share is
+     * told as echoes.
+     */
+    fun typeShares(ownedFrames: Set<String> = emptySet()): TypeShares {
+        val crest = DROP_TABLE.sumOf { it.chance * it.frameChance }
+        val drawable = CREST_FRAMES.any { it.id !in ownedFrames }
+        return TypeShares(
+            echoes = DROP_TABLE.sumOf { it.chance * it.figureChance } + if (drawable) 0.0 else crest,
+            relic = DROP_TABLE.sumOf { it.chance * it.relicChance },
+            crest = if (drawable) crest else 0.0,
+        )
+    }
 
     /**
      * What the pity rules say about the NEXT draw, in the app's voice: the first inscription is a relic,
@@ -165,6 +168,7 @@ object Gacha {
         ownedFrames: Set<String>,
         pity: Pity,
         ownedRelics: Map<String, Double> = emptyMap(),
+        perks: DrawPerks = DrawPerks.NONE,
     ): RollResult = roll(
         seed = seed,
         ownedFrames = ownedFrames,
@@ -172,6 +176,7 @@ object Gacha {
         figureStreak = pity.figureStreak,
         relicStreak = pity.relicStreak,
         guaranteeRelic = pity.guaranteeFirstRelic,
+        perks = perks,
     )
 
     /**
@@ -191,6 +196,10 @@ object Gacha {
      * the relic and the house and form are drawn from that tier's cells the lifter does not hold
      * yet (as a crest frame is drawn from the unowned ones). Only when the whole tier is held is
      * the draw a duplicate, which refines the relic (see [relicDraw]).
+     *
+     * [perks] are the worn crest's draw effects. They only reshape values the roller already draws (an echo
+     * payout, a new relic's roll) and add no random call, so with [DrawPerks.NONE] every seed pays what it
+     * always did.
      */
     fun roll(
         seed: Long,
@@ -199,6 +208,7 @@ object Gacha {
         relicStreak: Int = 0,
         guaranteeRelic: Boolean = false,
         ownedRelics: Map<String, Double> = emptyMap(),
+        perks: DrawPerks = DrawPerks.NONE,
     ): RollResult {
         val rng = Random(seed)
         val rarityRoll = rng.nextDouble()
@@ -222,24 +232,24 @@ object Gacha {
             return if (candidates.isEmpty()) {
                 // All frames owned: fall back to the next-best payout —
                 // the top of this rarity's figure band.
-                Reward.Figures(odds.figuresHigh)
+                Reward.Figures(perks.echoes(odds.figuresHigh, odds.figuresHigh, 0.0))
             } else {
                 candidates[rng.nextInt(candidates.size)]
             }
         }
         val reward = when {
-            forcedRelic -> relicDraw(odds, valueRoll, rng, ownedRelics)
+            forcedRelic -> relicDraw(odds, valueRoll, rng, ownedRelics, perks)
             forced -> {
                 // Rescale the rarity's relic/frame split to fill the whole
                 // roll. A row with no frame share still pays its relic.
                 val nonFigure = odds.relicChance + odds.frameChance
                 val relicShare = if (nonFigure <= 0.0) 1.0 else odds.relicChance / nonFigure
-                if (typeRoll < relicShare) relicDraw(odds, valueRoll, rng, ownedRelics) else frameOrFigures()
+                if (typeRoll < relicShare) relicDraw(odds, valueRoll, rng, ownedRelics, perks) else frameOrFigures()
             }
             typeRoll < odds.figureChance ->
-                Reward.Figures(lerp(odds.figuresLow, odds.figuresHigh, valueRoll))
+                Reward.Figures(perks.echoes(odds.figuresLow, odds.figuresHigh, valueRoll))
             typeRoll < odds.figureChance + odds.relicChance ->
-                relicDraw(odds, valueRoll, rng, ownedRelics)
+                relicDraw(odds, valueRoll, rng, ownedRelics, perks)
             else -> frameOrFigures()
         }
         return RollResult(reward, odds.rarity)
@@ -260,13 +270,17 @@ object Gacha {
      * One rng call, after the rolls the table has always made, so every seeded result before it
      * (rarity, type, value) is exactly what it was.
      */
-    private fun relicDraw(odds: Odds, t: Double, rng: Random, owned: Map<String, Double>): Reward.Relic {
+    private fun relicDraw(odds: Odds, t: Double, rng: Random, owned: Map<String, Double>, perks: DrawPerks): Reward.Relic {
         val cells = RelicHouses.ofTier(odds.rarity)
         val open = cells.filter { it.id !in owned }
         val cell = (open.ifEmpty { cells })[rng.nextInt(open.ifEmpty { cells }.size)]
         val have = owned[cell.id]
         val rolled = odds.relicLow + (odds.relicHigh - odds.relicLow) * t
-        if (have == null) return Reward.Relic(rolled, cell.name, cell.id)
+        // A new relic rolls the crest's share of its band higher, never past the top of the band; a refine is untouched.
+        if (have == null) {
+            val lifted = minOf(odds.relicHigh, rolled + (odds.relicHigh - odds.relicLow) * perks.newRelicLift)
+            return Reward.Relic(lifted, cell.name, cell.id)
+        }
         val cap = odds.relicHigh
         val refined = minOf(cap, have + RelicHouses.refineStep(odds.rarity))
         return if (refined > have + 1e-9) {
@@ -359,8 +373,4 @@ object Gacha {
         }
         return seen.values.sortedByDescending { it.multiplier }
     }
-
-    /** Inclusive integer lerp driven by a pre-drawn uniform in [0, 1). */
-    private fun lerp(low: Int, high: Int, t: Double) =
-        (low + ((high - low + 1) * t).toInt()).coerceAtMost(high)
 }

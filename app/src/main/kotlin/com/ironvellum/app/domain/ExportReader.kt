@@ -239,6 +239,7 @@ object ExportReader {
     private fun readCrestFrame(o: Obj) = ExportWriter.CrestFrameSnapshot(
         frameId = legacyFrameId(o.str("frameId")) ?: fail("crestFrame missing frameId"),
         ownedAtMs = o.long("ownedAtMs") ?: 0,
+        source = CrestSource.of(o.str("source")).id,
     )
 
     /**

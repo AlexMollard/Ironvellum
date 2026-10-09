@@ -832,4 +832,35 @@ class MigrationForwardTest {
             }
         }
     }
+
+    /**
+     * Schema 37 -> 38, crests: every held crest frame gets a source ('legacy', a draw before sources were
+     * kept, except the three that only the Veil ever paid, which are 'draw'), and the worn crest gets no
+     * change stamp so the first change under the once-a-day rule is free. Nothing held is taken away.
+     */
+    @Test
+    fun upgradeTo38TagsCrestSourcesAndKeepsWhatIsWorn() = runTest {
+        helper.createDatabase(dbName, 37).use { old ->
+            old.execSQL("INSERT OR REPLACE INTO gacha_state (id, rolls, equippedFrame, figureStreak, rollLevelMark, relicPity, drawsSpent, offeringsMade, veilGrantVersion) VALUES (1, 3, 'iron', 2, 15, 0, 0, 0, 1)")
+            old.execSQL("INSERT INTO owned_crest_frames (frameId, ownedAtMs) VALUES ('iron', 100)")
+            old.execSQL("INSERT INTO owned_crest_frames (frameId, ownedAtMs) VALUES ('aurora', 200)")
+        }
+        helper.runMigrationsAndValidate(dbName, 38, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT frameId, ownedAtMs, source FROM owned_crest_frames ORDER BY frameId").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals("aurora", c.getString(0))
+                assertEquals(200L, c.getLong(1))
+                assertEquals("draw", c.getString(2))
+                assertTrue(c.moveToNext())
+                assertEquals("iron", c.getString(0))
+                assertEquals("legacy", c.getString(2))
+            }
+            db.query("SELECT equippedFrame, equippedChangedAtMs, veilGrantVersion FROM gacha_state WHERE id = 1").use { c ->
+                assertTrue("the gacha row must survive", c.moveToFirst())
+                assertEquals("iron", c.getString(0))
+                assertTrue("no change stamp yet", c.isNull(1))
+                assertEquals("the retro grant is not re-run", 1, c.getInt(2))
+            }
+        }
+    }
 }

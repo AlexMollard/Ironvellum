@@ -45,6 +45,10 @@ import com.ironvellum.app.domain.ExportReader
 import com.ironvellum.app.domain.ExportWriter
 import com.ironvellum.app.domain.Gacha
 import com.ironvellum.app.domain.HealthDay
+import com.ironvellum.app.domain.CrestDef
+import com.ironvellum.app.domain.CrestEffects
+import com.ironvellum.app.domain.CrestSource
+import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.HouseEffects
 import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.IdleRate
@@ -1235,7 +1239,7 @@ class Repository(
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         val now = finishedAt
         titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
-        wearIfNoneWorn(newly)
+        settleNewTitles(newly)
 
         // A level-up from ANY source banks inscriptions — workout XP included.
         // Without this, levelling through sessions never paid out at all.
@@ -1822,7 +1826,7 @@ class Repository(
         // but nothing worn, and the unlock never came round again.
         db.withTransaction {
             titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
-            wearIfNoneWorn(newly)
+            settleNewTitles(newly)
         }
         // Every earned title gets its moment: reconciliation runs before any UI
         // exists, so the awards wait here until a screen can show them.
@@ -1837,8 +1841,11 @@ class Repository(
      * so an import does not dress the lifter in the easiest of twenty.
      * Call inside the transaction that inserted [newly].
      */
-    private suspend fun wearIfNoneWorn(newly: List<TitleDef>) {
-        if (newly.isEmpty() || profileDao.get()?.currentTitleId != null) return
+    private suspend fun settleNewTitles(newly: List<TitleDef>) {
+        if (newly.isEmpty()) return
+        // A deed that has a crest pays it in the same transaction that recorded the deed.
+        reconcileCrests()
+        if (profileDao.get()?.currentTitleId != null) return
         profileDao.setCurrentTitle(newly.maxByOrNull { it.rarity.ordinal }!!.id)
     }
 
@@ -1855,24 +1862,36 @@ class Repository(
         if (due > 0 || mark != g.rollLevelMark) {
             gachaDao.upsert(g.copy(rolls = g.rolls + due, rollLevelMark = mark))
         }
-        // Milestone crests ride the same once-per-level mark, so a refund and a
-        // climb back never pay one twice. They are on top of the chance drops.
-        val milestones = Veil.milestonesCrossed(maxOf(levelBefore, g.rollLevelMark), levelAfter)
-        if (milestones.isNotEmpty()) {
-            val owned = gachaDao.ownedFrameIds().toMutableSet()
-            val won = milestones.mapNotNull { level ->
-                Veil.milestoneCrest(level, owned)?.also {
-                    gachaDao.insertFrame(OwnedCrestFrameEntity(frameId = it, ownedAtMs = System.currentTimeMillis()))
-                    owned += it
-                }
-            }
-            if (won.isNotEmpty()) addPendingVeilGrant(VeilGrant(crests = won.map { crestName(it) }))
-        }
+        // Ladder crests ride the same once-per-level mark: every rung up to the level reached is owed, so a
+        // refund and a climb back never pay one twice and a rung won another way is simply already held.
+        reconcileCrests(maxOf(levelAfter, mark))
         return due
     }
 
-    private fun crestName(frameId: String): String =
-        Gacha.CREST_FRAMES.firstOrNull { it.id == frameId }?.name ?: frameId
+    private fun crestName(frameId: String): String = Crests.byId(frameId)?.name ?: frameId
+
+    /**
+     * The ONE place a crest outside a draw is awarded, idempotent and additive: every crest the lifter's
+     * level, held deeds and completed houses owe ([Crests.earned]) that is not yet held is inserted
+     * (IGNORE, so only a real insert counts), under the source that says how it came. Nothing is ever
+     * removed: a deed lost to a recompute or a level lost to a refund keeps its crest. Called from every
+     * place the inputs can change (level banked, deed unlocked, a draw that completes a house, the grant
+     * pass, a restore). Returns the crests that were new; with [queue] they await their celebration.
+     * Call inside the caller's transaction.
+     */
+    private suspend fun reconcileCrests(level: Int? = null, queue: Boolean = true): List<CrestDef> {
+        val g = gachaDao.get() ?: GachaStateEntity()
+        val standing = maxOf(level ?: 0, g.rollLevelMark, Xp.levelFor(profileDao.get()?.totalXp ?: 0L))
+        val relics = gachaDao.relics().map { it.toOwned() }
+        val completed = RelicHouses.effects(relics).standings.filter { it.fullReached }.map { it.house }.toSet()
+        val owned = gachaDao.ownedFrameIds().toSet()
+        val now = System.currentTimeMillis()
+        val added = Crests.earned(standing, titleDao.heldIds().toSet(), completed)
+            .filter { it.id !in owned }
+            .filter { gachaDao.insertFrame(OwnedCrestFrameEntity(it.id, now, CrestSource.awardedFor(it).id)) != -1L }
+        if (queue && added.isNotEmpty()) addPendingVeilGrant(VeilGrant(crests = added.map { it.name }))
+        return added
+    }
 
     private val _pendingVeilGrant = MutableStateFlow<VeilGrant?>(null)
 
@@ -1888,10 +1907,10 @@ class Repository(
     }
 
     /**
-     * The one-time Veil pass, guarded by [Veil.GRANT_VERSION] so it runs once per
-     * lifter and never again. It only ADDS: crests for milestones already
-     * reached, relics up to the floor the pacing implies, and the inscriptions
-     * for levels that never paid ([Veil.retroGrant]). Nothing is ever taken away.
+     * The one-time Veil pass, guarded by [Veil.GRANT_VERSION] so a version runs once per
+     * lifter and never again. It only ADDS: the crests the lifter's level, deeds and houses owe
+     * ([reconcileCrests]) and, for a lifter who never had the first pass, relics up to the floor the pacing
+     * implies and the inscriptions for levels that never paid ([Veil.retroGrant]). Nothing is ever taken away.
      * Queues one celebration. Returns what was paid, or null when it had already
      * run or there was nothing to pay.
      */
@@ -1899,36 +1918,44 @@ class Repository(
         val g = gachaDao.get() ?: GachaStateEntity()
         if (g.veilGrantVersion >= Veil.GRANT_VERSION) return@withTransaction null
         val level = Xp.levelFor(profileDao.get()?.totalXp ?: 0L)
-        val heldRelics = gachaDao.relics()
-        val grant = Veil.retroGrant(
-            level = level,
-            banked = g.rolls,
-            relicCount = heldRelics.size,
-            ownedFrames = gachaDao.ownedFrameIds().toSet(),
-            echoes = idleDao.get()?.shadows ?: 0,
-            ownedRelicIds = heldRelics.map { it.relicId }.toSet(),
-        )
         val now = System.currentTimeMillis()
-        grant.crestIds.forEach { gachaDao.insertFrame(OwnedCrestFrameEntity(frameId = it, ownedAtMs = now)) }
+        // The inscription and relic part runs for a lifter who never had the retro pass. A lifter already at
+        // version 1 was paid it, and running it again would pay levels twice: they get the crests only.
+        val retro = g.veilGrantVersion < Veil.RETRO_VERSION
+        val heldRelics = gachaDao.relics()
+        val grant = if (retro) {
+            Veil.retroGrant(
+                level = level,
+                banked = g.rolls,
+                relicCount = heldRelics.size,
+                drawnCrests = gachaDao.drawnFrameCount(),
+                echoes = idleDao.get()?.shadows ?: 0,
+                ownedRelicIds = heldRelics.map { it.relicId }.toSet(),
+            )
+        } else {
+            Veil.RetroGrant(0, emptyList())
+        }
         grant.relics.forEach {
             gachaDao.insertRelic(OwnedRelicEntity(name = it.name, multiplier = it.multiplier, drawnAtMs = now, relicId = it.relicId))
         }
         if (grant.relics.isNotEmpty()) applyRelicVault()
-        // The level is marked paid too: every level up to it is now accounted
-        // for, so the live level-up path cannot pay any of them a second time.
+        // Crests last, so a house the relics above just completed pays its crest too.
+        val crests = reconcileCrests(level, queue = false)
         gachaDao.upsert(
             g.copy(
                 rolls = g.rolls + grant.inscriptions,
-                rollLevelMark = maxOf(g.rollLevelMark, level),
+                // The level is marked paid only by the pass that paid it: every level up to it is now
+                // accounted for, so the live level-up path cannot pay any of them a second time.
+                rollLevelMark = if (retro) maxOf(g.rollLevelMark, level) else g.rollLevelMark,
                 veilGrantVersion = Veil.GRANT_VERSION,
             ),
         )
-        if (grant.isEmpty) return@withTransaction null
+        if (grant.isEmpty && crests.isEmpty()) return@withTransaction null
         VeilGrant(
-            retro = true,
+            retro = retro,
             inscriptions = grant.inscriptions,
             relics = grant.relics.map { it.name },
-            crests = grant.crestIds.map { crestName(it) },
+            crests = crests.map { it.name },
         ).also { addPendingVeilGrant(it) }
     }
 
@@ -2078,7 +2105,7 @@ class Repository(
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, now) })
-        wearIfNoneWorn(newly)
+        settleNewTitles(newly)
         SkillClaimResult(
             skill = def,
             xpAwarded = def.xp,
@@ -2273,7 +2300,7 @@ class Repository(
             )
             Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet()).also { found ->
                 titleDao.insertAll(found.map { TitleUnlockEntity(it.id, nowMs) })
-                wearIfNoneWorn(found)
+                settleNewTitles(found)
             }
         } else {
             emptyList()
@@ -2501,7 +2528,7 @@ class Repository(
             )
         }
         val crestFrames = gachaDao.ownedFrames().map {
-            ExportWriter.CrestFrameSnapshot(it.frameId, it.ownedAtMs)
+            ExportWriter.CrestFrameSnapshot(it.frameId, it.ownedAtMs, it.source)
         }
         val relics = gachaDao.observeRelics().first().map {
             ExportWriter.RelicSnapshot(it.name, it.multiplier, it.drawnAtMs, it.relicId, it.refinements)
@@ -2824,7 +2851,7 @@ class Repository(
                         ),
                     )
                     archive.crestFrames.forEach {
-                        gachaDao.insertFrame(OwnedCrestFrameEntity(frameId = it.frameId, ownedAtMs = it.ownedAtMs))
+                        gachaDao.insertFrame(OwnedCrestFrameEntity(frameId = it.frameId, ownedAtMs = it.ownedAtMs, source = it.source))
                     }
                     restoredRelics.forEach {
                         gachaDao.insertRelic(
@@ -2837,6 +2864,8 @@ class Repository(
                             ),
                         )
                     }
+                    // Crests the restored level, deeds and houses owe, on top of the archive's own (additive).
+                    reconcileCrests(queue = false)
                 }
 
                 ImportResult(
@@ -2996,7 +3025,7 @@ class Repository(
         )
         val newly = Titles.newlyUnlocked(ledger, titleDao.heldIds().toSet())
         titleDao.insertAll(newly.map { TitleUnlockEntity(it.id, System.currentTimeMillis()) })
-        wearIfNoneWorn(newly)
+        settleNewTitles(newly)
 
         MergeResult(
             sessions = sessionsInserted,
@@ -3065,10 +3094,11 @@ class Repository(
             sessionDao.observeCompletedWithSets().first(),
             skillPracticeDao.observeAll().first(),
         )
-        // The same houses the rate on screen is built from, or the banked essence and the shown rate drift.
+        // The same effects (houses AND the worn crest) the rate on screen is built from, or the banked
+        // essence and the shown rate drift. A change of crest collects here first, at the crest it replaces.
         val rate = Idle.rate(
             state, inputs.sessionsLast7d, inputs.volumeLast7d, inputs.skillsUnlocked, inputs.streakDays,
-            RelicHouses.effects(gachaDao.relics().map { it.toOwned() }),
+            rateEffectsNow(),
         )
         val gained = Idle.accrued(state, rate, nowMs)
         if (gained > 0) {
@@ -3122,9 +3152,30 @@ class Repository(
 
     private fun OwnedRelicEntity.toOwned() = OwnedRelic(relicId, multiplier, refinements, drawnAtMs)
 
-    /** What the relic houses change in the rate right now. */
+    /**
+     * What the relic houses and the worn crest change in the rate right now: the one value the rate on
+     * screen ([observeIdleRate]), a collect ([collectIdle]) and the cloud push all read.
+     */
     fun observeHouseEffects(): Flow<HouseEffects> =
-        gachaDao.observeRelics().map { rows -> RelicHouses.effects(rows.map { it.toOwned() }) }
+        combine(gachaDao.observeRelics(), gachaDao.observeEquipped()) { rows, worn ->
+            RelicHouses.effects(rows.map { it.toOwned() }, worn)
+        }
+
+    /** [observeHouseEffects] once, inside a transaction. */
+    private suspend fun rateEffectsNow(): HouseEffects =
+        RelicHouses.effects(gachaDao.relics().map { it.toOwned() }, gachaDao.get()?.equippedFrame)
+
+    /** What each crest would add to the rate now, in essence an hour ([Crests.worth]). */
+    fun observeCrestWorth(): Flow<Map<String, Double>> = combine(
+        observeIdle(),
+        observeIdleInputs(),
+        gachaDao.observeRelics(),
+    ) { state, inputs, rows ->
+        Crests.worth(state, inputs.sessionsLast7d, inputs.volumeLast7d, inputs.skillsUnlocked, inputs.streakDays, rows.map { it.toOwned() })
+    }
+
+    /** The worn crest's effects: what prices an inscription and what the draws pay. */
+    fun observeCrestEffects(): Flow<CrestEffects> = observeHouseEffects().map { it.crest }
 
     /**
      * The vault grid: per house and form whether it is held, its tier and whether it is the active
@@ -3138,19 +3189,29 @@ class Repository(
 
     fun observeEquippedFrame(): Flow<String?> = gachaDao.observeEquipped()
 
+    /** When the worn crest last changed (null: never), for the once-a-day rule's message. */
+    fun observeEquipChangedAt(): Flow<Long?> = gachaDao.observeEquipChangedAt()
+
     /**
-     * Equips (or unequips with null) a crest frame. Cosmetic only, so a frame
-     * the lifter does not own is silently refused (returns false) rather than
-     * thrown — the ownership check reads owned_crest_frames inside the same
-     * transaction as the write, so a concurrent draw can never race it.
+     * Wears (or takes off, with null) a crest. A crest the lifter does not own is refused
+     * ([Crests.Equip.NotOwned]) rather than thrown — the ownership check reads owned_crest_frames inside
+     * the same transaction as the write, so a concurrent draw can never race it. The worn crest changes
+     * once a local day ([Crests.canChange]; the first change is always allowed, taking it off counts), and
+     * a change first collects what is owed at the crest being replaced.
      */
-    suspend fun equipFrame(frameId: String?): Boolean = db.withTransaction {
+    suspend fun equipFrame(frameId: String?, nowMs: Long = System.currentTimeMillis()): Crests.Equip = db.withTransaction {
         if (frameId != null && frameId !in gachaDao.ownedFrameIds()) {
-            return@withTransaction false
+            return@withTransaction Crests.Equip.NotOwned
         }
         val current = gachaDao.get() ?: GachaStateEntity()
-        gachaDao.upsert(current.copy(equippedFrame = frameId))
-        true
+        // Wearing what is already worn changes nothing, so it costs nothing either.
+        if (current.equippedFrame == frameId) return@withTransaction Crests.Equip.Worn
+        if (!Crests.canChange(current.equippedChangedAtMs, nowMs)) return@withTransaction Crests.Equip.TooSoon
+        // What is owed is collected at the OLD crest's rate before the new one takes over, so a swap can
+        // never be timed to reprice time already spent.
+        collectIdle(nowMs)
+        gachaDao.upsert((gachaDao.get() ?: current).copy(equippedFrame = frameId, equippedChangedAtMs = nowMs))
+        Crests.Equip.Worn
     }
 
     /** Called on level-up: banks one more roll to spend on the Muster screen. */
@@ -3186,7 +3247,9 @@ class Repository(
     suspend fun buyInscription(): Boolean = db.withTransaction {
         val g = gachaDao.get() ?: GachaStateEntity()
         val idle = idleDao.get() ?: IdleStateEntity()
-        val paid = Veil.Balance(idle.essence, idle.lifetimeEssence).buy(Veil.offeringCost(g.offeringsMade))
+        // The price of the worn crest: the same Veil.offeringCost every screen shows it with.
+        val price = Veil.offeringCost(g.offeringsMade, rateEffectsNow().crest)
+        val paid = Veil.Balance(idle.essence, idle.lifetimeEssence).buy(price)
             ?: return@withTransaction false
         idleDao.upsert(idle.copy(essence = paid.essence, lifetimeEssence = paid.lifetime))
         gachaDao.upsert(g.copy(rolls = g.rolls + 1, offeringsMade = g.offeringsMade + 1))
@@ -3211,7 +3274,10 @@ class Repository(
             draws = current.drawsSpent,
             hasRelic = held.isNotEmpty(),
         )
-        val result = Gacha.roll(seed, gachaDao.ownedFrameIds().toSet(), pity, held.associate { it.relicId to it.multiplier })
+        val result = Gacha.roll(
+            seed, gachaDao.ownedFrameIds().toSet(), pity, held.associate { it.relicId to it.multiplier },
+            perks = rateEffectsNow().crest.draw,
+        )
         // The streaks are written in the SAME transaction as the payout, so a
         // crash between the two can never leave pity counting a draw that was
         // never paid.
@@ -3245,9 +3311,11 @@ class Repository(
                     if (reward.echoes > 0) grantIdle(reward.echoes, 1.0)
                 }
                 applyRelicVault()
+                // A relic that completes a house pays that house's crest.
+                reconcileCrests()
             }
             is Reward.CrestFrame -> gachaDao.insertFrame(
-                OwnedCrestFrameEntity(frameId = reward.id, ownedAtMs = System.currentTimeMillis()),
+                OwnedCrestFrameEntity(frameId = reward.id, ownedAtMs = System.currentTimeMillis(), source = CrestSource.Draw.id),
             )
         }
         result

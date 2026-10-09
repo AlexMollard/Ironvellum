@@ -508,8 +508,17 @@ interface GachaDao {
     @Query("SELECT equippedFrame FROM gacha_state WHERE id = 1")
     fun observeEquipped(): Flow<String?>
 
+    /** The row id, or -1 when the crest was already held and nothing was inserted. */
+    // When the worn crest last changed, or null: the once-a-day rule reads it.
+    @Query("SELECT equippedChangedAtMs FROM gacha_state WHERE id = 1")
+    fun observeEquipChangedAt(): Flow<Long?>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertFrame(frame: OwnedCrestFrameEntity)
+    suspend fun insertFrame(frame: OwnedCrestFrameEntity): Long
+
+    // Crests a draw paid (or that predate sources and may have been): the retro grant's spent inscriptions.
+    @Query("SELECT COUNT(*) FROM owned_crest_frames WHERE source IN ('draw', 'legacy')")
+    suspend fun drawnFrameCount(): Int
 
     // Full rows for the archive: the id-only projection loses ownedAtMs.
     @Query("SELECT * FROM owned_crest_frames")

@@ -10,6 +10,7 @@ import com.ironvellum.app.data.db.OwnedCrestFrameEntity
 import com.ironvellum.app.data.db.OwnedRelicEntity
 import com.ironvellum.app.data.db.PresetEntryEntity
 import com.ironvellum.app.data.db.PresetEntity
+import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.ExportWriter
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TrialDraft
@@ -227,7 +228,7 @@ class ExportRoundTripTest {
         repo.grantRoll(3)
         db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "ember", ownedAtMs = 10))
         db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "verdant", ownedAtMs = 20))
-        assertTrue(repo.equipFrame("ember"))
+        assertEquals(Crests.Equip.Worn, repo.equipFrame("ember"))
         db.gachaDao().insertRelic(OwnedRelicEntity(name = "Chain of Iron", multiplier = 1.31, drawnAtMs = 30, relicId = "iron.chain", refinements = 2))
 
         val export = repo.exportArchive()
