@@ -87,12 +87,14 @@ def responsive(serial: str) -> bool:
     """True when the device's shell answers; `adb devices` alone is not proof."""
     try:
         out = subprocess.run(
-            [ADB, "-s", serial, "shell", "getprop", "ro.build.version.sdk"],
+            [ADB, "-s", serial, "shell", "getprop ro.build.version.sdk; pm path android"],
             capture_output=True, text=True, timeout=10,
-        ).stdout.strip()
+        ).stdout.split()
     except subprocess.TimeoutExpired:
         return False
-    return out.isdigit()
+    # A system_server that died mid-suite leaves the shell answering while the package service is
+    # gone, and every install then fails; ask for both.
+    return len(out) >= 2 and out[0].isdigit() and out[1].startswith("package:")
 
 
 def revive(serial: str) -> bool:
