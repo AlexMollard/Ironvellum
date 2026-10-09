@@ -356,6 +356,7 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                             navController.getBackStackEntry(Routes.STATS).savedStateHandle[LOG_WEIGHT] = true
                         },
                         onOpenGarrison = { navController.navigate(Routes.IDLE) { launchSingleTop = true } },
+                        onOpenCrest = { navController.navigate(Routes.collection(CollectionTab.Crests)) { launchSingleTop = true } },
                         onOpenLift = { name -> navController.navigate(Routes.exercises(name)) },
                     )
                 }

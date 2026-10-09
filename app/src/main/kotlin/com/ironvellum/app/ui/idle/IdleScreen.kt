@@ -65,6 +65,7 @@ import com.ironvellum.app.domain.Circle
 import com.ironvellum.app.domain.CollectionTab
 import com.ironvellum.app.domain.DrawChange
 import com.ironvellum.app.domain.Gacha
+import com.ironvellum.app.domain.CrestEffects
 import com.ironvellum.app.domain.HouseEffects
 import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.FirstRun
@@ -325,7 +326,9 @@ fun IdleScreen(
     val inputs = ui.inputs
     // The balance as the figure shows it: banked essence plus what is gathering right now.
     val live = snapshot?.let { it.state.essence.toDouble() + Idle.accruedExact(it.state, it.rate, now).coerceAtLeast(0.0) }
-    val cost = Veil.offeringCost(offerings)
+    // The price of the worn crest, read from the same effects the rate is built from and the repository charges with.
+    val crest = snapshot?.rate?.effects?.crest ?: CrestEffects.NONE
+    val cost = Veil.offeringCost(offerings, crest)
 
     Column(Modifier.fillMaxSize()) {
         // Opened from Today's footer, not a tab, so it carries its own way out.
@@ -393,7 +396,9 @@ fun IdleScreen(
         VeilBuySheet(
             cost = cost,
             essence = live.toLong(),
-            nextCost = Veil.offeringCost(offerings + 1),
+            nextCost = Veil.offeringCost(offerings + 1, crest),
+            crest = crest,
+            ownedFrames = ui.ownedFrames,
             pity = pity,
             onConfirm = {
                 buyOpen = false
@@ -412,8 +417,9 @@ fun IdleScreen(
             onWearCrest = { viewModel.equipFrame(it) },
         )
     }
-    if (helpOpen) VeilIntroSheet(onDone = { helpOpen = false })
-    if (intro) VeilIntroSheet(onDone = viewModel::introSeen)
+    val fullHours = (snapshot?.rate?.effects ?: HouseEffects.NONE).fullStrengthHours.toInt()
+    if (helpOpen) VeilIntroSheet(fullHours, onDone = { helpOpen = false })
+    if (intro) VeilIntroSheet(fullHours, onDone = viewModel::introSeen)
 }
 
 /**
@@ -422,8 +428,7 @@ fun IdleScreen(
  * text slot: the dialog scrolls its own column, and three short rows fit.
  */
 @Composable
-private fun VeilIntroSheet(onDone: () -> Unit) {
-    val fullHours = HouseEffects.NONE.fullStrengthHours.toInt()
+private fun VeilIntroSheet(fullHours: Int, onDone: () -> Unit) {
     IronvellumDialog(
         onDismissRequest = onDone,
         title = { Text("How the Veil works") },
@@ -737,8 +742,7 @@ private fun CollectionCard(
 /** The next crest the ladder pays and how many levels off it is. Past the last milestone, or with the ladder owned, nothing. */
 @Composable
 private fun NextCrestRow(level: Int, owned: Set<String>, animate: Boolean) {
-    val next = (level / Veil.MILESTONE_EVERY + 1) * Veil.MILESTONE_EVERY
-    val crest = Veil.milestoneCrest(next, owned)?.takeIf { next / Veil.MILESTONE_EVERY <= Veil.CREST_LADDER.size } ?: return
+    val (next, crest) = Veil.nextMilestone(level, owned) ?: return
     val toGo = next - level
     Spacer(Modifier.height(8.dp))
     InkDivider()

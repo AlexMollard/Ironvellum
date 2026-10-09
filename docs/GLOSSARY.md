@@ -130,7 +130,7 @@ Support's public cost page is **"View the costs"**, never "the Ledger".
 | **Essence** | What echoes gather while you are away | "ESSENCE", "ESS" in tight columns | |
 | **Inscribe** | Spend an inscription to draw a reward | "INSCRIBE", "3 INSCRIPTIONS WAITING", each level-up earns one | roll, pull, summon |
 | **Relic** | A permanent multiplier, kept in **the Vault** | "RELIC VAULT", "Greater Crown of the Abyss" | |
-| **Crest** | A frame worn on the folio | "CREST INSCRIBED", "NOT YET INSCRIBED" | crest frame unlocked, not yet drawn |
+| **Crest** | A medallion worn on the folio; its perk works only in the Veil, and allies see it on your avatar. 28 of them: ladder (levels), deeds, houses, and six from the Veil | "Wear", "Iron crest", "CREST INSCRIBED", "NOT YET INSCRIBED" | crest frame, badge, skin, buff |
 
 ## Always plain
 

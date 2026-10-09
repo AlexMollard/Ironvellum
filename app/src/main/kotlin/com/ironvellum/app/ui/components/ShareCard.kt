@@ -31,6 +31,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.ironvellum.app.IronvellumApp
+import com.ironvellum.app.domain.Crests
+import com.ironvellum.app.domain.WorkoutShare
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
@@ -65,7 +69,13 @@ fun ShareCardDialog(
     val scope = rememberCoroutineScope()
     var copied by remember { mutableStateOf(false) }
     var includeNotes by remember { mutableStateOf(readIncludeNotes(context)) }
-    val text = remember(render, includeNotes, hasNotes) { render(includeNotes && hasNotes) }
+    var signWithCrest by remember { mutableStateOf(readSignWithCrest(context)) }
+    // The crest worn now, if any: the card can sign with its name, and only when there is a crest to name.
+    val repo = (context.applicationContext as IronvellumApp).repository
+    val worn = Crests.byId(repo.observeEquippedFrame().collectAsStateWithLifecycle(null).value)
+    val text = remember(render, includeNotes, hasNotes, signWithCrest, worn) {
+        WorkoutShare.signed(render(includeNotes && hasNotes), worn.takeIf { signWithCrest })
+    }
 
     LaunchedEffect(copied) {
         if (copied) {
@@ -103,6 +113,17 @@ fun ShareCardDialog(
                         onCheckedChange = {
                             includeNotes = it
                             writeIncludeNotes(context, it)
+                        },
+                    )
+                }
+                if (worn != null) {
+                    SettingsSwitchRow(
+                        label = "Sign with my crest",
+                        caption = "Adds your worn crest as the last line",
+                        checked = signWithCrest,
+                        onCheckedChange = {
+                            signWithCrest = it
+                            writeSignWithCrest(context, it)
                         },
                     )
                 }
@@ -147,6 +168,15 @@ private const val KEY_INCLUDE_NOTES = "include_exercise_notes"
 /** Off until the lifter turns it on: a note is their own words, not something to publish by default. */
 private fun readIncludeNotes(context: Context): Boolean =
     context.getSharedPreferences(SHARE_PREFS, Context.MODE_PRIVATE).getBoolean(KEY_INCLUDE_NOTES, false)
+
+private const val KEY_SIGN_WITH_CREST = "sign_with_crest"
+
+/** On by default: the crest's name is one line, no username, and the preview shows it before anything is sent. */
+private fun readSignWithCrest(context: Context): Boolean =
+    context.getSharedPreferences(SHARE_PREFS, Context.MODE_PRIVATE).getBoolean(KEY_SIGN_WITH_CREST, true)
+
+private fun writeSignWithCrest(context: Context, on: Boolean) =
+    context.getSharedPreferences(SHARE_PREFS, Context.MODE_PRIVATE).edit { putBoolean(KEY_SIGN_WITH_CREST, on) }
 
 private fun writeIncludeNotes(context: Context, on: Boolean) =
     context.getSharedPreferences(SHARE_PREFS, Context.MODE_PRIVATE).edit { putBoolean(KEY_INCLUDE_NOTES, on) }

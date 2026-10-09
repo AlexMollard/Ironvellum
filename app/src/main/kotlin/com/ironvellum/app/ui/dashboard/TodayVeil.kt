@@ -55,9 +55,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.currentStateAsState
+import com.ironvellum.app.domain.CrestDef
 import com.ironvellum.app.domain.Idle
 import com.ironvellum.app.domain.VaultSlot
 import com.ironvellum.app.domain.fmt
+import com.ironvellum.app.ui.components.CrestPlate
 import com.ironvellum.app.ui.components.HouseRelicSigil
 import com.ironvellum.app.ui.components.InkDivider
 import com.ironvellum.app.ui.components.InkRail
@@ -67,6 +69,8 @@ import com.ironvellum.app.ui.components.rarityWord
 import com.ironvellum.app.ui.theme.RarityTint
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.TileShape
+import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.inkStroke
@@ -128,7 +132,15 @@ private val SLOT_HEIGHT = 44.dp
 private val RING_TICK = Color(0xFF5C5850)
 
 @Composable
-internal fun VeilSection(veil: VeilGlance?, form: VeilForm, nowMs: Long, onOpen: () -> Unit, firstRun: Boolean = false, grow: Dp = 0.dp) {
+internal fun VeilSection(
+    veil: VeilGlance?,
+    form: VeilForm,
+    nowMs: Long,
+    onOpen: () -> Unit,
+    onOpenCrest: () -> Unit = {},
+    firstRun: Boolean = false,
+    grow: Dp = 0.dp,
+) {
     val animate = LocalTodayLive.current && LocalTodayMotion.current
     // The accrual is recomputed against the wall clock, offset so a caller's fixed `nowMs` stays consistent.
     val now = rememberVeilNow(nowMs, animate, TICK_MS)
@@ -162,8 +174,37 @@ internal fun VeilSection(veil: VeilGlance?, form: VeilForm, nowMs: Long, onOpen:
                         VeilForm.HERO -> HeroBody(snapshot, veil?.active, essence, strength, phase, animate, grow)
                     }
                 }
+                veil?.worn?.takeIf { form != VeilForm.COMPACT }?.let { PerkChip(it, veil.wornWorth, onOpenCrest) }
                 InscriptionsSlot(veil?.inscriptions, veil?.buyPrice, onOpen)
             }
+        }
+    }
+}
+
+/**
+ * The worn crest's perk at a glance: its mark, the perk's name and short form, and what it adds an hour when
+ * it is a perk on the rate. A tap opens that crest.
+ */
+@Composable
+private fun PerkChip(crest: CrestDef, perHour: Double, onOpen: () -> Unit) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .padding(top = 4.dp)
+            .heightIn(min = 48.dp)
+            .inkBorder(IronvellumColors.Rune, TileShape, 1.dp)
+            .clickable(role = Role.Button, onClickLabel = "Open the crest", onClick = onOpen)
+            .padding(start = 8.dp, end = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        CrestPlate(crest.id, Modifier.size(32.dp))
+        Column(Modifier.weight(1f)) {
+            Text(crest.perk, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium, color = IronvellumColors.Ink, maxLines = 1)
+            Text(crest.short, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
+        }
+        if (perHour >= 0.05) {
+            Text("+${rateLabel(perHour)}/h", style = MaterialTheme.typography.labelMedium, color = IronvellumColors.SystemGreen)
         }
     }
 }

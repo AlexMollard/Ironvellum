@@ -15,13 +15,13 @@ see `LICENSE`).
 | `ic_launcher_background.xml` | hand-authored (near-black `#0C0C0B`) | project licence |
 | `mipmap-anydpi-v26/ic_launcher.xml`, `ic_launcher_round.xml` | adaptive icon composition, no artwork of its own | project licence |
 | `drawable-nodpi/art_empty_*.png` (quests, stats, skills, board, chronicle, allies, muster) | generated with `tools/art.py` in the house ink style below | project licence |
-| `drawable-nodpi/art_crest_*.png` (ten crest frames) | generated with `tools/art.py` from `tools/art_batches/crests.txt` | project licence |
+| the 28 crest marks (`ui/components/CrestMarks.kt`) | hand-authored SVG line art in `tools/crest_art/marks.txt`, baked into Compose path data by `tools/crest_art/build.py` (which refuses a solid fill); drawn in flat gradients at runtime. They replace the ten generated `art_crest_*.png` frames. | project licence |
 | `drawable-nodpi/skill_*.webp` (119 technique illustrations across all 14 Paths) | generated individually with Codex's built-in image-generation tool. The owner chose the first Dead Hang pilot (`exec-d14e11a6-fc99-47fe-b8ca-ffb581007096.png`) as the style reference. Shipped WebP files retain the generated warm-bone/charcoal colours and transparency, with a maximum edge of 640 px. The [technique art manifest](art/skill-technique-art.json) records source image identifiers, prompts, dimensions and file hashes. | project licence |
 
 ### Technique illustrations
 
 The technique set follows the owner's approved detailed bone-ink athlete style.
-The earlier crest/empty-state generator and its tinting rules remain unchanged.
+The empty-state generator and its tinting rules remain unchanged; crests are no longer generated images.
 Each technique owns a distinct bundled image, shared by its 48dp tree illustration
 and 176dp About preview. Node states, tier labels, progression and actions stay in
 code. No runtime image generation or remote image hosting is required.

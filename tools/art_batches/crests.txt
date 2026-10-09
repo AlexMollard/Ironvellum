@@ -6,7 +6,10 @@
 #
 #   python tools/art_batches/run.py tools/art_batches/crests.txt tools/art_batches/drawn
 #
-# STATUS: complete. All ten drawn under tools/art_batches/drawn/ and shipped as
+# STATUS: SUPERSEDED. The crests are now 28 drawn marks (flat gradient line art, tools/crest_art/marks.txt
+# baked by tools/crest_art/build.py); these PNGs and their drawable-nodpi copies are gone. History only.
+#
+# Was: complete. All ten drawn under tools/art_batches/drawn/ and shipped as
 # app/src/main/res/drawable-nodpi/art_crest_<id>.png at 256px. The procedural
 # CrestEmblem they replaced is deleted; CrestArtCoverageTest fails if a frame is
 # added to Gacha.CREST_FRAMES without a mark, or if two frames share one.

@@ -110,7 +110,7 @@ Ironbound, and the iron-bound book that keeps the record is the **Ledger**.
   no image. Your per-exercise notes go in only if you opt in; the private note
   never does.
 - **The Veil** is an idle layer: each trial leaves an echo, echoes gather
-  essence while you are away, and you spend it on relics and crests.
+  essence while you are away, and you spend it on relics. Crests (28: levels, deeds, houses and the Veil) are worn for a small Veil-only perk and shown to your allies.
 
 ### Codex
 

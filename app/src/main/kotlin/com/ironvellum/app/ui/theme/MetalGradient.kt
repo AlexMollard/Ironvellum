@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.domain.CrestTone
 import com.ironvellum.app.domain.RewardRarity
 import com.ironvellum.app.domain.TitleRarity
 
@@ -71,6 +72,26 @@ class Metal internal constructor(
             PrismAt,
             prism = true,
         )
+
+        /**
+         * The crest ramps beyond the four tiers. FIXED hex, never the lifter's accent (unlike [emeraldRamp]):
+         * a crest is the same colour on the owner's screen and on an ally's. Emerald, Red and Ink are a
+         * light, a tint and a deeper tone, flat along the same diagonal as the metals.
+         */
+        val Emerald = Metal(listOf(Color(0xFF6EE7B7), Color(0xFF34D399), Color(0xFF25986E)), FlatAt)
+        val Red = Metal(listOf(Color(0xFFF4908D), Color(0xFFEF5350), Color(0xFFB33F3D)), FlatAt)
+        val Ink = Metal(listOf(Color(0xFFE8E8E4), Color(0xFFA3A099), Color(0xFF6B6963)), FlatAt)
+
+        /** The ramp a crest tone is drawn in. Exhaustive: a new tone does not compile until it has a ramp. */
+        fun of(tone: CrestTone): Metal = when (tone) {
+            CrestTone.Iron -> Common
+            CrestTone.Bronze -> Rare
+            CrestTone.Gold -> Fabled
+            CrestTone.Prism -> Masterwork
+            CrestTone.Emerald -> Emerald
+            CrestTone.Red -> Red
+            CrestTone.Ink -> Ink
+        }
 
         fun of(rarity: TitleRarity): Metal = when (rarity) {
             TitleRarity.Common -> Common

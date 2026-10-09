@@ -81,6 +81,8 @@ import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.VaultSlot
+import com.ironvellum.app.domain.CrestDef
+import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.Veil
 import com.ironvellum.app.domain.VeilGrant
 import com.ironvellum.app.domain.Titles
@@ -107,6 +109,7 @@ import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.launchGuarded
 import com.ironvellum.app.ui.program.toPlanned
+import com.ironvellum.app.ui.components.CrestPlate
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -136,7 +139,15 @@ enum class BodyGap { HEIGHT, WEIGHT, BOTH }
  * The Veil at a glance on Today: its live snapshot, the inscriptions waiting to be spent and the relic
  * setting the rate ([active], null with no relic), which the respite form shows as its centrepiece.
  */
-data class VeilGlance(val snapshot: IdleSnapshot, val inscriptions: Int, val active: VaultSlot? = null, val buyPrice: Long? = null)
+data class VeilGlance(
+    val snapshot: IdleSnapshot,
+    val inscriptions: Int,
+    val active: VaultSlot? = null,
+    val buyPrice: Long? = null,
+    /** The crest worn, with what it adds to the rate in essence an hour (0 for a perk that is not on the rate). */
+    val worn: CrestDef? = null,
+    val wornWorth: Double = 0.0,
+)
 
 class DashboardUi(
     val profile: PlayerProfile? = null,
@@ -273,10 +284,11 @@ class DashboardViewModel(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /** The Veil at a glance: its snapshot (essence, rate, echoes, relic) and the inscriptions waiting. */
-    val veil: StateFlow<VeilGlance?> = combine(repo.observeIdleSnapshot(), repo.observeRolls(), repo.observeVault(), repo.observeOfferingsMade()) { snapshot, rolls, vault, offerings ->
+    val veil: StateFlow<VeilGlance?> = combine(repo.observeIdleSnapshot(), repo.observeRolls(), repo.observeVault(), repo.observeOfferingsMade(), repo.observeCrestWorth()) { snapshot, rolls, vault, offerings, worth ->
         // The price rides the slot only when none wait and one is affordable on the banked essence.
-        val price = Veil.offeringCost(offerings)
-        VeilGlance(snapshot, rolls, vault.active, buyPrice = price.takeIf { rolls == 0 && snapshot.state.essence >= it })
+        val price = Veil.offeringCost(offerings, snapshot.rate.effects.crest)
+        val worn = Crests.byId(snapshot.rate.effects.crest.wornId)
+        VeilGlance(snapshot, rolls, vault.active, buyPrice = price.takeIf { rolls == 0 && snapshot.state.essence >= it }, worn = worn, wornWorth = worn?.let { worth[it.id] } ?: 0.0)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     /**
@@ -299,6 +311,10 @@ class DashboardViewModel(
 
     /** The crest worn now, so a crest moment can offer to swap it. */
     val wornCrest: StateFlow<String?> = repo.observeEquippedFrame()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /** How many of the 28 crests are held, for "10 of 28 crests" on a crest moment. */
+    val crestsOwned: StateFlow<Int?> = repo.observeOwnedFrames().map<Set<String>, Int?> { it.size }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun wearCrest(frameId: String) {
@@ -377,6 +393,7 @@ fun DashboardScreen(
     onOpenSettings: () -> Unit,
     onOpenLedger: () -> Unit,
     onOpenGarrison: () -> Unit,
+    onOpenCrest: () -> Unit = {},
     onOpenWorkout: (Long) -> Unit,
     /** Set height: straight to Settings → Profile, where height lives. */
     onSetHeight: () -> Unit = onOpenSettings,
@@ -440,6 +457,7 @@ fun DashboardScreen(
             onOpenSettings = onOpenSettings,
             onOpenLedger = onOpenLedger,
             onOpenGarrison = onOpenGarrison,
+            onOpenCrest = onOpenCrest,
             onOpenWorkout = onOpenWorkout,
             onSetHeight = onSetHeight,
             onOpenLift = onOpenLift,
@@ -455,8 +473,9 @@ fun DashboardScreen(
     val sex by viewModel.sex.collectAsStateWithLifecycle()
     val veilGrant by viewModel.pendingVeilGrant.collectAsStateWithLifecycle()
     val wornCrest by viewModel.wornCrest.collectAsStateWithLifecycle()
+    val crestsOwned by viewModel.crestsOwned.collectAsStateWithLifecycle()
     AchievementOverlay(
-        pages = deedPages(owed, sex) + veilGrantPages(veilGrant),
+        pages = deedPages(owed, sex) + veilGrantPages(veilGrant, crestsOwned),
         onDone = { viewModel.celebrationsSeen() },
         wornTitleId = ui.profile?.currentTitleId,
         onWear = viewModel::wearTitle,
@@ -474,6 +493,7 @@ internal class TodayActions(
     val onOpenSettings: () -> Unit = {},
     val onOpenLedger: () -> Unit = {},
     val onOpenGarrison: () -> Unit = {},
+    val onOpenCrest: () -> Unit = {},
     val onOpenWorkout: (Long) -> Unit = {},
     val onSetHeight: () -> Unit = {},
     val onOpenLift: (String) -> Unit = {},
@@ -521,7 +541,17 @@ internal fun TodayContent(
                 NameRow(
                     name = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            HeaderCrest()
+                            val worn = veil?.worn
+                            if (worn == null) {
+                                HeaderCrest()
+                            } else {
+                                CrestPlate(
+                                    worn.id,
+                                    Modifier
+                                        .size(40.dp)
+                                        .clickable(role = Role.Button, onClickLabel = "Open crests") { actions.onOpenCrest() },
+                                )
+                            }
                             Spacer(Modifier.width(8.dp))
                             Text(
                                 profile?.name ?: "Ironbound",
@@ -820,7 +850,7 @@ private fun TodayDayBody(
                 kind == DayKind.RESPITE -> VeilForm.HERO
                 else -> VeilForm.FULL
             }
-            VeilSection(veil, form, nowMs, actions.onOpenGarrison, firstRun = firstRun && kind != DayKind.NO_CYCLE, grow = grow)
+            VeilSection(veil, form, nowMs, actions.onOpenGarrison, onOpenCrest = actions.onOpenCrest, firstRun = firstRun && kind != DayKind.NO_CYCLE, grow = grow)
         },
     )
 }
