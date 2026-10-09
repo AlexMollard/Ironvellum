@@ -3098,6 +3098,20 @@ class Repository(
     fun observeRolls(): Flow<Int> =
         gachaDao.observeRolls().map { it?.rolls ?: 0 }
 
+    /**
+     * The pity counters as the roller reads them ([spendRoll]): what the last draw counted and so what
+     * the next one will do. Read once after a draw for its reveal, and by the buy sheet.
+     */
+    fun observePity(): Flow<Gacha.Pity> = combine(gachaDao.observeRolls(), gachaDao.observeRelics()) { g, relics ->
+        val state = g ?: GachaStateEntity()
+        Gacha.Pity(
+            figureStreak = state.figureStreak,
+            relicStreak = state.relicPity,
+            draws = state.drawsSpent,
+            hasRelic = relics.isNotEmpty(),
+        )
+    }
+
     fun observeOwnedFrames(): Flow<Set<String>> =
         gachaDao.observeOwnedFrames().map { it.toSet() }
 
