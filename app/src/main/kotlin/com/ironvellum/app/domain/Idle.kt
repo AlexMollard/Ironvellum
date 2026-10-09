@@ -5,11 +5,12 @@ package com.ironvellum.app.domain
  * that rate. Nothing here touches XP, strength score, or the training board —
  * this is a parallel economy with its own leaderboard later.
  * Rate formula (per hour):
- *   perHour = FLOOR * trainingFactor * skillFactor * relicMultiplier
+ *   perHour = FLOOR * trainingFactor * skillFactor * relicMultiplier * echoFactor
  *   trainingFactor = 1 + min(TRAINING_CAP, sessionsLast7d * SESSION_WEIGHT
  *                              + volumeLast7d * VOLUME_WEIGHT
  *                              + streakDays * STREAK_WEIGHT) / FLOOR
  *   skillFactor    = 1 + SKILL_CEILING * (1 - e^(-SKILL_RATE * skillsUnlocked))
+ *   echoFactor     = 1 + min(ECHO_BONUS_CAP, echoes / ECHO_BONUS_PER * ECHO_BONUS_STEP)
  *
  * relicMultiplier is the whole vault stacked by [Relics.effectiveMultiplier]: every relic lifts the
  * WHOLE rate, whatever its house. A house adds only its SET bonuses ([HouseEffects]): with 2 relics
@@ -26,6 +27,7 @@ package com.ironvellum.app.domain
  */
 data class IdleState(
     val essence: Long,
+    /** Echoes held. They lift the rate a little ([Idle.echoFactor]) and nothing else. */
     val figures: Int,
     val relicMultiplier: Double,
     val lastCollectedAtMs: Long,
@@ -43,6 +45,8 @@ data class IdleRate(
     val skillFactor: Double,
     /** What the relic houses changed in this rate. [HouseEffects.NONE] before any relic. */
     val effects: HouseEffects = HouseEffects.NONE,
+    /** What the echoes held lift the rate by: 1.0 with none, at most 1 + [Idle.ECHO_BONUS_CAP]. */
+    val echoFactor: Double = 1.0,
 )
 
 object Idle {
@@ -94,6 +98,18 @@ object Idle {
     val MAX_SKILL_FACTOR = 1.0 + SKILL_CEILING
     const val SKILL_RATE = 0.045    // approach speed per unlock
 
+    /** Every [ECHO_BONUS_PER] echoes held lift the rate by [ECHO_BONUS_STEP], counted continuously: 681 echoes is +6.81%. */
+    const val ECHO_BONUS_PER = 100.0
+    const val ECHO_BONUS_STEP = 0.01
+
+    /** The most the echoes can ever add (+25%), reached at 2,500 echoes: a tally is a trim on the rate, not an engine. */
+    const val ECHO_BONUS_CAP = 0.25
+    val MAX_ECHO_FACTOR = 1.0 + ECHO_BONUS_CAP
+
+    /** The factor [echoes] held put on the rate. Negative counts read as none. */
+    fun echoFactor(echoes: Int): Double =
+        1.0 + (echoes.coerceAtLeast(0) / ECHO_BONUS_PER * ECHO_BONUS_STEP).coerceAtMost(ECHO_BONUS_CAP)
+
     // Guards so a corrupt relic multiplier can't push the rate to Infinity.
     private const val MAX_RELIC = 1e6
     private const val MAX_PER_HOUR = 1e15
@@ -134,8 +150,10 @@ object Idle {
             else -> state.relicMultiplier.coerceIn(1.0, MAX_RELIC)
         }
 
-        val perHour = (FLOOR * trainingFactor * skillFactor * relic).coerceIn(0.0, MAX_PER_HOUR)
-        return IdleRate(perHour, trainingFactor, skillFactor, houses)
+        val echo = echoFactor(state.figures)
+
+        val perHour = (FLOOR * trainingFactor * skillFactor * relic * echo).coerceIn(0.0, MAX_PER_HOUR)
+        return IdleRate(perHour, trainingFactor, skillFactor, houses, echo)
     }
 
     /**

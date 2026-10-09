@@ -17,9 +17,10 @@ class IdleTest {
         essence: Long = 0L,
         relic: Double = 1.0,
         lastCollectedAtMs: Long = base,
+        echoes: Int = 0,
     ) = IdleState(
         essence = essence,
-        figures = 1,
+        figures = echoes,
         relicMultiplier = relic,
         lastCollectedAtMs = lastCollectedAtMs,
     )
@@ -204,5 +205,38 @@ class IdleTest {
         assertEquals(0.5, Idle.fullStrengthFraction(12 * 3_600_000L), 1e-9)
         assertEquals(1.0, Idle.fullStrengthFraction(30 * 3_600_000L), 1e-9)
         assertEquals(0.0, Idle.fullStrengthFraction(-5L), 1e-9)
+    }
+
+    @Test
+    fun `echoes lift the rate one percent per hundred, continuously`() {
+        fun factorAt(echoes: Int) = Idle.rate(state(echoes = echoes), 4, 200.0, 0, 0).echoFactor
+        assertEquals(1.0, factorAt(0), 1e-12)
+        assertEquals(1.01, factorAt(100), 1e-12)
+        // 681 echoes is +6.81%: no steps at the hundreds.
+        assertEquals(1.0681, factorAt(681), 1e-12)
+    }
+
+    @Test
+    fun `echoes stop at twenty-five percent, reached at 2500`() {
+        fun factorAt(echoes: Int) = Idle.rate(state(echoes = echoes), 4, 200.0, 0, 0).echoFactor
+        assertEquals(1.25, factorAt(2_500), 1e-12)
+        assertEquals(1.25, factorAt(10_000), 1e-12)
+        assertEquals(1.25, factorAt(Int.MAX_VALUE), 1e-12)
+        assertEquals(Idle.MAX_ECHO_FACTOR, factorAt(2_500), 1e-12)
+    }
+
+    @Test
+    fun `a negative echo count reads as none`() {
+        assertEquals(1.0, Idle.echoFactor(-40), 1e-12)
+        assertEquals(1.0, Idle.rate(state(echoes = -40), 4, 200.0, 0, 0).echoFactor, 1e-12)
+    }
+
+    @Test
+    fun `the echo factor multiplies into the hourly rate and nothing else`() {
+        val none = Idle.rate(state(), 4, 200.0, 3, 2)
+        val held = Idle.rate(state(echoes = 681), 4, 200.0, 3, 2)
+        assertEquals(none.perHour * 1.0681, held.perHour, 1e-9)
+        assertEquals(none.trainingFactor, held.trainingFactor, 1e-12)
+        assertEquals(none.skillFactor, held.skillFactor, 1e-12)
     }
 }
