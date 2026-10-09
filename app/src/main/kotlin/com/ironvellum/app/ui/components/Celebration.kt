@@ -306,9 +306,7 @@ internal fun AchievementOverlay(
                             notes = page.opened.map { "Technique opened · $it" },
                         )
                     }
-                    is CelebrationPage.Inscribed -> if (page.relic != null && page.houseSlots.isNotEmpty()) {
-                        RelicRevealPage(step = at, steps = pages.size, reveal = page.relic, slots = page.houseSlots, onContinue = advance)
-                    } else if (page.crestId != null) {
+                    is CelebrationPage.Inscribed -> if (page.crestId != null) {
                         val id = page.crestId
                         val canWear = onWearCrest != null && id != wornCrestId
                         val keep = wornCrestId?.let { worn -> Gacha.CREST_FRAMES.firstOrNull { it.id == worn }?.name?.replace(" Crest", "") }

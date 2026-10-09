@@ -288,3 +288,17 @@ fun HouseEmblem(house: RelicHouse, color: Color, modifier: Modifier = Modifier, 
         drawSigil(spec, house, c, side / 100f, brush)
     }
 }
+
+/** A tier's small marker for a list of rarities: a ring in its metal over a faint wash. */
+@Composable
+fun TierDot(tier: RewardRarity, modifier: Modifier = Modifier) {
+    val metal = Metal.of(tier)
+    Canvas(modifier.clearAndSetSemantics {}) {
+        val side = minOf(size.width, size.height)
+        val c = Offset(size.width / 2f, size.height / 2f)
+        val ring = Path().apply { addOval(Rect(c, side * 0.4f)) }
+        val brush = metal.span(side, 0f, Offset(c.x - side / 2f, c.y - side / 2f))
+        drawPath(ring, brush, alpha = METAL_WASH, style = Fill)
+        drawPath(ring, brush, style = Stroke(side * 0.1f))
+    }
+}
