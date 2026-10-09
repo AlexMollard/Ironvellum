@@ -61,6 +61,10 @@ create table if not exists profiles (
     visibility         profile_visibility not null default 'friends',
     -- The worn title travels with a hunter, so the feed and board can show it.
     current_title_id   text,
+    -- The worn crest rides along the same way: allies see it on the avatar.
+    -- Opaque to the server (the catalogue lives in the app); an id this build
+    -- does not know is drawn as nothing.
+    current_crest_id   text check (char_length(current_crest_id) <= 64),
     level              int    not null default 1 check (level >= 1),
     total_xp           bigint not null default 0 check (total_xp >= 0),
     streak_days        int    not null default 0 check (streak_days >= 0),
@@ -1156,7 +1160,7 @@ create policy lift_marks_delete on lift_marks
 -- by handle_new_user(), which also makes sign-up work while email confirmation
 -- is on (there is no session yet, so a client insert would run as anon).
 revoke update on profiles from authenticated;
-grant update (display_name, visibility, current_title_id) on profiles to authenticated;
+grant update (display_name, visibility, current_title_id, current_crest_id) on profiles to authenticated;
 revoke insert on profiles from anon, authenticated;
 
 -- blocks and mutes: no update at all (a block is added or removed, never
@@ -1537,7 +1541,9 @@ select
     p.lifetime_strength,
     (select count(*) from sessions s
       where s.user_id = p.id
-        and s.completed_at > now() - interval '7 days') as sessions_last_7d
+        and s.completed_at > now() - interval '7 days') as sessions_last_7d,
+    -- Appended last: create or replace view can only add columns at the end.
+    p.current_crest_id
 from profiles p;
 
 -- The Shadow Army board: same visibility rules as every other social surface.
@@ -1549,7 +1555,8 @@ select
     p.level,
     p.shadow_essence,
     p.shadow_count,
-    p.shadow_rate
+    p.shadow_rate,
+    p.current_crest_id
 from profiles p
 order by p.shadow_essence desc;
 
@@ -1565,7 +1572,8 @@ select
     p.level,
     m.lift,
     m.step,
-    case when m.recent_at > now() - interval '7 days' then m.recent_step end as recent_step
+    case when m.recent_at > now() - interval '7 days' then m.recent_step end as recent_step,
+    p.current_crest_id
 from lift_marks m
 join profiles p on p.id = m.user_id;
 
@@ -1695,7 +1703,8 @@ select
     (select sl.kind from session_likes sl where sl.session_id = s.id and sl.user_id = auth.uid()) as my_reaction,
 
     -- Appended last: create or replace view can only add columns at the end.
-    s.edited_at
+    s.edited_at,
+    p.current_crest_id
 from sessions s
 join profiles p on p.id = s.user_id
 where s.completed_at is not null
@@ -2619,6 +2628,8 @@ begin
                                      then coalesce(p.level, 1) end,
                        'current_title_id', case when m.user_id = me or can_view(m.user_id)
                                                 then p.current_title_id end,
+                       'current_crest_id', case when m.user_id = me or can_view(m.user_id)
+                                                then p.current_crest_id end,
                        'counts', r.counts,
                        'days_this_week', least(
                            case when r.counts
@@ -2714,7 +2725,7 @@ grant execute on function public.circle_bonuses() to authenticated;
 -- grant is load-bearing. EVERY SCHEMA CHANGE BUMPS THIS LITERAL and
 -- Cloud.kt's NEEDED_SCHEMA_VERSION with it.
 create or replace function public.schema_version() returns int
-language sql stable as $$ select 28 $$;
+language sql stable as $$ select 29 $$;
 revoke execute on function public.schema_version() from public;
 grant execute on function public.schema_version() to anon, authenticated;
 

@@ -81,6 +81,8 @@ internal data class LifterUi(
     val wornTitle: String? = null,
     /** The raw title id behind [wornTitle]; feeds the avatar crest's rarity palette. */
     val wornTitleId: String? = null,
+    /** The crest they wear, from the same leaderboard row; null when bare or unknown. */
+    val wornCrestId: String? = null,
     /** Null while unknown: the mute button stays hidden rather than guessing. */
     val muted: Boolean? = null,
     /** One lifter action (remove, mute, block, report) in flight at a time. */
@@ -153,10 +155,12 @@ internal class LifterViewModel(
         cloud.leaderboard().onSuccess { rows ->
             // The lifter's worn title comes from their leaderboard row; the id is
             // kept too so the crest can show its rarity.
-            val titleId = rows.firstOrNull { it.userId == userId }?.currentTitleId
+            val ally = rows.firstOrNull { it.userId == userId }
+            val titleId = ally?.currentTitleId
             _ui.value = _ui.value.copy(
                 wornTitle = titleId?.let { Titles.byId(it)?.name },
                 wornTitleId = titleId,
+                wornCrestId = ally?.crestId,
             )
         }
         // Unknown on failure: a guessed "not muted" would offer MUTE to someone
@@ -271,7 +275,7 @@ internal fun LifterScreen(
             level = null, // level is not in LifterUi; omitted rather than fetched
             size = IdentitySize.Hero,
             isMe = isMe,
-            frameId = if (isMe) equippedFrame else null,
+            frameId = if (isMe) equippedFrame else ui.wornCrestId,
             trailing = if (canManage) {
                 {
                     when (ui.allyState) {

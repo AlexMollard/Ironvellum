@@ -301,10 +301,10 @@ def backend() -> int:
         steps += migrations
         steps.append(test("assert_all.sql"))
         # The owner pastes supabase/hosted/ patches into the live project. The
-        # release patch must apply cleanly onto a project that has the baseline
+        # newest patch must apply cleanly onto a project that has the baseline
         # and run again as a no-op, and the suite must still hold afterwards.
         # (The older patches migrate warbands and are not re-runnable here.)
-        release = os.path.join(ROOT, "supabase/hosted/2026-10-02-release.sql")
+        release = os.path.join(ROOT, "supabase/hosted/2026-10-09-crests.sql")
         steps += [release, release, test("assert_all.sql")]
         # The hosted reset round trip. assert_all leaves its fixtures behind and
         # reset_seed adds a sign-up-made profile and a row in every table, so

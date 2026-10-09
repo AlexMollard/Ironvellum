@@ -561,7 +561,7 @@ begin
                       'note', 'completed_at', 'started_at', 'xp_awarded', 'strength_score', 'sets_done',
                       'reps_done', 'held_seconds', 'like_count', 'liked_by_me', 'top_movements', 'best_set',
                       'distance_m', 'hardest_grade', 'movement_count', 'duration_sec',
-                      'comment_count', 'reactions', 'my_reaction', 'edited_at']) c
+                      'comment_count', 'reactions', 'my_reaction', 'edited_at', 'current_crest_id']) c
     where not exists (select 1 from information_schema.columns ic
                       where ic.table_schema = 'public' and ic.table_name = 'public_feed' and ic.column_name = c);
     perform assert_true(missing is null, format('public_feed lost column(s) the app reads: %s', missing));
@@ -1311,12 +1311,12 @@ begin
     -- it as anon (Settings → CLOUD, TEST) before pointing a lifter's training
     -- at a custom backend, so both the number and the grant are load-bearing.
     perform assert_true(
-        (select public.schema_version()) = 28,
-        format('schema_version() reports %s, not 28 — bump the literal with the schema change', public.schema_version())
+        (select public.schema_version()) = 29,
+        format('schema_version() reports %s, not 29 — bump the literal with the schema change', public.schema_version())
     );
     set local role anon;
     perform assert_true(
-        (select public.schema_version()) = 28,
+        (select public.schema_version()) = 29,
         'anon cannot execute schema_version() — the app probe would read 401'
     );
     reset role;
@@ -1755,12 +1755,12 @@ begin
             'select m->>''display_name'' from my_circle(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
             finn::text)) = 'Ironbound0055'
             and value_as(nova, format(
-            'select (m->>''level'') is null and (m->>''current_title_id'') is null from my_circle(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
+            'select (m->>''level'') is null and (m->>''current_title_id'') is null and (m->>''current_crest_id'') is null from my_circle(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
             finn::text)) = 'true'
             and value_as(nova, format(
             'select m->>''display_name'' from my_circle(), jsonb_array_elements(members) m where m->>''user_id'' = %L',
             rey::text)) = 'Rey',
-        'a private fellow member leaked a name, level or title'
+        'a private fellow member leaked a name, level, title or crest'
     );
     update profiles set visibility = 'public' where id = finn;
 

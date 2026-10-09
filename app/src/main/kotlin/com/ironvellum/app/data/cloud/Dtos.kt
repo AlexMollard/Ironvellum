@@ -34,6 +34,8 @@ data class ProfileDto(
     // The worn title id (null when bare). Names resolve locally via
     // Titles.byId — never shipped over the wire.
     @SerialName("current_title_id") val currentTitleId: String? = null,
+    // The worn crest id (null when bare); the catalogue lives in the app.
+    @SerialName("current_crest_id") val currentCrestId: String? = null,
 )
 
 @Serializable
@@ -45,6 +47,7 @@ data class ShadowBoardDto(
     @SerialName("shadow_essence") val shadowEssence: Long = 0,
     @SerialName("shadow_count") val shadowCount: Int = 0,
     @SerialName("shadow_rate") val shadowRate: Double = 0.0,
+    @SerialName("current_crest_id") val currentCrestId: String? = null,
 )
 
 /** One lifter's standing on the muster board. */
@@ -56,6 +59,7 @@ data class ShadowBoardRow(
     val essence: Long,
     val shadows: Int,
     val ratePerHour: Double,
+    val crestId: String? = null,
 )
 
 /** Minimal projection when we only need the generated cloud id back. */
@@ -144,10 +148,11 @@ data class LiftBoardDto(
     @SerialName("lift") val lift: String,
     @SerialName("step") val step: Int,
     @SerialName("recent_step") val recentStep: Int? = null,
+    @SerialName("current_crest_id") val currentCrestId: String? = null,
 ) {
     /** Null for a lift this build does not know. */
     internal fun toRow(): LiftBoardRow? = Lift.fromWire(lift)?.let {
-        LiftBoardRow(userId, displayName, level, currentTitleId, it, step, recentStep)
+        LiftBoardRow(userId, displayName, level, currentTitleId, it, step, recentStep, currentCrestId)
     }
 }
 
@@ -188,6 +193,7 @@ data class LiftBoardRow(
     val lift: Lift,
     val step: Int,
     val recentStep: Int?,
+    val crestId: String? = null,
 )
 
 data class AllyWorkout(
@@ -235,6 +241,7 @@ data class LeaderboardDto(
     @SerialName("sessions_last_7d") val sessionsLast7d: Int,
     // The worn title id (null when bare); resolved to a name locally.
     @SerialName("current_title_id") val currentTitleId: String? = null,
+    @SerialName("current_crest_id") val currentCrestId: String? = null,
 )
 
 @Serializable
@@ -255,6 +262,7 @@ data class ProfileNameDto(
     @SerialName("display_name") val displayName: String,
     @SerialName("level") val level: Int? = null,
     @SerialName("current_title_id") val currentTitleId: String? = null,
+    @SerialName("current_crest_id") val currentCrestId: String? = null,
 )
 
 @Serializable
@@ -313,6 +321,8 @@ data class FeedEntry(
     val myReaction: Reaction? = null,
     /** When the owner amended the workout; null when never amended. */
     val editedAtMs: Long? = null,
+    /** The worn crest id, null when bare or from a backend without the column. */
+    val crestId: String? = null,
 )
 
 @Serializable
@@ -352,6 +362,7 @@ data class FeedEntryDto(
     @SerialName("reactions") val reactions: JsonObject? = null,
     @SerialName("my_reaction") val myReaction: String? = null,
     @SerialName("edited_at") val editedAt: String? = null,
+    @SerialName("current_crest_id") val currentCrestId: String? = null,
 ) {
     /** Known kinds with a positive count; anything else is skipped, never thrown. */
     internal fun reactionCounts(): Map<Reaction, Int> = buildMap {
@@ -389,6 +400,7 @@ data class FeedEntryDto(
         reactions = reactionCounts(),
         myReaction = Reaction.fromWire(myReaction),
         editedAtMs = editedAt?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() },
+        crestId = currentCrestId,
     )
 }
 
@@ -407,6 +419,7 @@ data class LeaderboardRow(
     val lifetimeStrength: Long,
     val sessionsLast7d: Int,
     val currentTitleId: String?,
+    val crestId: String? = null,
 )
 
 data class FriendRow(
@@ -417,6 +430,7 @@ data class FriendRow(
     /** Null when their profile is hidden from us (pending, friends-only). */
     val level: Int? = null,
     val currentTitleId: String? = null,
+    val crestId: String? = null,
 )
 
 /** One lifter who reacted to a session, newest first. */
@@ -851,6 +865,7 @@ data class CircleMemberDto(
     // Null when the member's profile is hidden from the caller.
     @SerialName("level") val level: Int? = null,
     @SerialName("current_title_id") val currentTitleId: String? = null,
+    @SerialName("current_crest_id") val currentCrestId: String? = null,
     // Days trained in the current Monday-start week (UTC anchor): distinct UTC
     // days with a trial that has a set, capped at the member's share, counted
     // server-side, the same for every viewer whatever the audience of the
@@ -900,6 +915,7 @@ data class CircleDto(
                 daysThisWeek = it.daysThisWeek,
                 counts = it.counts,
                 lastWorkoutAtMs = it.lastWorkoutAt?.let { at -> Instant.parse(at).toEpochMilli() },
+                crestId = it.currentCrestId,
             )
         },
     )

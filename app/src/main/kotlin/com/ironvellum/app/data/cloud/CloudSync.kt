@@ -122,6 +122,7 @@ class CloudSync(
         val client = Cloud.requireConfigured.getOrElse { return failure(it) }
         return runCatching {
             val profile = repo.observeProfile().first() ?: PlayerProfile()
+            val wornCrest = repo.observeEquippedFrame().first()
             val history = repo.observeHistory().first()
             val titles = repo.observeUnlockedTitles().first()
 
@@ -176,6 +177,7 @@ class CloudSync(
             client.postgrest.from("profiles").update(
                 {
                     set("current_title_id", profile.currentTitleId)
+                    set("current_crest_id", wornCrest)
                 },
             ) {
                 filter { eq("id", me.userId) }
@@ -561,6 +563,7 @@ class CloudSync(
                         sessionsLast7d = it.sessionsLast7d,
                         // Names resolve locally via Titles.byId — id only.
                         currentTitleId = it.currentTitleId,
+                        crestId = it.currentCrestId,
                     )
                 }
             }
@@ -690,6 +693,7 @@ class CloudSync(
                         userId = it.id,
                         displayName = it.displayName,
                         currentTitleId = it.currentTitleId,
+                        crestId = it.currentCrestId,
                         level = it.level,
                         essence = it.shadowEssence,
                         shadows = it.shadowCount,
@@ -770,6 +774,7 @@ class CloudSync(
                         incoming = row.addresseeId == me.userId && !row.accepted,
                         level = profile?.level,
                         currentTitleId = profile?.currentTitleId,
+                        crestId = profile?.currentCrestId,
                     )
                 }
             }

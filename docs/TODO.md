@@ -13,7 +13,9 @@ lives in git (`git log`, `git log -S`), not here.
 The hosted project is at `schema_version()` 28 (owner-verified in the SQL
 editor 2026-10-02): the circles and release patches are applied,
 `circle_draw_code()` works, `sessions` and `public_feed` carry `edited_at`, and
-warbands are gone. Nothing is owed there.
+warbands are gone. Owed: paste `supabase/hosted/2026-10-09-crests.sql` (schema 29, the
+worn crest on profiles, the boards, the feed and `my_circle()`) before shipping the
+crests build; until then the app reads the project as outdated.
 
 A schema change edits `supabase/migrations/0001_baseline.sql`, bumps the
 `schema_version()` literal and `NEEDED_SCHEMA_VERSION` (`Cloud.kt`) together,

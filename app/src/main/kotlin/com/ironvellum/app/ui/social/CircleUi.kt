@@ -670,6 +670,7 @@ private fun CircleMemberRow(
         LifterAvatar(
             displayName = member.displayName,
             size = 32.dp,
+            frameId = member.crestId,
             ring = if (isMe) AvatarRing.Own else AvatarRing.Iron,
         )
         val role = listOfNotNull("You".takeIf { isMe }, "Keeper".takeIf { isKeeper }).joinToString(" · ")
