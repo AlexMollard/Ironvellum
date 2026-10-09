@@ -617,7 +617,7 @@ private fun ActiveRelicPanel(vault: VaultState?, animate: Boolean, onOpenVault: 
         }
         Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             if (active != null) {
-                HouseRelicSigil(active.relic.id, active.tier, Modifier.size(150.dp), ringed = true, spin = animate)
+                HouseRelicSigil(active.relic.id, active.tier, Modifier.size(150.dp), ringed = true, animate = animate)
                 Text(active.relic.name, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = IronvellumColors.Ink, textAlign = TextAlign.Center)
                 TierLine(active.tier, active.relic.house, Modifier.padding(top = 2.dp))
                 Text(

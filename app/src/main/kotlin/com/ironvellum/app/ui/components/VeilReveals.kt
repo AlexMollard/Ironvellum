@@ -19,8 +19,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -35,15 +40,14 @@ import com.ironvellum.app.domain.RelicReveal
 import com.ironvellum.app.domain.RewardRarity
 import com.ironvellum.app.domain.VaultSlot
 import com.ironvellum.app.domain.fmt
-import com.ironvellum.app.ui.social.crestFrameTreatment
 import com.ironvellum.app.ui.theme.ChakraPetch
-import com.ironvellum.app.ui.theme.DotShape
+import com.ironvellum.app.ui.theme.METAL_WASH
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.RarityTint
 import com.ironvellum.app.ui.theme.TileShape
-import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkDot
+import com.ironvellum.app.ui.theme.rememberPrismDrift
 
 /*
  * The two celebrations of the Veil: a relic drawn (its sigil on its rarity plate, what it does, how
@@ -226,25 +230,27 @@ internal fun CrestRevealPage(
 }
 
 /**
- * A crest on its plate: two rings in the frame's own colour round a Vault disc, the drawn mark on it.
+ * A crest on its plate: a dark disc ringed in the crest's metal ([crestMetal]), the drawn mark on it.
  * Used by the reveal and the collection, so a crest looks the same where it is won and where it is kept.
- * [owned] false sinks it to a whisper, the way the old rail did for a locked frame.
+ * [owned] false sinks it to a whisper: a flat muted ring and a faded mark. [animate] lets a prism drift.
  */
 @Composable
-fun CrestPlate(frameId: String, modifier: Modifier = Modifier, owned: Boolean = true) {
-    val ring = crestFrameTreatment(frameId)?.frameColor ?: IronvellumColors.SovereignGold
+fun CrestPlate(frameId: String, modifier: Modifier = Modifier, owned: Boolean = true, animate: Boolean = false) {
+    val metal = crestMetal(frameId)
+    val drift = rememberPrismDrift(1f, animate && owned && metal.prism)
     Box(modifier.clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
-        if (owned) {
-            Box(Modifier.matchParentSize().background(Brush.radialGradient(listOf(ring.copy(alpha = 0.16f), Color.Transparent)), DotShape))
-        }
         Canvas(Modifier.matchParentSize()) {
+            val side = minOf(size.width, size.height)
             val c = Offset(size.width / 2f, size.height / 2f)
-            val u = minOf(size.width, size.height) / 260f
-            val tone = if (owned) ring else IronvellumColors.Rune
-            inkDot(c, 116f * u, IronvellumColors.Vault)
-            inkArc(c, 126f * u, 0f, 360f, tone.copy(alpha = 0.6f), 1.5f * u)
-            inkArc(c, 116f * u, 0f, 360f, tone.copy(alpha = 0.75f), 3f * u)
-            inkArc(c, 104f * u, 0f, 360f, tone.copy(alpha = 0.3f), 1f * u)
+            val origin = Offset(c.x - side / 2f, c.y - side / 2f)
+            val brush: Brush = if (owned) metal.span(side, (drift?.value ?: 0f) * side, origin) else SolidColor(CrestSilhouette)
+            val rim = side * 0.47f
+            val line = maxOf(side * 0.012f, 1.dp.toPx())
+            inkDot(c, rim, if (owned) CrestGround else CrestSilhouetteGround)
+            val outer = Path().apply { addOval(Rect(c, rim)) }
+            if (owned) drawPath(outer, brush, alpha = METAL_WASH, style = Fill)
+            drawPath(outer, brush, style = Stroke(line))
+            drawPath(Path().apply { addOval(Rect(c, rim - side * 0.05f)) }, brush, alpha = 0.3f, style = Stroke(line * 0.4f))
         }
         CrestMark(
             frameId,
@@ -254,3 +260,7 @@ fun CrestPlate(frameId: String, modifier: Modifier = Modifier, owned: Boolean = 
         )
     }
 }
+
+private val CrestGround = Color(0xFF121211)
+private val CrestSilhouette = Color(0xFF3A3935)
+private val CrestSilhouetteGround = Color(0xFF0F0F0E)

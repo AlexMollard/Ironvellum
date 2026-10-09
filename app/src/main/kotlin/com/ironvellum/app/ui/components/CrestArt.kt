@@ -7,6 +7,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import com.ironvellum.app.R
+import com.ironvellum.app.ui.theme.Metal
 
 /**
  * The drawn heraldic mark for a crest frame.
@@ -50,4 +51,16 @@ fun CrestMark(frameId: String, modifier: Modifier = Modifier) {
         contentScale = ContentScale.Fit,
         modifier = modifier,
     )
+}
+
+/**
+ * The metal a crest's plate is drawn in. The milestone ladder climbs the tiers (iron and silver are
+ * Common, bronze Rare, gold and the three above it Fabled) and the chance-drawn crests, which no level
+ * pays for, wear the Masterwork prism.
+ */
+fun crestMetal(frameId: String): Metal = when (frameId) {
+    "iron", "silver" -> Metal.Common
+    "bronze" -> Metal.Rare
+    "gold", "jade", "crimson", "obsidian" -> Metal.Fabled
+    else -> Metal.Masterwork
 }
