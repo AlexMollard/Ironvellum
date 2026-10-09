@@ -54,16 +54,20 @@ object Relics {
     /**
      * Rate multiplier for a set of owned relics, strongest first. Values at or
      * below 1.0 contribute nothing; an empty vault yields exactly 1.0.
+     *
+     * [excessCap] and [restWeight] are the two levers a worn crest can pull (Ironvellum raises the cap,
+     * Margin weighs the backing relics more); the defaults are the rule as it has always been, and the
+     * crest's effect on the rate is the RATIO of the two stacks, so the stored multiplier is never touched.
      */
-    fun effectiveMultiplier(multipliers: List<Double>): Double {
+    fun effectiveMultiplier(multipliers: List<Double>, excessCap: Double = EXCESS_CAP, restWeight: Double = 1.0): Double {
         val held = multipliers.filter { it.isFinite() && it > 1.0 }.sortedDescending()
         if (held.isEmpty()) return 1.0
         val best = held.first() - 1.0
         // The rest SATURATE toward the ceiling rather than being clipped at it.
         // A hard min() made relics past the cap contribute exactly nothing,
         // which is the same dead-reward bug in a new place.
-        val rest = held.drop(1).withIndex().sumOf { (i, m) -> (m - 1.0) * weightAt(i + 1) }
-        val headroom = best * (EXCESS_CAP - 1.0)
+        val rest = held.drop(1).withIndex().sumOf { (i, m) -> (m - 1.0) * weightAt(i + 1) } * restWeight
+        val headroom = best * (excessCap - 1.0)
         val contributed = if (headroom <= 0.0) 0.0 else headroom * (1.0 - exp(-rest / headroom))
         return 1.0 + best + contributed
     }

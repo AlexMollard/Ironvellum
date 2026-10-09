@@ -129,6 +129,13 @@ object WorkoutShare {
         if (session.note.isNotBlank()) append('\n').append('“').append(session.note.trim()).append('”').append('\n')
     }.trimEnd('\n')
 
+    /**
+     * [text] signed with the worn crest as its last line: the crest's name and nothing else, so no username
+     * rides along. The card is plain text, so the crest is its name, not a picture. A null [crest] leaves it as it was.
+     */
+    fun signed(text: String, crest: CrestDef?): String =
+        if (crest == null) text else text.trimEnd('\n') + "\n\n" + crest.sentenceName.replaceFirstChar { it.uppercase() }
+
     /** A trial's done-set figures; the card and the victory screen print the same ones. */
     data class Totals(val sets: Int, val reps: Int, val heldSeconds: Int, val movedKg: Int)
 

@@ -46,6 +46,8 @@ object ExportWriter {
     data class CrestFrameSnapshot(
         val frameId: String,
         val ownedAtMs: Long,
+        // How it was come by (CrestSource ids). Absent in an older archive, which reads as "legacy".
+        val source: String = "legacy",
     )
 
     data class RelicSnapshot(
@@ -199,6 +201,7 @@ object ExportWriter {
             if (i > 0) append(",")
             append("{\"frameId\":").appendEscaped(f.frameId)
             append(",\"ownedAtMs\":").append(f.ownedAtMs)
+            append(",\"source\":").appendEscaped(f.source)
             append("}")
         }
         append("]")

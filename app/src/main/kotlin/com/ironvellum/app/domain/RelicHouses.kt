@@ -98,32 +98,50 @@ data class HouseStanding(
 }
 
 /**
- * Everything the houses change in the rate, in one value so [Idle.rate] and [Idle.accrued] can never
- * disagree. [NONE] is a lifter with no relics, which is exactly the rate before houses existed.
+ * Everything that moves the rate beyond the raw training inputs, in one value so [Idle.rate] and
+ * [Idle.accruedExact] can never disagree: what the houses add, and what the worn crest adds ([crest]).
+ * [NONE] is a lifter with no relics and no crest, which is exactly the rate before houses existed.
  */
-data class HouseEffects(val standings: List<HouseStanding>) {
+data class HouseEffects(
+    val standings: List<HouseStanding>,
+    val crest: CrestEffects = CrestEffects.NONE,
+) {
     private fun standing(house: RelicHouse) = standings.firstOrNull { it.house == house }
 
-    /** The multiplier on [house]'s term of the rate. */
-    fun term(house: RelicHouse): Double = standing(house)?.termMultiplier ?: 1.0
+    /**
+     * The multiplier on [house]'s term of the rate: its 2-relic bonus (5%, or the crest's pair bonus),
+     * then the worn crest's own lift of that term.
+     */
+    fun term(house: RelicHouse): Double =
+        (if (standing(house)?.pairReached == true) 1.0 + crest.pairBonus else 1.0) * (crest.houseTermScale[house] ?: 1.0)
 
     private fun full(house: RelicHouse) = standing(house)?.fullReached == true
 
-    /** Iron, 4 relics: the full-strength window gains [RelicHouses.IRON_WINDOW_HOURS]. */
+    /** Iron, 4 relics: the full-strength window gains [RelicHouses.IRON_WINDOW_HOURS]; a Jade crest adds its own hours. */
     val fullStrengthHours: Double
-        get() = Idle.FULL_RATE_HOURS + if (full(RelicHouse.Iron)) RelicHouses.IRON_WINDOW_HOURS else 0.0
+        get() = Idle.FULL_RATE_HOURS + (if (full(RelicHouse.Iron)) RelicHouses.IRON_WINDOW_HOURS else 0.0) + crest.fullHoursBonus
 
     /** Vigil, 4 relics: one absence pays 4 days instead of 3. */
     val maxEffectiveHours: Double
         get() = Idle.MAX_EFFECTIVE_HOURS + if (full(RelicHouse.Vigil)) RelicHouses.VIGIL_EXTRA_HOURS else 0.0
 
-    /** Craft, 4 relics: the technique ceiling goes from x2.0 to x2.1 (this is the added part, 1.0 to 1.1). */
+    /**
+     * Craft, 4 relics: the technique ceiling goes from x2.0 to x2.1 (this is the added part, 1.0 to 1.1);
+     * a Sage crest adds its own on top.
+     */
     val skillCeiling: Double
-        get() = Idle.SKILL_CEILING + if (full(RelicHouse.Craft)) RelicHouses.CRAFT_CEILING else 0.0
+        get() = Idle.SKILL_CEILING + (if (full(RelicHouse.Craft)) RelicHouses.CRAFT_CEILING else 0.0) + crest.skillCeilingBonus
 
-    /** Return, 4 relics: the taper floor goes from 10% to 15%. */
+    /** Return, 4 relics: the taper floor goes from 10% to 15%; a Crimson crest adds its own. */
     val minEfficiency: Double
-        get() = Idle.MIN_EFFICIENCY + if (full(RelicHouse.Return)) RelicHouses.RETURN_FLOOR else 0.0
+        get() = Idle.MIN_EFFICIENCY + (if (full(RelicHouse.Return)) RelicHouses.RETURN_FLOOR else 0.0) + crest.floorBonus
+
+    /** The window the roll tapers across after the full-strength day: 48 hours, 54 with a Void crest. */
+    val taperWindowHours: Double
+        get() = Idle.TAPER_WINDOW_HOURS + crest.taperHoursBonus
+
+    /** The same houses wearing [crest]. */
+    fun wearing(crest: CrestEffects): HouseEffects = copy(crest = crest)
 
     companion object {
         val NONE = HouseEffects(emptyList())
@@ -275,11 +293,16 @@ object RelicHouses {
 
     // ------------------------------------------------------------------ effects and vault
 
-    fun effects(owned: List<OwnedRelic>): HouseEffects = HouseEffects(
+    /**
+     * The houses' effects for the relics [owned], wearing the crest [worn] (null wears none). The one
+     * place the rate's effects are built, so the screen's rate, a collect and the cloud push agree.
+     */
+    fun effects(owned: List<OwnedRelic>, worn: String? = null): HouseEffects = HouseEffects(
         RelicHouse.entries.map { house ->
             val held = owned.filter { BY_ID[it.relicId]?.house == house }
             HouseStanding(house, held.size)
         },
+        Crests.effects(worn, owned),
     )
 
     /** The strongest held relic (ties go to the newer): the one that sets the relic rate. */
