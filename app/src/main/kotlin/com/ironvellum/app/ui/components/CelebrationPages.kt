@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
@@ -165,11 +166,13 @@ internal fun Haptics(motion: Boolean, vararg beats: Pair<Long, HapticFeedbackTyp
 /**
  * The dock every celebration page ends in: a 52dp emerald primary, then a
  * quiet 48dp link 16dp below. The link's slot keeps its height when it is
- * empty, so the primary never moves between pages.
+ * empty, so the primary never moves between pages. [caption] is a line (or a few)
+ * above the primary, and a null [primary] leaves the dock as that caption alone, for
+ * a state with nothing to press yet.
  */
 @Composable
 internal fun CelebrationDock(
-    primary: String,
+    primary: String?,
     onPrimary: () -> Unit,
     link: String? = null,
     linkOn: Boolean = true,
@@ -177,6 +180,7 @@ internal fun CelebrationDock(
     onLink: () -> Unit = {},
     primaryEnabled: Boolean = true,
     reserveLink: Boolean = true,
+    caption: (@Composable ColumnScope.() -> Unit)? = null,
 ) {
     Column(
         Modifier
@@ -186,7 +190,8 @@ internal fun CelebrationDock(
             .navigationBarsPadding()
             .padding(start = 16.dp, top = 16.dp, end = 16.dp, bottom = 14.dp),
     ) {
-        Box(
+        caption?.invoke(this)
+        if (primary != null) Box(
             Modifier
                 .fillMaxWidth()
                 .height(52.dp)
@@ -203,8 +208,8 @@ internal fun CelebrationDock(
                 color = if (primaryEnabled) MaterialTheme.colorScheme.onPrimary else IronvellumColors.InkMuted,
             )
         }
-        if (link != null || reserveLink) Spacer(Modifier.height(16.dp))
-        if (link != null || reserveLink) Box(
+        if (primary != null && (link != null || reserveLink)) Spacer(Modifier.height(16.dp))
+        if (primary != null && (link != null || reserveLink)) Box(
             Modifier
                 .fillMaxWidth()
                 .height(48.dp)
@@ -251,7 +256,7 @@ internal data class LevelUp(
  */
 @Composable
 internal fun DockedActionBar(
-    primary: String,
+    primary: String?,
     onPrimary: () -> Unit,
     link: String? = null,
     linkOn: Boolean = true,
@@ -259,7 +264,8 @@ internal fun DockedActionBar(
     onLink: () -> Unit = {},
     primaryEnabled: Boolean = true,
     reserveLink: Boolean = true,
-) = CelebrationDock(primary, onPrimary, link, linkOn, linkColor, onLink, primaryEnabled, reserveLink)
+    caption: (@Composable ColumnScope.() -> Unit)? = null,
+) = CelebrationDock(primary, onPrimary, link, linkOn, linkColor, onLink, primaryEnabled, reserveLink, caption)
 
 /** "1 of 2": two dots and a count at the top of a step page. */
 @Composable

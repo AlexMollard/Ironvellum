@@ -1,12 +1,18 @@
 package com.ironvellum.app.ui.idle
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.RelicHouse
@@ -50,5 +56,20 @@ internal fun HousesSheet(onDismiss: () -> Unit) {
             }
         },
         confirmButton = { IronvellumButton("Got it", onClick = onDismiss) },
+    )
+}
+
+/** The quiet link that opens the houses sheet, on a 48dp target. */
+@Composable
+internal fun HousesLink(onClick: () -> Unit) {
+    Text(
+        "How houses work",
+        style = MaterialTheme.typography.bodySmall,
+        color = IronvellumColors.SystemGreen,
+        modifier = Modifier
+            .heightIn(min = 48.dp)
+            .clickable(role = Role.Button, onClickLabel = "Open how houses work", onClick = onClick)
+            .padding(horizontal = 4.dp)
+            .wrapContentHeight(Alignment.CenterVertically),
     )
 }

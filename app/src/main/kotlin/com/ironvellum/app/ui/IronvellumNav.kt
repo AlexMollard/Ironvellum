@@ -100,9 +100,10 @@ import com.ironvellum.app.ui.train.PresetEditorScreen
 import com.ironvellum.app.ui.program.ProgramBuilderScreen
 import com.ironvellum.app.ui.program.MuscleCoverageScreen
 import com.ironvellum.app.ui.train.SessionScreen
-import com.ironvellum.app.ui.idle.CrestCollectionScreen
+import com.ironvellum.app.domain.CollectionTab
+import com.ironvellum.app.ui.idle.CollectionScreen
 import com.ironvellum.app.ui.idle.IdleScreen
-import com.ironvellum.app.ui.idle.RelicVaultScreen
+import com.ironvellum.app.ui.idle.RateScreen
 
 /** Ledger back stack flag: open the weigh-in on arrival. */
 private const val LOG_WEIGHT = "log_weight"
@@ -114,8 +115,9 @@ object Routes {
     const val STATS = "stats"
     const val TITLES = "titles"
     const val IDLE = "idle"
-    const val VAULT = "idle/vault"
-    const val CRESTS = "idle/crests"
+    const val COLLECTION = "idle/collection/{tab}"
+    const val RATE = "idle/rate"
+    fun collection(tab: CollectionTab) = "idle/collection/${tab.name}"
     const val SETTINGS = "settings"
     const val SETTINGS_SECTION = "settings/{section}"
     const val SUPPORT = "support"
@@ -501,17 +503,22 @@ fun IronvellumRoot(inboxRequest: Int = 0, todayRequest: Int = 0, trialRequest: T
                         MeasurementDetailScreen(site = site, onBack = { navController.popBackStack() })
                     }
                 }
-                composable(Routes.VAULT) {
-                    RelicVaultScreen(onBack = { navController.popBackStack() })
+                composable(Routes.COLLECTION) { entry ->
+                    val tab = CollectionTab.entries.firstOrNull { it.name == entry.arguments?.getString("tab") }
+                        ?: CollectionTab.Relics
+                    CollectionScreen(initialTab = tab, onBack = { navController.popBackStack() })
                 }
-                composable(Routes.CRESTS) {
-                    CrestCollectionScreen(onBack = { navController.popBackStack() })
+                composable(Routes.RATE) {
+                    RateScreen(
+                        onBack = { navController.popBackStack() },
+                        onOpenCollection = { navController.navigate(Routes.collection(CollectionTab.Relics)) { launchSingleTop = true } },
+                    )
                 }
                 composable(Routes.IDLE) {
                     IdleScreen(
                         onBack = { navController.popBackStack() },
-                        onOpenVault = { navController.navigate(Routes.VAULT) { launchSingleTop = true } },
-                        onOpenCrests = { navController.navigate(Routes.CRESTS) { launchSingleTop = true } },
+                        onOpenCollection = { tab -> navController.navigate(Routes.collection(tab)) { launchSingleTop = true } },
+                        onOpenRate = { navController.navigate(Routes.RATE) { launchSingleTop = true } },
                         onOpenCircle = {
                             navController.navigate(Routes.SOCIAL) {
                                 popUpTo(Routes.DASHBOARD) { saveState = false }
