@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -112,6 +113,16 @@ fun Modifier.inkBorder(
     color: Color,
     shape: Shape,
     width: Dp = 1.dp,
+): Modifier = inkBorder(SolidColor(color), shape, width)
+
+/**
+ * [inkBorder] in a [Brush]: a tier's metal ([Metal.bounds]) runs across the whole box, corner to corner,
+ * so a tile's edge is one flat diagonal gradient.
+ */
+fun Modifier.inkBorder(
+    brush: Brush,
+    shape: Shape,
+    width: Dp = 1.dp,
 ): Modifier = if (width <= 0.dp) this else this.drawBehind {
     // A zero width means no border. Handed to Stroke it is a hairline instead,
     // which ringed every date on the training calendar in "today" gold.
@@ -137,7 +148,7 @@ fun Modifier.inkBorder(
     val px = width.toPx()
     drawPath(
         outlinePath(px / 2f),
-        color,
+        brush,
         style = Stroke(px, cap = StrokeCap.Round, join = StrokeJoin.Round),
     )
 }
