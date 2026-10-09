@@ -23,6 +23,7 @@ class HostedPatchTest {
         "2026-10-01-inbox.sql",
         "2026-10-01-circles.sql",
         "2026-10-02-release.sql",
+        "2026-10-09-crests.sql",
     )
 
     private val root: File = run {
@@ -81,13 +82,21 @@ class HostedPatchTest {
     }
 
     @Test
-    fun `the release patch carries the schema the app needs, the column and the feed that reads it`() {
+    fun `the release patch carries the column and the feed that read edited_at`() {
         val release = sql("supabase/hosted/2026-10-02-release.sql")
+        assertTrue("add column if not exists edited_at" in release.lowercase())
+        assertTrue("s.edited_at" in release)
+    }
+
+    @Test
+    fun `the crests patch carries the schema the app needs, the column and every surface that reads it`() {
+        val crests = sql("supabase/hosted/2026-10-09-crests.sql")
         val baseline = sql("supabase/migrations/0001_baseline.sql")
         val beacon = Regex("""schema_version\(\) returns int\s+language sql stable as \$\$ select (\d+) \$\$""")
         assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(baseline)!!.groupValues[1].toInt())
-        assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(release)!!.groupValues[1].toInt())
-        assertTrue("add column if not exists edited_at" in release.lowercase())
-        assertTrue("s.edited_at" in release)
+        assertEquals(NEEDED_SCHEMA_VERSION, beacon.find(crests)!!.groupValues[1].toInt())
+        assertTrue("add column if not exists current_crest_id" in crests.lowercase())
+        // Four views and the circle's two mentions (the key and the column it reads).
+        assertEquals(6, Regex("current_crest_id").findAll(crests.substringAfter("2. the boards")).count())
     }
 }

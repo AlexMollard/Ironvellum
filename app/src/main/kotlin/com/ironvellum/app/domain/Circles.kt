@@ -55,6 +55,8 @@ data class CircleMember(
     val daysThisWeek: Int,
     val counts: Boolean = true,
     val lastWorkoutAtMs: Long?,
+    /** The worn crest id, null when bare or hidden from the caller. */
+    val crestId: String? = null,
 )
 
 /**

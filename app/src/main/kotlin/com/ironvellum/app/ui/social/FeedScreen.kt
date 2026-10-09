@@ -538,7 +538,7 @@ private fun FeedCard(
                 level = entry.level,
                 size = IdentitySize.Card,
                 isMe = isMe,
-                frameId = if (isMe) equippedFrame else null,
+                frameId = if (isMe) equippedFrame else entry.crestId,
                 onClick = { onOpenLifter(entry.userId, entry.displayName) },
             )
             // User-authored title, falling back to the drill label when untitled.

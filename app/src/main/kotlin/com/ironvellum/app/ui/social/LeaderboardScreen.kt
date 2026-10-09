@@ -513,6 +513,7 @@ private fun TrainingRow(
         figure = metric.format(row),
         isMe = isMe,
         equippedFrame = equippedFrame,
+        crestId = row.crestId,
         onClick = { onOpenFriend(row.userId, row.displayName) },
     )
 }
@@ -619,7 +620,7 @@ private fun PodiumSlot(
                 LifterAvatar(
                     displayName = row.displayName,
                     size = avatarSize,
-                    frameId = if (isMe) equippedFrame else null,
+                    frameId = if (isMe) equippedFrame else row.crestId,
                     // Your own mark is always the gold one; otherwise first place alone wears gold.
                     ring = if (isMe) AvatarRing.Own else if (rank == 1) AvatarRing.First else AvatarRing.Iron,
                 )
@@ -686,6 +687,7 @@ private fun BoardRow(
     figure: String,
     isMe: Boolean,
     equippedFrame: String?,
+    crestId: String? = null,
     onClick: (() -> Unit)? = null,
 ) {
     Row(
@@ -716,7 +718,7 @@ private fun BoardRow(
             displayName = displayName,
             size = 36.dp,
             // The equipped crest frame is worn by the local lifter alone.
-            frameId = if (isMe) equippedFrame else null,
+            frameId = if (isMe) equippedFrame else crestId,
             ring = if (isMe) AvatarRing.Own else AvatarRing.Iron,
         )
         Column(Modifier.weight(1f)) {
@@ -847,6 +849,7 @@ private fun MusterBoard(
                                 figure = "${formatEssence(row.essence)} essence",
                                 isMe = row.userId == myUserId,
                                 equippedFrame = equippedFrame,
+                                crestId = row.crestId,
                             )
                         }
                     }
@@ -998,6 +1001,7 @@ private fun LiftsBoard(
                                     figure = LiftBoards.stepLabel(row.lift, standing.step),
                                     isMe = row.userId == myUserId,
                                     equippedFrame = equippedFrame,
+                                    crestId = row.crestId,
                                     onClick = { onOpenFriend(row.userId, row.displayName) },
                                 )
                             }

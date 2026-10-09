@@ -85,6 +85,7 @@ internal data class OwnerIdentity(
     val name: String,
     val level: Int?,
     val titleId: String?,
+    val crestId: String? = null,
 )
 
 internal data class CommentsUi(
@@ -195,7 +196,7 @@ internal class CommentsViewModel(
         viewModelScope.launch {
             val row = cloud.friends().getOrNull()?.firstOrNull { it.userId == userId }
             _ui.value = _ui.value.copy(
-                owner = OwnerIdentity(userId, row?.displayName ?: "Ironbound", row?.level, row?.currentTitleId),
+                owner = OwnerIdentity(userId, row?.displayName ?: "Ironbound", row?.level, row?.currentTitleId, row?.crestId),
             )
         }
     }
@@ -501,6 +502,7 @@ private fun WorkoutHeaderPanel(
                 level = owner.level,
                 size = IdentitySize.Standard,
                 isMe = isMe,
+                frameId = owner.crestId,
                 onClick = onOpenLifter,
             )
             Spacer(Modifier.height(10.dp))

@@ -70,7 +70,7 @@ backend (PostgreSQL over HTTPS/TLS) exactly these things
 
 | Data | Cloud table(s) |
 | Email address — your sign-in identity, held by Supabase Auth (from email/password sign-up, or your Google account on Google sign-in) | Supabase `auth.users`; the app never reads it back beyond restoring its own session (`AccountRepository.kt`) |
-| Display name, profile visibility setting, level, total XP, streak days, title count, lifetime strength, worn title | `profiles` |
+| Display name, profile visibility setting, level, total XP, streak days, title count, lifetime strength, worn title, worn crest | `profiles` |
 | Idle-game aggregates (muster essence, figure count, figure rate) — the idle accrual clock itself stays on-device | `profiles` columns (migration `0008`) |
 | Completed sessions: label, public title (≤80 chars), public note (≤500 chars), timestamps, XP, strength score | `sessions` |
 | Set rows: exercise name, set index, reps, weight, modifiers, done | `session_sets` |

@@ -60,7 +60,7 @@ is upgraded in place: a schema change edits the baseline, bumps the
 `schema_version()` literal and `NEEDED_SCHEMA_VERSION` in `Cloud.kt` together,
 and ships an idempotent patch in `supabase/hosted/` cut verbatim from the
 baseline (`HostedPatchTest` fails the unit gate if one drifts). The hosted
-project is at schema 28 (2026-10-02).
+project is at schema 29 (2026-10-09).
 
 **Never paste `supabase/reset.sql` into the hosted project.** It deletes every
 account. It exists for a throwaway project and for the gate's round trip.

@@ -902,6 +902,8 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
     val profile by remember(app) { app.repository.observeProfile() }
         .collectAsStateWithLifecycle(initialValue = null)
     val titleId = profile?.currentTitleId
+    val crestId by remember(app) { app.repository.observeEquippedFrame() }
+        .collectAsStateWithLifecycle(initialValue = null)
 
     // Your own plate: a gold rim and wash, and a gold ring on your crest.
     InkPanel(
@@ -916,6 +918,7 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
             level = profile?.let { Xp.progress(it.totalXp).level },
             size = IdentitySize.Profile,
             isMe = true,
+            frameId = crestId,
             ring = AvatarRing.Own,
             trailing = {
                 InkIconButton(onClick = onOpenAccount, modifier = Modifier.size(48.dp)) {
@@ -1136,6 +1139,7 @@ private fun AlliesPanel(
             LifterAvatar(
                 displayName = friend.displayName,
                 size = 36.dp,
+                frameId = friend.crestId,
             )
             Column(Modifier.weight(1f)) {
                 Text(
