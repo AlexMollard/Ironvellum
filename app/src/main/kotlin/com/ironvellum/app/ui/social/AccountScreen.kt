@@ -96,6 +96,7 @@ import com.ironvellum.app.ui.components.InkPanel
 import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.theme.ChakraPetch
+import com.ironvellum.app.ui.theme.Metal
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.components.InkSegmented
 import com.ironvellum.app.ui.components.wholeKeyboard
@@ -902,7 +903,12 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
         .collectAsStateWithLifecycle(initialValue = null)
     val titleId = profile?.currentTitleId
 
-    InkPanel(Modifier.fillMaxWidth(), contentPadding = PaddingValues(start = 14.dp, top = 14.dp, end = 6.dp, bottom = 12.dp)) {
+    // Your own plate: a gold rim and wash, and a gold ring on your crest.
+    InkPanel(
+        Modifier.fillMaxWidth(),
+        contentPadding = PaddingValues(start = 14.dp, top = 14.dp, end = 6.dp, bottom = 12.dp),
+        metal = Metal.Fabled,
+    ) {
         IdentityRow(
             displayName = acct.displayName,
             userId = acct.userId,
@@ -910,6 +916,7 @@ private fun ProfileHeader(acct: Account, onOpenAccount: () -> Unit) {
             level = profile?.let { Xp.progress(it.totalXp).level },
             size = IdentitySize.Profile,
             isMe = true,
+            ring = AvatarRing.Own,
             trailing = {
                 InkIconButton(onClick = onOpenAccount, modifier = Modifier.size(48.dp)) {
                     Icon(

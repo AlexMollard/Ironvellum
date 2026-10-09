@@ -16,12 +16,14 @@ class AccentPaletteTest {
         assertEquals(0xFF34D399.toInt(), AccentPalette.Default.primary)
         assertEquals(0xFFF2C14E.toInt(), AccentPalette.Default.secondary)
         assertEquals(0xFF6EE7B7.toInt(), AccentPalette.Default.bright)
+        assertEquals(0xFF25986E.toInt(), AccentPalette.Default.deep)
         assertEquals(0xFF6FAE8C.toInt(), AccentPalette.Default.muted)
     }
     @Test fun `presets can be restored and custom shades follow the primary`() {
         val sapphire = AccentPresets.entries[1].palette
         assertNotEquals(AccentPalette.Default, sapphire)
         assertNotEquals(AccentPalette.Default.bright, sapphire.bright)
+        assertNotEquals(AccentPalette.Default.deep, sapphire.deep)
         assertNotEquals(AccentPalette.Default.muted, sapphire.muted)
         assertEquals(4, AccentPresets.entries.map { it.palette }.distinct().size)
     }

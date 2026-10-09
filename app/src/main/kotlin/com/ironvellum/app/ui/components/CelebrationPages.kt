@@ -45,6 +45,10 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -64,13 +68,19 @@ import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.TitleDef
 import com.ironvellum.app.domain.TitleRarity
+import com.ironvellum.app.domain.Titles
 import com.ironvellum.app.domain.Xp
 import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.METAL_WASH
+import com.ironvellum.app.ui.theme.Metal
+import com.ironvellum.app.ui.theme.RarityTint
+import com.ironvellum.app.ui.theme.emeraldRamp
 import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkDot
 import com.ironvellum.app.ui.theme.inkStroke
+import com.ironvellum.app.ui.titles.DeedSeal as RarityDeedSeal
 import java.util.Locale
 import kotlinx.coroutines.delay
 
@@ -330,7 +340,8 @@ internal fun StepPage(
 
 /**
  * The level-up page: the bar fills and runs out, the number rolls, the bar
- * refills. Gold is only what was earned: the ring, the XP and the new number.
+ * refills. Gold is only what was earned: the ring (a flat gold gradient on a faint wash), the XP and the
+ * new number, which stays the solid reward gold.
  */
 @Composable
 internal fun LevelUpPage(
@@ -403,7 +414,10 @@ internal fun LevelUpPage(
             Canvas(Modifier.fillMaxSize()) {
                 val centre = Offset(size.width / 2f, size.height / 2f)
                 val radius = size.width * 84f / 180f
-                inkArc(centre, radius, -90f, 360f * phase(t, 0, 600, FastOutSlowInEasing::transform), IronvellumColors.SovereignGold, 2.dp.toPx())
+                val ring = phase(t, 0, 600, FastOutSlowInEasing::transform)
+                val gold = Metal.Fabled.bounds()
+                drawOval(gold, Offset(centre.x - radius, centre.y - radius), Size(radius * 2f, radius * 2f), alpha = METAL_WASH * ring, style = Fill)
+                inkArc(centre, radius, -90f, 360f * ring, gold, 2.dp.toPx())
                 // The pulse as the old level runs out: one ring leaving the seal.
                 val p = phase(t, CROSS_AT, 900) { 1f - (1f - it) * (1f - it) }
                 if (t >= CROSS_AT && p < 1f) {
@@ -446,7 +460,7 @@ internal fun LevelUpPage(
                     Modifier
                         .fillMaxWidth((into / needed).coerceIn(0f, 1f))
                         .height(6.dp)
-                        .background(IronvellumColors.Emerald),
+                        .background(emeraldRamp()),
                 )
             }
         }
@@ -459,8 +473,33 @@ internal fun LevelUpPage(
         )
         if (note != null) {
             Spacer(Modifier.height(6.dp))
-            Text(note, style = MaterialTheme.typography.labelMedium, color = Dim, modifier = Modifier.reveal(t >= CROSS_AT, motion))
+            Row(
+                Modifier.reveal(t >= CROSS_AT, motion),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                InscriptionDiamond()
+                Text(note, style = MaterialTheme.typography.labelMedium, color = Dim)
+            }
         }
+    }
+}
+
+/** The note's small diamond: a gold-gradient outline on a faint wash, 12dp. */
+@Composable
+private fun InscriptionDiamond() {
+    Canvas(Modifier.size(12.dp).clearAndSetSemantics {}) {
+        val u = size.width / 24f
+        val diamond = Path().apply {
+            moveTo(12f * u, 2f * u)
+            lineTo(21f * u, 12f * u)
+            lineTo(12f * u, 22f * u)
+            lineTo(3f * u, 12f * u)
+            close()
+        }
+        val gold = Metal.Fabled.bounds()
+        drawPath(diamond, gold, alpha = METAL_WASH, style = Fill)
+        drawPath(diamond, gold, style = Stroke(2.4f * u, join = StrokeJoin.Round))
     }
 }
 
@@ -553,7 +592,16 @@ internal fun DeedsPage(
             modifier = Modifier.reveal(t >= 100, motion),
         )
         Spacer(Modifier.height(20.dp))
-        DeedSeal(t, if (deeds.size == 1) 156.dp else 104.dp)
+        // The shipped seal in the lead deed's tier, stamped in once; the old ring-and-diamond is retired here.
+        val lead = remember(deeds) { wearTarget(deeds) }
+        if (lead != null) {
+            RarityDeedSeal(
+                rarity = lead.rarity,
+                category = Titles.category(lead.rule),
+                size = if (deeds.size == 1) 156.dp else 104.dp,
+                stampIn = true,
+            )
+        }
         Spacer(Modifier.height(26.dp))
         if (deeds.size == 1) {
             val deed = deeds.single()
@@ -626,11 +674,15 @@ internal fun DeedSeal(t: Long, diameter: Dp) {
     }
 }
 
-/** "Rare · Hang 10 kg from the bar": the rarity is earned, so it is gold. */
+/** "Rare · Hang 10 kg from the bar": the rarity is earned, so it is gold; a Masterwork is the prism's lilac. */
 @Composable
 internal fun DeedSubline(deed: TitleDef, sex: Sex, modifier: Modifier, center: Boolean = true) {
     Row(modifier, horizontalArrangement = if (center) Arrangement.Center else Arrangement.Start) {
-        Text(deed.rarity.label, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.SovereignGold)
+        Text(
+            deed.rarity.label,
+            style = MaterialTheme.typography.bodySmall,
+            color = if (deed.rarity == TitleRarity.Masterwork) RarityTint.Prismatic else IronvellumColors.SovereignGold,
+        )
         Text(
             " · ${deed.describeFor(sex)}",
             style = MaterialTheme.typography.bodySmall,

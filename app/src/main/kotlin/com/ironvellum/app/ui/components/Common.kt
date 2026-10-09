@@ -67,6 +67,8 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
 import com.ironvellum.app.ui.theme.InkPressIndication
+import com.ironvellum.app.ui.theme.Metal
+import com.ironvellum.app.ui.theme.metalPlate
 import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkHairline
@@ -79,7 +81,8 @@ import java.util.Locale
 
 /**
  * The app's card: flat [IronvellumColors.Vault] with a 1dp [IronvellumColors.Rune]
- * border and the theme's 8dp cut corners (`MaterialTheme.shapes.medium`).
+ * border and the theme's 8dp cut corners (`MaterialTheme.shapes.medium`). A card for something earned
+ * or the lifter's own passes a [metal]: its rim and a faint wash in that metal's flat gradient.
  *
  * The most reused surface in Ironvellum (~90 call sites), which is exactly why the
  * treatment lives HERE and not in the screens - every screen inherits it
@@ -91,6 +94,8 @@ fun InkPanel(
     modifier: Modifier = Modifier,
     onClick: (() -> Unit)? = null,
     contentPadding: PaddingValues = PaddingValues(16.dp),
+    /** A card for something earned or the lifter's own: its rim and faint wash in this metal, not Rune. */
+    metal: Metal? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
     val shape = MaterialTheme.shapes.medium
@@ -102,9 +107,13 @@ fun InkPanel(
             content = content,
         )
     }
-    val surfaceModifier = modifier
-        .background(IronvellumColors.Vault, shape)
-        .inkBorder(IronvellumColors.Rune, shape, 1.dp)
+    val surfaceModifier = if (metal != null) {
+        modifier.metalPlate(metal, shape)
+    } else {
+        modifier
+            .background(IronvellumColors.Vault, shape)
+            .inkBorder(IronvellumColors.Rune, shape, 1.dp)
+    }
     if (onClick != null) {
         Surface(
             shape = shape,

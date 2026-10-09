@@ -6,11 +6,16 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Composable
+import androidx.compose.foundation.background
 import androidx.compose.runtime.State
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.RewardRarity
 import com.ironvellum.app.domain.TitleRarity
 
@@ -37,8 +42,8 @@ class Metal internal constructor(
     val prism: Boolean = false,
 ) {
 
-    /** Stops as a Brush across the box it is drawn in, corner to corner. */
-    fun bounds(): Brush = Brush.linearGradient(colorStops = stops())
+    /** Stops as a Brush across the box it is drawn in, corner to corner, at [alpha] of their strength. */
+    fun bounds(alpha: Float = 1f): Brush = Brush.linearGradient(colorStops = stops(alpha))
 
     /**
      * Stops as a Brush across a square of [extent] units at [origin], slid [shift] units along the diagonal.
@@ -54,7 +59,8 @@ class Metal internal constructor(
     /** The tone the metal is named by: a thin line or a glyph that cannot carry a gradient. */
     val tone: Color get() = colors[if (prism) 0 else 1]
 
-    private fun stops(): Array<Pair<Float, Color>> = Array(colors.size) { at[it] to colors[it] }
+    private fun stops(alpha: Float = 1f): Array<Pair<Float, Color>> =
+        Array(colors.size) { at[it] to colors[it].let { c -> if (alpha == 1f) c else c.copy(alpha = c.alpha * alpha) } }
 
     companion object {
         val Common = Metal(listOf(Color(0xFFA9AEB5), RarityTint.Iron, Color(0xFF6F747B)), FlatAt)
@@ -81,6 +87,31 @@ class Metal internal constructor(
         }
     }
 }
+
+/**
+ * The XP ramp: the accent's own light, tint and deeper tone (EmeraldBright, Emerald, EmeraldDeep), flat along
+ * the same diagonal as a metal, for the XP bar and its crest. Read in composition or a draw lambda, since the
+ * accent is snapshot state.
+ */
+fun emeraldRamp(alpha: Float = 1f): Brush = Brush.linearGradient(
+    colorStops = arrayOf(
+        0f to IronvellumColors.EmeraldBright.copy(alpha = alpha),
+        0.5f to IronvellumColors.Emerald.copy(alpha = alpha),
+        1f to IronvellumColors.EmeraldDeep.copy(alpha = alpha),
+    ),
+)
+
+/** The default strength of a plate's rim; an iron podium card takes 50%, first place 70%. */
+const val METAL_RIM = 0.55f
+
+/**
+ * A card in a [metal]: Vault paper, the metal's faint [METAL_WASH] over it and a 1dp rim in the same metal at
+ * [rimAlpha], all one flat diagonal gradient across the card.
+ */
+fun Modifier.metalPlate(metal: Metal, shape: Shape, rimAlpha: Float = METAL_RIM, rimWidth: Dp = 1.dp): Modifier =
+    this.background(IronvellumColors.Vault, shape)
+        .background(metal.bounds(METAL_WASH), shape)
+        .inkBorder(metal.bounds(rimAlpha), shape, rimWidth)
 
 /** One slow drift of the prism, in milliseconds. */
 private const val PRISM_DRIFT_MS = 18_000

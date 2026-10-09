@@ -9,6 +9,8 @@ data class AccentPalette(
     val secondary: Int = 0xFFF2C14E.toInt(),
 ) {
     val bright: Int get() = if (primary == Default.primary) 0xFF6EE7B7.toInt() else mixAccent(primary, 0xFFFFFFFF.toInt(), 0.28)
+    /** The deeper end of the accent's ramp: the default's #25986E, else the accent mixed 28% toward black. */
+    val deep: Int get() = if (primary == Default.primary) 0xFF25986E.toInt() else mixAccent(primary, 0xFF000000.toInt(), 0.28)
     val muted: Int get() = if (primary == Default.primary) 0xFF6FAE8C.toInt() else mixAccent(primary, 0xFFA3A099.toInt(), 0.5)
     companion object { val Default = AccentPalette() }
 }
