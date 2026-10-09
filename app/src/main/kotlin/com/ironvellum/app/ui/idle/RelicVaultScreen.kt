@@ -188,7 +188,7 @@ private fun RelicTile(slot: VaultSlot, animate: Boolean, modifier: Modifier = Mo
     ) {
         Column(Modifier.fillMaxWidth().padding(horizontal = 2.dp, vertical = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Box(contentAlignment = Alignment.Center) {
-                HouseRelicSigil(slot.relic.id, slot.tier, Modifier.size(52.dp), owned = held, spin = slot.active && animate)
+                HouseRelicSigil(slot.relic.id, slot.tier, Modifier.size(52.dp), owned = held, animate = slot.active && animate)
                 if (!held) Text("?", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = IronvellumColors.InkMuted)
             }
             Text(

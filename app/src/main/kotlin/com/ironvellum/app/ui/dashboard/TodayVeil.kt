@@ -325,7 +325,7 @@ private fun RelicCentrepiece(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        HouseRelicSigil(active.relic.id, active.tier, Modifier.size(relicSize), ringed = true, spin = animate)
+        HouseRelicSigil(active.relic.id, active.tier, Modifier.size(relicSize), ringed = true, animate = animate)
         if (essence != null && snapshot != null) {
             val state = snapshot.state
             EssenceFigure(essence, 34.sp, animate, Modifier.padding(top = 4.dp))
