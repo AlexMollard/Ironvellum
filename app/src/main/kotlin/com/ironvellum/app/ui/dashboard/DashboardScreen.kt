@@ -811,13 +811,13 @@ private fun TodayDayBody(
         card = card,
         plain = plain,
         displayed = displayed,
-        veil = { full ->
+        veil = { full, grow ->
             val form = when {
                 !full -> VeilForm.COMPACT
                 kind == DayKind.RESPITE -> VeilForm.HERO
                 else -> VeilForm.FULL
             }
-            VeilSection(veil, form, nowMs, actions.onOpenGarrison, firstRun = firstRun && kind != DayKind.NO_CYCLE)
+            VeilSection(veil, form, nowMs, actions.onOpenGarrison, firstRun = firstRun && kind != DayKind.NO_CYCLE, grow = grow)
         },
     )
 }
@@ -833,6 +833,9 @@ private val MORE_LINE = 28.dp
 
 /** Clear of the raised Train plate, which stands 10dp above the bar. */
 private val BOTTOM_CLEARANCE = 28.dp
+
+/** Kept free under a grown Veil, on top of [BOTTOM_CLEARANCE]. */
+private val GROW_MARGIN = 12.dp
 
 /** The page's side margin; the card pads its content another 16dp inside it. */
 private val GUTTER = 16.dp
@@ -873,7 +876,7 @@ private fun TodayLayout(
     rows: List<DayRow>,
     card: @Composable (rows: @Composable () -> Unit) -> Unit,
     plain: @Composable () -> Unit,
-    veil: @Composable (full: Boolean) -> Unit,
+    veil: @Composable (full: Boolean, grow: Dp) -> Unit,
     displayed: Boolean,
 ) {
     SubcomposeLayout(Modifier.fillMaxSize()) { constraints ->
@@ -887,8 +890,8 @@ private fun TodayLayout(
             subcompose(slot) { Box(Modifier.clearAndSetSemantics {}) { content() } }.sumOf { it.measure(loose).height }
 
         val chrome = heightOf("chrome") { TodayPage(card, plain, rows = {}, veil = null) }
-        val veilCompact = heightOf("veilCompact") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(false) } }
-        val veilFull = heightOf("veilFull") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(true) } }
+        val veilCompact = heightOf("veilCompact") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(false, 0.dp) } }
+        val veilFull = heightOf("veilFull") { Column(Modifier.fillMaxWidth().padding(horizontal = GUTTER)) { veil(true, 0.dp) } }
         // A row sits inside the page gutter and the card's own padding; only its content height matters here.
         val rowContent =
             if (rows.isEmpty()) 0
@@ -912,16 +915,23 @@ private fun TodayLayout(
                 veilCompact = veilCompact,
             ),
         )
-        val body = subcompose("page") {
-            val rowHeight = (fit?.rowHeight ?: naturalRow).toDp()
-            val shown = fit?.rows ?: rows.size
+        val rowHeight = (fit?.rowHeight ?: naturalRow).toDp()
+        val shown = fit?.rows ?: rows.size
+        val page: @Composable (Dp, Boolean) -> Unit = { grow, live ->
             val contentModifier = if (fit == null) Modifier.verticalScroll(rememberScrollState()) else Modifier
             TodayPage(
                 card = card, plain = plain,
                 rows = { ExerciseBlock(rows, shown, rowHeight, hidden = rows.size - shown) },
-                veil = { veil(fit?.fullVeil ?: true) }, live = displayed, modifier = contentModifier,
+                veil = { veil(fit?.fullVeil ?: true, grow) }, live = live, modifier = contentModifier,
             )
-        }.map { it.measure(if (bounded) Constraints.fixed(width, available) else loose) }
+        }
+        // Room the fitted page truly leaves under a full Veil, measured on the page itself, less a margin
+        // above the raised Train plate; the respite centrepiece grows into it so a tall phone keeps no gap.
+        val grow = if (bounded && fit?.fullVeil == true) {
+            val natural = heightOf("natural") { page(0.dp, false) }
+            (available - natural - GROW_MARGIN.roundToPx()).coerceAtLeast(0).toDp()
+        } else 0.dp
+        val body = subcompose("page") { page(grow, displayed) }.map { it.measure(if (bounded) Constraints.fixed(width, available) else loose) }
         val height = if (bounded) available else body.maxOf { it.height }
         layout(width, height) {
             body.forEach { it.place(0, 0) }
