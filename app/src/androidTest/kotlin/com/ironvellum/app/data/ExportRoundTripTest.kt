@@ -222,13 +222,14 @@ class ExportRoundTripTest {
         // assertions below pin.
         repo.setHeight(181.5)
         repo.setSex(Sex.FEMALE)
-        db.idleDao().upsert(
-            IdleStateEntity(essence = 777, shadows = 4, relicMultiplier = 1.31, lastCollectedAtMs = 123),
-        )
         repo.grantRoll(3)
         db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "ember", ownedAtMs = 10))
         db.gachaDao().insertFrame(OwnedCrestFrameEntity(frameId = "verdant", ownedAtMs = 20))
         assertEquals(Crests.Equip.Worn, repo.equipFrame("ember"))
+        // After the equip: wearing a crest first collects what the bank is owed.
+        db.idleDao().upsert(
+            IdleStateEntity(essence = 777, shadows = 4, relicMultiplier = 1.31, lastCollectedAtMs = 123),
+        )
         db.gachaDao().insertRelic(OwnedRelicEntity(name = "Chain of Iron", multiplier = 1.31, drawnAtMs = 30, relicId = "iron.chain", refinements = 2))
 
         val export = repo.exportArchive()
