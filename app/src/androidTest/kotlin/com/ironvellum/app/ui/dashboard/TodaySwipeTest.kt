@@ -37,6 +37,7 @@ import com.ironvellum.app.domain.WorkoutSession
 import com.ironvellum.app.domain.WorkoutPreset
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -357,11 +358,11 @@ class TodaySwipeTest {
         fun ink() = runBlocking { layer.toImageBitmap() }.toPixelMap()[x, y]
         val before = ink()
         button.performTouchInput { down(center) }
-        compose.waitUntil(timeoutMillis = 5_000) {
-            compose.mainClock.advanceTimeBy(16)
-            compose.waitForIdle()
-            ink() != before
-        }
+        // Past the tap timeout and the ink's fade-in on the test clock, then look once: polling a
+        // full-screen capture against a wall-clock budget timed out on a freshly booted emulator.
+        compose.mainClock.advanceTimeBy(300)
+        compose.waitForIdle()
+        assertNotEquals("A held button should show its press highlight", before, ink())
         button.performTouchInput { up() }
         advance()
         assertEquals(before, ink())
