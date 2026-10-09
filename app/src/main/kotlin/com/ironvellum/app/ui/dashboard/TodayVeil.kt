@@ -50,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
@@ -117,8 +118,9 @@ private const val TICK_MS = 3_000L
 private val RING_SIZE = 184.dp
 
 /** The relic centrepiece: the plate and the column it heads. */
-private val RELIC_SIZE = 116.dp
-private val RELIC_HERO_HEIGHT = 216.dp
+private val RELIC_SIZE = 100.dp
+private val RELIC_HERO_HEIGHT = 200.dp
+private val RELIC_GROW_MAX = 48.dp
 
 /** The Veil's reserved inscriptions slot: the same height whether or not any wait. */
 private val SLOT_HEIGHT = 44.dp
@@ -126,7 +128,7 @@ private val SLOT_HEIGHT = 44.dp
 private val RING_TICK = Color(0xFF5C5850)
 
 @Composable
-internal fun VeilSection(veil: VeilGlance?, form: VeilForm, nowMs: Long, onOpen: () -> Unit, firstRun: Boolean = false) {
+internal fun VeilSection(veil: VeilGlance?, form: VeilForm, nowMs: Long, onOpen: () -> Unit, firstRun: Boolean = false, grow: Dp = 0.dp) {
     val animate = LocalTodayLive.current && LocalTodayMotion.current
     // The accrual is recomputed against the wall clock, offset so a caller's fixed `nowMs` stays consistent.
     val now = rememberVeilNow(nowMs, animate, TICK_MS)
@@ -157,7 +159,7 @@ internal fun VeilSection(veil: VeilGlance?, form: VeilForm, nowMs: Long, onOpen:
                     when (form) {
                         VeilForm.COMPACT -> CompactBody(snapshot, essence, strength, phase, animate)
                         VeilForm.FULL -> FullBody(snapshot, essence, strength, phase, animate, firstRun)
-                        VeilForm.HERO -> HeroBody(snapshot, veil?.active, essence, strength, phase, animate)
+                        VeilForm.HERO -> HeroBody(snapshot, veil?.active, essence, strength, phase, animate, grow)
                     }
                 }
                 InscriptionsSlot(veil?.inscriptions, onOpen)
@@ -276,10 +278,11 @@ private fun HeroBody(
     strength: VeilStrength?,
     phase: State<Float>,
     animate: Boolean,
+    grow: Dp,
 ) {
     TitleRow(trailing = { RateLabel(snapshot) })
     if (active != null) {
-        RelicCentrepiece(snapshot, active, essence, animate)
+        RelicCentrepiece(snapshot, active, essence, animate, grow)
     } else Box(Modifier.fillMaxWidth().height(RING_SIZE + 8.dp).testTag("veil-hero"), contentAlignment = Alignment.Center) {
         BreathingGlow(phase)
         RuneRing(phase, Modifier.size(RING_SIZE))
@@ -313,13 +316,16 @@ private fun RelicCentrepiece(
     active: VaultSlot,
     essence: Long?,
     animate: Boolean,
+    grow: Dp,
 ) {
+    // Spare room under the page goes to the block, and half of it to the relic, up to a cap.
+    val relicSize = RELIC_SIZE + (grow / 2).coerceAtMost(RELIC_GROW_MAX)
     Column(
-        Modifier.fillMaxWidth().height(RELIC_HERO_HEIGHT).testTag("veil-hero"),
+        Modifier.fillMaxWidth().height(RELIC_HERO_HEIGHT + grow).testTag("veil-hero"),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
     ) {
-        HouseRelicSigil(active.relic.id, active.tier, Modifier.size(RELIC_SIZE), ringed = true, spin = animate)
+        HouseRelicSigil(active.relic.id, active.tier, Modifier.size(relicSize), ringed = true, spin = animate)
         if (essence != null && snapshot != null) {
             val state = snapshot.state
             EssenceFigure(essence, 34.sp, animate, Modifier.padding(top = 4.dp))
