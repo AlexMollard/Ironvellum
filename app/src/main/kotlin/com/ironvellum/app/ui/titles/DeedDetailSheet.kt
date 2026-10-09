@@ -182,7 +182,7 @@ internal fun DeedDetailSheet(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                DeedSeal(def.rarity, category = category, size = 96.dp, earned = earned)
+                DeedSeal(def.rarity, category = category, size = 96.dp, earned = earned, stampIn = earned)
                 if (earnedAtMs != null) {
                     Text(
                         "Earned ${formatDate(earnedAtMs, "d MMM yyyy")}",

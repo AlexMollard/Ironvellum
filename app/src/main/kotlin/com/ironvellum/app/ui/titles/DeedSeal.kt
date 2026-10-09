@@ -1,8 +1,16 @@
 package com.ironvellum.app.ui.titles
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -12,15 +20,21 @@ import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.TileMode
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.vector.PathParser
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.TitleRarity
+import com.ironvellum.app.ui.components.animatorsOn
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.RarityTint
 import kotlin.math.cos
@@ -158,21 +172,41 @@ private class SealPaths(val geometry: SealGeometry, category: String?) {
 /** The seal's own dark ground, so the tier's tint reads the same over any panel. */
 private val SealGround = Color(0xFF121211)
 
-private val Prism: Brush = Brush.linearGradient(
-    0f to Color(0xFFBFB0F7),
-    0.35f to Color(0xFF9DD5F0),
-    0.65f to Color(0xFFF0B6E4),
-    1f to Color(0xFFBFB0F7),
-    start = Offset.Zero,
-    end = Offset(64f, 64f),
+private val PrismStops = listOf(Color(0xFFBFB0F7), Color(0xFF9DD5F0), Color(0xFFF0B6E4), Color(0xFFBFB0F7))
+private val PrismAt = floatArrayOf(0f, 0.35f, 0.65f, 1f)
+
+/**
+ * A flat diagonal gradient across the 64-unit grid, as the mockup's prism: no light source,
+ * just a lighter tone, the tier's tint, then a deeper tone. [shift] slides it along the diagonal;
+ * the prism's first and last stops match, so a shift of 0..64 loops seamlessly.
+ */
+private fun flat(colors: List<Color>, at: FloatArray, shift: Float = 0f): Brush = Brush.linearGradient(
+    colorStops = colors.mapIndexed { i, c -> at[i] to c }.toTypedArray(),
+    start = Offset(shift, shift),
+    end = Offset(shift + 64f, shift + 64f),
+    tileMode = TileMode.Repeated,
 )
+
+private val FlatAt = floatArrayOf(0f, 0.5f, 1f)
+
+/** Lighter tone, the tier's [RarityTint] metal, a slightly deeper tone. */
+private fun metalStops(rarity: TitleRarity): List<Color> = when (rarity) {
+    TitleRarity.Common -> listOf(Color(0xFFA9AEB5), RarityTint.Iron, Color(0xFF6F747B))
+    TitleRarity.Rare -> listOf(Color(0xFFE0A877), RarityTint.Bronze, Color(0xFFA86F44))
+    TitleRarity.Epic -> listOf(Color(0xFFE8C672), RarityTint.Gold, Color(0xFFB88A30))
+    TitleRarity.Masterwork -> PrismStops
+}
+
+private const val STAMP_MS = 300
+private const val PRISM_DRIFT_MS = 18_000
 
 /**
  * A deed's forged seal: a polygon stamped in its tier's metal ([RarityTint]) with the stroke
  * glyph of its [category] on it. Pass a null [category] for a bare seal (a tier header's mini
  * seal). A locked deed ([earned] false) keeps its tier's shape but takes the muted ink, so a
- * tier is only coloured once it is held. Static, so it needs no animation gate. Decorative:
- * the row or sheet carries the words.
+ * tier is only coloured once it is held. Still by default; [stampIn] gives the detail sheet's
+ * big seal a one-off stamp, and an earned Masterwork's prism drifts slowly. Both stop when
+ * system animations are off. Decorative: the row or sheet carries the words.
  */
 @Composable
 internal fun DeedSeal(
@@ -181,12 +215,29 @@ internal fun DeedSeal(
     category: String? = null,
     size: Dp = 52.dp,
     earned: Boolean = true,
+    stampIn: Boolean = false,
 ) {
     val paths = remember(rarity, category) { SealPaths(sealGeometry(rarity), category) }
     val tint = if (earned) RarityTint.of(rarity) else IronvellumColors.InkMuted
     val prism = earned && rarity == TitleRarity.Masterwork
-    Canvas(modifier.size(size)) {
-        scale(this.size.minDimension / 64f, Offset.Zero) { drawSeal(paths, tint, if (prism) Prism else SolidColor(tint), prism) }
+    val motion = animatorsOn(LocalContext.current)
+    val still = remember(rarity, earned) { if (earned) flat(metalStops(rarity), if (prism) PrismAt else FlatAt) else SolidColor(tint) }
+    val drift = if (prism && motion) {
+        rememberInfiniteTransition(label = "prism").animateFloat(
+            0f, 64f, infiniteRepeatable(tween(PRISM_DRIFT_MS, easing = LinearEasing)), label = "shift",
+        )
+    } else null
+    val stamp = remember { Animatable(if (stampIn && motion) 1.08f else 1f) }
+    val haptics = LocalHapticFeedback.current
+    LaunchedEffect(stampIn, motion) {
+        if (stampIn && motion) {
+            haptics.performHapticFeedback(HapticFeedbackType.SegmentTick)
+            stamp.animateTo(1f, tween(STAMP_MS, easing = FastOutSlowInEasing))
+        }
+    }
+    Canvas(modifier.size(size).graphicsLayer { scaleX = stamp.value; scaleY = stamp.value }) {
+        val metal = drift?.let { flat(PrismStops, PrismAt, it.value) } ?: still
+        scale(this.size.minDimension / 64f, Offset.Zero) { drawSeal(paths, tint, metal, prism) }
     }
 }
 
