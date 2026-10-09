@@ -162,7 +162,7 @@ internal fun VeilSection(veil: VeilGlance?, form: VeilForm, nowMs: Long, onOpen:
                         VeilForm.HERO -> HeroBody(snapshot, veil?.active, essence, strength, phase, animate, grow)
                     }
                 }
-                InscriptionsSlot(veil?.inscriptions, onOpen)
+                InscriptionsSlot(veil?.inscriptions, veil?.buyPrice, onOpen)
             }
         }
     }
@@ -287,14 +287,10 @@ private fun HeroBody(
         BreathingGlow(phase)
         RuneRing(phase, Modifier.size(RING_SIZE))
         if (essence != null && snapshot != null) {
-            val state = snapshot.state
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 EssenceFigure(essence, 40.sp, animate)
                 Text(
-                    buildString {
-                        append("essence · ${state.figures} ${plural(state.figures, "echo", "echoes")}")
-                        if (state.relicMultiplier > 1.0) append(" · relic ×${"%.2f".fmt(state.relicMultiplier)}")
-                    },
+                    "essence",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     textAlign = TextAlign.Center,
@@ -327,13 +323,9 @@ private fun RelicCentrepiece(
     ) {
         HouseRelicSigil(active.relic.id, active.tier, Modifier.size(relicSize), ringed = true, animate = animate)
         if (essence != null && snapshot != null) {
-            val state = snapshot.state
             EssenceFigure(essence, 34.sp, animate, Modifier.padding(top = 4.dp))
             Text(
-                buildString {
-                    append("essence · ${state.figures} ${plural(state.figures, "echo", "echoes")}")
-                    if (state.relicMultiplier > 1.0) append(" · relic ×${"%.2f".fmt(state.relicMultiplier)}")
-                },
+                "essence",
                 style = MaterialTheme.typography.bodySmall,
                 color = IronvellumColors.InkMuted,
                 textAlign = TextAlign.Center,
@@ -345,7 +337,6 @@ private fun RelicCentrepiece(
                 withStyle(SpanStyle(color = IronvellumColors.Ink, fontWeight = FontWeight.SemiBold)) { append(active.relic.name) }
                 append(" · ")
                 withStyle(SpanStyle(color = RarityTint.of(active.tier))) { append(rarityWord(active.tier)) }
-                append(" · ${active.relic.house.title}")
             },
             style = MaterialTheme.typography.bodySmall,
             color = IronvellumColors.InkMuted,
@@ -363,8 +354,8 @@ private fun RelicCentrepiece(
  * anything else on the page.
  */
 @Composable
-private fun InscriptionsSlot(waiting: Int?, onOpen: () -> Unit) {
-    val line = inscriptionsLine(waiting)
+private fun InscriptionsSlot(waiting: Int?, buyPrice: Long?, onOpen: () -> Unit) {
+    val line = inscriptionsLine(waiting, buyPrice)
     Row(
         Modifier.fillMaxWidth().heightIn(min = SLOT_HEIGHT).testTag("veil-inscriptions"),
         verticalAlignment = Alignment.CenterVertically,
@@ -378,15 +369,15 @@ private fun InscriptionsSlot(waiting: Int?, onOpen: () -> Unit) {
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
         )
-        if (line.inscribe) {
-            // The Veil is where inscriptions are spent: the same destination as the section.
+        if (line.action != null) {
+            // The Veil is where inscriptions are spent and bought: the same destination as the section.
             Text(
-                "Inscribe",
+                line.action,
                 style = MaterialTheme.typography.bodyMedium,
                 color = IronvellumColors.SystemGreen,
                 modifier = Modifier
                     .heightIn(min = SLOT_HEIGHT)
-                    .clickable(role = Role.Button, onClickLabel = "Inscribe in the Veil", onClick = onOpen)
+                    .clickable(role = Role.Button, onClickLabel = if (line.waiting) "Inscribe in the Veil" else "Buy an inscription in the Veil", onClick = onOpen)
                     .padding(start = 12.dp)
                     .wrapContentHeight(Alignment.CenterVertically),
             )
