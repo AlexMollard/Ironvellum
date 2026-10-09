@@ -32,6 +32,9 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.ironvellum.app.domain.ArmyClass
+import com.ironvellum.app.domain.CrestDef
+import com.ironvellum.app.domain.CrestGroup
+import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.Gacha
 import com.ironvellum.app.domain.RelicHouses
 import com.ironvellum.app.domain.RelicReveal
@@ -165,15 +168,15 @@ internal fun inscribedPage(result: RollResult, vault: VaultState? = null, crests
     )
 }
 
-/** "Chance draw · 5 of 10 crests", or just the lead when the count is not known. */
+/** "Chance draw · 5 of 28 crests", or just the lead when the count is not known. */
 internal fun crestLine(lead: String, owned: Int?): String =
-    if (owned == null) lead else "$lead · $owned of ${Gacha.CREST_FRAMES.size} crests"
+    if (owned == null) lead else "$lead · $owned of ${Crests.ALL.size} crests"
 
 /**
  * What the Veil paid outside a draw, as moments. The one-time catch-up is a single page that
  * lists everything it paid; a milestone crest is a page of its own, one per crest.
  */
-internal fun veilGrantPages(grant: VeilGrant?): List<CelebrationPage> {
+internal fun veilGrantPages(grant: VeilGrant?, crestsOwned: Int? = null): List<CelebrationPage> {
     if (grant == null || grant.isEmpty) return emptyList()
     val retro = if (grant.retro) {
         val notes = buildList {
@@ -189,17 +192,28 @@ internal fun veilGrantPages(grant: VeilGrant?): List<CelebrationPage> {
     }
     // A crest already named by the catch-up page is not told twice; one won at a milestone since is.
     val milestones = if (grant.retro) emptyList() else grant.crests.map { name ->
-        val id = Gacha.CREST_FRAMES.firstOrNull { it.name == name }?.id
-        val level = Veil.CREST_LADDER.indexOf(id).takeIf { it >= 0 }?.let { (it + 1) * Veil.MILESTONE_EVERY }
+        val crest = Crests.ALL.firstOrNull { it.name == name }
+        val id = crest?.id
         CelebrationPage.Inscribed(
             rarity = RewardRarity.Rare,
             name = name,
-            notes = if (id == null) listOf("Milestone crest", "Wear it on your folio") else emptyList(),
+            notes = if (id == null) listOf("Crest earned", "Wear it on your folio") else emptyList(),
             crestId = id,
-            crestLine = level?.let { "Level $it milestone" },
+            crestLine = crest?.let { earnedLine(it, crestsOwned) },
         )
     }
     return retro + milestones
+}
+
+/**
+ * What a crest awarded outside a draw says under its name: "Level 20 milestone" for a ladder rung, and for a
+ * deed or a house what earned it and how many of the 28 are held now ("Deed crest · Unbroken · 10 of 28 crests").
+ */
+internal fun earnedLine(crest: CrestDef, crestsOwned: Int?): String = when (crest.group) {
+    CrestGroup.Ladder -> "Level ${crest.level} milestone"
+    CrestGroup.Deeds -> crestLine("Deed crest · ${crest.deed?.name}", crestsOwned)
+    CrestGroup.Houses -> crestLine("House crest · ${crest.house?.title}", crestsOwned)
+    CrestGroup.Veil -> crestLine("Chance draw", crestsOwned)
 }
 
 /** The one narrator line of an inscription, in the voice of Today's: a short sentence with a full stop. */
@@ -309,7 +323,7 @@ internal fun AchievementOverlay(
                     is CelebrationPage.Inscribed -> if (page.crestId != null) {
                         val id = page.crestId
                         val canWear = onWearCrest != null && id != wornCrestId
-                        val keep = wornCrestId?.let { worn -> Gacha.CREST_FRAMES.firstOrNull { it.id == worn }?.name?.replace(" Crest", "") }
+                        val keep = Crests.byId(wornCrestId)?.name?.replace(" Crest", "")
                         CrestRevealPage(
                             step = at,
                             steps = pages.size,

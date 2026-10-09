@@ -127,7 +127,7 @@ class CelebrationPagesTest {
 
         val crest = inscribedPage(RollResult(Reward.CrestFrame("gold", "Gold Crest"), RewardRarity.Rare), crestsOwned = 5)
         assertEquals("gold", crest.crestId)
-        assertEquals("Chance draw · 5 of 10 crests", crest.crestLine)
+        assertEquals("Chance draw · 5 of 28 crests", crest.crestLine)
     }
 
     @Test
@@ -135,6 +135,15 @@ class CelebrationPagesTest {
         val page = veilGrantPages(VeilGrant(crests = listOf("Gold Crest"))).single() as CelebrationPage.Inscribed
         assertEquals("gold", page.crestId)
         assertEquals("Level 20 milestone", page.crestLine)
+    }
+
+    @Test
+    fun `a deed or house crest says what earned it and how many are held`() {
+        val deed = veilGrantPages(VeilGrant(crests = listOf("Anvil Crest")), crestsOwned = 10).single() as CelebrationPage.Inscribed
+        assertEquals("anvil", deed.crestId)
+        assertEquals("Deed crest · Unbroken · 10 of 28 crests", deed.crestLine)
+        val house = veilGrantPages(VeilGrant(crests = listOf("Ironhold Crest")), crestsOwned = 3).single() as CelebrationPage.Inscribed
+        assertEquals("House crest · House of Iron · 3 of 28 crests", house.crestLine)
     }
 }
 

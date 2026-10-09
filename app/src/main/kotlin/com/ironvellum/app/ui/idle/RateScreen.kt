@@ -150,7 +150,7 @@ private fun Breakdown(snapshot: IdleSnapshot, inputs: IdleInputs, vault: VaultSt
 
     // The four multipliers, each with its ceiling where it has one. A house's pair bonus lifts a term past
     // the plain ceiling, so each ceiling is what THIS lifter can reach.
-    val trainingMax = 1.0 + (Idle.MAX_TRAINING_FACTOR - 1.0) * maxOf(houses.term(RelicHouse.Iron), houses.term(RelicHouse.Vigil))
+    val trainingMax = 1.0 + (Idle.MAX_TRAINING_FACTOR - 1.0 + houses.crest.trainingCapBonus / Idle.FLOOR) * maxOf(houses.term(RelicHouse.Iron), houses.term(RelicHouse.Vigil))
     val skillMax = 1.0 + houses.skillCeiling * houses.term(RelicHouse.Craft)
     InkPanel(Modifier.padding(top = 14.dp), contentPadding = PaddingValues(0.dp)) {
         FactorRow(
@@ -186,8 +186,8 @@ private fun Breakdown(snapshot: IdleSnapshot, inputs: IdleInputs, vault: VaultSt
             "Echoes",
             rate.echoFactor,
             "${"%,d".fmt(state.figures)} ${plural(state.figures, "echo", "echoes")}. Every ${Idle.ECHO_BONUS_PER.roundToInt()} add " +
-                "${(Idle.ECHO_BONUS_STEP * 100).roundToInt()}%, up to ${(Idle.ECHO_BONUS_CAP * 100).roundToInt()}%.",
-            ceiling = Idle.MAX_ECHO_FACTOR,
+                "${"%.1f".fmt(houses.crest.echoStep * 100).removeSuffix(".0")}%, up to ${(houses.crest.echoCap * 100).roundToInt()}%.",
+            ceiling = 1.0 + houses.crest.echoCap,
         )
     }
 
@@ -198,7 +198,7 @@ private fun Breakdown(snapshot: IdleSnapshot, inputs: IdleInputs, vault: VaultSt
     }
 
     SectionHeader("While you are away", topPadding = 18.dp)
-    AwayCurve(houses.fullStrengthHours, houses.minEfficiency)
+    AwayCurve(houses.fullStrengthHours, houses.minEfficiency, houses.taperWindowHours)
     Text(
         "One absence pays at most ${houses.maxEffectiveHours.roundToInt()} h of work. Opening the Veil banks it and starts the clock again.",
         style = MaterialTheme.typography.bodySmall,
@@ -307,8 +307,8 @@ private fun Modifier.wrapCenter(): Modifier = this.then(Modifier.heightIn(min = 
  * then held. Drawn as paths on a flat baseline; the axis runs a day past the end of the taper.
  */
 @Composable
-private fun AwayCurve(fullHours: Double, floor: Double) {
-    val taperEnd = fullHours + Idle.TAPER_WINDOW_HOURS
+private fun AwayCurve(fullHours: Double, floor: Double, window: Double = Idle.TAPER_WINDOW_HOURS) {
+    val taperEnd = fullHours + window
     val axisEnd = taperEnd + 24.0
     val description = "Full pace for ${fullHours.roundToInt()} hours, then tapering to ${(floor * 100).roundToInt()}% by ${taperEnd.roundToInt()} hours"
     Canvas(
@@ -342,7 +342,7 @@ private fun AwayCurve(fullHours: Double, floor: Double) {
     }
     Row(Modifier.fillMaxWidth().padding(horizontal = 2.dp)) {
         Text("0 h", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(fullHours.toFloat()))
-        Text("${fullHours.roundToInt()} h, full pace ends", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(Idle.TAPER_WINDOW_HOURS.toFloat()))
+        Text("${fullHours.roundToInt()} h, full pace ends", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(window.toFloat()))
         Text("${taperEnd.roundToInt()} h, ${(floor * 100).roundToInt()}%", style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, modifier = Modifier.weight(24f))
     }
 }

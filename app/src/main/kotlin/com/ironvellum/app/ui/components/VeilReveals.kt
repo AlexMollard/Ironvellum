@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.ironvellum.app.domain.Crests
 import com.ironvellum.app.domain.DrawChange
 import com.ironvellum.app.domain.Gacha
 import com.ironvellum.app.domain.RelicOutcome
@@ -465,7 +466,8 @@ internal fun CrestRevealPage(
     val motion = animatorsOn(LocalContext.current)
     val t = rememberClock(REVEAL_END, motion)
     Haptics(motion, *inscribedBeats(RewardRarity.Rare).toTypedArray())
-    val name = Gacha.CREST_FRAMES.firstOrNull { it.id == crestId }?.name?.replace(" Crest", " crest") ?: crestId
+    val def = Crests.byId(crestId)
+    val name = def?.sentenceName ?: crestId
     StepPage(step = step, steps = steps, dock = dock) {
         Text(
             "Crest earned",
@@ -503,6 +505,29 @@ internal fun CrestRevealPage(
             Spacer(Modifier.height(4.dp))
             Text(line, style = MaterialTheme.typography.bodyMedium, color = Dim, textAlign = TextAlign.Center, modifier = Modifier.reveal(t >= 800, motion))
         }
+        if (def != null) {
+            Spacer(Modifier.height(14.dp))
+            Column(
+                Modifier.widthIn(max = 320.dp).reveal(t >= 900, motion),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Text(
+                    "VEIL PERK · ${def.kind.label.uppercase()}",
+                    style = MaterialTheme.typography.labelSmall,
+                    letterSpacing = 1.sp,
+                    color = Dim,
+                )
+                Text(
+                    def.perk,
+                    fontFamily = ChakraPetch,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 18.sp,
+                    color = IronvellumColors.Ink,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+                Text(def.text, style = MaterialTheme.typography.bodyMedium, color = Dim, textAlign = TextAlign.Center, modifier = Modifier.padding(top = 2.dp))
+            }
+        }
         Spacer(Modifier.height(14.dp))
         Text(
             "This one is yours to keep, whatever you wear.",
@@ -515,37 +540,21 @@ internal fun CrestRevealPage(
 }
 
 /**
- * A crest on its plate: a dark disc ringed in the crest's metal ([crestMetal]), the drawn mark on it.
- * Used by the reveal and the collection, so a crest looks the same where it is won and where it is kept.
- * [owned] false sinks it to a whisper: a flat muted ring and a faded mark. [animate] lets a prism drift.
+ * A crest medallion: a dark plate ringed in the crest's flat gradient, its drawn mark in the mark's own
+ * ramp ([crestLook]). Used by the reveal, the collection and the sheet, so a crest looks the same where it
+ * is won and where it is kept. [owned] false sinks it to a flat muted silhouette; [animate] lets a prism
+ * drift. An id the catalogue does not know draws nothing.
  */
 @Composable
 fun CrestPlate(frameId: String, modifier: Modifier = Modifier, owned: Boolean = true, animate: Boolean = false) {
-    val metal = crestMetal(frameId)
-    val drift = rememberPrismDrift(1f, animate && owned && metal.prism)
-    Box(modifier.clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
-        Canvas(Modifier.matchParentSize()) {
-            val side = minOf(size.width, size.height)
-            val c = Offset(size.width / 2f, size.height / 2f)
-            val origin = Offset(c.x - side / 2f, c.y - side / 2f)
-            val brush: Brush = if (owned) metal.span(side, (drift?.value ?: 0f) * side, origin) else SolidColor(CrestSilhouette)
-            val rim = side * 0.47f
-            val line = maxOf(side * 0.012f, 1.dp.toPx())
-            inkDot(c, rim, if (owned) CrestGround else CrestSilhouetteGround)
-            val outer = Path().apply { addOval(Rect(c, rim)) }
-            if (owned) drawPath(outer, brush, alpha = METAL_WASH, style = Fill)
-            drawPath(outer, brush, style = Stroke(line))
-            drawPath(Path().apply { addOval(Rect(c, rim - side * 0.05f)) }, brush, alpha = 0.3f, style = Stroke(line * 0.4f))
-        }
-        CrestMark(
-            frameId,
-            Modifier
-                .fillMaxSize(0.6f)
-                .graphicsLayer { alpha = if (owned) 1f else 0.4f },
-        )
+    val look = crestLook(frameId) ?: return
+    val prism = look.art.prism || look.ring.prism
+    val drift = rememberPrismDrift(1f, animate && owned && prism)
+    Canvas(modifier.clearAndSetSemantics {}) {
+        val side = minOf(size.width, size.height)
+        val origin = Offset((size.width - side) / 2f, (size.height - side) / 2f)
+        // 1.5dp on a small medallion, 2.5dp on a large one, as drawn.
+        val ring = (if (side < 80.dp.toPx()) 1.5.dp else 2.5.dp).toPx()
+        drawCrestMedallion(frameId, look, origin, side, ring, owned, drift?.value ?: 0f)
     }
 }
-
-private val CrestGround = Color(0xFF121211)
-private val CrestSilhouette = Color(0xFF3A3935)
-private val CrestSilhouetteGround = Color(0xFF0F0F0E)

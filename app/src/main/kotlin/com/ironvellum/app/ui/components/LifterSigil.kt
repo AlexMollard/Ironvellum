@@ -22,7 +22,6 @@ import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.ArmyClass
-import com.ironvellum.app.ui.social.crestFrameTreatment
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkHairline
@@ -61,11 +60,12 @@ fun LifterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier, com
         )
         return
     }
-    val treatment = frameId?.let { crestFrameTreatment(it) }
-    val plateTop = treatment?.plateTop ?: IronvellumColors.VaultHigh
-    val plateBottom = treatment?.plateBottom ?: IronvellumColors.Vault
-    val frameColor = treatment?.frameColor ?: IronvellumColors.Rune
-    val accent = treatment?.initialColor ?: IronvellumColors.SystemGreen
+    // The frame is the crest's own ramp now: its rim tone, on the same plate whatever is worn.
+    val look = frameId?.let { crestLook(it) }
+    val plateTop = IronvellumColors.VaultHigh
+    val plateBottom = IronvellumColors.Vault
+    val frameColor = look?.ring?.tone ?: IronvellumColors.Rune
+    val accent = IronvellumColors.SystemGreen
     // The sigil sits on the home player card, next to inked panels; a
     // geometric cut corner here is the one edge that would look machined.
     val shape = MaterialTheme.shapes.small
@@ -102,7 +102,7 @@ fun LifterSigil(level: Int, frameId: String?, modifier: Modifier = Modifier, com
             .inkBorder(
                 color = frameColor,
                 shape = shape,
-                width = minOf(treatment?.frameWidth ?: 2.dp, 2.dp),
+                width = 2.dp,
             )
             .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically,

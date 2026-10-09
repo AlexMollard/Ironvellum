@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.ironvellum.app.domain.CrestEffects
 import com.ironvellum.app.domain.Gacha
 import com.ironvellum.app.domain.Veil
 import com.ironvellum.app.domain.fmt
@@ -40,11 +41,13 @@ internal fun VeilBuySheet(
     cost: Long,
     essence: Long,
     nextCost: Long,
+    crest: CrestEffects,
+    ownedFrames: Set<String>,
     pity: Gacha.Pity,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    val shares = remember { Gacha.typeShares() }
+    val shares = remember(ownedFrames) { Gacha.typeShares(ownedFrames) }
     IronvellumDialog(
         onDismissRequest = onDismiss,
         title = { Text("Buy an inscription") },
@@ -61,7 +64,7 @@ internal fun VeilBuySheet(
                     InkDivider()
                 }
                 Text(
-                    "The next one costs ${"%,d".fmt(nextCost)}. Each one you buy adds ${Veil.OFFERING_STEP}.",
+                    "The next one costs ${"%,d".fmt(nextCost)}. Each one you buy adds ${crest.offeringStep}.",
                     style = MaterialTheme.typography.bodySmall,
                     color = IronvellumColors.InkMuted,
                     modifier = Modifier.padding(top = 8.dp),
@@ -81,6 +84,17 @@ internal fun VeilBuySheet(
                         }
                     }
                 }
+                // What an echo draw pays at each rarity, under the crest worn now (the roller's own function).
+                val echoes = Gacha.DROP_TABLE.joinToString(", ") {
+                    val range = it.echoRange(crest.draw)
+                    "%,d–%,d".fmt(range.first, range.last)
+                }
+                Text(
+                    "An echo draw pays $echoes, by rarity.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = IronvellumColors.InkMuted,
+                    modifier = Modifier.padding(top = 10.dp),
+                )
                 Text(
                     Gacha.pityLine(pity),
                     style = MaterialTheme.typography.bodySmall,

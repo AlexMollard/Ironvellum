@@ -70,7 +70,7 @@ that may be difficult to see on dark paper.
 never themed and used only for rarity: Common iron #8A8F96, Rare bronze #C98B5B, Fabled gold
 #D6A94A, Masterwork prismatic #BFB0F7. An earned deed's glyph and tier word take its metal; the
 top two tiers sit on a soft static ring. A locked deed shows its tier word in `InkMuted`.
-Crests and relics reuse the same ladder. `SovereignGold` stays the reward accent and is not the
+Crests and relics reuse the same ladder, but a crest is flat line art in one fixed diagonal gradient per crest (never the lifter's accent), a ring in that same ramp, and at most a 12% wash: no solid metal fill, bevel, highlight or sheen. `SovereignGold` stays the reward accent and is not the
 Fabled gold.
 Speak in roles, not hues: the lifter may have chosen sapphire and amber. "Primary" is the action
 colour, "reward" is the earned colour, "link" is the quiet accent.
