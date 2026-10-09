@@ -45,12 +45,14 @@ class CrestArtCoverageTest {
     }
 
     @Test
-    fun `every mark is line art with at most a twelve percent wash`() {
+    fun `every mark uses a bounded wash and only Void has a dark centre`() {
         CREST_SHAPES.forEach { (id, shapes) ->
             assertTrue("$id has no shapes", shapes.isNotEmpty())
             shapes.forEach {
                 assertTrue("$id: wash ${it.wash} is over $MAX_WASH, a solid fill", it.wash in 0f..MAX_WASH)
                 assertTrue("$id: a stroke with no width", it.width > 0f)
+                assertTrue("$id: invalid stroke alpha", it.strokeAlpha in 0f..1f)
+                if (it.darkGround) assertEquals("void", id)
             }
         }
     }

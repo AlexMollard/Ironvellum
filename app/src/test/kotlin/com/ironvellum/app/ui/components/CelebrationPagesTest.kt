@@ -145,5 +145,14 @@ class CelebrationPagesTest {
         val house = veilGrantPages(VeilGrant(crests = listOf("Ironhold Crest")), crestsOwned = 3).single() as CelebrationPage.Inscribed
         assertEquals("House crest · House of Iron · 3 of 28 crests", house.crestLine)
     }
+    @Test fun aKnownRelicKeepsItsIdentityEvenWithoutVaultDetails() {
+        val relic = RelicHouses.CATALOGUE.first()
+        val page = inscribedPage(RollResult(Reward.Relic(1.25, relic.name, relic.id), relic.tier))
+        assertEquals(relic.id, page.relicId)
+        assertNull(page.relic)
+        val unknown = inscribedPage(RollResult(Reward.Relic(1.25, "Old relic", "unknown"), RewardRarity.Common))
+        assertNull(unknown.relicId)
+        assertEquals("Old relic", unknown.sigilSeed)
+    }
 }
 

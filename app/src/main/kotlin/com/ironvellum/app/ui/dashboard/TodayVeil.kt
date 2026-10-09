@@ -477,27 +477,22 @@ private fun RuneRing(phase: State<Float>, modifier: Modifier = Modifier) {
             val u = size.width / 240f
             val c = Offset(120f * u, 120f * u)
             inkArc(c, 110f * u, 0f, 360f, IronvellumColors.Rune, 1.dp.toPx())
-            for (i in 0 until 72) {
-                val a = Math.toRadians(i * 5.0)
-                val long = i % 6 == 0
-                val r2 = if (long) 103f else 106f
+            for (i in 0 until 12) {
+                val a = Math.toRadians(i * 30.0)
+                val r2 = 103f
                 val s = sin(a).toFloat()
                 val k = cos(a).toFloat()
                 inkStroke(
                     Offset(c.x + 110f * u * s, c.y - 110f * u * k),
                     Offset(c.x + r2 * u * s, c.y - r2 * u * k),
-                    if (i % 18 == 0) IronvellumColors.SystemGreen else RING_TICK,
-                    (if (long) 1.4.dp else 0.9.dp).toPx(),
+                    if (i % 3 == 0) IronvellumColors.SystemGreen else RING_TICK,
+                    1.4.dp.toPx(),
                 )
             }
         }
         Canvas(Modifier.fillMaxSize().graphicsLayer { rotationZ = -phase.value * 1080f }) {
             val u = size.width / 240f
             val c = Offset(120f * u, 120f * u)
-            for (i in 0 until 36) {
-                val a = Math.toRadians(i * 10.0)
-                inkDot(Offset(c.x + 86f * u * sin(a).toFloat(), c.y - 86f * u * cos(a).toFloat()), 0.7.dp.toPx(), IronvellumColors.Bracket)
-            }
             for (i in 0 until 8) {
                 val a = Math.toRadians(i * 45.0 + 22.5)
                 val at = Offset(c.x + 92f * u * sin(a).toFloat(), c.y - 92f * u * cos(a).toFloat())

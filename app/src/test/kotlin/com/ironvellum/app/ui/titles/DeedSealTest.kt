@@ -13,43 +13,43 @@ class DeedSealTest {
     @Test fun commonIsAPlainOctagon() {
         val s = g(TitleRarity.Common)
         assertEquals(8, s.outer.size)
-        assertTrue(s.rim.isEmpty() && s.rivets.isEmpty() && s.leaves.isEmpty() && s.core.isEmpty())
+        assertTrue(s.rim.isEmpty() && s.leaves.isEmpty() && s.core.isEmpty())
     }
 
-    @Test fun rareAddsARimAndEightRivets() {
+    @Test fun rareKeepsAQuietInsetRim() {
         val s = g(TitleRarity.Rare)
         assertEquals(8, s.outer.size)
         assertEquals(8, s.rim.size)
-        assertEquals(8, s.rivets.size)
         assertTrue(s.leaves.isEmpty())
     }
 
-    @Test fun fabledIsTwelvePointsScallopedWithTenLaurelLeaves() {
+    @Test fun fabledKeepsScallopsWithSixCurvedLaurelLeaves() {
         val s = g(TitleRarity.Epic)
         assertEquals(24, s.outer.size) // 12 points and 12 notches
-        assertEquals(12, s.rim.size)
-        assertEquals(10, s.leaves.size)
-        assertTrue(s.leaves.all { it.size == 4 })
-        assertTrue(s.rivets.isEmpty())
+        assertTrue(s.rim.isEmpty())
+        assertEquals(6, s.leaves.size)
+        assertTrue(s.leaves.all { it.contains("C") && it.endsWith("Z") })
+        assertTrue(s.branches != null)
+        assertEquals(26f, s.glyphSize, 0f)
     }
 
-    @Test fun masterworkIsAFacetedStarWithAGemCutCentre() {
+    @Test fun masterworkKeepsAStarAndQuietInsetWithRoomForTheGlyph() {
         val s = g(TitleRarity.Masterwork)
         assertEquals(16, s.outer.size)
         assertEquals(8, s.core.size)
-        assertEquals(8, s.spokes.size)
-        assertTrue(s.rivets.isEmpty() && s.leaves.isEmpty())
+        assertEquals(28f, s.glyphSize, 0f)
+        assertTrue(s.leaves.isEmpty())
     }
 
     @Test fun everyTierHasADistinctSilhouette() {
-        val shapes = TitleRarity.entries.map { r -> g(r).let { Triple(it.outer, it.rim.size, it.rivets.size) } }
+        val shapes = TitleRarity.entries.map { r -> g(r).let { it.outer to it.rim } }
         assertEquals(TitleRarity.entries.size, shapes.toSet().size)
     }
 
     @Test fun everyPointStaysOnTheGrid() {
         TitleRarity.entries.forEach { r ->
             val s = g(r)
-            val all = s.outer + s.rim + s.rivets + s.leaves.flatten() + s.core
+            val all = s.outer + s.rim + s.core
             assertTrue("$r", all.all { it.x in 0f..64f && it.y in 0f..64f })
         }
     }

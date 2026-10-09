@@ -548,7 +548,7 @@ internal fun TodayContent(
                                 CrestPlate(
                                     worn.id,
                                     Modifier
-                                        .size(40.dp)
+                                        .size(32.dp)
                                         .clickable(role = Role.Button, onClickLabel = "Open crests") { actions.onOpenCrest() },
                                 )
                             }

@@ -83,6 +83,7 @@ internal sealed interface CelebrationPage {
         val rarity: RewardRarity,
         val name: String,
         val sigilSeed: String? = null,
+        val relicId: String? = null,
         val notes: List<String> = emptyList(),
         val relic: RelicReveal? = null,
         val houseSlots: List<VaultSlot> = emptyList(),
@@ -160,6 +161,7 @@ internal fun inscribedPage(result: RollResult, vault: VaultState? = null, crests
         // already has its own plate in the collection: a generic sigil there
         // would misrepresent the frame that was won.
         sigilSeed = (result.reward as? Reward.Relic)?.name,
+        relicId = (result.reward as? Reward.Relic)?.relicId?.takeIf { RelicHouses.byId(it) != null },
         notes = notes,
         relic = relic,
         houseSlots = relic?.let { r -> vault?.houses?.firstOrNull { it.house == r.relic.house }?.slots }.orEmpty(),
@@ -350,7 +352,7 @@ internal fun AchievementOverlay(
                         dock = { CelebrationDock(primary = "Continue", onPrimary = advance) },
                         mark = { t ->
                             val seed = page.sigilSeed
-                            if (seed != null) RelicMark(seed, t) else DeedSeal(t, 156.dp)
+                            if (seed != null) RelicMark(seed, page.relicId, page.rarity, t) else DeedSeal(t, 156.dp)
                         },
                         subline = {
                             Column(it, horizontalAlignment = Alignment.CenterHorizontally) {
@@ -457,17 +459,17 @@ private fun MomentPage(
 
 /** A relic's generated art where the seal would be, settling with the same stamp. */
 @Composable
-private fun RelicMark(seed: String, t: Long, size: Dp = 132.dp) {
-    RelicSigil(
-        name = seed,
-        accent = IronvellumColors.Emerald,
-        modifier = Modifier
-            .size(size)
-            .graphicsLayer {
-                alpha = phase(t, 0, 400)
-                val s = stamp(t, SEAL_AT)
-                scaleX = s
-                scaleY = s
-            },
-    )
+private fun RelicMark(seed: String, relicId: String?, tier: RewardRarity, t: Long, size: Dp = 132.dp) {
+    val mark = Modifier.size(size).graphicsLayer {
+        alpha = phase(t, 0, 400)
+        val s = stamp(t, SEAL_AT)
+        scaleX = s
+        scaleY = s
+    }
+    if (relicId != null) {
+        HouseRelicSigil(relicId, tier, mark)
+    } else {
+        // Old rewards without a catalogue identity retain their original name-derived art.
+        RelicSigil(name = seed, accent = IronvellumColors.Emerald, modifier = mark)
+    }
 }
