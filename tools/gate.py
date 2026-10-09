@@ -266,8 +266,8 @@ def backend() -> int:
     if run(
         [
             "docker", "run", "-d", "--name", name,
-            "-e", "POSTGRES_PASSWORD=probe",
-            "-p", "55432:5432", "postgres:16",
+            # psql runs through docker exec, so no host port: a fixed one clashes with other containers.
+            "-e", "POSTGRES_PASSWORD=probe", "postgres:16",
         ]
     ):
         return 1
