@@ -25,7 +25,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.StrokeCap
@@ -66,6 +67,9 @@ import com.ironvellum.app.ui.program.riteAlpha
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
 import com.ironvellum.app.ui.theme.IronvellumTracking
+import com.ironvellum.app.ui.theme.METAL_WASH
+import com.ironvellum.app.ui.theme.Metal
+import com.ironvellum.app.ui.theme.emeraldRamp
 import com.ironvellum.app.ui.theme.inkArc
 
 /*
@@ -85,6 +89,7 @@ internal fun HeaderCrest() {
     Canvas(Modifier.size(18.dp, 26.dp).clearAndSetSemantics {}) {
         val w = size.width
         val h = size.height
+        val ramp = emeraldRamp()
         for (inset in listOf(0.08f, 0.28f)) {
             val diamond = Path().apply {
                 moveTo(w / 2f, h * inset)
@@ -93,7 +98,9 @@ internal fun HeaderCrest() {
                 lineTo(w * inset, h / 2f)
                 close()
             }
-            drawPath(diamond, IronvellumColors.Emerald, style = Stroke(1.dp.toPx()))
+            // The outer diamond holds the faint wash; both lines are the emerald ramp.
+            if (inset < 0.1f) drawPath(diamond, ramp, alpha = METAL_WASH, style = Fill)
+            drawPath(diamond, ramp, style = Stroke(1.dp.toPx()))
         }
     }
 }
@@ -140,7 +147,7 @@ internal fun HeaderProgress(progress: Xp.Progress, days: Int, onLevel: () -> Uni
             fraction = if (progress.needed <= 0) 0f else progress.intoLevel.toFloat() / progress.needed,
             value = AnnotatedString("${progress.intoLevel} / ${progress.needed} XP"),
             caption = "Level progress",
-            color = IronvellumColors.Emerald,
+            fill = emeraldRamp(),
             tag = "today-level", barTag = "today-xp-bar", onClickLabel = "Explain level and XP",
             state = "${progress.intoLevel} of ${progress.needed} XP towards the next level",
             modifier = Modifier.weight(1f), onClick = onLevel,
@@ -159,7 +166,7 @@ internal fun HeaderProgress(progress: Xp.Progress, days: Int, onLevel: () -> Uni
                 next != null -> "Next: ${next.second.name}"
                 else -> "Milestones complete"
             },
-            color = IronvellumColors.SovereignGold,
+            fill = Metal.Fabled.bounds(),
             tag = "today-oath", barTag = "today-oath-bar", onClickLabel = "Explain Oath",
             state = "$days ${plural(days, "day", "days")} kept" + (next?.let { "; next milestone at ${it.first} days" } ?: ""),
             modifier = Modifier.weight(1f), onClick = onOath,
@@ -173,7 +180,7 @@ private fun ProgressColumn(
     fraction: Float,
     value: AnnotatedString,
     caption: String,
-    color: Color,
+    fill: Brush,
     tag: String,
     barTag: String,
     onClickLabel: String,
@@ -192,7 +199,7 @@ private fun ProgressColumn(
             color = IronvellumColors.Ink, maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
         Spacer(Modifier.height(6.dp))
-        InkRail(fraction.coerceIn(0f, 1f), Modifier.testTag(barTag), height = 4.dp, fill = SolidColor(color))
+        InkRail(fraction.coerceIn(0f, 1f), Modifier.testTag(barTag), height = 4.dp, fill = fill)
         Spacer(Modifier.height(6.dp))
         Text(value, style = MaterialTheme.typography.bodySmall, color = IronvellumColors.InkMuted, maxLines = 1, overflow = TextOverflow.Ellipsis)
         Spacer(Modifier.height(2.dp))
@@ -200,13 +207,14 @@ private fun ProgressColumn(
     }
 }
 
-/** The week rail's gold seal for a day whose rite is sealed: two rings and a tick. */
+/** The week rail's gold seal for a day whose rite is sealed: a ring on a faint wash and a tick, one gold gradient. */
 @Composable
 internal fun SealMark(side: Dp, modifier: Modifier = Modifier, earned: Boolean = true) {
     Canvas(modifier.size(side).clearAndSetSemantics {}) {
         val u = size.width / 24f
-        val gold = if (earned) IronvellumColors.SovereignGold else IronvellumColors.InkMuted
+        val gold: Brush = if (earned) Metal.Fabled.bounds() else SolidColor(IronvellumColors.InkMuted)
         val c = Offset(12f * u, 12f * u)
+        if (earned) drawOval(gold, Offset(1.5f * u, 1.5f * u), Size(21f * u, 21f * u), alpha = METAL_WASH, style = Fill)
         inkArc(c, 10.5f * u, 0f, 360f, gold, 1.6f * u)
         val tick = Path().apply { moveTo(7.5f * u, 12.5f * u); lineTo(10.8f * u, 15.8f * u); lineTo(16.8f * u, 9.2f * u) }
         if (earned) drawPath(tick, gold, style = Stroke(2f * u, cap = StrokeCap.Round, join = StrokeJoin.Round))

@@ -670,6 +670,7 @@ private fun CircleMemberRow(
         LifterAvatar(
             displayName = member.displayName,
             size = 32.dp,
+            ring = if (isMe) AvatarRing.Own else AvatarRing.Iron,
         )
         val role = listOfNotNull("You".takeIf { isMe }, "Keeper".takeIf { isKeeper }).joinToString(" · ")
         // The name and the role share one line, the role small and muted.

@@ -37,6 +37,7 @@ object IronvellumColors {
     // destroy: progression, rarity, earned moments, danger.
     val Emerald get() = Color(accents.primary) // XP and success
     val EmeraldBright get() = Color(accents.bright)
+    val EmeraldDeep get() = Color(accents.deep)
     val SystemGreen get() = Color(accents.muted) // muted green accent
     val SovereignGold get() = Color(accents.secondary) // earned moments only
     val DangerRed = Color(0xFFEF5350)

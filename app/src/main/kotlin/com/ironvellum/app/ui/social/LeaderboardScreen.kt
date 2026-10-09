@@ -73,7 +73,9 @@ import com.ironvellum.app.ui.ironvellumAccount
 import com.ironvellum.app.ui.ironvellumCloudSync
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.components.plural
+import com.ironvellum.app.ui.theme.Metal
 import com.ironvellum.app.ui.theme.inkBorder
+import com.ironvellum.app.ui.theme.metalPlate
 import com.ironvellum.app.ui.theme.IronvellumColors
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -516,9 +518,10 @@ private fun TrainingRow(
 }
 
 /**
- * Three-column podium, flattened: second, first, third on one floor, stepped heights, flat Vault
- * cards. The "1" is the one reward-accent mark on the board; no medal colours. Missing lifters
- * render as open ally slots, never blank boxes.
+ * Three-column podium, flattened: second, first, third on one floor, stepped heights, Vault cards
+ * with an iron rim and faint wash. First place alone takes a gold rim, wash and avatar ring (the
+ * owner approved it); second and third stay iron, so there are still no bronze or silver medals.
+ * Missing lifters render as open ally slots, never blank boxes.
  */
 @Composable
 private fun Podium(
@@ -588,8 +591,15 @@ private fun PodiumSlot(
     Box(
         modifier
             .heightIn(min = if (open) openHeight else minHeight)
-            .then(if (open) Modifier else Modifier.background(IronvellumColors.Vault, shape))
-            .inkBorder(IronvellumColors.Rune, shape, 1.dp),
+            .then(
+                if (open) {
+                    Modifier.inkBorder(IronvellumColors.Rune, shape, 1.dp)
+                } else if (rank == 1) {
+                    Modifier.metalPlate(Metal.Fabled, shape, rimAlpha = 0.7f)
+                } else {
+                    Modifier.metalPlate(Metal.Common, shape, rimAlpha = 0.5f)
+                },
+            ),
     ) {
         Column(
             Modifier
@@ -610,6 +620,8 @@ private fun PodiumSlot(
                     displayName = row.displayName,
                     size = avatarSize,
                     frameId = if (isMe) equippedFrame else null,
+                    // Your own mark is always the gold one; otherwise first place alone wears gold.
+                    ring = if (isMe) AvatarRing.Own else if (rank == 1) AvatarRing.First else AvatarRing.Iron,
                 )
                 Spacer(Modifier.height(8.dp))
                 Text(
@@ -705,6 +717,7 @@ private fun BoardRow(
             size = 36.dp,
             // The equipped crest frame is worn by the local lifter alone.
             frameId = if (isMe) equippedFrame else null,
+            ring = if (isMe) AvatarRing.Own else AvatarRing.Iron,
         )
         Column(Modifier.weight(1f)) {
             Text(

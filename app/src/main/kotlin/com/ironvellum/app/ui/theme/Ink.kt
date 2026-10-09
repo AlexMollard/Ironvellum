@@ -20,6 +20,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.inset
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
@@ -161,7 +162,8 @@ fun DrawScope.inkRail(
 ) {
     drawRect(color = track, size = size)
     if (fraction > 0f) {
-        drawRect(brush = fill, size = Size(size.width * fraction.coerceIn(0f, 1f), size.height))
+        // Inset to the filled part, so a gradient fill runs across the fill and not the whole track.
+        inset(0f, 0f, size.width * (1f - fraction.coerceIn(0f, 1f)), 0f) { drawRect(brush = fill) }
     }
 }
 
@@ -192,8 +194,16 @@ fun DrawScope.inkStroke(
     to: Offset,
     color: Color,
     widthPx: Float,
+) = inkStroke(from, to, SolidColor(color), widthPx)
+
+/** [inkStroke] in a [Brush]: a metal's flat diagonal gradient. */
+fun DrawScope.inkStroke(
+    from: Offset,
+    to: Offset,
+    brush: Brush,
+    widthPx: Float,
 ) {
-    drawLine(color, from, to, widthPx, StrokeCap.Round)
+    drawLine(brush, from, to, widthPx, StrokeCap.Round)
 }
 
 /** A round-capped arc stroke. */
@@ -204,10 +214,20 @@ fun DrawScope.inkArc(
     sweepDeg: Float,
     color: Color,
     widthPx: Float,
+) = inkArc(center, radius, startDeg, sweepDeg, SolidColor(color), widthPx)
+
+/** [inkArc] in a [Brush]: a metal's flat diagonal gradient. */
+fun DrawScope.inkArc(
+    center: Offset,
+    radius: Float,
+    startDeg: Float,
+    sweepDeg: Float,
+    brush: Brush,
+    widthPx: Float,
 ) {
     if (sweepDeg == 0f || radius <= 0f) return
     drawArc(
-        color = color,
+        brush = brush,
         startAngle = startDeg,
         sweepAngle = sweepDeg,
         useCenter = false,

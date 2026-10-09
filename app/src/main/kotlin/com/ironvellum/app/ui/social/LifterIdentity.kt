@@ -32,6 +32,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.ui.theme.ChakraPetch
+import com.ironvellum.app.ui.theme.METAL_WASH
+import com.ironvellum.app.ui.theme.Metal
+import com.ironvellum.app.ui.theme.RarityTint
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.DotShape
 import androidx.compose.ui.platform.LocalDensity
@@ -46,6 +49,16 @@ internal enum class IdentitySize {
 
     /** The lifter's own card: 48dp crest, 18sp name, "Title . Level n" under it, no level at the right. */
     Profile,
+}
+
+/**
+ * The metal an avatar's ring and faint wash are drawn in: iron for everyone, gold for first place on a
+ * board, and a heavier gold for the lifter's own mark. An equipped crest frame replaces all three.
+ */
+internal enum class AvatarRing(val metal: Metal, val width: Dp, val initials: Color) {
+    Iron(Metal.Common, 1.5.dp, IronvellumColors.Ink),
+    First(Metal.Fabled, 1.5.dp, IronvellumColors.Ink),
+    Own(Metal.Fabled, 3.dp, RarityTint.Gold),
 }
 
 /**
@@ -65,6 +78,7 @@ internal fun IdentityRow(
     avatarUrl: String? = null,
     // Equipped gacha crest frame; null = today's rarity/level rendering.
     frameId: String? = null,
+    ring: AvatarRing = AvatarRing.Iron,
     trailing: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
@@ -98,7 +112,7 @@ internal fun IdentityRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            LifterAvatar(displayName = displayName, size = badgeSize, frameId = frameId)
+            LifterAvatar(displayName = displayName, size = badgeSize, frameId = frameId, ring = ring)
             Column(Modifier.weight(1f)) {
                 Text(
                     displayName.ifBlank { "IRONBOUND" },
@@ -213,6 +227,12 @@ internal data class CrestFrameTreatment(
     val initialColor: Color,
     /** Extra outer ring; the level ring yields this channel to the frame. */
     val outerRing: Color? = null,
+    /**
+     * The metal of a metal-named frame (iron, silver, bronze, gold, masterwork): its ring, its outer ring and a
+     * faint wash are drawn as that metal's flat gradient, the crest art's own mapping. Null for a colour-based
+     * frame (jade, crimson, obsidian, aurora, void), which keeps its solid colours.
+     */
+    val metal: Metal? = null,
 )
 
 /**
@@ -221,10 +241,10 @@ internal data class CrestFrameTreatment(
  * equipped id that fell out of the catalogue degrades to today's rendering.
  */
 internal fun crestFrameTreatment(frameId: String): CrestFrameTreatment? = when (frameId) {
-    "iron" -> CrestFrameTreatment(IronvellumColors.VaultHigh, IronvellumColors.Vault, IronvellumColors.Rune, 2.dp, IronvellumColors.InkMuted)
-    "bronze" -> CrestFrameTreatment(IronvellumColors.Rune, IronvellumColors.Vault, IronvellumColors.SovereignGold.copy(alpha = 0.55f), 2.dp, IronvellumColors.SovereignGold)
-    "silver" -> CrestFrameTreatment(IronvellumColors.Rune, IronvellumColors.Vault, IronvellumColors.Ink, 2.dp, IronvellumColors.Ink)
-    "gold" -> CrestFrameTreatment(IronvellumColors.VaultHigh, IronvellumColors.Vault, IronvellumColors.SovereignGold, 3.dp, IronvellumColors.SovereignGold)
+    "iron" -> CrestFrameTreatment(IronvellumColors.VaultHigh, IronvellumColors.Vault, IronvellumColors.Rune, 2.dp, IronvellumColors.InkMuted, metal = Metal.Common)
+    "bronze" -> CrestFrameTreatment(IronvellumColors.Rune, IronvellumColors.Vault, IronvellumColors.SovereignGold.copy(alpha = 0.55f), 2.dp, IronvellumColors.SovereignGold, metal = Metal.Rare)
+    "silver" -> CrestFrameTreatment(IronvellumColors.Rune, IronvellumColors.Vault, IronvellumColors.Ink, 2.dp, IronvellumColors.Ink, metal = Metal.Common)
+    "gold" -> CrestFrameTreatment(IronvellumColors.VaultHigh, IronvellumColors.Vault, IronvellumColors.SovereignGold, 3.dp, IronvellumColors.SovereignGold, metal = Metal.Fabled)
     "jade" -> CrestFrameTreatment(IronvellumColors.VaultHigh, IronvellumColors.Vault, IronvellumColors.EmeraldBright, 2.dp, IronvellumColors.EmeraldBright, IronvellumColors.Emerald)
     "crimson" -> CrestFrameTreatment(IronvellumColors.VaultHigh, IronvellumColors.Vault, IronvellumColors.DangerRed, 3.dp, IronvellumColors.DangerRed)
     "obsidian" -> CrestFrameTreatment(IronvellumColors.Abyss, IronvellumColors.Vault, IronvellumColors.Bracket, 3.dp, IronvellumColors.Ink)
@@ -232,22 +252,25 @@ internal fun crestFrameTreatment(frameId: String): CrestFrameTreatment? = when (
     // Inverted: near-black plate with a pale border and pale initials.
     "void" -> CrestFrameTreatment(IronvellumColors.Abyss, IronvellumColors.Abyss, IronvellumColors.InkMuted, 2.dp, IronvellumColors.Ink)
     // Double gold ring — the top of the catalogue.
-    "masterwork" -> CrestFrameTreatment(IronvellumColors.VaultHigh, IronvellumColors.Vault, IronvellumColors.SovereignGold, 3.dp, IronvellumColors.SovereignGold, IronvellumColors.SovereignGold)
+    "masterwork" -> CrestFrameTreatment(IronvellumColors.VaultHigh, IronvellumColors.Vault, IronvellumColors.SovereignGold, 3.dp, IronvellumColors.SovereignGold, IronvellumColors.SovereignGold, metal = Metal.Masterwork)
     else -> null
 }
 
 /**
  * The one lifter mark on every Allies surface, as the mockups draw it: a round
  * Vault-high plate, a 1dp Rune ring and the lifter's initials in Chakra Petch
- * semi-bold, sized to the plate. Only an equipped crest frame (the wearer's own,
- * earned) restyles it; level, title rarity and the user id no longer decorate
- * the mark. An uploaded picture is not supported yet, so the monogram is drawn.
+ * semi-bold, sized to the plate. Without a frame the ring is a flat diagonal metal gradient over a
+ * faint wash ([ring]: iron, or gold for first place and the lifter's own). Only an equipped crest frame
+ * (the wearer's own, earned) restyles it further, a metal-named one in its metal and a colour-based one as
+ * it was; level, title rarity and the user id no longer
+ * decorate the mark. An uploaded picture is not supported yet, so the monogram is drawn.
  */
 @Composable
 internal fun LifterAvatar(
     displayName: String,
     size: Dp,
     frameId: String? = null,
+    ring: AvatarRing = AvatarRing.Iron,
 ) {
     val frame = frameId?.let { crestFrameTreatment(it) }
     val outerRing = frame?.outerRing
@@ -256,11 +279,28 @@ internal fun LifterAvatar(
     Box(
         Modifier
             .size(size + ringPad * 2)
-            .then(if (outerRing != null) Modifier.inkBorder(outerRing, DotShape, 1.5.dp) else Modifier)
+            .then(
+                when {
+                    outerRing == null -> Modifier
+                    frame?.metal != null -> Modifier.inkBorder(frame.metal.bounds(), DotShape, 1.5.dp)
+                    else -> Modifier.inkBorder(outerRing, DotShape, 1.5.dp)
+                },
+            )
             .padding(ringPad)
             .clip(DotShape)
             .background(plate, DotShape)
-            .inkBorder(frame?.frameColor ?: IronvellumColors.Rune, DotShape, frame?.frameWidth ?: 1.dp),
+            .then(
+                when {
+                    // A colour-based frame keeps its solid ring; a metal one (and the plain mark) is a flat gradient.
+                    frame != null && frame.metal == null -> Modifier.inkBorder(frame.frameColor, DotShape, frame.frameWidth)
+                    frame != null -> Modifier
+                        .background(frame.metal!!.bounds(METAL_WASH), DotShape)
+                        .inkBorder(frame.metal.bounds(), DotShape, frame.frameWidth)
+                    else -> Modifier
+                        .background(ring.metal.bounds(METAL_WASH), DotShape)
+                        .inkBorder(ring.metal.bounds(), DotShape, ring.width)
+                },
+            ),
         contentAlignment = Alignment.Center,
     ) {
         Text(
@@ -268,7 +308,7 @@ internal fun LifterAvatar(
             fontFamily = ChakraPetch,
             fontWeight = FontWeight.SemiBold,
             fontSize = avatarInitialsSize(size),
-            color = frame?.initialColor ?: IronvellumColors.Ink,
+            color = frame?.initialColor ?: ring.initials,
             maxLines = 1,
             softWrap = false,
         )

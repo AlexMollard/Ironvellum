@@ -30,6 +30,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
@@ -69,6 +71,8 @@ import com.ironvellum.app.ui.components.reveal
 import com.ironvellum.app.ui.components.stamp
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.METAL_WASH
+import com.ironvellum.app.ui.theme.Metal
 import com.ironvellum.app.ui.theme.inkArc
 import com.ironvellum.app.ui.theme.inkStroke
 import kotlinx.coroutines.delay
@@ -268,8 +272,11 @@ private fun SummaryPage(
                     },
             ) {
                 val unit = size.width / 80f
-                val gold = IronvellumColors.SovereignGold
-                inkArc(Offset(size.width / 2f, size.height / 2f), 34f * unit, -90f, 360f * phase(t, 0, 600, FastOutSlowInEasing::transform), gold, 2.dp.toPx())
+                // The seal is one flat gold gradient: a faint wash inside, the ring and the check in line.
+                val gold = Metal.Fabled.bounds()
+                val ring = phase(t, 0, 600, FastOutSlowInEasing::transform)
+                drawOval(gold, Offset(6f * unit, 6f * unit), Size(68f * unit, 68f * unit), alpha = METAL_WASH * ring, style = Fill)
+                inkArc(Offset(size.width / 2f, size.height / 2f), 34f * unit, -90f, 360f * ring, gold, 2.dp.toPx())
                 val check = listOf(Offset(27f, 41.5f), Offset(36f, 50f), Offset(53f, 31f))
                 val drawn = 2f * phase(t, 450, 400, FastOutSlowInEasing::transform)
                 for (i in 0 until 2) {
@@ -380,7 +387,8 @@ private fun totalsLine(totals: WorkoutShare.Totals): String = buildList {
 /** The best peak as the hero, and any others as quiet rows under it. */
 @Composable
 private fun PeaksCard(best: SessionPeaks.Peak, total: Int, others: List<SessionPeaks.Peak>, modifier: Modifier) {
-    InkPanel(modifier.fillMaxWidth()) {
+    // The best peak is the one earned thing here, so the card wears the gold plate.
+    InkPanel(modifier.fillMaxWidth(), metal = Metal.Fabled) {
         Text(
             if (total == 1) "New peak" else "New peaks · $total",
             fontFamily = ChakraPetch,
