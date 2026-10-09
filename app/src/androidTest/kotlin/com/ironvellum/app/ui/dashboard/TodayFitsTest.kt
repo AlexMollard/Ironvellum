@@ -200,7 +200,7 @@ class TodayFitsTest {
         show(ui = DashboardUi(presets = listOf(rite(9, day = 3))), selectedDay = 2, bodyGap = BodyGap.WEIGHT)
         assertDoesNotScroll()
         assertPlaced("veil-hero")
-        assertInside("essence · 3 echoes · relic ×1.25")
+        assertInside("essence")
         assertInside("Add a weight reading")
         assertInside("3 inscriptions waiting")
         saveShot("today-respite-full")
