@@ -82,7 +82,7 @@ private fun DrawScope.drawGlyph(family: GlyphFamily, color: Color) {
         }
         // a side stretch: legs set, torso bent over, arm sweeping overhead
         GlyphFamily.MOBILITY -> {
-            ln(6.4f, 22.1f, 8.8f, 14.9f); ln(11.2f, 22.1f, 8.8f, 14.9f); head(12.6f, 5.7f)
+            ln(6.4f, 22.1f, 8.8f, 14.9f); ln(11.2f, 22.1f, 8.8f, 14.9f); head(14.5f, 6.7f)
             val bend = Path().apply {
                 moveTo(8.8f * u, 14.9f * u)
                 cubicTo(7.4f * u, 11.7f * u, 7.8f * u, 8.7f * u, 10.2f * u, 6.7f * u)

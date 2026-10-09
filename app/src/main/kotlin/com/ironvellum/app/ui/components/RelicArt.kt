@@ -21,7 +21,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.semantics.clearAndSetSemantics
-import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.RelicHouse
 import com.ironvellum.app.domain.RewardRarity
 import com.ironvellum.app.domain.TitleRarity
@@ -36,10 +35,10 @@ import kotlin.math.sin
 
 /*
  * The art of the sixteen house relics, drawn as Compose paths from the geometry of the approved
- * sigils: concentric setting rings, ruled spokes, one washed and stroked star, a ringed core, all in
+ * sigils: one quiet setting ring, a washed and stroked star, a ringed core, all in
  * a 100 unit square. A relic is `house.form`, so its art is a frozen row of the table below and
  * never a hash of its name. The house sets the motif (the mark on the rim), the form sets the shape
- * (points, depth, turn of the spokes, rings, spokes). The star stands upright, as the mockups draw it.
+ * (points and depth). Legacy ring/spoke parameters remain frozen catalogue data. The star stands upright, as the mockups draw it.
  *
  * Rarity is the metal: every line is a flat diagonal gradient in the tier's own metal ([Metal]), with
  * a faint wash inside the star. No solid metal fills, no bevel, highlight, sheen or glint. A relic on
@@ -152,13 +151,7 @@ private fun DrawScope.drawRimMotif(house: RelicHouse?, c: Offset, u: Float, brus
 /** One sigil, centred on [c], [u] pixels to a unit, every line in [brush]. */
 private fun DrawScope.drawSigil(spec: RelicSpec, house: RelicHouse?, c: Offset, u: Float, brush: Brush) {
     drawRimMotif(house, c, u, brush)
-    repeat(spec.rings) { r ->
-        ring(c, (RIM - 8f * r) * u, brush, 0.22f + 0.12f * r, 2.2f * u)
-    }
-    repeat(spec.spokes) { i ->
-        val a = spec.rotation + 360f * i / spec.spokes - 7f
-        seg(c, at(c, 43f, a, u), brush, 0.35f, 1.6f * u)
-    }
+    ring(c, RIM * u, brush, 0.35f, 1.6f * u)
     val star = Path()
     val vertices = spec.points * 2
     for (i in 0 until vertices) {
@@ -168,7 +161,7 @@ private fun DrawScope.drawSigil(spec: RelicSpec, house: RelicHouse?, c: Offset, 
     }
     star.close()
     drawPath(star, brush, alpha = METAL_WASH, style = Fill)
-    drawPath(star, brush, alpha = 0.9f, style = Stroke(width = 3.2f * u, join = StrokeJoin.Round))
+    drawPath(star, brush, alpha = 0.9f, style = Stroke(width = 3f * u, join = StrokeJoin.Round))
     ring(c, spec.core * 0.68f * u, brush, 0.9f, 2.4f * u)
 }
 
@@ -187,29 +180,22 @@ private fun RewardRarity.seal(): TitleRarity = when (this) {
 /**
  * The plate a relic or an echo count sits on: its tier's seal outline from DeedSeal's geometry, without
  * the glyph and the laurel (the thing on it is the picture). Common is a plain octagon, Rare adds a rim
- * and eight rivet rings, Fabled the scalloped edge and a rim, Masterwork the faceted star and gem-cut
- * core. A dark ground, a faint wash and then lines in [brush], drawn on the 64 unit grid.
+ * without rivets, Fabled the scalloped edge, Masterwork the star and quiet inset
+ * outline. A dark ground, a faint wash and then lines in [brush], drawn on the 64 unit grid.
  */
 private fun DrawScope.drawPlate(g: SealGeometry, origin: Offset, side: Float, brush: Brush) {
     val k = side / 64f
-    val line = maxOf(1.4f * k, 1.dp.toPx())
     translate(origin.x, origin.y) {
         scale(k, Offset.Zero) {
             val outer = g.outer.toPath()
-            val prism = g.core.isNotEmpty()
             drawPath(outer, PlateGround, style = Fill)
-            drawPath(outer, brush, alpha = if (prism) 0.26f else METAL_WASH, style = Fill)
-            drawPath(outer, brush, style = Stroke(width = line / k, join = StrokeJoin.Round))
+            drawPath(outer, brush, alpha = 0.08f, style = Fill)
+            drawPath(outer, brush, style = Stroke(width = 1.8f, join = StrokeJoin.Round))
             if (g.rim.isNotEmpty()) {
-                drawPath(g.rim.toPath(), brush, alpha = 0.55f, style = Stroke(width = line / k * 0.6f, join = StrokeJoin.Round))
+                drawPath(g.rim.toPath(), brush, alpha = 0.48f, style = Stroke(width = 0.85f, join = StrokeJoin.Round))
             }
-            g.rivets.forEach { ring(Offset(it.x, it.y), 1.3f, brush, 0.8f, line / k * 0.45f) }
-            if (prism) {
-                val core = g.core.toPath()
-                drawPath(core, PlateGround, style = Fill)
-                drawPath(core, brush, style = Stroke(width = line / k * 0.7f, join = StrokeJoin.Round))
-                val spokes = Path().also { p -> g.spokes.forEach { (a, b) -> p.moveTo(a.x, a.y); p.lineTo(b.x, b.y) } }
-                drawPath(spokes, brush, alpha = 0.7f, style = Stroke(width = line / k * 0.6f, cap = StrokeCap.Round))
+            if (g.core.isNotEmpty()) {
+                drawPath(g.core.toPath(), brush, alpha = 0.45f, style = Stroke(width = 0.85f, join = StrokeJoin.Round))
             }
         }
     }

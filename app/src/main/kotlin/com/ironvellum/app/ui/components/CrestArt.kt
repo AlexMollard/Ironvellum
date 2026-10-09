@@ -24,7 +24,7 @@ import com.ironvellum.app.ui.theme.Metal
 /*
  * The drawn mark of every crest, as flat line art. The 28 marks are SVG paths in a 100 x 100 box
  * (tools/crest_art/marks.txt, baked into CrestMarks.kt by tools/crest_art/build.py): each is a stroke in the
- * crest's flat diagonal gradient with, at most, a 12% wash inside. Never a solid fill, bevel, highlight or
+ * crest's flat diagonal gradient with, at most, an 18% wash inside. Void has a dark centre. No bevel, highlight or
  * sheen. The colours are FIXED per crest (never the lifter's accent): a crest looks the same on the
  * owner's screen and on an ally's.
  */
@@ -66,6 +66,7 @@ internal fun DrawScope.drawCrestMark(frameId: String, topLeft: Offset, side: Flo
     }) {
         shapes.forEachIndexed { i, shape ->
             val path = paths[i]
+            if (shape.darkGround) drawPath(path, Color(0xFF0B0B0D), style = Fill)
             if (shape.wash > 0f) drawPath(path, brush, alpha = shape.wash, style = Fill)
             drawPath(
                 path,
@@ -110,7 +111,7 @@ internal fun DrawScope.drawCrestMedallion(
     }
     val box = side * (if (side < 80f * density) 0.68f else 0.62f)
     val markTop = Offset(center.x - box / 2f, center.y - box / 2f)
-    val markBrush: Brush = if (owned) look.art.span(box, drift * box, markTop) else SolidColor(CrestSilhouette)
+    val markBrush: Brush = if (owned) look.art.span(100f, drift * 100f) else SolidColor(CrestSilhouette)
     drawCrestMark(frameId, markTop, box, markBrush)
 }
 
@@ -121,6 +122,6 @@ fun CrestMark(frameId: String, modifier: Modifier = Modifier) {
     Canvas(modifier) {
         val side = minOf(size.width, size.height)
         val top = Offset((size.width - side) / 2f, (size.height - side) / 2f)
-        drawCrestMark(frameId, top, side, look.art.span(side, 0f, top))
+        drawCrestMark(frameId, top, side, look.art.span(100f))
     }
 }

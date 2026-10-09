@@ -305,21 +305,21 @@ internal fun LedgerMotif(modifier: Modifier = Modifier) {
     Canvas(modifier.size(52.dp).clearAndSetSemantics {}) {
         val u = size.width / 60f
         val cover = Path().apply {
-            moveTo(14f * u, 14f * u); lineTo(40f * u, 14f * u); lineTo(43f * u, 17f * u); lineTo(43f * u, 49f * u)
-            lineTo(17f * u, 49f * u); lineTo(14f * u, 46f * u); close()
+            moveTo(14f * u, 14f * u); lineTo(42f * u, 14f * u); lineTo(42f * u, 49f * u)
+            lineTo(17f * u, 49f * u); quadraticTo(14f * u, 49f * u, 14f * u, 46f * u); close()
         }
         drawPath(cover, IronvellumColors.InkMuted, style = Stroke(1.6f * u, join = StrokeJoin.Round))
         val marks = Path().apply {
-            moveTo(19f * u, 14f * u); lineTo(19f * u, 49f * u)
-            moveTo(27f * u, 24f * u); lineTo(37f * u, 24f * u)
-            moveTo(27f * u, 29f * u); lineTo(34f * u, 29f * u)
+            moveTo(20f * u, 14f * u); lineTo(20f * u, 49f * u)
+            moveTo(25f * u, 25f * u); lineTo(30f * u, 25f * u)
+            moveTo(25f * u, 30f * u); lineTo(29f * u, 30f * u)
         }
-        drawPath(marks, IronvellumColors.Bracket, style = Stroke(1.3f * u, cap = StrokeCap.Round))
+        drawPath(marks, IronvellumColors.InkMuted, alpha = 0.65f, style = Stroke(1.3f * u, cap = StrokeCap.Round))
         val ribbon = Path().apply {
-            moveTo(34f * u, 14f * u); lineTo(34f * u, 54f * u); lineTo(37f * u, 51f * u); lineTo(40f * u, 54f * u); lineTo(40f * u, 14f * u)
+            moveTo(34f * u, 14f * u); lineTo(34f * u, 42f * u); lineTo(37f * u, 39f * u)
+            lineTo(40f * u, 42f * u); lineTo(40f * u, 14f * u)
         }
-        drawPath(ribbon, IronvellumColors.SystemGreen.copy(alpha = 0.18f), style = Fill)
-        drawPath(ribbon, IronvellumColors.SystemGreen, style = Stroke(1.4f * u, join = StrokeJoin.Round))
+        drawPath(ribbon, Metal.Emerald.span(60f * u), style = Stroke(1.4f * u, join = StrokeJoin.Round))
     }
 }
 
