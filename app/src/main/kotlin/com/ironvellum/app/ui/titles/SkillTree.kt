@@ -54,6 +54,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.sp
 import com.ironvellum.app.domain.Skills
+import com.ironvellum.app.ui.components.ExerciseStill
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.TileShape
@@ -384,6 +385,7 @@ private fun SkillNode(
             contentAlignment = Alignment.Center,
         ) {
             val artwork = techniqueArtwork(skill.name)
+            val animation = techniqueAnimation(skill.name)
             val art = when (state) {
                 NodeState.MASTERED -> ArtState.MASTERED
                 NodeState.NEXT -> ArtState.OPEN
@@ -412,6 +414,9 @@ private fun SkillNode(
                         alpha = artAlpha(art),
                         modifier = Modifier.size(NodeSize - 10.dp),
                     )
+                } else if (animation != null) {
+                    // A tree node is a thumbnail: the first pose, still. The sheet is where it moves.
+                    ExerciseStill(animation, Modifier.size(NodeSize - 10.dp), alpha = artAlpha(art))
                 } else {
                     SkillGlyph(
                         family = glyphFamily(skill),

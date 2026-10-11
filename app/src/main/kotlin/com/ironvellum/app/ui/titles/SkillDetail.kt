@@ -239,20 +239,22 @@ fun SkillDetailSheet(
                 // A female lifter reads her own published bar, not the male default.
                 val standard = sexBar ?: skill.standard
                 val artwork = techniqueArtwork(skill.name)
-                if (artwork != null) {
+                val animation = techniqueAnimation(skill.name)
+                if (artwork != null || animation != null) {
                     // The engraving in its plate, with the standard and the reason beside it: the art fills
                     // the width the text leaves, instead of a band of its own above the text.
                     section(null) {
                         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            TechniquePlate(
-                                artwork,
-                                when {
-                                    mastered -> ArtState.MASTERED
-                                    unlocked -> ArtState.OPEN
-                                    else -> ArtState.LOCKED
-                                },
-                                Modifier.weight(0.42f),
-                            )
+                            val plateState = when {
+                                mastered -> ArtState.MASTERED
+                                unlocked -> ArtState.OPEN
+                                else -> ArtState.LOCKED
+                            }
+                            if (artwork != null) {
+                                TechniquePlate(artwork, plateState, Modifier.weight(0.42f))
+                            } else if (animation != null) {
+                                TechniqueAnimationPlate(animation, plateState, Modifier.weight(0.42f))
+                            }
                             Spacer(Modifier.width(16.dp))
                             Column(Modifier.weight(0.58f)) {
                                 PanelLabel("CLAIM STANDARD")

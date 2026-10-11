@@ -55,6 +55,7 @@ class GlossaryTest {
         "Remmert JF," to "citation, always plain (\"Is There Too Much of a Good Thing... Session\")",
         "Moesgaard L et al." to "citation, always plain (\"...Programs\")",
         "comments/" to "nav route, a protected name",
+        "Workout Guide (Bryl Lim" to "proper name of the upstream project credited in the licence panel",
     )
 
     /** Raised messages that name a retired word on purpose, with the reason. */
