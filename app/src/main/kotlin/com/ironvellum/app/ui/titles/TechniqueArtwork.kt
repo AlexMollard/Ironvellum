@@ -178,26 +178,15 @@ internal fun TechniquePlate(@DrawableRes artwork: Int, state: ArtState, modifier
 /** [TechniquePlate] for a technique that has an animated drawing: the same plate, the figure moving inside it. */
 @Composable
 internal fun TechniqueAnimationPlate(animation: ArtRef, state: ArtState, modifier: Modifier = Modifier) {
-    val glow = artRing(state)
     val shape = MaterialTheme.shapes.medium
     Box(
         modifier
             .aspectRatio(1f)
             .clip(shape)
             .background(IronvellumColors.Abyss)
-            .drawBehind {
-                if (state != ArtState.LOCKED) {
-                    drawRect(
-                        Brush.radialGradient(
-                            0f to glow.copy(alpha = if (state == ArtState.MASTERED) 0.22f else 0.12f),
-                            1f to Color.Transparent,
-                            center = Offset(size.width / 2f, size.height * 0.45f),
-                            radius = size.maxDimension * 0.6f,
-                        ),
-                    )
-                }
-            }
-            .inkBorder(glow.copy(alpha = if (state == ArtState.LOCKED) 0.6f else 0.45f), shape, 1.dp),
+            // The same flat wash and gradient rim as [TechniquePlate]; none for a locked one.
+            .then(if (state != ArtState.LOCKED) Modifier.background(artBrush(state, METAL_WASH)) else Modifier)
+            .inkBorder(artBrush(state, METAL_RIM), shape, 1.dp),
     ) {
         ExerciseAnimation(animation, Modifier.fillMaxSize().padding(10.dp), alpha = artAlpha(state))
     }
