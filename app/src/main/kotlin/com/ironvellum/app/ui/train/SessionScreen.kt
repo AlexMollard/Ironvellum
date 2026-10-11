@@ -132,6 +132,7 @@ import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.domain.PlannedEntry
 import com.ironvellum.app.domain.SetKind
+import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LastLogged
@@ -399,6 +400,16 @@ class SessionViewModel(
     ) {
         noteTick(setId, done)
         viewModelScope.launch { repo.updateActivitySet(setId, reps, durationSec, distanceM, grade, weightKg, done) }
+    }
+
+    /** "Warm up" on an exercise's menu; [onAdded] gets the new sets' ids for the Undo bar, and is not called when none were added. */
+    fun addWarmupRamp(exerciseId: Long, onAdded: (List<Long>) -> Unit) {
+        viewModelScope.launchGuarded("add warm-up ramp") { repo.addWarmupRamp(sessionId, exerciseId).takeIf { it.isNotEmpty() }?.let(onAdded) }
+    }
+
+    /** Undo for the ramp. */
+    fun removeSets(setIds: List<Long>) {
+        viewModelScope.launchGuarded("remove warm-up ramp") { repo.removeSets(setIds) }
     }
 
     fun addSet(exerciseId: Long, reps: Int, weightKg: Double?, modifiers: String, durationSec: Int? = null) {
@@ -759,6 +770,11 @@ fun SessionScreen(
         undo = UndoPrompt.Removed(undoSerial, message, removed)
     }
 
+    fun offerRampUndo(setIds: List<Long>) {
+        undoSerial++
+        undo = UndoPrompt.Ramp(undoSerial, setIds)
+    }
+
     fun undoLog(prompt: UndoPrompt.Logged) {
         ui.sets.firstOrNull { it.id == prompt.setId }?.let { commit(it.copy(done = false)) }
         // The rest belonged to the set that was just taken back.
@@ -858,6 +874,15 @@ fun SessionScreen(
                                 onMove = { up -> viewModel.moveExercise(first.exercisePosition, up) },
                                 onEditLoad = if (metric.isStrength || (metric == ExerciseMetric.DURATION && weighted)) {
                                     { editLoadFor = block.sets.firstOrNull { it.isPending } ?: block.sets.last() }
+                                } else {
+                                    null
+                                },
+                                // Before anything is logged, on a loaded movement with no warm-up yet.
+                                onWarmup = if (
+                                    exercise != null && block.sets.none { it.warmup || it.done } &&
+                                    WarmupRamp.planFor(exercise.name, exercise.muscleGroup.name, metric, first.weightKg).isNotEmpty()
+                                ) {
+                                    { viewModel.addWarmupRamp(block.id, ::offerRampUndo) }
                                 } else {
                                     null
                                 },
@@ -968,6 +993,10 @@ fun SessionScreen(
                         is UndoPrompt.Logged -> undoLog(prompt)
                         is UndoPrompt.Removed -> {
                             viewModel.restoreSets(prompt.removed)
+                            undo = null
+                        }
+                        is UndoPrompt.Ramp -> {
+                            viewModel.removeSets(prompt.setIds)
                             undo = null
                         }
                     }
@@ -1438,6 +1467,11 @@ private sealed interface UndoPrompt {
     }
 
     data class Removed(override val serial: Int, override val message: String, val removed: Repository.RemovedSets) : UndoPrompt
+
+    /** "Warm-up added": Undo takes the ramp's sets back out. */
+    data class Ramp(override val serial: Int, val setIds: List<Long>) : UndoPrompt {
+        override val message: String get() = "Warm-up added"
+    }
 }
 
 /** What a stepper moves. LOAD has its own entry dialog; the others share one. */
@@ -1779,6 +1813,7 @@ internal fun OpenExerciseCard(
     onEditModifiers: () -> Unit,
     onMove: (up: Boolean) -> Unit,
     onEditLoad: (() -> Unit)?,
+    onWarmup: (() -> Unit)?,
     onAddSet: () -> Unit,
     onRemoveSet: (SessionSet) -> Unit,
     onRemoveExercise: () -> Unit,
@@ -1847,6 +1882,7 @@ internal fun OpenExerciseCard(
                 onModifiers = if (modifiersEditable) onEditModifiers else null,
                 onEditLoad = onEditLoad,
                 // Amending has its own Add set row under the sets.
+                onWarmup = if (amend) null else onWarmup,
                 onAddSet = if (amend) null else onAddSet,
                 // Only a set not yet logged: removing a logged one loses its log.
                 // An amendment may drop any set; Save is the commit.
@@ -1976,6 +2012,7 @@ private fun ExerciseMenu(
     onMoveDown: (() -> Unit)?,
     onModifiers: (() -> Unit)?,
     onEditLoad: (() -> Unit)?,
+    onWarmup: (() -> Unit)?,
     onAddSet: (() -> Unit)?,
     onRemoveLastSet: (() -> Unit)?,
     onRemoveExercise: () -> Unit,
@@ -2001,6 +2038,7 @@ private fun ExerciseMenu(
                     },
                 )
             }
+            onWarmup?.let { item("Warm up", action = it) }
             onAddSet?.let { item("Add set", action = it) }
             onEditLoad?.let { item("Edit load", action = it) }
             onModifiers?.let { item("Edit modifiers", action = it) }

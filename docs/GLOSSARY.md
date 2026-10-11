@@ -83,6 +83,7 @@ Settings keeps the name **Settings**.
 | **Temper** | The Forge improving an existing rite | "Temper this rite", "Before / After" | improve |
 | **Patterns** | Hand-written cycle templates | "FROM A PATTERN", "Start from a pattern" | templates |
 | **Set type** | How one set was done: Working, Warm-up, Drop, Failure or Rest-pause. A tag on the set row, changed by tapping it. Only a warm-up is left out of XP, volume and peaks | "Set types", "Mark as warm-up", "Count as a working set", tags W · D · F · R | set kind (in copy), set mode, set flavour |
+| **Warm up** | The action on a loaded exercise's menu that adds warm-up sets before its first working set: the bar for 10 (barbell only), then about 40% for 5, 60% for 3 and 80% for 2 of the working load, rounded to the movement's load step | "Warm up", "Warm-up added · Undo" | ramp, prime, build-up |
 | **Note** | Free text on a trial or rite | "PRIVATE NOTE", "NOTE · shared with allies", "PUBLIC NOTE" | field note, sealed note, mantra |
 
 ## Codex

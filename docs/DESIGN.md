@@ -137,6 +137,12 @@ A plain working set adds none, only a faint caret on the active row. The tag is
 a label, never a reward colour, and never sheen. The cell keeps the 22dp width of
 the number so the two steppers still fit a 360dp phone.
 
+**Warm up (exercise menu).** On the open item's overflow menu, "Warm up" adds the
+ramp as Warm-up rows ahead of the first working set (`domain/WarmupRamp.kt`). It
+is offered only before anything on that exercise is logged, on a loaded rep
+movement that has no warm-up yet, and it raises the usual "Warm-up added · Undo"
+bar. The rows are ordinary warm-ups: unticked, never paid, never a peak.
+
 **Stepper.** Label (labelSmall, `InkMuted`) above a value with plain − and +
 glyph buttons (44dp targets, no borders). Tapping the value types it.
 

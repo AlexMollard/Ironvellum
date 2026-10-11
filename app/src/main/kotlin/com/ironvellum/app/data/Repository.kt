@@ -65,6 +65,7 @@ import com.ironvellum.app.domain.PlayerProfile
 import com.ironvellum.app.domain.Sex
 import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.Progression
+import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.domain.Rank
 import com.ironvellum.app.domain.RankBreakdown
 import com.ironvellum.app.domain.RankUp
@@ -959,6 +960,55 @@ class Repository(
             else -> current.done
         }
         sessionDao.updateSet(current.copy(kind = kind.name, done = done))
+    }
+
+    /**
+     * Adds the warm-up ramp ([WarmupRamp]) before [exerciseId]'s first working set in a
+     * live trial and returns the ids it made, lightest first: empty when the movement is
+     * not loaded work, has no working load set, already has warm-ups or the trial is
+     * sealed. The movement's own sets move down to make room, so the warm-ups sit first
+     * and the working sets keep their order. Warm-ups are stored unticked, so they never
+     * earn XP; records judge a working set by its place less the warm-ups ahead of it.
+     */
+    suspend fun addWarmupRamp(sessionId: Long, exerciseId: Long): List<Long> = db.withTransaction {
+        if (isSealed(sessionId)) return@withTransaction emptyList()
+        val exercise = exerciseDao.byId(exerciseId) ?: return@withTransaction emptyList()
+        val metric = runCatching { ExerciseMetric.valueOf(exercise.metric) }.getOrDefault(ExerciseMetric.REPS)
+        val rows = sessionDao.setsFor(sessionId).filter { it.exerciseId == exerciseId }.sortedBy { it.setIndex }
+        if (rows.isEmpty() || rows.any { it.isWarmup }) return@withTransaction emptyList()
+        val first = rows.first()
+        val plan = WarmupRamp.planFor(exercise.name, exercise.muscleGroup, metric, first.weightKg)
+        if (plan.isEmpty()) return@withTransaction emptyList()
+        rows.forEach { sessionDao.updateSet(it.copy(setIndex = it.setIndex + plan.size)) }
+        val made = plan.mapIndexed { index, step ->
+            SetLogEntity(
+                sessionId = sessionId,
+                exerciseId = exerciseId,
+                exercisePosition = first.exercisePosition,
+                setIndex = index,
+                reps = step.reps,
+                weightKg = step.weightKg,
+                modifiers = first.modifiers,
+                done = false,
+                kind = SetKind.WARMUP.name,
+                supersetGroup = first.supersetGroup,
+            )
+        }
+        sessionDao.insertSets(made)
+    }
+
+    /**
+     * Takes [setIds] back out of a live trial (Undo for the ramp) and closes the gap in
+     * their movement's set numbers. Refused when the trial is sealed.
+     */
+    suspend fun removeSets(setIds: List<Long>) = db.withTransaction {
+        val rows = setIds.mapNotNull { sessionDao.setById(it) }
+        val first = rows.firstOrNull() ?: return@withTransaction
+        if (isSealed(first.sessionId)) return@withTransaction
+        rows.forEach { sessionDao.deleteSet(it.id) }
+        sessionDao.setsFor(first.sessionId).filter { it.exerciseId == first.exerciseId }
+            .sortedBy { it.setIndex }
+            .forEachIndexed { index, row -> if (row.setIndex != index) sessionDao.updateSet(row.copy(setIndex = index)) }
     }
 
     /**
