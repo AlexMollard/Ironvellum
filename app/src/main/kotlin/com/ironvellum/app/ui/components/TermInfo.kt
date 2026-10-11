@@ -22,6 +22,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.ArmyClass
 import com.ironvellum.app.domain.Rank
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.Streak
 import com.ironvellum.app.ui.theme.IronvellumColors
 
@@ -155,6 +156,12 @@ enum class Term(
         "Seal",
         "Finishing a trial. Sealing banks its XP and adds its strength score to your lifetime " +
             "total. A sealed trial can still be amended later, and the difference is settled.",
+    ),
+    SET_TYPES(
+        "Set types",
+        "Each set wears a tag you can tap to change. " +
+            SetKind.entries.joinToString(" ") { "${it.label}: ${it.blurb}" } +
+            " Only a warm-up is left out of XP, volume and peaks.",
     ),
     THE_VEIL(
         "The Veil",

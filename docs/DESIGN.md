@@ -128,6 +128,15 @@ quiet reference line ("Last 6 × 7.5 kg · Peak 6 × 10 kg", with the peak in
 gold), then its rows. The active row is marked with a thin emerald left bar
 and a faint tint, not an outline.
 
+**Set number and type tag.** The number at the start of a set row is also the
+set's type control: tapping it opens a small menu of the five set types
+(Working, Warm-up, Drop, Failure, Rest-pause) and "What are set types?". A warm-up
+reads "W"; Drop, Failure and Rest-pause add a 10sp letter under the number
+(D, F, R) in a muted token (`SystemGreen`, `DangerRed` at 80%, `Ink` at 85%).
+A plain working set adds none, only a faint caret on the active row. The tag is
+a label, never a reward colour, and never sheen. The cell keeps the 22dp width of
+the number so the two steppers still fit a 360dp phone.
+
 **Stepper.** Label (labelSmall, `InkMuted`) above a value with plain − and +
 glyph buttons (44dp targets, no borders). Tapping the value types it.
 

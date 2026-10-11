@@ -71,7 +71,7 @@ class RestTimerTest {
 
     @Test
     fun `a warm-up never counts as a set still waiting`() {
-        val warmup = set(2, done = false).copy(warmup = true)
+        val warmup = set(2, done = false).copy(kind = SetKind.WARMUP)
         // Set 1 is the last working set: only the warm-up is left, so nothing to rest for.
         assertFalse(RestTimer.startsRest(listOf(set(1, done = false), warmup), setId = 1, nowDone = true))
         assertTrue(RestTimer.startsRest(listOf(set(1, done = false), warmup, set(3, done = false)), setId = 1, nowDone = true))

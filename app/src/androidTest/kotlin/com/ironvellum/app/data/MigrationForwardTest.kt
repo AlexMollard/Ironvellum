@@ -699,11 +699,11 @@ class MigrationForwardTest {
             )
         }
         helper.runMigrationsAndValidate(dbName, IronvellumDatabase.VERSION, true, *IronvellumDatabase.MIGRATIONS).use { db ->
-            db.query("SELECT reps, done, warmup, supersetGroup FROM set_logs WHERE id = 7").use { c ->
+            db.query("SELECT reps, done, kind, supersetGroup FROM set_logs WHERE id = 7").use { c ->
                 assertTrue("the set must survive", c.moveToFirst())
                 assertEquals(5, c.getInt(0))
                 assertEquals("its tick must not move", 1, c.getInt(1))
-                assertEquals("it is not a warm-up", 0, c.getInt(2))
+                assertEquals("it is not a warm-up", "WORKING", c.getString(2))
                 assertTrue("it is in no superset", c.isNull(3))
             }
         }
@@ -860,6 +860,56 @@ class MigrationForwardTest {
                 assertEquals("iron", c.getString(0))
                 assertTrue("no change stamp yet", c.isNull(1))
                 assertEquals("the retro grant is not re-run", 1, c.getInt(2))
+            }
+        }
+    }
+
+    /**
+     * Schema 38 -> 39, set kinds: the warm-up flag becomes a kind. Every set keeps its id, figures and tick;
+     * warmup = 1 reads as WARMUP and everything else as WORKING; the superset group, the foreign key and the
+     * sessionId index come through the table rebuild.
+     */
+    @Test
+    fun upgradeTo39TurnsTheWarmupFlagIntoAKind() = runTest {
+        helper.createDatabase(dbName, 38).use { old ->
+            old.execSQL(
+                "INSERT INTO exercises (id, name, muscleGroup, isWeighted, metric, category) " +
+                    "VALUES (1, 'Bench Press', 'PUSH', 1, 'REPS', '')",
+            )
+            old.execSQL(
+                "INSERT INTO sessions (id, presetId, label, startedAtMs, completedAtMs, xpAwarded, " +
+                    "strengthScore, title, note, privateNote, imported, audience, editedAtMs, sealedXp) " +
+                    "VALUES (2, NULL, 'Push', 1789782608320, 1789785525853, 330, 610, '', '', '', 0, 'profile', NULL, NULL)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade, warmup, supersetGroup) " +
+                    "VALUES (7, 2, 1, 0, 0, 10, 40.0, '', 0, NULL, NULL, NULL, 1, 3)",
+            )
+            old.execSQL(
+                "INSERT INTO set_logs (id, sessionId, exerciseId, exercisePosition, setIndex, " +
+                    "reps, weightKg, modifiers, done, durationSec, distanceM, grade, warmup, supersetGroup) " +
+                    "VALUES (8, 2, 1, 0, 1, 5, 80.0, 'Pause', 1, NULL, NULL, NULL, 0, NULL)",
+            )
+        }
+        helper.runMigrationsAndValidate(dbName, 39, true, *IronvellumDatabase.MIGRATIONS).use { db ->
+            db.query("SELECT id, setIndex, reps, weightKg, modifiers, done, kind, supersetGroup FROM set_logs ORDER BY id").use { c ->
+                assertTrue(c.moveToFirst())
+                assertEquals(7L, c.getLong(0))
+                assertEquals(10, c.getInt(2))
+                assertEquals(0, c.getInt(5))
+                assertEquals("an old warm-up reads as a warm-up", "WARMUP", c.getString(6))
+                assertEquals("its superset survives", 3, c.getInt(7))
+                assertTrue(c.moveToNext())
+                assertEquals(8L, c.getLong(0))
+                assertEquals(80.0, c.getDouble(3), 0.0)
+                assertEquals("Pause", c.getString(4))
+                assertEquals("its tick must not move", 1, c.getInt(5))
+                assertEquals("WORKING", c.getString(6))
+                assertTrue(c.isNull(7))
+            }
+            db.query("SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'index_set_logs_sessionId'").use { c ->
+                assertTrue("the sessionId index is rebuilt", c.moveToFirst())
             }
         }
     }

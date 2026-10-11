@@ -43,7 +43,8 @@ internal class SessionScoring(catalogue: List<ExerciseEntity>) {
      * holds) earns difficulty-weighted XP; activities earn from ActivityScore.
      */
     fun xp(sets: List<SetLogEntity>, bodyweightKg: Double?): Int {
-        val doneSets = sets.filter { it.done }
+        // A warm-up is stored unticked; the kind check keeps one from ever paying even if a stale write ticked it.
+        val doneSets = sets.filter { it.done && !it.isWarmup }
         val liftingSets = doneSets.filter { metricOf(it.exerciseId).isStrength }
         val activitySets = doneSets.filterNot { metricOf(it.exerciseId).isStrength }
         val liftingXp = Xp.award(
@@ -83,7 +84,7 @@ internal class SessionScoring(catalogue: List<ExerciseEntity>) {
      */
     fun strength(sets: List<SetLogEntity>, bodyweightKg: Double?, sex: Sex): Int =
         StrengthIndex.sessionScore(
-            sets.filter { it.done && metricOf(it.exerciseId).isStrength }.map { set ->
+            sets.filter { it.done && !it.isWarmup && metricOf(it.exerciseId).isStrength }.map { set ->
                 StrengthIndex.Effort(
                     exerciseName = names[set.exerciseId] ?: "",
                     reps = set.reps,

@@ -38,7 +38,7 @@ class WarmupSupersetTest {
     fun theDraftKeepsBothAndNeverFoldsAcrossSupersets() {
         val draft = TrialDraft.of(
             listOf(
-                SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 0, setIndex = 0, reps = 10, weightKg = 40.0, warmup = true, supersetGroup = 0),
+                SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 0, setIndex = 0, reps = 10, weightKg = 40.0, kind = SetKind.WARMUP, supersetGroup = 0),
                 SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 0, setIndex = 1, reps = 5, weightKg = 80.0, done = true, supersetGroup = 0),
                 SessionSet(exerciseId = 2, exerciseName = "Row", exercisePosition = 1, setIndex = 0, reps = 8, weightKg = 60.0, done = true, supersetGroup = 0),
                 SessionSet(exerciseId = 1, exerciseName = "Bench Press", exercisePosition = 2, setIndex = 2, reps = 8, weightKg = 70.0, done = true),
@@ -55,7 +55,7 @@ class WarmupSupersetTest {
     fun theArchiveRoundTripsBothAndLeavesPlainSetsUntouched() {
         val session = WorkoutSession(id = 1, label = "Upper", startedAtMs = 1_000, completedAtMs = 2_000)
         val sets = listOf(
-            SessionSet(exerciseId = 1, exerciseName = "Bench Press", setIndex = 0, reps = 10, warmup = true, supersetGroup = 3),
+            SessionSet(exerciseId = 1, exerciseName = "Bench Press", setIndex = 0, reps = 10, kind = SetKind.WARMUP, supersetGroup = 3),
             SessionSet(exerciseId = 1, exerciseName = "Bench Press", setIndex = 1, reps = 5, done = true),
         )
         val json = ExportWriter.write(
@@ -81,7 +81,7 @@ class WarmupSupersetTest {
         val zone = ZoneId.systemDefault()
         val session = WorkoutSession(id = 1, label = "Upper", startedAtMs = 1_800_000_000_000, completedAtMs = 1_800_003_600_000)
         val sets = listOf(
-            SessionSet(exerciseId = 1, exerciseName = "Bench Press", setIndex = 0, reps = 10, weightKg = 40.0, warmup = true),
+            SessionSet(exerciseId = 1, exerciseName = "Bench Press", setIndex = 0, reps = 10, weightKg = 40.0, kind = SetKind.WARMUP),
             SessionSet(exerciseId = 1, exerciseName = "Bench Press", setIndex = 1, reps = 5, weightKg = 80.0, done = true),
         )
         val parsed = CsvWorkoutReader.read(WorkoutCsvWriter.write(listOf(session to sets), zone))

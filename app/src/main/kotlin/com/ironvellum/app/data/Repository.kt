@@ -82,6 +82,7 @@ import com.ironvellum.app.domain.carriesFrom
 import com.ironvellum.app.domain.carryFiguresFor
 import com.ironvellum.app.domain.restoredIndexes
 import com.ironvellum.app.domain.SessionSet
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.SetRecords
 import com.ironvellum.app.domain.SealedEdit
 import com.ironvellum.app.domain.SealedReopen
@@ -143,6 +144,12 @@ data class SkillTrainingEvidence(
     val weightKg: Double?,
     val achievedAtMs: Long,
 )
+
+/** The stored kind; an unknown name reads as a plain working set. */
+internal fun SetLogEntity.setKind(): SetKind = SetKind.fromName(kind)
+
+/** A warm-up is the one kind that is stored unticked and never counts. */
+internal val SetLogEntity.isWarmup: Boolean get() = setKind() == SetKind.WARMUP
 
 /**
  * Which set-position record stands as a movement's evidence. [SetRecords.records]
@@ -801,7 +808,7 @@ class Repository(
         }.toMap()
     }
 
-    private fun SetLogEntity.carrySet() = CarrySet(id, setIndex, weightKg, done, reps, durationSec, warmup)
+    private fun SetLogEntity.carrySet() = CarrySet(id, setIndex, weightKg, done, reps, durationSec, isWarmup)
 
     /**
      * Called with a set's row [before] a write and the row [after] it. Any
@@ -910,7 +917,7 @@ class Repository(
                 durationSec = s.durationSec,
                 distanceM = s.distanceM,
                 grade = s.grade,
-                warmup = s.warmup,
+                kind = s.setKind(),
                 supersetGroup = s.supersetGroup,
             )
         }.sortedWith(compareBy({ it.exercisePosition }, { it.setIndex }))
@@ -928,23 +935,30 @@ class Repository(
     suspend fun updateSet(setId: Long, reps: Int, weightKg: Double?, done: Boolean) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
-        val next = current.copy(reps = reps, weightKg = weightKg, done = done && !current.warmup)
+        val next = current.copy(reps = reps, weightKg = weightKg, done = done && !current.isWarmup)
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
         carryFigures(current, next, carryFiguresFor(ExerciseMetric.REPS))
     }
 
     /**
-     * Marks a live-trial set as a warm-up, or counts it as a working set. A
-     * warm-up is stored unticked, so it drops out of everything that counts
-     * ticked sets (XP, strength, records); the writers above keep it unticked
-     * whatever a stale screen sends. Counting it again ticks it: a set called
-     * a warm-up was one the lifter had done.
+     * Changes a live-trial set's kind. A warm-up is stored unticked, so it drops
+     * out of everything that counts ticked sets (XP, strength, records); the
+     * writers above keep it unticked whatever a stale screen sends. Making a set
+     * a warm-up unticks it; counting it again ticks it, since a set called a
+     * warm-up was one the lifter had done. Moving between the counting kinds
+     * (Working, Drop, Failure, Rest-pause) leaves the tick as it is.
      */
-    suspend fun setWarmup(setId: Long, warmup: Boolean) = db.withTransaction {
+    suspend fun setKind(setId: Long, kind: SetKind) = db.withTransaction {
         val current = sessionDao.setById(setId) ?: return@withTransaction
         if (isSealed(current.sessionId)) return@withTransaction
-        sessionDao.updateSet(current.copy(warmup = warmup, done = !warmup))
+        val wasWarmup = current.isWarmup
+        val done = when {
+            kind == SetKind.WARMUP -> false
+            wasWarmup -> true
+            else -> current.done
+        }
+        sessionDao.updateSet(current.copy(kind = kind.name, done = done))
     }
 
     /**
@@ -963,7 +977,7 @@ class Repository(
             reps = 0,
             durationSec = seconds.coerceAtLeast(0),
             weightKg = weightKg,
-            done = done && !current.warmup,
+            done = done && !current.isWarmup,
         )
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
@@ -1020,7 +1034,7 @@ class Repository(
             distanceM = distanceM?.coerceAtLeast(0.0),
             grade = grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
             weightKg = weightKg,
-            done = done && !current.warmup,
+            done = done && !current.isWarmup,
         )
         sessionDao.updateSet(next)
         followLoad(current, weightKg)
@@ -1324,6 +1338,7 @@ class Repository(
                 modifiers = s.modifiers,
                 done = s.done,
                 durationSec = s.durationSec,
+                kind = s.setKind(),
             )
         }
         val changes = RoutineUpdate.propose(entries, sets) { id ->
@@ -1420,7 +1435,7 @@ class Repository(
                     durationSec = s.durationSec,
                     distanceM = s.distanceM,
                     grade = s.grade,
-                    warmup = s.warmup,
+                    kind = s.setKind(),
                     supersetGroup = s.supersetGroup,
                 )
             }
@@ -2351,7 +2366,7 @@ class Repository(
                     durationSec = s.durationSec?.coerceAtLeast(0),
                     distanceM = s.distanceM?.coerceAtLeast(0.0),
                     grade = s.grade?.take(WireLimits.GRADE_MAX)?.ifBlank { null },
-                    warmup = s.warmup,
+                    kind = s.kind.name,
                     supersetGroup = block.supersetGroup,
                 )
             }
@@ -2409,7 +2424,7 @@ class Repository(
                     durationSec = s.durationSec,
                     distanceM = s.distanceM,
                     grade = s.grade,
-                    warmup = s.warmup,
+                    kind = s.setKind(),
                     supersetGroup = s.supersetGroup,
                 )
             }
@@ -2725,7 +2740,7 @@ class Repository(
                                 durationSec = s.durationSec,
                                 distanceM = s.distanceM,
                                 grade = s.grade,
-                                warmup = s.warmup,
+                                kind = s.kind.name,
                                 supersetGroup = s.supersetGroup,
                             )
                         },
@@ -2956,8 +2971,6 @@ class Repository(
             val mapped = workout.sets.mapNotNull { set ->
                 val exerciseId = mapping[set.exerciseName.trim().lowercase()] ?: return@mapNotNull null
                 val mods = buildList {
-                    if (set.setType == "dropset") add("dropset")
-                    if (set.setType == "failure") add("failure")
                     set.rpe?.let { add("RPE ${if (it == it.toLong().toDouble()) it.toLong().toString() else it.toString()}") }
                     set.notes.takeIf { it.isNotBlank() }?.let { add(it) }
                 }.joinToString(", ")
@@ -2980,7 +2993,7 @@ class Repository(
             )
             val placements = CsvWorkoutReader.blockPlacements(mapped.map { it.second })
             val setEntities = mapped.zip(placements) { (set, exerciseId, mods), (position, index) ->
-                val warmup = set.setType == "warmup"
+                val kind = SetKind.fromImport(set.setType)
                 SetLogEntity(
                     sessionId = sessionId,
                     exerciseId = exerciseId,
@@ -2990,11 +3003,11 @@ class Repository(
                     weightKg = set.weightKg,
                     modifiers = mods,
                     // A warm-up is kept, unticked, so nothing that counts sets counts it.
-                    done = !warmup,
+                    done = kind.countsAsWork,
                     durationSec = set.durationSec,
                     distanceM = set.distanceM,
                     grade = null,
-                    warmup = warmup,
+                    kind = kind.name,
                     supersetGroup = set.supersetGroup,
                 )
             }

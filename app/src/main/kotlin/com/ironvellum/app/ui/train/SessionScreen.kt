@@ -131,6 +131,7 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.domain.PlannedEntry
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.LastLogged
@@ -421,9 +422,9 @@ class SessionViewModel(
         viewModelScope.launchGuarded("restore sets") { repo.restoreSets(removed) }
     }
 
-    /** "Mark as warm-up" and "Count as a working set" on a set's edit row. */
-    fun setWarmup(setId: Long, warmup: Boolean) {
-        viewModelScope.launchGuarded("mark warm-up") { repo.setWarmup(setId, warmup) }
+    /** The kind tag's menu, and "Mark as warm-up" / "Count as a working set" on a set's edit row. */
+    fun setKind(setId: Long, kind: SetKind) {
+        viewModelScope.launchGuarded("change set type") { repo.setKind(setId, kind) }
     }
 
     fun setModifiers(exerciseId: Long, modifiers: String) {
@@ -890,7 +891,7 @@ fun SessionScreen(
                                 onTypeLoad = { editLoadFor = it },
                                 onTypeFigure = { set, kind -> typing = set to kind },
                                 onToggleEdit = { set -> editingSetId = if (editingSetId == set.id) null else set.id },
-                                onToggleWarmup = { set -> viewModel.setWarmup(set.id, !set.warmup) },
+                                onSetKind = { set, kind -> viewModel.setKind(set.id, kind) },
                                 onUnlog = { set ->
                                     commit(set.copy(done = false))
                                     editingSetId = null
@@ -1621,7 +1622,7 @@ private fun newPeakSetIds(
             SetRecords.score(earlier.exerciseName, figure(earlier), earlier.weightKg, bw, hold)
         }
         SetRecords.delta(
-            records, set.exerciseName, set.setIndex, figure(set), set.weightKg, bw,
+            records, set.exerciseName, SetRecords.position(set, sets), figure(set), set.weightKg, bw,
             isHold = hold,
             bestEarlierThisWorkout = bestEarlier,
         ).isRecord
@@ -1785,7 +1786,7 @@ internal fun OpenExerciseCard(
     onTypeLoad: (SessionSet) -> Unit,
     onTypeFigure: (SessionSet, FigureKind) -> Unit,
     onToggleEdit: (SessionSet) -> Unit,
-    onToggleWarmup: (SessionSet) -> Unit,
+    onSetKind: (SessionSet, SetKind) -> Unit,
     onUnlog: (SessionSet) -> Unit,
     modifier: Modifier = Modifier,
     /** The sealed trial's amend mode: any set can open for editing, and there is no live-only chrome. */
@@ -1924,7 +1925,7 @@ internal fun OpenExerciseCard(
                     onTypeLoad = { onTypeLoad(set) },
                     onTypeFigure = { kind -> onTypeFigure(set, kind) },
                     onToggleEdit = { onToggleEdit(set) },
-                    onToggleWarmup = { onToggleWarmup(set) },
+                    onSetKind = { kind -> onSetKind(set, kind) },
                     onUnlog = { onUnlog(set) },
                     onRemove = { onRemoveSet(set) },
                     amend = amend,
@@ -2028,7 +2029,7 @@ private fun TrialSetRow(
     onTypeLoad: () -> Unit,
     onTypeFigure: (FigureKind) -> Unit,
     onToggleEdit: () -> Unit,
-    onToggleWarmup: () -> Unit,
+    onSetKind: (SetKind) -> Unit,
     onUnlog: () -> Unit,
     onRemove: () -> Unit,
     amend: Boolean = false,
@@ -2044,12 +2045,13 @@ private fun TrialSetRow(
                 .padding(vertical = 4.dp),
         ) {
             Row(Modifier.fillMaxWidth().padding(start = 14.dp, end = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    label,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontFamily = ChakraPetch,
-                    color = IronvellumColors.Ink,
-                    textAlign = TextAlign.Center,
+                SetNumberCell(
+                    label = label,
+                    kind = set.kind,
+                    onKind = onSetKind,
+                    tone = IronvellumColors.Ink,
+                    showHint = true,
+                    numberStyle = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.width(22.dp),
                 )
                 figures.forEach { figure ->
@@ -2086,7 +2088,10 @@ private fun TrialSetRow(
                     RowAction("Close", IronvellumColors.InkMuted, onToggleEdit)
                 }
                 Row(Modifier.fillMaxWidth().padding(start = 22.dp), verticalAlignment = Alignment.CenterVertically) {
-                    RowAction(if (set.warmup) "Count as a working set" else "Mark as warm-up", IronvellumColors.Ink, onToggleWarmup)
+                    RowAction(
+                        if (set.warmup) "Count as a working set" else "Mark as warm-up",
+                        IronvellumColors.Ink,
+                    ) { onSetKind(if (set.warmup) SetKind.WORKING else SetKind.WARMUP) }
                 }
             }
         }
@@ -2118,12 +2123,11 @@ private fun TrialSetRow(
             textAlign = TextAlign.Center,
             modifier = Modifier.width(18.dp),
         )
-        Text(
-            label,
-            style = MaterialTheme.typography.bodySmall,
-            fontFamily = ChakraPetch,
-            color = tone,
-            textAlign = TextAlign.Center,
+        SetNumberCell(
+            label = label,
+            kind = set.kind,
+            onKind = onSetKind,
+            tone = tone,
             modifier = Modifier.padding(start = 6.dp).width(22.dp),
         )
         Text(

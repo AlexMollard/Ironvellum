@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.SealedEdit
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.TrialDraft
 import com.ironvellum.app.domain.isStrength
@@ -141,8 +142,8 @@ internal fun TrialAmendEditor(
                 onTypeLoad = { set -> loadFor = blockIdx to set.id.toInt() },
                 onTypeFigure = { set, kind -> typing = Triple(blockIdx, set.id.toInt(), kind) },
                 onToggleEdit = { set -> editingSetId = if (editingSetId == set.id) null else set.id },
-                // A warm-up never counts, so marking one takes the tick off.
-                onToggleWarmup = { set -> update(set.id.toInt()) { it.copy(warmup = !it.warmup, done = false) } },
+                // A warm-up never counts, so marking one takes the tick off; the other kinds keep it.
+                onSetKind = { set, kind -> update(set.id.toInt()) { it.copy(kind = kind, done = it.done && kind != SetKind.WARMUP) } },
                 onUnlog = { set ->
                     update(set.id.toInt()) { it.copy(done = false) }
                     editingSetId = null
@@ -274,7 +275,7 @@ private fun TrialDraft.DraftSet.asSessionSet(block: TrialDraft.Block, blockIdx: 
     durationSec = durationSec,
     distanceM = distanceM,
     grade = grade,
-    warmup = warmup,
+    kind = kind,
     supersetGroup = block.supersetGroup,
 )
 
@@ -286,7 +287,7 @@ private fun SessionSet.asDraftSet() = TrialDraft.DraftSet(
     distanceM = distanceM,
     grade = grade,
     done = done && !warmup,
-    warmup = warmup,
+    kind = kind,
 )
 
 /** The quiet row under an open exercise's sets that adds another. */

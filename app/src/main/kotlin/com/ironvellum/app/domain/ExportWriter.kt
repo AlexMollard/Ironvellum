@@ -10,8 +10,9 @@ object ExportWriter {
     // per-exercise metadata. 6: per-set warmup and supersetGroup. 7: per-trial
     // exercise notes. 8: lifetime essence, and the pacing state the Veil needs to
     // come back whole (draw counters, round level mark, purchases, grant version).
-    // ExportReader still accepts 7 and below.
-    const val FORMAT_VERSION = 8
+    // 9: per-set kind (drop, failure, rest-pause; a warm-up still writes warmup:true).
+    // ExportReader still accepts 8 and below.
+    const val FORMAT_VERSION = 9
 
     /** Real catalogue attributes for one movement, matched by name on import. */
     data class ExerciseMeta(
@@ -313,9 +314,11 @@ object ExportWriter {
                 append(",\"grade\":").appendNullable(set.grade) { appendEscaped(it) }
                 append(",\"modifiers\":").appendEscaped(set.modifiers)
                 append(",\"done\":").append(set.done)
-                // Only a warm-up or a superset member carries these, so plain
-                // sets stay byte-identical to a v5 archive.
+                // Only a warm-up, a drop/failure/rest-pause set or a superset
+                // member carries these, so plain sets stay byte-identical to a
+                // v5 archive. A warm-up keeps its v6 key, which older readers know.
                 if (set.warmup) append(",\"warmup\":true")
+                else if (set.kind != SetKind.WORKING) append(",\"kind\":\"").append(set.kind.wire).append("\"")
                 set.supersetGroup?.let { append(",\"supersetGroup\":").append(it) }
                 append("}")
             }

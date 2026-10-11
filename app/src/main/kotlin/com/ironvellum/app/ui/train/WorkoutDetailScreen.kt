@@ -62,6 +62,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.domain.Energy
+import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.EnergyConfidence
 import com.ironvellum.app.domain.EnergyEstimate
 import com.ironvellum.app.domain.Exercise
@@ -735,7 +736,11 @@ private fun WorkoutSets(sets: List<SessionSet>, exercises: Map<Long, Exercise>) 
                         set.modifiers.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
                     when {
                         set.warmup -> SetLine("", "Warm-up · $figure", muted = true)
-                        else -> SetLine((++number).toString(), if (set.done) figure else "$figure · not done", muted = !set.done)
+                        else -> {
+                            // Drop, Failure and Rest-pause count as working sets and say how they were done.
+                            val shown = if (set.kind == SetKind.WORKING) figure else "${set.kind.label} · $figure"
+                            SetLine((++number).toString(), if (set.done) shown else "$shown · not done", muted = !set.done)
+                        }
                     }
                 }
             }

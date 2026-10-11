@@ -77,7 +77,8 @@ object RoutineUpdate {
         sets: List<SessionSet>,
         metricOf: (Long) -> ExerciseMetric?,
     ): List<Change> {
-        val blocksByExercise = sets.groupBy { it.exerciseId }.mapValues { (_, rows) ->
+        // A warm-up row is not part of the rite's prescription, whatever its tick.
+        val blocksByExercise = sets.filter { !it.warmup }.groupBy { it.exerciseId }.mapValues { (_, rows) ->
             rows.groupBy { it.exercisePosition }.toSortedMap().values.toList()
         }
         val seen = mutableMapOf<Long, Int>()

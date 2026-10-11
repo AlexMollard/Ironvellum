@@ -82,6 +82,7 @@ Settings keeps the name **Settings**.
 | **The Forge** | The builder that makes rites and cycles | "Forge a Cycle", "Forge a Rite", "What my week is missing" | program builder, generate a routine |
 | **Temper** | The Forge improving an existing rite | "Temper this rite", "Before / After" | improve |
 | **Patterns** | Hand-written cycle templates | "FROM A PATTERN", "Start from a pattern" | templates |
+| **Set type** | How one set was done: Working, Warm-up, Drop, Failure or Rest-pause. A tag on the set row, changed by tapping it. Only a warm-up is left out of XP, volume and peaks | "Set types", "Mark as warm-up", "Count as a working set", tags W · D · F · R | set kind (in copy), set mode, set flavour |
 | **Note** | Free text on a trial or rite | "PRIVATE NOTE", "NOTE · shared with allies", "PUBLIC NOTE" | field note, sealed note, mantra |
 
 ## Codex
@@ -140,7 +141,7 @@ These stay plain under the theme. Each needs to be instantly clear, and several
 are compared outside the app.
 
 - **Measurements and science:** exercise names, set, rep, kg, lb, rest between
-  sets, time, load, modifiers, BMI, FFMI, body fat, steps, sleep, calories,
+  sets, set types (warm-up, drop, failure, rest-pause), time, load, modifiers, BMI, FFMI, body fat, steps, sleep, calories,
   RPE, deload, hypertrophy, 1-rep max, muscle names, muscle coverage. Explain
   them; never rename them.
 - **Game stats:** XP, Level (LV), STR, LEVEL UP, strength score.

@@ -9,7 +9,7 @@ import org.junit.Test
 class LiveWarmupTest {
 
     private fun set(index: Int, exerciseId: Long = 1, done: Boolean = false, warmup: Boolean = false) =
-        SessionSet(id = exerciseId * 100 + index, exerciseId = exerciseId, exerciseName = "Lift $exerciseId", setIndex = index, reps = 5, done = done, warmup = warmup)
+        SessionSet(id = exerciseId * 100 + index, exerciseId = exerciseId, exerciseName = "Lift $exerciseId", setIndex = index, reps = 5, done = done, kind = if (warmup) SetKind.WARMUP else SetKind.WORKING)
 
     @Test
     fun `only an unticked working set is pending`() {

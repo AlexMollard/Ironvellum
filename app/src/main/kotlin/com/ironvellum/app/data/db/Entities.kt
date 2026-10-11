@@ -118,8 +118,11 @@ data class SetLogEntity(
     val durationSec: Int? = null,
     val distanceM: Double? = null,
     val grade: String? = null,
-    /** A warm-up, stored unticked so nothing that counts ticked sets counts it. */
-    val warmup: Boolean = false,
+    /**
+     * [com.ironvellum.app.domain.SetKind] by enum name, like `metric`; an unknown name reads as
+     * Working. A warm-up is stored unticked, so nothing that counts ticked sets counts it.
+     */
+    val kind: String = "WORKING",
     /** Shared by the sets of adjacent blocks done as one superset; null when not in one. */
     val supersetGroup: Int? = null,
 )

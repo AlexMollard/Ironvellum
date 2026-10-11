@@ -52,7 +52,7 @@ object SessionPeaks {
                         .filter { it.setIndex < set.setIndex }
                         .maxOfOrNull { SetRecords.score(it.exerciseName, figure(it), it.weightKg, bw, hold) }
                     val delta = SetRecords.delta(
-                        records, set.exerciseName, set.setIndex, figure(set), set.weightKg, bw,
+                        records, set.exerciseName, SetRecords.position(set, block), figure(set), set.weightKg, bw,
                         isHold = hold,
                         bestEarlierThisWorkout = bestEarlier,
                     )

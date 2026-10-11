@@ -71,11 +71,14 @@ data class SessionSet(
     val durationSec: Int? = null,
     val distanceM: Double? = null,
     val grade: String? = null,
-    /** A warm-up: always unticked, shown as a warm-up rather than a skipped set. */
-    val warmup: Boolean = false,
+    /** Working unless marked: a warm-up is always unticked and shown as one rather than a skipped set. */
+    val kind: SetKind = SetKind.WORKING,
     /** Shared by the sets of adjacent blocks done as one superset; null when not in one. */
     val supersetGroup: Int? = null,
 ) {
+    /** A warm-up: the one kind that never counts. */
+    val warmup: Boolean get() = kind == SetKind.WARMUP
+
     /** Still to be logged: a warm-up is stored unticked and never counts, so it is never waiting. */
     val isPending: Boolean get() = !done && !warmup
 }
