@@ -953,6 +953,7 @@ object MuscleMap {
             MovementPattern.CORE, Muscle.HIP_FLEXORS, Muscle.GLUTES, Muscle.ADDUCTORS, Muscle.LOWER_BACK,
             Muscle.ROTATOR_CUFF, Muscle.ABS,
         ))
+        putAll(ExerciseLibrary.rows.associate { it.name.lowercase() to it.profile })
     }.mapValues { (name, profile) -> if (name in unilateralKeys) profile.copy(unilateral = true) else profile }
 
     /** The conventional pull: a hinge from a flexed hip, so the adductor magnus extends it too (see romanian deadlift). */

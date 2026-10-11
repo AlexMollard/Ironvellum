@@ -1,6 +1,7 @@
 package com.ironvellum.app.data
 
 import com.ironvellum.app.data.db.ExerciseEntity
+import com.ironvellum.app.domain.ExerciseLibrary
 import com.ironvellum.app.domain.MuscleGroup
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.MovementDifficulty
@@ -272,6 +273,20 @@ object Seed {
             entity
         }
 
+    /**
+     * The exercise library's added movements (see [ExerciseLibrary]). Inserted by name like the rest, so an upgrade
+     * gains them without touching history; none is a skill-tree movement, so [withMetric] has nothing to stamp.
+     */
+    private val libraryExercises: List<ExerciseEntity> = ExerciseLibrary.rows.map {
+        ExerciseEntity(
+            name = it.name,
+            muscleGroup = it.group.name,
+            isWeighted = it.weighted,
+            metric = it.metric.name,
+            category = it.category,
+        )
+    }
+
     private val allExercises: List<ExerciseEntity> = (
         baseExercises +
             Skills.ALL
@@ -283,7 +298,7 @@ object Seed {
                         isWeighted = Skills.isWeighted(skill),
                     )
                 }
-        ).map(::withMetric) + activities
+        ).map(::withMetric) + activities + libraryExercises
 
     data class SeedEntry(
         val exercise: String,

@@ -152,7 +152,7 @@ object MovementDifficulty {
         // but the assistance makes them the beginner's entry point, not tier 3.
         "assisted pull-up" to 2,
         "assisted dip" to 2,
-    )
+    ) + ExerciseLibrary.rows.associate { it.name.lowercase() to it.tier }
 
     /**
      * Tree tiers that price the added load into the movement itself.
@@ -294,7 +294,7 @@ object MovementDifficulty {
         // Dual-pulley band (2:1 on most crossover stations) - the flagged,
         // least-certain ratio in the class KDoc.
         "cable fly" to DUAL_PULLEY_LOAD,
-    )
+    ) + ExerciseLibrary.rows.filter { it.loadFactor != FREE_WEIGHT_LOAD }.associate { it.name.lowercase() to it.loadFactor }
 
     /**
      * Seconds of a static hold worth one rep-equivalent. The ONE place this
@@ -355,7 +355,7 @@ object MovementDifficulty {
         "weighted plank",
         "plank",
         "side plank",
-    )
+    ) + ExerciseLibrary.rows.filter { it.metric == ExerciseMetric.HOLD }.map { it.name.lowercase() }
 
     /**
      * Legacy signal: before [ExerciseMetric.HOLD] existed, a hold was a REPS

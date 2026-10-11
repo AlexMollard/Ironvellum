@@ -147,7 +147,7 @@ object GearRequirements {
         // Cable movements the machine rule cannot see (no loadFactor entry):
         // an empty alternative list means no toggle expresses them - full gym only.
         "face pull" to emptyList(),
-    )
+    ) + ExerciseLibrary.rows.filter { it.gear.isNotEmpty() }.associate { it.name.lowercase() to it.gear }
 
     /** Movements that physically need TWO dumbbells; a single one rules them out. */
     private val pairOnly: Set<String> = setOf(
