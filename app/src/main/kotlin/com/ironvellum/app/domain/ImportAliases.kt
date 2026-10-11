@@ -147,8 +147,6 @@ object ImportAliases {
         "v-bar push down" to "Triceps Pushdown",
         "parallel bar triceps dip" to "Dip",
         "cable overhead triceps extension" to "Overhead Cable Extension",
-        "barbell curl" to "Bicep Curl",
-        "ez-bar curl" to "Bicep Curl",
         "dumbbell curl" to "Bicep Curl",
         "dumbbell hammer curl" to "Hammer Curl",
         "ez-bar preacher curl" to "Preacher Curl",

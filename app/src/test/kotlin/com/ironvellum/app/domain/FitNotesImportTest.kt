@@ -220,7 +220,8 @@ class FitNotesImportTest {
             "Seated Dumbbell Press" to "Dumbbell Shoulder Press",
             "Lateral Dumbbell Raise" to "Lateral Raise",
             "Cable Face Pull" to "Face Pull",
-            "Barbell Curl" to "Bicep Curl",
+            // Its own movement since the exercise library landed, so no alias is needed.
+            "Barbell Curl" to "Barbell Curl",
             "Dumbbell Hammer Curl" to "Hammer Curl",
             "Cable Overhead Triceps Extension" to "Overhead Cable Extension",
             "Parallel Bar Triceps Dip" to "Dip",
