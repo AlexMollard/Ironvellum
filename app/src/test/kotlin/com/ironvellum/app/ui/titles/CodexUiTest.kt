@@ -143,4 +143,14 @@ class CodexUiTest {
         assertTrue(threeLines.levelLines.all { it == 3 })
         assertTrue(threeLines.tops.last() > guess.tops.last())
     }
+
+    @Test
+    fun `a visible progress line grows its row and moves the line that leaves its node`() {
+        val layout = treeLayout("Pull", columns = 4)
+        val node = layout.nodes.first()
+        val plain = treeMetrics(layout, cellW = 82f, lineH = 12f)
+        val cued = treeMetrics(layout, cellW = 82f, lineH = 12f, cueLinesOf = { if (it == node) 2 else 0 })
+        assertEquals(plain.tops[1] + 24f, cued.tops[1], 0.001f)
+        assertEquals(layout.nodeBottom(node, plain) + 24f, layout.nodeBottom(node, cued), 0.001f)
+    }
 }

@@ -11,10 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.layout.ContentScale
@@ -22,6 +19,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.ironvellum.app.R
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.METAL_RIM
+import com.ironvellum.app.ui.theme.METAL_WASH
+import com.ironvellum.app.ui.theme.Metal
+import com.ironvellum.app.ui.theme.emeraldRamp
 import com.ironvellum.app.ui.theme.inkBorder
 
 /** Bundled, technique-specific art shared by tree nodes and the About preview. */
@@ -152,11 +153,11 @@ internal fun techniqueArtwork(name: String): Int? = when (name) {
 /** Where a technique stands for the lifter, as its art shows it: earned, open to claim, or out of reach. */
 internal enum class ArtState { MASTERED, OPEN, LOCKED }
 
-/** The state's own colour: gold earned, green open, grey locked. The same ring the tree draws. */
-internal fun artRing(state: ArtState): Color = when (state) {
-    ArtState.MASTERED -> IronvellumColors.SovereignGold
-    ArtState.OPEN -> IronvellumColors.SystemGreen
-    ArtState.LOCKED -> LockedDot
+/** The state's own metal at [alpha]: the gold ramp earned, the emerald ramp open, Iron locked. The same ring the tree draws. */
+internal fun artBrush(state: ArtState, alpha: Float = 1f): Brush = when (state) {
+    ArtState.MASTERED -> Metal.Fabled.bounds(alpha)
+    ArtState.OPEN -> emeraldRamp(alpha)
+    ArtState.LOCKED -> Metal.Common.bounds(alpha)
 }
 
 /**
@@ -169,8 +170,8 @@ internal fun artFilter(state: ArtState): ColorFilter? =
 internal fun artAlpha(state: ArtState): Float = if (state == ArtState.LOCKED) 0.5f else 1f
 
 /**
- * A technique's engraving set in a plate rather than left floating on the sheet: a dark paper ground lit
- * from behind in the state's colour, and an ink edge. No floor shadow: hangs, levers and holds have no
+ * A technique's engraving set in a plate rather than left floating on the sheet: a dark paper ground under a
+ * faint wash of the state's metal, and a gradient rim. No floor shadow: hangs, levers and holds have no
  * floor, and a shadow under them read as the figure floating.
  * The plate takes the art's own shape (most are 2:3 portraits), never squarer than 1:1.
  */
@@ -178,27 +179,15 @@ internal fun artAlpha(state: ArtState): Float = if (state == ArtState.LOCKED) 0.
 internal fun TechniquePlate(@DrawableRes artwork: Int, state: ArtState, modifier: Modifier = Modifier) {
     val painter = painterResource(artwork)
     val ratio = painter.intrinsicSize.let { if (it.height > 0f) it.width / it.height else 2f / 3f }.coerceIn(2f / 3f, 1f)
-    val glow = artRing(state)
     val shape = MaterialTheme.shapes.medium
     Box(
         modifier
             .aspectRatio(ratio)
             .clip(shape)
             .background(IronvellumColors.Abyss)
-            .drawBehind {
-                // A soft light behind the figure, in the state's colour; none for a locked one.
-                if (state != ArtState.LOCKED) {
-                    drawRect(
-                        Brush.radialGradient(
-                            0f to glow.copy(alpha = if (state == ArtState.MASTERED) 0.22f else 0.12f),
-                            1f to Color.Transparent,
-                            center = Offset(size.width / 2f, size.height * 0.45f),
-                            radius = size.maxDimension * 0.6f,
-                        ),
-                    )
-                }
-            }
-            .inkBorder(glow.copy(alpha = if (state == ArtState.LOCKED) 0.6f else 0.45f), shape, 1.dp),
+            // A flat wash of the state's metal behind the figure; none for a locked one.
+            .then(if (state != ArtState.LOCKED) Modifier.background(artBrush(state, METAL_WASH)) else Modifier)
+            .inkBorder(artBrush(state, METAL_RIM), shape, 1.dp),
     ) {
         Image(
             painter = painter,

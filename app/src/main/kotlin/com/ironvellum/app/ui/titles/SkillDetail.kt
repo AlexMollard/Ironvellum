@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.wrapContentHeight
@@ -65,6 +66,8 @@ import com.ironvellum.app.ui.components.gearFacts
 import com.ironvellum.app.ui.components.muscleFacts
 import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.components.InkRail
+import com.ironvellum.app.ui.theme.Metal
+import com.ironvellum.app.ui.theme.emeraldRamp
 import com.ironvellum.app.ui.theme.inkBorder
 import com.ironvellum.app.ui.theme.inkHairline
 import com.ironvellum.app.ui.theme.IronvellumColors
@@ -187,9 +190,7 @@ fun SkillDetailSheet(
                         }
                     },
                 ).joinToString(" · "),
-                fill = Brush.horizontalGradient(
-                    listOf(if (cleared) IronvellumColors.SovereignGold else IronvellumColors.SystemGreen, if (cleared) IronvellumColors.SovereignGold else IronvellumColors.Emerald),
-                ),
+                fill = if (cleared) Metal.Fabled.bounds() else emeraldRamp(),
             )
         }
     } else {
@@ -556,7 +557,7 @@ private fun PrerequisiteChip(name: String, met: Boolean, onClick: () -> Unit) {
         Modifier
             .heightIn(min = 48.dp)
             .background(Color(0xFF151C19), shape)
-            .inkBorder(color, shape, 1.dp)
+            .inkBorder(if (met) emeraldRamp(0.7f) else SolidColor(color), shape, 1.dp)
             .clickable(role = Role.Button, onClickLabel = "Open $name") { onClick() }
             .padding(horizontal = 10.dp),
         verticalAlignment = Alignment.CenterVertically,

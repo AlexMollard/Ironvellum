@@ -31,6 +31,10 @@ internal data class TreeMetrics(
     val levelLines: List<Int>,
     /** Per level, the lines its widest "needs X (Path)" marker takes; 0 when no node there carries one. */
     val crossLines: List<Int>,
+    /** Per level, the lines its tallest visible progress line ("best 6/8 reps") takes; 0 when no node there shows one. */
+    val cueLines: List<Int> = emptyList(),
+    /** The lines each node's own progress line takes, by technique name; a node with none is absent. */
+    val nodeCue: Map<String, Int> = emptyMap(),
 )
 
 /** Type sizes of the two captions under a disc, for the line estimate; [SkillTree] draws with the same. */
@@ -86,14 +90,18 @@ internal fun treeMetrics(
     crossLinesOf: (PlacedSkill) -> Int = { n ->
         layout.crossMarker(n.skill.name)?.let { estimateLines(it, cellW - 2 * LABEL_PAD_DP, CROSS_SP, bold = false) } ?: 0
     },
+    /** Lines a node's visible progress line takes, 0 for none. The screen measures; there is no line without data. */
+    cueLinesOf: (PlacedSkill) -> Int = { 0 },
     linesOf: (PlacedSkill) -> Int = { estimateLines(it.skill.name, cellW - 2 * LABEL_PAD_DP, LABEL_SP, bold = true) },
 ): TreeMetrics {
     val lines = layout.levels.indices.map { l -> layout.nodes.filter { it.level == l }.maxOf(linesOf) }
     val cross = layout.levels.indices.map { l -> layout.nodes.filter { it.level == l }.maxOf(crossLinesOf) }
+    val cue = layout.levels.indices.map { l -> layout.nodes.filter { it.level == l }.maxOf(cueLinesOf) }
     val tops = (0 until layout.levels.size).runningFold(0f) { y, l ->
-        y + TOP_PAD_DP + NODE_DP + TEXT_GAP_DP + lineH * (lines[l] + cross[l]) + EDGE_GAP_DP
+        y + TOP_PAD_DP + NODE_DP + TEXT_GAP_DP + lineH * (lines[l] + cue[l] + cross[l]) + EDGE_GAP_DP
     }
-    return TreeMetrics(cellW, lineH, tops, lines, cross)
+    val own = layout.nodes.associate { it.skill.name to cueLinesOf(it) }.filterValues { it > 0 }
+    return TreeMetrics(cellW, lineH, tops, lines, cross, cue, own)
 }
 
 internal fun TreeMetrics.centreX(x: Float): Float = cellW * (x + 0.5f)
@@ -108,7 +116,7 @@ internal fun TreeMetrics.discCentre(n: PlacedSkill) = Pt(centreX(n.x), discTop(n
  * height, so the line is hidden behind its own text and emerges clean below it.
  */
 internal fun TreeLayout.nodeBottom(n: PlacedSkill, m: TreeMetrics): Float =
-    m.discBottom(n.level) + TEXT_GAP_DP + m.lineH * (m.levelLines[n.level] + if (n.skill.name in crossNeeds) m.crossLines[n.level] else 0)
+    m.discBottom(n.level) + TEXT_GAP_DP + m.lineH * (m.levelLines[n.level] + (m.nodeCue[n.skill.name] ?: 0) + if (n.skill.name in crossNeeds) m.crossLines[n.level] else 0)
 
 /** y of a technique's disc top, in dp from the top of the tree; null when it is not on this path. */
 internal fun TreeLayout.discTopOf(name: String, m: TreeMetrics): Float? =

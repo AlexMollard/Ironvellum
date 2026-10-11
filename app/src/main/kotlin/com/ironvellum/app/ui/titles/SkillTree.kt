@@ -33,7 +33,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -57,6 +58,9 @@ import com.ironvellum.app.ui.theme.ChakraPetch
 import com.ironvellum.app.ui.theme.DotShape
 import com.ironvellum.app.ui.theme.TileShape
 import com.ironvellum.app.ui.theme.IronvellumColors
+import com.ironvellum.app.ui.theme.METAL_WASH
+import com.ironvellum.app.ui.theme.Metal
+import com.ironvellum.app.ui.theme.emeraldRamp
 import com.ironvellum.app.ui.theme.inkBorder
 
 /** The node disc. Room around it is for the glow and the breathing ring. */
@@ -67,6 +71,9 @@ private val EdgeW = 2.dp
 
 /** The locked node ring: InkMuted, 3:1 against the page and dimmer than the open node. */
 internal val LockedDot = IronvellumColors.InkMuted
+
+/** The strength of a locked node's Iron ring. */
+private const val LOCKED_RING = 0.55f
 
 /** The locked node's fill, where its glyph has the least contrast. */
 internal val LockedRowBg = IronvellumColors.Vault
@@ -168,8 +175,27 @@ fun SkillTreeGraph(
                 } ?: 0)
             }
         }
-        val metrics = remember(layout, cellW, lineH, measured, measuredCross) {
-            treeMetrics(layout, cellW.value, lineH, crossLinesOf = { measuredCross.getValue(it.skill.name) }) {
+        // The visible progress line under an open node ("best 6/8 reps"): the same cue its description reads out.
+        val cues = remember(layout, mastered, best, bodyweightKg, female) {
+            layout.nodes.mapNotNull { n ->
+                val s = n.skill
+                if (s.name in mastered || !Skills.unlocked(s, mastered)) null
+                else SkillGuidance.progressCue(s, best[s.name], bodyweightKg, female)?.let { s.name to it }
+            }.toMap()
+        }
+        val measuredCue = remember(cues, cellW, uiDensity, crossStyle) {
+            val textW = with(uiDensity) { (cellW - LabelPad * 2).roundToPx() }.coerceAtLeast(1)
+            cues.mapValues { (_, cue) ->
+                measurer.measure(cue, crossStyle, constraints = Constraints(maxWidth = textW), maxLines = MAX_LABEL_LINES)
+                    .lineCount.coerceIn(1, MAX_LABEL_LINES)
+            }
+        }
+        val metrics = remember(layout, cellW, lineH, measured, measuredCross, measuredCue) {
+            treeMetrics(
+                layout, cellW.value, lineH,
+                crossLinesOf = { measuredCross.getValue(it.skill.name) },
+                cueLinesOf = { measuredCue[it.skill.name] ?: 0 },
+            ) {
                 measured.getValue(it.skill.name)
             }
         }
@@ -211,7 +237,7 @@ fun SkillTreeGraph(
                         if (i == 0) path.moveTo(c.p0.x * dp, c.p0.y * dp)
                         path.cubicTo(c.c1.x * dp, c.c1.y * dp, c.c2.x * dp, c.c2.y * dp, c.p3.x * dp, c.p3.y * dp)
                     }
-                    drawPath(path, edgeColor(e.to, mastered), style = Stroke(stroke, cap = StrokeCap.Round))
+                    drawPath(path, edgeBrush(e.to, mastered), style = Stroke(stroke, cap = StrokeCap.Round))
                 }
             }
 
@@ -240,6 +266,8 @@ fun SkillTreeGraph(
                         width = cellW,
                         lines = levelLines[node.level],
                         labelSize = labelSize,
+                        cue = cues[skill.name],
+                        cueLines = measuredCue[skill.name] ?: 0,
                         onClick = { onSelect(skill.name) },
                     )
                     // The marker room is always reserved, so the line leaving this node starts below it
@@ -277,12 +305,14 @@ private const val SCROLL_LEAD_DP = 16f
 /** Where the target lands in its page, as a share of the page's visible height from the top. */
 private const val UPPER_SHARE = 0.25f
 
-/** A line's colour from the dependant it leads to: gold once mastered, green when open, ink while locked. */
-private fun edgeColor(to: String, mastered: Set<String>): Color = when {
-    to in mastered -> IronvellumColors.SovereignGold.copy(alpha = 0.85f)
-    Skills.forName(to)?.let { Skills.unlocked(it, mastered) } == true ->
-        IronvellumColors.SystemGreen.copy(alpha = 0.85f)
-    else -> IronvellumColors.Bracket
+/**
+ * A line's brush from the dependant it leads to: the gold ramp once mastered, the emerald ramp when open, flat
+ * Bracket while locked. Drawn across the whole canvas, so every line is a slice of one diagonal gradient.
+ */
+private fun edgeBrush(to: String, mastered: Set<String>): Brush = when {
+    to in mastered -> Metal.Fabled.bounds(0.85f)
+    Skills.forName(to)?.let { Skills.unlocked(it, mastered) } == true -> emeraldRamp(0.85f)
+    else -> SolidColor(IronvellumColors.Bracket)
 }
 
 private fun edgeRank(to: String, mastered: Set<String>): Int = when {
@@ -327,6 +357,9 @@ private fun SkillNode(
     width: Dp,
     lines: Int,
     labelSize: TextUnit,
+    /** The visible "best 6/8 reps" line under an open node's name; its words are already in [description]. */
+    cue: String?,
+    cueLines: Int,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -360,21 +393,14 @@ private fun SkillNode(
                 Modifier
                     .size(NodeSize)
                     .clip(shape)
-                    .background(
-                        // Engraved art keeps one dark ground in every state, so the cream figure reads the
-                        // same on all of them; the state is the ring. A glyph node keeps its gold fill.
-                        when {
-                            artwork != null && state == NodeState.LOCKED -> LockedRowBg
-                            artwork != null -> IronvellumColors.Vault
-                            state == NodeState.MASTERED -> IronvellumColors.SovereignGold
-                            state == NodeState.NEXT -> IronvellumColors.Vault
-                            else -> LockedRowBg
-                        },
-                    )
+                    // One dark ground in every state, so the figure reads the same on all of them; the state is
+                    // the metal: a faint wash and a gradient ring, the gold ramp earned, emerald open, Iron locked.
+                    .background(if (state == NodeState.LOCKED) LockedRowBg else IronvellumColors.Vault)
+                    .then(if (state == NodeState.LOCKED) Modifier else Modifier.background(artBrush(art, METAL_WASH)))
                     .inkBorder(
-                        artRing(art),
+                        artBrush(art, if (state == NodeState.LOCKED) LOCKED_RING else 1f),
                         shape,
-                        if (state == NodeState.NEXT || (artwork != null && state == NodeState.MASTERED)) 3.dp else 1.5.dp,
+                        if (state == NodeState.LOCKED) 1.5.dp else 3.dp,
                     ),
                 contentAlignment = Alignment.Center,
             ) {
@@ -390,7 +416,7 @@ private fun SkillNode(
                     SkillGlyph(
                         family = glyphFamily(skill),
                         color = when (state) {
-                            NodeState.MASTERED -> MaterialTheme.colorScheme.onTertiary
+                            NodeState.MASTERED -> IronvellumColors.SovereignGold
                             NodeState.NEXT -> IronvellumColors.Ink
                             NodeState.LOCKED -> LockedGlyph
                         },
@@ -408,7 +434,7 @@ private fun SkillNode(
                         .size(20.dp)
                         .clip(DotShape)
                         .background(IronvellumColors.Abyss)
-                        .inkBorder(if (state == NodeState.MASTERED) IronvellumColors.SovereignGold else LockedDot, DotShape, 1.5.dp),
+                        .inkBorder(artBrush(art, if (state == NodeState.LOCKED) LOCKED_RING else 1f), DotShape, 1.5.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
@@ -458,6 +484,26 @@ private fun SkillNode(
                 .background(plateColour)
                 .padding(horizontal = LabelPad),
         )
+        // Quiet, on the page tone so the line passing under it never cuts the text.
+        if (cue != null) {
+            Text(
+                cue,
+                style = MaterialTheme.typography.labelSmall,
+                fontSize = CrossSize,
+                lineHeight = LabelLine,
+                letterSpacing = 0.sp,
+                color = IronvellumColors.InkMuted,
+                textAlign = TextAlign.Center,
+                maxLines = MAX_LABEL_LINES,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .widthIn(max = width)
+                    .heightIn(min = textH / 2 * cueLines)
+                    .clip(plate)
+                    .background(plateColour)
+                    .padding(horizontal = LabelPad),
+            )
+        }
     }
 }
 

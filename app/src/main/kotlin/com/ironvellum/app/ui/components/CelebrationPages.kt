@@ -421,7 +421,7 @@ internal fun LevelUpPage(
                 // The pulse as the old level runs out: one ring leaving the seal.
                 val p = phase(t, CROSS_AT, 900) { 1f - (1f - it) * (1f - it) }
                 if (t >= CROSS_AT && p < 1f) {
-                    inkArc(centre, radius * (1f + 0.7f * p), -90f, 360f, IronvellumColors.SovereignGold.copy(alpha = 0.5f * (1f - p)), 1.5.dp.toPx())
+                    inkArc(centre, radius * (1f + 0.7f * p), -90f, 360f, Metal.Fabled.bounds(0.5f * (1f - p)), 1.5.dp.toPx())
                 }
             }
             LevelRoll(levelUp.levelBefore, levelUp.levelAfter, phase(t, CROSS_AT, ROLL_MS, RollEasing::transform))
@@ -653,12 +653,19 @@ internal fun DeedSeal(t: Long, diameter: Dp) {
     ) {
         val centre = Offset(size.width / 2f, size.height / 2f)
         val unit = size.width / 132f
-        val gold = IronvellumColors.SovereignGold
-        inkArc(centre, 58f * unit, -90f, 360f * phase(t, 0, 600, FastOutSlowInEasing::transform), gold, 2.dp.toPx())
-        inkArc(centre, 48f * unit, -90f, 360f, gold.copy(alpha = 0.35f), 1.dp.toPx())
+        val gold = Metal.Fabled.bounds()
+        val ring = phase(t, 0, 600, FastOutSlowInEasing::transform)
+        drawOval(gold, Offset(centre.x - 58f * unit, centre.y - 58f * unit), Size(116f * unit, 116f * unit), alpha = METAL_WASH * ring, style = Fill)
+        inkArc(centre, 58f * unit, -90f, 360f * ring, gold, 2.dp.toPx())
+        inkArc(centre, 48f * unit, -90f, 360f, Metal.Fabled.bounds(0.35f), 1.dp.toPx())
         // The diamond is drawn edge by edge once the ring has closed.
         val corners = listOf(Offset(66f, 38f), Offset(82f, 66f), Offset(66f, 94f), Offset(50f, 66f), Offset(66f, 38f))
         val drawn = 4f * phase(t, 450, 400, FastOutSlowInEasing::transform)
+        val diamond = Path().apply {
+            corners.take(4).forEachIndexed { i, c -> if (i == 0) moveTo(c.x * unit, c.y * unit) else lineTo(c.x * unit, c.y * unit) }
+            close()
+        }
+        drawPath(diamond, gold, alpha = METAL_WASH * (drawn / 4f))
         for (i in 0 until 4) {
             val k = (drawn - i).coerceIn(0f, 1f)
             if (k <= 0f) continue
@@ -669,7 +676,7 @@ internal fun DeedSeal(t: Long, diameter: Dp) {
         }
         val p = phase(t, 750, 900) { 1f - (1f - it) * (1f - it) }
         if (t >= 750 && p < 1f) {
-            inkArc(centre, 58f * unit * (1f + 0.7f * p), -90f, 360f, gold.copy(alpha = 0.5f * (1f - p)), 1.5.dp.toPx())
+            inkArc(centre, 58f * unit * (1f + 0.7f * p), -90f, 360f, Metal.Fabled.bounds(0.5f * (1f - p)), 1.5.dp.toPx())
         }
     }
 }
