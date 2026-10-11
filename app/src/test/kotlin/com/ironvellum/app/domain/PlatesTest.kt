@@ -2,7 +2,6 @@ package com.ironvellum.app.domain
 
 import com.ironvellum.app.domain.PlateRack.Kind
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -96,13 +95,16 @@ class PlatesTest {
     }
 
     @Test
-    fun `loadable means the greedy fill reaches it, so every offered load can be drawn`() {
-        // 25 x1 and 15 x2 could make 30 a side as 15 + 15, but greedy takes the 25 first and strands 5.
+    fun `a build greedy would miss is still found, and every offered load can be drawn`() {
+        // 25 x1 and 15 x2 make 30 a side only as 15 + 15: greedy would take the 25 and strand 5.
         val rack = PlateRack(LoadUnit.KG, 20.0, mapOf(25.0 to 1, 15.0 to 2))
-        assertNull(rack.build(80.0))
-        assertFalse(80.0 in rack.loadable)
-        assertEquals(70.0, rack.nearestBelow(80.0)!!, 0.0)
-        assertEquals(Kind.BETWEEN, rack.read(80.0).kind)
+        assertEquals(listOf(15.0, 15.0), sides(rack, 80.0))
+        assertTrue(80.0 in rack.loadable)
+        assertEquals(Kind.EXACT, rack.read(80.0).kind)
+        // 35 a side is out of reach (25 + 15 = 40, 15 + 15 = 30), so 90 sits between 80 and 100.
+        assertNull(rack.build(90.0))
+        assertEquals(80.0, rack.nearestBelow(90.0)!!, 0.0)
+        assertEquals(100.0, rack.nearestAbove(90.0)!!, 0.0)
         rack.loadable.forEach { assertTrue("$it", rack.build(it) != null) }
     }
 

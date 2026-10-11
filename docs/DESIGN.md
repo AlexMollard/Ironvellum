@@ -148,8 +148,8 @@ the plates can make, a tappable bar row (a per-exercise bar), an iron line-art
 barbell drawn in the flat diagonal Iron gradient with a faint wash in each plate
 (no sheen), "25 + 15 kg a side", and, when the load falls between plates, the
 closest build below with "Use X" / "Use Y" for the loads either side. A load is
-loadable when the greedy fill (heaviest plate first, up to the pairs owned) reaches
-it exactly, so the drawing can always show what the sheet offers. The bar and the
+loadable when some choice of the pairs owned makes it exactly, heaviest plates
+tried first, so the drawing can always show what the sheet offers. The bar and the
 pairs live under Armoury, "Bar and plates", once Barbell is ticked; kg and lb each
 keep their own set (lb: a 45 lb bar, 45 / 35 / 25 / 10 / 5 / 2.5 lb plates).
 

@@ -6,10 +6,9 @@ import kotlin.math.roundToInt
  * What a barbell can be loaded with: a bar and pairs of plates, in one unit. All sums are kept in
  * hundredths of that unit as integers, so 1.25 steps never meet float noise.
  *
- * A load is "loadable" when the greedy fill (heaviest plate first, up to the pairs owned) lands on
- * it exactly. That is what the drawing shows, so the sheet only ever offers builds it can draw.
- * Greedy can miss a build a person would find by hand (25 x1 and 15 x2 reach 30 a side only as
- * 15 + 15), which is why loadability asks the greedy fill rather than the plate list.
+ * A load is "loadable" when some choice of the pairs owned makes it exactly. The search tries the
+ * heaviest plates first, so the build is the one a lifter would load (the greedy one whenever greedy
+ * works), yet it still finds 30 a side as 15 + 15 from 25 x1 and 15 x2, where greedy strands 5.
  */
 class PlateRack(val unit: LoadUnit, val bar: Double, pairs: Map<Double, Int>) {
 
@@ -48,7 +47,7 @@ class PlateRack(val unit: LoadUnit, val bar: Double, pairs: Map<Double, Int>) {
     /** How far apart neighbouring loads sit at the light end: a pair of the smallest plate. */
     val step: Double? get() = smallest?.let { it * 2 }
 
-    /** Every load the greedy fill reaches exactly, bar first, in the unit. */
+    /** Every load the plates make exactly, bar first, in the unit. */
     val loadable: List<Double> by lazy {
         val maxSide = (heaviestH() - barH) / 2
         (0..maxSide / gridH).mapNotNull { j ->
@@ -89,16 +88,28 @@ class PlateRack(val unit: LoadUnit, val bar: Double, pairs: Map<Double, Int>) {
 
     private fun heaviestH() = hundredths(heaviest)
 
-    /** Greedy fill of [sideH] hundredths: the plates taken and what is left over. */
+    /**
+     * One side of [sideH] hundredths: the plates taken, heaviest first, and 0 left over; or no plates
+     * and [sideH] left when nothing makes it. Each size is tried at its most pairs first, so the first
+     * build found is the heaviest-first one. A rack has at most seven sizes, so the search is tiny.
+     */
     private fun fill(sideH: Int): Pair<List<Int>, Int> {
-        var rest = sideH
-        val taken = ArrayList<Int>()
-        for (i in sizesH.indices) {
-            val n = minOf(countsH[i], rest / sizesH[i])
-            repeat(n) { taken += sizesH[i] }
-            rest -= n * sizesH[i]
+        val counts = IntArray(sizesH.size)
+        // What every size from i down can still add, to drop branches that cannot reach the target.
+        val reach = IntArray(sizesH.size + 1)
+        for (i in sizesH.indices.reversed()) reach[i] = reach[i + 1] + sizesH[i] * countsH[i]
+        fun search(i: Int, rest: Int): Boolean {
+            if (rest == 0) return true
+            if (i == sizesH.size || reach[i] < rest) return false
+            for (n in minOf(countsH[i], rest / sizesH[i]) downTo 0) {
+                counts[i] = n
+                if (search(i + 1, rest - n * sizesH[i])) return true
+            }
+            counts[i] = 0
+            return false
         }
-        return taken to rest
+        if (!search(0, sideH)) return emptyList<Int>() to sideH
+        return sizesH.indices.flatMap { i -> List(counts[i]) { sizesH[i] } } to 0
     }
 
     companion object {
