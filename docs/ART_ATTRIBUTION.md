@@ -101,3 +101,7 @@ Empty-state art must swap as a set, or one screen keeps the old style.
 No artwork needs third-party credit. The only bundled third-party asset is the
 Chakra Petch font (SIL Open Font License 1.1), credited in `NOTICE` and on the
 app's Support/About screen.
+
+## README store badges
+
+`docs/images/badge_fdroid.png` is F-Droid's official "Get it on F-Droid" badge (fdroid.gitlab.io/artwork) and `docs/images/badge_obtainium.png` is Obtainium's badge (`assets/graphics/badge_obtainium.png` in ImranR98/Obtainium), copied as their projects ask. They appear only in the README and are not shipped in the app.
