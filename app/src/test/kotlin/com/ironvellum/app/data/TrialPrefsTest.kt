@@ -2,6 +2,7 @@ package com.ironvellum.app.data
 
 import android.content.SharedPreferences
 import com.ironvellum.app.domain.RestAlert
+import com.ironvellum.app.domain.SetClock
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -49,6 +50,20 @@ class TrialPrefsTest {
         }
         assertEquals(RestAlert.VIBRATE, RestAlert.fromWire("shout"))
         assertEquals(RestAlert.VIBRATE, RestAlert.fromWire(null))
+    }
+
+    @Test
+    fun `a cue plays what the alert mode allows and silent plays nothing`() {
+        val tick = SetClock.Cue.TICK
+        val done = SetClock.Cue.DONE
+        RestAlert.entries.forEach { assertEquals(RestAlert.CuePlan(0, 0), it.cuePlan(SetClock.Cue.NONE)) }
+        assertEquals(RestAlert.CuePlan(0, 0), RestAlert.SILENT.cuePlan(tick))
+        assertEquals(RestAlert.CuePlan(0, 0), RestAlert.SILENT.cuePlan(done))
+        assertEquals("vibrate buzzes and makes no sound", 0, RestAlert.VIBRATE.cuePlan(tick).toneMs)
+        assertTrue(RestAlert.VIBRATE.cuePlan(tick).buzzMs > 0)
+        assertTrue(RestAlert.SOUND_VIBRATE.cuePlan(tick).toneMs > 0 && RestAlert.SOUND_VIBRATE.cuePlan(tick).buzzMs > 0)
+        assertTrue("the end is longer than a tick", RestAlert.VIBRATE.cuePlan(done).buzzMs > RestAlert.VIBRATE.cuePlan(tick).buzzMs)
+        assertTrue(RestAlert.SOUND_VIBRATE.cuePlan(done).toneMs > RestAlert.SOUND_VIBRATE.cuePlan(tick).toneMs)
     }
 
     @Test

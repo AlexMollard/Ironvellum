@@ -87,6 +87,7 @@ Settings keeps the name **Settings**.
 | **Rest timer** | The countdown between sets, to the movement's ready time (the window's max is only a soft ceiling). It can be off for every movement (Settings, DURING A TRIAL) or for one movement (its rite, or its menu in the trial). Rest *between sets* stays plain | "Rest timer", "No rest timer", "Skip rest", "+15", "Rest is over" | cooldown, break, recovery |
 | **Rest alert** | How a rest's end is announced: Vibrate, Sound + vibrate or Silent. The same choice cues the last 3 seconds of a timed set | "WHEN A REST ENDS", "Vibrate", "Sound + vibrate", "Silent" | notification sound, ringtone |
 | **Pocket lock** | A dim cover over the live trial that shows only the rest countdown or the set in hand, and ignores touches until a long hold. The trial keeps running underneath | "Lock the screen", "Hold to unlock", "Unlock the trial" (the TalkBack action) | screen lock, lock mode, kiosk |
+| **Timed set** | A hold or duration set done against a countdown on its row (Start, Pause, Finish); a distance run has a stopwatch (Start stopwatch, Stop) that fills its time. The last 3 seconds and the end cue as the rest alert allows | "Start", "Pause", "Resume", "Finish", "Start stopwatch", "Stop", "LEFT", "ELAPSED" | timer set, interval |
 | **Note** | Free text on a trial or rite | "PRIVATE NOTE", "NOTE · shared with allies", "PUBLIC NOTE" | field note, sealed note, mantra |
 
 ## Codex

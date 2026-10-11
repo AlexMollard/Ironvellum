@@ -162,6 +162,16 @@ stays awake for the whole live trial unless Settings (DURING A TRIAL) turns that
 Logging a set gives a `Confirm` haptic and every stepper press a `SegmentTick`, both
 through `LocalHapticFeedback`, so the system's own haptics setting decides.
 
+**Timed set control.** Under the steppers of the active set of a hold or a duration,
+one line: the time left in ChakraPetch bold 22sp (`Ink` while it runs, `InkMuted`
+while idle or paused), a "LEFT" caption, and plain text actions (Start, then Pause and
+Finish; Resume after a pause). A countdown that reaches zero logs the set at its target;
+Finish logs the time actually held. A distance run shows "ELAPSED" and one Start
+stopwatch / Stop action: Stop fills the time and leaves the set for the lifter to tick.
+Ticks on 3, 2 and 1 and a longer cue at 0 follow the rest alert (Vibrate, Sound +
+vibrate or Silent). Its clock is `domain/SetClock.kt`, on the monotonic clock and held
+by the view model. There is no timed control in an amendment.
+
 **Stepper.** Label (labelSmall, `InkMuted`) above a value with plain − and +
 glyph buttons (44dp targets, no borders). Tapping the value types it.
 

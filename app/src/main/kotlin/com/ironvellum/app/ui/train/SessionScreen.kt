@@ -137,6 +137,8 @@ import com.ironvellum.app.data.Repository
 import com.ironvellum.app.data.cloud.CloudSyncWorker
 import com.ironvellum.app.data.cloud.WireLimits
 import com.ironvellum.app.domain.PlannedEntry
+import com.ironvellum.app.domain.RestAlert
+import com.ironvellum.app.domain.SetClock
 import com.ironvellum.app.domain.SetKind
 import com.ironvellum.app.domain.WarmupRamp
 import com.ironvellum.app.domain.Exercise
@@ -362,6 +364,18 @@ class SessionViewModel(
 
     private val actions = LiveTrialActions(repo, appContext, sessionId)
 
+    /**
+     * The clocks running on timed sets, by set id. Held here, not in the row, so a card folding
+     * or the screen turning does not stop a hold being timed. In memory only: a trial reopened
+     * after the process died starts its timers fresh.
+     */
+    private val _clocks = MutableStateFlow<Map<Long, SetClock>>(emptyMap())
+    val clocks: StateFlow<Map<Long, SetClock>> = _clocks
+
+    fun setClock(setId: Long, clock: SetClock?) {
+        _clocks.value = if (clock == null) _clocks.value - setId else _clocks.value + (setId to clock)
+    }
+
     fun extendRest() = RestClock.extend(sessionId)
 
     fun shortenRest() = RestClock.shorten(sessionId)
@@ -577,6 +591,7 @@ fun SessionScreen(
     val lastNotes by viewModel.lastNotes.collectAsStateWithLifecycle()
     val reasons by viewModel.reasons.collectAsStateWithLifecycle()
     val rest by viewModel.rest.collectAsStateWithLifecycle()
+    val clocks by viewModel.clocks.collectAsStateWithLifecycle()
     var confirmAbandon by remember { mutableStateOf(false) }
     var confirmClaim by remember { mutableStateOf(false) }
     var confirmReopen by remember { mutableStateOf(false) }
@@ -744,9 +759,11 @@ fun SessionScreen(
         if (!claiming && completion == null) slideReset++
     }
 
-    fun logActive() {
+    // [seconds] is a timed set's figure when its clock logged it; otherwise the set's own.
+    fun logActive(seconds: Int? = null) {
         val set = activeSet ?: return
-        commit(set.copy(done = true))
+        commit(set.copy(durationSec = seconds ?: set.durationSec, done = true))
+        viewModel.setClock(set.id, null)
         undoSerial++
         undo = UndoPrompt.Logged(undoSerial, set.id, set.workingNumber(ui.sets))
         // The card moves on once its last set is logged.
@@ -909,6 +926,11 @@ fun SessionScreen(
                                 },
                                 onPlates = if (GearRequirements.isBarbellLift(first.exerciseName)) ({ platesFor = block.id }) else null,
                                 onEdit = ::commit,
+                                timed = true,
+                                clocks = clocks,
+                                timedAlert = trialPrefs.restAlert,
+                                onClock = viewModel::setClock,
+                                onTimedLog = { seconds -> logActive(seconds) },
                                 onTypeLoad = { editLoadFor = it },
                                 onTypeFigure = { set, kind -> typing = set to kind },
                                 onToggleEdit = { set -> editingSetId = if (editingSetId == set.id) null else set.id },
@@ -1843,6 +1865,13 @@ internal fun OpenExerciseCard(
     onLog: (SessionSet) -> Unit = {},
     footer: (@Composable () -> Unit)? = null,
     onPlates: (() -> Unit)? = null,
+    /** The live trial only: the active timed set gets a countdown or a stopwatch. An amendment has none. */
+    timed: Boolean = false,
+    clocks: Map<Long, SetClock> = emptyMap(),
+    timedAlert: RestAlert = RestAlert.DEFAULT,
+    onClock: (setId: Long, SetClock?) -> Unit = { _, _ -> },
+    /** Logs the active set with the seconds its countdown ended on. */
+    onTimedLog: (seconds: Int) -> Unit = {},
 ) {
     val first = block.first
     val shape = MaterialTheme.shapes.medium
@@ -1981,6 +2010,11 @@ internal fun OpenExerciseCard(
                     onRemove = { onRemoveSet(set) },
                     amend = amend,
                     onLog = { onLog(set) },
+                    timed = timed,
+                    clock = clocks[set.id],
+                    timedAlert = timedAlert,
+                    onClock = { onClock(set.id, it) },
+                    onTimedLog = onTimedLog,
                 )
             }
         }
@@ -2091,6 +2125,11 @@ private fun TrialSetRow(
     onRemove: () -> Unit,
     amend: Boolean = false,
     onLog: () -> Unit = {},
+    timed: Boolean = false,
+    clock: SetClock? = null,
+    timedAlert: RestAlert = RestAlert.DEFAULT,
+    onClock: (SetClock?) -> Unit = {},
+    onTimedLog: (seconds: Int) -> Unit = {},
 ) {
     if (state == RowState.ACTIVE || state == RowState.EDITING) {
         val figures = figuresFor(set, metric, weighted)
@@ -2132,6 +2171,20 @@ private fun TrialSetRow(
                         modifier = Modifier.weight(1f),
                     )
                 }
+            }
+            // A hold or duration counts down to its figure and a distance run has a stopwatch;
+            // only on the set in hand, and only in the live trial.
+            if (timed && state == RowState.ACTIVE && (SetClock.countsDown(metric) || SetClock.countsUp(metric))) {
+                TimedSetControl(
+                    metric = metric,
+                    targetSec = set.durationSec ?: 0,
+                    clock = clock,
+                    alert = timedAlert,
+                    onClock = onClock,
+                    onLog = onTimedLog,
+                    onFill = { seconds -> onEdit(set.copy(durationSec = seconds)) },
+                    modifier = Modifier.padding(start = 36.dp, end = 4.dp),
+                )
             }
             if (state == RowState.EDITING) {
                 Row(Modifier.fillMaxWidth().padding(start = 22.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -2318,7 +2371,7 @@ private fun GradeField(value: String, onChange: (String) -> Unit, modifier: Modi
 }
 
 @Composable
-private fun RowAction(label: String, color: Color, onClick: () -> Unit) {
+internal fun RowAction(label: String, color: Color, onClick: () -> Unit) {
     Box(
         Modifier
             .heightIn(min = 48.dp)
