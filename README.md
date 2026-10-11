@@ -133,7 +133,7 @@ Optional, and only with an account.
 - Everything is stored on the phone first.
 - Export a full JSON archive or a CSV of your trials, and import the archive
   again.
-- Import trials from a Strong or Hevy CSV.
+- Import trials from a Strong, Hevy or FitNotes CSV.
 - Delete your cloud account from inside the app at any time.
 
 ## Install

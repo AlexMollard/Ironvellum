@@ -1,13 +1,15 @@
 package com.ironvellum.app.domain
 
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.OffsetDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * Reads a Strong or Hevy CSV export (one row per set, workout fields repeated
- * on every row) into [ParsedImport].
+ * Reads a Strong, Hevy or FitNotes CSV export (one row per set) into
+ * [ParsedImport]. Strong and Hevy repeat the workout fields on every row;
+ * FitNotes has none, so a date is a workout.
  *
  * Formats are evidence-based, not guessed:
  * - Strong header `Date,Workout Name,Duration,Exercise Name,Set Order,Weight,
@@ -24,12 +26,29 @@ import java.time.format.DateTimeFormatter
  *   verified against github.com/matanabudy/workout-data-sync's sample export
  *   and the Hevy help centre. Hevy's paired kg/lb columns are BOTH parsed,
  *   preferring the kg one.
+ * - FitNotes (Android) header `Date,Exercise,Category,Weight,Weight Unit,Reps,
+ *   Distance,Distance Unit,Time[,Comment]`, built by the app's own exporter
+ *   (decompiled FitNotes 25.1, class Z0.c, in github.com/stoyanov-x/fitnotes-research;
+ *   real files: github.com/LiamMorrow/LiftLog tests/csv-import-test-files/
+ *   fitnotes-android-export-{kgs,lbs-edge-cases}.csv, github.com/douglastkaiser/
+ *   kaiserlift tests/example_use). `Comment` exists only when the lifter ticks
+ *   "Include comments in export". Date is `2019-07-01` (no time of day); the
+ *   weight unit rides on EVERY row (`kgs` / `lbs`) and is blank when the
+ *   exercise has no weight; `Distance Unit` is m / km / ft / mi; `Time` is
+ *   a duration, `H:MM:SS`, e.g. `0:00:30`. Cells a movement does not
+ *   use are blank. There is no workout name, id or set number: all rows of one
+ *   Date are one workout, sets in file order. Older files (pumpR's 2015
+ *   exports, github.com/magnusnissel/pumpR) carry the unit in the header,
+ *   `Weight (kgs)`, and the FitNotes iOS importer's documented spec
+ *   (getfitnotes.com/docs/migrate-from-other-apps.html) uses `Weight (kg)` +
+ *   `Weight (lbs)` columns, `Notes` for comments and yd/cm/in distance units;
+ *   all three shapes are read. Self-describing like Hevy, so no unit question.
  *
  * Pure Kotlin: parsing runs off the main thread and must stay unit-testable.
  */
 object CsvWorkoutReader {
 
-    enum class Source { STRONG, HEVY }
+    enum class Source { STRONG, HEVY, FITNOTES }
 
     enum class WeightUnit { KG, LB }
 
@@ -69,7 +88,7 @@ object CsvWorkoutReader {
         val workouts: List<ParsedWorkout>,
         /**
          * Strong only: the unit the file's Weight column was read as. Null for
-         * Hevy, whose files self-describe. The review step shows the guess.
+         * Hevy and FitNotes, whose files self-describe. The review step shows the guess.
          */
         val units: WeightUnit?,
         val problems: List<Problem>,
@@ -143,13 +162,18 @@ object CsvWorkoutReader {
             header.firstOrNull()?.equals("title", true) == true &&
                 header.any { it.equals("exercise_title", true) } ->
                 readHevy(rows)
+            header.firstOrNull()?.equals("Date", true) == true &&
+                header.any { it.equals("Exercise", true) } &&
+                header.any { it.equals("Category", true) } &&
+                header.any { it.startsWith("Weight", true) } ->
+                readFitNotes(rows)
             else -> ParsedImport(
                 Source.STRONG,
                 emptyList(),
                 null,
                 listOf(
                     unrelated(
-                        "This file is not a Strong or Hevy export. Expected a header row " +
+                        "This file is not a Strong, Hevy or FitNotes export. Expected a header row " +
                             "starting with \"Date\" or \"title\" — found " +
                             "\"${header.take(3).joinToString(", ")}\".",
                     ),
@@ -341,6 +365,108 @@ object CsvWorkoutReader {
         val mon = HEVY_MONTHS[monName.take(3).lowercase()] ?: return null
         return LocalDateTime.of(y.toInt(), mon, d.toInt(), hh.toInt(), mm.toInt())
             .atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    }
+
+    // ---------------------------------------------------------------- FitNotes
+
+    /** Metres per FitNotes distance unit; the first four are what the app writes, the rest the iOS spec. */
+    private val FITNOTES_DISTANCE_M = mapOf(
+        "m" to 1.0, "km" to 1000.0, "ft" to 0.3048, "mi" to 1609.344,
+        "yd" to 0.9144, "cm" to 0.01, "in" to 0.0254,
+    )
+
+    private fun readFitNotes(rows: List<List<String>>): ParsedImport {
+        val header = rows.first().map { it.trim() }
+        val col = header.associate { it.lowercase() to header.indexOf(it) }
+        val problems = mutableListOf<Problem>()
+        // `Weight` / `Weight (kgs)` / iOS `Weight (kg)` + `Weight (lbs)`; never `Weight Unit`.
+        val weightCols = header.indices.filter {
+            val h = header[it].lowercase()
+            h.startsWith("weight") && !h.contains("unit")
+        }
+        val commentCol = col["comment"] ?: col["notes"]
+        var unreadableUnits = 0
+
+        val days = LinkedHashMap<LocalDate, MutableList<ParsedSet>>()
+        val setCount = HashMap<Pair<LocalDate, String>, Int>()
+        rows.drop(1).forEachIndexed { rowNo, row ->
+            fun str(name: String) = col[name.lowercase()]?.let { row.getOrNull(it) }?.trim() ?: ""
+            val dateStr = str("Date")
+            val date = runCatching { LocalDate.parse(dateStr) }.getOrNull() ?: run {
+                problems += Problem("Row ${rowNo + 2}: unreadable date \"$dateStr\" — skipped.")
+                return@forEachIndexed
+            }
+            val name = str("Exercise")
+            if (name.isEmpty()) {
+                problems += Problem("Row ${rowNo + 2}: no exercise name — skipped.")
+                return@forEachIndexed
+            }
+
+            // The unit is the header's (`kgs`, `lbs`) or, in the current export, this row's own.
+            val weightCol = weightCols.firstOrNull { row.getOrNull(it)?.trim()?.toDoubleOrNull() != null }
+            val weightKg = weightCol?.let { c ->
+                val factor = fitNotesWeightFactor(header[c]) ?: fitNotesWeightFactor(str("Weight Unit"))
+                if (factor == null) unreadableUnits++
+                factor?.let { round3(row[c].trim().toDouble() * it) }
+            }
+            val distance = str("Distance").toDoubleOrNull()?.takeIf { it > 0.0 }
+            val distanceM = distance?.let { d ->
+                val metres = FITNOTES_DISTANCE_M[str("Distance Unit").lowercase()]
+                if (metres == null) unreadableUnits++
+                metres?.let { round3(d * it) }
+            }
+
+            val index = (setCount[date to name] ?: 0) + 1
+            setCount[date to name] = index
+            days.getOrPut(date) { mutableListOf() } += ParsedSet(
+                exerciseName = name,
+                setIndex = index,
+                reps = str("Reps").toDoubleOrNull()?.toInt() ?: 0,
+                weightKg = weightKg,
+                distanceM = distanceM,
+                durationSec = parseFitNotesTime(str("Time")),
+                setType = "normal",
+                rpe = null,
+                // A set's comment rides its set, as Strong's `Notes` do.
+                notes = commentCol?.let { row.getOrNull(it) }?.trim() ?: "",
+            )
+        }
+        if (unreadableUnits > 0) {
+            problems += Problem("$unreadableUnits weight or distance values had no readable unit and were left out.")
+        }
+
+        val zone = ZoneId.systemDefault()
+        val workouts = days.map { (date, sets) ->
+            ParsedWorkout(
+                label = "FitNotes workout",
+                // The file has a date and no time of day; midday keeps it on that
+                // date in the device zone and is stable across re-imports.
+                startedAtMs = date.atTime(12, 0).atZone(zone).toInstant().toEpochMilli(),
+                completedAtMs = null,
+                notes = "",
+                sets = sets,
+            )
+        }
+        return ParsedImport(Source.FITNOTES, workouts, null, problems)
+    }
+
+    /** kg multiplier for a header or `Weight Unit` cell mentioning kgs or lbs, else null. */
+    private fun fitNotesWeightFactor(label: String): Double? {
+        val s = label.lowercase()
+        return when {
+            s.contains("kg") -> 1.0
+            s.contains("lb") -> LB_TO_KG
+            else -> null
+        }
+    }
+
+    /** `0:00:30`, `25:30` or plain seconds; null when blank, malformed or zero. */
+    fun parseFitNotesTime(raw: String): Int? {
+        val s = raw.trim()
+        if (s.isEmpty()) return null
+        val parts = s.split(':').map { it.toIntOrNull() ?: return null }
+        if (parts.size > 3) return null
+        return parts.fold(0) { acc, p -> acc * 60 + p }.takeIf { it > 0 }
     }
 
     /**

@@ -2915,7 +2915,7 @@ class Repository(
     }
 
     /**
-     * APPENDS parsed Strong/Hevy history to the lifter's log. This is the one
+     * APPENDS parsed Strong/Hevy/FitNotes history to the lifter's log. This is the one
      * import path that clears nothing: pre-existing sessions, presets, stats
      * and titles are untouched, and [importArchive] (a destructive replace) is
      * never involved.

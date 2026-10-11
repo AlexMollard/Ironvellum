@@ -107,7 +107,7 @@ class CsvWorkoutReaderTest {
         assertTrue(parsed.workouts.isEmpty())
         assertTrue(parsed.problems.isNotEmpty())
         assertTrue(
-            parsed.problems.first().message.contains("not a Strong or Hevy export"),
+            parsed.problems.first().message.contains("not a Strong, Hevy or FitNotes export"),
         )
     }
 

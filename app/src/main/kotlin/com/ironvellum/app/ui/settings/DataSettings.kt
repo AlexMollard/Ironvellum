@@ -110,7 +110,7 @@ internal fun DataSettings(viewModel: SettingsViewModel, onBack: () -> Unit) {
             InkDivider()
             ListRow(
                 "Import from another app",
-                subline = "Adds trials from a Strong or Hevy CSV export.",
+                subline = "Adds trials from a Strong, Hevy or FitNotes CSV export.",
                 onClick = {
                     csvLauncher.launch(CSV_MIME_TYPES)
                 },

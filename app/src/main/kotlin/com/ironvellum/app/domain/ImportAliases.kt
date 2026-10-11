@@ -1,8 +1,8 @@
 package com.ironvellum.app.domain
 
 /**
- * Curated map from Strong/Hevy default exercise names to Ironvellum's seed
- * catalogue names.
+ * Curated map from Strong/Hevy/FitNotes default exercise names to Ironvellum's
+ * seed catalogue names.
  *
  * Matching order in [resolve]:
  *  1. exact / NOCASE match against the catalogue (Strong's `Bench Press
@@ -13,7 +13,7 @@ package com.ironvellum.app.domain
  */
 object ImportAliases {
 
-    /** Equipment suffixes Strong and Hevy append to default names. */
+    /** Equipment suffixes Strong and Hevy append to default names (FitNotes names carry none). */
     private val EQUIPMENT_SUFFIX = Regex(
         "\\s*\\((?:Barbell|Dumbbell|Machine|Cable|Cable - Straight Bar|Smith Machine|" +
             "Bodyweight|Leverage Machine|Lever Machine|Assisted|Weighted|Band|Kettlebell)\\)\\s*$",
@@ -132,6 +132,48 @@ object ImportAliases {
         "back lever" to "Back Lever",
         "inverted row" to "Inverted Row",
         "army press" to "Overhead Press",
+        // FitNotes defaults (the built-in list of FitNotes 25.1, decompiled in
+        // github.com/stoyanov-x/fitnotes-research, class X.w). Only those with
+        // a real counterpart in Seed.kt; the rest go to review.
+        "seated dumbbell press" to "Dumbbell Shoulder Press",
+        "lateral dumbbell raise" to "Lateral Raise",
+        "front dumbbell raise" to "Front Raise",
+        "rear delt dumbbell raise" to "Reverse Fly",
+        "hammer strength shoulder press" to "Machine Shoulder Press",
+        "arnold dumbbell press" to "Arnold Press",
+        "cable face pull" to "Face Pull",
+        "close grip barbell bench press" to "Close-Grip Bench Press",
+        "rope push down" to "Triceps Pushdown",
+        "v-bar push down" to "Triceps Pushdown",
+        "parallel bar triceps dip" to "Dip",
+        "cable overhead triceps extension" to "Overhead Cable Extension",
+        "barbell curl" to "Bicep Curl",
+        "ez-bar curl" to "Bicep Curl",
+        "dumbbell curl" to "Bicep Curl",
+        "dumbbell hammer curl" to "Hammer Curl",
+        "ez-bar preacher curl" to "Preacher Curl",
+        "dumbbell preacher curl" to "Preacher Curl",
+        "flat barbell bench press" to "Bench Press",
+        "flat dumbbell bench press" to "Dumbbell Bench Press",
+        "incline barbell bench press" to "Incline Bench Press",
+        "incline dumbbell bench press" to "Incline Dumbbell Press",
+        "flat dumbbell fly" to "Dumbbell Fly",
+        "cable crossover" to "Cable Fly",
+        "seated machine fly" to "Pec Deck",
+        "hammer strength row" to "Machine Row",
+        "barbell squat" to "Back Squat",
+        "barbell front squat" to "Front Squat",
+        "leg extension machine" to "Leg Extension",
+        "seated leg curl machine" to "Seated Leg Curl",
+        "lying leg curl machine" to "Lying Leg Curl",
+        "standing calf raise machine" to "Standing Calf Raise",
+        "seated calf raise machine" to "Seated Calf Raise",
+        "ab-wheel rollout" to "Ab Wheel Rollout",
+        "rowing machine" to "Rowing",
+        "running (outdoor)" to "Running",
+        "running (treadmill)" to "Treadmill",
+        "stationary bike" to "Indoor Cycling",
+        "elliptical trainer" to "Elliptical",
     )
 
     /** Strips a Strong/Hevy equipment suffix; `"Bench Press (Barbell)"` -> `"Bench Press"`. */
