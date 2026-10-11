@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.stats
 
+import com.ironvellum.app.data.Units
 import com.ironvellum.app.ui.settings.SettingsSection
 import com.ironvellum.app.domain.fmt
 import androidx.compose.ui.text.font.FontWeight
@@ -447,11 +448,11 @@ private fun LiftRecordsPanel(records: List<LiftRecord>, nowMs: Long, onOpenLift:
         records.forEachIndexed { i, record ->
             if (i > 0) InkDivider()
             // The board is a glance; the lift's whole history is on Exercises.
-            val change = record.deltaKg?.let { "${Ledger.signed(it, "kg")} / 90d" }
+            val change = record.deltaKg?.let { "${Ledger.signed(Units.amount(it), Units.name)} / 90d" }
             val fresh = LiftRecords.isFresh(record, nowMs)
             ListRow(
                 label = record.name,
-                value = "%.1f kg".format(Locale.US, record.bestE1rmKg),
+                value = Units.fixed(record.bestE1rmKg, 1),
                 subline = if (fresh) listOfNotNull("New peak", change).joinToString(" \u00B7 ") else change,
                 sublineColor = if (fresh) IronvellumColors.SovereignGold else IronvellumColors.InkMuted,
                 onClickLabel = "Open ${record.name}",

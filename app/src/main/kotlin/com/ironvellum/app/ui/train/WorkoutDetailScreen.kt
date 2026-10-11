@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.data.Units
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -91,7 +92,6 @@ import com.ironvellum.app.ui.components.SectionHeader
 import com.ironvellum.app.ui.components.ShareCardDialog
 import com.ironvellum.app.ui.components.deedPages
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.components.formatLoadKg
 import com.ironvellum.app.ui.components.metricTotals
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.components.setFigure
@@ -426,6 +426,7 @@ fun WorkoutDetailScreen(
                         targets = shareTargets,
                         exerciseNotes = exerciseNotes,
                         includeNotes = includeNotes,
+                        unit = Units.current,
                     )
                 },
                 hasNotes = exerciseNotes.isNotEmpty(),
@@ -808,7 +809,7 @@ private fun SetLine(label: String, text: String, muted: Boolean) {
 private fun setText(set: SessionSet, metric: ExerciseMetric, hold: Boolean, weighted: Boolean): String {
     val kg = set.weightKg ?: 0.0
     return when {
-        hold -> "${set.durationSec ?: set.reps}s" + if (kg > 0.0) " × ${formatLoadKg(kg)} kg" else ""
+        hold -> "${set.durationSec ?: set.reps}s" + if (kg > 0.0) " × ${Units.withUnit(kg)}" else ""
         metric == ExerciseMetric.ATTEMPTS_GRADE ->
             // The grade is the climb's identity; the weight slot is not (a boulder problem carries no load).
             "${set.reps} ${plural(set.reps, "attempt", "attempts")}" + set.grade?.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty()
@@ -816,7 +817,7 @@ private fun setText(set: SessionSet, metric: ExerciseMetric, hold: Boolean, weig
         metric == ExerciseMetric.DURATION -> setFigure(metric, set.reps, set.durationSec, null).figure
         // A barbell lift with no load is unset, not bodyweight.
         weighted && kg <= 0.0 -> "${set.reps} reps"
-        kg > 0.0 -> "${formatLoadKg(kg)} kg × ${set.reps}"
+        kg > 0.0 -> "${Units.withUnit(kg)} × ${set.reps}"
         else -> "${set.reps} reps"
     }
 }

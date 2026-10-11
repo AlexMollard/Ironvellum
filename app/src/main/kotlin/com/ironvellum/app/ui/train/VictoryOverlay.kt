@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.data.Units
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -381,7 +382,7 @@ private fun totalsLine(totals: WorkoutShare.Totals): String = buildList {
     add("${count(totals.sets)} ${if (totals.sets == 1) "set" else "sets"}")
     if (totals.reps > 0) add("${count(totals.reps)} reps")
     if (totals.heldSeconds > 0) add("${count(totals.heldSeconds)} s held")
-    if (totals.movedKg > 0) add("${count(totals.movedKg)} kg moved")
+    if (totals.movedKg > 0) add("${count(Units.whole(totals.movedKg.toDouble()).toInt())} ${Units.name} moved")
 }.joinToString(" · ")
 
 /** The best peak as the hero, and any others as quiet rows under it. */
@@ -489,7 +490,7 @@ internal fun peakGain(peak: SessionPeaks.Peak): String {
     val load = (peak.weightKg ?: 0.0) - (peak.was.weightKg ?: 0.0)
     return when {
         peak.isHold && peak.figure > peak.was.reps -> "+${peak.figure - peak.was.reps}s"
-        !peak.isHold && peak.weightKg != null && load > 0.001 -> "+" + (if (load == load.toLong().toDouble()) load.toLong().toString() else "%.1f".fmt(load)) + " kg"
+        !peak.isHold && peak.weightKg != null && load > 0.001 -> "+" + Units.withUnit(load)
         !peak.isHold && peak.figure > peak.was.reps -> "+${peak.figure - peak.was.reps} reps"
         else -> "+" + "%.1f".fmt(peak.deltaScore)
     }

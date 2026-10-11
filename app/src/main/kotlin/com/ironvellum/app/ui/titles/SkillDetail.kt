@@ -1,5 +1,8 @@
 package com.ironvellum.app.ui.titles
 
+import com.ironvellum.app.domain.Loads
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.data.Units
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -169,7 +172,7 @@ fun SkillDetailSheet(
             cleared -> "standard cleared"
             // Reps alone cannot judge a bodyweight-multiple bar.
             !SkillGuidance.judgeable(skill, bodyweightKg, female) -> "check the load yourself"
-            bestOverall >= skill.target && needKg != null -> "needs ${if (added) "+" else ""}${formatLoad(needKg)}kg"
+            bestOverall >= skill.target && needKg != null -> "needs ${if (added) "+" else ""}${formatLoad(needKg)}${Units.name}"
             else -> "${SkillGuidance.withUnit(skill.target - bestOverall, skill)} to standard"
         }
     }
@@ -186,7 +189,7 @@ fun SkillDetailSheet(
                         buildString {
                             append("from training ${SkillGuidance.withUnit(t.value, skill)}")
                             val w = t.weightKg
-                            if (w != null && w > 0.0) append(" @ ${formatLoad(w)}kg")
+                            if (w != null && w > 0.0) append(" @ ${formatLoad(w)}${Units.name}")
                         }
                     },
                 ).joinToString(" · "),
@@ -330,7 +333,7 @@ fun SkillDetailSheet(
                         recent.map { entry ->
                             formatDate(entry.practicedAtMs, "EEE d MMM · HH:mm") to when {
                                 entry.claimed -> "CLAIMED"
-                                entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${formatLoad(entry.weightKg)}kg"
+                                entry.weightKg != null -> "${SkillGuidance.withUnit(entry.value, skill)} @ ${formatLoad(entry.weightKg)}${Units.name}"
                                 else -> SkillGuidance.withUnit(entry.value, skill)
                             }
                         },
@@ -440,15 +443,15 @@ private fun AttemptLogger(
             // A barbell lift logs the whole bar; a weighted bodyweight move, what hangs on top.
             MiniLabel(if (barLoad) "BAR LOAD" else "ADDED LOAD")
             Row(verticalAlignment = Alignment.CenterVertically) {
-                StepGlyph("−", "Less added load") { onLoad((load - 2.5).coerceAtLeast(0.0)) }
+                StepGlyph("−", "Less added load") { onLoad(if (Units.current == LoadUnit.LB) Loads.stepDown(load, Units.current, 5.0, 2.5) ?: 0.0 else (load - 2.5).coerceAtLeast(0.0)) }
                 Text(
-                    if (load <= 0.0) (if (barLoad) "0kg" else "BW") else "${formatLoad(load)}kg",
+                    if (load <= 0.0) (if (barLoad) "0${Units.name}" else "BW") else "${formatLoad(load)}${Units.name}",
                     style = MaterialTheme.typography.titleMedium,
                     fontFamily = ChakraPetch,
                     fontWeight = FontWeight.Bold,
                     color = IronvellumColors.Ink,
                 )
-                StepGlyph("+", "More added load") { onLoad(load + 2.5) }
+                StepGlyph("+", "More added load") { onLoad(if (Units.current == LoadUnit.LB) Loads.stepUp(load, Units.current, 5.0, 2.5) else load + 2.5) }
             }
         }
     } else {
@@ -506,7 +509,8 @@ internal fun roundToPlate(kg: Double): Double = Math.round(kg / 2.5) * 2.5
 
 /** Plate-stepped load: whole kilograms drop the ".0"; anything else keeps its decimals. */
 internal fun formatLoad(kg: Double): String =
-    if (kg % 1.0 == 0.0) kg.toLong().toString() else formatBodyValue(kg)
+    if (Units.current == LoadUnit.LB) Units.format(kg)
+    else if (kg % 1.0 == 0.0) kg.toLong().toString() else formatBodyValue(kg)
 
 /** Preset attempts around the standard, so common values are one tap away. */
 private fun quickValues(skill: Skills.SkillDef): List<Int> {

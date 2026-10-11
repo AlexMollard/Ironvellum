@@ -781,6 +781,7 @@ class Repository(
             muscleGroup = exercise?.muscleGroup ?: "",
             exerciseName = name,
             lever = lever,
+            unit = Units.current,
         )
     }
 
@@ -1508,8 +1509,8 @@ class Repository(
 
     /** The Strength Rank written out ([Rank.breakdown]); null while unranked. */
     fun observeRankBreakdown(): Flow<RankBreakdown?> =
-        combine(observeHistory(), observeStats(), observeBodyProfile(), observeSkillPractices()) { history, stats, body, practices ->
-            Rank.breakdown(history, SetRecords.bodyweightLookup(stats), body.second, System.currentTimeMillis(), practices)
+        combine(observeHistory(), observeStats(), observeBodyProfile(), observeSkillPractices(), Units.flow) { history, stats, body, practices, unit ->
+            Rank.breakdown(history, SetRecords.bodyweightLookup(stats), body.second, System.currentTimeMillis(), practices, unit)
         }
 
     private suspend fun rankNow(): String? = Rank.current(

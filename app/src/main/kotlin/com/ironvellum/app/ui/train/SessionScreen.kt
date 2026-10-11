@@ -1,5 +1,10 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.domain.GearRequirements
+import com.ironvellum.app.domain.Progression
+import com.ironvellum.app.domain.Loads
+import com.ironvellum.app.domain.LoadUnit
+import com.ironvellum.app.data.Units
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Build
@@ -29,7 +34,6 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.input.KeyboardType
-import com.ironvellum.app.ui.components.formatLoadKg
 import com.ironvellum.app.ui.components.lastLoggedFigure
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
@@ -594,6 +598,7 @@ fun SessionScreen(
     var showRiteMuscles by remember { mutableStateOf(false) }
     var infoFor by remember { mutableStateOf<Long?>(null) }
     var editLoadFor by remember { mutableStateOf<SessionSet?>(null) }
+    var platesFor by remember { mutableStateOf<Long?>(null) }
     var typing by remember { mutableStateOf<Pair<SessionSet, FigureKind>?>(null) }
     var showName by rememberSaveable { mutableStateOf(false) }
     var showNote by rememberSaveable { mutableStateOf(false) }
@@ -880,6 +885,7 @@ fun SessionScreen(
                                 onRemoveExercise = {
                                     viewModel.removeExercise(block.id) { offerRemovedUndo("${first.exerciseName} removed", it) }
                                 },
+                                onPlates = if (GearRequirements.isBarbellLift(first.exerciseName)) ({ platesFor = block.id }) else null,
                                 onEdit = ::commit,
                                 onTypeLoad = { editLoadFor = it },
                                 onTypeFigure = { set, kind -> typing = set to kind },
@@ -1038,6 +1044,23 @@ fun SessionScreen(
         )
     }
 
+    platesFor?.let { exerciseId ->
+        val sets = ui.sets.filter { it.exerciseId == exerciseId && !it.warmup }
+        val set = sets.firstOrNull { it.isPending } ?: sets.lastOrNull()
+        if (set != null) {
+            PlateSheet(
+                exerciseName = set.exerciseName,
+                setLabel = "set ${set.workingNumber(ui.sets)}",
+                loadKg = set.weightKg,
+                onUse = { kg ->
+                    commit(set.copy(weightKg = kg))
+                    platesFor = null
+                },
+                onDismiss = { platesFor = null },
+            )
+        }
+    }
+
     editLoadFor?.let { target ->
         val initial = target.weightKg?.let { loadText(it) }.orEmpty()
         var field by remember(target.id) { mutableStateOf(TextFieldValue(initial, TextRange(0, initial.length))) }
@@ -1086,11 +1109,11 @@ fun SessionScreen(
                     value = field,
                     onValueChange = { field = cleanLoadInput(it) },
                     singleLine = true,
-                    label = { Text("Load (kg)") },
+                    label = { Text("Load (${Units.name})") },
                     placeholder = { Text("Leave blank for bodyweight") },
                     isError = parsed.isFailure,
                     supportingText = if (parsed.isFailure) {
-                        { Text("Enter 0 to ${MAX_LOAD_KG.toInt()} kg.") }
+                        { Text("Enter 0 to ${Loads.ceilingText(MAX_LOAD_KG, Units.current)} ${Units.name}.") }
                     } else {
                         null
                     },
@@ -1296,6 +1319,7 @@ fun SessionScreen(
                             targets = targets,
                             exerciseNotes = notes,
                             includeNotes = includeNotes,
+                            unit = Units.current,
                         )
                     }
                 },
@@ -1366,27 +1390,28 @@ internal const val LOAD_INPUT_DECIMALS = 3
 internal fun cleanLoadInput(typed: TextFieldValue): TextFieldValue =
     typed.copy(text = DecimalInput.sanitize(typed.text, LOAD_INPUT_DECIMALS, LOAD_INPUT_MAX_CHARS))
 
-internal fun stepDownKg(kg: Double?): Double? =
-    kg?.let { (kotlin.math.ceil(it / LOAD_STEP_KG - 1e-9) - 1) * LOAD_STEP_KG }?.takeIf { it > 0.0 }
+internal fun stepDownKg(kg: Double?, unit: LoadUnit = Units.current, gridLb: Double = LOAD_STEP_LB): Double? =
+    Loads.stepDown(kg, unit, gridLb, LOAD_STEP_KG)
 
-internal fun stepUpKg(kg: Double?): Double =
-    (kotlin.math.floor((kg ?: 0.0) / LOAD_STEP_KG + 1e-9) + 1) * LOAD_STEP_KG
+internal fun stepUpKg(kg: Double?, unit: LoadUnit = Units.current, gridLb: Double = LOAD_STEP_LB): Double =
+    Loads.stepUp(kg, unit, gridLb, LOAD_STEP_KG)
+
+/** In lb the ± buttons walk 5 lb on compounds and 2.5 lb on small work, from the movement's kg progression step. */
+internal const val LOAD_STEP_LB = 5.0
+
+internal fun loadGridLb(exerciseName: String): Double = Loads.lbGrid(Progression.weightStepKg("", exerciseName))
 
 /**
  * A typed load: blank is bodyweight (0.0), a comma is a decimal point, and
  * the value is kept to the gram. Anything else, or out of range, fails.
  */
-internal fun parseLoadKg(text: String): Result<Double> {
-    if (text.isBlank()) return Result.success(0.0)
-    val kg = DecimalInput.parse(text)
-        ?: return Result.failure(IllegalArgumentException("not a number: $text"))
-    if (kg < 0.0 || kg > MAX_LOAD_KG) return Result.failure(IllegalArgumentException("out of range: $text"))
-    return Result.success(Math.round(kg * 1000.0) / 1000.0)
-}
+internal fun parseLoadKg(text: String, unit: LoadUnit = Units.current): Result<Double> =
+    Loads.parse(text, unit, MAX_LOAD_KG)
 
 /** A load as the dialog shows it for editing: no unit, no trailing ".0". */
-internal fun loadText(kg: Double): String =
-    if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
+internal fun loadText(kg: Double, unit: LoadUnit = Units.current): String =
+    if (unit == LoadUnit.LB) Loads.fieldText(kg, unit)
+    else if (kg == kg.toLong().toDouble()) kg.toLong().toString() else kg.toString()
 
 
 private const val TITLE_CAP = 80
@@ -1448,11 +1473,11 @@ private fun figuresFor(set: SessionSet, metric: ExerciseMetric, weighted: Boolea
         return Figure(
             kind = FigureKind.LOAD,
             // A bodyweight movement reads BW; a weighted one with no load yet reads 0.
-            value = kg?.let { formatLoadKg(it) } ?: if (weighted) "0" else "BW",
-            unit = if (kg != null || weighted) "kg" else "",
+            value = kg?.let { Units.format(it) } ?: if (weighted) "0" else "BW",
+            unit = if (kg != null || weighted) Units.name else "",
             what = "load",
-            minus = set.copy(weightKg = stepDownKg(set.weightKg)),
-            plus = set.copy(weightKg = stepUpKg(set.weightKg)),
+            minus = set.copy(weightKg = stepDownKg(set.weightKg, gridLb = loadGridLb(set.exerciseName))),
+            plus = set.copy(weightKg = stepUpKg(set.weightKg, gridLb = loadGridLb(set.exerciseName))),
         )
     }
     fun minutes(): Figure {
@@ -1529,7 +1554,7 @@ internal fun SessionSet.withTypedFigure(kind: FigureKind, n: Int): SessionSet = 
 private fun FigureKind.typable(): Boolean = this != FigureKind.KM
 
 /** "10 kg", or "BW" for a bodyweight set. */
-internal fun kgLabel(kg: Double?): String = kg?.takeIf { it > 0.0 }?.let { "${formatLoadKg(it)} kg" } ?: "BW"
+internal fun kgLabel(kg: Double?): String = Units.label(kg)
 
 /** A set as its row reads: "10 kg × 6". */
 internal fun setFigureText(set: SessionSet, metric: ExerciseMetric, weighted: Boolean): String = when (metric) {
@@ -1620,8 +1645,8 @@ internal fun foldedSubline(block: TrialBlock, metric: ExerciseMetric, weighted: 
         }
         done.isNotEmpty() -> "${done.size}/$total ${plural(total, "set", "sets")}"
         else -> when (metric) {
-            ExerciseMetric.REPS -> "$total × ${first.reps}" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${formatLoadKg(it)} kg" } ?: "")
-            ExerciseMetric.HOLD -> "$total × ${first.durationSec ?: 0}s" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${formatLoadKg(it)} kg" } ?: "")
+            ExerciseMetric.REPS -> "$total × ${first.reps}" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${Units.withUnit(it)}" } ?: "")
+            ExerciseMetric.HOLD -> "$total × ${first.durationSec ?: 0}s" + (first.weightKg?.takeIf { it > 0.0 }?.let { " · ${Units.withUnit(it)}" } ?: "")
             ExerciseMetric.DURATION -> "$total × ${(first.durationSec ?: 0) / 60} min"
             ExerciseMetric.DISTANCE_TIME, ExerciseMetric.ATTEMPTS_GRADE -> "$total ${plural(total, "set", "sets")}"
         }
@@ -1768,6 +1793,7 @@ internal fun OpenExerciseCard(
     onChangeExercise: (() -> Unit)? = null,
     onLog: (SessionSet) -> Unit = {},
     footer: (@Composable () -> Unit)? = null,
+    onPlates: (() -> Unit)? = null,
 ) {
     val first = block.first
     val shape = MaterialTheme.shapes.medium
@@ -1828,12 +1854,20 @@ internal fun OpenExerciseCard(
             )
         }
         Column(Modifier.padding(horizontal = 16.dp)) {
-            if (reference != null) {
-                Text(
-                    reference,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = IronvellumColors.InkMuted,
-                )
+            if (reference != null || onPlates != null) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (reference != null) {
+                        Text(
+                            reference,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = IronvellumColors.InkMuted,
+                            modifier = Modifier.weight(1f),
+                        )
+                    } else {
+                        Spacer(Modifier.weight(1f))
+                    }
+                    onPlates?.let { InkChip("Plates", clickLabel = "Open the plate calculator", onClick = it) }
+                }
             }
             // What the last trial that left a note on this exercise said.
             if (lastNote != null) {

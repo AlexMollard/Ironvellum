@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.data.Units
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -47,7 +48,6 @@ import com.ironvellum.app.ui.components.ListRow
 import com.ironvellum.app.ui.components.PushedHeader
 import com.ironvellum.app.ui.components.TrendChart
 import com.ironvellum.app.ui.components.formatDate
-import com.ironvellum.app.ui.components.formatLoadKg
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.ironvellumRepository
 import com.ironvellum.app.ui.theme.ChakraPetch
@@ -192,15 +192,15 @@ fun ExerciseExplorerScreen(
 /** One set as the lifter reads it: "100 kg × 5", "BW × 12", or for a hold "45 s · 20 kg". */
 internal fun setText(reps: Int, weightKg: Double?, hold: Boolean): String =
     if (hold) {
-        "$reps s" + (weightKg?.let { " · ${formatLoadKg(it)} kg" } ?: "")
+        "$reps s" + (weightKg?.let { " · ${Units.withUnit(it)}" } ?: "")
     } else {
-        (weightKg?.let { "${formatLoadKg(it)} kg" } ?: "BW") + " × $reps"
+        Units.label(weightKg) + " × $reps"
     }
 
 /** The short form for a line of sets: "100 × 5", "BW × 12", "45 s · 20". */
 internal fun compactSet(reps: Int, weightKg: Double?, hold: Boolean): String =
-    if (hold) "$reps s" + (weightKg?.let { " · ${formatLoadKg(it)}" } ?: "")
-    else (weightKg?.let { formatLoadKg(it) } ?: "BW") + " × $reps"
+    if (hold) "$reps s" + (weightKg?.let { " · ${Units.format(it)}" } ?: "")
+    else (weightKg?.let { Units.format(it) } ?: "BW") + " × $reps"
 
 /** The done set with the best strength score: the one the hero names. Null when none scored. */
 internal fun peakSet(history: ExerciseHistory): ExerciseSetEntry? =
@@ -270,7 +270,7 @@ private fun PeakCard(history: ExerciseHistory) {
         } else {
             history.totalVolumeKg?.let { volume ->
                 InkDivider()
-                ListRow("Volume", subline = "All time", value = "${"%,d".fmt(Math.round(volume))} kg")
+                ListRow("Volume", subline = "All time", value = Units.volume(volume))
             }
         }
         frequency?.let {

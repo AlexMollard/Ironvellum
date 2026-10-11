@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.dashboard
 
+import com.ironvellum.app.data.Units
 import com.ironvellum.app.domain.Exercise
 import com.ironvellum.app.domain.ExerciseMetric
 import com.ironvellum.app.domain.HouseEffects
@@ -9,7 +10,6 @@ import com.ironvellum.app.domain.PresetEntry
 import com.ironvellum.app.domain.SessionSet
 import com.ironvellum.app.domain.WorkoutPreset
 import com.ironvellum.app.domain.WorkoutSession
-import com.ironvellum.app.ui.components.formatLoadKg
 import com.ironvellum.app.ui.components.plural
 import com.ironvellum.app.ui.train.setFigureText
 import kotlin.math.ceil
@@ -163,7 +163,7 @@ internal fun veilStrength(lastCollectedAtMs: Long, nowMs: Long, houses: HouseEff
 
 /** The set a peak was lifted with, as the Ledger's rows read it: "100 kg × 5", "+11 kg × 8" for load added to the body. */
 internal fun peakSetText(peak: LiftRecord): String {
-    val set = peak.bestSet ?: return "est. ${"%.0f".format(java.util.Locale.US, peak.bestE1rmKg)} kg"
+    val set = peak.bestSet ?: return "est. ${Units.fixed(peak.bestE1rmKg, 0)}"
     val figure = setFigureText(set, ExerciseMetric.REPS, weighted = !peak.bestSetAddsToBody)
     return if (peak.bestSetAddsToBody && (set.weightKg ?: 0.0) > 0.0) "+$figure" else figure
 }
@@ -172,7 +172,7 @@ internal fun peakSetText(peak: LiftRecord): String {
 internal fun peakGainText(peak: LiftRecord): String {
     val best = peak.series.indexOfFirst { it == peak.bestE1rmKg }
     val gain = (peak.bestE1rmKg - (peak.series.take(best).maxOrNull() ?: peak.bestE1rmKg)).coerceAtLeast(0.1)
-    return "${formatLoadKg(Math.round(gain * 10) / 10.0)} kg"
+    return Units.withUnit(Math.round(gain * 10) / 10.0)
 }
 
 /**

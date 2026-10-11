@@ -51,6 +51,7 @@ class IronvellumApp : Application() {
     override fun onCreate() {
         super.onCreate()
         appearanceStore // Restore accents before any window or notification reads them.
+        com.ironvellum.app.data.Units.init(this) // And the load unit, before any screen or notification prints a load.
         // Every channel must exist before anything posts on O+; the workers
         // and the trial service can all start in a cold process, so the
         // cold-start call is the reliable one.

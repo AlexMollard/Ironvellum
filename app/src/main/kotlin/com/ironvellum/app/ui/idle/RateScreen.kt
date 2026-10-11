@@ -1,5 +1,6 @@
 package com.ironvellum.app.ui.idle
 
+import com.ironvellum.app.data.Units
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -157,7 +158,7 @@ private fun Breakdown(snapshot: IdleSnapshot, inputs: IdleInputs, vault: VaultSt
             "Training",
             rate.trainingFactor,
             "${inputs.sessionsLast7d} ${plural(inputs.sessionsLast7d, "trial", "trials")} in 7 days" +
-                " · ${"%,.0f".fmt(inputs.volumeLast7d)} kg · oath ${inputs.streakDays} ${plural(inputs.streakDays, "day", "days")}",
+                " · ${Units.volume(inputs.volumeLast7d)} · oath ${inputs.streakDays} ${plural(inputs.streakDays, "day", "days")}",
             ceiling = trainingMax,
         )
         InkDivider()

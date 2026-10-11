@@ -1,5 +1,7 @@
 package com.ironvellum.app.ui.train
 
+import com.ironvellum.app.domain.Loads
+import com.ironvellum.app.data.Units
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -380,11 +382,11 @@ private fun AmendLoadDialog(
                 value = field,
                 onValueChange = { field = cleanLoadInput(it) },
                 singleLine = true,
-                label = { Text("Load (kg)") },
+                label = { Text("Load (${Units.name})") },
                 placeholder = { Text("Leave blank for bodyweight") },
                 isError = parsed.isFailure,
                 supportingText = if (parsed.isFailure) {
-                    { Text("Enter 0 to ${MAX_LOAD_KG.toInt()} kg.") }
+                    { Text("Enter 0 to ${Loads.ceilingText(MAX_LOAD_KG, Units.current)} ${Units.name}.") }
                 } else {
                     null
                 },

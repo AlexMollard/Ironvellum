@@ -77,6 +77,8 @@ Settings keeps the name **Settings**.
 | **The Summons** | The daily reminder notification and its setting | "THE SUMMONS · Heavy Pull", settings header THE SUMMONS | daily reminder, quest open, nudge |
 | **The Binding** | First-run setup | step titles: Who you are · How you train · Your cycle | onboarding, setup |
 | **Armoury** | The equipment an Ironbound owns | "YOUR ARMOURY", settings header ARMOURY, picker filter "MY ARMOURY" | gear, my gear, equipment |
+| **Plates** | The plate calculator: a chip on a barbell lift in the live trial that opens a sheet building the load from the bar and plates owned; and the Armoury's "Bar and plates" block | chip "Plates", sheet "Plates", "Closest below", "falls between plates", "Use 102.5 kg", "Heaviest you can load" | plate math |
+| **Units** | kg or lb, a Training mode setting. Storage is kg everywhere; it changes only what is shown and typed | "UNITS · kg lb", "225 lb × 5", "Load (lb)" | imperial, metric |
 | **The Forge** | The builder that makes rites and cycles | "Forge a Cycle", "Forge a Rite", "What my week is missing" | program builder, generate a routine |
 | **Temper** | The Forge improving an existing rite | "Temper this rite", "Before / After" | improve |
 | **Patterns** | Hand-written cycle templates | "FROM A PATTERN", "Start from a pattern" | templates |
@@ -137,7 +139,7 @@ Support's public cost page is **"View the costs"**, never "the Ledger".
 These stay plain under the theme. Each needs to be instantly clear, and several
 are compared outside the app.
 
-- **Measurements and science:** exercise names, set, rep, kg, rest between
+- **Measurements and science:** exercise names, set, rep, kg, lb, rest between
   sets, time, load, modifiers, BMI, FFMI, body fat, steps, sleep, calories,
   RPE, deload, hypertrophy, 1-rep max, muscle names, muscle coverage. Explain
   them; never rename them.

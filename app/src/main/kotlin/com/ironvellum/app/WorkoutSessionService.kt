@@ -1,5 +1,6 @@
 package com.ironvellum.app
 
+import com.ironvellum.app.data.Units
 import android.app.Notification
 import android.app.PendingIntent
 import android.app.Service
@@ -294,7 +295,7 @@ class WorkoutSessionService : Service() {
     }
 
     private fun formatLoad(kg: Double): String =
-        if (kg == kg.toLong().toDouble()) "${kg.toLong()}kg" else "${kg}kg"
+        Units.format(kg) + Units.name
 
     override fun onDestroy() {
         releaseWake()

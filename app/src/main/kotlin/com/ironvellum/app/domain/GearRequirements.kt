@@ -204,6 +204,10 @@ object GearRequirements {
     fun needs(exerciseName: String): List<Set<Gear>> =
         requirements[exerciseName.trim().lowercase()].orEmpty().filter { it.isNotEmpty() }
 
+    /** True when every way of doing the movement uses a barbell: the live trial's plate calculator is for these. */
+    fun isBarbellLift(exerciseName: String): Boolean =
+        needs(exerciseName).let { ways -> ways.isNotEmpty() && ways.all { Gear.BARBELL in it } }
+
     /** Whether the movement has an explicit row - the silent-fallthrough guard. */
     internal fun hasEntry(name: String): Boolean = name.trim().lowercase() in requirements
 }
