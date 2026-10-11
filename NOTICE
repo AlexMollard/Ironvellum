@@ -24,10 +24,23 @@ Muscle map shapes (app/src/main/kotlin/com/ironvellum/app/ui/program/BodyMapShap
   hand-drawn outline (border) paths of its male and female bodies were converted by tools/bodymap_import.py.
   Full text: licenses/MIT-react-native-body-highlighter.txt, also shown in the app under Support, Licence.
 
+Exercise drawings and instructions (app/src/main/assets/exercise_art/, domain/LibraryGuides.kt)
+  Drawings adapted from two projects, both under Creative Commons Attribution-ShareAlike 4.0 (CC BY-SA 4.0,
+  https://creativecommons.org/licenses/by-sa/4.0/; text in licenses/CC-BY-SA-4.0-exercise-art.txt):
+  - Everkinetic, created by Greg Priday (https://github.com/everkinetic/data), the exercise drawings and the
+    instructions that the app's added movements are adapted from.
+  - Workout Guide by Bryl Lim (https://github.com/bryllim/workout-guide, assets under CC BY-SA 4.0 via its
+    LICENSE-ASSETS; its code is MIT). It expands the Everkinetic poses with more exercises and animation frames.
+  Changes made: each frame was converted to a one-channel ink mask, cropped to the figure, scaled to at most 256 px,
+  reduced to four ink levels and packed with its sibling frames into one WebP; the app paints the mask in its own
+  ink colour at draw time. Some faint frames were brightened. The drawings and the instruction text adapted from them
+  stay under CC BY-SA 4.0; the rest of the app is GPL-3.0-or-later. Details and the per-drawing record:
+  docs/ART_ATTRIBUTION.md and tools/exercise_art/.
+
 Artwork
 =======
 
-All artwork is original to Ironvellum. Rank emblems are hand-authored vectors;
+Apart from the exercise drawings credited above, all artwork is original to Ironvellum. Rank emblems are hand-authored vectors;
 the launcher icon, empty-state and crest images were generated for this
 project with Google Gemini (tools/art.py). All of it is released under the
 project licence above. Details: docs/ART_ATTRIBUTION.md.

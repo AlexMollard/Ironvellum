@@ -39,6 +39,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
+## Exercise drawings and instructions
+
+- Sources: [Everkinetic](https://github.com/everkinetic/data) (created by Greg Priday) and
+  [Workout Guide](https://github.com/bryllim/workout-guide) by Bryl Lim, which builds on Everkinetic's poses.
+- Licence: Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0). Everkinetic: `LICENSE.md` in its
+  repository. Workout Guide: assets under `LICENSE-ASSETS`, code under MIT (no code is used). Text:
+  `licenses/CC-BY-SA-4.0-exercise-art.txt`.
+- Taken from them: the drawings in `app/src/main/assets/exercise_art/` and, for the movements the library adds, the
+  step-by-step text adapted from Everkinetic's records (`LibraryGuides.kt`).
+- Changed: converted to ink masks, cropped, scaled, reduced to four levels and recoloured at draw time; faint frames
+  brightened; instruction text lightly edited. Built by `tools/exercise_art/`.
+- The adaptations stay under CC BY-SA 4.0; everything else is GPL-3.0-or-later.
+
 ## Chakra Petch font
 
 Copyright 2018 The Chakra Petch Project Authors, SIL Open Font License 1.1. See `licenses/OFL-ChakraPetch.txt`.
