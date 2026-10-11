@@ -138,8 +138,8 @@ Optional, and only with an account.
 
 ## Install
 
-- **F-Droid:** the listing is still in review with F-Droid, so it is not in
-  the store yet. The `foss` build carries no proprietary libraries.
+- **F-Droid:** [Ironvellum on F-Droid](https://f-droid.org/packages/com.ironvellum.app/).
+  The `foss` build carries no proprietary libraries.
 - **Releases:** tagged versions are on
   [GitHub Releases](https://github.com/AlexMollard/Ironvellum/releases).
 - **From source:** needs a JDK and the Android SDK.
